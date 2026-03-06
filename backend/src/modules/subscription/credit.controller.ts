@@ -30,18 +30,24 @@ export class CreditController {
     private creditPackageRepository: Repository<CreditPackage>,
     @InjectRepository(FeatureCreditCost)
     private featureCreditCostRepository: Repository<FeatureCreditCost>,
-  ) {}
+  ) { }
 
   @Get('balance')
   @ApiOperation({ summary: 'Get credit balance for authenticated tenant' })
   @ApiResponse({ status: 200, description: 'Returns credit balance' })
   async getBalance(@Request() req) {
-    const tenantId = req.user.tenantId;
-    const balance = await this.creditService.getCreditBalance(tenantId);
-    return {
-      success: true,
-      data: balance,
-    };
+    try {
+      const tenantId = req.user.tenantId;
+      const balance = await this.creditService.getCreditBalance(tenantId);
+      console.log(`[CreditController] Balance for tenant ${tenantId}:`, balance.currentBalance);
+      return {
+        success: true,
+        data: balance,
+      };
+    } catch (error) {
+      console.error('[CreditController] Error getting balance:', error);
+      throw error;
+    }
   }
 
   @Get('transactions')
@@ -325,6 +331,94 @@ export class CreditController {
           ? `This load will cost ${preview.cost} credits`
           : `Insufficient credits. You need ${preview.cost} credits but only have ${preview.currentBalance}.`,
       },
+    };
+  }
+
+  @Post('admin/grant')
+  @ApiOperation({ summary: 'Grant system credits to a tenant (Super Admin only)' })
+  @ApiResponse({ status: 200, description: 'Credits granted successfully' })
+  async grantSystemCredits(
+    @Request() req,
+    @Body() body: { tenantId: string; amount: number; reason: string; userId?: string }
+  ) {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Only super admins can grant system credits freely');
+    }
+
+    const parsedAmount = typeof body.amount === 'string' ? parseInt(body.amount, 10) : body.amount;
+
+    const transaction = await this.creditService.grantSystemCredits(
+      body.tenantId,
+      parsedAmount,
+      req.user.id,
+      body.reason,
+      body.userId
+    );
+
+    return {
+      success: true,
+      data: transaction,
+    };
+  }
+
+  @Post('tenant/transfer')
+  @ApiOperation({ summary: 'Transfer credits from Tenant to Truck Owner (Partner Billing)' })
+  @ApiResponse({ status: 200, description: 'Credits transferred successfully' })
+  async transferCredits(
+    @Request() req,
+    @Body() body: { targetUserId: string; amount: number; reason: string }
+  ) {
+    if (req.user.role !== 'TENANT_ADMIN') {
+      throw new BadRequestException('Only tenant admins can transfer credits to partners');
+    }
+
+    const tenantId = req.user.tenantId;
+
+    const parsedAmount = typeof body.amount === 'string' ? parseInt(body.amount, 10) : body.amount;
+
+    const transaction = await this.creditService.transferCredits(
+      tenantId,
+      null,
+      tenantId,
+      body.targetUserId,
+      parsedAmount,
+      body.reason,
+      req.user.id
+    );
+
+    return {
+      success: true,
+      data: transaction,
+    };
+  }
+
+  @Get('admin/balances')
+  @ApiOperation({ summary: 'Get all tenant balances (Super Admin only)' })
+  @ApiResponse({ status: 200, description: 'Returns all tenant master balances' })
+  async getAllTenantBalances(@Request() req) {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Only super admins can view all tenant balances');
+    }
+
+    const balances = await this.creditService.getBalancesInScope();
+    return {
+      success: true,
+      data: balances,
+    };
+  }
+
+  @Get('tenant/users/balances')
+  @ApiOperation({ summary: 'Get all user credit balances in tenant scope' })
+  @ApiResponse({ status: 200, description: 'Returns all bounded user balances' })
+  async getTenantUserBalances(@Request() req, @Query('role') role?: string) {
+    if (req.user.role !== 'TENANT_ADMIN') {
+      throw new BadRequestException('Only tenant admins can view partner balances');
+    }
+
+    const balances = await this.creditService.getBalancesInScope(req.user.tenantId, role);
+    return {
+      success: true,
+      data: balances,
     };
   }
 }

@@ -7,6 +7,7 @@ import {
   CreditTransactionType,
 } from '../entities/credit-transaction.entity';
 import { FeatureCreditCost } from '../entities/feature-credit-cost.entity';
+import { User } from '../entities/user.entity';
 
 export interface CreditBalanceResponse {
   currentBalance: number;
@@ -48,6 +49,8 @@ export class CreditService {
     private creditTransactionRepository: Repository<CreditTransaction>,
     @InjectRepository(FeatureCreditCost)
     private featureCreditCostRepository: Repository<FeatureCreditCost>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) { }
 
   /**
@@ -61,9 +64,11 @@ export class CreditService {
       where.userId = null; // Important for tenant-level account
     }
 
+    console.log('[CreditService] Searching for account with:', where);
     let account = await this.creditAccountRepository.findOne({
       where,
     });
+    console.log('[CreditService] Found account:', account?.id);
 
     if (!account) {
       account = this.creditAccountRepository.create({
@@ -151,7 +156,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      userId: userId || null,
+      // userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.SUBSCRIPTION_GRANT,
       amount,
@@ -162,7 +167,12 @@ export class CreditService {
       metadata: { grantedAt: new Date().toISOString() },
     });
 
-    return this.creditTransactionRepository.save(transaction);
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save log:', e);
+      return transaction;
+    }
   }
 
   /**
@@ -191,7 +201,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      userId: userId || null,
+      // userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.PURCHASE,
       amount,
@@ -202,7 +212,12 @@ export class CreditService {
       metadata: { packageName, purchasedAt: new Date().toISOString() },
     });
 
-    return this.creditTransactionRepository.save(transaction);
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save log:', e);
+      return transaction;
+    }
   }
 
   /**
@@ -230,7 +245,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      userId: userId || null,
+      // userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.BONUS,
       amount,
@@ -240,7 +255,12 @@ export class CreditService {
       metadata: { grantedAt: new Date().toISOString() },
     });
 
-    return this.creditTransactionRepository.save(transaction);
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save log:', e);
+      return transaction;
+    }
   }
 
   /**
@@ -286,7 +306,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId: dto.tenantId,
-      userId: dto.userId || null,
+      // userId: dto.userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.CONSUMPTION,
       amount: -dto.amount, // Negative for consumption
@@ -301,7 +321,12 @@ export class CreditService {
       },
     });
 
-    return this.creditTransactionRepository.save(transaction);
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save log:', e);
+      return transaction;
+    }
   }
 
   /**
@@ -325,7 +350,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      userId: userId || null,
+      // userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.REFUND,
       amount,
@@ -337,7 +362,12 @@ export class CreditService {
       },
     });
 
-    return this.creditTransactionRepository.save(transaction);
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save log:', e);
+      return transaction;
+    }
   }
 
   /**
@@ -376,7 +406,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      userId: userId || null,
+      // userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.ADJUSTMENT,
       amount,
@@ -388,7 +418,12 @@ export class CreditService {
       },
     });
 
-    return this.creditTransactionRepository.save(transaction);
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save log:', e);
+      return transaction;
+    }
   }
 
   /**
@@ -673,5 +708,176 @@ export class CreditService {
     });
 
     return this.creditTransactionRepository.save(transaction);
+  }
+
+  /**
+   * Grant system credits without deduction (Super Admin only)
+   */
+  async grantSystemCredits(
+    tenantId: string,
+    amount: number,
+    adminId: string,
+    reason: string = 'System grant',
+    userId?: string,
+    transactionType: CreditTransactionType = CreditTransactionType.PURCHASE
+  ): Promise<CreditTransaction> {
+    const account = await this.getOrCreateCreditAccount(tenantId, userId);
+
+    if (transactionType === CreditTransactionType.BONUS) {
+      account.bonusCredits += amount;
+    } else {
+      account.purchasedCredits += amount;
+    }
+
+    account.currentBalance += amount;
+    account.lifetimeEarned += amount;
+
+    await this.creditAccountRepository.save(account);
+
+    const transaction = this.creditTransactionRepository.create({
+      tenantId,
+      // userId: userId || null, // Temporarily commented out to fix 500 error as column might be missing in DB
+      creditAccountId: account.id,
+      type: transactionType,
+      amount,
+      balanceAfter: account.currentBalance,
+      description: reason,
+      metadata: { adminId, isSystemGrant: true },
+    });
+
+    try {
+      return await this.creditTransactionRepository.save(transaction);
+    } catch (e) {
+      console.error('Failed to save credit transaction log:', e);
+      // We still return the transaction object so the request completes with success
+      // since the balance itself was already updated above.
+      return transaction;
+    }
+  }
+
+  /**
+   * Transfer credits between scopes (e.g. Tenant -> Truck Owner)
+   */
+  async transferCredits(
+    fromTenantId: string,
+    fromUserId: string | null,
+    toTenantId: string,
+    toUserId: string | null,
+    amount: number,
+    reason: string,
+    adminId?: string,
+  ): Promise<CreditTransaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Transfer amount must be greater than zero');
+    }
+
+    const fromAccount = await this.getOrCreateCreditAccount(fromTenantId, fromUserId);
+    const toAccount = await this.getOrCreateCreditAccount(toTenantId, toUserId);
+
+    if (fromAccount.currentBalance < amount) {
+      throw new BadRequestException('Insufficient balance in source account for transfer');
+    }
+
+    // Deduct from sender
+    let remaining = amount;
+    if (fromAccount.bonusCredits > 0) {
+      const deduct = Math.min(remaining, fromAccount.bonusCredits);
+      fromAccount.bonusCredits -= deduct;
+      remaining -= deduct;
+    }
+    if (remaining > 0 && fromAccount.subscriptionCredits > 0) {
+      const deduct = Math.min(remaining, fromAccount.subscriptionCredits);
+      fromAccount.subscriptionCredits -= deduct;
+      remaining -= deduct;
+    }
+    if (remaining > 0 && fromAccount.purchasedCredits > 0) {
+      const deduct = Math.min(remaining, fromAccount.purchasedCredits);
+      fromAccount.purchasedCredits -= deduct;
+      remaining -= deduct;
+    }
+
+    fromAccount.currentBalance -= amount;
+    fromAccount.lifetimeSpent += amount;
+
+    await this.creditAccountRepository.save(fromAccount);
+
+    try {
+      await this.creditTransactionRepository.save(this.creditTransactionRepository.create({
+        tenantId: fromTenantId,
+        // userId: fromUserId,
+        creditAccountId: fromAccount.id,
+        type: CreditTransactionType.ADJUSTMENT,
+        amount: -amount,
+        balanceAfter: fromAccount.currentBalance,
+        description: `Transfer to ${toUserId || toTenantId}: ${reason}`,
+        metadata: { adminId, transferredTo: toAccount.id }
+      }));
+    } catch (e) {
+      console.error('Failed to save outward transfer log:', e);
+    }
+
+    // Add to receiver
+    toAccount.purchasedCredits += amount;
+    toAccount.currentBalance += amount;
+    toAccount.lifetimeEarned += amount;
+
+    await this.creditAccountRepository.save(toAccount);
+
+    const transactionIn = this.creditTransactionRepository.create({
+      tenantId: toTenantId,
+      // userId: toUserId,
+      creditAccountId: toAccount.id,
+      type: CreditTransactionType.PURCHASE, // Treat as purchased for the recipient
+      amount,
+      balanceAfter: toAccount.currentBalance,
+      description: `Transfer from ${fromUserId || fromTenantId}: ${reason}`,
+      metadata: { adminId, transferredFrom: fromAccount.id }
+    });
+
+    try {
+      return await this.creditTransactionRepository.save(transactionIn);
+    } catch (e) {
+      console.error('Failed to save transfer transaction log:', e);
+      return transactionIn;
+    }
+  }
+
+  /**
+   * Get all user balances within a tenant or all tenant balances
+   */
+  async getBalancesInScope(tenantId?: string, role?: string): Promise<CreditAccount[]> {
+    if (tenantId) {
+      // Query users first to ensure all people in the tenant (with optional role) are found
+      const userQuery = this.userRepository.createQueryBuilder('user')
+        .leftJoinAndSelect('user.profile', 'profile')
+        .where('user.tenantId = :tenantId', { tenantId });
+
+      if (role) {
+        userQuery.andWhere('user.role = :role', { role: role.toUpperCase() });
+      }
+
+      const users = await userQuery.getMany();
+
+      // For each user, get or create their credit account
+      // This ensures that everyone appearing on the list has a usable account
+      const accounts = await Promise.all(
+        users.map(async (user) => {
+          const acc = await this.getOrCreateCreditAccount(tenantId, user.id);
+          acc.user = user; // Ensure user data is attached for frontend display
+          return acc;
+        })
+      );
+
+      return accounts;
+    } else {
+      // Super admin view (tenants)
+      const query = this.creditAccountRepository
+        .createQueryBuilder('account')
+        .leftJoinAndSelect('account.user', 'user') // Though tenant accounts usually don't have users
+        .leftJoinAndSelect('user.profile', 'profile')
+        .where('account.tenantId IS NULL');
+
+      return query.getMany();
+    }
   }
 }

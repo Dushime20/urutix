@@ -71,6 +71,8 @@ const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
+const TruckOwnerBilling = lazy(() => import('./pages/tenant-admin/TruckOwnerBilling'));
+const PartnerBillingManager = lazy(() => import('./pages/tenant-admin/PartnerBillingManager'));
 
 const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
 const TenantAdminDrivers = lazy(() => import('./components/TenantAdmin/TenantAdminDrivers'));
@@ -402,6 +404,8 @@ function App() {
                       <Route path="routes" element={<TenantAdminRoutes />} />
                       <Route path="trips" element={<TenantAdminTrips />} />
                       <Route path="financial" element={<TenantDashboardPage />} />
+                      <Route path="truck-owners" element={<TruckOwnerBilling />} />
+                      <Route path="partner-billing" element={<PartnerBillingManager />} />
                       <Route path="analytics" element={<TenantDashboardPage />} />
                       <Route path="reports" element={<TenantDashboardPage />} />
                       <Route path="profile" element={<Profile />} />

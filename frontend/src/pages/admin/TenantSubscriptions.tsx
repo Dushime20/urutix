@@ -56,6 +56,7 @@ const TenantSubscriptions: React.FC = () => {
   const [showTransactionsModal, setShowTransactionsModal] = useState(false);
   const [creditsToAdd, setCreditsToAdd] = useState(0);
   const [creditReason, setCreditReason] = useState('');
+  const [transactionType, setTransactionType] = useState('purchase');
 
   // Fetch all tenant subscriptions
   const { data: subscriptionsData, isLoading, refetch } = useQuery({
@@ -64,7 +65,7 @@ const TenantSubscriptions: React.FC = () => {
       const params = new URLSearchParams();
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (planFilter !== 'all') params.append('plan', planFilter);
-      
+
       const response = await api.get(`/admin/subscriptions?${params.toString()}`);
       return response.data;
     },
@@ -113,26 +114,37 @@ const TenantSubscriptions: React.FC = () => {
     },
   });
 
-  // Add credits mutation
+  // Add / Sell credits mutation
   const addCredits = useMutation({
-    mutationFn: async ({ tenantId, credits, reason }: { tenantId: string; credits: number; reason: string }) => {
-      const response = await api.post(`/admin/credits/add`, {
-        tenantId,
-        amount: credits,
-        reason,
-        type: 'bonus',
-      });
-      return response.data;
+    mutationFn: async ({ tenantId, credits, reason, transactionType }: { tenantId: string; credits: number; reason: string, transactionType: string }) => {
+      if (transactionType === 'bonus') {
+        const response = await api.post(`/admin/credits/add`, {
+          tenantId,
+          amount: credits,
+          reason,
+          type: 'bonus',
+        });
+        return response.data;
+      } else {
+        // Use the new grant endpoint for purchases/system grants
+        const response = await api.post(`/credits/admin/grant`, {
+          tenantId,
+          amount: credits,
+          reason,
+        });
+        return response.data;
+      }
     },
     onSuccess: () => {
-      toast.success('Credits added successfully');
+      toast.success('Credits successfully processed');
       queryClient.invalidateQueries({ queryKey: ['admin-tenant-subscriptions'] });
       setShowAddCreditsModal(false);
       setCreditsToAdd(0);
       setCreditReason('');
+      setTransactionType('purchase');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to add credits');
+      toast.error(error.response?.data?.message || 'Failed to process credits');
     },
   });
 
@@ -140,7 +152,7 @@ const TenantSubscriptions: React.FC = () => {
 
   // Filter subscriptions
   const filteredSubscriptions = subscriptions.filter((sub) => {
-    const matchesSearch = 
+    const matchesSearch =
       sub.tenantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.tenantId.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
@@ -173,7 +185,7 @@ const TenantSubscriptions: React.FC = () => {
       label: 'Monthly Revenue',
       value: `$${Number(subscriptions.reduce((sum, s) => {
         if ((s.status === 'active' || s.status === 'trial') && s.plan) {
-          const monthlyPrice = s.billingCycle === 'monthly' 
+          const monthlyPrice = s.billingCycle === 'monthly'
             ? (Number(s.plan.priceMonthly) || 0)
             : ((Number(s.plan.priceYearly) || 0) / 12);
           return sum + monthlyPrice;
@@ -381,8 +393,8 @@ const TenantSubscriptions: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="font-medium text-slate-900 capitalize">{subscription.billingCycle}</div>
                         <div className="text-xs text-slate-500">
-                          ${subscription.billingCycle === 'monthly' 
-                            ? subscription.plan.priceMonthly 
+                          ${subscription.billingCycle === 'monthly'
+                            ? subscription.plan.priceMonthly
                             : subscription.plan.priceYearly}/
                           {subscription.billingCycle === 'monthly' ? 'mo' : 'yr'}
                         </div>
@@ -419,8 +431,8 @@ const TenantSubscriptions: React.FC = () => {
                           </button>
                           <button
                             onClick={() => {
-                              navigate('/admin/credit-usage', { 
-                                state: { tenantId: subscription.tenantId, tenantName: subscription.tenantName } 
+                              navigate('/admin/credit-usage', {
+                                state: { tenantId: subscription.tenantId, tenantName: subscription.tenantName }
                               });
                             }}
                             className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
@@ -444,7 +456,7 @@ const TenantSubscriptions: React.FC = () => {
                               setShowAddCreditsModal(true);
                             }}
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Add Credits"
+                            title="Sell / Grant Credits"
                           >
                             <FaGift />
                           </button>
@@ -585,12 +597,13 @@ const TenantSubscriptions: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Add Bonus Credits</h3>
+                <h3 className="text-2xl font-bold text-slate-900">Sell / Grant Credits</h3>
                 <button
                   onClick={() => {
                     setShowAddCreditsModal(false);
                     setCreditsToAdd(0);
                     setCreditReason('');
+                    setTransactionType('purchase');
                   }}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 >
@@ -610,7 +623,21 @@ const TenantSubscriptions: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Credits to Add
+                    Transaction Type
+                  </label>
+                  <select
+                    value={transactionType}
+                    onChange={(e) => setTransactionType(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="purchase">Credit Purchase (Sale)</option>
+                    <option value="bonus">Bonus / Goodwill Grant</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Credits to Issue
                   </label>
                   <input
                     type="number"
@@ -624,49 +651,51 @@ const TenantSubscriptions: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Reason
+                    Reason / Reference (Optional)
                   </label>
                   <textarea
                     value={creditReason}
                     onChange={(e) => setCreditReason(e.target.value)}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Enter reason for adding credits"
+                    placeholder={transactionType === 'purchase' ? "E.g. Invoice #12344, Wire Transfer" : "Enter reason for granting bonus credits"}
                     rows={3}
                   />
                 </div>
 
                 {creditsToAdd > 0 && (
                   <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-sm text-green-600 mb-1">New Balance</div>
+                    <div className="text-sm text-green-600 mb-1">New Balance Estimate</div>
                     <div className="text-2xl font-bold text-green-900">
                       {((selectedSubscription.creditBalance || 0) + creditsToAdd).toLocaleString()} credits
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 mt-6">
                   <button
                     onClick={() => {
-                      if (creditsToAdd > 0 && creditReason.trim()) {
+                      if (creditsToAdd > 0) {
                         addCredits.mutate({
                           tenantId: selectedSubscription.tenantId,
                           credits: creditsToAdd,
-                          reason: creditReason,
+                          reason: creditReason || (transactionType === 'purchase' ? 'Credit Purchase' : 'Bonus Grant'),
+                          transactionType,
                         });
                       } else {
-                        toast.error('Please enter credits amount and reason');
+                        toast.error('Please enter a valid amount of credits');
                       }
                     }}
-                    disabled={addCredits.isPending || creditsToAdd <= 0 || !creditReason.trim()}
+                    disabled={addCredits.isPending || creditsToAdd <= 0}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all font-bold disabled:opacity-50"
                   >
-                    {addCredits.isPending ? 'Adding...' : 'Add Credits'}
+                    {addCredits.isPending ? 'Processing...' : (transactionType === 'purchase' ? 'Record Sale' : 'Grant Bonus')}
                   </button>
                   <button
                     onClick={() => {
                       setShowAddCreditsModal(false);
                       setCreditsToAdd(0);
                       setCreditReason('');
+                      setTransactionType('purchase');
                     }}
                     className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all font-bold"
                   >
@@ -714,9 +743,8 @@ const TenantSubscriptions: React.FC = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            transaction.amount > 0 ? 'bg-green-100' : 'bg-red-100'
-                          }`}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center ${transaction.amount > 0 ? 'bg-green-100' : 'bg-red-100'
+                            }`}
                         >
                           {transaction.amount > 0 ? (
                             <FaPlus className="text-green-600 text-xl" />
@@ -736,9 +764,8 @@ const TenantSubscriptions: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <div
-                          className={`text-xl font-bold ${
-                            transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}
+                          className={`text-xl font-bold ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
                         >
                           {transaction.amount > 0 ? '+' : ''}
                           {transaction.amount.toLocaleString()}

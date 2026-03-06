@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import {
   FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
-  FaEye, FaMapMarkerAlt, FaGasPump, FaTools, FaCheckCircle, FaExclamationTriangle
+  FaEye, FaMapMarkerAlt, FaTools, FaCheckCircle, FaExclamationTriangle
 } from 'react-icons/fa';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { useQuery } from '@tanstack/react-query';
+import { tenantApi } from '../../services/tenantApi';
+import { FaCoins } from 'react-icons/fa';
 
 interface Truck {
   id: string;
@@ -101,6 +104,13 @@ const FleetManagement: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const { data: balanceData } = useQuery({
+    queryKey: ['tenant-credit-balance'],
+    queryFn: () => tenantApi.getCreditBalance(),
+  });
+
+  const currentBalance = balanceData?.currentBalance || 0;
+
   return (
     <AdminPageLayout
       title="Fleet Management"
@@ -176,13 +186,13 @@ const FleetManagement: React.FC = () => {
             <FaTools className="text-yellow-500 text-3xl" />
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 border-b-4 border-indigo-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Avg Fuel Level</p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{Math.round(trucks.reduce((acc, t) => acc + t.fuelLevel, 0) / trucks.length)}%</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Credit Balance</p>
+              <p className="text-2xl font-black text-indigo-600 leading-none tracking-tight">{currentBalance.toLocaleString()} <span className="text-xs">TRX</span></p>
             </div>
-            <FaGasPump className="text-purple-500 text-3xl" />
+            <FaCoins className="text-indigo-500 text-3xl" />
           </div>
         </div>
       </div>
@@ -262,7 +272,7 @@ const FleetManagement: React.FC = () => {
           </div>
         ))}
       </div>
-    </AdminPageLayout>
+    </AdminPageLayout >
   );
 };
 

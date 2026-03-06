@@ -15,6 +15,7 @@ import { Tenant } from '../../entities/tenant.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
+import { User } from '../../entities/user.entity';
 
 // Services
 import { SubscriptionService } from '../../services/subscription.service';
@@ -42,6 +43,7 @@ import { CreditController } from './credit.controller';
       Payment,
       Trip,
       Load,
+      User,
     ]),
     ScheduleModule.forRoot(),
   ],
@@ -55,4 +57,4 @@ import { CreditController } from './credit.controller';
   ],
   exports: [SubscriptionService, CreditService, PricingService, CreditConsumptionListener],
 })
-export class SubscriptionModule {}
+export class SubscriptionModule { }

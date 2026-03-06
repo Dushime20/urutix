@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { FleetOverview } from '../TenantDashboard';
+import { Users } from 'lucide-react';
 
 const TenantFleetManagement: React.FC = () => {
   const { user } = useAuth();
@@ -18,6 +19,13 @@ const TenantFleetManagement: React.FC = () => {
             </p>
           </div>
           <div className="flex space-x-3">
+            <button
+              onClick={() => window.location.href = '/tenant-admin/truck-owners'}
+              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-bold text-sm flex items-center gap-2 border border-indigo-100 shadow-sm"
+            >
+              <Users className="w-4 h-4" />
+              Owner Credits
+            </button>
             <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
               Export Report
             </button>

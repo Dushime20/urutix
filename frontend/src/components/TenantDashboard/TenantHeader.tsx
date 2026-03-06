@@ -33,8 +33,8 @@ interface TenantHeaderProps {
   tenant: Tenant;
   onRefresh: () => void;
   isRefreshing?: boolean;
-  selectedView: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding';
-  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding') => void;
+  selectedView: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding';
+  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding') => void;
 }
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({
@@ -56,6 +56,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
     { id: 'trips', label: 'Trips', icon: Navigation },
     { id: 'bidding', label: 'Bidding', icon: DollarSign },
     { id: 'fleet', label: 'Fleet', icon: Truck },
+    { id: 'truck-owners', label: 'Truck Owners', icon: Users },
     { id: 'cargo', label: 'Cargo', icon: Box },
     { id: 'users', label: 'Partners', icon: Users },
     { id: 'financial', label: 'Financial', icon: DollarSign },
@@ -69,6 +70,13 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
     staleTime: 30000, // 30 seconds
   });
 
+  const { data: balanceData } = useQuery({
+    queryKey: ['tenant-credit-balance', tenant?.id],
+    queryFn: () => tenantApi.getCreditBalance(),
+    staleTime: 60000, // 1 minute
+  });
+
+  const currentBalance = balanceData?.currentBalance || 0;
   const unreadCount = notifications.filter(n => n.status === 'warning' || n.status === 'error').length;
 
   useEffect(() => {
@@ -195,6 +203,23 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               </div>
               HELP
             </button>
+
+            {/* Credit Balance Badge */}
+            <div
+              onClick={() => setSelectedView('financial')}
+              className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 cursor-pointer hover:bg-indigo-100 transition-all group"
+            >
+              <div className="p-1 bgColor-white rounded-lg shadow-sm">
+                <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-0.5">Available Credits</span>
+                <span className="text-sm font-black text-indigo-900 leading-none tabular-nums">
+                  {currentBalance.toLocaleString()}
+                  <span className="text-[10px] ml-1 text-indigo-400">TRX</span>
+                </span>
+              </div>
+            </div>
 
             {/* User Profile */}
             <div className="relative" ref={userMenuRef}>

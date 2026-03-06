@@ -33,6 +33,7 @@ import TenantUserManagement from './TenantUserManagement';
 import ActiveTrips from './ActiveTrips';
 import TenantSettings from './TenantSettings';
 import TenantBidding from './TenantBidding';
+import TruckOwnerBilling from '../../pages/tenant-admin/TruckOwnerBilling';
 import { tenantApi, mockTenantData } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -62,7 +63,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding'>('overview');
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding'>('overview');
 
   // Create tenant data object from authenticated user
   const currentTenant = useMemo(() => {
@@ -457,6 +458,12 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           {!isLoading && selectedView === 'users' && tenantId && (
             <motion.div key="users" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <TenantUserManagement tenantId={tenantId} />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'truck-owners' && (
+            <motion.div key="truck-owners" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <TruckOwnerBilling />
             </motion.div>
           )}
 

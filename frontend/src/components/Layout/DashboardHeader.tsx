@@ -209,6 +209,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
         { label: 'Routes', path: '/tenant-admin/routes', icon: Route },
         { label: 'Trips', path: '/tenant-admin/trips', icon: Navigation },
         { label: 'Financial', path: '/tenant-admin/financial', icon: DollarSign },
+        { label: 'Truck Owners', path: '/tenant-admin/truck-owners', icon: Users },
         { label: 'Analytics', path: '/tenant-admin/analytics', icon: BarChart3 },
         { label: 'Reports', path: '/tenant-admin/reports', icon: ClipboardList },
         { label: 'Tenant Settings', path: '/tenant-admin/settings', icon: Settings },

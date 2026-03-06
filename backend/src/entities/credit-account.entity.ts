@@ -10,6 +10,7 @@ import {
   Index,
 } from 'typeorm';
 import { Tenant } from './tenant.entity';
+import { User } from './user.entity';
 import { CreditTransaction } from './credit-transaction.entity';
 
 @Entity('credit_accounts')
@@ -64,6 +65,10 @@ export class CreditAccount {
 
   @OneToMany(() => CreditTransaction, (transaction) => transaction.creditAccount)
   transactions: CreditTransaction[];
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   // Virtual properties
   get hasCredits(): boolean {
