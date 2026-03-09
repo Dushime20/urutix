@@ -6,11 +6,8 @@ import {
   fetchTenants,
   fetchEnrichedTenants,
   getTenantById,
-  getTenantDetailsEnriched,
-  getTenantHealth,
   updateTenant,
-  setTenantStatus,
-  bulkUpdateTenants
+  deactivateTenant
 } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import TenantSettingsModal from '../components/TenantSettingsModal';
@@ -18,10 +15,10 @@ import ManageUsersModal from '../components/ManageUsersModal';
 import TenantKYCModal from '../components/TenantKYCModal';
 import {
   Building2, Edit, Plus, Search, Download,
-  Eye, Check, X,
+  Eye, Check, X, Trash2,
   ChevronsUpDown, Globe, Users, TrendingUp,
-  Calendar, Settings, ShieldCheck, AlertTriangle,
-  Truck, CreditCard, Clock, Activity, Heart
+  Settings, ShieldCheck, AlertTriangle, CreditCard,
+  Heart, Clock
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 
@@ -88,6 +85,8 @@ const AdminTenants: React.FC = () => {
   const [manageUsersTenantName, setManageUsersTenantName] = useState<string>('');
   const [showKYCModal, setShowKYCModal] = useState(false);
   const [kycTenant, setKYCTenant] = useState<Tenant | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -135,6 +134,40 @@ const AdminTenants: React.FC = () => {
     }
   });
 
+  // Handle errors for tenants fetch
+  useEffect(() => {
+    if (tenantsError) {
+      toast.error((tenantsError as any)?.response?.data?.message || 'Failed to fetch tenants');
+    }
+  }, [tenantsError]);
+
+  const deleteMutation = useMutation({
+    mutationFn: (tenantId: string) => deactivateTenant(tenantId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-tenants'] });
+      qc.invalidateQueries({ queryKey: ['active-tenants'] });
+      qc.invalidateQueries({ queryKey: ['tenants'] });
+      qc.invalidateQueries({ queryKey: ['enriched-tenants'] });
+      toast.success('Tenant successfully decommissioned');
+      setShowDeleteModal(false);
+      setTenantToDelete(null);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to decommission tenant');
+    }
+  });
+
+  const handleDeleteTenant = (tenant: Tenant) => {
+    setTenantToDelete(tenant);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (tenantToDelete) {
+      deleteMutation.mutate(tenantToDelete.id);
+    }
+  };
+
   // Map backend status to frontend status format
   const mapBackendStatus = (status: string): 'active' | 'inactive' | 'pending' | 'suspended' => {
     const statusMap: Record<string, 'active' | 'inactive' | 'pending' | 'suspended'> = {
@@ -163,12 +196,13 @@ const AdminTenants: React.FC = () => {
     // Check multiple possible response structures
     let tenantsArray: any[] = [];
 
-    if (tenantsData?.data && Array.isArray(tenantsData.data)) {
-      tenantsArray = tenantsData.data;
-    } else if (tenantsData?.tenants && Array.isArray(tenantsData.tenants)) {
-      tenantsArray = tenantsData.tenants;
-    } else if (Array.isArray(tenantsData)) {
-      tenantsArray = tenantsData;
+    const data = tenantsData as any;
+    if (data?.data && Array.isArray(data.data)) {
+      tenantsArray = data.data;
+    } else if (data?.tenants && Array.isArray(data.tenants)) {
+      tenantsArray = data.tenants;
+    } else if (Array.isArray(data)) {
+      tenantsArray = data;
     }
 
     if (!tenantsArray || tenantsArray.length === 0) {
@@ -178,7 +212,48 @@ const AdminTenants: React.FC = () => {
 
     console.log(`✅ Found ${tenantsArray.length} tenants to display`);
 
-    const transformed = tenantsArray.map((tenant: any) => {
+    // Deduplicate by email - keep only the most recent ACTIVE tenant per email
+    const emailMap = new Map<string, any>();
+    
+    tenantsArray.forEach((tenant: any) => {
+      const email = tenant.contactEmail?.toLowerCase();
+      if (!email) {
+        // Keep tenants without email
+        emailMap.set(tenant.id, tenant);
+        return;
+      }
+
+      const existing = emailMap.get(email);
+      if (!existing) {
+        emailMap.set(email, tenant);
+      } else {
+        // Keep the better tenant (prefer ACTIVE, then most recent)
+        const existingPriority = existing.status === 'ACTIVE' ? 3 : 
+                                existing.status === 'PENDING_ACTIVATION' ? 2 : 1;
+        const newPriority = tenant.status === 'ACTIVE' ? 3 : 
+                           tenant.status === 'PENDING_ACTIVATION' ? 2 : 1;
+        
+        if (newPriority > existingPriority) {
+          emailMap.set(email, tenant);
+        } else if (newPriority === existingPriority) {
+          // Same priority, keep more recent
+          const existingDate = new Date(existing.createdAt || 0);
+          const newDate = new Date(tenant.createdAt || 0);
+          if (newDate > existingDate) {
+            emailMap.set(email, tenant);
+          }
+        }
+      }
+    });
+
+    // Convert map back to array
+    const uniqueTenants = Array.from(emailMap.values());
+    
+    if (uniqueTenants.length < tenantsArray.length) {
+      console.log(`⚠️ Removed ${tenantsArray.length - uniqueTenants.length} duplicate tenants by email`);
+    }
+
+    const transformed = uniqueTenants.map((tenant: any) => {
       // Check if this is enriched data (has subscription, credits, users objects)
       const isEnriched = tenant.subscription || tenant.credits || tenant.users;
 
@@ -220,6 +295,7 @@ const AdminTenants: React.FC = () => {
     mutationFn: (payload: any) => createTenant(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-tenants'] });
+      qc.invalidateQueries({ queryKey: ['active-tenants'] });
       resetForm();
       setShowCreateModal(false);
       toast.success('Tenant created successfully!');
@@ -258,6 +334,7 @@ const AdminTenants: React.FC = () => {
     onSuccess: () => {
       console.log('✅ Update mutation success, invalidating queries');
       qc.invalidateQueries({ queryKey: ['admin-tenants'] });
+      qc.invalidateQueries({ queryKey: ['active-tenants'] });
       qc.invalidateQueries({ queryKey: ['tenant-details', editingTenantId] });
       setShowEditModal(false);
       setEditingTenantId(null);
@@ -370,7 +447,9 @@ const AdminTenants: React.FC = () => {
       const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tenant.contactEmail?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || tenant.status === statusFilter;
+      const matchesStatus = statusFilter === 'all'
+        ? tenant.status !== 'inactive' // Hide decommissioned by default in 'all' view
+        : tenant.status === statusFilter;
       const matchesPlan = planFilter === 'all' || tenant.plan === planFilter;
       return matchesSearch && matchesStatus && matchesPlan;
     })
@@ -401,14 +480,6 @@ const AdminTenants: React.FC = () => {
     }
   };
 
-  const getHealthScoreColor = (score?: number) => {
-    if (!score) return { bg: 'bg-gray-100', text: 'text-gray-600', label: 'N/A' };
-    if (score >= 80) return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'EXCELLENT' };
-    if (score >= 60) return { bg: 'bg-green-100', text: 'text-green-700', label: 'GOOD' };
-    if (score >= 40) return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'FAIR' };
-    if (score >= 20) return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'POOR' };
-    return { bg: 'bg-rose-100', text: 'text-rose-700', label: 'CRITICAL' };
-  };
 
   const handleCreateTenant = () => {
     // Use default admin names since admin info is stored in User entity, not Tenant
@@ -528,8 +599,8 @@ const AdminTenants: React.FC = () => {
           <button
             onClick={() => setUseEnrichedData(!useEnrichedData)}
             className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all shadow-sm ${useEnrichedData
-                ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
-                : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
+              ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+              : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
               }`}
             title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
           >
@@ -540,7 +611,7 @@ const AdminTenants: React.FC = () => {
             <Download className="w-3 h-3" /> Export
           </button>
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-gray-100/50 px-4 py-2.5 rounded-xl border border-gray-100">
-            {filteredTenants.length} IDENTIFIED
+            {filteredTenants.length} TENANTS
           </div>
         </div>
       </div>
@@ -583,20 +654,14 @@ const AdminTenants: React.FC = () => {
                         setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                       }}
                     >
-                      <span>Tenant Identity</span>
+                      <span>Name</span>
                       <ChevronsUpDown className="w-3 h-3 text-gray-400" />
                     </button>
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Network Node</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Plan</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  {useEnrichedData && (
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Health</th>
-                  )}
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">KYC Sync</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Capacity</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fiscal Yield</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Email</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Plan</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Status</th>
+                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -604,16 +669,11 @@ const AdminTenants: React.FC = () => {
                   <tr key={tenant.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden relative group-hover:scale-105 transition-transform duration-300 bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-indigo-200">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden relative bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-indigo-200">
                           <Building2 className="relative z-10 text-white" size={18} />
-                          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <div>
                           <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{tenant.name}</div>
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 leading-none">
-                            <Users className="w-3 h-3 text-indigo-400" />
-                            {tenant.adminName || 'NO ADMIN'}
-                          </div>
                           {tenant.location && (
                             <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">{tenant.location}</div>
                           )}
@@ -621,14 +681,8 @@ const AdminTenants: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
-                          <Globe className="w-3 h-3 text-indigo-400" />
-                          {tenant.domain || tenant.subdomain}
-                        </div>
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                          {tenant.contactEmail}
-                        </div>
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+                        {tenant.contactEmail}
                       </div>
                     </td>
                     <td className="px-6 py-5">
@@ -642,84 +696,15 @@ const AdminTenants: React.FC = () => {
                         <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{(tenant.status || '').replace('_', ' ')}</span>
                       </div>
                     </td>
-                    {useEnrichedData && (
-                      <td className="px-6 py-5">
-                        {tenant.healthScore !== undefined ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Heart className={`w-3 h-3 ${getHealthScoreColor(tenant.healthScore).text}`} />
-                              <span className="text-sm font-black text-gray-900 tracking-tight leading-none">{tenant.healthScore}</span>
-                            </div>
-                            <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${getHealthScoreColor(tenant.healthScore).bg} ${getHealthScoreColor(tenant.healthScore).text}`}>
-                              {getHealthScoreColor(tenant.healthScore).label}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">N/A</span>
-                        )}
-                      </td>
-                    )}
                     <td className="px-6 py-5">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer hover:scale-105 ${getKYCStatusColor(tenant.kycStatus || 'PENDING').replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50')} border-transparent shadow-sm`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setKYCTenant(tenant);
-                          setShowKYCModal(true);
-                        }}
-                      >
-                        {tenant.kycStatus || 'PENDING'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-1">
-                        <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
-                          {useEnrichedData && tenant.users ? tenant.users.total : tenant.userCount || 0} SEATS
-                        </div>
-                        {useEnrichedData && tenant.users && (
-                          <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                            <Activity size={10} className="text-emerald-500" />
-                            {tenant.users.active} ACTIVE
-                          </div>
-                        )}
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                          <Truck size={10} className="text-indigo-400" />
-                          {tenant.trucksCount || 0} ASSETS
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-1">
-                        {useEnrichedData && tenant.credits ? (
-                          <>
-                            <div className="text-sm font-black text-indigo-600 tracking-tight leading-none uppercase flex items-center gap-1.5">
-                              <CreditCard size={12} className="text-indigo-500" />
-                              {tenant.credits.balance.toLocaleString()} CREDITS
-                            </div>
-                            {tenant.credits.lastPurchase && (
-                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                                <Clock size={10} className="text-slate-300" />
-                                {new Date(tenant.credits.lastPurchase).toLocaleDateString()}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="text-sm font-black text-emerald-600 tracking-tight leading-none uppercase">${tenant.revenue?.toLocaleString() || '0'} USD</div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">MONTHLY YIELD</div>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-center gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedTenant(tenant);
                             setShowDetailsModal(true);
                           }}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-indigo-100"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -745,6 +730,16 @@ const AdminTenants: React.FC = () => {
                         >
                           <Settings className="w-4 h-4" />
                         </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTenant(tenant);
+                          }}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                          title="Decommission Tenant"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -762,8 +757,8 @@ const AdminTenants: React.FC = () => {
             <div className="p-8 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Initialize New Node</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Tenant Onboarding Sequence</p>
+                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Create New Tenant</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Tenant Setup Sequence</p>
                 </div>
                 <button
                   onClick={() => {
@@ -781,7 +776,7 @@ const AdminTenants: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Tenant Identity *
+                    Tenant Name *
                   </label>
                   <input
                     type="text"
@@ -794,7 +789,7 @@ const AdminTenants: React.FC = () => {
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Network Subdomain *
+                    Subdomain *
                   </label>
                   <div className="relative">
                     <input
@@ -1188,7 +1183,7 @@ const AdminTenants: React.FC = () => {
                       </div>
                       <div className="h-4 w-px bg-gray-200" />
                       <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                        {selectedTenant.plan} ACCESS NODE
+                        {selectedTenant.plan} Plan
                       </span>
                     </div>
                   </div>
@@ -1203,52 +1198,25 @@ const AdminTenants: React.FC = () => {
             </div>
 
             <div className="p-8 space-y-10">
-              {/* Key Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-indigo-600 border border-gray-100">
-                      <Users size={18} />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL USERS</span>
-                  </div>
-                  <div className="text-3xl font-black text-gray-900 tracking-tight leading-none uppercase">{selectedTenant.userCount || 0}</div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-4">Platform Seats</p>
+              {/* Stats Section */}
+              <div className="flex flex-wrap items-center gap-x-12 gap-y-6 py-6 border-b border-gray-100">
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Users</div>
+                  <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">{selectedTenant.userCount || 0}</div>
                 </div>
-
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-emerald-600 border border-gray-100">
-                      <Truck size={18} />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ACTIVE ASSETS</span>
-                  </div>
-                  <div className="text-3xl font-black text-gray-900 tracking-tight leading-none uppercase">{selectedTenant.trucksCount || 0}</div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-4">Fleet Capacity</p>
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Trucks</div>
+                  <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">{selectedTenant.trucksCount || 0}</div>
                 </div>
-
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-purple-600 border border-gray-100">
-                      <TrendingUp size={18} />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FISCAL YIELD</span>
-                  </div>
-                  <div className="text-3xl font-black text-emerald-600 tracking-tight leading-none uppercase">${(selectedTenant.revenue || 0).toLocaleString()}</div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-4">Monthly Revenue</p>
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</div>
+                  <div className="text-2xl font-black text-emerald-600 tracking-tight uppercase">${(selectedTenant.revenue || 0).toLocaleString()}</div>
                 </div>
-
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-100 hover:shadow-lg transition-shadow">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-amber-600 border border-gray-100">
-                      <Calendar size={18} />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LIFECYCLE</span>
-                  </div>
-                  <div className="text-3xl font-black text-gray-900 tracking-tight leading-none uppercase">
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Days Active</div>
+                  <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">
                     {Math.ceil((new Date().getTime() - new Date(selectedTenant.createdAt).getTime()) / (1000 * 3600 * 24))}
                   </div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-4">Days Since Init</p>
                 </div>
               </div>
 
@@ -1258,11 +1226,11 @@ const AdminTenants: React.FC = () => {
                 <div>
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <Building2 className="text-indigo-600" size={14} />
-                    Core Infrastructure
+                    General Info
                   </h3>
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 space-y-4">
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Node ID</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tenant ID</span>
                       <span className="text-sm font-black text-gray-900 tracking-tight font-mono truncate max-w-[200px]">{selectedTenant.id}</span>
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
@@ -1271,10 +1239,10 @@ const AdminTenants: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Domain</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.domain || 'UNCONFIGURED'}</span>
+                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.domain || 'NOT SET'}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Initialization Date</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Created At</span>
                       <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{new Date(selectedTenant.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                     </div>
                   </div>
@@ -1284,23 +1252,23 @@ const AdminTenants: React.FC = () => {
                 <div>
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <Users className="text-emerald-600" size={14} />
-                    Administrative Registry
+                    Contact Information
                   </h3>
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 space-y-4">
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Principal Admin</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.adminName || 'UNASSIGNED'}</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin Name</span>
+                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.adminName || 'NOT ASSIGNED'}</span>
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Email</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Email</span>
                       <span className="text-sm font-black text-indigo-600 tracking-tight lowercase">{selectedTenant.contactEmail || 'MISSING'}</span>
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operational Base</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</span>
                       <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.location || 'GLOBAL'}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trust Index (KYC)</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">KYC Status</span>
                       <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${getKYCStatusColor(selectedTenant.kycStatus || 'PENDING')}`}>
                         {selectedTenant.kycStatus || 'PENDING'}
                       </span>
@@ -1316,9 +1284,9 @@ const AdminTenants: React.FC = () => {
               <div>
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Settings className="text-purple-600" size={14} />
-                  Operational Procedures
+                  Management Actions
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                   <button
                     onClick={() => {
                       handleEditTenant(selectedTenant);
@@ -1327,7 +1295,7 @@ const AdminTenants: React.FC = () => {
                     className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Edit className="text-slate-400 group-hover:text-indigo-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-indigo-600">Modify Node</span>
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-indigo-600">Edit Tenant</span>
                   </button>
 
                   <button
@@ -1339,7 +1307,7 @@ const AdminTenants: React.FC = () => {
                     className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-purple-200 hover:bg-purple-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Settings className="text-slate-400 group-hover:text-purple-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-purple-600">Protocol Sync</span>
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-purple-600">Settings</span>
                   </button>
 
                   <button
@@ -1352,7 +1320,7 @@ const AdminTenants: React.FC = () => {
                     className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Users className="text-slate-400 group-hover:text-emerald-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-emerald-600">Seat Audit</span>
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-emerald-600">Manage Users</span>
                   </button>
 
                   <button
@@ -1364,7 +1332,18 @@ const AdminTenants: React.FC = () => {
                     className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-amber-200 hover:bg-amber-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <ShieldCheck className="text-slate-400 group-hover:text-amber-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-amber-600">Trust Verify</span>
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-amber-600">Review KYC</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleDeleteTenant(selectedTenant);
+                      setShowDetailsModal(false);
+                    }}
+                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-rose-200 hover:bg-rose-50/30 transition-all group shadow-sm hover:shadow-md"
+                  >
+                    <Trash2 className="text-slate-400 group-hover:text-rose-600 mb-3 transition-colors" size={24} />
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-rose-600">Decommission</span>
                   </button>
                 </div>
               </div>
@@ -1380,7 +1359,7 @@ const AdminTenants: React.FC = () => {
                 <div className="flex gap-4">
                   <button className="px-8 py-3 text-[10px] font-black bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-2">
                     <Download className="w-3 h-3" />
-                    EXPORT TELEMETRY
+                    EXPORT DATA
                   </button>
                   <button
                     onClick={() => {
@@ -1396,7 +1375,7 @@ const AdminTenants: React.FC = () => {
                     }}
                     className="px-8 py-3 text-[10px] font-black bg-gray-900 text-white rounded-2xl hover:bg-black transition-all uppercase tracking-widest shadow-lg shadow-gray-200"
                   >
-                    SYSTEM LOGS
+                    ACTIVITY LOGS
                   </button>
                 </div>
               </div>
@@ -1445,6 +1424,46 @@ const AdminTenants: React.FC = () => {
           }}
         />
       )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && tenantToDelete && (
+        <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-100">
+                <AlertTriangle className="text-rose-600" size={40} />
+              </div>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-2">Decommission Node</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed px-4">
+                You are about to transition <span className="text-gray-900">{tenantToDelete.name}</span> to a decommissioned state. This will suspend all operational protocols and access.
+              </p>
+            </div>
+
+            <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setTenantToDelete(null);
+                }}
+                className="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-white transition-all"
+              >
+                Abort
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-4 text-[10px] font-black bg-rose-600 text-white rounded-2xl hover:bg-rose-700 transition-all uppercase tracking-widest shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
+              >
+                {deleteMutation.isPending ? (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminPageLayout>
   );
 };
@@ -1486,11 +1505,11 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
       <div className="bg-[#fafafa] border border-gray-100 rounded-[32px] p-8 mt-10">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
           <CreditCard className="text-purple-600" size={14} />
-          Fiscal Agreement
+          Billing & Subscription
         </h3>
         <div className="flex flex-col items-center justify-center py-12">
           <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Synchronizing Ledgers...</span>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading subscription...</span>
         </div>
       </div>
     );
@@ -1501,18 +1520,18 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
       <div className="bg-[#fafafa] border border-gray-100 rounded-[32px] p-8 mt-10">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
           <CreditCard className="text-purple-600" size={14} />
-          Fiscal Agreement
+          Billing & Subscription
         </h3>
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-50">
             <AlertTriangle className="text-slate-300" size={24} />
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">No Active Protocol Found</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">No Active Subscription Found</p>
           <button
             onClick={() => navigate('/admin/subscriptions')}
             className="px-8 py-3 text-[10px] font-black bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition-all uppercase tracking-widest shadow-lg shadow-purple-100"
           >
-            Initialize Protocol
+            Setup Subscription
           </button>
         </div>
       </div>
@@ -1526,48 +1545,48 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
       <div className="flex items-center justify-between mb-8">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
           <CreditCard className="text-purple-600" size={14} />
-          Fiscal Agreement
+          Billing & Subscription
         </h3>
         <button
           onClick={() => navigate('/admin/subscriptions')}
           className="text-[10px] font-black text-purple-600 hover:text-purple-700 uppercase tracking-widest flex items-center gap-1 bg-white px-4 py-2 rounded-xl border border-purple-100 shadow-sm transition-all"
         >
           <Settings className="w-3 h-3" />
-          Protocol Sync
+          Manage Subscription
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Tier</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription Plan</span>
             <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{subscription.plan.name}</span>
           </div>
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Status</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription Status</span>
             <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-indigo-100 bg-indigo-50 text-indigo-600`}>
               {subscription.status}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Yield Frequency</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Billing Cycle</span>
             <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{subscription.billingCycle}</span>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Credit Liquidity</span>
-            <span className="text-sm font-black text-purple-600 tracking-tight uppercase">{subscription.creditBalance || 0} UNITS</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available Credits</span>
+            <span className="text-sm font-black text-purple-600 tracking-tight uppercase">{subscription.creditBalance || 0} CREDITS</span>
           </div>
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lifecycle End</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Renews On</span>
             <span className="text-sm font-black text-gray-900 tracking-tight uppercase">
               {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recursive Billing</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Auto Renew</span>
             <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${subscription.autoRenew ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-600 border-gray-100'}`}>
               {subscription.autoRenew ? 'ACTIVE' : 'DISABLED'}
             </span>
@@ -1575,7 +1594,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
         </div>
       </div>
 
-      {/* Trial Protocol Banner */}
+      {/* Trial Period Banner */}
       {isTrial && subscription.trialEnd && (
         <div className="mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-[24px] p-6 shadow-lg shadow-indigo-100">
           <div className="flex items-center gap-4">
@@ -1583,23 +1602,23 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Trial Protocol Active</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Trial Period Active</p>
               <p className="text-sm font-black tracking-tight uppercase">
-                Termination scheduled for {new Date(subscription.trialEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                Trial ends on {new Date(subscription.trialEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Protocol Metrics */}
+      {/* Plan Metrics */}
       <div className="mt-8 grid grid-cols-2 gap-4">
         <div className="bg-white rounded-[24px] p-6 border border-gray-100 hover:border-purple-100 transition-all group">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-purple-600 transition-colors">Included Credits</div>
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-purple-600 transition-colors">Monthly Credits</div>
           <div className="text-2xl font-black text-gray-900 tracking-tight">{subscription.plan.includedCredits}</div>
         </div>
         <div className="bg-white rounded-[24px] p-6 border border-gray-100 hover:border-emerald-100 transition-all group">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-emerald-600 transition-colors">Cumulative Yield</div>
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-emerald-600 transition-colors">Lifetime Revenue</div>
           <div className="text-2xl font-black text-gray-900 tracking-tight">${(subscription.totalRevenue || 0).toFixed(2)}</div>
         </div>
       </div>

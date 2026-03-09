@@ -64,7 +64,7 @@ export class Tenant {
   @Column({ nullable: true })
   websiteUrl?: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, unique: true })
   contactEmail?: string;
 
   @Column({ nullable: true })

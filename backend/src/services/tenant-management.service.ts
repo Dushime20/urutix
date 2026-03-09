@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual, Like, ILike } from 'typeorm';
 import { Tenant, TenantStatus } from '../entities/tenant.entity';
@@ -30,6 +30,7 @@ export interface EnrichedTenant {
   };
   lastActivity: Date;
   healthScore: number;
+  contactEmail: string;
 }
 
 export interface TenantDetails extends EnrichedTenant {
@@ -132,7 +133,7 @@ export class TenantManagementService {
     private readonly activityLogRepository: Repository<ActivityLog>,
     @InjectRepository(CreditTransaction)
     private readonly creditTransactionRepository: Repository<CreditTransaction>,
-  ) {}
+  ) { }
 
   /**
    * Set activity log service (injected after construction to avoid circular dependency)
@@ -177,32 +178,32 @@ export class TenantManagementService {
     let filteredTenants = enrichedTenants;
 
     if (filters?.subscriptionStatus && filters.subscriptionStatus.length > 0) {
-      filteredTenants = filteredTenants.filter(t => 
+      filteredTenants = filteredTenants.filter(t =>
         filters.subscriptionStatus.includes(t.subscription.status as SubscriptionStatus)
       );
     }
 
     if (filters?.minCreditBalance !== undefined) {
-      filteredTenants = filteredTenants.filter(t => 
+      filteredTenants = filteredTenants.filter(t =>
         t.credits.balance >= filters.minCreditBalance
       );
     }
 
     if (filters?.maxCreditBalance !== undefined) {
-      filteredTenants = filteredTenants.filter(t => 
+      filteredTenants = filteredTenants.filter(t =>
         t.credits.balance <= filters.maxCreditBalance
       );
     }
 
     if (filters?.hasLowBalance) {
-      filteredTenants = filteredTenants.filter(t => 
+      filteredTenants = filteredTenants.filter(t =>
         t.credits.balance < 100 // Low balance threshold
       );
     }
 
     if (filters?.hasExpiringSubscription) {
       const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      filteredTenants = filteredTenants.filter(t => 
+      filteredTenants = filteredTenants.filter(t =>
         t.subscription.expiresAt && t.subscription.expiresAt <= sevenDaysFromNow
       );
     }
@@ -231,8 +232,8 @@ export class TenantManagementService {
 
     // Get recent activity logs (last 50)
     const recentActivity = await this.activityLogRepository.find({
-      where: { 
-        user: { tenantId } 
+      where: {
+        user: { tenantId }
       },
       order: { createdAt: 'DESC' },
       take: 50,
@@ -265,7 +266,7 @@ export class TenantManagementService {
    * Requirement 2.7: Log all modifications
    */
   async updateTenant(
-    tenantId: string, 
+    tenantId: string,
     updates: TenantUpdate,
     actorUserId?: string,
     ipAddress?: string,
@@ -281,6 +282,19 @@ export class TenantManagementService {
       throw new NotFoundException(`Tenant ${tenantId} not found`);
     }
 
+    // Check for duplicate email if email is being updated
+    if (updates.contactEmail !== undefined && updates.contactEmail !== tenant.contactEmail) {
+      const existingTenant = await this.tenantRepository.findOne({
+        where: { contactEmail: updates.contactEmail },
+      });
+      
+      if (existingTenant && existingTenant.id !== tenantId) {
+        throw new BadRequestException(
+          `A tenant with email ${updates.contactEmail} already exists`
+        );
+      }
+    }
+
     // Track changes for logging
     const changes: Record<string, { old: any; new: any }> = {};
 
@@ -289,32 +303,32 @@ export class TenantManagementService {
       changes.name = { old: tenant.name, new: updates.name };
       tenant.name = updates.name;
     }
-    
+
     if (updates.contactEmail !== undefined && updates.contactEmail !== tenant.contactEmail) {
       changes.contactEmail = { old: tenant.contactEmail, new: updates.contactEmail };
       tenant.contactEmail = updates.contactEmail;
     }
-    
+
     if (updates.contactPhone !== undefined && updates.contactPhone !== tenant.contactPhone) {
       changes.contactPhone = { old: tenant.contactPhone, new: updates.contactPhone };
       tenant.contactPhone = updates.contactPhone;
     }
-    
+
     if (updates.maxUsers !== undefined && updates.maxUsers !== tenant.maxUsers) {
       changes.maxUsers = { old: tenant.maxUsers, new: updates.maxUsers };
       tenant.maxUsers = updates.maxUsers;
     }
-    
+
     if (updates.maxTrucks !== undefined && updates.maxTrucks !== tenant.maxTrucks) {
       changes.maxTrucks = { old: tenant.maxTrucks, new: updates.maxTrucks };
       tenant.maxTrucks = updates.maxTrucks;
     }
-    
+
     if (updates.maxDrivers !== undefined && updates.maxDrivers !== tenant.maxDrivers) {
       changes.maxDrivers = { old: tenant.maxDrivers, new: updates.maxDrivers };
       tenant.maxDrivers = updates.maxDrivers;
     }
-    
+
     if (updates.settings !== undefined) {
       const oldSettings = { ...tenant.settings };
       tenant.settings = {
@@ -385,8 +399,8 @@ export class TenantManagementService {
    * Requirement 2.6: Prevent access for deactivated tenants
    */
   async setTenantStatus(
-    tenantId: string, 
-    active: boolean, 
+    tenantId: string,
+    active: boolean,
     actorUserId?: string,
     reason?: string,
     ipAddress?: string,
@@ -404,7 +418,7 @@ export class TenantManagementService {
 
     const oldStatus = tenant.status;
     const newStatus = active ? TenantStatus.ACTIVE : TenantStatus.DEACTIVATED;
-    
+
     tenant.status = newStatus;
     tenant.isActive = active;
 
@@ -593,7 +607,7 @@ export class TenantManagementService {
       // Note: Session termination would be handled by the ActivityLogService
       // or a dedicated SessionService. For now, we log the intent.
       this.logger.log(`Terminated sessions for ${userIds.length} users in tenant ${tenantId}`);
-      
+
       // In a complete implementation, this would call:
       // await this.activityLogService.terminateUserSessions(userId) for each user
     } catch (error) {
@@ -607,7 +621,7 @@ export class TenantManagementService {
    * Requirement 2.7: Apply changes to multiple tenants and log each modification
    */
   async bulkUpdateTenants(
-    tenantIds: string[], 
+    tenantIds: string[],
     updates: TenantUpdate,
     actorUserId?: string,
     ipAddress?: string,
@@ -722,7 +736,7 @@ export class TenantManagementService {
 
     // Get last credit purchase
     const lastPurchase = await this.creditTransactionRepository.findOne({
-      where: { 
+      where: {
         tenantId: tenant.id,
         type: In(['PURCHASE', 'SUBSCRIPTION_GRANT']),
       },
@@ -743,8 +757,8 @@ export class TenantManagementService {
 
     // Get last activity
     const lastActivity = await this.activityLogRepository.findOne({
-      where: { 
-        user: { tenantId: tenant.id } 
+      where: {
+        user: { tenantId: tenant.id }
       },
       order: { createdAt: 'DESC' },
     });
@@ -782,6 +796,7 @@ export class TenantManagementService {
       },
       lastActivity: lastActivity?.createdAt || tenant.createdAt,
       healthScore,
+      contactEmail: tenant.contactEmail || '',
     };
   }
 
@@ -998,7 +1013,7 @@ export class TenantManagementService {
 
   private async calculateActivityLevel(tenantId: string): Promise<number> {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
+
     const activeUsers = await this.userRepository.count({
       where: {
         tenantId,
@@ -1057,7 +1072,7 @@ export class TenantManagementService {
     const total = balance + consumed;
 
     if (total === 0) return 50;
-    
+
     // Higher usage = better score (they're using the platform)
     const usagePercent = (consumed / total) * 100;
     return Math.min(100, usagePercent);

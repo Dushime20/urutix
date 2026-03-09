@@ -72,9 +72,10 @@ const Auth = () => {
   });
 
   // Fetch active tenants for dropdown (for both CARGO_OWNER and TRUCK_OWNER)
-  const { data: tenantsData, isLoading: isLoadingTenants } = useQuery({
+  const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
     queryKey: ['active-tenants'],
     queryFn: async () => {
+      console.log('🔍 Fetching all tenants for signup dropdown...');
       const response = await tenantAPI.searchTenants({});
       // Extract tenants from response
       let allTenants: Tenant[] = [];
@@ -89,22 +90,40 @@ const Auth = () => {
         allTenants = response.data.data;
       }
 
-      // Filter to only show ACTIVE tenants
-      const activeTenants = allTenants.filter((tenant: Tenant) => {
-        // Check for different status formats
-        const status = tenant.status?.toUpperCase();
-        return status === 'ACTIVE' || status === 'active';
-      });
+      // Show ALL tenants as requested by user
+      console.log('📋 Total tenants fetched for signup:', allTenants.length);
 
-      console.log('📋 Total tenants fetched:', allTenants.length);
-      console.log('✅ Active tenants available for signup:', activeTenants.length);
+      // Robust extraction like in AdminTenants
+      let finalTenants: Tenant[] = [];
+      const data = response.data as any;
 
-      return activeTenants;
+      if (data?.data?.results && Array.isArray(data.data.results)) {
+        finalTenants = data.data.results;
+      } else if (data?.data && Array.isArray(data.data)) {
+        finalTenants = data.data;
+      } else if (data?.results && Array.isArray(data.results)) {
+        finalTenants = data.results;
+      } else if (Array.isArray(data)) {
+        finalTenants = data;
+      } else {
+        finalTenants = allTenants;
+      }
+
+      console.log('✅ Extracted tenants for dropdown:', finalTenants.length);
+      return finalTenants;
     },
     enabled: true, // Always fetch tenants for both user types
-    staleTime: 30 * 1000, // Cache for 30 seconds (reduced from 5 minutes to show new tenants faster)
+    staleTime: 0, // Ensure we always get fresh tenants when the page loads
     refetchOnWindowFocus: true, // Refetch when window regains focus to get latest tenants
   });
+
+  // Handle errors for tenants fetch in Auth
+  useEffect(() => {
+    if (tenantsError) {
+      console.error('❌ Failed to fetch tenants for signup:', tenantsError);
+      toast.error('Unable to load companies. Please refresh or contact support.');
+    }
+  }, [tenantsError]);
 
   const tenants = tenantsData || [];
 
@@ -529,7 +548,6 @@ const Auth = () => {
                       <div>
                         <label htmlFor="companyName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                           Select your company <span className="text-red-500">*</span>
-                          <span className="text-[10px] text-slate-400 font-bold ml-2">(Active companies only)</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
@@ -538,7 +556,7 @@ const Auth = () => {
                           </div>
                         ) : tenants.length === 0 ? (
                           <div className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-yellow-50">
-                            <p className="text-xs text-yellow-800 font-medium">No active companies available</p>
+                            <p className="text-xs text-yellow-800 font-medium">No companies available</p>
                             <p className="text-xs text-yellow-700 mt-1">Please contact support to activate a company account.</p>
                           </div>
                         ) : (
@@ -611,7 +629,7 @@ const Auth = () => {
                         )}
                         {tenants.length === 0 && !isLoadingTenants && (
                           <p className="mt-1 text-xs text-amber-600">
-                            No active companies available. Please contact support.
+                            No companies available. Please contact support.
                           </p>
                         )}
                       </div>
@@ -622,7 +640,6 @@ const Auth = () => {
                       <div>
                         <label htmlFor="companyName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                           Select your company <span className="text-red-500">*</span>
-                          <span className="text-[10px] text-slate-400 font-bold ml-2">(Active companies only)</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
@@ -631,7 +648,7 @@ const Auth = () => {
                           </div>
                         ) : tenants.length === 0 ? (
                           <div className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-yellow-50">
-                            <p className="text-xs text-yellow-800 font-medium">No active companies available</p>
+                            <p className="text-xs text-yellow-800 font-medium">No companies available</p>
                             <p className="text-xs text-yellow-700 mt-1">Please contact support to activate a company account.</p>
                           </div>
                         ) : (
@@ -704,7 +721,7 @@ const Auth = () => {
                         )}
                         {tenants.length === 0 && !isLoadingTenants && (
                           <p className="mt-1 text-xs text-amber-600">
-                            No active companies available. Please contact support.
+                            No companies available. Please contact support.
                           </p>
                         )}
                       </div>

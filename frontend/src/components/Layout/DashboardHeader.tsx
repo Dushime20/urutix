@@ -128,6 +128,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Financial Management', path: '/dashboard/fleet/financial' },
             { label: 'Payments', path: '/dashboard/payments' },
+            { label: 'Credits', path: '/dashboard/fleet/credits' },
             { label: 'Analytics', path: '/dashboard/fleet/analytics' },
           ]
         },

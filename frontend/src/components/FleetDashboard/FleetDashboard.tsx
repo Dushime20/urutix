@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
@@ -48,6 +48,9 @@ import { TruckOwnerRecentActivities } from './TruckOwnerRecentActivities';
 
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
+// Lazy load Credits component
+const TruckOwnerCredits = lazy(() => import('../../pages/truck-owner/TruckOwnerCredits'));
+
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
@@ -79,7 +82,7 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'fuel'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'fuel' | 'credits'>('overview');
 
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'trucks' | 'drivers'>('trucks');
@@ -107,6 +110,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
     else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
+    else if (path.includes('/fleet/credits')) setActiveTab('credits');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
   }, [location.pathname, location.search]);
 
@@ -409,6 +413,7 @@ export const FleetDashboard: React.FC = () => {
                 { id: 'safety', icon: Shield, label: 'Safety' },
                 { id: 'matches', icon: Zap, label: 'Matches' },
                 { id: 'financial', icon: CreditCard, label: 'Financials' },
+                { id: 'credits', icon: CreditCard, label: 'Credits' },
                 { id: 'analytics', icon: Activity, label: 'Analytics' }
               ].map((tab) => (
                 <button
@@ -416,6 +421,8 @@ export const FleetDashboard: React.FC = () => {
                   onClick={() => {
                     if (tab.id === 'fuel') {
                       navigate('/dashboard/fleet/fuel');
+                    } else if (tab.id === 'credits') {
+                      navigate('/dashboard/fleet/credits');
                     } else {
                       setActiveTab(tab.id as any);
                     }
@@ -724,6 +731,10 @@ export const FleetDashboard: React.FC = () => {
                   <TrucksList onAddTruck={handleCreateTruck} />
                 ) : activeTab === 'matches' ? (
                   <TruckMatches />
+                ) : activeTab === 'credits' ? (
+                  <Suspense fallback={<FleetSkeleton />}>
+                    <TruckOwnerCredits />
+                  </Suspense>
                 ) : loading && fleetItems.length === 0 ? (
                   <FleetSkeleton />
                 ) : (

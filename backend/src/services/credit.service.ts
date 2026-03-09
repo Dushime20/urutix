@@ -850,6 +850,7 @@ export class CreditService {
       // Query users first to ensure all people in the tenant (with optional role) are found
       const userQuery = this.userRepository.createQueryBuilder('user')
         .leftJoinAndSelect('user.profile', 'profile')
+        .leftJoinAndSelect('user.trucks', 'trucks')
         .where('user.tenantId = :tenantId', { tenantId });
 
       if (role) {

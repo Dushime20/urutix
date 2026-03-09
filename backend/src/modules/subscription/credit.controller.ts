@@ -33,13 +33,25 @@ export class CreditController {
   ) { }
 
   @Get('balance')
-  @ApiOperation({ summary: 'Get credit balance for authenticated tenant' })
+  @ApiOperation({ summary: 'Get credit balance for authenticated user or tenant' })
   @ApiResponse({ status: 200, description: 'Returns credit balance' })
   async getBalance(@Request() req) {
     try {
       const tenantId = req.user.tenantId;
-      const balance = await this.creditService.getCreditBalance(tenantId);
-      console.log(`[CreditController] Balance for tenant ${tenantId}:`, balance.currentBalance);
+      const userId = req.user.id;
+      const userRole = req.user.role;
+
+      // For TRUCK_OWNER role, fetch their personal credit account
+      // For TENANT_ADMIN and others, fetch tenant-level account (master balance)
+      const shouldFetchUserAccount = userRole === 'TRUCK_OWNER';
+      
+      const balance = await this.creditService.getCreditBalance(
+        tenantId,
+        shouldFetchUserAccount ? userId : undefined  // undefined = tenant-level account
+      );
+      
+      console.log(`[CreditController] Balance for ${shouldFetchUserAccount ? 'user' : 'tenant'} ${shouldFetchUserAccount ? userId : tenantId}:`, balance.currentBalance);
+      
       return {
         success: true,
         data: balance,
@@ -62,6 +74,8 @@ export class CreditController {
     @Query('offset') offset?: string,
   ) {
     const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
     const filters: any = {};
     if (type) filters.type = type;
@@ -69,6 +83,11 @@ export class CreditController {
     if (endDate) filters.endDate = new Date(endDate);
     if (limit) filters.limit = parseInt(limit);
     if (offset) filters.offset = parseInt(offset);
+
+    // For TRUCK_OWNER role, fetch their personal transactions
+    if (userRole === 'TRUCK_OWNER') {
+      filters.userId = userId;
+    }
 
     const result = await this.creditService.getTransactionHistory(tenantId, filters);
 

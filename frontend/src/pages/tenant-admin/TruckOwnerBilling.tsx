@@ -22,11 +22,16 @@ interface UserBalance {
     user?: {
         id: string;
         email: string;
+        phone?: string;
+        status: string;
+        createdAt: string;
+        lastLoginAt?: string;
         profile?: {
             firstName: string;
             lastName: string;
             companyName?: string;
-        }
+        };
+        trucks?: any[];
     }
 }
 
@@ -56,6 +61,11 @@ const TruckOwnerBilling: React.FC = () => {
 
     const tenantBalance = balanceData?.currentBalance || 0;
     const partnerBalances: UserBalance[] = partnerBalancesData?.data || [];
+
+    // Calculate statistics
+    const totalTruckOwners = partnerBalances.length;
+    const activeTruckOwners = partnerBalances.filter(b => b.user?.status === 'ACTIVE').length;
+    const totalCreditsDistributed = partnerBalances.reduce((sum, b) => sum + b.currentBalance, 0);
 
     const transferMutation = useMutation({
         mutationFn: async ({ targetUserId, amount, reason }: { targetUserId: string; amount: number; reason: string }) => {
@@ -132,6 +142,45 @@ const TruckOwnerBilling: React.FC = () => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
             </div>
 
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Truck Owners</p>
+                            <p className="text-3xl font-black text-gray-900">{totalTruckOwners}</p>
+                        </div>
+                        <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
+                            <FaTruck className="text-2xl text-blue-600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Active Owners</p>
+                            <p className="text-3xl font-black text-green-600">{activeTruckOwners}</p>
+                        </div>
+                        <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
+                            <FaUser className="text-2xl text-green-600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Credits Distributed</p>
+                            <p className="text-3xl font-black text-indigo-600">{totalCreditsDistributed.toLocaleString()}</p>
+                        </div>
+                        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                            <FaWallet className="text-2xl text-indigo-600" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Partner List */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-8 border-b border-gray-50 bg-gray-50/30">
@@ -172,46 +221,71 @@ const TruckOwnerBilling: React.FC = () => {
                             <thead className="bg-gray-50/50">
                                 <tr>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Identity Node</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Joined</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Credit Capacity</th>
                                     <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction Cell</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {filteredBalances.map((item) => (
-                                    <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-black group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                                                    {item.user?.profile?.firstName?.[0]}{item.user?.profile?.lastName?.[0]}
-                                                </div>
-                                                <div>
-                                                    <div className="font-black text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                        {item.user?.profile?.firstName} {item.user?.profile?.lastName}
+                                {filteredBalances.map((item) => {
+                                    const joinedDate = item.user?.createdAt ? new Date(item.user.createdAt).toLocaleDateString() : 'N/A';
+                                    const statusColor = item.user?.status === 'ACTIVE' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50';
+                                    
+                                    return (
+                                        <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-black group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                                        {item.user?.profile?.firstName?.[0]}{item.user?.profile?.lastName?.[0]}
                                                     </div>
-                                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{item.user?.profile?.companyName || item.user?.email}</div>
+                                                    <div>
+                                                        <div className="font-black text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                            {item.user?.profile?.firstName} {item.user?.profile?.lastName}
+                                                        </div>
+                                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                                                            {item.user?.profile?.companyName || item.user?.email}
+                                                        </div>
+                                                        {item.user?.phone && (
+                                                            <div className="text-[10px] text-gray-400 mt-0.5">{item.user.phone}</div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-baseline gap-1">
-                                                <span className="text-xl font-black text-gray-800 group-hover:text-blue-600 transition-colors tabular-nums">{item.currentBalance.toLocaleString()}</span>
-                                                <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest">CR</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUser(item);
-                                                    setIsTransferModalOpen(true);
-                                                }}
-                                                className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-100 transition-all text-[10px] font-black uppercase tracking-widest"
-                                            >
-                                                <FaExchangeAlt />
-                                                <span>Sell Credits</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColor}`}>
+                                                    {item.user?.status || 'UNKNOWN'}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="text-sm font-bold text-gray-700">{joinedDate}</div>
+                                                {item.user?.lastLoginAt && (
+                                                    <div className="text-[10px] text-gray-400 mt-0.5">
+                                                        Last: {new Date(item.user.lastLoginAt).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-xl font-black text-gray-800 group-hover:text-blue-600 transition-colors tabular-nums">{item.currentBalance.toLocaleString()}</span>
+                                                    <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest">CR</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedUser(item);
+                                                        setIsTransferModalOpen(true);
+                                                    }}
+                                                    className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-100 transition-all text-[10px] font-black uppercase tracking-widest"
+                                                >
+                                                    <FaExchangeAlt />
+                                                    <span>Sell Credits</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

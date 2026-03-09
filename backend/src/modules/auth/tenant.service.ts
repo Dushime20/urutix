@@ -141,7 +141,7 @@ export class TenantService {
             finalTenant.id,
           );
         } else {
-             this.logger.log(`Existing user has password. Skipped password setup email for tenant admin.`);
+          this.logger.log(`Existing user has password. Skipped password setup email for tenant admin.`);
         }
       } else {
         // Create new user for tenant admin
@@ -427,16 +427,9 @@ export class TenantService {
     const { q } = query;
     const { skip, limit, sorts } = Paginators(query);
 
-    // For signup flow, return ONLY ACTIVE tenants
-    // Users should only be able to sign up for companies that are active
-    // IMPORTANT: This query must return ALL active tenants for the company selection dropdown
-    // Using enum value ensures case-sensitive match with database enum type
-    // Note: We only filter by status, not isActive, to include all ACTIVE tenants
-    // (some tenants may have isActive=false if manually updated, but status=ACTIVE is the primary indicator)
-    let where: FindOptionsWhere<Tenant>[] | FindOptionsWhere<Tenant> = {
-      status: TenantStatus.ACTIVE, // This matches 'ACTIVE' in the database enum
-      // Note: Not filtering by isActive to ensure all ACTIVE status tenants are included
-    };
+    // For signup flow, return ALL tenants as requested by user
+    // IMPORTANT: This query must return ALL tenants for the company selection dropdown
+    let where: FindOptionsWhere<Tenant>[] | FindOptionsWhere<Tenant> = {};
 
     // If there's a search query, add name filter
     if (q) {
