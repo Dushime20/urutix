@@ -10,6 +10,10 @@ import {
     FaUser,
     FaBuilding,
     FaTruck,
+    FaEye,
+    FaTimes,
+    FaCheckCircle,
+    FaShieldAlt,
 } from 'react-icons/fa';
 
 interface UserBalance {
@@ -32,6 +36,15 @@ interface UserBalance {
             companyName?: string;
         };
         trucks?: any[];
+        subscriptions?: Array<{
+            id: string;
+            status: string;
+            currentPeriodEnd: string;
+            plan?: {
+                name: string;
+                slug: string;
+            }
+        }>;
     }
 }
 
@@ -39,6 +52,7 @@ const TruckOwnerBilling: React.FC = () => {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserBalance | null>(null);
     const [transferAmount, setTransferAmount] = useState(10);
     const [transferReason, setTransferReason] = useState('');
@@ -143,40 +157,49 @@ const TruckOwnerBilling: React.FC = () => {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Truck Owners</p>
-                            <p className="text-3xl font-black text-gray-900">{totalTruckOwners}</p>
-                        </div>
-                        <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
-                            <FaTruck className="text-2xl text-blue-600" />
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-4">
+                {/* Total Truck Owners */}
+                <div className="flex items-center space-x-5 transition-all duration-300 hover:translate-x-1 cursor-default group">
+                    <div className="relative flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-full bg-white border border-[#ff9800] shadow-lg shadow-[#ff9800]/20 overflow-hidden transition-all duration-500 group-hover:scale-110">
+                        <FaTruck className="w-8 h-8 text-[#009688]" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-2xl font-black text-[#ff9800] tracking-tight leading-none mb-1">
+                            {totalTruckOwners}
+                        </span>
+                        <span className="text-[14px] font-bold text-slate-500 whitespace-nowrap uppercase tracking-wider">
+                            Total Truck Owners
+                        </span>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Active Owners</p>
-                            <p className="text-3xl font-black text-green-600">{activeTruckOwners}</p>
-                        </div>
-                        <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center">
-                            <FaUser className="text-2xl text-green-600" />
-                        </div>
+                {/* Active Owners */}
+                <div className="flex items-center space-x-5 transition-all duration-300 hover:translate-x-1 cursor-default group">
+                    <div className="relative flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-full bg-white border border-[#4caf50] shadow-lg shadow-[#4caf50]/20 overflow-hidden transition-all duration-500 group-hover:scale-110">
+                        <FaUser className="w-8 h-8 text-[#009688]" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-2xl font-black text-[#4caf50] tracking-tight leading-none mb-1">
+                            {activeTruckOwners}
+                        </span>
+                        <span className="text-[14px] font-bold text-slate-500 whitespace-nowrap uppercase tracking-wider">
+                            Active Owners
+                        </span>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Credits Distributed</p>
-                            <p className="text-3xl font-black text-indigo-600">{totalCreditsDistributed.toLocaleString()}</p>
-                        </div>
-                        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                            <FaWallet className="text-2xl text-indigo-600" />
-                        </div>
+                {/* Credits Distributed */}
+                <div className="flex items-center space-x-5 transition-all duration-300 hover:translate-x-1 cursor-default group">
+                    <div className="relative flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-full bg-white border border-[#6366f1] shadow-lg shadow-[#6366f1]/20 overflow-hidden transition-all duration-500 group-hover:scale-110">
+                        <FaWallet className="w-8 h-8 text-[#009688]" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-2xl font-black text-[#6366f1] tracking-tight leading-none mb-1">
+                            {totalCreditsDistributed.toLocaleString()}
+                        </span>
+                        <span className="text-[14px] font-bold text-slate-500 whitespace-nowrap uppercase tracking-wider">
+                            Credits Distributed
+                        </span>
                     </div>
                 </div>
             </div>
@@ -222,16 +245,21 @@ const TruckOwnerBilling: React.FC = () => {
                                 <tr>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Identity Node</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Plan</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Joined</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Credit Capacity</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction Cell</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions Cell</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {filteredBalances.map((item) => {
                                     const joinedDate = item.user?.createdAt ? new Date(item.user.createdAt).toLocaleDateString() : 'N/A';
                                     const statusColor = item.user?.status === 'ACTIVE' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50';
-                                    
+
+                                    // Get plan name from subscriptions
+                                    const activeSubscription = item.user?.subscriptions?.find(s => s.status === 'active');
+                                    const planName = activeSubscription?.plan?.name || 'No Plan';
+
                                     return (
                                         <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
                                             <td className="px-8 py-6">
@@ -258,6 +286,11 @@ const TruckOwnerBilling: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-8 py-6">
+                                                <div className="text-xs font-black text-gray-700 uppercase tracking-tight">
+                                                    {planName}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
                                                 <div className="text-sm font-bold text-gray-700">{joinedDate}</div>
                                                 {item.user?.lastLoginAt && (
                                                     <div className="text-[10px] text-gray-400 mt-0.5">
@@ -272,16 +305,28 @@ const TruckOwnerBilling: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6 text-right">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUser(item);
-                                                        setIsTransferModalOpen(true);
-                                                    }}
-                                                    className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-100 transition-all text-[10px] font-black uppercase tracking-widest"
-                                                >
-                                                    <FaExchangeAlt />
-                                                    <span>Sell Credits</span>
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedUser(item);
+                                                            setIsViewModalOpen(true);
+                                                        }}
+                                                        className="p-2.5 bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                                        title="View Details"
+                                                    >
+                                                        <FaEye className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedUser(item);
+                                                            setIsTransferModalOpen(true);
+                                                        }}
+                                                        className="inline-flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-100 transition-all text-[10px] font-black uppercase tracking-widest"
+                                                    >
+                                                        <FaExchangeAlt />
+                                                        <span>Sell Credits</span>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -372,6 +417,132 @@ const TruckOwnerBilling: React.FC = () => {
                             >
                                 Abort Transaction
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Truck Owner Details Modal */}
+            {isViewModalOpen && selectedUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-hidden="true" onClick={() => setIsViewModalOpen(false)} />
+                    <div className="relative z-50 mx-auto max-w-2xl rounded-3xl bg-white p-0 shadow-2xl w-full border border-slate-100 overflow-hidden">
+                        {/* Header */}
+                        <div className="bg-slate-50 p-8 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-2xl font-black text-blue-600">
+                                    {selectedUser.user?.profile?.firstName?.[0]}{selectedUser.user?.profile?.lastName?.[0]}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                                        {selectedUser.user?.profile?.firstName} {selectedUser.user?.profile?.lastName}
+                                    </h3>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Identity Node: {selectedUser.userId}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsViewModalOpen(false)} className="p-3 hover:bg-white hover:shadow-sm rounded-xl transition-all">
+                                <FaTimes className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+
+                        <div className="p-8 max-h-[70vh] overflow-y-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Left Column: System Integrity */}
+                                <div className="space-y-8">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <FaShieldAlt className="text-blue-600" />
+                                            System Integrity
+                                        </p>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center py-3 border-b border-slate-50">
+                                                <span className="text-xs font-bold text-slate-500">Status</span>
+                                                <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${selectedUser.user?.status === 'ACTIVE' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>
+                                                    {selectedUser.user?.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center py-3 border-b border-slate-50">
+                                                <span className="text-xs font-bold text-slate-500">Node Activation</span>
+                                                <span className="text-xs font-black text-slate-900">{new Date(selectedUser.user?.createdAt || '').toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center py-3 border-b border-slate-50">
+                                                <span className="text-xs font-bold text-slate-500">Last Sync</span>
+                                                <span className="text-xs font-black text-slate-900">{selectedUser.user?.lastLoginAt ? new Date(selectedUser.user.lastLoginAt).toLocaleString() : 'Never'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <FaUser className="text-indigo-600" />
+                                            Communication Node
+                                        </p>
+                                        <div className="space-y-4">
+                                            <div className="flex flex-col py-3 border-b border-slate-50">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Electronic Mail</span>
+                                                <span className="text-sm font-black text-slate-900">{selectedUser.user?.email}</span>
+                                            </div>
+                                            <div className="flex flex-col py-3 border-b border-slate-50">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mobile Uplink</span>
+                                                <span className="text-sm font-black text-slate-900">{selectedUser.user?.phone || 'Not Configured'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Capacity & Intelligence */}
+                                <div className="space-y-8">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <FaCheckCircle className="text-green-600" />
+                                            Active Intelligence Plan
+                                        </p>
+                                        <div className="p-6 bg-blue-600 rounded-2xl text-white">
+                                            <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Current Protocol</p>
+                                            <p className="text-xl font-black mb-4">
+                                                {selectedUser.user?.subscriptions?.find(s => s.status === 'active')?.plan?.name || 'Standard Protocol'}
+                                            </p>
+                                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-blue-100">
+                                                <span>Renewal Node</span>
+                                                <span>
+                                                    {selectedUser.user?.subscriptions?.find(s => s.status === 'active')?.currentPeriodEnd
+                                                        ? new Date(selectedUser.user.subscriptions.find(s => s.status === 'active')!.currentPeriodEnd).toLocaleDateString()
+                                                        : 'N/A'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <FaTruck className="text-orange-600" />
+                                            Fleet Capacity
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Assets</p>
+                                                <p className="text-xl font-black text-slate-900">{selectedUser.user?.trucks?.length || 0}</p>
+                                            </div>
+                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Credits</p>
+                                                <p className="text-xl font-black text-blue-600">{selectedUser.currentBalance.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <button
+                                            onClick={() => {
+                                                setIsViewModalOpen(false);
+                                                setIsTransferModalOpen(true);
+                                            }}
+                                            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 transition-all"
+                                        >
+                                            <FaExchangeAlt />
+                                            Initialize Credit Sale
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

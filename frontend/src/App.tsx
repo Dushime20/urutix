@@ -41,6 +41,11 @@ const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/En
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
+// Subscription pages
+// Subscription pages
+// Billing dashboard lazy imported within Tenant Dashboard.
+const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPlans'));
+
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
 const UnifiedFleetManagement = lazy(() => import('./pages/UnifiedFleetManagement'));
 const UnifiedDriverManagement = lazy(() => import('./pages/UnifiedDriverManagement'));
@@ -405,7 +410,10 @@ function App() {
                       <Route path="lenders" element={<TenantLenderManagementPage />} />
                       <Route path="routes" element={<TenantAdminRoutes />} />
                       <Route path="trips" element={<TenantAdminTrips />} />
-                      <Route path="financial" element={<TenantDashboardPage />} />
+                      <Route path="financial" element={<TenantDashboardPage defaultView="financial" />} />
+                      <Route path="purchase-credits" element={<TenantDashboardPage defaultView="purchase-credits" />} />
+                      <Route path="billing" element={<TenantDashboardPage defaultView="billing" />} />
+                      <Route path="subscription-plans" element={<SubscriptionPlans />} />
                       <Route path="truck-owners" element={<TruckOwnerBilling />} />
                       <Route path="partner-billing" element={<PartnerBillingManager />} />
                       <Route path="analytics" element={<TenantDashboardPage />} />

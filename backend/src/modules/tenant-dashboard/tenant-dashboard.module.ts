@@ -10,6 +10,7 @@ import { Payment } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { PartnerBillingController } from './partner-billing-mgmt.controller';
 
 @Module({
@@ -17,6 +18,7 @@ import { PartnerBillingController } from './partner-billing-mgmt.controller';
     TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid]),
     EnhancedAuthModule,
     SubscriptionModule,
+    NotificationsModule,
   ],
   controllers: [TenantDashboardController, PartnerBillingController],
   providers: [TenantDashboardService],

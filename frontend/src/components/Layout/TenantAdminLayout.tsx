@@ -40,7 +40,10 @@ const TenantAdminLayoutContent: React.FC = () => {
 
   // Check if we're on the index dashboard route
   const isDashboardIndex = location.pathname === '/tenant-admin' || 
-                           location.pathname === '/tenant-admin/';
+                           location.pathname === '/tenant-admin/' ||
+                           location.pathname === '/tenant-admin/financial' ||
+                           location.pathname === '/tenant-admin/purchase-credits' ||
+                           location.pathname === '/tenant-admin/billing';
 
   return (
     <>

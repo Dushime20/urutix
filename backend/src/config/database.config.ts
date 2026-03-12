@@ -107,6 +107,10 @@ import { BulkEmailLog } from '../entities/bulk-email-log.entity';
 import { LoadTemplate } from '../entities/load-template.entity';
 import { Receipt } from '../entities/receipt.entity';
 
+// Notification system entities
+import { NotificationPreference } from '../entities/notification-preference.entity';
+import { NotificationLog } from '../entities/notification-log.entity';
+
 import { config } from 'dotenv';
 config();
 
@@ -231,6 +235,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     BulkEmailLog,
     LoadTemplate,
     Receipt,
+    // Notification system entities
+    NotificationPreference,
+    NotificationLog,
 
   ],
   synchronize: false,
@@ -355,6 +362,9 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BulkEmailLog,
     LoadTemplate,
     Receipt,
+    // Notification system entities
+    NotificationPreference,
+    NotificationLog,
   ],
   synchronize: true,
   autoLoadEntities: false,

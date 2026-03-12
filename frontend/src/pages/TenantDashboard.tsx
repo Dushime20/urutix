@@ -2,13 +2,17 @@ import React from 'react';
 import TenantDashboard from '../components/TenantDashboard/TenantDashboard';
 import { useAuth } from '../contexts/AuthContext';
 
-const TenantDashboardPage: React.FC = () => {
+interface TenantDashboardPageProps {
+  defaultView?: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing';
+}
+
+const TenantDashboardPage: React.FC<TenantDashboardPageProps> = ({ defaultView = 'overview' }) => {
   const { user } = useAuth();
   const tenantId = user?.tenantId || 'default-tenant';
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TenantDashboard tenantId={tenantId} />
+      <TenantDashboard tenantId={tenantId} defaultView={defaultView} />
     </div>
   );
 };

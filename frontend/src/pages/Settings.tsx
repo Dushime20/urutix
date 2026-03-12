@@ -12,12 +12,13 @@ import {
   Globe,
   Shield,
   Mail,
-  Building2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import { fetchAllUsers, createTenantUser, updateUser, deleteUser } from '../services/adminApi';
 import { TranslatedText } from '../components/translated-text';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import toast from 'react-hot-toast';
 
 
 const Settings: React.FC = () => {
@@ -37,6 +38,13 @@ const Settings: React.FC = () => {
       const response = await authAPI.getProfile();
       const userData = response.data?.data?.user || response.data?.user || response.data;
       setUserProfile(userData || user);
+
+      // Initialize states from profile if available
+      if (userData) {
+        if (userData.preferences) setPreferences(userData.preferences);
+        if (userData.notifications) setNotifications(userData.notifications);
+        if (userData.security) setSecurity(userData.security);
+      }
     } catch (err: any) {
       console.error('Error loading user profile:', err);
       setUserProfile(user);
@@ -44,6 +52,23 @@ const Settings: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const loadReceivers = async () => {
+    try {
+      if (!user?.tenantId) return;
+      const users = await fetchAllUsers(user.tenantId);
+      // Filter or map users as needed. For now, assuming all tenant users are part of team
+      setReceivers(users);
+    } catch (err: any) {
+      console.error('Error loading receivers:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'team') {
+      loadReceivers();
+    }
+  }, [activeTab]);
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -67,111 +92,16 @@ const Settings: React.FC = () => {
   });
 
   // Cargo Receiver Management
-  const [receivers, setReceivers] = useState([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@doelogistics.com',
-      role: 'Cargo Receiver',
-      status: 'active',
-      permissions: ['view_cargo', 'create_cargo', 'edit_cargo'],
-      createdAt: '2024-01-10T00:00:00Z',
-      // Payment workflow permissions
-      paymentPermissions: {
-        canInitiatePayments: true,
-        canApprovePayments: false,
-        canRequestPayments: true,
-        canViewTransactions: true,
-        canManageFinancing: false,
-        canHandleInsurance: false,
-        canProcessRefunds: false,
-        canGenerateReports: false,
-        canManageTeamPermissions: false,
-        canHandleEscrow: false,
-        canProcessThirdPartyPayments: false,
-        canManageBankAccounts: false,
-        canHandleMobileMoney: true,
-        canProcessPlatformServices: false,
-        canManageDocuments: false,
-        canHandleCompliance: false,
-      },
-      // Document handling permissions
-      documentPermissions: {
-        canUploadDocuments: true,
-        canViewDocuments: true,
-        canEditDocuments: false,
-        canDeleteDocuments: false,
-        canShareDocuments: true,
-        canGenerateReports: false,
-        canHandleCompliance: false,
-      },
-      // Workflow permissions
-      workflowPermissions: {
-        canCreateWorkflows: false,
-        canEditWorkflows: false,
-        canDeleteWorkflows: false,
-        canAssignTasks: false,
-        canApproveSteps: false,
-        canViewWorkflowHistory: true,
-        canManageApprovals: false,
-      },
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      email: 'michael.chen@doelogistics.com',
-      role: 'Assistant Manager',
-      status: 'active',
-      permissions: ['view_cargo', 'create_cargo', 'edit_cargo', 'delete_cargo', 'publish_cargo'],
-      createdAt: '2024-01-15T00:00:00Z',
-      // Payment workflow permissions
-      paymentPermissions: {
-        canInitiatePayments: true,
-        canApprovePayments: true,
-        canRequestPayments: true,
-        canViewTransactions: true,
-        canManageFinancing: true,
-        canHandleInsurance: true,
-        canProcessRefunds: true,
-        canGenerateReports: true,
-        canManageTeamPermissions: false,
-        canHandleEscrow: true,
-        canProcessThirdPartyPayments: true,
-        canManageBankAccounts: true,
-        canHandleMobileMoney: true,
-        canProcessPlatformServices: true,
-        canManageDocuments: true,
-        canHandleCompliance: false,
-      },
-      // Document handling permissions
-      documentPermissions: {
-        canUploadDocuments: true,
-        canViewDocuments: true,
-        canEditDocuments: true,
-        canDeleteDocuments: false,
-        canShareDocuments: true,
-        canGenerateReports: true,
-        canHandleCompliance: false,
-      },
-      // Workflow permissions
-      workflowPermissions: {
-        canCreateWorkflows: true,
-        canEditWorkflows: true,
-        canDeleteWorkflows: false,
-        canAssignTasks: true,
-        canApproveSteps: true,
-        canViewWorkflowHistory: true,
-        canManageApprovals: true,
-      },
-    },
-  ]);
+  const [receivers, setReceivers] = useState<any[]>([]);
 
   const [showAddReceiver, setShowAddReceiver] = useState(false);
   const [editingReceiver, setEditingReceiver] = useState<any>(null);
   const [receiverForm, setReceiverForm] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    role: 'Cargo Receiver',
+    password: '', // Needed for new users
+    role: 'CARGO_RECEIVER',
     permissions: ['view_cargo'],
     // Payment workflow permissions
     paymentPermissions: {
@@ -235,14 +165,33 @@ const Settings: React.FC = () => {
     }));
   };
 
+  const saveSettings = async () => {
+    try {
+      setLoading(true);
+      await updateUser(userProfile.id, {
+        preferences,
+        notifications,
+        security
+      });
+      toast.success('Settings saved successfully');
+    } catch (err: any) {
+      console.error('Error saving settings:', err);
+      toast.error('Failed to save settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Team Management Functions
   const handleAddReceiver = () => {
     setShowAddReceiver(true);
     setEditingReceiver(null);
     setReceiverForm({
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
-      role: 'Cargo Receiver',
+      password: '',
+      role: 'CARGO_RECEIVER',
       permissions: ['view_cargo'],
       paymentPermissions: {
         canInitiatePayments: false,
@@ -287,8 +236,10 @@ const Settings: React.FC = () => {
     setEditingReceiver(receiver);
     setShowAddReceiver(true);
     setReceiverForm({
-      name: receiver.name,
+      firstName: receiver.profile?.firstName || '',
+      lastName: receiver.profile?.lastName || '',
       email: receiver.email,
+      password: '', // Don't show password
       role: receiver.role,
       permissions: receiver.permissions,
       paymentPermissions: receiver.paymentPermissions || {
@@ -330,80 +281,53 @@ const Settings: React.FC = () => {
     });
   };
 
-  const handleDeleteReceiver = (receiverId: string) => {
-    if (window.confirm('Are you sure you want to remove this team member?')) { // TODO: Translate
-      setReceivers(prev => prev.filter(r => r.id !== receiverId));
+  const handleDeleteReceiver = async (receiverId: string) => {
+    if (window.confirm('Are you sure you want to remove this team member?')) {
+      try {
+        await deleteUser(receiverId);
+        toast.success('Team member removed');
+        loadReceivers();
+      } catch (err) {
+        toast.error('Failed to remove team member');
+      }
     }
   };
 
-  const handleSaveReceiver = () => {
-    if (!receiverForm.name || !receiverForm.email) {
-      alert('Please fill in all required fields'); // TODO: Translate
+  const handleSaveReceiver = async () => {
+    if (!receiverForm.firstName || !receiverForm.email || (!editingReceiver && !receiverForm.password)) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    if (editingReceiver) {
-      // Update existing receiver
-      setReceivers(prev => prev.map(r =>
-        r.id === editingReceiver.id
-          ? { ...r, ...receiverForm, updatedAt: new Date().toISOString() }
-          : r
-      ));
-    } else {
-      // Add new receiver
-      const newReceiver = {
-        id: Date.now().toString(),
-        ...receiverForm,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-      };
-      setReceivers(prev => [...prev, newReceiver]);
+    try {
+      setLoading(true);
+      if (editingReceiver) {
+        await updateUser(editingReceiver.id, {
+          firstName: receiverForm.firstName,
+          lastName: receiverForm.lastName,
+          role: receiverForm.role,
+          // Only update email if changed? usually safer to keep fixed or separate flow
+        });
+        toast.success('Team member updated');
+      } else {
+        if (!user?.tenantId) return;
+        await createTenantUser(user.tenantId, {
+          firstName: receiverForm.firstName,
+          lastName: receiverForm.lastName,
+          email: receiverForm.email,
+          password: receiverForm.password,
+          role: receiverForm.role,
+        });
+        toast.success('Team member added');
+      }
+      setShowAddReceiver(false);
+      loadReceivers();
+    } catch (err: any) {
+      console.error('Error saving receiver:', err);
+      toast.error(err.response?.data?.message || 'Failed to save team member');
+    } finally {
+      setLoading(false);
     }
-
-    setShowAddReceiver(false);
-    setEditingReceiver(null);
-    setReceiverForm({
-      name: '',
-      email: '',
-      role: 'Cargo Receiver',
-      permissions: ['view_cargo'],
-      paymentPermissions: {
-        canInitiatePayments: false,
-        canApprovePayments: false,
-        canRequestPayments: false,
-        canViewTransactions: true,
-        canManageFinancing: false,
-        canHandleInsurance: false,
-        canProcessRefunds: false,
-        canGenerateReports: false,
-        canManageTeamPermissions: false,
-        canHandleEscrow: false,
-        canProcessThirdPartyPayments: false,
-        canManageBankAccounts: false,
-        canHandleMobileMoney: false,
-        canProcessPlatformServices: false,
-        canManageDocuments: false,
-        canHandleCompliance: false,
-      },
-      documentPermissions: {
-        canUploadDocuments: false,
-        canViewDocuments: true,
-        canEditDocuments: false,
-        canDeleteDocuments: false,
-        canShareDocuments: false,
-        canGenerateReports: false,
-        canHandleCompliance: false,
-      },
-      workflowPermissions: {
-        canCreateWorkflows: false,
-        canEditWorkflows: false,
-        canDeleteWorkflows: false,
-        canAssignTasks: false,
-        canApproveSteps: false,
-        canViewWorkflowHistory: true,
-        canManageApprovals: false,
-      },
-    });
   };
 
   const handlePermissionChange = (permission: string, checked: boolean) => {
@@ -423,13 +347,9 @@ const Settings: React.FC = () => {
     { id: 'team', label: 'Team Management', icon: Users },
   ];
 
-  return (
-    <AdminPageLayout
-      title="Settings"
-      description="Manage your account settings and preferences"
-    >
+  const settingsContent = (
+    <>
       <div className="space-y-6">
-        {/* Settings Tabs */}
         <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
           <div className="border-b border-gray-100">
             <nav className="flex px-6 overflow-x-auto">
@@ -454,11 +374,9 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="p-8">
-            {/* General Settings */}
             {activeTab === 'general' && (
               <div className="space-y-8 animate-enter">
-                {loading ? (
-                  // Skeleton Loader
+                {loading && !userProfile ? (
                   <div className="space-y-8">
                     <div>
                       <div className="h-4 w-32 bg-gray-100 rounded mb-6 animate-pulse" />
@@ -527,41 +445,85 @@ const Settings: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                          Company/Tenant
+                          First Name
                         </label>
-                        <div className="relative group">
-                          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            value={userProfile?.tenantName || user?.tenantName || ''}
-                            disabled
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 cursor-not-allowed"
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          value={userProfile?.firstName || ''}
+                          onChange={(e) => setUserProfile((prev: any) => ({ ...prev, firstName: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                          placeholder="First Name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          value={userProfile?.lastName || ''}
+                          onChange={(e) => setUserProfile((prev: any) => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                          placeholder="Last Name"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          Company / Tenant Name
+                        </label>
+                        <input
+                          type="text"
+                          value={userProfile?.tenantName || user?.tenantName || ''}
+                          disabled
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 cursor-not-allowed"
+                        />
                       </div>
                     </div>
-                  </div>
-                )}
 
-                {!loading && (
-                  <div className="pt-6 border-t border-gray-100">
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-6">Account Actions</h3>
-                    <div className="flex flex-col md:flex-row gap-4">
-                      <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
-                        <Check size={14} />
-                        Download My Data
+                    <div className="pt-6 border-t border-gray-100 flex justify-end mt-8">
+                      <button
+                        onClick={async () => {
+                          try {
+                            setLoading(true);
+                            await updateUser(userProfile.id, {
+                              firstName: userProfile.firstName,
+                              lastName: userProfile.lastName
+                            });
+                            toast.success('Profile updated');
+                          } catch (err) {
+                            toast.error('Failed to update profile');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={loading}
+                        className="px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+                      >
+                        {loading ? 'Saving...' : 'Save Profile'}
                       </button>
-                      <button className="px-6 py-3 bg-white text-rose-600 border border-rose-200 rounded-xl hover:bg-rose-50 font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
-                        <Trash2 size={14} />
-                        Deactivate Account
-                      </button>
+                    </div>
+
+                    <div className="pt-12 border-t border-gray-100">
+                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-6">Account Actions</h3>
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+                          <Check size={14} />
+                          Download My Data
+                        </button>
+                        <button className="px-6 py-3 bg-white text-rose-600 border border-rose-200 rounded-xl hover:bg-rose-50 font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                          <Trash2 size={14} />
+                          Deactivate Account
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Notification Settings */}
+
+
+
             {activeTab === 'notifications' && (
               <div className="space-y-8 animate-enter">
                 <div>
@@ -593,7 +555,6 @@ const Settings: React.FC = () => {
                     ))}
                   </div>
                 </div>
-
                 <div className="pt-6 border-t border-gray-100">
                   <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
                     <Bell size={16} className="text-indigo-600" />
@@ -617,10 +578,19 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                <div className="pt-6 border-t border-gray-100 flex justify-end">
+                  <button
+                    onClick={saveSettings}
+                    disabled={loading}
+                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+                  >
+                    {loading ? 'Saving...' : 'Update Notification Settings'}
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Security Settings */}
+
             {activeTab === 'security' && (
               <div className="space-y-8 animate-enter">
                 <div>
@@ -644,7 +614,6 @@ const Settings: React.FC = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
                     </div>
-
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                         Session Timeout (minutes)
@@ -660,7 +629,6 @@ const Settings: React.FC = () => {
                         <option value={120}>2 hours</option>
                       </select>
                     </div>
-
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                       <div>
                         <div className="text-sm font-bold text-gray-900">Require Password Change</div>
@@ -678,7 +646,6 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="pt-6 border-t border-gray-100">
                   <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
                     <Lock size={16} className="text-indigo-600" />
@@ -689,10 +656,18 @@ const Settings: React.FC = () => {
                     Change Password
                   </button>
                 </div>
+                <div className="pt-6 border-t border-gray-100 flex justify-end">
+                  <button
+                    onClick={saveSettings}
+                    disabled={loading}
+                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+                  >
+                    {loading ? 'Saving...' : 'Update Security Settings'}
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Preferences Settings */}
             {activeTab === 'preferences' && (
               <div className="space-y-8 animate-enter">
                 <div>
@@ -718,7 +693,6 @@ const Settings: React.FC = () => {
                         </select>
                       </div>
                     </div>
-
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                         Timezone
@@ -733,7 +707,6 @@ const Settings: React.FC = () => {
                         <option value="Africa/Kampala">Kampala (UTC+3)</option>
                       </select>
                     </div>
-
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                         Currency
@@ -748,7 +721,6 @@ const Settings: React.FC = () => {
                         <option value="EUR">EUR (€)</option>
                       </select>
                     </div>
-
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                         Theme
@@ -765,10 +737,19 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                <div className="pt-6 border-t border-gray-100 flex justify-end">
+                  <button
+                    onClick={saveSettings}
+                    disabled={loading}
+                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100"
+                  >
+                    {loading ? 'Saving...' : 'Update Preferences'}
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Team Management Settings */}
+
             {activeTab === 'team' && (
               <div className="space-y-8 animate-enter">
                 <div className="flex items-center justify-between">
@@ -787,8 +768,6 @@ const Settings: React.FC = () => {
                     <span>Add Member</span>
                   </button>
                 </div>
-
-                {/* Team Members List */}
                 <div className="grid grid-cols-1 gap-4">
                   {receivers.map((receiver) => (
                     <div key={receiver.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all group">
@@ -798,47 +777,42 @@ const Settings: React.FC = () => {
                             <Users size={20} />
                           </div>
                           <div>
-                            <div className="font-bold text-gray-900 text-sm">{receiver.name}</div>
-                            <div className="text-xs text-slate-500">{receiver.email}</div>
-                            <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">{receiver.role}</div>
+                            <div className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1.5">
+                              {receiver.profile?.firstName} {receiver.profile?.lastName}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{receiver.role.replace('_', ' ')}</span>
+                              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{receiver.email}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${receiver.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                            : 'bg-gray-50 text-gray-500 border-gray-100'
-                            }`}>
-                            {receiver.status}
-                          </span>
-                          <div className="flex items-center gap-1 pl-2 border-l border-gray-100">
-                            <button
-                              onClick={() => handleEditReceiver(receiver)}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReceiver(receiver.id)}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                              title="Remove"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={() => handleEditReceiver(receiver)}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReceiver(receiver.id)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-50">
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Permissions</div>
                         <div className="flex flex-wrap gap-2">
-                          {receiver.permissions.map((permission) => (
+                          {receiver.permissions?.map((permission: string) => (
                             <span
                               key={permission}
                               className="px-2 py-0.5 bg-gray-50 text-gray-600 border border-gray-100 text-[10px] font-medium rounded-md uppercase tracking-wide"
                             >
                               {permission.replace('_', ' ')}
                             </span>
-                          ))}
+                          )) || <span className="text-[10px] text-slate-400 italic">No special permissions</span>}
                         </div>
                       </div>
                     </div>
@@ -850,7 +824,6 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* Add/Edit Receiver Modal */}
       {showAddReceiver && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div
@@ -878,14 +851,26 @@ const Settings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Full Name
+                      First Name
                     </label>
                     <input
                       type="text"
-                      value={receiverForm.name}
-                      onChange={(e) => setReceiverForm(prev => ({ ...prev, name: e.target.value }))}
+                      value={receiverForm.firstName}
+                      onChange={(e) => setReceiverForm(prev => ({ ...prev, firstName: e.target.value }))}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                      placeholder="e.g. John Doe"
+                      placeholder="e.g. John"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={receiverForm.lastName}
+                      onChange={(e) => setReceiverForm(prev => ({ ...prev, lastName: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      placeholder="e.g. Doe"
                     />
                   </div>
                   <div>
@@ -895,11 +880,26 @@ const Settings: React.FC = () => {
                     <input
                       type="email"
                       value={receiverForm.email}
+                      disabled={!!editingReceiver}
                       onChange={(e) => setReceiverForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      className={`w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none ${editingReceiver ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       placeholder="e.g. john@example.com"
                     />
                   </div>
+                  {!editingReceiver && (
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Initial Password
+                      </label>
+                      <input
+                        type="password"
+                        value={receiverForm.password}
+                        onChange={(e) => setReceiverForm(prev => ({ ...prev, password: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -911,9 +911,10 @@ const Settings: React.FC = () => {
                     onChange={(e) => setReceiverForm(prev => ({ ...prev, role: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                   >
-                    <option value="Cargo Receiver">Cargo Receiver</option>
-                    <option value="Assistant Manager">Assistant Manager</option>
-                    <option value="Viewer">Viewer</option>
+                    <option value="CARGO_RECEIVER">Cargo Receiver</option>
+                    <option value="TENANT_ADMIN">Tenant Admin</option>
+                    <option value="FLEET_MANAGER">Fleet Manager</option>
+                    <option value="VIEWER">Viewer</option>
                   </select>
                 </div>
 
@@ -963,7 +964,35 @@ const Settings: React.FC = () => {
           </div>
         </div>
       )}
-    </AdminPageLayout>
+    </>
+  );
+
+  if (user?.role === 'SUPER_ADMIN') {
+    return (
+      <AdminPageLayout
+        title="Settings"
+        description="Manage your account settings and preferences"
+      >
+        {settingsContent}
+      </AdminPageLayout>
+    );
+  }
+
+  // Tenant Admin View with custom header
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Settings</h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Manage your account configurations and platform preferences
+            </p>
+          </div>
+        </div>
+      </div>
+      {settingsContent}
+    </div>
   );
 };
 

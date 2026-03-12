@@ -45,6 +45,9 @@ export const updateUser = async (userId: string, userData: {
   companyName?: string;
   role?: string;
   status?: string;
+  preferences?: any;
+  notifications?: any;
+  security?: any;
 }) => {
   const res = await api.patch(`/users/${userId}`, userData);
   return res.data;

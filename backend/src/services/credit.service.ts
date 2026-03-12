@@ -850,7 +850,6 @@ export class CreditService {
       // Query users first to ensure all people in the tenant (with optional role) are found
       const userQuery = this.userRepository.createQueryBuilder('user')
         .leftJoinAndSelect('user.profile', 'profile')
-        .leftJoinAndSelect('user.trucks', 'trucks')
         .where('user.tenantId = :tenantId', { tenantId });
 
       if (role) {
@@ -880,5 +879,21 @@ export class CreditService {
 
       return query.getMany();
     }
+  }
+
+  /**
+   * Get partners with low credit balances for a tenant
+   */
+  async getLowCreditPartners(tenantId: string, threshold: number = 1000): Promise<CreditAccount[]> {
+    const query = this.creditAccountRepository
+      .createQueryBuilder('account')
+      .leftJoinAndSelect('account.user', 'user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .where('account.tenantId = :tenantId', { tenantId })
+      .andWhere('user.id IS NOT NULL')
+      .andWhere('account.currentBalance <= :threshold', { threshold })
+      .orderBy('account.currentBalance', 'ASC');
+
+    return query.getMany();
   }
 }

@@ -21,7 +21,6 @@ import {
   FaSync,
 } from "react-icons/fa";
 import FilterSelect from "@/components/common/FilterSelect";
-import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Cargo {
   id: string;
@@ -133,16 +132,24 @@ const CargoManagement: React.FC = () => {
   });
 
   return (
-    <AdminPageLayout
-      title="Cargo Management"
-      description="Monitor and manage all cargo shipments"
-      actions={
-        <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-          <FaPlus />
-          <span>Add Cargo</span>
-        </button>
-      }
-    >
+    <div className="space-y-6">
+      {/* Custom Header for Tenant Admin */}
+      <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Cargo Management</h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Monitor and manage all cargo shipments and logistics
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2">
+              <FaPlus className="text-xs" />
+              Add Cargo
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="rounded-2xl bg-gradient-to-r from-gray-50 via-white to-gray-50 p-6 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.35)]">
@@ -361,7 +368,7 @@ const CargoManagement: React.FC = () => {
           </table>
         </div>
       </div>
-    </AdminPageLayout>
+    </div>
   );
 };
 

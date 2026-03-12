@@ -217,6 +217,20 @@ export const tenantApi = {
     return response.data.data;
   },
 
+  // Get comprehensive summary
+  getTenantDashboardSummary: async (tenantId: string, timeRange: string = '7d'): Promise<any> => {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/summary`, {
+      params: { timeRange }
+    });
+    return response.data.data;
+  },
+
+  // Notify low credit partners
+  notifyLowCreditPartners: async (tenantId: string): Promise<any> => {
+    const response = await api.post(`/tenant-dashboard/${tenantId}/notify-low-credit`);
+    return response.data;
+  },
+
   // Get performance metrics
   getPerformanceMetrics: async (tenantId: string): Promise<PerformanceMetric[]> => {
     const response = await api.get(`/tenant-dashboard/${tenantId}/performance`);
@@ -528,5 +542,83 @@ export const mockTenantData = {
     averageTransactionValue: 10032,
     dailyRevenue: [180000, 220000, 195000, 250000, 280000, 320000, 305000],
     monthlyGrowth: 12.5
-  }
+  },
+  lowCreditPartners: [
+    {
+      id: "cp-001",
+      currentBalance: 240,
+      subscriptionCredits: 150,
+      purchasedCredits: 50,
+      bonusCredits: 40,
+      lifetimeEarned: 15000,
+      lifetimeSpent: 14760,
+      lastRefreshDate: "2024-08-01T10:00:00Z",
+      nextRefreshDate: "2024-09-01T10:00:00Z",
+      user: {
+        id: "user-001",
+        email: "operations@rapidlogistics.com",
+        profile: {
+          firstName: "John",
+          lastName: "Doe",
+          companyName: "Rapid Logistics Ltd",
+          avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=John"
+        }
+      },
+      recentTransactions: [
+        { id: "tx-001", type: "CONSUMPTION", amount: -450, description: "Bulk SMS Broadcast", createdAt: "2024-08-10T14:30:00Z", balanceAfter: 240 },
+        { id: "tx-002", type: "PURCHASE", amount: 500, description: "Credit Top-up", createdAt: "2024-08-05T09:15:00Z", balanceAfter: 690 },
+        { id: "tx-003", type: "CONSUMPTION", amount: -200, description: "Load Marketplace Fee", createdAt: "2024-08-01T11:00:00Z", balanceAfter: 190 }
+      ]
+    },
+    {
+      id: "cp-002",
+      currentBalance: 1200,
+      subscriptionCredits: 500,
+      purchasedCredits: 600,
+      bonusCredits: 100,
+      lifetimeEarned: 25000,
+      lifetimeSpent: 23800,
+      lastRefreshDate: "2024-08-05T09:30:00Z",
+      nextRefreshDate: "2024-09-05T09:30:00Z",
+      user: {
+        id: "user-002",
+        email: "sam@eahaulers.com",
+        profile: {
+          firstName: "Samuel",
+          lastName: "Onyango",
+          companyName: "East Africa Haulers",
+          avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Samuel"
+        }
+      },
+      recentTransactions: [
+        { id: "tx-101", type: "SUBSCRIPTION_GRANT", amount: 1000, description: "Monthly Plan Refresh", createdAt: "2024-08-05T08:00:00Z", balanceAfter: 1200 },
+        { id: "tx-102", type: "CONSUMPTION", amount: -800, description: "Route Optimization usage", createdAt: "2024-08-04T16:45:00Z", balanceAfter: 200 }
+      ]
+    },
+    {
+      id: "cp-003",
+      currentBalance: 4500,
+      subscriptionCredits: 3000,
+      purchasedCredits: 1000,
+      bonusCredits: 500,
+      lifetimeEarned: 80000,
+      lifetimeSpent: 75500,
+      lastRefreshDate: "2024-07-20T14:15:00Z",
+      nextRefreshDate: "2024-08-20T14:15:00Z",
+      user: {
+        id: "user-003",
+        email: "mary@mbroadmovers.com",
+        profile: {
+          firstName: "Mary",
+          lastName: "Wanjiku",
+          companyName: "Mombasa Road Movers",
+          avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mary"
+        }
+      },
+      recentTransactions: [
+        { id: "tx-201", type: "CONSUMPTION", amount: -1500, description: "API Integration License", createdAt: "2024-08-08T12:00:00Z", balanceAfter: 4500 },
+        { id: "tx-202", type: "PURCHASE", amount: 5000, description: "Volume Top-up", createdAt: "2024-08-02T10:00:00Z", balanceAfter: 6000 }
+      ]
+    }
+  ]
 };

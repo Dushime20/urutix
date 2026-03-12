@@ -106,7 +106,7 @@ export class UserProfile {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToOne('User', 'profile')
-  @JoinColumn({ name: 'user_id' })
+  @OneToOne(() => User, (user) => user.profile)
+  @JoinColumn({ name: 'userId' })
   user: User;
 }

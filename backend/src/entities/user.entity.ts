@@ -105,7 +105,7 @@ export class User {
   deletedAt?: Date;
 
   // Relations
-  @OneToOne('UserProfile', 'user', { cascade: true })
+  @OneToOne(() => UserProfile, (profile) => profile.user)
   profile: UserProfile;
 
   @ManyToOne('Tenant', 'users')
@@ -157,8 +157,11 @@ export class User {
   @OneToMany(() => AuctionView, (view) => view.viewer)
   auctionViews: AuctionView[];
 
-  @OneToMany(() => AuctionWatch, (watch) => watch.watcher)
+  @OneToMany('AuctionWatch', (watch: any) => watch.watcher)
   auctionWatches: AuctionWatch[];
+
+  @OneToMany('TenantSubscription', 'userId')
+  subscriptions: any[];
 
   // Rating relationships - commented out until entities are created
   // @OneToMany('UserRating', 'ratedUser')

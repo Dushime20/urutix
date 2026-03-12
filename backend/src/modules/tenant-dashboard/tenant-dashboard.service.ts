@@ -7,6 +7,9 @@ import { User, UserRole } from '../../entities/user.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Payment, PaymentStatus } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
+import { CreditService } from '../../services/credit.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../../entities/notification.entity';
 
 export interface TenantMetrics {
   totalRevenue: number;
@@ -32,11 +35,11 @@ export interface TenantTrends {
 export interface TenantActivity {
   id: string;
   type:
-    | 'load_created'
-    | 'trip_started'
-    | 'trip_completed'
-    | 'payment_received'
-    | 'bid_placed';
+  | 'load_created'
+  | 'trip_started'
+  | 'trip_completed'
+  | 'payment_received'
+  | 'bid_placed';
   description: string;
   timestamp: Date;
   metadata?: any;
@@ -57,7 +60,37 @@ export class TenantDashboardService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Bid)
     private readonly bidRepository: Repository<Bid>,
-  ) {}
+    private readonly creditService: CreditService,
+    private readonly notificationsService: NotificationsService,
+  ) { }
+
+  async getLowCreditPartners(tenantId: string) {
+    return this.creditService.getLowCreditPartners(tenantId);
+  }
+
+  async notifyLowCreditPartners(tenantId: string) {
+    const lowCreditPartners = await this.creditService.getLowCreditPartners(tenantId, 5000); // 5000 TRX threshold
+
+    const notificationPromises = lowCreditPartners.map(partner =>
+      this.notificationsService.createNotification({
+        userId: partner.user.id,
+        type: NotificationType.ALERT,
+        tenantId: tenantId,
+        channel: 'IN_APP' as any,
+        priority: 'HIGH' as any,
+        category: 'FINANCIAL' as any,
+        templateId: 'low-credit-alert',
+        content: `Your credit balance is low (${partner.currentBalance} TRX). Please top up to avoid service interruption.`,
+        metadata: {
+          currentBalance: partner.currentBalance,
+          threshold: 5000,
+          actionUrl: '/dashboard/credits/topup'
+        }
+      }, tenantId)
+    );
+
+    return Promise.all(notificationPromises);
+  }
 
   async getTenantMetrics(
     tenantId: string,

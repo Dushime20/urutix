@@ -1,0 +1,53 @@
+{
+  "account": [
+    {
+      "id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4",
+      "tenant_id": "b7d244e3-9a1a-4686-a22f-3fe18468500e",
+      "current_balance": 1928,
+      "subscription_credits": 1828,
+      "purchased_credits": 100,
+      "bonus_credits": 0,
+      "lifetime_earned": 2100,
+      "lifetime_spent": 172,
+      "last_refresh_date": null,
+      "next_refresh_date": null,
+      "created_at": "2026-02-13T14:49:17.457Z",
+      "updated_at": "2026-03-12T09:00:10.800Z",
+      "user_id": null
+    }
+  ],
+  "transactions": [
+    {
+      "id": "feabad71-aed0-4ba5-8e51-2cf0da161737",
+      "type": "PURCHASE",
+      "amount": 5000,
+      "balance_after": 5000,
+      "description": "Invoice",
+      "created_at": "2026-03-10T08:51:04.995Z"
+    },
+    {
+      "id": "4818f161-5ffa-403f-a2ce-908d9b35d09e",
+      "type": "PURCHASE",
+      "amount": 8000,
+      "balance_after": 8000,
+      "description": "March",
+      "created_at": "2026-03-09T14:43:15.390Z"
+    },
+    {
+      "id": "09ee4f79-fc7d-4d28-b912-ad0531074866",
+      "type": "PURCHASE",
+      "amount": 172,
+      "balance_after": 172,
+      "description": "Transfer from b7d244e3-9a1a-4686-a22f-3fe18468500e: No reference",
+      "created_at": "2026-03-09T14:14:23.458Z"
+    },
+    {
+      "id": "a5f33be7-87ef-403b-ac8b-80fd1ca7a4ab",
+      "type": "ADJUSTMENT",
+      "amount": -172,
+      "balance_after": 1828,
+      "description": "Transfer to 9a947709-71b8-476e-b94f-92bf4a0f29e5: No reference",
+      "created_at": "2026-03-09T14:14:23.423Z"
+    }
+  ]
+}

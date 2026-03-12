@@ -15,7 +15,9 @@ import {
   Bell as FaBell,
   Navigation,
   Box,
-  Users
+  Users,
+  ChevronDown,
+  ArrowRight
 } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,8 +35,8 @@ interface TenantHeaderProps {
   tenant: Tenant;
   onRefresh: () => void;
   isRefreshing?: boolean;
-  selectedView: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding';
-  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding') => void;
+  selectedView: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing';
+  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing') => void;
 }
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({
@@ -48,19 +50,50 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'trips', label: 'Trips', icon: Navigation },
-    { id: 'bidding', label: 'Bidding', icon: DollarSign },
-    { id: 'fleet', label: 'Fleet', icon: Truck },
-    { id: 'truck-owners', label: 'Truck Owners', icon: Users },
-    { id: 'cargo', label: 'Cargo', icon: Box },
-    { id: 'users', label: 'Partners', icon: Users },
-    { id: 'financial', label: 'Financial', icon: DollarSign },
-    { id: 'operations', label: 'Operations', icon: Route },
+  const groupedTabs = [
+    {
+      id: 'market',
+      label: 'Marketplace',
+      icon: Navigation,
+      items: [
+        { id: 'trips', label: 'Monitor Trips', icon: Navigation, description: 'Real-time shipment tracking' },
+        { id: 'bidding', label: 'Negotiations', icon: DollarSign, description: 'Active bidding & load acquisition' },
+      ]
+    },
+    {
+      id: 'logistics',
+      label: 'Asset Hub',
+      icon: Truck,
+      items: [
+        { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
+        { id: 'cargo', label: 'Inventory Control', icon: Box, description: 'Cargo & specialized storage' },
+        { id: 'operations', label: 'Operational Health', icon: Route, description: 'Efficiency & performance monitoring' },
+      ]
+    },
+    {
+      id: 'network',
+      label: 'Partner Network',
+      icon: Users,
+      items: [
+        { id: 'truck-owners', label: 'Truck Owners', icon: Users, description: 'External partner management' },
+        { id: 'users', label: 'Internal Staff', icon: Users, description: 'Access control & permissions' },
+      ]
+    },
+    {
+      id: 'financial',
+      label: 'Financials',
+      icon: DollarSign,
+      items: [
+        { id: 'financial', label: 'Escrow Account', icon: DollarSign, description: 'Revenue & credit intelligence' },
+        { id: 'purchase-credits', label: 'Purchase Credits', icon: DollarSign, description: 'Top up your account balance' },
+        { id: 'billing', label: 'Billing Dashboard', icon: DollarSign, description: 'Manage plans and invoices' },
+      ]
+    }
   ];
 
   const { data: notifications = [] } = useQuery({
@@ -86,6 +119,9 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
+      }
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setActiveGroup(null);
       }
     };
 
@@ -117,23 +153,90 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
           </div>
 
 
-          <nav className="hidden lg:flex items-center gap-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = selectedView === tab.id;
+          <nav className="hidden lg:flex items-center gap-2" ref={navRef}>
+            {/* Direct Link: Monitor */}
+            <button
+              onClick={() => { setSelectedView('overview'); setActiveGroup(null); }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all duration-300 ${selectedView === 'overview'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
+                }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>DASHBOARD</span>
+            </button>
+
+            <div className="w-[1px] h-6 bg-slate-100 mx-2" />
+
+            {/* Grouped Dropdowns */}
+            {groupedTabs.map((group) => {
+              const isGroupActive = group.items.some(item => item.id === selectedView);
+              const isOpen = activeGroup === group.id;
 
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedView(tab.id as any)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${isActive
-                    ? 'bg-[#f0f7ff] text-[#1e40af]'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#1e40af]' : 'text-slate-400'}`} />
-                  <span>{tab.label}</span>
-                </button>
+                <div key={group.id} className="relative">
+                  <button
+                    onClick={() => setActiveGroup(isOpen ? null : group.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black tracking-wider transition-all duration-300 ${isGroupActive
+                      ? 'bg-slate-900 text-white shadow-lg'
+                      : isOpen ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                  >
+                    <group.icon className="w-4 h-4" />
+                    <span>{group.label.toUpperCase()}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute left-0 mt-3 w-72 bg-white rounded-3xl shadow-2xl border border-slate-100 p-3 z-[100] origin-top-left"
+                      >
+                        <div className="mb-2 px-3 pt-2">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+                            System Category: {group.label}
+                          </span>
+                        </div>
+                        <div className="grid gap-1">
+                          {group.items.map((tab) => {
+                            const TabIcon = tab.icon;
+                            const isTabActive = selectedView === tab.id;
+
+                            return (
+                              <button
+                                key={tab.id}
+                                onClick={() => {
+                                  setSelectedView(tab.id as any);
+                                  setActiveGroup(null);
+                                }}
+                                className={`w-full text-left p-3 rounded-2xl transition-all duration-300 flex items-start gap-3 group/item ${isTabActive
+                                  ? 'bg-blue-50/50'
+                                  : 'hover:bg-slate-50'
+                                  }`}
+                              >
+                                <div className={`p-2 rounded-xl shrink-0 transition-colors ${isTabActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover/item:bg-blue-600 group-hover/item:text-white'}`}>
+                                  <TabIcon className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className={`text-xs font-black ${isTabActive ? 'text-blue-600' : 'text-slate-800'}`}>
+                                    {tab.label}
+                                  </p>
+                                  <p className="text-[10px] font-medium text-slate-400 mt-0.5 line-clamp-1">
+                                    {tab.description}
+                                  </p>
+                                </div>
+                                <ArrowRight className={`ml-auto w-3.5 h-3.5 text-slate-300 group-hover/item:text-blue-600 transition-all ${isTabActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </nav>

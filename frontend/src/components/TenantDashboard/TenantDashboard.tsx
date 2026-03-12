@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle as FaExclamationTriangle,
@@ -28,12 +29,15 @@ import FinancialMetrics from './FinancialMetrics';
 import OperationalInsights from './OperationalInsights';
 import PerformanceMetrics from './PerformanceMetrics';
 import RecentActivity from './RecentActivity';
+import LowCreditPartners from './LowCreditPartners';
 import SkeletonDashboard from './SkeletonDashboard';
 import TenantUserManagement from './TenantUserManagement';
 import ActiveTrips from './ActiveTrips';
 import TenantSettings from './TenantSettings';
 import TenantBidding from './TenantBidding';
 import TruckOwnerBilling from '../../pages/tenant-admin/TruckOwnerBilling';
+import PurchaseCredits from '../../pages/subscription/PurchaseCredits';
+import BillingDashboard from '../../pages/subscription/BillingDashboard';
 import { tenantApi, mockTenantData } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -53,17 +57,23 @@ ChartJS.register(
 interface TenantDashboardProps {
   tenantId?: string;
   className?: string;
+  defaultView?: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing';
 }
 
 const TenantDashboard: React.FC<TenantDashboardProps> = ({
   tenantId,
-  className = ''
+  className = '',
+  defaultView = 'overview'
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding'>('overview');
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing'>(defaultView);
+
+  useEffect(() => {
+    setSelectedView(defaultView);
+  }, [defaultView]);
 
   // Create tenant data object from authenticated user
   const currentTenant = useMemo(() => {
@@ -88,18 +98,20 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     queryKey: ['tenant', tenantId, timeRange],
     queryFn: async () => {
       try {
-        const [metrics, trends, activity] = await Promise.all([
-          tenantApi.getTenantMetrics(tenantId || 'default-tenant', timeRange),
-          tenantApi.getTenantTrends(tenantId || 'default-tenant', timeRange),
-          tenantApi.getRecentActivity(tenantId || 'default-tenant', 10)
-        ]);
-        return { metrics, trends, activity };
+        const summary = await tenantApi.getTenantDashboardSummary(tenantId || 'default-tenant', timeRange);
+        return {
+          metrics: summary.metrics,
+          trends: summary.trends,
+          activity: summary.recentActivity,
+          lowCreditPartners: summary.lowCreditPartners || []
+        };
       } catch (error) {
         console.warn('Using mock data due to API error:', error);
         return {
           metrics: mockTenantData.metrics,
           trends: mockTenantData.trends,
-          activity: mockTenantData.recentActivity
+          activity: mockTenantData.recentActivity,
+          lowCreditPartners: (mockTenantData as any).lowCreditPartners || []
         };
       }
     },
@@ -112,7 +124,19 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   const data = tenantData || {
     metrics: mockTenantData.metrics,
     trends: mockTenantData.trends,
-    activity: mockTenantData.recentActivity
+    activity: mockTenantData.recentActivity,
+    lowCreditPartners: (mockTenantData as any).lowCreditPartners || []
+  };
+
+  const handleNotifyLowCredit = async () => {
+    const notifyToast = toast.loading('Broadcasting alerts to partners...');
+    try {
+      await tenantApi.notifyLowCreditPartners(tenantId || 'default-tenant');
+      toast.success('Alerts broadcasted successfully', { id: notifyToast });
+    } catch (error) {
+      console.error('Failed to notify partners:', error);
+      toast.error('Failed to broadcast alerts', { id: notifyToast });
+    }
   };
 
   const handleRefresh = async () => {
@@ -340,6 +364,14 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
               {/* Quick Stats */}
               <QuickStats metrics={data.metrics} />
 
+              {/* Low Credit Alerts */}
+              {data.lowCreditPartners && data.lowCreditPartners.length > 0 && (
+                <LowCreditPartners
+                  partners={data.lowCreditPartners}
+                  onNotifyAll={handleNotifyLowCredit}
+                />
+              )}
+
               {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Revenue Chart */}
@@ -482,6 +514,18 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           {!isLoading && selectedView === 'bidding' && tenantId && (
             <motion.div key="bidding" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <TenantBidding tenantId={tenantId} />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'purchase-credits' && (
+            <motion.div key="purchase-credits" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <PurchaseCredits />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'billing' && (
+            <motion.div key="billing" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <BillingDashboard />
             </motion.div>
           )}
         </AnimatePresence>

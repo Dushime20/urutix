@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Res } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -23,7 +23,7 @@ import { ApiResponseDto } from '../../common/dto/api-response.dto';
 export class TenantDashboardController {
   constructor(
     private readonly tenantDashboardService: TenantDashboardService,
-  ) {}
+  ) { }
 
   @Get(':tenantId/metrics')
   @ApiOperation({
@@ -187,16 +187,22 @@ export class TenantDashboardController {
     @Param('tenantId') tenantId: string,
     @Query('timeRange') timeRange: string = '7d',
   ): Promise<ApiResponseDto<any>> {
-    const [metrics, trends, activity] = await Promise.all([
+    const [metrics, trends, activity, lowCreditPartners] = await Promise.all([
       this.tenantDashboardService.getTenantMetrics(tenantId, timeRange),
       this.tenantDashboardService.getTenantTrends(tenantId, timeRange),
       this.tenantDashboardService.getRecentActivity(tenantId, 10),
+      this.tenantDashboardService.getLowCreditPartners(tenantId),
     ]);
+
+    // Trigger notifications for low credit partners
+    // Note: In production, this should be handled by a scheduled task
+    await this.tenantDashboardService.notifyLowCreditPartners(tenantId);
 
     const summary = {
       metrics,
       trends,
       recentActivity: activity,
+      lowCreditPartners,
       lastUpdated: new Date().toISOString(),
     };
 
@@ -205,6 +211,22 @@ export class TenantDashboardController {
       statusCode: 200,
       message: 'Tenant dashboard summary retrieved successfully',
       data: summary,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':tenantId/notify-low-credit')
+  @ApiOperation({ summary: 'Notify partners with low credit' })
+  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
+  async notifyLowCredit(
+    @Param('tenantId') tenantId: string,
+  ): Promise<ApiResponseDto<any>> {
+    await this.tenantDashboardService.notifyLowCreditPartners(tenantId);
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Low credit notifications sent successfully',
       timestamp: new Date().toISOString(),
     };
   }

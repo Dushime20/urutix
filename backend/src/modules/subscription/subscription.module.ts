@@ -11,6 +11,8 @@ import { SubscriptionPayment } from '../../entities/subscription-payment.entity'
 import { CreditPackage } from '../../entities/credit-package.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { CreditPricingRule } from '../../entities/credit-pricing-rule.entity';
+import { NotificationPreference } from '../../entities/notification-preference.entity';
+import { NotificationLog } from '../../entities/notification-log.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
@@ -21,12 +23,16 @@ import { User } from '../../entities/user.entity';
 import { SubscriptionService } from '../../services/subscription.service';
 import { CreditService } from '../../services/credit.service';
 import { SubscriptionSchedulerService } from '../../services/subscription-scheduler.service';
+import { SubscriptionNotificationService } from '../../services/subscription-notification.service';
+import { NotificationDeliveryService } from '../../services/notification-delivery.service';
 import { PricingService } from '../../services/pricing.service';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
 
-// Controllers (to be created)
+// Controllers
 import { SubscriptionController } from './subscription.controller';
 import { CreditController } from './credit.controller';
+import { NotificationController } from './notification.controller';
+import { NotificationPreferencesController } from './notification-preferences.controller';
 
 @Module({
   imports: [
@@ -39,6 +45,8 @@ import { CreditController } from './credit.controller';
       CreditPackage,
       FeatureCreditCost,
       CreditPricingRule,
+      NotificationPreference,
+      NotificationLog,
       Tenant,
       Payment,
       Trip,
@@ -47,14 +55,28 @@ import { CreditController } from './credit.controller';
     ]),
     ScheduleModule.forRoot(),
   ],
-  controllers: [SubscriptionController, CreditController],
+  controllers: [
+    SubscriptionController, 
+    CreditController, 
+    NotificationController,
+    NotificationPreferencesController,
+  ],
   providers: [
     SubscriptionService,
     CreditService,
     SubscriptionSchedulerService,
+    SubscriptionNotificationService,
+    NotificationDeliveryService,
     PricingService,
     CreditConsumptionListener,
   ],
-  exports: [SubscriptionService, CreditService, PricingService, CreditConsumptionListener],
+  exports: [
+    SubscriptionService, 
+    CreditService, 
+    SubscriptionNotificationService,
+    NotificationDeliveryService,
+    PricingService, 
+    CreditConsumptionListener
+  ],
 })
 export class SubscriptionModule { }

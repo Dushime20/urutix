@@ -3,7 +3,6 @@ import {
   FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
   FaEye, FaMapMarkerAlt, FaTools, FaCheckCircle, FaExclamationTriangle
 } from 'react-icons/fa';
-import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '../../services/tenantApi';
 import { FaCoins } from 'react-icons/fa';
@@ -112,16 +111,24 @@ const FleetManagement: React.FC = () => {
   const currentBalance = balanceData?.currentBalance || 0;
 
   return (
-    <AdminPageLayout
-      title="Fleet Management"
-      description="Monitor and manage your truck fleet"
-      actions={
-        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-          <FaPlus />
-          <span>Add Truck</span>
-        </button>
-      }
-    >
+    <div className="space-y-6">
+      {/* Custom Header for Tenant Admin */}
+      <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fleet Management</h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Monitor and manage your truck fleet operations
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2">
+              <FaPlus className="text-xs" />
+              Add Truck
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -272,7 +279,7 @@ const FleetManagement: React.FC = () => {
           </div>
         ))}
       </div>
-    </AdminPageLayout >
+    </div>
   );
 };
 

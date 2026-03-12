@@ -3,19 +3,20 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import AdminPageLayout from '../../components/Admin/AdminPageLayout';
-import { 
-  FaCheck, 
-  FaTimes, 
-  FaCrown, 
-  FaRocket, 
-  FaStar, 
+import {
+  FaCheck,
+  FaTimes,
+  FaCrown,
+  FaRocket,
+  FaStar,
   FaQuestionCircle,
   FaCalculator,
   FaChartBar,
   FaShieldAlt,
   FaHeadset,
-  FaLightbulb
+  FaLightbulb,
+  FaArrowLeft,
+  FaGift
 } from 'react-icons/fa';
 
 interface SubscriptionPlan {
@@ -87,20 +88,20 @@ const SubscriptionPlans: React.FC = () => {
   const plans: SubscriptionPlan[] = plansData?.data || [];
 
   const getPrice = (plan: SubscriptionPlan) => {
-    return billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly;
+    return billingCycle === 'monthly' ? Number(plan.priceMonthly) : Number(plan.priceYearly);
   };
 
   const getMonthlyEquivalent = (plan: SubscriptionPlan) => {
     if (billingCycle === 'yearly') {
-      return (plan.priceYearly / 12).toFixed(2);
+      return (Number(plan.priceYearly) / 12).toFixed(2);
     }
-    return plan.priceMonthly.toFixed(2);
+    return Number(plan.priceMonthly).toFixed(2);
   };
 
   const getSavings = (plan: SubscriptionPlan) => {
     if (billingCycle === 'yearly') {
-      const monthlyTotal = plan.priceMonthly * 12;
-      const savings = monthlyTotal - plan.priceYearly;
+      const monthlyTotal = Number(plan.priceMonthly) * 12;
+      const savings = monthlyTotal - Number(plan.priceYearly);
       const percentage = Math.round((savings / monthlyTotal) * 100);
       return { amount: savings, percentage };
     }
@@ -120,43 +121,63 @@ const SubscriptionPlans: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AdminPageLayout title="Subscription Plans" description="Choose your perfect plan">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-slate-600">Loading subscription plans...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#345E85] mx-auto"></div>
+          <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Subscription Plans...</p>
         </div>
-      </AdminPageLayout>
+      </div>
     );
   }
 
   return (
-    <AdminPageLayout
-      title="Choose Your Perfect Plan"
-      description="Flexible pricing that grows with your business"
-    >
-      <div className="space-y-6">
+    <div className="space-y-6 antialiased">
+      {/* Header - Enlite Prime Style */}
+      <div className="bg-white rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        {/* Decorative Background Blur */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
+
+        <div className="flex items-center gap-5 relative z-10">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100/50 shadow-sm">
+            <FaCrown className="w-6 h-6 text-[#345E85]" />
+          </div>
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Billing & Operations</h3>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Choose Your Perfect Plan</h1>
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row items-center gap-4 relative z-10">
+          <button
+            onClick={() => navigate('/tenant-admin/billing')}
+            className="px-6 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-sm whitespace-nowrap"
+          >
+            <FaArrowLeft className="text-xs" />
+            Back to Billing
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-8">
         {/* Header Actions */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="inline-block">
-            <span className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-bold">
-              🎉 14-Day Free Trial • No Credit Card Required
-            </span>
+        <div className="flex flex-col items-center gap-6">
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#345E85] px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm">
+            <FaGift className="text-blue-500" />
+            🎉 14-Day Free Trial • No Credit Card Required
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => setShowCalculator(!showCalculator)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all font-medium"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-[#345E85] rounded-2xl hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-widest shadow-sm"
             >
               <FaCalculator />
-              Credit Calculator
+              {showCalculator ? 'Hide Calculator' : 'Credit Calculator'}
             </button>
             <button
               onClick={() => setShowComparison(!showComparison)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all font-medium"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-[#345E85] rounded-2xl hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-widest shadow-sm"
             >
               <FaChartBar />
               Compare Plans
@@ -165,14 +186,18 @@ const SubscriptionPlans: React.FC = () => {
 
           {/* Credit Calculator */}
           {showCalculator && (
-            <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 border-2 border-indigo-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <FaCalculator className="text-indigo-600" />
-                Estimate Your Credit Needs
-              </h3>
-              <div className="space-y-4">
+            <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] max-w-3xl mx-auto w-full">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 rounded-[14px] bg-slate-50 flex items-center justify-center border border-slate-100">
+                  <FaCalculator className="w-4 h-4 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  Estimate Your Credit Needs
+                </h3>
+              </div>
+              <div className="space-y-8">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
                     How many loads do you post per month?
                   </label>
                   <input
@@ -182,23 +207,30 @@ const SubscriptionPlans: React.FC = () => {
                     step="10"
                     value={estimatedLoads}
                     onChange={(e) => setEstimatedLoads(Number(e.target.value))}
-                    className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-3 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#345E85]"
                   />
-                  <div className="flex justify-between text-sm text-slate-600 mt-2">
+                  <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest mt-4">
                     <span>10</span>
-                    <span className="font-bold text-indigo-600 text-lg">{estimatedLoads} loads</span>
+                    <span className="text-[#345E85] scale-125 transform transition-transform">{estimatedLoads} loads</span>
                     <span>500+</span>
                   </div>
                 </div>
-                <div className="bg-indigo-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-700">Estimated Credits Needed:</span>
-                    <span className="text-2xl font-bold text-indigo-600">
-                      ~{calculateCreditsNeeded().toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Recommended Plan: <span className="font-bold text-indigo-600 capitalize">{getRecommendedPlan()}</span>
+                <div className="bg-blue-50/50 rounded-[24px] p-6 border border-blue-100/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Recommended Plan</span>
+                      <div className="text-2xl font-black text-[#345E85] tracking-tight mt-1 capitalize">
+                        {getRecommendedPlan()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-black text-[#345E85] tracking-tight">
+                        ~{calculateCreditsNeeded().toLocaleString()}
+                      </div>
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        Estimated Credits Needed
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -206,28 +238,26 @@ const SubscriptionPlans: React.FC = () => {
           )}
 
           {/* Billing Toggle */}
-          <div className="inline-flex items-center bg-white rounded-xl p-1.5 shadow-lg border-2 border-indigo-100">
+          <div className="inline-flex items-center bg-white rounded-[20px] p-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-8 py-3 rounded-lg font-bold transition-all ${
-                billingCycle === 'monthly'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${billingCycle === 'monthly'
+                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-900/20'
+                : 'text-slate-400 hover:text-slate-900'
+                }`}
             >
-              Monthly
+              Monthly Billed
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-8 py-3 rounded-lg font-bold transition-all relative ${
-                billingCycle === 'yearly'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all relative ${billingCycle === 'yearly'
+                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-900/20'
+                : 'text-slate-400 hover:text-slate-900'
+                }`}
             >
-              Yearly
-              <span className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-green-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-md animate-pulse">
-                Save 17%
+              Yearly Billed
+              <span className="absolute -top-3 -right-3 bg-emerald-500 text-white text-[9px] px-2 py-1 rounded-[10px] font-black shadow-md">
+                SAVE 17%
               </span>
             </button>
           </div>
@@ -235,7 +265,7 @@ const SubscriptionPlans: React.FC = () => {
 
         {/* Plans Grid */}
         <div className="grid md:grid-cols-3 gap-8">
-          {plans.map((plan, index) => {
+          {plans.map((plan) => {
             const savings = getSavings(plan);
             const isPopular = plan.slug === 'professional';
             const isEnterprise = plan.slug === 'enterprise';
@@ -244,177 +274,191 @@ const SubscriptionPlans: React.FC = () => {
             return (
               <div
                 key={plan.id}
-                className={`relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all hover:scale-105 hover:shadow-2xl ${
-                  isPopular ? 'ring-4 ring-indigo-600 transform scale-105' : ''
+                className={`relative bg-white rounded-[32px] p-8 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] border ${
+                  isPopular
+                    ? 'border-[#345E85]/20 shadow-[0_4px_20px_rgba(52,94,133,0.15)] ring-1 ring-[#345E85]/10'
+                    : isRecommended
+                    ? 'border-emerald-200 shadow-[0_4px_20px_rgba(16,185,129,0.08)] ring-1 ring-emerald-500/10'
+                    : 'border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]'
                 }`}
               >
                 {/* Popular Badge */}
                 {isPopular && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 text-sm font-bold rounded-bl-xl shadow-lg">
-                    ⭐ MOST POPULAR
+                  <div className="absolute top-0 right-0 bg-[#345E85] text-white px-4 py-2 rounded-bl-[20px] rounded-tr-[30px] shadow-sm flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest">
+                    <FaStar className="w-2.5 h-2.5" /> MOST POPULAR
                   </div>
                 )}
 
                 {/* Recommended Badge */}
                 {isRecommended && !isPopular && showCalculator && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 text-sm font-bold rounded-bl-xl shadow-lg">
-                    💡 RECOMMENDED
+                  <div className="absolute top-0 right-0 bg-emerald-500 text-white px-4 py-2 rounded-bl-[20px] rounded-tr-[30px] shadow-sm flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest">
+                    <FaLightbulb className="w-2.5 h-2.5" /> RECOMMENDED
                   </div>
                 )}
 
                 {/* Plan Header */}
-                <div className={`p-8 ${
-                  isPopular 
-                    ? 'bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100' 
-                    : isEnterprise
-                    ? 'bg-gradient-to-br from-slate-50 to-slate-100'
-                    : 'bg-gradient-to-br from-slate-50 to-white'
-                }`}>
+                <div className="flex-1">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-slate-900">{plan.name}</h3>
-                    <div className={`p-3 rounded-xl ${
-                      isPopular ? 'bg-gradient-to-br from-indigo-500 to-purple-600' :
-                      isEnterprise ? 'bg-gradient-to-br from-slate-700 to-slate-900' :
-                      'bg-gradient-to-br from-indigo-400 to-indigo-600'
-                    }`}>
-                      {plan.slug === 'starter' && <FaRocket className="text-2xl text-white" />}
-                      {plan.slug === 'professional' && <FaStar className="text-2xl text-white" />}
-                      {plan.slug === 'enterprise' && <FaCrown className="text-2xl text-white" />}
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
+                    <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center ${isPopular ? 'bg-[#345E85] text-white' :
+                      isEnterprise ? 'bg-slate-900 text-white' :
+                        'bg-blue-50 text-[#345E85]'
+                      }`}>
+                      {plan.slug === 'starter' && <FaRocket className="text-xl" />}
+                      {plan.slug === 'professional' && <FaStar className="text-xl" />}
+                      {plan.slug === 'enterprise' && <FaCrown className="text-xl" />}
                     </div>
                   </div>
-                  <p className="text-slate-600 mb-6 min-h-[48px]">{plan.description}</p>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 min-h-[48px]">{plan.description}</p>
 
                   {/* Pricing */}
-                  <div className="mb-6">
+                  <div className="mb-8">
                     <div className="flex items-baseline mb-2">
-                      <span className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      <span className="text-5xl font-black text-[#345E85] tracking-tight">
                         ${getMonthlyEquivalent(plan)}
                       </span>
-                      <span className="text-slate-600 ml-2 font-medium">/month</span>
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">/ month</span>
                     </div>
                     {billingCycle === 'yearly' && (
-                      <p className="text-sm text-slate-600">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                         Billed ${getPrice(plan)} annually
                       </p>
                     )}
                     {savings && (
-                      <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 text-green-700 px-4 py-2 rounded-full text-sm font-bold shadow-sm">
-                        <FaLightbulb className="text-green-600" />
+                      <div className="mt-4 inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                        <FaLightbulb className="text-emerald-500 w-3 h-3" />
                         Save ${savings.amount.toFixed(0)}/year ({savings.percentage}%)
                       </div>
                     )}
                   </div>
 
                   {/* Credits */}
-                  <div className="bg-white rounded-xl p-5 mb-6 shadow-md border-2 border-indigo-100">
+                  <div className="bg-slate-50/50 rounded-[24px] p-6 mb-8 border border-slate-100">
                     <div className="text-center">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-1">
+                      <div className="text-3xl font-black text-slate-900 tracking-tight mb-1">
                         {plan.includedCredits.toLocaleString()}
                       </div>
-                      <div className="text-sm text-slate-600 font-medium">credits/month</div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        ~{Math.floor(plan.includedCredits / 7)} loads
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">credits / month</div>
+                      <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-2 bg-blue-50 inline-block px-3 py-1 rounded-full">
+                        ~{Math.floor(plan.includedCredits / 7)} loads capacity
                       </div>
                     </div>
                   </div>
-
+                  
                   {/* CTA Button */}
                   <button
                     onClick={() => handleSelectPlan(plan.id)}
                     disabled={createSubscription.isPending && selectedPlan === plan.id}
-                    className={`w-full py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg ${
-                      isPopular
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-                        : isEnterprise
-                        ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white hover:from-slate-900 hover:to-black'
-                        : 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700'
-                    } disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
+                    className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${isPopular
+                      ? 'bg-[#345E85] text-white hover:bg-[#2a4d6d] hover:shadow-lg hover:shadow-blue-900/20'
+                      : isEnterprise
+                        ? 'bg-slate-900 text-white hover:bg-black hover:shadow-lg hover:shadow-black/20'
+                        : 'bg-white border border-[#345E85]/20 text-[#345E85] hover:bg-blue-50'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {createSubscription.isPending && selectedPlan === plan.id
                       ? 'Processing...'
-                      : '🚀 Start 14-Day Free Trial'}
+                      : 'Start 14-Day Free Trial'}
                   </button>
-                  <p className="text-center text-xs text-slate-500 mt-3">
+                  <p className="text-center text-[9px] font-black text-slate-400 uppercase tracking-widest mt-4">
                     No credit card required • Cancel anytime
                   </p>
                 </div>
 
                 {/* Features List */}
-                <div className="p-8">
-                  <h4 className="font-bold text-slate-900 mb-4">What's included:</h4>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-slate-700">
+                <div className="mt-8 pt-8 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">What's included in this plan</h4>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3 group">
+                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">
                         {plan.features.maxTrucks ? `Up to ${plan.features.maxTrucks} trucks` : 'Unlimited trucks'}
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-slate-700">
+                    <li className="flex items-start gap-3 group">
+                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">
                         {plan.features.maxUsers ? `Up to ${plan.features.maxUsers} users` : 'Unlimited users'}
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-slate-700">
+                    <li className="flex items-start gap-3 group">
+                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">
                         {plan.features.maxLoadsPerMonth ? `${plan.features.maxLoadsPerMonth} loads/month` : 'Unlimited loads'}
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      {plan.features.aiMatching ? (
-                        <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      ) : (
-                        <FaTimes className="text-slate-300 mt-1 mr-3 flex-shrink-0" />
-                      )}
-                      <span className={plan.features.aiMatching ? 'text-slate-700' : 'text-slate-400'}>
+                    <li className="flex items-start gap-3 group">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${plan.features.aiMatching ? 'bg-emerald-50 group-hover:bg-emerald-100' : 'bg-slate-50'}`}>
+                        {plan.features.aiMatching ? (
+                          <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                        ) : (
+                          <FaTimes className="w-2.5 h-2.5 text-slate-300" />
+                        )}
+                      </div>
+                      <span className={`text-xs font-bold ${plan.features.aiMatching ? 'text-slate-700' : 'text-slate-400'}`}>
                         AI-powered matching
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      {plan.features.advancedAnalytics ? (
-                        <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      ) : (
-                        <FaTimes className="text-slate-300 mt-1 mr-3 flex-shrink-0" />
-                      )}
-                      <span className={plan.features.advancedAnalytics ? 'text-slate-700' : 'text-slate-400'}>
+                    <li className="flex items-start gap-3 group">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${plan.features.advancedAnalytics ? 'bg-emerald-50 group-hover:bg-emerald-100' : 'bg-slate-50'}`}>
+                        {plan.features.advancedAnalytics ? (
+                          <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                        ) : (
+                          <FaTimes className="w-2.5 h-2.5 text-slate-300" />
+                        )}
+                      </div>
+                      <span className={`text-xs font-bold ${plan.features.advancedAnalytics ? 'text-slate-700' : 'text-slate-400'}`}>
                         Advanced analytics
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      {plan.features.brokerManagement ? (
-                        <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      ) : (
-                        <FaTimes className="text-slate-300 mt-1 mr-3 flex-shrink-0" />
-                      )}
-                      <span className={plan.features.brokerManagement ? 'text-slate-700' : 'text-slate-400'}>
+                    <li className="flex items-start gap-3 group">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${plan.features.brokerManagement ? 'bg-emerald-50 group-hover:bg-emerald-100' : 'bg-slate-50'}`}>
+                        {plan.features.brokerManagement ? (
+                          <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                        ) : (
+                          <FaTimes className="w-2.5 h-2.5 text-slate-300" />
+                        )}
+                      </div>
+                      <span className={`text-xs font-bold ${plan.features.brokerManagement ? 'text-slate-700' : 'text-slate-400'}`}>
                         Broker management
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      {plan.features.apiAccess ? (
-                        <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      ) : (
-                        <FaTimes className="text-slate-300 mt-1 mr-3 flex-shrink-0" />
-                      )}
-                      <span className={plan.features.apiAccess ? 'text-slate-700' : 'text-slate-400'}>
+                    <li className="flex items-start gap-3 group">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${plan.features.apiAccess ? 'bg-emerald-50 group-hover:bg-emerald-100' : 'bg-slate-50'}`}>
+                         {plan.features.apiAccess ? (
+                          <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                        ) : (
+                          <FaTimes className="w-2.5 h-2.5 text-slate-300" />
+                        )}
+                      </div>
+                      <span className={`text-xs font-bold ${plan.features.apiAccess ? 'text-slate-700' : 'text-slate-400'}`}>
                         API access
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-slate-700">
+                    <li className="flex items-start gap-3 group">
+                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">
                         {plan.limits.storageGB}GB storage
                       </span>
                     </li>
-                    <li className="flex items-start">
-                      <FaCheck className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-slate-700">
+                    <li className="flex items-start gap-3 group">
+                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">
                         {plan.features.prioritySupport
                           ? 'Priority support'
                           : plan.features.dedicatedSupport
-                          ? 'Dedicated support'
-                          : 'Email support'}
+                            ? 'Dedicated support'
+                            : 'Email support'}
                       </span>
                     </li>
                   </ul>
@@ -536,7 +580,7 @@ const SubscriptionPlans: React.FC = () => {
                     {plans.map(plan => (
                       <td key={plan.id} className="text-center py-4 px-4">
                         {plan.features.dedicatedSupport ? '24/7 Dedicated' :
-                         plan.features.prioritySupport ? 'Priority' : 'Email'}
+                          plan.features.prioritySupport ? 'Priority' : 'Email'}
                       </td>
                     ))}
                   </tr>
@@ -634,7 +678,7 @@ const SubscriptionPlans: React.FC = () => {
               </p>
             </div>
           </div>
-          
+
           <div className="mt-8 text-center">
             <p className="text-slate-600 mb-4">Still have questions?</p>
             <button className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-bold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg">
@@ -643,7 +687,7 @@ const SubscriptionPlans: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminPageLayout>
+    </div>
   );
 };
 

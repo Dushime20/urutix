@@ -1,0 +1,142 @@
+[
+  {
+    "id": "f2874faa-25bd-43bd-b098-169258b7325d",
+    "email": "manzidom@gmail.com",
+    "role": "CARGO_RECEIVER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "f2874faa-25bd-43bd-b098-169258b7325d",
+    "email": "manzidom@gmail.com",
+    "role": "CARGO_RECEIVER",
+    "current_balance": 9000,
+    "account_id": "3f1675aa-f858-47b1-9de8-b3743a67bb14"
+  },
+  {
+    "id": "74841538-f58c-4670-a1a6-a53893677985",
+    "email": "deborahrutagengwa.admin@urutix.com",
+    "role": "TENANT_ADMIN",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "ffb69aad-1d9e-4e69-8054-422dc18dc4f7",
+    "email": "admin12@urutix.com",
+    "role": "AGENT",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "2eec892f-9ea2-45fa-909c-2d80afa25de2",
+    "email": "uruticargo@gmail.com",
+    "role": "CARGO_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "2eec892f-9ea2-45fa-909c-2d80afa25de2",
+    "email": "uruticargo@gmail.com",
+    "role": "CARGO_OWNER",
+    "current_balance": 6000,
+    "account_id": "16e72980-3a1f-4345-9603-17a960df954d"
+  },
+  {
+    "id": "7e0e0e4b-f369-43c2-963c-4ed799549b8c",
+    "email": "urutilender@gmail.com",
+    "role": "LENDER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "426a2aa3-d038-4994-a322-8bee51866de4",
+    "email": "urutidriver@gmail.com",
+    "role": "DRIVER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "9a947709-71b8-476e-b94f-92bf4a0f29e5",
+    "email": "urutitruck@gmail.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "9a947709-71b8-476e-b94f-92bf4a0f29e5",
+    "email": "urutitruck@gmail.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1172,
+    "account_id": "61475b30-3955-434a-91c3-3b78cdf56088"
+  },
+  {
+    "id": "bc51913e-20ed-4bac-9a3a-ccd2b9b9e498",
+    "email": "risk.partner1@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "bc51913e-20ed-4bac-9a3a-ccd2b9b9e498",
+    "email": "risk.partner1@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 5240,
+    "account_id": "6c391768-df77-449f-bac1-f7f4e92edf8c"
+  },
+  {
+    "id": "66fa87d7-f06c-4120-b562-8c5c2d0d6c1c",
+    "email": "risk.partner2@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "66fa87d7-f06c-4120-b562-8c5c2d0d6c1c",
+    "email": "risk.partner2@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 2200,
+    "account_id": "47816bb1-48f0-4827-b89a-003650b62b0b"
+  },
+  {
+    "id": "32fee17b-5d3e-4f7f-ad1f-b65fc337e771",
+    "email": "risk.partner3@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 4500,
+    "account_id": "65e9cee4-4298-46e9-9249-67c55e15529e"
+  },
+  {
+    "id": "32fee17b-5d3e-4f7f-ad1f-b65fc337e771",
+    "email": "risk.partner3@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "2faea96c-74cd-4046-b6a2-7efaa62f5889",
+    "email": "healthy.partner@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 25000,
+    "account_id": "1c04cdd0-b4ba-4228-a78f-1bcb3bf53d4f"
+  },
+  {
+    "id": "2faea96c-74cd-4046-b6a2-7efaa62f5889",
+    "email": "healthy.partner@isimbiruti.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "3ef34de5-a50d-42f0-9cde-62fdeac0b821",
+    "email": "truckowner3@gmail.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1928,
+    "account_id": "90c03b11-eeb4-49eb-8bef-67d8592cd9b4"
+  },
+  {
+    "id": "3ef34de5-a50d-42f0-9cde-62fdeac0b821",
+    "email": "truckowner3@gmail.com",
+    "role": "TRUCK_OWNER",
+    "current_balance": 1000,
+    "account_id": "0b7e7132-d7b8-4961-9735-6801108cfd99"
+  }
+]

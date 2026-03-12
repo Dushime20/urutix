@@ -30,6 +30,7 @@ import { DriverModule } from './modules/drivers/driver.module';
 import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
 import { FuelModule } from './modules/fuel/fuel.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
@@ -66,6 +67,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ReceiversModule,
     BrokersModule,
     FuelModule,
+    SubscriptionModule,
 
   ],
   controllers: [AppController],

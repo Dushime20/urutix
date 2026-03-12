@@ -3,7 +3,6 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import {
   CreditCard,
   TrendingUp,
@@ -145,28 +144,34 @@ const BillingDashboard: React.FC = () => {
   };
 
   return (
-    <AdminPageLayout
-      title="Billing & Credits"
-      description="Manage your subscription and monitor credit usage"
-      actions={
-        <div className="flex gap-2">
-          <button
-            onClick={() => refetchSubscription()}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-black text-xs"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-          <button
-            onClick={() => navigate('/admin/billing/settings')}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-black text-xs"
-          >
-            <Cog size={14} />
-            Settings
-          </button>
+    <div className="space-y-6">
+      {/* Custom Header for Tenant Admin */}
+      <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Billing & Credits</h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Manage your subscription and monitor credit usage
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => refetchSubscription()}
+              className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-bold text-xs flex items-center gap-2"
+            >
+              <RefreshCw size={14} />
+              Refresh
+            </button>
+            <button
+              onClick={() => navigate('/tenant-admin/settings')}
+              className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-bold text-xs flex items-center gap-2"
+            >
+              <Cog size={14} />
+              Settings
+            </button>
+          </div>
         </div>
-      }
-    >
+      </div>
       <div className="space-y-6">
         {/* Trial Banner */}
         {isTrial && subscription?.trialEnd && (
@@ -184,7 +189,7 @@ const BillingDashboard: React.FC = () => {
                 </p>
               </div>
               <button
-                onClick={() => navigate('/admin/billing/payment-methods')}
+                onClick={() => navigate('/tenant-admin/settings')}
                 className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-bold hover:bg-indigo-50 transition-colors"
               >
                 Add Payment Method
@@ -210,7 +215,7 @@ const BillingDashboard: React.FC = () => {
                 </p>
               </div>
               <button
-                onClick={() => navigate('/admin/billing/purchase-credits')}
+                onClick={() => navigate('/tenant-admin/purchase-credits')}
                 className="bg-red-600 text-white px-4 py-2 rounded-xl font-black hover:bg-red-700 transition-all text-xs shadow-lg shadow-red-200"
               >
                 Buy Credits Now
@@ -232,7 +237,7 @@ const BillingDashboard: React.FC = () => {
                 </p>
               </div>
               <button
-                onClick={() => navigate('/admin/billing/purchase-credits')}
+                onClick={() => navigate('/tenant-admin/purchase-credits')}
                 className="bg-yellow-500 text-white px-4 py-2 rounded-xl font-black hover:bg-yellow-600 transition-all text-xs shadow-lg shadow-yellow-100"
               >
                 Buy Credits
@@ -443,14 +448,14 @@ const BillingDashboard: React.FC = () => {
 
                     <div className="mt-6 flex gap-3">
                       <button
-                        onClick={() => navigate('/admin/subscription/plans')}
+                        onClick={() => navigate('/tenant-admin/subscription-plans')}
                         className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-black transition-all font-black text-xs shadow-lg shadow-black/10"
                       >
                         <ArrowUp size={14} />
                         Upgrade Plan
                       </button>
                       <button
-                        onClick={() => navigate('/admin/billing/purchase-credits')}
+                        onClick={() => navigate('/tenant-admin/purchase-credits')}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-900 rounded-xl hover:bg-gray-50 transition-all font-black text-xs"
                       >
                         <ShoppingCart size={14} />
@@ -627,7 +632,7 @@ const BillingDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </AdminPageLayout>
+    </div>
   );
 };
 

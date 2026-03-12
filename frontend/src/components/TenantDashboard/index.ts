@@ -7,3 +7,4 @@ export { default as PerformanceMetrics } from './PerformanceMetrics';
 export { default as TenantHeader } from './TenantHeader';
 export { default as QuickStats } from './QuickStats';
 export { default as RecentActivity } from './RecentActivity';
+export { default as LowCreditPartners } from './LowCreditPartners';

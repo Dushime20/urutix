@@ -6,6 +6,7 @@ import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificat
 import ContextualHelp from '../Help/ContextualHelp';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { TranslatedText } from '../translated-text';
+import TenantCreditBalance from '../CreditBalance/TenantCreditBalance';
 
 interface DashboardHeaderProps {
   children?: React.ReactNode;
@@ -209,7 +210,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
         { label: 'Lenders', path: '/tenant-admin/lenders', icon: DollarSign },
         { label: 'Routes', path: '/tenant-admin/routes', icon: Route },
         { label: 'Trips', path: '/tenant-admin/trips', icon: Navigation },
-        { label: 'Financial', path: '/tenant-admin/financial', icon: DollarSign },
+        {
+          label: 'Financial',
+          path: '/tenant-admin/financial',
+          icon: DollarSign,
+          subItems: [
+            { label: 'Billing Dashboard', path: '/tenant-admin/financial' },
+            { label: 'Purchase Credits', path: '/tenant-admin/purchase-credits' },
+            { label: 'Subscription Plans', path: '/tenant-admin/subscription-plans' },
+            { label: 'Billing History', path: '/tenant-admin/billing' },
+          ]
+        },
         { label: 'Truck Owners', path: '/tenant-admin/truck-owners', icon: Users },
         { label: 'Analytics', path: '/tenant-admin/analytics', icon: BarChart3 },
         { label: 'Reports', path: '/tenant-admin/reports', icon: ClipboardList },
@@ -361,6 +372,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-shrink-0">
             <div className="hidden md:flex items-center gap-2 mr-4">
+              <TenantCreditBalance />
               {children}
             </div>
             <CargoOwnerNotificationDropdown />
