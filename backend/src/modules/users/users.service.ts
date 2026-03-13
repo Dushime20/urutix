@@ -8,17 +8,20 @@ import { Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Tenant, TenantStatus } from '../../entities/tenant.entity';
+import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { EmailService } from '../auth/email.service';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 export interface CreateTenantUserDto {
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
   role: UserRole;
   tenantId: string;
   companyName?: string;
   phoneNumber?: string;
+  sendPasswordSetupEmail?: boolean; // Optional flag to control email sending
 }
 
 @Injectable()
@@ -30,6 +33,9 @@ export class UsersService {
     private readonly userProfileRepository: Repository<UserProfile>,
     @InjectRepository(Tenant)
     private readonly tenantRepository: Repository<Tenant>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly emailService: EmailService,
   ) { }
 
   async create(payload: any) {
@@ -91,17 +97,14 @@ export class UsersService {
       );
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
-
-    // Create user
+    // Create user without password initially - they'll set it via email link
     const user = this.userRepository.create({
       email: createUserDto.email,
-      passwordHash: hashedPassword,
+      passwordHash: null, // No password initially
       role: createUserDto.role,
-      status: UserStatus.ACTIVE, // Activate immediately for tenant users
+      status: UserStatus.PENDING_VERIFICATION, // User needs to set password first
       tenantId: createUserDto.tenantId,
-      emailVerifiedAt: new Date(), // Auto-verify for tenant users
+      emailVerifiedAt: null, // Will be set when they complete password setup
       phone: createUserDto.phoneNumber,
       // Set brokerTenantId for brokers so they can be queried by tenant
       ...(createUserDto.role === UserRole.BROKER && {
@@ -122,9 +125,134 @@ export class UsersService {
 
     await this.userProfileRepository.save(userProfile);
 
+    // Generate password setup token and send email (if enabled)
+    if (createUserDto.sendPasswordSetupEmail !== false) { // Default to true
+      try {
+        await this.sendPasswordSetupEmail(savedUser, createUserDto.firstName, createUserDto.lastName);
+      } catch (emailError) {
+        // Log email error but don't fail user creation
+        console.error('Failed to send password setup email:', emailError);
+        // You might want to set a flag on the user indicating email failed
+      }
+    }
+
     // Remove sensitive data before returning
     const { passwordHash, ...userWithoutPassword } = savedUser;
     return userWithoutPassword as User;
+  }
+
+  private async sendPasswordSetupEmail(user: User, firstName: string, lastName: string): Promise<void> {
+    // Generate password setup token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+
+    // Invalidate any existing tokens for this email
+    await this.passwordResetTokenRepository.update(
+      { email: user.email, used: false },
+      { used: true },
+    );
+
+    // Create new password setup token
+    const passwordSetupToken = this.passwordResetTokenRepository.create({
+      email: user.email,
+      token,
+      expiresAt,
+      used: false,
+    });
+
+    await this.passwordResetTokenRepository.save(passwordSetupToken);
+
+    // Send appropriate email based on user role
+    switch (user.role) {
+      case UserRole.DRIVER:
+        await this.emailService.sendDriverPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
+      case UserRole.CARGO_OWNER:
+        await this.emailService.sendCargoOwnerPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
+      case UserRole.BROKER:
+        await this.emailService.sendBrokerPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
+      case UserRole.TRUCK_OWNER:
+        await this.emailService.sendTruckOwnerPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
+      case UserRole.AGENT:
+        await this.emailService.sendAgentPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
+      case UserRole.LENDER:
+        // Get tenant name for lender email
+        const tenant = await this.tenantRepository.findOne({
+          where: { id: user.tenantId },
+        });
+        const lenderName = tenant?.name || 'Lender Account';
+        await this.emailService.sendLenderPasswordSetupEmail(
+          user.email,
+          lenderName,
+          token,
+        );
+        break;
+      case UserRole.TENANT_ADMIN:
+        // Get tenant name for tenant admin email
+        const tenantForAdmin = await this.tenantRepository.findOne({
+          where: { id: user.tenantId },
+        });
+        const tenantName = tenantForAdmin?.name || 'Tenant Account';
+        await this.emailService.sendTenantPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          tenantName,
+          token,
+        );
+        break;
+      default:
+        // Fallback for any other roles - should not happen with current roles
+        await this.sendGenericPasswordSetupEmail(user.email, firstName, lastName, user.role, token);
+        break;
+    }
+  }
+
+  private async sendGenericPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    role: UserRole,
+    token: string,
+  ): Promise<void> {
+    // For now, we'll use the driver email template as a base
+    // In the future, you might want to create role-specific templates
+    await this.emailService.sendDriverPasswordSetupEmail(
+      email,
+      firstName,
+      lastName,
+      token,
+    );
   }
 
   async createTenantAdminUser(
@@ -166,5 +294,38 @@ export class UsersService {
     return this.userRepository.find({
       relations: ['profile'],
     });
+  }
+
+  async findById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+      relations: ['profile'],
+    });
+  }
+
+  async updateUser(id: string, updateData: any): Promise<User | null> {
+    const user = await this.findById(id);
+    if (!user) {
+      return null;
+    }
+
+    // Update user fields
+    if (updateData.email) user.email = updateData.email;
+    if (updateData.status) user.status = updateData.status;
+    if (updateData.phone) user.phone = updateData.phone;
+
+    const updatedUser = await this.userRepository.save(user);
+
+    // Update profile if provided
+    if (updateData.profile && user.profile) {
+      const profile = user.profile;
+      if (updateData.profile.firstName) profile.firstName = updateData.profile.firstName;
+      if (updateData.profile.lastName) profile.lastName = updateData.profile.lastName;
+      if (updateData.profile.companyName) profile.companyName = updateData.profile.companyName;
+      
+      await this.userProfileRepository.save(profile);
+    }
+
+    return this.findById(id);
   }
 }

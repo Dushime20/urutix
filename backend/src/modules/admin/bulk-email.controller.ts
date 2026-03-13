@@ -10,21 +10,219 @@ import {
   Request,
   HttpStatus,
   HttpException,
+  Logger,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { BulkEmailService } from '../../services/bulk-email.service';
 import { AIEmailAssistantService } from '../../services/ai-email-assistant.service';
+import { SmsService } from '../notifications/services/sms.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { User } from '../../entities/user.entity';
+import { Tenant } from '../../entities/tenant.entity';
+import {
+  NotificationType,
+  NotificationPriority,
+  NotificationCategory,
+  NotificationChannel,
+} from '../../entities/notification.entity';
 
 @Controller('admin/bulk-email')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('SUPER_ADMIN')
+@Roles('SUPER_ADMIN', 'ADMIN')
 export class BulkEmailController {
+  private readonly logger = new Logger(BulkEmailController.name);
+
   constructor(
     private readonly bulkEmailService: BulkEmailService,
     private readonly aiEmailAssistant: AIEmailAssistantService,
+    private readonly smsService: SmsService,
+    private readonly notificationsService: NotificationsService,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Tenant) private readonly tenantRepository: Repository<Tenant>,
   ) {}
+
+  // ─── Unified Multi-Channel Send ──────────────────────────────────────────
+
+  /**
+   * POST /admin/bulk-email/send
+   * Send to TENANTS (TENANT_ADMIN users) via any combination of:
+   *   email | sms | whatsapp | in_app
+   *
+   * Body:
+   * {
+   *   channels: string[],       // ['email','sms','whatsapp','in_app']
+   *   subject: string,
+   *   message: string,          // plain-text (SMS / WhatsApp / In-App)
+   *   htmlBody?: string,        // rich HTML for email
+   *   filters?: {
+   *     status?: string[],
+   *     tenantIds?: string[]
+   *   }
+   * }
+   */
+  @Post('send')
+  async sendMultiChannel(@Request() req, @Body() body: any) {
+    const { channels = ['email'], subject, message, htmlBody, filters } = body;
+
+    if (!subject || !message) {
+      throw new HttpException(
+        { success: false, message: 'subject and message are required' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // ── Resolve tenant-admin users ─────────────────────────────────────────
+    const userQuery = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: 'TENANT_ADMIN' })
+      .andWhere('user.deletedAt IS NULL');
+
+    if (filters?.tenantIds?.length) {
+      userQuery.andWhere('user.tenantId IN (:...tenantIds)', { tenantIds: filters.tenantIds });
+    }
+    if (filters?.status?.length) {
+      userQuery.andWhere('user.status IN (:...statuses)', { statuses: filters.status });
+    }
+
+    const users = await userQuery.getMany();
+    this.logger.log(`[admin/communicate] ${users.length} recipients | channels: ${channels.join(', ')}`);
+
+    const results: Record<string, any> = {};
+
+    // ── EMAIL ────────────────────────────────────────────────────────────
+    if (channels.includes('email')) {
+      try {
+        const log = await this.bulkEmailService.sendCustomBulkEmail(
+          req.user.userId,
+          req.user.email,
+          subject,
+          htmlBody || `<p>${message}</p>`,
+          message,
+          filters,
+        );
+        results.email = { success: true, recipientsCount: log.recipientsCount };
+      } catch (e) {
+        results.email = { success: false, error: e.message };
+      }
+    }
+
+    // ── SMS ──────────────────────────────────────────────────────────────
+    if (channels.includes('sms')) {
+      try {
+        const smsRcpts = users.filter(u => !!u.phone).map(u => ({ phone: u.phone, message }));
+        const smsRes = await this.smsService.sendBulkSms(smsRcpts);
+        results.sms = { success: true, sent: smsRes.filter(r => r.success).length, total: smsRcpts.length };
+      } catch (e) {
+        results.sms = { success: false, error: e.message };
+      }
+    }
+
+    // ── WHATSAPP ─────────────────────────────────────────────────────────
+    if (channels.includes('whatsapp')) {
+      try {
+        const waRcpts = users
+          .filter(u => !!u.phone)
+          .map(u => ({ phone: `whatsapp:${u.phone}`, message: `*${subject}*\n\n${message}` }));
+        const waRes = await this.smsService.sendBulkSms(waRcpts);
+        results.whatsapp = { success: true, sent: waRes.filter(r => r.success).length, total: waRcpts.length };
+      } catch (e) {
+        results.whatsapp = { success: false, error: e.message };
+      }
+    }
+
+    // ── IN-APP ───────────────────────────────────────────────────────────
+    if (channels.includes('in_app')) {
+      try {
+        const notifications = users.map(u => ({
+          type: NotificationType.GENERAL,
+          priority: NotificationPriority.NORMAL,
+          subject,
+          content: message,
+          userId: u.id,
+          channel: NotificationChannel.IN_APP,
+          category: NotificationCategory.SYSTEM,
+          metadata: { sentBy: req.user.email, adminBroadcast: true },
+          tenantId: u.tenantId,
+          templateId: 'admin-broadcast',
+        }));
+
+        // Group by tenantId for createBulkNotifications
+        const byTenant = notifications.reduce((acc: any, n: any) => {
+          if (!acc[n.tenantId]) acc[n.tenantId] = [];
+          acc[n.tenantId].push(n);
+          return acc;
+        }, {} as Record<string, any[]>);
+
+        await Promise.all(
+          Object.entries(byTenant).map(([tid, notifs]) =>
+            this.notificationsService.createBulkNotifications(notifs as any, tid),
+          ),
+        );
+        results.in_app = { success: true, sent: users.length };
+      } catch (e) {
+        results.in_app = { success: false, error: e.message };
+      }
+    }
+
+    return {
+      success: true,
+      message: `Campaign dispatched via ${channels.join(', ')}`,
+      recipientsFound: users.length,
+      results,
+    };
+  }
+
+  // ─── Tenant Picker ───────────────────────────────────────────────────────
+
+  /**
+   * GET /admin/bulk-email/tenants
+   * Lightweight list of all tenants that have at least one TENANT_ADMIN user.
+   * Used by the multi-select picker on the frontend.
+   */
+  @Get('tenants')
+  async getTenantList() {
+    try {
+      // Find all distinct tenant IDs for active TENANT_ADMINs
+      const activeAdminRecords = await this.userRepository
+        .createQueryBuilder('user')
+        .select('user.tenantId', 'tenantId')
+        .where('user.role = :role', { role: 'TENANT_ADMIN' })
+        .andWhere('user.deletedAt IS NULL')
+        .getRawMany();
+
+      // Extract raw IDs
+      const tenantIds = activeAdminRecords
+        .map(record => record.tenantId)
+        .filter((id, index, self) => id && self.indexOf(id) === index); // unique and non-null
+
+      if (tenantIds.length === 0) {
+        return { success: true, data: [] };
+      }
+
+      // Fetch the Tenant entities for those IDs
+      const tenants = await this.tenantRepository
+        .createQueryBuilder('tenant')
+        .select([
+          'tenant.id',
+          'tenant.name',
+          'tenant.status',
+          'tenant.subdomain',
+          'tenant.contactEmail',
+        ])
+        .where('tenant.id IN (:...tenantIds)', { tenantIds })
+        .orderBy('tenant.name', 'ASC')
+        .getMany();
+
+      return { success: true, data: tenants };
+    } catch (error) {
+      this.logger.error(`GET /admin/bulk-email/tenants failed: ${error.message}`, error.stack);
+      return { success: false, message: error.message, data: [] };
+    }
+  }
 
   // Email Templates
   @Get('templates')

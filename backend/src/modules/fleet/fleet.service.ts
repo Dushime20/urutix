@@ -309,6 +309,9 @@ export class FleetService {
       // Start with tenantId as the first condition to ensure it's always included
       const queryBuilder = this.truckRepository
         .createQueryBuilder('truck')
+        .leftJoinAndSelect('truck.owner', 'owner')
+        .leftJoinAndSelect('owner.profile', 'ownerProfile')
+        .leftJoinAndSelect('truck.currentDriver', 'currentDriver')
         .where('truck.tenantId = :tenantId', { tenantId: tenantId })
         .andWhere('truck.isActive = :isActive', { isActive: true })
         .andWhere('truck.deletedAt IS NULL')
@@ -324,7 +327,26 @@ export class FleetService {
       
       // Apply filters
       if (filters?.status) {
-        queryBuilder.andWhere('truck.status = :status', { status: filters.status });
+        // Validate and normalize status parameter
+        const validStatuses = Object.values(VehicleStatus);
+        let normalizedStatus = filters.status.toUpperCase();
+        
+        // Map common status values to valid enum values
+        const statusMapping: { [key: string]: VehicleStatus } = {
+          'ACTIVE': VehicleStatus.AVAILABLE,
+          'AVAILABLE': VehicleStatus.AVAILABLE,
+          'IN_TRANSIT': VehicleStatus.IN_TRANSIT,
+          'MAINTENANCE': VehicleStatus.MAINTENANCE,
+          'OUT_OF_SERVICE': VehicleStatus.OUT_OF_SERVICE,
+        };
+        
+        if (statusMapping[normalizedStatus]) {
+          queryBuilder.andWhere('truck.status = :status', { status: statusMapping[normalizedStatus] });
+          console.log(`🔍 Fleet Service - Filtering by status: ${filters.status} -> ${statusMapping[normalizedStatus]}`);
+        } else {
+          console.warn(`⚠️ Fleet Service - Invalid status filter: ${filters.status}. Valid values: ${validStatuses.join(', ')}`);
+          // Don't apply the filter for invalid status values to avoid 500 errors
+        }
       }
       
       // Apply search filter

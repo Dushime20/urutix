@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AdminLayoutProvider } from '../../contexts/AdminLayoutContext';
 import DashboardLayout from './DashboardLayout';
+import DashboardFooter from './DashboardFooter';
 
 const TenantAdminLayoutContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -39,11 +40,23 @@ const TenantAdminLayoutContent: React.FC = () => {
   if (isLoading || !user || user.role !== 'TENANT_ADMIN') return null;
 
   // Check if we're on the index dashboard route
-  const isDashboardIndex = location.pathname === '/tenant-admin' || 
-                           location.pathname === '/tenant-admin/' ||
-                           location.pathname === '/tenant-admin/financial' ||
-                           location.pathname === '/tenant-admin/purchase-credits' ||
-                           location.pathname === '/tenant-admin/billing';
+  const isDashboardIndex = location.pathname.startsWith('/tenant-admin') && (
+    location.pathname === '/tenant-admin' || 
+    location.pathname === '/tenant-admin/' ||
+    location.pathname === '/tenant-admin/financial' ||
+    location.pathname === '/tenant-admin/purchase-credits' ||
+    location.pathname === '/tenant-admin/billing' ||
+    location.pathname === '/tenant-admin/communication' ||
+    location.pathname === '/tenant-admin/fleet' ||
+    location.pathname === '/tenant-admin/cargo' ||
+    location.pathname === '/tenant-admin/drivers' ||
+    location.pathname === '/tenant-admin/trips' ||
+    location.pathname === '/tenant-admin/users' ||
+    location.pathname === '/tenant-admin/truck-owners' ||
+    location.pathname === '/tenant-admin/lenders' ||
+    location.pathname === '/tenant-admin/settings' ||
+    location.pathname === '/tenant-admin/profile'
+  );
 
   return (
     <>
@@ -53,6 +66,7 @@ const TenantAdminLayoutContent: React.FC = () => {
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>
+          <DashboardFooter />
         </div>
       ) : (
         // All other routes use the shared DashboardLayout (includes header/footer)

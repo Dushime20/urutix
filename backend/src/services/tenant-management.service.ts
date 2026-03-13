@@ -168,11 +168,20 @@ export class TenantManagementService {
     }
 
     const tenants = await queryBuilder.getMany();
+    this.logger.log(`Found ${tenants.length} tenants base records`);
 
     // Enrich each tenant with additional data
-    const enrichedTenants = await Promise.all(
-      tenants.map(tenant => this.enrichTenantData(tenant))
-    );
+    const enrichedTenants = [];
+    for (const tenant of tenants) {
+      try {
+        const enriched = await this.enrichTenantData(tenant);
+        enrichedTenants.push(enriched);
+      } catch (err) {
+        this.logger.error(`Failed to enrich tenant ${tenant.id} (${tenant.name}): ${err.message}`, err.stack);
+        // Continue with others or throw? Let's throw for now to see the error in logs if it's systemic
+        throw err;
+      }
+    }
 
     // Apply post-query filters
     let filteredTenants = enrichedTenants;
@@ -764,7 +773,14 @@ export class TenantManagementService {
     });
 
     // Calculate health score
-    const healthScore = await this.calculateHealthScore(tenant.id);
+    let healthScore = 0;
+    try {
+      healthScore = await this.calculateHealthScore(tenant.id);
+    } catch (err) {
+      this.logger.warn(`Failed to calculate health score for tenant ${tenant.id}: ${err.message}`);
+      // Fallback to 0 if health score fails
+      healthScore = 0;
+    }
 
     // Map status to enriched format
     let status: 'active' | 'inactive' | 'suspended';

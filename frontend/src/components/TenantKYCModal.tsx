@@ -7,7 +7,7 @@ import { FaCheck, FaTimes, FaFileAlt, FaShieldAlt, FaSpinner, FaCloudUploadAlt }
 interface TenantKYCModalProps {
     tenantId: string;
     tenantName: string;
-    currentStatus: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
+    currentStatus: 'PENDING' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
     kycData?: any;
     isOpen: boolean;
     onClose: () => void;
@@ -31,7 +31,7 @@ const TenantKYCModal: React.FC<TenantKYCModalProps> = ({
     const [taxId, setTaxId] = useState(kycData?.taxId || '');
 
     const { mutate: updateStatus, isPending: isUpdating } = useMutation({
-        mutationFn: ({ status, notes }: { status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE'; notes?: string }) =>
+        mutationFn: ({ status, notes }: { status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE' | 'UNDER_REVIEW'; notes?: string }) =>
             tenantApi.updateKYCStatus(tenantId, status, notes),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['admin-tenants'] });
@@ -83,13 +83,25 @@ const TenantKYCModal: React.FC<TenantKYCModalProps> = ({
 
                 <div className="p-6 space-y-6">
                     {/* Status Banner */}
-                    <div className={`p-4 rounded-lg flex items-center gap-3 ${currentStatus === 'APPROVED' ? 'bg-green-50 text-green-800' :
-                            currentStatus === 'REJECTED' ? 'bg-red-50 text-red-800' :
-                                currentStatus === 'SUBMITTED' ? 'bg-blue-50 text-blue-800' :
-                                    'bg-yellow-50 text-yellow-800'
-                        }`}>
+                    <div className={`p-4 rounded-lg flex items-center gap-3 ${
+                        currentStatus === 'APPROVED' ? 'bg-green-50 text-green-800' :
+                        currentStatus === 'REJECTED' ? 'bg-red-50 text-red-800' :
+                        currentStatus === 'SUBMITTED' ? 'bg-blue-50 text-blue-800' :
+                        currentStatus === 'UNDER_REVIEW' ? 'bg-yellow-50 text-yellow-800' :
+                        'bg-gray-50 text-gray-800'
+                    }`}>
                         <span className="font-bold">Current Status:</span>
                         <span>{currentStatus}</span>
+                        {currentStatus === 'SUBMITTED' && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full ml-auto">
+                                Awaiting Review
+                            </span>
+                        )}
+                        {currentStatus === 'UNDER_REVIEW' && (
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full ml-auto">
+                                In Progress
+                            </span>
+                        )}
                     </div>
 
                     {/* Submitted Data View or Edit Mode */}
@@ -213,6 +225,32 @@ const TenantKYCModal: React.FC<TenantKYCModalProps> = ({
                                     Close
                                 </button>
                                 {(currentStatus === 'SUBMITTED' || currentStatus === 'PENDING') && (
+                                    <>
+                                        <button
+                                            onClick={() => updateStatus({ status: 'UNDER_REVIEW' })}
+                                            disabled={isUpdating}
+                                            className="px-4 py-2 border border-blue-200 text-blue-600 rounded hover:bg-blue-50"
+                                        >
+                                            Mark Under Review
+                                        </button>
+                                        <button
+                                            onClick={() => setShowRejectForm(true)}
+                                            disabled={isUpdating}
+                                            className="px-4 py-2 border border-red-200 text-red-600 rounded hover:bg-red-50"
+                                        >
+                                            Reject
+                                        </button>
+                                        <button
+                                            onClick={() => updateStatus({ status: 'APPROVED' })}
+                                            disabled={isUpdating}
+                                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+                                        >
+                                            {isUpdating && <FaSpinner className="animate-spin" />}
+                                            Approve KYC
+                                        </button>
+                                    </>
+                                )}
+                                {currentStatus === 'UNDER_REVIEW' && (
                                     <>
                                         <button
                                             onClick={() => setShowRejectForm(true)}

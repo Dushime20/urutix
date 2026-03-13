@@ -580,6 +580,541 @@ This link will expire in 7 days.
     this.logger.log('========== TENANT EMAIL SERVICE CALL END ==========');
   }
 
+  async sendCargoOwnerPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== CARGO OWNER EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send cargo owner password setup email to: ${email}`);
+    
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/cargo-owner/setup-password?token=${token}`;
+    
+    this.logger.log(`📧 Cargo owner password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    // Check SMTP configuration
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    
+    this.logger.log(`SMTP Configuration Check for cargo owner email:`);
+    this.logger.log(`  SMTP_HOST: ${smtpHost ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_USER: ${smtpUser ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_PASS: ${smtpPass ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  Transporter exists: ${this.transporter ? 'YES' : 'NO'}`);
+    this.logger.log(`  Setup URL: ${setupUrl}`);
+    this.logger.log(`  From Address: ${fromAddress}`);
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = this.getCargoOwnerPasswordSetupEmailTemplate(
+          firstName,
+          lastName,
+          setupUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to UrutiX, ${firstName}!
+
+Your cargo owner account has been created. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your cargo owner dashboard to:
+- Create and manage cargo shipments
+- Track your shipments in real-time
+- Manage receivers and delivery locations
+- View shipping history and analytics
+
+If you didn't expect this email, please contact support or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Cargo Owner Account Password`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+        
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+        
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+        
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Cargo owner password setup email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+          this.logger.log(`📧 Email result:`, JSON.stringify(result, null, 2));
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send cargo owner password setup email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        if (error.code) {
+          this.logger.error(`❌ Error code: ${error.code}`);
+        }
+        if (error.response) {
+          this.logger.error(`❌ Error response: ${error.response}`);
+        }
+        if (error.responseCode) {
+          this.logger.error(`❌ Error response code: ${error.responseCode}`);
+        }
+        if (error.command) {
+          this.logger.error(`❌ Failed command: ${error.command}`);
+        }
+        this.logger.error(`❌ Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        throw error;
+      }
+    } else {
+      this.logger.error('❌ SMTP transporter is not configured. Email will not be sent.');
+      this.logger.error('❌ To fix: Add SMTP configuration to your .env file:');
+      this.logger.error('   SMTP_HOST=smtp.gmail.com');
+      this.logger.error('   SMTP_PORT=587');
+      this.logger.error('   SMTP_USER=your-email@gmail.com');
+      this.logger.error('   SMTP_PASS=your-app-password');
+      this.logger.error('   FRONTEND_URL=http://localhost:5173');
+      // Don't throw error if SMTP is not configured - just log warning
+      // This allows cargo owner creation to succeed even if email can't be sent
+    }
+    this.logger.log('========== CARGO OWNER EMAIL SERVICE CALL END ==========');
+  }
+
+  async sendBrokerPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== BROKER EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send broker password setup email to: ${email}`);
+    
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/broker/setup-password?token=${token}`;
+    
+    this.logger.log(`📧 Broker password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    // Check SMTP configuration
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    
+    this.logger.log(`SMTP Configuration Check for broker email:`);
+    this.logger.log(`  SMTP_HOST: ${smtpHost ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_USER: ${smtpUser ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_PASS: ${smtpPass ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  Transporter exists: ${this.transporter ? 'YES' : 'NO'}`);
+    this.logger.log(`  Setup URL: ${setupUrl}`);
+    this.logger.log(`  From Address: ${fromAddress}`);
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = this.getBrokerPasswordSetupEmailTemplate(
+          firstName,
+          lastName,
+          setupUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to UrutiX, ${firstName}!
+
+Your broker account has been created. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your broker dashboard to:
+- Browse and bid on available loads
+- Manage your load assignments and commissions
+- Track shipment progress and delivery status
+- View earnings and payout history
+- Communicate with cargo owners and truck owners
+
+If you didn't expect this email, please contact support or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Broker Account Password`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+        
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+        
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+        
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Broker password setup email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+          this.logger.log(`📧 Email result:`, JSON.stringify(result, null, 2));
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send broker password setup email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        if (error.code) {
+          this.logger.error(`❌ Error code: ${error.code}`);
+        }
+        if (error.response) {
+          this.logger.error(`❌ Error response: ${error.response}`);
+        }
+        if (error.responseCode) {
+          this.logger.error(`❌ Error response code: ${error.responseCode}`);
+        }
+        if (error.command) {
+          this.logger.error(`❌ Failed command: ${error.command}`);
+        }
+        this.logger.error(`❌ Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        throw error;
+      }
+    } else {
+      this.logger.error('❌ SMTP transporter is not configured. Email will not be sent.');
+      this.logger.error('❌ To fix: Add SMTP configuration to your .env file:');
+      this.logger.error('   SMTP_HOST=smtp.gmail.com');
+      this.logger.error('   SMTP_PORT=587');
+      this.logger.error('   SMTP_USER=your-email@gmail.com');
+      this.logger.error('   SMTP_PASS=your-app-password');
+      this.logger.error('   FRONTEND_URL=http://localhost:5173');
+      // Don't throw error if SMTP is not configured - just log warning
+      // This allows broker creation to succeed even if email can't be sent
+    }
+    this.logger.log('========== BROKER EMAIL SERVICE CALL END ==========');
+  }
+
+  async sendTruckOwnerPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== TRUCK OWNER EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send truck owner password setup email to: ${email}`);
+    
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/truck-owner/setup-password?token=${token}`;
+    
+    this.logger.log(`📧 Truck owner password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    // Check SMTP configuration
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    
+    this.logger.log(`SMTP Configuration Check for truck owner email:`);
+    this.logger.log(`  SMTP_HOST: ${smtpHost ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_USER: ${smtpUser ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_PASS: ${smtpPass ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  Transporter exists: ${this.transporter ? 'YES' : 'NO'}`);
+    this.logger.log(`  Setup URL: ${setupUrl}`);
+    this.logger.log(`  From Address: ${fromAddress}`);
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = this.getTruckOwnerPasswordSetupEmailTemplate(
+          firstName,
+          lastName,
+          setupUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to UrutiX, ${firstName}!
+
+Your truck owner account has been created. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your truck owner dashboard to:
+- Manage your fleet of trucks and drivers
+- Track vehicle locations and performance
+- Monitor fuel consumption and expenses
+- Handle maintenance schedules and records
+- View earnings and financial reports
+
+If you didn't expect this email, please contact support or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Truck Owner Account Password`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+        
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+        
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+        
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Truck owner password setup email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+          this.logger.log(`📧 Email result:`, JSON.stringify(result, null, 2));
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send truck owner password setup email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        if (error.code) {
+          this.logger.error(`❌ Error code: ${error.code}`);
+        }
+        if (error.response) {
+          this.logger.error(`❌ Error response: ${error.response}`);
+        }
+        if (error.responseCode) {
+          this.logger.error(`❌ Error response code: ${error.responseCode}`);
+        }
+        if (error.command) {
+          this.logger.error(`❌ Failed command: ${error.command}`);
+        }
+        this.logger.error(`❌ Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        throw error;
+      }
+    } else {
+      this.logger.error('❌ SMTP transporter is not configured. Email will not be sent.');
+      this.logger.error('❌ To fix: Add SMTP configuration to your .env file:');
+      this.logger.error('   SMTP_HOST=smtp.gmail.com');
+      this.logger.error('   SMTP_PORT=587');
+      this.logger.error('   SMTP_USER=your-email@gmail.com');
+      this.logger.error('   SMTP_PASS=your-app-password');
+      this.logger.error('   FRONTEND_URL=http://localhost:5173');
+      // Don't throw error if SMTP is not configured - just log warning
+      // This allows truck owner creation to succeed even if email can't be sent
+    }
+    this.logger.log('========== TRUCK OWNER EMAIL SERVICE CALL END ==========');
+  }
+
+  async sendAgentPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== AGENT EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send agent password setup email to: ${email}`);
+    
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/agent/setup-password?token=${token}`;
+    
+    this.logger.log(`📧 Agent password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    // Check SMTP configuration
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    
+    this.logger.log(`SMTP Configuration Check for agent email:`);
+    this.logger.log(`  SMTP_HOST: ${smtpHost ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_USER: ${smtpUser ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_PASS: ${smtpPass ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  Transporter exists: ${this.transporter ? 'YES' : 'NO'}`);
+    this.logger.log(`  Setup URL: ${setupUrl}`);
+    this.logger.log(`  From Address: ${fromAddress}`);
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = this.getAgentPasswordSetupEmailTemplate(
+          firstName,
+          lastName,
+          setupUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to UrutiX, ${firstName}!
+
+Your agent account has been created. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your agent dashboard to:
+- Assist clients with logistics and transportation needs
+- Coordinate between cargo owners and truck owners
+- Manage client relationships and communications
+- Track shipments and provide status updates
+- Generate reports and handle documentation
+
+If you didn't expect this email, please contact support or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Agent Account Password`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+        
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+        
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+        
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+        
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Agent password setup email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+          this.logger.log(`📧 Email result:`, JSON.stringify(result, null, 2));
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send agent password setup email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        if (error.code) {
+          this.logger.error(`❌ Error code: ${error.code}`);
+        }
+        if (error.response) {
+          this.logger.error(`❌ Error response: ${error.response}`);
+        }
+        if (error.responseCode) {
+          this.logger.error(`❌ Error response code: ${error.responseCode}`);
+        }
+        if (error.command) {
+          this.logger.error(`❌ Failed command: ${error.command}`);
+        }
+        this.logger.error(`❌ Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        throw error;
+      }
+    } else {
+      this.logger.error('❌ SMTP transporter is not configured. Email will not be sent.');
+      this.logger.error('❌ To fix: Add SMTP configuration to your .env file:');
+      this.logger.error('   SMTP_HOST=smtp.gmail.com');
+      this.logger.error('   SMTP_PORT=587');
+      this.logger.error('   SMTP_USER=your-email@gmail.com');
+      this.logger.error('   SMTP_PASS=your-app-password');
+      this.logger.error('   FRONTEND_URL=http://localhost:5173');
+      // Don't throw error if SMTP is not configured - just log warning
+      // This allows agent creation to succeed even if email can't be sent
+    }
+    this.logger.log('========== AGENT EMAIL SERVICE CALL END ==========');
+  }
+
   private getDriverPasswordSetupEmailTemplate(
     firstName: string,
     lastName: string,
@@ -763,6 +1298,157 @@ This link will expire in 7 days.
         <p>After setting your password, you'll be able to log in and access your tenant dashboard.</p>
         <p>If you didn't expect this email, please contact support or ignore this message.</p>
         <p>This link will expire in 7 days.</p>
+      </div>
+    `;
+  }
+
+  private getCargoOwnerPasswordSetupEmailTemplate(
+    firstName: string,
+    lastName: string,
+    setupUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-bottom: 20px;">Welcome to UrutiX, ${firstName}!</h2>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            Your cargo owner account has been created. To get started, please set up your password by clicking the button below:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}" style="display: inline-block; padding: 14px 28px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Set Up Password
+            </a>
+          </div>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            After setting your password, you'll be able to log in and access your cargo owner dashboard to:
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6; margin-bottom: 20px; padding-left: 20px;">
+            <li>Create and manage cargo shipments</li>
+            <li>Track your shipments in real-time</li>
+            <li>Manage receivers and delivery locations</li>
+            <li>View shipping history and analytics</li>
+          </ul>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            If you didn't expect this email, please contact support or ignore this message.
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
+            This link will expire in 7 days.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private getBrokerPasswordSetupEmailTemplate(
+    firstName: string,
+    lastName: string,
+    setupUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-bottom: 20px;">Welcome to UrutiX, ${firstName}!</h2>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            Your broker account has been created. To get started, please set up your password by clicking the button below:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}" style="display: inline-block; padding: 14px 28px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Set Up Password
+            </a>
+          </div>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            After setting your password, you'll be able to log in and access your broker dashboard to:
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6; margin-bottom: 20px; padding-left: 20px;">
+            <li>Browse and bid on available loads</li>
+            <li>Manage your load assignments and commissions</li>
+            <li>Track shipment progress and delivery status</li>
+            <li>View earnings and payout history</li>
+            <li>Communicate with cargo owners and truck owners</li>
+          </ul>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            If you didn't expect this email, please contact support or ignore this message.
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
+            This link will expire in 7 days.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private getTruckOwnerPasswordSetupEmailTemplate(
+    firstName: string,
+    lastName: string,
+    setupUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-bottom: 20px;">Welcome to UrutiX, ${firstName}!</h2>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            Your truck owner account has been created. To get started, please set up your password by clicking the button below:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}" style="display: inline-block; padding: 14px 28px; background-color: #f59e0b; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Set Up Password
+            </a>
+          </div>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            After setting your password, you'll be able to log in and access your truck owner dashboard to:
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6; margin-bottom: 20px; padding-left: 20px;">
+            <li>Manage your fleet of trucks and drivers</li>
+            <li>Track vehicle locations and performance</li>
+            <li>Monitor fuel consumption and expenses</li>
+            <li>Handle maintenance schedules and records</li>
+            <li>View earnings and financial reports</li>
+          </ul>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            If you didn't expect this email, please contact support or ignore this message.
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
+            This link will expire in 7 days.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private getAgentPasswordSetupEmailTemplate(
+    firstName: string,
+    lastName: string,
+    setupUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1f2937; margin-bottom: 20px;">Welcome to UrutiX, ${firstName}!</h2>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            Your agent account has been created. To get started, please set up your password by clicking the button below:
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${setupUrl}" style="display: inline-block; padding: 14px 28px; background-color: #8b5cf6; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              Set Up Password
+            </a>
+          </div>
+          <p style="color: #4b5563; line-height: 1.6; margin-bottom: 15px;">
+            After setting your password, you'll be able to log in and access your agent dashboard to:
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6; margin-bottom: 20px; padding-left: 20px;">
+            <li>Assist clients with logistics and transportation needs</li>
+            <li>Coordinate between cargo owners and truck owners</li>
+            <li>Manage client relationships and communications</li>
+            <li>Track shipments and provide status updates</li>
+            <li>Generate reports and handle documentation</li>
+          </ul>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            If you didn't expect this email, please contact support or ignore this message.
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 10px;">
+            This link will expire in 7 days.
+          </p>
+        </div>
       </div>
     `;
   }

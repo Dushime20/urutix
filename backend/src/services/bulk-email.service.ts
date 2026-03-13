@@ -298,6 +298,89 @@ export class BulkEmailService {
     // await this.emailService.sendGenericEmail(to, subject, textBody, htmlBody);
   }
 
+  // ---- Tenant Admin: send to own partners ----
+
+  async sendBulkEmailToPartners(
+    tenantAdminId: string,
+    tenantAdminEmail: string,
+    tenantId: string,
+    subject: string,
+    htmlBody: string,
+    textBody: string,
+    filters?: {
+      roles?: string[];
+      status?: string[];
+    },
+  ): Promise<BulkEmailLog> {
+    this.logger.log(
+      `Tenant admin ${tenantAdminEmail} sending bulk email to partners in tenant ${tenantId}`,
+    );
+
+    // Build recipient list from users in this tenant
+    const userQuery = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.tenantId = :tenantId', { tenantId })
+      .andWhere('user.deletedAt IS NULL');
+
+    if (filters?.roles && filters.roles.length > 0) {
+      userQuery.andWhere('user.role IN (:...roles)', { roles: filters.roles });
+    }
+    if (filters?.status && filters.status.length > 0) {
+      userQuery.andWhere('user.status IN (:...statuses)', { statuses: filters.status });
+    }
+
+    const users = await userQuery.getMany();
+    const recipients = users
+      .filter((u) => !!u.email)
+      .map((u) => ({ email: u.email, tenantName: 'Partner', tenantId }));
+
+    this.logger.log(`Found ${recipients.length} partner recipients`);
+
+    const log = this.bulkEmailLogRepository.create({
+      tenantId,
+      createdBy: tenantAdminId,
+      subject,
+      body: htmlBody,
+      recipientsCount: recipients.length,
+      status: 'sending',
+      metadata: { filters, tenantAdminEmail, partnerBulkEmail: true },
+    });
+    await this.bulkEmailLogRepository.save(log);
+
+    const template: EmailTemplate = {
+      id: null,
+      name: 'Partner Email',
+      subject,
+      htmlBody,
+      textBody,
+      description: null,
+      category: 'partner',
+      variables: [],
+      isActive: true,
+      createdBy: tenantAdminId,
+      updatedBy: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    this.sendEmailsAsync(log.id, template, recipients);
+
+    return log;
+  }
+
+  async getPartnerEmailLogs(tenantId: string): Promise<BulkEmailLog[]> {
+    try {
+      return await this.bulkEmailLogRepository.find({
+        where: { tenantId },
+        order: { createdAt: 'DESC' },
+        take: 100,
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching partner email logs: ${error.message}`);
+      return [];
+    }
+  }
+
   // Bulk Email Logs
   async getBulkEmailLogs(): Promise<BulkEmailLog[]> {
     try {

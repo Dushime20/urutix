@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   Body,
   Param,
   Query,
@@ -95,7 +96,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Create a user for a specific tenant' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'User created successfully',
+    description: 'User created successfully and password setup email sent',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -116,7 +117,7 @@ export class UsersController {
 
     return {
       success: true,
-      message: 'Tenant user created successfully',
+      message: 'Tenant user created successfully. Password setup email has been sent.',
       data: {
         id: user.id,
         email: user.email,
@@ -151,6 +152,74 @@ export class UsersController {
         role: user.role,
         tenantId: user.tenantId,
         status: user.status,
+      },
+    };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User retrieved successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+  })
+  async getUserById(@Param('id') id: string) {
+    const user = await this.usersService.findById(id);
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'User retrieved successfully',
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        profile: user.profile,
+        tenantId: user.tenantId,
+      },
+    };
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update user by ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+  })
+  async updateUser(@Param('id') id: string, @Body() updateData: any) {
+    const user = await this.usersService.updateUser(id, updateData);
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'User updated successfully',
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        profile: user.profile,
+        tenantId: user.tenantId,
       },
     };
   }

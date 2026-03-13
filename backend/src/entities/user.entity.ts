@@ -57,8 +57,8 @@ export class User {
   @Column({ nullable: true })
   phone?: string;
 
-  @Column()
-  passwordHash: string;
+  @Column({ nullable: true })
+  passwordHash?: string;
 
   @Column({ nullable: true })
   emailVerifiedAt?: Date;

@@ -17,7 +17,9 @@ import {
   Box,
   Users,
   ChevronDown,
-  ArrowRight
+  ArrowRight,
+  Mail,
+  FileCheck,
 } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,8 +37,8 @@ interface TenantHeaderProps {
   tenant: Tenant;
   onRefresh: () => void;
   isRefreshing?: boolean;
-  selectedView: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing';
-  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing') => void;
+  selectedView: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'communicate' | 'profile' | 'lenders' | 'kyc';
+  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'communicate' | 'profile' | 'lenders' | 'kyc') => void;
 }
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({
@@ -81,7 +83,9 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
       icon: Users,
       items: [
         { id: 'truck-owners', label: 'Truck Owners', icon: Users, description: 'External partner management' },
+        { id: 'lenders', label: 'Lender Nodes', icon: Users, description: 'Manage asset financing partners' },
         { id: 'users', label: 'Internal Staff', icon: Users, description: 'Access control & permissions' },
+        { id: 'communicate', label: 'Partner Comms', icon: Mail, description: 'Send bulk emails to partners' },
       ]
     },
     {
@@ -156,9 +160,9 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
           <nav className="hidden lg:flex items-center gap-2" ref={navRef}>
             {/* Direct Link: Monitor */}
             <button
-              onClick={() => { setSelectedView('overview'); setActiveGroup(null); }}
+              onClick={() => { navigate('/tenant-admin'); setSelectedView('overview'); setActiveGroup(null); }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all duration-300 ${selectedView === 'overview'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
                 }`}
             >
@@ -209,26 +213,49 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                               <button
                                 key={tab.id}
                                 onClick={() => {
-                                  setSelectedView(tab.id as any);
+                                  // Map tab IDs to their respective routes
+                                  const routeMap: Record<string, string> = {
+                                    'overview': '/tenant-admin',
+                                    'financial': '/tenant-admin/financial',
+                                    'purchase-credits': '/tenant-admin/purchase-credits',
+                                    'billing': '/tenant-admin/billing',
+                                    'communicate': '/tenant-admin/communication',
+                                    'fleet': '/tenant-admin/fleet',
+                                    'cargo': '/tenant-admin/cargo',
+                                    'drivers': '/tenant-admin/drivers',
+                                    'trips': '/tenant-admin/trips',
+                                    'users': '/tenant-admin/users',
+                                    'truck-owners': '/tenant-admin/truck-owners',
+                                    'lenders': '/tenant-admin/lenders',
+                                    'settings': '/tenant-admin/settings',
+                                    'profile': '/tenant-admin/profile'
+                                  };
+
+                                  const targetRoute = routeMap[tab.id];
+                                  if (targetRoute) {
+                                    navigate(targetRoute);
+                                  } else {
+                                    setSelectedView(tab.id as any);
+                                  }
                                   setActiveGroup(null);
                                 }}
                                 className={`w-full text-left p-3 rounded-2xl transition-all duration-300 flex items-start gap-3 group/item ${isTabActive
-                                  ? 'bg-blue-50/50'
+                                  ? 'bg-primary-50/50'
                                   : 'hover:bg-slate-50'
                                   }`}
                               >
-                                <div className={`p-2 rounded-xl shrink-0 transition-colors ${isTabActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover/item:bg-blue-600 group-hover/item:text-white'}`}>
+                                <div className={`p-2 rounded-xl shrink-0 transition-colors ${isTabActive ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-400 group-hover/item:bg-primary-600 group-hover/item:text-white'}`}>
                                   <TabIcon className="w-4 h-4" />
                                 </div>
                                 <div>
-                                  <p className={`text-xs font-black ${isTabActive ? 'text-blue-600' : 'text-slate-800'}`}>
+                                  <p className={`text-xs font-black ${isTabActive ? 'text-primary-600' : 'text-slate-800'}`}>
                                     {tab.label}
                                   </p>
                                   <p className="text-[10px] font-medium text-slate-400 mt-0.5 line-clamp-1">
                                     {tab.description}
                                   </p>
                                 </div>
-                                <ArrowRight className={`ml-auto w-3.5 h-3.5 text-slate-300 group-hover/item:text-blue-600 transition-all ${isTabActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`} />
+                                <ArrowRight className={`ml-auto w-3.5 h-3.5 text-slate-300 group-hover/item:text-primary-600 transition-all ${isTabActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`} />
                               </button>
                             );
                           })}
@@ -248,7 +275,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              className={`p-2.5 rounded-full border border-gray-100 transition-all ${isRefreshing ? 'text-blue-500 bg-blue-50' : 'text-slate-400 hover:bg-gray-50 hover:text-slate-600'
+              className={`p-2.5 rounded-full border border-gray-100 transition-all ${isRefreshing ? 'text-primary-500 bg-primary-50' : 'text-slate-400 hover:bg-gray-50 hover:text-slate-600'
                 }`}
             >
               <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -262,7 +289,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               >
                 <FaBell className="w-5 h-5 text-slate-400" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-white"></span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white"></span>
                 )}
               </button>
 
@@ -276,17 +303,17 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                   >
                     <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
                       <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider text-left">Notifications</h3>
-                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{notifications.length} New</span>
+                      <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{notifications.length} New</span>
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.map((notification: any) => (
                         <div key={notification.id} className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer group text-left">
                           <div className="flex items-start space-x-3">
-                            <div className={`p-1.5 rounded-full mt-0.5 shrink-0 ${notification.status === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-blue-50 text-blue-500'}`}>
+                            <div className={`p-1.5 rounded-full mt-0.5 shrink-0 ${notification.status === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-primary-50 text-primary-500'}`}>
                               <FaClock className="w-3 h-3" />
                             </div>
                             <div>
-                              <p className="text-[11px] font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{notification.action}</p>
+                              <p className="text-[11px] font-bold text-slate-800 group-hover:text-primary-600 transition-colors">{notification.action}</p>
                               <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 font-medium">{notification.description}</p>
                               <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1.5">{notification.timestamp}</p>
                             </div>
@@ -341,8 +368,20 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">Tenant Admin</p>
                     </div>
                     <button
-                      onClick={() => { setShowUserMenu(false); setSelectedView('settings'); }}
+                      onClick={() => { setShowUserMenu(false); setSelectedView('profile'); }}
                       className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-widest hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2 mt-1"
+                    >
+                      <FaUser size={14} className="text-slate-400" /> My Profile
+                    </button>
+                    <button
+                      onClick={() => { setShowUserMenu(false); setSelectedView('kyc'); }}
+                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-widest hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <FileCheck size={14} className="text-slate-400" /> KYC Center
+                    </button>
+                    <button
+                      onClick={() => { setShowUserMenu(false); setSelectedView('settings'); }}
+                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-widest hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2"
                     >
                       <FaCog size={14} className="text-slate-400" /> Settings
                     </button>

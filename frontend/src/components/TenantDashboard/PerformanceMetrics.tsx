@@ -26,7 +26,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   // Mock data - in real app, this would come from API calls
   const metrics: PerformanceMetric[] = [
     {
-      name: 'Revenue Growth',
+      name: 'Sales Growth',
       value: 12.5,
       unit: '%',
       target: 10.0,
@@ -36,7 +36,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
       status: 'excellent'
     },
     {
-      name: 'Fleet Utilization',
+      name: 'Truck Usage',
       value: 87.3,
       unit: '%',
       target: 85.0,
@@ -123,7 +123,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
       case 'excellent':
         return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'good':
-        return 'bg-indigo-50 text-indigo-700 border-indigo-100';
+        return 'bg-primary-50 text-primary-700 border-primary-100';
       case 'average':
         return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'poor':
@@ -134,7 +134,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   };
 
   const getCategoryIcon = (category: string) => {
-    const iconClass = "w-4 h-4 text-[#1e40af]";
+    const iconClass = "w-4 h-4 text-primary-600";
     switch (category) {
       case 'revenue':
         return <Trophy className={iconClass} />;
@@ -152,7 +152,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
   const getProgressColor = (value: number, target: number) => {
     const percentage = (value / target) * 100;
     if (percentage >= 100) return 'bg-emerald-500';
-    if (percentage >= 80) return 'bg-indigo-500';
+    if (percentage >= 80) return 'bg-primary-500';
     if (percentage >= 60) return 'bg-amber-500';
     return 'bg-rose-500';
   };
@@ -166,7 +166,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
     <div className={`space-y-8 ${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric) => (
-          <div key={metric.name} className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300">
+          <div key={metric.name} className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-primary-500/5 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <div className="p-2.5 bg-[#f0f7ff] rounded-xl">
@@ -216,7 +216,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
       </div>
 
       {/* Summary Section - Premium Enlite Card */}
-      <div className="bg-indigo-600 rounded-[32px] p-8 text-white relative overflow-hidden shadow-lg shadow-indigo-200">
+      <div className="bg-primary-600 rounded-[32px] p-8 text-white relative overflow-hidden shadow-lg shadow-primary-200">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-10 -mb-10 blur-2xl"></div>
 
@@ -226,8 +226,8 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
               <Trophy className="text-white w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-lg font-black tracking-tight">System Performance Protocol</h4>
-              <p className="text-indigo-100 text-sm font-medium">Intelligence analysis of core operational vectors</p>
+              <h4 className="text-lg font-black tracking-tight">Operational Insights</h4>
+              <p className="text-primary-100 text-sm font-medium">Overview of your business performance</p>
             </div>
           </div>
 
@@ -236,19 +236,19 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
               <div className="text-3xl font-black">
                 {metrics.filter(m => m.status === 'excellent').length}
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Excellent</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-primary-100">Excellent</div>
             </div>
             <div>
               <div className="text-3xl font-black">
                 {metrics.filter(m => m.trend === 'up').length}
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Improving</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-primary-100">Improving</div>
             </div>
             <div>
               <div className="text-3xl font-black">
                 {((metrics.filter(m => m.value >= m.target).length / metrics.length) * 100).toFixed(0)}%
               </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Target</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-primary-100">Target</div>
             </div>
           </div>
         </div>

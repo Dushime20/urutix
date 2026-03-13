@@ -48,7 +48,7 @@ export class FleetController {
 
   // Truck endpoints
   @Post('trucks')
-  // @Roles(UserRole.TRUCK_OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN) // Temporarily disabled for testing
+  @Roles(UserRole.TRUCK_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Create a new truck',
     description: 'Creates a new truck in the fleet',
@@ -296,6 +296,7 @@ export class FleetController {
   }
 
   @Patch('trucks/:id')
+  @Roles(UserRole.TRUCK_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Update truck',
     description: 'Updates an existing truck',
@@ -336,6 +337,7 @@ export class FleetController {
   }
 
   @Delete('trucks/:id')
+  @Roles(UserRole.TRUCK_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'Delete truck',
     description: 'Deletes a truck from the fleet',

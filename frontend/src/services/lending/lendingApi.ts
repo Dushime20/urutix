@@ -132,7 +132,7 @@ export const lendingApi = {
   },
 
   getTenantLenders: async (): Promise<Lender[]> => {
-    const response = await api.get('/tenant/lenders');
+    const response = await api.get('/lending/tenant/lenders');
     return response.data;
   },
 

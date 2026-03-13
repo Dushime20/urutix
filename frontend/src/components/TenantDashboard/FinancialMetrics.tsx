@@ -62,7 +62,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
 
   // Enlite Prime Theme Colors (Indigo focus)
   const colors = {
-    primary: '#3F51B5', // Indigo
+    primary: '#2D5173', // Navy
     primaryLight: '#E8EAF6',
     secondary: '#F50057', // Pink
     background: '#F9FAFB',
@@ -145,7 +145,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
         label: 'Revenue',
         data: financialData.trends.map(t => t.revenue),
         borderColor: colors.primary,
-        backgroundColor: 'rgba(63, 81, 181, 0.05)',
+        backgroundColor: 'rgba(45, 81, 115, 0.05)',
         borderWidth: 3,
         fill: true,
         tension: 0.4,
@@ -218,8 +218,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
       {/* Header */}
       <div className="px-10 py-8 bg-white border-b border-slate-100 flex items-center justify-between">
         <div>
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Fiscal Command</h3>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">Financial Metrics</h2>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Financial Status</h3>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900">Balance & Revenue</h2>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
@@ -236,7 +236,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
           </div>
           <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-100 flex items-center text-[10px] font-black uppercase tracking-widest">
             <Download className="w-4 h-4 mr-2" />
-            Export Ledger
+            Download Report
           </button>
         </div>
       </div>
@@ -251,14 +251,14 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               className={`py-5 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
                 }`}
             >
-              {tab === 'overview' && 'Core Metrics'}
-              {tab === 'breakdown' && 'Fiscal Segments'}
-              {tab === 'history' && 'Transaction Log'}
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="finTabIndicator"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
-                />
+            {tab === 'overview' && 'Summary'}
+            {tab === 'breakdown' && 'Revenue Breakdown'}
+            {tab === 'history' && 'Transactions'}
+            {activeTab === tab && (
+              <motion.div
+                layoutId="finTabIndicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full"
+              />
               )}
             </button>
           ))}
@@ -289,9 +289,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               {/* Core KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { label: 'Total Revenue', value: financialData.summary.totalRevenue, trend: 12.5, icon: DollarSign, color: 'indigo' },
+                  { label: 'Total Earnings', value: financialData.summary.totalRevenue, trend: 12.5, icon: DollarSign, color: 'indigo' },
                   { label: 'Net Profit', value: financialData.summary.netProfit, trend: 18.7, icon: TrendingUp, color: 'emerald' },
-                  { label: 'Avg. Load Unit', value: financialData.summary.averageRevenuePerLoad, trend: 4.2, icon: Landmark, color: 'blue' },
+                  { label: 'Average Trip Income', value: financialData.summary.averageRevenuePerLoad, trend: 4.2, icon: Landmark, color: 'blue' },
                   { label: 'Remaining Credits', value: creditBalance?.currentBalance ?? 0, trend: 0, icon: Wallet, color: 'violet', isCredit: true } // Add Credit Card
                 ].map((kpi, i) => {
                   const isCredit = (kpi as any).isCredit;
@@ -329,8 +329,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               <div className="bg-white p-10 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <div className="flex items-center justify-between mb-10">
                   <div>
-                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Performance Vector</h4>
-                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Revenue vs Operating Expenses (12M Window)</p>
+                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Earnings Overview</h4>
+                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Income vs Spend (12 Month History)</p>
                   </div>
                   <div className="flex gap-4">
                     <button className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
@@ -434,9 +434,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               <table className="w-full text-left">
                 <thead className="bg-slate-50/50 border-b border-slate-100">
                   <tr>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Contract Info</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Value</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
                     <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>

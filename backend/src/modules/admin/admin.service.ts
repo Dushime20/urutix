@@ -471,15 +471,19 @@ export class AdminService {
 
     try {
       // Create tenant admin user
+      // If password is provided, we'll need to handle it differently
+      // For now, we'll use email-based password setup regardless
+      // TODO: Add support for direct password setting if adminPassword is provided
       const adminUser = await this.usersService.createTenantAdminUser(
         savedTenant.id,
         {
           email: createTenantDto.contactEmail.toLowerCase().trim(),
-          password: createTenantDto.adminPassword,
           firstName: createTenantDto.adminFirstName.trim(),
           lastName: createTenantDto.adminLastName.trim(),
           companyName: createTenantDto.companyName?.trim() || createTenantDto.name.trim(),
           phoneNumber: createTenantDto.contactPhone?.trim(),
+          // Note: adminPassword from DTO is ignored - user will receive email to set password
+          sendPasswordSetupEmail: true, // Ensure email is sent
         },
       );
 

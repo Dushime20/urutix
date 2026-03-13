@@ -111,6 +111,12 @@ import { Receipt } from '../entities/receipt.entity';
 import { NotificationPreference } from '../entities/notification-preference.entity';
 import { NotificationLog } from '../entities/notification-log.entity';
 
+// KYC system entities
+import { KycRoleRequirements } from '../entities/kyc-role-requirements.entity';
+import { UserKycDocument } from '../entities/user-kyc-document.entity';
+import { UserKycAuditLog } from '../entities/user-kyc-audit-log.entity';
+import { TenantKycDocument } from '../entities/tenant-kyc-document.entity';
+
 import { config } from 'dotenv';
 config();
 
@@ -238,6 +244,11 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Notification system entities
     NotificationPreference,
     NotificationLog,
+    // KYC system entities
+    KycRoleRequirements,
+    UserKycDocument,
+    UserKycAuditLog,
+    TenantKycDocument,
 
   ],
   synchronize: false,
@@ -365,6 +376,11 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     // Notification system entities
     NotificationPreference,
     NotificationLog,
+    // KYC system entities
+    KycRoleRequirements,
+    UserKycDocument,
+    UserKycAuditLog,
+    TenantKycDocument,
   ],
   synchronize: true,
   autoLoadEntities: false,

@@ -87,16 +87,18 @@ export class CreateTenantDto {
   adminLastName: string;
 
   @ApiProperty({
-    description: 'Admin password (minimum 8 characters)',
+    description: 'Admin password (minimum 8 characters) - Optional: If not provided, admin will receive email to set password',
     example: 'SecurePassword123!',
     type: String,
     minLength: 8,
+    required: false,
   })
+  @IsOptional()
+  @ValidateIf((o) => o.adminPassword !== undefined && o.adminPassword !== null && o.adminPassword !== '')
   @IsString()
-  @IsNotEmpty({ message: 'Admin password is required' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(100, { message: 'Password must not exceed 100 characters' })
-  adminPassword: string;
+  adminPassword?: string;
 
   @ApiProperty({
     description: 'Subscription plan',

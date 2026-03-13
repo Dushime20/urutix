@@ -1,10 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Truck, User, Route, Wrench as Tools, CheckCircle,
-  AlertTriangle, Clock, MapPin as FaMapMarkerAlt,
-  Filter, Search, Plus, Eye
+  Truck, User, Wrench as Tools,
+  AlertTriangle, Clock,
+  Filter, Search, Plus, Eye, Edit, Trash2,
+  Activity,
+  Settings as SettingsIcon, ShieldCheck, Zap,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Line, Doughnut } from 'react-chartjs-2';
+import { fleetApi } from '../../services/fleetApi';
+import AddTruckModal from './AddTruckModal';
+import toast from 'react-hot-toast';
 
 interface FleetOverviewProps {
   tenantId?: string;
@@ -13,82 +21,236 @@ interface FleetOverviewProps {
 const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddTruckModalOpen, setIsAddTruckModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const queryClient = useQueryClient();
 
-  // Mock fleet data - in real app, this would come from API
-  const fleetData = useMemo(() => ({
-    summary: {
-      totalTrucks: 25,
-      activeTrucks: 23,
-      maintenanceTrucks: 1,
-      inactiveTrucks: 1,
-      totalDrivers: 28,
-      activeDrivers: 25,
-      availableDrivers: 18,
-      onDutyDrivers: 7,
+  // Fetch trucks data
+  const { 
+    data: trucks = [], 
+    isLoading: trucksLoading, 
+    error: trucksError 
+  } = useQuery({
+    queryKey: ['trucks', tenantId, selectedFilter, searchTerm],
+    queryFn: () => fleetApi.getTrucks({
+      search: searchTerm || undefined,
+      status: selectedFilter !== 'all' ? selectedFilter : undefined,
+    }),
+    enabled: !!tenantId,
+    staleTime: 30000, // 30 seconds
+  });
+
+  // Fetch drivers data
+  const { 
+    data: drivers = [], 
+    isLoading: driversLoading, 
+    error: driversError 
+  } = useQuery({
+    queryKey: ['drivers', tenantId],
+    queryFn: () => fleetApi.getDrivers(),
+    enabled: !!tenantId,
+    staleTime: 30000, // 30 seconds
+  });
+
+  // Delete truck mutation
+  const deleteTruckMutation = useMutation({
+    mutationFn: (truckId: string) => fleetApi.deleteTruck(truckId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trucks'] });
+      toast.success('Truck deleted successfully');
     },
-    utilization: {
-      current: 87.3,
-      weekly: [78, 82, 75, 88, 91, 85, 87],
-      monthly: [82, 79, 85, 88, 90, 87, 89, 91, 88, 86, 89, 92],
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete truck');
     },
-    trucks: [
-      { id: 'T-001', plate: 'RAB 123A', status: 'active', driver: 'John Doe', location: 'Kigali', utilization: 92, lastMaintenance: '2024-01-15' },
-      { id: 'T-002', plate: 'RAB 124B', status: 'active', driver: 'Jane Smith', location: 'Huye', utilization: 88, lastMaintenance: '2024-01-20' },
-      { id: 'T-003', plate: 'RAB 125C', status: 'maintenance', driver: 'Mike Johnson', location: 'Maintenance', utilization: 0, lastMaintenance: '2024-01-25' },
-      { id: 'T-004', plate: 'RAB 126D', status: 'active', driver: 'Sarah Wilson', location: 'Musanze', utilization: 95, lastMaintenance: '2024-01-10' },
-      { id: 'T-005', plate: 'RAB 127E', status: 'active', driver: 'David Brown', location: 'Kigali', utilization: 76, lastMaintenance: '2024-01-18' },
-    ],
-    drivers: [
-      { id: 'D-001', name: 'John Doe', status: 'active', license: 'Class A', experience: '5 years', rating: 4.8, currentTruck: 'T-001' },
-      { id: 'D-002', name: 'Jane Smith', status: 'active', license: 'Class A', experience: '3 years', rating: 4.6, currentTruck: 'T-002' },
-      { id: 'D-003', name: 'Mike Johnson', status: 'maintenance', license: 'Class A', experience: '7 years', rating: 4.9, currentTruck: 'T-003' },
-      { id: 'D-004', name: 'Sarah Wilson', status: 'active', license: 'Class B', experience: '2 years', rating: 4.4, currentTruck: 'T-004' },
-      { id: 'D-005', name: 'David Brown', status: 'active', license: 'Class A', experience: '4 years', rating: 4.7, currentTruck: 'T-005' },
-    ]
-  }), []);
+  });
+
+  // Calculate fleet summary from real data
+  const fleetSummary = useMemo(() => {
+    const activeTrucks = trucks.filter((truck: any) => truck.status === 'AVAILABLE').length;
+    const maintenanceTrucks = trucks.filter((truck: any) => truck.status === 'MAINTENANCE').length;
+    const inactiveTrucks = trucks.filter((truck: any) => truck.status === 'OUT_OF_SERVICE').length;
+    const activeDrivers = drivers.filter((driver: any) => driver.status === 'ACTIVE').length;
+    
+    return {
+      totalTrucks: trucks.length,
+      activeTrucks,
+      maintenanceTrucks,
+      inactiveTrucks,
+      totalDrivers: drivers.length,
+      activeDrivers,
+      availableDrivers: drivers.filter((driver: any) => !driver.currentTruckId).length,
+      onDutyDrivers: drivers.filter((driver: any) => driver.currentTruckId).length,
+    };
+  }, [trucks, drivers]);
+
+  // Calculate utilization (mock calculation for now)
+  const utilization = useMemo(() => {
+    const totalTrucks = trucks.length;
+    const activeTrucks = fleetSummary.activeTrucks;
+    const currentUtilization = totalTrucks > 0 ? Math.round((activeTrucks / totalTrucks) * 100) : 0;
+    
+    return {
+      current: currentUtilization,
+      weekly: [78, 82, 75, 88, 91, 85, currentUtilization],
+      monthly: [82, 79, 85, 88, 90, 87, 89, 91, 88, 86, 89, currentUtilization],
+    };
+  }, [trucks, fleetSummary.activeTrucks]);
+
+  // Transform trucks data for display
+  const displayTrucks = useMemo(() => {
+    return trucks.map((truck: any) => ({
+      id: truck.id,
+      plate: truck.plateNumber,
+      status: truck.status.toLowerCase(),
+      owner: truck.owner ? 
+        `${truck.owner.profile?.firstName || ''} ${truck.owner.profile?.lastName || ''}`.trim() || 
+        truck.owner.email || 'Unknown Owner' : 
+        'No Owner',
+      driver: truck.currentDriver ? 
+        `${truck.currentDriver.firstName || ''} ${truck.currentDriver.lastName || ''}`.trim() || 
+        truck.currentDriver.email || 'Unknown Driver' : 
+        'Unassigned',
+      location: truck.currentAddress || truck.currentLocation?.address || 'Unknown',
+      utilization: Math.floor(Math.random() * 100), // Mock utilization for now
+      lastMaintenance: truck.updatedAt,
+      make: truck.make,
+      model: truck.model,
+      year: truck.year,
+      vin: truck.vin,
+    }));
+  }, [trucks]);
 
   const filteredTrucks = useMemo(() => {
-    let filtered = fleetData.trucks;
+    let filtered = displayTrucks;
 
     if (selectedFilter !== 'all') {
-      filtered = filtered.filter(truck => truck.status === selectedFilter);
+      const statusMap: Record<string, string> = {
+        'active': 'available',
+        'maintenance': 'maintenance',
+        'inactive': 'out_of_service',
+      };
+      filtered = filtered.filter((truck: any) => truck.status === statusMap[selectedFilter]);
     }
 
     if (searchTerm) {
-      filtered = filtered.filter(truck =>
+      filtered = filtered.filter((truck: any) =>
         truck.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         truck.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        truck.driver.toLowerCase().includes(searchTerm.toLowerCase())
+        truck.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        truck.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        truck.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        truck.model?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     return filtered;
-  }, [fleetData.trucks, selectedFilter, searchTerm]);
+  }, [displayTrucks, selectedFilter, searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedFilter]);
+
+  const totalPages = Math.ceil(filteredTrucks.length / itemsPerPage);
+  const paginatedTrucks = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredTrucks.slice(start, start + itemsPerPage);
+  }, [filteredTrucks, currentPage]);
+
+  const handleDeleteTruck = (truckId: string) => {
+    if (window.confirm('Are you sure you want to delete this truck?')) {
+      deleteTruckMutation.mutate(truckId);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+      case 'available': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
       case 'maintenance': return 'text-amber-600 bg-amber-50 border-amber-100';
-      case 'inactive': return 'text-rose-600 bg-rose-50 border-rose-100';
+      case 'out_of_service': return 'text-rose-600 bg-rose-50 border-rose-100';
+      case 'in_transit': return 'text-blue-600 bg-blue-50 border-blue-100';
       default: return 'text-slate-500 bg-slate-50 border-slate-100';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircle className="w-3 h-3" />;
+      case 'available': return <Zap className="w-3 h-3" />;
       case 'maintenance': return <Tools className="w-3 h-3" />;
-      case 'inactive': return <AlertTriangle className="w-3 h-3" />;
+      case 'out_of_service': return <AlertTriangle className="w-3 h-3" />;
+      case 'in_transit': return <Activity className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
     }
   };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'available': return 'Active';
+      case 'maintenance': return 'Maintenance';
+      case 'out_of_service': return 'Inactive';
+      case 'in_transit': return 'In Transit';
+      default: return status;
+    }
+  };
+
+  // Show loading state
+  if (trucksLoading || driversLoading) {
+    return (
+      <div className="space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6">
+              <div className="animate-pulse">
+                <div className="flex items-center">
+                  <div className="p-3 bg-gray-200 rounded-xl w-12 h-12"></div>
+                  <div className="ml-4 flex-1">
+                    <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-6 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">Loading fleet data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (trucksError || driversError) {
+    return (
+      <div className="space-y-10">
+        <div className="text-center py-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">Failed to load fleet data</h3>
+          <p className="text-slate-600 mb-4">
+            {trucksError?.message || driversError?.message || 'An error occurred while loading fleet data'}
+          </p>
+          <button 
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['trucks'] });
+              queryClient.invalidateQueries({ queryKey: ['drivers'] });
+            }}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const utilizationChartData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
         label: 'Fleet Utilization (%)',
-        data: fleetData.utilization.weekly,
+        data: utilization.weekly,
         borderColor: '#6366f1',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         borderWidth: 3,
@@ -106,7 +268,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     labels: ['Active', 'Maintenance', 'Inactive'],
     datasets: [
       {
-        data: [fleetData.summary.activeTrucks, fleetData.summary.maintenanceTrucks, fleetData.summary.inactiveTrucks],
+        data: [fleetSummary.activeTrucks, fleetSummary.maintenanceTrucks, fleetSummary.inactiveTrucks],
         backgroundColor: [
           'rgba(16, 185, 129, 0.8)',
           'rgba(245, 158, 11, 0.8)',
@@ -151,170 +313,356 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
 
   return (
     <div className="space-y-10">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Summary Cards — Screenshot-driven Refinement */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10 py-6">
         {[
-          { label: 'Total Trucks', value: fleetData.summary.totalTrucks, icon: Truck },
-          { label: 'Active Trucks', value: fleetData.summary.activeTrucks, icon: CheckCircle },
-          { label: 'Total Drivers', value: fleetData.summary.totalDrivers, icon: User },
-          { label: 'Utilization', value: `${fleetData.utilization.current}% `, icon: Route }
+          { 
+            label: 'Total Trucks', 
+            value: fleetSummary.totalTrucks, 
+            icon: Truck,
+            color: 'text-primary-600',
+            borderColor: 'border-primary-100',
+            shadow: 'shadow-primary-100/50'
+          },
+          { 
+            label: 'Available Trucks', 
+            value: fleetSummary.activeTrucks, 
+            icon: Zap,
+            color: 'text-primary-600',
+            borderColor: 'border-primary-100',
+            shadow: 'shadow-primary-100/50'
+          },
+          { 
+            label: 'Total Drivers', 
+            value: fleetSummary.totalDrivers, 
+            icon: User,
+            color: 'text-primary-600',
+            borderColor: 'border-primary-100',
+            shadow: 'shadow-primary-100/50'
+          },
+          { 
+            label: 'Fleet Usage', 
+            value: `${utilization.current}%`, 
+            icon: Activity,
+            color: 'text-primary-600',
+            borderColor: 'border-primary-100',
+            shadow: 'shadow-primary-100/50'
+          }
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-[#f0f7ff] rounded-xl">
-                <stat.icon className="w-6 h-6 text-[#1e40af]" />
-              </div>
-              <div className="ml-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                <p className="text-2xl font-black text-slate-800 tracking-tight leading-tight">{stat.value}</p>
-              </div>
-            </div>
-          </div>
+          <motion.div 
+            key={i} 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="flex items-center gap-6 group cursor-default"
+          >
+             <div className={`w-20 h-20 rounded-full bg-white border ${stat.borderColor} flex items-center justify-center flex-shrink-0 shadow-xl ${stat.shadow} transition-transform duration-500 group-hover:scale-110`}>
+                <stat.icon size={28} className="text-primary-600" />
+             </div>
+             
+             <div className="flex flex-col">
+                <p className={`text-3xl font-black ${stat.color} leading-none mb-1.5 tracking-tight`}>
+                  {stat.value}
+                </p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">
+                  {stat.label}
+                </p>
+             </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Charts Row — Enhanced Visuals */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Utilization Trend */}
-        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
-          <div className="mb-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Performance Trend</h3>
-            <h4 className="text-xl font-black text-slate-800 tracking-tight">Weekly Utilization</h4>
+        <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all duration-500">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Activity</h3>
+              <h4 className="text-2xl font-black text-slate-800 tracking-tight">Truck Usage Trend</h4>
+            </div>
+            <div className="flex gap-2">
+              <button className="px-4 py-1.5 bg-primary-50 text-primary-600 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-primary-600 hover:text-white transition-all">Week</button>
+              <button className="px-4 py-1.5 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-100 transition-all">Month</button>
+            </div>
           </div>
-          <div className="h-64">
-            <Line data={utilizationChartData} options={chartOptions} />
+          <div className="h-72">
+            <Line data={utilizationChartData} options={{
+              ...chartOptions,
+              scales: {
+                ...chartOptions.scales,
+                y: {
+                  ...chartOptions.scales.y,
+                  suggestedMax: 100
+                }
+              }
+            }} />
           </div>
         </div>
 
         {/* Status Distribution */}
-        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8">
-          <div className="mb-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Inventory status</h3>
-            <h4 className="text-xl font-black text-slate-800 tracking-tight">Truck Distribution</h4>
+        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all duration-500 flex flex-col">
+          <div className="mb-10">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Status</h3>
+            <h4 className="text-2xl font-black text-slate-800 tracking-tight">Fleet Distribution</h4>
           </div>
-          <div className="h-64">
-            <Doughnut data={statusChartData} options={{
-              ...chartOptions,
-              cutout: '75%',
-            }} />
+          <div className="flex-1 relative flex items-center justify-center">
+            <div className="h-64 w-full">
+              <Doughnut data={statusChartData} options={{
+                ...chartOptions,
+                cutout: '82%',
+                plugins: {
+                  ...chartOptions.plugins,
+                  legend: { display: false }
+                }
+              }} />
+            </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <p className="text-3xl font-black text-slate-800 leading-none">{fleetSummary.totalTrucks}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Trucks</p>
+            </div>
+          </div>
+          
+          <div className="mt-10 space-y-4">
+             {[
+               { label: 'Operational', count: fleetSummary.activeTrucks, color: 'bg-emerald-500' },
+               { label: 'Maintenance', count: fleetSummary.maintenanceTrucks, color: 'bg-amber-500' },
+               { label: 'Inactive / Suspended', count: fleetSummary.inactiveTrucks, color: 'bg-rose-500' },
+             ].map((item, id) => (
+               <div key={id} className="flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                   <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{item.label}</span>
+                 </div>
+                 <span className="text-sm font-black text-slate-800">{item.count}</span>
+               </div>
+             ))}
           </div>
         </div>
       </div>
 
-      {/* Trucks Table */}
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Asset Repository</h3>
-              <h4 className="text-xl font-black text-slate-800 tracking-tight">Fleet Trucks</h4>
+      {/* Asset Repository — Enlite Prime Style Table */}
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="px-10 py-8 border-b border-gray-50 flex items-center justify-between bg-white relative">
+          <div>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 italic">Your Fleet</h3>
+            <h4 className="text-3xl font-black text-slate-800 tracking-tight">Truck List</h4>
+          </div>
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="px-8 py-4 bg-primary-600 text-white rounded-[20px] transition-all shadow-xl shadow-primary-100 flex items-center gap-3 text-xs font-black uppercase tracking-widest group"
+            onClick={() => setIsAddTruckModalOpen(true)}
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+            Provision Truck
+          </motion.button>
+        </div>
+
+        <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-50 flex flex-col lg:flex-row items-center gap-6">
+          <div className="relative group flex-1 w-full">
+            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
             </div>
-            <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center text-sm font-black uppercase tracking-widest">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Truck
+            <input
+              type="text"
+              placeholder="Search assets, plates, owners, or drivers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[24px] text-sm font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 shadow-sm transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-4 w-full lg:w-auto">
+            <div className="relative w-full lg:w-56">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <select
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value)}
+                className="w-full pl-10 pr-10 py-4 bg-white border border-slate-100 rounded-[20px] text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 focus:outline-none focus:ring-4 focus:ring-primary-500/10 shadow-sm appearance-none"
+              >
+                <option value="all">Global Fleet</option>
+                <option value="active">Operational Only</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="inactive">Suspended</option>
+              </select>
+            </div>
+            
+            <button className="p-4 bg-white border border-slate-100 rounded-[20px] text-slate-400 hover:text-primary-600 shadow-sm transition-all hover:shadow-md">
+              <SettingsIcon size={20} />
             </button>
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="px-8 py-5 border-b border-gray-50">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-300 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Query assets..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium text-slate-600"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
-                <select
-                  value={selectedFilter}
-                  onChange={(e) => setSelectedFilter(e.target.value)}
-                  className="pl-9 pr-8 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500/20 text-xs font-black uppercase tracking-widest text-slate-500 appearance-none pointer-events-auto"
-                >
-                  <option value="all">Global Filter</option>
-                  <option value="active">Active Only</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="inactive">Suspended</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="min-w-full divide-y divide-gray-50">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Metadata</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Operator</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Geolocation</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Log</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="pl-10 pr-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Details</th>
+                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Owner</th>
+                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Driver</th>
+                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Usage</th>
+                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Maintenance</th>
+                <th className="pl-6 pr-10 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-50">
-              {filteredTrucks.map((truck) => (
-                <tr key={truck.id} className="hover:bg-indigo-50/10 transition-colors">
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black text-slate-800">{truck.id}</span>
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{truck.plate}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <span className="text-sm font-bold text-slate-600">{truck.driver}</span>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FaMapMarkerAlt className="w-3.5 h-3.5 text-indigo-400 mr-2" />
-                      <span className="text-sm font-medium text-slate-600">{truck.location}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <span className={`inline - flex items - center px - 2.5 py - 1 rounded - full text - [10px] font - black uppercase tracking - widest border ${getStatusColor(truck.status)} `}>
-                      {getStatusIcon(truck.status)}
-                      <span className="ml-1.5">{truck.status}</span>
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-indigo-600 h-full rounded-full"
-                          style={{ width: `${truck.utilization}% ` }}
-                        ></div>
+              {paginatedTrucks.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-10 py-24 text-center">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                    >
+                      <div className="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto mb-6 border border-slate-100 rotate-12">
+                        <Truck className="w-12 h-12 text-slate-200 -rotate-12" />
                       </div>
-                      <span className="text-xs font-black text-slate-800">{truck.utilization}%</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-slate-400">
-                    {new Date(truck.lastMaintenance).toLocaleDateString()}
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-right">
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all ml-1">
-                      <Plus className="w-4 h-4" />
-                    </button>
+                      <h3 className="text-2xl font-black text-slate-800 mb-2">No Trucks Found</h3>
+                      <p className="text-sm text-slate-400 max-w-sm mx-auto mb-10 font-medium">
+                        You haven't added any trucks to your fleet yet.
+                      </p>
+                      <button 
+                        className="bg-primary-600 text-white px-8 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 text-[11px] font-black uppercase tracking-[0.2em]"
+                        onClick={() => setIsAddTruckModalOpen(true)}
+                      >
+                        Add First Truck
+                      </button>
+                    </motion.div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedTrucks.map((truck: any, idx: number) => (
+                  <motion.tr 
+                    key={truck.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    className="group hover:bg-slate-50/80 transition-all duration-300"
+                  >
+                    <td className="pl-10 pr-6 py-6 whitespace-nowrap">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-100 rounded-2xl text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all duration-500">
+                          <Truck size={20} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-slate-800 tracking-tight">{truck.plate}</span>
+                          <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest leading-none mt-1">{truck.id}</span>
+                          {truck.make && (
+                            <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">{truck.make} {truck.model}</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-600">
+                           {truck.owner.charAt(0)}
+                         </div>
+                         <span className="text-sm font-bold text-slate-700">{truck.owner}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={14} className="text-emerald-500" />
+                        <span className="text-sm font-medium text-slate-600">{truck.driver}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-6 whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm ${getStatusColor(truck.status)}`}>
+                        {getStatusIcon(truck.status)}
+                        <span className="ml-2">{getStatusLabel(truck.status)}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-4">
+                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Usage (%)</span>
+                           <span className="text-[10px] font-black text-slate-800 italic">{truck.utilization}%</span>
+                        </div>
+                        <div className="w-28 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${truck.utilization}%` }}
+                            transition={{ duration: 1 }}
+                            className="bg-primary-600 h-full rounded-full shadow-[0_0_8px_rgba(52,94,133,0.5)]"
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-black text-slate-700 tracking-tight">{new Date(truck.lastMaintenance).toLocaleDateString()}</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Checked</span>
+                      </div>
+                    </td>
+                    <td className="pl-6 pr-10 py-6 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button className="p-2.5 bg-slate-50 text-slate-400 hover:text-primary-600 hover:bg-white hover:shadow-lg hover:shadow-primary-50 rounded-xl transition-all duration-300">
+                          <Eye size={16} />
+                        </button>
+                        <button className="p-2.5 bg-slate-50 text-slate-400 hover:text-amber-600 hover:bg-white hover:shadow-lg hover:shadow-amber-50 rounded-xl transition-all duration-300">
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          className="p-2.5 bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-white hover:shadow-lg hover:shadow-red-50 rounded-xl transition-all duration-300"
+                          onClick={() => handleDeleteTruck(truck.id)}
+                          disabled={deleteTruckMutation.isPending}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination — Enlite Prime Style */}
+        {totalPages > 1 && (
+          <div className="px-10 py-6 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Page</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center text-[11px] font-black shadow-lg shadow-primary-100">
+                  {currentPage}
+                </span>
+                <span className="text-[10px] font-black text-slate-300 uppercase">of</span>
+                <span className="w-8 h-8 rounded-lg bg-white border border-slate-100 text-slate-600 flex items-center justify-center text-[11px] font-black">
+                  {totalPages}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-primary-600 disabled:opacity-30 disabled:hover:text-slate-400 shadow-sm transition-all hover:shadow-md group"
+              >
+                <ChevronLeft size={18} className="group-active:-translate-x-1 transition-transform" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-primary-600 disabled:opacity-30 disabled:hover:text-slate-400 shadow-sm transition-all hover:shadow-md group"
+              >
+                <ChevronRight size={18} className="group-active:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Add Truck Modal */}
+      <AddTruckModal 
+        isOpen={isAddTruckModalOpen}
+        onClose={() => setIsAddTruckModalOpen(false)}
+      />
     </div>
   );
 };

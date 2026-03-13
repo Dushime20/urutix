@@ -106,8 +106,8 @@ Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "NEXT STEPS:" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "1. Restart backend: cd backend && npm run start:dev" -ForegroundColor Yellow
-Write-Host "2. Start frontend: cd frontend && npm run dev" -ForegroundColor Yellow
+Write-Host "1. Restart backend: cd backend; npm run start:dev" -ForegroundColor Yellow
+Write-Host "2. Start frontend: cd frontend; npm run dev" -ForegroundColor Yellow
 Write-Host "3. Test subdomain: http://gasa.localhost:5173" -ForegroundColor Yellow
 Write-Host ""
 Read-Host "Press Enter to exit"

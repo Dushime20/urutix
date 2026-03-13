@@ -2,17 +2,17 @@ import React, { useState, useMemo } from "react";
 import {
   Box, Truck, MapPin as FaMapMarkerAlt, Clock, CheckCircle,
   AlertTriangle, Route, DollarSign, Search, Filter,
-  Plus, Eye, BarChart3 as FaChartLine, Save as FaSave, Check as FaCheck,
+  Plus, Eye, Save as FaSave, Check as FaCheck,
   Rocket as FaRocket, Layers as FaLayerGroup
 } from 'lucide-react';
-import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { Line, Bar } from "react-chartjs-2";
 import FilterSelect from "@/components/common/FilterSelect";
 
 interface CargoAnalyticsProps {
   tenantId?: string;
 }
 
-const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
+const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
   const [selectedFilter, setSelectedFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [timeRange, setTimeRange] = useState("7d");
@@ -137,7 +137,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'text-slate-500 bg-slate-50 border-slate-100';
-      case 'created': return 'text-indigo-600 bg-indigo-50 border-indigo-100';
+      case 'created': return 'text-primary-600 bg-primary-50 border-primary-100';
       case 'published': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
       case 'completed': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
       case 'in-transit': return 'text-sky-600 bg-sky-50 border-sky-100';
@@ -224,7 +224,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
         label: 'Revenue by Cargo Type',
         data: cargoData.cargoTypes.map(item => item.revenue),
         backgroundColor: [
-          'rgba(99, 102, 241, 0.8)',
+          '#2D5173', // Navy
           'rgba(16, 185, 129, 0.8)',
           'rgba(245, 158, 11, 0.8)',
           'rgba(239, 68, 68, 0.8)',
@@ -268,15 +268,25 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     }
   };
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredLoads.length / itemsPerPage);
+  
+  const paginatedLoads = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredLoads.slice(start, start + itemsPerPage);
+  }, [filteredLoads, currentPage]);
+
   return (
     <div className="space-y-10">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Loads', value: cargoData.summary.totalLoads.toLocaleString(), icon: Box, color: 'indigo' },
-          { label: 'Completed', value: cargoData.summary.completedLoads.toLocaleString(), icon: CheckCircle, color: 'emerald' },
-          { label: 'Total Revenue', value: formatCurrency(cargoData.summary.totalRevenue), icon: DollarSign, color: 'violet' },
-          { label: 'On-Time Rate', value: `${cargoData.summary.onTimeDelivery}%`, icon: Route, color: 'amber' }
+          { label: 'Total Shipments', value: cargoData.summary.totalLoads.toLocaleString(), icon: Box, color: 'indigo' },
+          { label: 'Success Rate', value: `${cargoData.summary.onTimeDelivery}%`, icon: Route, color: 'amber' },
+          { label: 'Delivered', value: cargoData.summary.completedLoads.toLocaleString(), icon: CheckCircle, color: 'emerald' },
+          { label: 'Earnings', value: formatCurrency(cargoData.summary.totalRevenue), icon: DollarSign, color: 'primary' }
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 hover:shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
@@ -284,8 +294,8 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
                 <p className="text-2xl font-black text-slate-800 tracking-tight leading-tight">{stat.value}</p>
               </div>
-              <div className={`p-3 bg-${stat.color}-50 rounded-xl`}>
-                <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+              <div className={`p-3 bg-primary-50 rounded-xl`}>
+                <stat.icon className={`w-6 h-6 text-primary-600`} />
               </div>
             </div>
           </div>
@@ -322,8 +332,8 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
         {/* Revenue Trend */}
         <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
           <div className="mb-8">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Financial Yield</h3>
-            <h4 className="text-xl font-black text-slate-800 tracking-tight">Revenue Trend</h4>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Financial Performance</h3>
+            <h4 className="text-xl font-black text-slate-800 tracking-tight">Earnings Trend</h4>
           </div>
           <div className="h-72">
             <Line data={revenueData} options={chartOptions} />
@@ -335,7 +345,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
       <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Segment breakdown</h3>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Cargo Breakdown</h3>
             <h4 className="text-xl font-black text-slate-800 tracking-tight">Revenue by Category</h4>
           </div>
           <div className="px-4 py-1.5 bg-gray-50 rounded-full border border-gray-100">
@@ -357,9 +367,9 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Logistics Core</h3>
               <h4 className="text-xl font-black text-slate-800 tracking-tight">Cargo Loads</h4>
             </div>
-            <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center text-sm font-black uppercase tracking-widest">
+            <button className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 flex items-center text-sm font-black uppercase tracking-widest">
               <Plus className="w-4 h-4 mr-2" />
-              New Load
+              New Shipment
             </button>
           </div>
         </div>
@@ -401,18 +411,18 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
           <table className="min-w-full divide-y divide-gray-50">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Metadata</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Shipment ID</th>
                 <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Logistics Path</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</th>
                 <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Payload</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Yield</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Chain</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Weight</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Income</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck/Driver</th>
                 <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-50">
-              {filteredLoads.map((load) => (
+              {paginatedLoads.map((load) => (
                 <tr key={load.id} className="hover:bg-indigo-50/10 transition-colors">
                   <td className="px-8 py-5 whitespace-nowrap">
                     <span className="text-sm font-black text-slate-800">{load.id}</span>
@@ -457,6 +467,31 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-8 py-4 bg-gray-50/30 border-t border-gray-50 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+              Showing page {currentPage} of {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-black uppercase tracking-widest text-slate-600 disabled:opacity-50 transition-all hover:bg-primary-50 hover:text-primary-600"
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-black uppercase tracking-widest text-slate-600 disabled:opacity-50 transition-all hover:bg-primary-50 hover:text-primary-600"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -765,4 +765,8 @@ export class Truck {
   @ManyToOne('User', 'trucks')
   @JoinColumn({ name: 'ownerId' })
   owner: User;
+
+  @ManyToOne('Driver', { nullable: true })
+  @JoinColumn({ name: 'currentDriverId' })
+  currentDriver?: any;
 }

@@ -44,8 +44,8 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
 
     // Enlite Prime Theme Colors
     const colors = {
-        primary: '#3F51B5', // Indigo
-        primaryLight: '#E8EAF6',
+        primary: '#345E85', // Navy (Uruti Primary)
+        primaryLight: '#F0F4F8',
         secondary: '#F50057', // Pink
         secondaryLight: '#FCE4EC',
         background: '#F9FAFB',
@@ -135,8 +135,8 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
         return (
             <div className="flex items-center justify-center h-screen bg-slate-50/50">
                 <div className="flex flex-col items-center">
-                    <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                    <p className="text-sm font-medium text-slate-500 animate-pulse">Loading billing data...</p>
+                    <div className="w-12 h-12 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin mb-4"></div>
+                    <p className="text-sm font-medium text-slate-500 animate-pulse">Loading billing information...</p>
                 </div>
             </div>
         );
@@ -174,7 +174,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                     <div>
                         <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">Partner Billing</h2>
                         <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
-                            Review and manage billing for <span className="text-indigo-600 font-semibold">{userName}</span>
+                            Review and manage billing for <span className="text-primary-600 font-semibold">{userName}</span>
                         </p>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -201,22 +201,22 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`py-3 text-xs md:text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                            className={`py-3 text-xs md:text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === tab ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'
                                 }`}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}
                             {activeTab === tab && (
                                 <motion.div
                                     layoutId="activeTabIndicator"
-                                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
+                                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full"
                                 />
                             )}
                         </button>
                     ))}
                 </div>
-                <div className="flex items-center gap-4 bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100/50 w-full md:w-auto justify-between md:justify-start">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Available Balance</span>
-                    <span className="text-base md:text-lg font-black text-indigo-700 tabular-nums">{(balance.currentBalance || 0).toLocaleString()} <span className="text-xs font-bold text-indigo-400 ml-0.5">CR</span></span>
+                <div className="flex items-center gap-4 bg-primary-50 px-4 py-2 rounded-2xl border border-primary-100/50 w-full md:w-auto justify-between md:justify-start">
+                    <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest">Available Balance</span>
+                    <span className="text-base md:text-lg font-black text-primary-700 tabular-nums">{(balance.currentBalance || 0).toLocaleString()} <span className="text-xs font-bold text-primary-400 ml-0.5">CR</span></span>
                 </div>
             </div>
 
@@ -238,11 +238,11 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                     <div className="relative z-10">
                                         <div className="flex justify-between items-start mb-6 md:mb-10">
                                             <div>
-                                                <h3 className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Account Summary</h3>
+                                                <h3 className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Credit Balance</h3>
                                                 <p className="text-2xl md:text-4xl font-black text-slate-900">{(balance.currentBalance || 0).toLocaleString()} <span className="text-sm md:text-lg text-slate-400 font-bold ml-1">Credits</span></p>
                                             </div>
-                                            <div className="p-3 md:p-4 bg-indigo-50 rounded-[18px]">
-                                                <Wallet className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
+                                            <div className="p-3 md:p-4 bg-primary-50 rounded-[18px]">
+                                                <Wallet className="w-6 h-6 md:w-8 md:h-8 text-primary-600" />
                                             </div>
                                         </div>
 
@@ -254,7 +254,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                                     <motion.div
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${Math.min(100, (balance.subscriptionCredits / balance.currentBalance) * 100 || 0)}%` }}
-                                                        className="h-full bg-indigo-500 rounded-full"
+                                                        className="h-full bg-primary-500 rounded-full"
                                                     />
                                                 </div>
                                             </div>
@@ -295,13 +295,13 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                             {getStatusChip(subscription?.status || 'Inactive')}
                                         </div>
                                         <div>
-                                            <h3 className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Service Tier</h3>
+                                            <h3 className="text-xs md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1">Current Plan</h3>
                                             <p className="text-xl md:text-2xl font-black text-slate-800">{subscription ? subscription.plan?.name : 'Free Tier'}</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setIsPlanModalOpen(true)}
-                                        className="mt-6 md:mt-10 w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[16px] text-sm font-bold transition-all shadow-lg shadow-indigo-100 active:scale-[0.98] flex items-center justify-center gap-2"
+                                        className="mt-6 md:mt-10 w-full py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-[16px] text-sm font-bold transition-all shadow-lg shadow-primary-100 active:scale-[0.98] flex items-center justify-center gap-2"
                                     >
                                         Manage Subscription
                                     </button>
@@ -311,8 +311,8 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                             {/* Details Table Card */}
                             <div className="bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden">
                                 <div className="px-6 md:px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
-                                    <h3 className="text-[10px] md:text-sm font-black text-slate-900 uppercase tracking-wider">Billing Specifics</h3>
-                                    <button className="text-[10px] md:text-xs font-bold text-indigo-600 hover:underline">Download PDF</button>
+                                    <h3 className="text-[10px] md:text-sm font-black text-slate-900 uppercase tracking-wider">Billing Details</h3>
+                                    <button className="text-[10px] md:text-xs font-bold text-primary-600 hover:underline">Download PDF</button>
                                 </div>
                                 <div className="grid grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 lg:divide-x divide-slate-100">
                                     {[
@@ -341,8 +341,8 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                         >
                             <div className="bg-white p-6 md:p-12 rounded-[24px] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-slate-100">
                                 <div className="text-center mb-8 md:mb-10">
-                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-50 rounded-[22px] flex items-center justify-center mx-auto mb-6">
-                                        <Zap className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />
+                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-50 rounded-[22px] flex items-center justify-center mx-auto mb-6">
+                                        <Zap className="w-8 h-8 md:w-10 md:h-10 text-primary-600" />
                                     </div>
                                     <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-2">Adjust Credits</h3>
                                     <p className="text-sm text-slate-500 font-medium">Add or remove credits from this partner's account.</p>
@@ -356,10 +356,10 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                                 type="number"
                                                 value={adjustAmount || ''}
                                                 onChange={(e) => setAdjustAmount(parseInt(e.target.value) || 0)}
-                                                className="w-full px-5 md:px-6 py-3.5 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-base md:text-lg focus:bg-white focus:border-indigo-600 transition-all outline-none"
+                                                className="w-full px-5 md:px-6 py-3.5 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-base md:text-lg focus:bg-white focus:border-primary-600 transition-all outline-none"
                                                 placeholder="0"
                                             />
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-indigo-400">CREDITS</div>
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-primary-400">CREDITS</div>
                                         </div>
                                     </div>
 
@@ -378,7 +378,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                         <button
                                             onClick={() => handleAdjustCredits('add')}
                                             disabled={adjustCreditsMutation.isPending}
-                                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-primary-100 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                                         >
                                             <Plus className="w-4 h-4" /> Grant
                                         </button>
@@ -412,7 +412,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                         placeholder="Search by description or amount..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-11 pr-6 py-3.5 bg-white border border-slate-200 rounded-[14px] text-sm font-medium focus:border-indigo-600 transition-all outline-none"
+                                        className="w-full pl-11 pr-6 py-3.5 bg-white border border-slate-200 rounded-[14px] text-sm font-medium focus:border-primary-600 transition-all outline-none"
                                     />
                                 </div>
                                 <div className="flex gap-3">
@@ -462,7 +462,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                                         </p>
                                                     </td>
                                                     <td className="px-8 py-5 text-right">
-                                                        <button className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-400 hover:text-indigo-600">
+                                                        <button className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-400 hover:text-primary-600">
                                                             <Eye className="w-4 h-4" />
                                                         </button>
                                                     </td>
@@ -504,7 +504,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                         >
                             <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Modify Service Tier</h3>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Change Subscription Plan</h3>
                                     <p className="text-sm text-slate-500 font-medium">Select a plan to update features and credit allocations.</p>
                                 </div>
                                 <button
@@ -520,7 +520,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                     <div
                                         key={plan.id}
                                         className={`relative p-8 rounded-[24px] border-2 transition-all flex flex-col justify-between group ${subscription?.planId === plan.id
-                                            ? 'border-indigo-600 bg-indigo-50/20'
+                                            ? 'border-primary-600 bg-primary-50/20'
                                             : 'border-slate-100 hover:border-slate-200'
                                             }`}
                                     >
@@ -528,23 +528,23 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                             <div className="flex justify-between items-start mb-4">
                                                 <h4 className="text-xl font-black text-slate-900">{plan.name}</h4>
                                                 {subscription?.planId === plan.id && (
-                                                    <CheckCircle2 className="w-6 h-6 text-indigo-600" />
+                                                    <CheckCircle2 className="w-6 h-6 text-primary-600" />
                                                 )}
                                             </div>
                                             <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed line-clamp-2">{plan.description}</p>
 
                                             <div className="space-y-4 mb-10">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center">
-                                                        <Plus className="w-3 h-3 text-indigo-600" />
+                                                    <div className="w-6 h-6 bg-primary-50 rounded-full flex items-center justify-center">
+                                                        <Plus className="w-3 h-3 text-primary-600" />
                                                     </div>
                                                     <span className="text-xs font-bold text-slate-600">{(plan.includedCredits || 0).toLocaleString()} Base Credits</span>
                                                 </div>
                                                 {(Object.entries(plan.features || {}) as [string, boolean][]).map(([key, value]) => (
                                                     value && (
                                                         <div key={key} className="flex items-center gap-3">
-                                                            <div className="w-6 h-6 bg-indigo-50 rounded-full flex items-center justify-center">
-                                                                <CheckCircle2 className="w-3 h-3 text-indigo-600" />
+                                                            <div className="w-6 h-6 bg-primary-50 rounded-full flex items-center justify-center">
+                                                                <CheckCircle2 className="w-3 h-3 text-primary-600" />
                                                             </div>
                                                             <span className="text-xs font-bold text-slate-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                                                         </div>
@@ -563,7 +563,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                                 onClick={() => handleUpdatePlan(plan.id, 'monthly')}
                                                 className={`w-full py-4 rounded-[16px] font-black text-sm transition-all ${subscription?.planId === plan.id
                                                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
+                                                    : 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-100'
                                                     }`}
                                             >
                                                 {subscription?.planId === plan.id ? 'Current Plan' : 'Activate Plan'}

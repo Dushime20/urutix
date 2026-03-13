@@ -14,22 +14,22 @@ if (typeof window !== 'undefined' && shouldInitializePostHog()) {
   const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY;
   
   try {
-    posthog.init(POSTHOG_API_KEY, {
+    posthog.init(POSTHOG_API_KEY!, {
       api_host: 'https://app.posthog.com',
       loaded: (posthog) => {
         console.log('📊 PostHog loaded callback triggered');
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           posthog.debug();
         }
       },
-      autocapture: process.env.NODE_ENV === 'production', // Only enable in production
+      autocapture: import.meta.env.PROD, // Only enable in production
       capture_pageview: true,
       capture_pageleave: true,
       disable_session_recording: false,
       enable_recording_console_log: true,
       bootstrap: {
         // Ensure user identification is properly handled
-        distinctId: null,
+        distinctID: undefined,
       },
     });
     

@@ -24,6 +24,23 @@ export enum TenantType {
   PARTNER = 'PARTNER',
 }
 
+export enum KycStatus {
+  PENDING = 'PENDING',
+  SUBMITTED = 'SUBMITTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  INCOMPLETE = 'INCOMPLETE',
+}
+
+export enum OnboardingStep {
+  STEP_1_BRANDING = 'STEP_1_BRANDING',
+  STEP_2_KYC = 'STEP_2_KYC',
+  STEP_3_PLAN = 'STEP_3_PLAN',
+  STEP_4_CONFIG = 'STEP_4_CONFIG',
+  COMPLETED = 'COMPLETED',
+}
+
 @Entity('tenants')
 @Index(['subdomain'], { unique: true, where: 'deleted_at IS NULL' })
 @Index(['status', 'type'])
@@ -132,6 +149,40 @@ export class Tenant {
 
   @Column({ nullable: true })
   suspendedReason?: string;
+
+  // KYC Fields
+  @Column({
+    type: 'enum',
+    enum: KycStatus,
+    default: KycStatus.PENDING,
+  })
+  kycStatus: KycStatus;
+
+  @Column('jsonb', { default: {} })
+  kycData: Record<string, any>;
+
+  @Column({ nullable: true })
+  kycSubmittedAt?: Date;
+
+  @Column({ nullable: true })
+  kycVerifiedAt?: Date;
+
+  @Column({ nullable: true })
+  kycNotes?: string;
+
+  @Column({ nullable: true })
+  kycReviewedBy?: string;
+
+  // Onboarding Fields
+  @Column({
+    type: 'enum',
+    enum: OnboardingStep,
+    default: OnboardingStep.STEP_1_BRANDING,
+  })
+  onboardingStep: OnboardingStep;
+
+  @Column({ nullable: true })
+  onboardingCompletedAt?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

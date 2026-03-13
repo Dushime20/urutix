@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Truck, Box, Clock, Navigation, LayoutGrid, Map as MapIcon } from 'lucide-react';
+import { MapPin, Truck, Box, Navigation, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tenantApi } from '../../services/tenantApi';
 import type { Trip } from '../../services/tenantApi';
@@ -8,23 +8,51 @@ import TripMap from './TripMap';
 
 interface ActiveTripsProps {
     tenantId: string;
+    onTrackTrip?: (activity: any) => void;
 }
 
-const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId }) => {
+const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId, onTrackTrip }) => {
     const [viewMode, setViewMode] = React.useState<'list' | 'map'>('list');
     const [selectedTripId, setSelectedTripId] = React.useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [statusFilter, setStatusFilter] = React.useState<string>('all');
 
     const { data: trips = [], isLoading } = useQuery({
         queryKey: ['activeTrips', tenantId],
         queryFn: () => tenantApi.getActiveTrips(tenantId),
     });
 
+    const filteredTrips = React.useMemo(() => {
+        return trips.filter(trip => {
+            const matchesSearch = trip.tripNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (typeof trip.origin === 'string' ? trip.origin : (trip.origin?.name || '')).toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (typeof trip.destination === 'string' ? trip.destination : (trip.destination?.name || '')).toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const matchesStatus = statusFilter === 'all' || trip.status === statusFilter;
+            
+            return matchesSearch && matchesStatus;
+        });
+    }, [trips, searchQuery, statusFilter]);
+
+    const handleTrackMovement = (trip: Trip) => {
+        if (onTrackTrip) {
+            onTrackTrip({
+                action: `Movement Tracking: ${trip.tripNumber}`,
+                description: `${trip.tripNumber} in transit from ${typeof trip.origin === 'string' ? trip.origin : (trip.origin?.name || 'Unknown')} to ${typeof trip.destination === 'string' ? trip.destination : (trip.destination?.name || 'Unknown')}`,
+                type: 'shipment',
+                status: trip.status === 'DELAYED' ? 'warning' : 'success',
+                timestamp: 'Live Feed',
+                metadata: { tripId: trip.id }
+            });
+        }
+    };
+
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-96">
                 <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
-                    <p className="text-sm font-medium text-slate-500">Scanning satellite network...</p>
+                    <div className="w-16 h-16 border-4 border-primary-50 border-t-primary-600 rounded-full animate-spin mb-6" />
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing Satellite Network...</p>
                 </div>
             </div>
         );
@@ -34,155 +62,175 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId }) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between px-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900">Active Movements</h3>
-                    <p className="text-xs text-slate-500 font-medium">Monitoring <span className="text-indigo-600">{trips.length} units</span> in transit</p>
+                    <h3 className="text-xl font-black text-slate-800 tracking-tight">Active Trips</h3>
+                    <p className="text-sm text-slate-500 font-medium">Monitoring <span className="text-primary-600 font-bold">{trips.length} units</span> live</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="relative group w-full sm:w-64">
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                            <Navigation className="w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search movements..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 pr-4 py-2 bg-white border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all w-full shadow-sm"
+                        />
+                    </div>
+
+                    <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="py-2.5 px-4 bg-white border border-slate-100 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-primary-500/10 shadow-sm"
+                    >
+                        <option value="all">Global Fleet</option>
+                        <option value="IN_PROGRESS">In Transit</option>
+                        <option value="DELAYED">Delayed</option>
+                        <option value="PLANNED">Planned</option>
+                    </select>
+
+                    <div className="flex bg-white p-1 rounded-[18px] border border-slate-100 shadow-sm shrink-0">
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`p-1.5 rounded-lg transition-all ${viewMode === 'list'
-                                ? 'bg-white text-indigo-600 shadow-sm'
+                            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-2 ${viewMode === 'list'
+                                ? 'bg-primary-600 text-white shadow-lg'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
                         >
                             <LayoutGrid className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Grid</span>
                         </button>
                         <button
                             onClick={() => setViewMode('map')}
-                            className={`p-1.5 rounded-lg transition-all ${viewMode === 'map'
-                                ? 'bg-white text-indigo-600 shadow-sm'
+                            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-2 ${viewMode === 'map'
+                                ? 'bg-primary-600 text-white shadow-lg'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
                         >
                             <MapIcon className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Network</span>
                         </button>
                     </div>
                 </div>
             </div>
 
             {viewMode === 'list' ? (
-                trips.length === 0 ? (
+                filteredTrips.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center justify-center p-12 bg-white rounded-[32px] border border-dashed border-slate-200"
+                        className="flex flex-col items-center justify-center p-20 bg-white rounded-[40px] border border-dashed border-slate-200 shadow-inner"
                     >
-                        <div className="p-4 bg-slate-50 rounded-full mb-6">
-                            <Navigation className="w-8 h-8 text-slate-300" />
+                        <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center mb-6 border border-slate-100 rotate-12">
+                            <Navigation className="w-10 h-10 text-slate-300 -rotate-12" />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">No Active Movements</h3>
-                        <p className="text-sm text-slate-500 text-center max-w-xs leading-relaxed">
-                            All fleet nodes are currently idle or planned. Switch to Map View to see the fleet network.
+                        <h3 className="text-xl font-black text-slate-800 mb-2">No active trips found</h3>
+                        <p className="text-sm text-slate-400 text-center max-w-sm leading-relaxed font-medium">
+                            Adjust your filters or search terms to see more results.
                         </p>
                     </motion.div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <AnimatePresence>
-                            {trips.map((trip: Trip) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <AnimatePresence mode="popLayout">
+                            {filteredTrips.map((trip: Trip) => (
                                 <motion.div
                                     key={trip.id}
                                     layout
-                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className="bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group p-6"
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    className="bg-white rounded-[40px] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group"
                                 >
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-3 bg-indigo-50 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
-                                                <Truck className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{trip.tripNumber}</p>
-                                                <h4 className="text-sm font-bold text-slate-900">
-                                                    {typeof trip.origin === 'string' ? trip.origin : (trip.origin?.name || 'Unknown')}
-                                                    {' → '}
-                                                    {typeof trip.destination === 'string' ? trip.destination : (trip.destination?.name || 'Unknown')}
-                                                </h4>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedTripId(trip.id);
-                                                setViewMode('map');
-                                            }}
-                                            className="p-2 hover:bg-slate-50 rounded-xl transition-colors"
-                                        >
-                                            <MapIcon className="w-4 h-4 text-slate-400" />
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-4 mb-6">
-                                        <div className="relative pl-6 space-y-4">
-                                            <div className="absolute left-1 top-1 bottom-1 w-0.5 bg-slate-100">
-                                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
-                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-indigo-500 border-2 border-white shadow-sm" />
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-slate-500">Departure</span>
-                                                <span className="text-xs font-black text-slate-900 uppercase">
-                                                    {typeof trip.origin === 'string' ? trip.origin : (trip.origin?.name || 'N/A')}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-slate-500">Destination</span>
-                                                <span className="text-xs font-black text-slate-900 uppercase">
-                                                    {typeof trip.destination === 'string' ? trip.destination : (trip.destination?.name || 'N/A')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-6 border-t border-slate-50 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Clock className="w-4 h-4 text-slate-400" />
-                                                <span className="text-xs font-bold text-slate-600">On-Time Performance</span>
-                                            </div>
-                                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider">
-                                                EXCELLENT
-                                            </span>
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress Node</span>
-                                                <span className="text-xs font-black text-indigo-600 tracking-tighter">64%</span>
-                                            </div>
-                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: '64%' }}
-                                                    className="h-full bg-indigo-600 rounded-full"
-                                                />
+                                    <div className="p-8">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-4 bg-gradient-to-br from-primary-500 to-primary-700 rounded-[24px] text-white shadow-lg shadow-primary-200 group-hover:scale-110 transition-transform duration-500">
+                                                    <Truck className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{trip.tripNumber}</p>
+                                                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                                                            trip.status === 'DELAYED' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                                            trip.status === 'IN_PROGRESS' ? 'bg-primary-50 text-primary-600 border border-primary-100' :
+                                                            'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                        }`}>
+                                                            {trip.status === 'IN_PROGRESS' ? 'In Transit' : trip.status}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-base font-black text-slate-800 tracking-tight line-clamp-1">
+                                                        {typeof trip.origin === 'string' ? trip.origin : (trip.origin?.name || 'Point A')}
+                                                        {' → '}
+                                                        {typeof trip.destination === 'string' ? trip.destination : (trip.destination?.name || 'Point B')}
+                                                    </h4>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="p-3 bg-slate-50 rounded-2xl">
-                                                <div className="flex items-center gap-2 mb-1">
+                                        <div className="space-y-6 relative mb-8">
+                                            <div className="absolute left-[13px] top-1.5 bottom-1.5 w-0.5 bg-slate-100 rounded-full" />
+                                            
+                                            <div className="flex gap-4 relative">
+                                                <div className="w-7 h-7 bg-emerald-500 rounded-full border-[6px] border-white shadow-sm shrink-0 z-10" />
+                                                <div className="flex-1">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">Departure Hub</p>
+                                                    <p className="text-xs font-bold text-slate-700">{typeof trip.origin === 'string' ? trip.origin : (trip.origin?.name || 'Main Terminal')}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-4 relative">
+                                                <div className="w-7 h-7 bg-primary-600 rounded-full border-[6px] border-white shadow-sm shrink-0 z-10" />
+                                                <div className="flex-1">
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">Destination</p>
+                                                    <p className="text-xs font-bold text-slate-700">{typeof trip.destination === 'string' ? trip.destination : (trip.destination?.name || 'Logistics Center')}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 pt-8 border-t border-slate-50">
+                                            <div className="p-4 bg-slate-50 rounded-[24px] border border-transparent hover:border-slate-100 transition-colors">
+                                                <div className="flex items-center gap-2 mb-2">
                                                     <Box className="w-3.5 h-3.5 text-slate-400" />
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cargo Type</span>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mt-0.5">Asset</span>
                                                 </div>
-                                                <p className="text-xs font-bold text-slate-900 truncate">General Commodities</p>
+                                                <p className="text-[11px] font-bold text-slate-900 truncate">{trip.truckNumber || 'Asset-74X'}</p>
                                             </div>
-                                            <div className="p-3 bg-slate-50 rounded-2xl">
-                                                <div className="flex items-center gap-2 mb-1">
+                                            <div className="p-4 bg-slate-50 rounded-[24px] border border-transparent hover:border-slate-100 transition-colors">
+                                                <div className="flex items-center gap-2 mb-2">
                                                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Next Stop</span>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mt-0.5">Location</span>
                                                 </div>
-                                                <p className="text-xs font-bold text-slate-900 truncate">Voi Checkpoint</p>
+                                                <p className="text-[11px] font-bold text-slate-900 truncate">Voi Checkpoint</p>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <div className="px-8 py-6 bg-slate-50/50 border-t border-white flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-black text-primary-600 tracking-tighter">TRANSIT 64%</span>
+                                            </div>
+                                            <div className="h-1.5 w-24 bg-slate-200 rounded-full overflow-hidden">
+                                                <div className="h-full bg-primary-600 w-[64%]" />
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleTrackMovement(trip)}
+                                            className="px-6 py-3 bg-white hover:bg-primary-600 text-primary-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100"
+                                        >
+                                            Track Live
+                                        </button>
                                     </div>
                                 </motion.div>
                             ))}
                         </AnimatePresence>
                     </div>
                 )
+
             ) : (
                 <TripMap
                     trips={trips}

@@ -41,68 +41,68 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
 
   const stats = [
     {
-      title: 'Total Revenue',
+      title: 'Total Earnings',
       value: formatCurrency(metrics?.totalRevenue),
       icon: DollarSign,
-      themeColor: 'text-[#ff9800]',
-      borderColor: 'border-[#ff9800]',
-      shadowColor: 'shadow-[#ff9800]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Active Shipments',
+      title: 'Trips Today',
       value: formatNumber(metrics?.totalShipments),
       icon: Box,
-      themeColor: 'text-[#9c27b0]',
-      borderColor: 'border-[#9c27b0]',
-      shadowColor: 'shadow-[#9c27b0]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Live Fleet',
+      title: 'Active Trucks',
       value: (metrics?.activeFleet || 0).toString(),
       icon: Truck,
-      themeColor: 'text-[#e91e63]',
-      borderColor: 'border-[#e91e63]',
-      shadowColor: 'shadow-[#e91e63]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Reliability Rate',
+      title: 'On-Time Delivery',
       value: formatPercentage(metrics?.onTimeDelivery),
       icon: CheckCircle,
-      themeColor: 'text-[#3f51b5]',
-      borderColor: 'border-[#3f51b5]',
-      shadowColor: 'shadow-[#3f51b5]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Partner Trust',
+      title: 'Customer Rating',
       value: `${metrics?.customerSatisfaction || 0}/5`,
       icon: Star,
-      themeColor: 'text-[#ff9800]',
-      borderColor: 'border-[#ff9800]',
-      shadowColor: 'shadow-[#ff9800]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Fuel Optimization',
-      value: `${metrics?.fuelEfficiency || 0} L/km`,
+      title: 'Fuel Efficiency',
+      value: `${metrics?.fuelEfficiency || 0} km/L`,
       icon: Route,
-      themeColor: 'text-[#9c27b0]',
-      borderColor: 'border-[#9c27b0]',
-      shadowColor: 'shadow-[#9c27b0]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Asset Yield',
+      title: 'Truck Capacity',
       value: formatPercentage(metrics?.averageLoadUtilization),
       icon: Box,
-      themeColor: 'text-[#e91e63]',
-      borderColor: 'border-[#e91e63]',
-      shadowColor: 'shadow-[#e91e63]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     },
     {
-      title: 'Conflict Index',
+      title: 'Reported Issues',
       value: formatPercentage(metrics?.disputeRate),
       icon: AlertTriangle,
-      themeColor: 'text-[#3f51b5]',
-      borderColor: 'border-[#3f51b5]',
-      shadowColor: 'shadow-[#3f51b5]/20'
+      themeColor: 'text-primary-600',
+      borderColor: 'border-primary-100',
+      shadowColor: 'shadow-primary-100/20'
     }
   ];
 
@@ -124,7 +124,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10 py-6"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-12 py-10"
     >
       {stats.map((stat, index) => {
         const Icon = stat.icon;
@@ -132,17 +132,17 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
           <motion.div
             key={index}
             variants={item}
-            className="flex items-center space-x-5 transition-transform duration-300 hover:translate-x-1"
+            className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group"
           >
-            <div className={`relative flex-shrink-0 items-center justify-center w-16 h-16 rounded-full bg-white border ${stat.borderColor} ${stat.shadowColor} shadow-lg overflow-hidden transition-all duration-500 hover:scale-110 flex`}>
-              <Icon className="w-8 h-8 text-[#009688]" strokeWidth={2.5} />
+            <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white border ${stat.borderColor} shadow-xl ${stat.shadowColor} overflow-hidden transition-all duration-500 group-hover:scale-110`}>
+              <Icon size={28} className="text-primary-600" />
             </div>
 
             <div className="flex flex-col">
-              <span className={`text-2xl font-black ${stat.themeColor} tracking-tight leading-none mb-1`}>
+              <span className={`text-4xl font-black ${stat.themeColor} tracking-tight leading-none mb-1.5`}>
                 {stat.value}
               </span>
-              <span className="text-[14px] font-bold text-slate-500 whitespace-nowrap">
+              <span className="text-[11px] font-black text-slate-400 whitespace-nowrap uppercase tracking-[0.2em]">
                 {stat.title}
               </span>
             </div>

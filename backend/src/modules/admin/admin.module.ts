@@ -50,6 +50,7 @@ import { BulkEmailController } from './bulk-email.controller';
 import { BulkEmailService } from '../../services/bulk-email.service';
 import { AIEmailAssistantService } from '../../services/ai-email-assistant.service';
 // EmailService is imported from EnhancedAuthModule
+import { NotificationsModule } from '../notifications/notifications.module';
 
 // System Health imports
 import { SystemHealthLog } from '../../entities/system-health.entity';
@@ -105,6 +106,7 @@ import { TenantManagementController } from './tenant-management.controller';
     ]),
     UsersModule, // Import UsersModule to use UsersService
     EnhancedAuthModule, // Import EnhancedAuthModule to use PermissionService
+    NotificationsModule, // Import NotificationsModule for SmsService + NotificationsService
   ],
   controllers: [
     AdminController,

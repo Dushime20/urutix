@@ -76,15 +76,9 @@ const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
-const TenantFleetManagement = lazy(() => import('./components/TenantAdmin/TenantFleetManagement'));
-const TruckOwnerBilling = lazy(() => import('./pages/tenant-admin/TruckOwnerBilling'));
 const PartnerBillingManager = lazy(() => import('./pages/tenant-admin/PartnerBillingManager'));
-
 const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
-const TenantAdminDrivers = lazy(() => import('./components/TenantAdmin/TenantAdminDrivers'));
-const TenantAdminCargo = lazy(() => import('./components/TenantAdmin/TenantAdminCargo'));
-const TenantAdminTrips = lazy(() => import('./components/TenantAdmin/TenantAdminTrips'));
-const TenantLenderManagementPage = lazy(() => import('./pages/TenantLenderManagementPage'));
+
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const LenderPolicySettingsPage = lazy(() => import('./pages/LenderPolicySettingsPage'));
@@ -404,22 +398,24 @@ function App() {
                     {/* Tenant Admin Routes */}
                     <Route path="/tenant-admin" element={<TenantAdminLayout />}>
                       <Route index element={<TenantDashboardPage />} />
-                      <Route path="fleet" element={<TenantFleetManagement />} />
-                      <Route path="cargo" element={<TenantAdminCargo />} />
-                      <Route path="drivers" element={<TenantAdminDrivers />} />
-                      <Route path="lenders" element={<TenantLenderManagementPage />} />
+                      <Route path="fleet" element={<TenantDashboardPage defaultView="fleet" />} />
+                      <Route path="cargo" element={<TenantDashboardPage defaultView="cargo" />} />
+                      <Route path="drivers" element={<TenantDashboardPage defaultView="drivers" />} />
+                       <Route path="users" element={<TenantDashboardPage defaultView="users" />} />
+                      <Route path="lenders" element={<TenantDashboardPage defaultView="lenders" />} />
                       <Route path="routes" element={<TenantAdminRoutes />} />
-                      <Route path="trips" element={<TenantAdminTrips />} />
+                      <Route path="trips" element={<TenantDashboardPage defaultView="trips" />} />
                       <Route path="financial" element={<TenantDashboardPage defaultView="financial" />} />
                       <Route path="purchase-credits" element={<TenantDashboardPage defaultView="purchase-credits" />} />
                       <Route path="billing" element={<TenantDashboardPage defaultView="billing" />} />
                       <Route path="subscription-plans" element={<SubscriptionPlans />} />
-                      <Route path="truck-owners" element={<TruckOwnerBilling />} />
+                      <Route path="truck-owners" element={<TenantDashboardPage defaultView="truck-owners" />} />
                       <Route path="partner-billing" element={<PartnerBillingManager />} />
+                       <Route path="communication" element={<TenantDashboardPage defaultView="communicate" />} />
                       <Route path="analytics" element={<TenantDashboardPage />} />
                       <Route path="reports" element={<TenantDashboardPage />} />
-                      <Route path="profile" element={<Profile />} />
-                      <Route path="settings" element={<Settings />} />
+                      <Route path="profile" element={<TenantDashboardPage defaultView="profile" />} />
+                      <Route path="settings" element={<TenantDashboardPage defaultView="settings" />} />
                     </Route>
 
                     {/* Lender Routes */}

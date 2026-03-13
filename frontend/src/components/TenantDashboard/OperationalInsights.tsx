@@ -3,9 +3,9 @@ import {
   AlertTriangle, CheckCircle, Info,
   Truck, Route, Clock, Thermometer,
   MapPin as MapPinIcon, Lightbulb, Bell,
-  XCircle, ArrowRight, Filter, Search,
-  Download, ThermometerSun, Wind, Droplets,
-  Zap, TrendingUp, Shield, MoreHorizontal, X
+  XCircle, ArrowRight, Search,
+  ThermometerSun, Wind, Droplets,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -52,7 +52,7 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
 
   // Enlite Prime Theme Colors
   const colors = {
-    primary: '#3F51B5', // Indigo
+    primary: '#2D5173', // Navy
     primaryLight: '#E8EAF6',
     background: '#F9FAFB',
     surface: '#FFFFFF',
@@ -163,7 +163,7 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
       case 'warning':
         return <AlertTriangle className="w-5 h-5 text-amber-500" />;
       case 'info':
-        return <Info className="w-5 h-5 text-indigo-500" />;
+        return <Info className="w-5 h-5 text-primary-600" />;
       case 'success':
         return <CheckCircle className="w-5 h-5 text-emerald-500" />;
       case 'critical':
@@ -235,8 +235,8 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
                 }`}
             >
               {tab === 'alerts' && 'Active Alerts'}
-              {tab === 'routes' && 'Efficiency Engine'}
-              {tab === 'weather' && 'Weather Scan'}
+              {tab === 'routes' && 'Route Efficiency'}
+              {tab === 'weather' && 'Weather Updates'}
               {activeTab === tab && (
                 <motion.div
                   layoutId="opTabIndicator"
@@ -335,8 +335,8 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
                     <div className="w-16 h-16 bg-[#f0f7ff] rounded-full flex items-center justify-center mx-auto mb-4">
                       <Shield className="w-8 h-8 text-[#1e40af]" />
                     </div>
-                    <h4 className="text-lg font-black text-slate-900">All Nodes Secure</h4>
-                    <p className="text-sm text-slate-400 max-w-xs mx-auto mt-1">Operational parameters are within optimal range for the current grid.</p>
+                    <h4 className="text-lg font-black text-slate-900">No Issues Found</h4>
+                    <p className="text-sm text-slate-400 max-w-xs mx-auto mt-1">All systems are running normally across your network.</p>
                   </div>
                 )}
               </div>
@@ -351,7 +351,7 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
               exit={{ opacity: 0, scale: 0.98 }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-8"
             >
-              {routeOptimizations.map((opt, idx) => (
+              {routeOptimizations.map((opt) => (
                 <div key={opt.id} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5 transition-all flex flex-col justify-between overflow-hidden relative group">
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-8">
@@ -364,8 +364,8 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
                         </div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-10">Route Analysis Node #{opt.id}</p>
                       </div>
-                      <div className="px-3 py-1 bg-[#f0f9ff] rounded-full border border-slate-100">
-                        <span className="text-[11px] font-black text-[#1e40af]">+{opt.potentialImprovement}% Yield</span>
+                      <div className="px-3 py-1 bg-primary-50 rounded-full border border-slate-100">
+                        <span className="text-[11px] font-black text-primary-600">+{opt.potentialImprovement}% Improvement</span>
                       </div>
                     </div>
 
@@ -385,7 +385,7 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
                     </div>
 
                     <div className="space-y-4 pl-2">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Adjustments</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recommended Actions</p>
                       <div className="space-y-2">
                         {opt.recommendations.map((rec, i) => (
                           <div key={i} className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-white transition-all cursor-default">

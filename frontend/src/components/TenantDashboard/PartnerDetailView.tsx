@@ -8,6 +8,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { PartnerBillingDetails } from './PartnerBillingDetails';
 
+import { tenantApi } from '../../services/tenantApi';
+import { toast } from 'react-hot-toast';
+
 interface PartnerProfile {
     firstName: string;
     lastName: string;
@@ -16,8 +19,8 @@ interface PartnerProfile {
 interface Partner {
     id: string;
     email: string;
-    role: 'TRUCK_OWNER' | 'CARGO_OWNER';
-    status: 'ACTIVE' | 'SUSPENDED' | 'PENDING';
+    role: 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER';
+    status: 'ACTIVE' | 'SUSPENDED' | 'PENDING' | 'PENDING_VERIFICATION' | 'DEACTIVATED';
     profile?: PartnerProfile;
     phone?: string;
 }
@@ -45,8 +48,8 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
     const tabs = [
         { id: 'overview', label: 'Overview', icon: User },
         { id: 'billing', label: 'Financials', icon: CreditCard },
-        ...(partner.role === 'TRUCK_OWNER' ? [{ id: 'fleet', label: 'Fleet Node', icon: Truck }] : []),
-        { id: 'performance', label: 'Yield Analytics', icon: TrendingUp }
+        ...(partner.role === 'TRUCK_OWNER' ? [{ id: 'fleet', label: 'My Fleet', icon: Truck }] : []),
+        { id: 'performance', label: 'Performance', icon: TrendingUp }
     ];
 
     return (
@@ -54,11 +57,11 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
             {/* Top Navigation / Header */}
             <div className="px-6 md:px-10 py-6 md:py-8 bg-white border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0">
                 <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
-                    <div className="w-12 h-12 md:w-14 md:h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 flex-shrink-0">
+                    <div className="w-12 h-12 md:w-14 md:h-14 bg-primary-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-100 flex-shrink-0">
                         <span className="text-white font-black text-lg md:text-xl">{partner.profile?.firstName?.[0] || partner.email?.[0]}</span>
                     </div>
                     <div className="min-w-0">
-                        <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5 md:mb-1">Partner Identity Node</h3>
+                        <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5 md:mb-1">Partner Profile</h3>
                         <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 truncate">{partner.profile?.firstName} {partner.profile?.lastName}</h2>
                     </div>
                 </div>
@@ -83,7 +86,7 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as 'overview' | 'billing' | 'fleet' | 'performance')}
-                        className={`py-4 md:py-5 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+                        className={`py-4 md:py-5 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-primary-600' : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         <tab.icon className="w-3.5 h-3.5 inline mr-2 -mt-0.5" />
@@ -91,7 +94,7 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                         {activeTab === tab.id && (
                             <motion.div
                                 layoutId="partnerTabIndicator"
-                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full"
                             />
                         )}
                     </button>
@@ -112,13 +115,13 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                             {/* Key Performance Row */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                                 {[
-                                    { label: 'Network Yield', value: `${partnerExt.onTimeRate}%`, icon: Award, color: 'indigo' },
-                                    { label: 'Rating Index', value: `${partnerExt.rating}/5.0`, icon: Activity, color: 'amber' },
-                                    { label: 'Life-Cycle Loads', value: partnerExt.totalLoads, icon: Box, color: 'emerald' }
+                                    { label: 'On-Time Delivery', value: `${partnerExt.onTimeRate}%`, icon: Award, color: 'primary' },
+                                    { label: 'Partner Rating', value: `${partnerExt.rating}/5.0`, icon: Activity, color: 'amber' },
+                                    { label: 'Total Loads', value: partnerExt.totalLoads, icon: Box, color: 'emerald' }
                                 ].map((stat, i) => (
                                     <div key={i} className="bg-white p-5 md:p-6 rounded-[24px] border border-slate-100 shadow-sm flex md:block items-center md:items-start gap-4 md:gap-0">
-                                        <div className={`w-10 h-10 rounded-xl bg-${stat.color}-50 flex items-center justify-center mb-0 md:mb-4 flex-shrink-0`}>
-                                            <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
+                                        <div className={`w-10 h-10 rounded-xl bg-${stat.color === 'primary' ? 'primary-50' : stat.color + '-50'} flex items-center justify-center mb-0 md:mb-4 flex-shrink-0`}>
+                                            <stat.icon className={`w-5 h-5 text-${stat.color === 'primary' ? 'primary-600' : stat.color + '-600'}`} />
                                         </div>
                                         <div>
                                             <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 md:mb-1">{stat.label}</p>
@@ -131,14 +134,14 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                             {/* Info & Metadata */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div className="bg-white p-6 md:p-8 rounded-[32px] border border-slate-100 shadow-sm">
-                                    <h4 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 md:mb-6">Metadata Payload</h4>
+                                    <h4 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 md:mb-6">Contact Information</h4>
                                     <div className="space-y-4 md:space-y-6">
                                         <div className="flex items-center gap-4">
                                             <div className="p-2.5 md:p-3 bg-slate-50 rounded-xl flex-shrink-0">
                                                 <Mail className="w-4 h-4 text-slate-400" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Node</p>
+                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</p>
                                                 <p className="text-xs md:text-sm font-bold text-slate-800 truncate">{partner.email}</p>
                                             </div>
                                         </div>
@@ -147,7 +150,7 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                                                 <Phone className="w-4 h-4 text-slate-400" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Vector</p>
+                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</p>
                                                 <p className="text-xs md:text-sm font-bold text-slate-800 truncate">{partner.phone || 'Not Configured'}</p>
                                             </div>
                                         </div>
@@ -156,7 +159,7 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                                                 <MapPin className="w-4 h-4 text-slate-400" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Operations</p>
+                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Location</p>
                                                 <p className="text-xs md:text-sm font-bold text-slate-800 truncate">{partnerExt.location}</p>
                                             </div>
                                         </div>
@@ -165,29 +168,66 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                                                 <Calendar className="w-4 h-4 text-slate-400" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">System Ingress</p>
+                                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Member Since</p>
                                                 <p className="text-xs md:text-sm font-bold text-slate-800 truncate">{partnerExt.joinDate}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-indigo-600 p-6 md:p-8 rounded-[32px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                                <div className="bg-primary-600 p-6 md:p-8 rounded-[32px] text-white shadow-xl shadow-primary-100 relative overflow-hidden group">
                                     <div className="relative z-10">
                                         <h4 className="text-[9px] md:text-[10px] font-black text-white/60 uppercase tracking-widest mb-4 md:mb-6">Quick Actions</h4>
                                         <div className="space-y-3 md:space-y-4">
                                             <button className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3.5 md:p-4 rounded-2xl flex items-center justify-between transition-all group/btn">
-                                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">Audit Activity Node</span>
+                                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">View Activity Logs</span>
                                                 <History className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                             </button>
                                             <button className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3.5 md:p-4 rounded-2xl flex items-center justify-between transition-all group/btn">
-                                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">Edit Profile Payload</span>
+                                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">Update Profile</span>
                                                 <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                             </button>
-                                            <button className="w-full bg-rose-500 hover:bg-rose-600 p-3.5 md:p-4 rounded-2xl flex items-center justify-between transition-all shadow-lg shadow-rose-900/20">
-                                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">Suspend Access Node</span>
-                                                <AlertCircle className="w-4 h-4" />
-                                            </button>
+                                            
+                                            <div className="pt-4 border-t border-white/10 mt-2">
+                                                <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-4">Manage User Access</p>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {[
+                                                        { id: 'ACTIVE', label: 'Approve & Activate', color: 'emerald', desc: 'Allows full access' },
+                                                        { id: 'PENDING_VERIFICATION', label: 'Wait for Verification', color: 'amber', desc: 'Needs documents check' },
+                                                        { id: 'SUSPENDED', label: 'Suspend Account', color: 'rose', desc: 'Temporary block access' },
+                                                        { id: 'DEACTIVATED', label: 'Disable Account', color: 'slate', desc: 'Permanent removal' }
+                                                    ].map((s) => (
+                                                        <button
+                                                            key={s.id}
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const confirmChange = window.confirm(`Change status to ${s.label}?`);
+                                                                    if (!confirmChange) return;
+                                                                    
+                                                                    await tenantApi.updateTenantUser(partner.id, { status: s.id as any });
+                                                                    toast.success(`Account is now ${s.label}`);
+                                                                    window.location.reload(); 
+                                                                } catch (err) {
+                                                                    toast.error('Could not update status');
+                                                                }
+                                                            }}
+                                                            className={`p-4 rounded-2xl border transition-all flex flex-col items-start gap-1 group/status ${
+                                                                partner.status === s.id 
+                                                                    ? 'bg-white text-primary-600 border-white shadow-xl scale-[1.02]' 
+                                                                    : 'bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                               <div className={`w-2 h-2 rounded-full bg-${s.color}-400 ${s.id === 'ACTIVE' && partner.status === 'ACTIVE' ? 'animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]' : ''}`} />
+                                                               <span className="text-[10px] font-black uppercase tracking-widest">{s.label}</span>
+                                                            </div>
+                                                            <span className={`text-[8px] font-medium opacity-60 group-hover/status:opacity-100 ${partner.status === s.id ? 'text-primary-400' : 'text-white'}`}>
+                                                               {s.desc}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
@@ -224,16 +264,16 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Active Fleet Nodes</h4>
+                                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Registered Trucks</h4>
                                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tracking 4 total assets</p>
                                 </div>
-                                <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest">Register Node</button>
+                                <button className="bg-primary-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest">Add Truck</button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={i} className="bg-white p-5 md:p-6 rounded-[24px] border border-slate-100 shadow-sm flex items-center gap-4 md:gap-6">
                                         <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-50 rounded-2xl flex items-center justify-center flex-shrink-0">
-                                            <Truck className="w-6 h-6 md:w-8 md:h-8 text-indigo-500" />
+                                            <Truck className="w-6 h-6 md:w-8 md:h-8 text-primary-500" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-start">
@@ -265,12 +305,12 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                             className="space-y-10"
                         >
                             <div className="bg-white p-6 md:p-10 rounded-[32px] border border-slate-100 shadow-sm text-center py-16 md:py-20">
-                                <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                                    <TrendingUp className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />
+                                <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                                    <TrendingUp className="w-8 h-8 md:w-10 md:h-10 text-primary-600" />
                                 </div>
-                                <h4 className="text-lg md:text-xl font-black text-slate-900 tracking-tight mb-2">Performance Analytics Node</h4>
-                                <p className="text-xs md:text-sm text-slate-400 font-medium max-w-sm mx-auto mb-6 md:mb-8">Access historical yield data, corridor efficiency ratings, and on-time performance vectoring.</p>
-                                <button className="bg-indigo-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100">Initialize Analysis</button>
+                                <h4 className="text-lg md:text-xl font-black text-slate-900 tracking-tight mb-2">Performance History</h4>
+                                <p className="text-xs md:text-sm text-slate-400 font-medium max-w-sm mx-auto mb-6 md:mb-8">Access historical performance data, delivery efficiency ratings, and on-time statistics.</p>
+                                <button className="bg-primary-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-100">View Detailed Report</button>
                             </div>
                         </motion.div>
                     )}

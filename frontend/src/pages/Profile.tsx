@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaEnvelope, FaPhone, FaBuilding, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+import { 
+  User, Mail, Phone, Building2, MapPin, 
+  Map, Globe, Info, Save, Edit3, Camera,
+  Shield, Clock, Star, CheckCircle, FileCheck
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
-import { TranslatedText } from '../components/translated-text';
-
+import { motion, AnimatePresence } from 'framer-motion';
+import { KycStatusBanner } from '../components/UserKYC/KycStatusBanner';
+import { KycManagementPage } from '../components/UserKYC/KycManagementPage';
 
 interface UserProfile {
   id: string;
@@ -27,14 +32,13 @@ interface UserProfile {
 }
 
 const Profile: React.FC = () => {
-  const { user, updateProfile } = useAuth();
-  // const { currency, setCurrency, availableCurrencies } = useCurrency(); // Removed
-
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showKycManagement, setShowKycManagement] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -61,15 +65,11 @@ const Profile: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch profile from API
       const response = await authAPI.getProfile();
       const userData = response.data?.data?.user || response.data?.user || response.data;
 
-      if (!userData) {
-        throw new Error('No user data received');
-      }
+      if (!userData) throw new Error('No user data received');
 
-      // Use logged-in user data from context as fallback
       const profileData: UserProfile = {
         id: userData.id || user?.id || '',
         userId: userData.id || user?.id || '',
@@ -106,7 +106,6 @@ const Profile: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Error loading profile:', err);
-      // If API fails, use logged-in user data from context
       if (user) {
         const fallbackProfile: UserProfile = {
           id: user.id,
@@ -114,63 +113,15 @@ const Profile: React.FC = () => {
           firstName: user.firstName || '',
           lastName: user.lastName || '',
           companyName: user.tenantName || '',
-          phone: '',
-          address: '',
-          city: '',
-          state: '',
-          country: '',
-          postalCode: '',
-          bio: '',
-          websiteUrl: '',
-          rating: 0,
-          totalTrips: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         setProfile(fallbackProfile);
-        setFormData({
-          firstName: fallbackProfile.firstName || '',
-          lastName: fallbackProfile.lastName || '',
-          companyName: fallbackProfile.companyName || '',
-          phone: '',
-          address: '',
-          city: '',
-          state: '',
-          country: '',
-          postalCode: '',
-          bio: '',
-          websiteUrl: '',
-        });
       } else {
-        setError('Failed to load profile. Please try again.');
+        setError('Failed to load profile.');
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleEdit = () => {
-    setEditing(true);
-    setError(null);
-    setSuccess(null);
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        companyName: profile.companyName,
-        phone: profile.phone || '',
-        address: profile.address || '',
-        city: profile.city || '',
-        state: profile.state || '',
-        country: profile.country || '',
-        postalCode: profile.postalCode || '',
-        bio: profile.bio || '',
-        websiteUrl: profile.websiteUrl || '',
-      });
     }
   };
 
@@ -178,24 +129,13 @@ const Profile: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // In a real app, this would call the API
-      // await updateProfile(formData);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      await new Promise(resolve => setTimeout(resolve, 800));
       if (profile) {
-        const updatedProfile = {
-          ...profile,
-          ...formData,
-          updatedAt: new Date().toISOString(),
-        };
-        setProfile(updatedProfile);
+        setProfile({ ...profile, ...formData, updatedAt: new Date().toISOString() });
       }
-
       setEditing(false);
       setSuccess('Profile updated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError('Failed to update profile');
     } finally {
@@ -204,289 +144,253 @@ const Profile: React.FC = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (loading) {
+  if (showKycManagement) {
+    return <KycManagementPage />;
+  }
+
+  if (loading && !profile) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 px-4 py-3 mb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600">
-              <FaUser className="w-4 h-4 text-white" />
+    <div className="max-w-7xl mx-auto space-y-8 pb-20 p-4 md:p-8">
+      {/* Header Banner */}
+      <div className="relative h-64 md:h-80 bg-slate-900 rounded-[40px] overflow-hidden shadow-2xl border border-white/5">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/5 rounded-full -ml-32 -mb-32 blur-3xl" />
+        
+        <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 flex flex-col md:flex-row items-center md:items-end gap-8 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent">
+          <div className="relative group">
+            <div className="w-32 h-32 md:w-40 md:h-40 bg-white/10 backdrop-blur-xl rounded-[32px] border border-white/20 flex items-center justify-center text-5xl font-black text-primary-400 shadow-2xl">
+              {profile?.firstName?.[0]}{profile?.lastName?.[0]}
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">
-                <TranslatedText text="Profile" />
-              </h1>
-              <p className="text-xs text-gray-600 mt-0.5">
-                <TranslatedText text="Manage your account information" />
-              </p>
+            <button className="absolute -bottom-2 -right-2 p-3 bg-primary-600 text-white rounded-2xl shadow-xl hover:bg-primary-700 transition-all border-4 border-slate-900">
+              <Camera size={20} />
+            </button>
+          </div>
+          <div className="flex-1 text-center md:text-left space-y-3">
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+              {profile?.firstName} {profile?.lastName}
+            </h1>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-primary-200">
+              <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-full border border-white/10 backdrop-blur-md">
+                <Shield size={14} className="text-emerald-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Verified Account</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-full border border-white/10 backdrop-blur-md">
+                <Star size={14} className="text-amber-400 fill-amber-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest">{profile?.rating || 4.9} Performance</span>
+              </div>
             </div>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-4">
             {editing ? (
               <>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
-                >
-                  <FaSave className="w-3.5 h-3.5" />
-                  <span><TranslatedText text="Save" /></span>
+                <button onClick={handleSave} className="px-8 py-4 bg-primary-600 text-white rounded-[20px] text-xs font-black uppercase tracking-widest hover:bg-primary-700 transition-all shadow-xl shadow-primary-500/20 flex items-center gap-3">
+                  <Save size={18} /> Save Changes
                 </button>
-                <button
-                  onClick={handleCancel}
-                  className="px-3 py-1.5 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 flex items-center gap-1.5 transition-colors"
-                >
-                  <FaTimes className="w-3.5 h-3.5" />
-                  <span><TranslatedText text="Cancel" /></span>
+                <button onClick={() => setEditing(false)} className="px-8 py-4 bg-white/10 text-white rounded-[20px] text-xs font-black uppercase tracking-widest hover:bg-white/20 transition-all backdrop-blur-md">
+                  Cancel
                 </button>
               </>
             ) : (
-              <button
-                onClick={handleEdit}
-                className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
-              >
-                <FaEdit className="w-3.5 h-3.5" />
-                <span><TranslatedText text="Edit Profile" /></span>
+              <button onClick={() => setEditing(true)} className="px-8 py-4 bg-white text-slate-900 rounded-[20px] text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl flex items-center gap-3">
+                <Edit3 size={18} /> Edit Profile
               </button>
             )}
+            <button 
+              onClick={() => setShowKycManagement(true)} 
+              className="px-8 py-4 bg-emerald-600 text-white rounded-[20px] text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl flex items-center gap-3"
+            >
+              <FileCheck size={18} /> KYC Center
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Alerts */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-xs">
-          {error}
-        </div>
-      )}
+      {/* KYC Status Banner */}
+      <KycStatusBanner
+        onStartKyc={() => setShowKycManagement(true)}
+        onViewKyc={() => setShowKycManagement(true)}
+        compact={false}
+        showActions={true}
+      />
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg text-xs">
-          {success}
-        </div>
-      )}
-
-      {/* Profile Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Profile Card */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FaUser className="w-8 h-8 text-gray-600" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Sidebar Info */}
+        <div className="lg:col-span-4 space-y-8">
+          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 space-y-8">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest italic">Node Statistics</h3>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-400">Total Trips</p>
+                <p className="text-3xl font-black text-slate-800 tracking-tight">{profile?.totalTrips || 0}</p>
               </div>
-              <h2 className="text-sm font-semibold text-gray-900">
-                {profile?.firstName} {profile?.lastName}
-              </h2>
-              <p className="text-xs text-gray-600 mt-0.5">{profile?.companyName}</p>
-              <div className="flex items-center justify-center space-x-3 mt-2">
-                <span className="text-xs text-gray-500">
-                  <TranslatedText text="Rating" />: {profile?.rating}/5
-                </span>
-                <span className="text-xs text-gray-500">•</span>
-                <span className="text-xs text-gray-500">
-                  {profile?.totalTrips} <TranslatedText text="trips" />
-                </span>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-400">Node Status</p>
+                <div className="flex items-center gap-2 text-emerald-500">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="text-sm font-black uppercase tracking-widest">Active</span>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <FaEnvelope className="w-3.5 h-3.5 text-gray-400" />
-                <span className="text-xs text-gray-600">{user?.email}</span>
+            
+            <hr className="border-slate-50" />
+            
+            <div className="space-y-6">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest italic">Contact Details</h3>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-primary-50 transition-colors">
+                    <Mail size={18} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</p>
+                    <p className="text-sm font-black text-slate-800 break-all">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-primary-50 transition-colors">
+                    <Phone size={18} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</p>
+                    <p className="text-sm font-black text-slate-800">{profile?.phone || 'Not Provided'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 group">
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-primary-50 transition-colors">
+                    <Clock size={18} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Member Since</p>
+                    <p className="text-sm font-black text-slate-800">{new Date(profile?.createdAt || '').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</p>
+                  </div>
+                </div>
               </div>
-              {profile?.phone && (
-                <div className="flex items-center space-x-2">
-                  <FaPhone className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="text-xs text-gray-600">{profile.phone}</span>
-                </div>
-              )}
-              {profile?.websiteUrl && (
-                <div className="flex items-center space-x-2">
-                  <FaBuilding className="w-3.5 h-3.5 text-gray-400" />
-                  <a
-                    href={profile.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    {profile.websiteUrl}
-                  </a>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Profile Form */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200 p-3">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              <TranslatedText text="Personal Information" />
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="First Name" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
+        {/* Main Form Area */}
+        <div className="lg:col-span-8">
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-10 py-8 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100">
+                  <Info size={20} className="text-primary-600" />
+                </div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Personal Information</h2>
               </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Last Name" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Company Name" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.companyName}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Phone Number" />
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Address" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="City" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="State/Province" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Country" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.country}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Postal Code" />
-                </label>
-                <input
-                  type="text"
-                  value={formData.postalCode}
-                  onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Website" />
-                </label>
-                <input
-                  type="url"
-                  value={formData.websiteUrl}
-                  onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
-                  disabled={!editing}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <TranslatedText text="Bio" />
-                </label>
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  disabled={!editing}
-                  rows={3}
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              {/* Currency Preference Section */}
-
             </div>
+
+            <div className="p-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-600 transition-colors" />
+                    <input
+                      disabled={!editing}
+                      type="text"
+                      value={formData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-600 outline-none transition-all disabled:opacity-60"
+                      placeholder="First Name"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-600 transition-colors" />
+                    <input
+                      disabled={!editing}
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-600 outline-none transition-all disabled:opacity-60"
+                      placeholder="Last Name"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name</label>
+                  <div className="relative group">
+                    <Building2 className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-600 transition-colors" />
+                    <input
+                      disabled={!editing}
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => handleInputChange('companyName', e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-600 outline-none transition-all disabled:opacity-60"
+                      placeholder="Company Name"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Address</label>
+                  <div className="relative group">
+                    <MapPin className="absolute left-6 top-6 w-4 h-4 text-slate-300 group-focus-within:text-primary-600 transition-colors" />
+                    <textarea
+                      disabled={!editing}
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-600 outline-none transition-all disabled:opacity-60 min-h-[120px]"
+                      placeholder="Detailed company address..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                  <div className="relative group">
+                    <Map className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-600 transition-colors" />
+                    <input
+                      disabled={!editing}
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-600 outline-none transition-all disabled:opacity-60"
+                      placeholder="City"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
+                  <div className="relative group">
+                    <Globe className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-600 transition-colors" />
+                    <input
+                      disabled={!editing}
+                      type="text"
+                      value={formData.country}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-600 outline-none transition-all disabled:opacity-60"
+                      placeholder="Country"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <AnimatePresence>
+              {success && (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="px-10 py-6 bg-emerald-50 text-emerald-600 text-xs font-black uppercase tracking-widest flex items-center gap-3">
+                  <CheckCircle size={16} /> {success}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -494,4 +398,4 @@ const Profile: React.FC = () => {
   );
 };
 
-export default Profile; 
+export default Profile;

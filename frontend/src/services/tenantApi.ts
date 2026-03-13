@@ -299,17 +299,32 @@ export const tenantApi = {
 
   // KYC Management
   submitKYC: async (tenantId: string, data: any): Promise<TenantInfo> => {
-    const response = await api.post(`/tenants/${tenantId}/kyc`, data);
+    const response = await api.post(`/kyc/submit`, data);
     return response.data;
   },
 
-  updateKYCStatus: async (tenantId: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<TenantInfo> => {
-    const response = await api.put(`/tenants/${tenantId}/kyc/status`, { status, notes });
+  updateKYCStatus: async (tenantId: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE' | 'UNDER_REVIEW', notes?: string): Promise<TenantInfo> => {
+    const response = await api.put(`/kyc/${tenantId}/status`, { status, notes });
     return response.data;
   },
 
   getPendingKYC: async (): Promise<TenantInfo[]> => {
-    const response = await api.get('/tenants/kyc/pending');
+    const response = await api.get('/kyc/pending');
+    return response.data;
+  },
+
+  getKYCStats: async (): Promise<any> => {
+    const response = await api.get('/kyc/stats');
+    return response.data;
+  },
+
+  getKYCDocuments: async (tenantId: string): Promise<any[]> => {
+    const response = await api.get(`/kyc/${tenantId}/documents`);
+    return response.data;
+  },
+
+  getKYCAuditLog: async (tenantId: string): Promise<any[]> => {
+    const response = await api.get(`/kyc/${tenantId}/audit-log`);
     return response.data;
   },
 
@@ -446,9 +461,9 @@ export const mockTenantData = {
     fuelEfficiency: [8.2, 8.5, 8.1, 8.8, 8.9, 8.6, 8.7],
   },
   recentActivity: [
-    { id: 1, type: 'shipment', action: 'completed', description: 'Load #L-2024-001 delivered successfully', timestamp: '2 hours ago', status: 'success' as const },
+    { id: 1, type: 'shipment', action: 'completed', description: 'Load #L-2024-001 delivered successfully', timestamp: '2 hours ago', status: 'success' as const, metadata: { tripId: 'trip-101' } },
     { id: 2, type: 'maintenance', action: 'scheduled', description: 'Truck #T-001 maintenance scheduled', timestamp: '4 hours ago', status: 'info' as const },
-    { id: 3, type: 'payment', action: 'received', description: 'Payment received for Load #L-2024-002', timestamp: '6 hours ago', status: 'success' as const },
+    { id: 3, type: 'payment', action: 'received', description: 'Payment received for Load #L-2024-002', timestamp: '6 hours ago', status: 'success' as const, metadata: { tripId: 'trip-102' } },
     { id: 4, type: 'dispute', action: 'resolved', description: 'Dispute resolved for Load #L-2024-003', timestamp: '1 day ago', status: 'warning' as const },
   ],
   performanceMetrics: [

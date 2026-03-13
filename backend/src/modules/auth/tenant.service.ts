@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, FindOptionsOrder, ILike, In, Repository } from 'typeorm';
-import { Tenant, TenantStatus, TenantType } from '../../entities/tenant.entity';
+import { Tenant, TenantStatus, TenantType, KycStatus, OnboardingStep } from '../../entities/tenant.entity';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
@@ -496,7 +496,8 @@ export class TenantService {
       tenantId: tenant.id,
       name: tenant.name,
       status: tenant.status,
-      // kycStatus: tenant.kycStatus, // TODO: Add KYC fields to Tenant entity
+      kycStatus: tenant.kycStatus,
+      onboardingStep: tenant.onboardingStep,
       // Add more stats as needed
     };
   }
@@ -504,10 +505,10 @@ export class TenantService {
   async submitKYC(id: string, kycData: any): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
 
-    // TODO: Add KYC fields to Tenant entity
-    // tenant.kycData = { ...tenant.kycData, ...kycData };
-    // tenant.kycStatus = 'SUBMITTED';
-    // tenant.kycSubmittedAt = new Date();
+    // Update tenant KYC data and status
+    tenant.kycData = { ...tenant.kycData, ...kycData };
+    tenant.kycStatus = KycStatus.SUBMITTED;
+    tenant.kycSubmittedAt = new Date();
 
     // Auto-update standard fields if provided in KYC
     if (kycData.registrationNumber) tenant.businessLicense = kycData.registrationNumber;
@@ -520,12 +521,18 @@ export class TenantService {
   async updateKYCStatus(id: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
 
-    // TODO: Add KYC fields to Tenant entity
-    // tenant.kycStatus = status;
-    // tenant.kycNotes = notes;
+    // Map string status to enum
+    const kycStatusMap = {
+      'APPROVED': KycStatus.APPROVED,
+      'REJECTED': KycStatus.REJECTED,
+      'INCOMPLETE': KycStatus.INCOMPLETE,
+    };
+
+    tenant.kycStatus = kycStatusMap[status];
+    tenant.kycNotes = notes;
 
     if (status === 'APPROVED') {
-      // tenant.kycVerifiedAt = new Date();
+      tenant.kycVerifiedAt = new Date();
       // Optionally activate tenant if they were pending activation
       if (tenant.status === TenantStatus.PENDING_ACTIVATION) {
         tenant.status = TenantStatus.ACTIVE;
@@ -539,17 +546,39 @@ export class TenantService {
   }
 
   async getTenantsByKYCStatus(status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE'): Promise<Tenant[]> {
-    // TODO: Add KYC fields to Tenant entity
+    // Map string status to enum
+    const kycStatusMap = {
+      'PENDING': KycStatus.PENDING,
+      'SUBMITTED': KycStatus.SUBMITTED,
+      'APPROVED': KycStatus.APPROVED,
+      'REJECTED': KycStatus.REJECTED,
+      'INCOMPLETE': KycStatus.INCOMPLETE,
+    };
+
     return this.tenantRepository.find({
-      // where: { kycStatus: status },
-      // order: { kycSubmittedAt: 'DESC' }
+      where: { kycStatus: kycStatusMap[status] },
+      order: { kycSubmittedAt: 'DESC' }
     });
   }
 
   async updateOnboardingStep(id: string, step: number): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
-    // TODO: Add onboardingStep field to Tenant entity
-    // tenant.onboardingStep = step;
+    
+    // Map number to enum
+    const stepMap = {
+      1: OnboardingStep.STEP_1_BRANDING,
+      2: OnboardingStep.STEP_2_KYC,
+      3: OnboardingStep.STEP_3_PLAN,
+      4: OnboardingStep.STEP_4_CONFIG,
+      5: OnboardingStep.COMPLETED,
+    };
+
+    tenant.onboardingStep = stepMap[step] || OnboardingStep.STEP_1_BRANDING;
+    
+    if (step === 5) {
+      tenant.onboardingCompletedAt = new Date();
+    }
+
     return this.tenantRepository.save(tenant);
   }
 

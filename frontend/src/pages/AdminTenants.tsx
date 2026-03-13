@@ -37,7 +37,7 @@ interface Tenant {
   contactEmail?: string;
   adminName?: string;
   location?: string;
-  kycStatus?: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
+  kycStatus?: 'PENDING' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
   kycData?: any;
   // Enhanced fields from new API
   healthScore?: number;
@@ -476,6 +476,8 @@ const AdminTenants: React.FC = () => {
       case 'APPROVED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'REJECTED': return 'bg-rose-50 text-rose-600 border-rose-100';
       case 'SUBMITTED': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+      case 'UNDER_REVIEW': return 'bg-yellow-50 text-yellow-600 border-yellow-100';
+      case 'INCOMPLETE': return 'bg-orange-50 text-orange-600 border-orange-100';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };

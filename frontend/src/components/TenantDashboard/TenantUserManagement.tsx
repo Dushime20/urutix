@@ -3,7 +3,9 @@ import {
     Users, UserPlus, Search,
     Truck, Box, CheckCircle,
     ArrowRight, Download,
-    X, Activity, Mail, Phone
+    X, Mail, Phone, Gavel, 
+    Navigation, DollarSign,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
 import PartnerDetailView from './PartnerDetailView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,8 +21,8 @@ interface PartnerProfile {
 interface Partner {
     id: string;
     email: string;
-    role: 'TRUCK_OWNER' | 'CARGO_OWNER';
-    status: 'ACTIVE' | 'SUSPENDED' | 'PENDING';
+    role: 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER';
+    status: 'ACTIVE' | 'SUSPENDED' | 'PENDING' | 'PENDING_VERIFICATION' | 'DEACTIVATED';
     profile?: PartnerProfile;
     phone?: string;
 }
@@ -32,9 +34,13 @@ interface TenantUserManagementProps {
 const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId }) => {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState<'ALL' | 'TRUCK_OWNER' | 'CARGO_OWNER'>('ALL');
+    const [roleFilter, setRoleFilter] = useState<'ALL' | 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER'>('ALL');
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     // Onboarding Form State
     const [onboardForm, setOnboardForm] = useState({
@@ -77,11 +83,25 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
         });
     }, [users, searchTerm, roleFilter]);
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredUsers.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+    // Reset to first page when filters change
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, roleFilter, pageSize]);
+
     const stats = useMemo(() => {
         return {
             total: users.length,
             truckOwners: users.filter((u: Partner) => u.role === 'TRUCK_OWNER').length,
             cargoOwners: users.filter((u: Partner) => u.role === 'CARGO_OWNER').length,
+            brokers: users.filter((u: Partner) => u.role === 'BROKER').length,
+            drivers: users.filter((u: Partner) => u.role === 'DRIVER').length,
+            lenders: users.filter((u: Partner) => u.role === 'LENDER').length,
             active: users.filter((u: Partner) => u.status === 'ACTIVE').length,
         };
     }, [users]);
@@ -90,6 +110,9 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
         switch (role) {
             case 'TRUCK_OWNER': return <Truck className="w-4 h-4 text-indigo-500" />;
             case 'CARGO_OWNER': return <Box className="w-4 h-4 text-emerald-500" />;
+            case 'BROKER': return <Gavel className="w-4 h-4 text-amber-500" />;
+            case 'DRIVER': return <Navigation className="w-4 h-4 text-primary-500" />;
+            case 'LENDER': return <DollarSign className="w-4 h-4 text-rose-500" />;
             default: return <Users className="w-4 h-4 text-slate-400" />;
         }
     };
@@ -102,74 +125,75 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
     return (
         <div className="space-y-8 pb-20">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 py-4">
                 {[
-                    { label: 'Network Entities', value: stats.total, icon: Users, color: 'indigo' },
-                    { label: 'Asset Owners', value: stats.truckOwners, icon: Truck, color: 'violet' },
-                    { label: 'Freight Nodes', value: stats.cargoOwners, icon: Box, color: 'emerald' },
-                    { label: 'Operational Status', value: stats.active, icon: CheckCircle, color: 'sky' }
+                    { label: 'Total Users', value: stats.total, icon: Users, borderColor: 'border-primary-100', shadowColor: 'shadow-primary-100/20' },
+                    { label: 'Truck Owners', value: stats.truckOwners, icon: Truck, borderColor: 'border-indigo-100', shadowColor: 'shadow-indigo-100/20' },
+                    { label: 'Cargo Owners', value: stats.cargoOwners, icon: Box, borderColor: 'border-emerald-100', shadowColor: 'shadow-emerald-100/20' },
+                    { label: 'Active Status', value: stats.active, icon: CheckCircle, borderColor: 'border-primary-100', shadowColor: 'shadow-primary-100/20' }
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-8 group hover:border-indigo-100 transition-all"
+                        className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`p-4 bg-${stat.color}-50 rounded-2xl group-hover:scale-110 transition-transform`}>
-                                <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
-                            </div>
-                            <Activity className="w-4 h-4 text-slate-100 group-hover:text-indigo-50 transition-colors" />
+                        <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white border ${stat.borderColor} shadow-xl ${stat.shadowColor} overflow-hidden transition-all duration-500 group-hover:scale-110`}>
+                            <stat.icon size={28} className="text-primary-600" />
                         </div>
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                            <p className="text-2xl font-black text-slate-900 tracking-tight">{stat.value}</p>
+
+                        <div className="flex flex-col">
+                            <span className={`text-3xl font-black text-primary-600 tracking-tight leading-none mb-1.5`}>
+                                {stat.value}
+                            </span>
+                            <span className="text-[11px] font-black text-slate-400 whitespace-nowrap uppercase tracking-[0.2em]">
+                                {stat.label}
+                            </span>
                         </div>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Hub Header */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] md:min-h-[600px] flex flex-col">
-                <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* User Directory Header */}
+            <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-6 md:px-10 py-6 md:py-10 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="text-center sm:text-left">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Central Hub</h3>
-                        <h4 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Partner Ecosystem</h4>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 italic">Users</h3>
+                        <h4 className="text-3xl font-black text-slate-900 tracking-tight">User List</h4>
                     </div>
                     <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-end">
-                        <button className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all">
+                        <button className="p-4 bg-slate-50 border border-slate-100 rounded-[20px] text-slate-400 hover:text-primary-600 transition-all">
                             <Download className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => setIsOnboardModalOpen(true)}
-                            className="flex-1 sm:flex-none justify-center bg-indigo-600 text-white px-6 md:px-8 py-3 md:py-3.5 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center text-[10px] font-black uppercase tracking-widest"
+                            className="flex-1 sm:flex-none justify-center bg-primary-600 text-white px-8 md:px-10 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 flex items-center text-[11px] font-black uppercase tracking-widest"
                         >
                             <UserPlus className="w-4 h-4 mr-3" />
-                            Ingress New Partner
+                            Add User
                         </button>
                     </div>
                 </div>
 
-                {/* Search & Filter Plane */}
-                <div className="px-6 md:px-10 py-4 md:py-6 border-b border-slate-50 flex flex-col lg:flex-row gap-4 md:gap-6 bg-slate-50/20">
+                <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-50 flex flex-col lg:flex-row gap-4 md:gap-6 bg-slate-50/20">
                     <div className="flex-1 relative">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                         <input
                             type="text"
-                            placeholder="Universal search (Entity ID, Name, Email)..."
+                            placeholder="Search by name, email, or ID..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-6 py-3.5 md:py-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all outline-none text-xs md:text-sm font-medium"
+                            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[20px] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-600 transition-all outline-none text-xs md:text-sm font-medium shadow-sm"
                         />
                     </div>
                     <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
-                        <div className="flex bg-white p-1 md:p-1.5 rounded-2xl border border-slate-100 shadow-sm min-w-max">
-                            {(['ALL', 'TRUCK_OWNER', 'CARGO_OWNER'] as const).map((role) => (
+                        <div className="flex bg-white p-1.5 rounded-[20px] border border-slate-100 shadow-sm min-w-max">
+                            {(['ALL', 'TRUCK_OWNER', 'CARGO_OWNER', 'BROKER', 'DRIVER', 'LENDER'] as const).map((role) => (
                                 <button
                                     key={role}
                                     onClick={() => setRoleFilter(role)}
-                                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all ${roleFilter === role ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'
+                                    className={`px-5 py-2.5 rounded-[14px] text-[9px] font-black uppercase tracking-widest transition-all ${roleFilter === role ? 'bg-primary-600 text-white shadow-lg shadow-primary-100' : 'text-slate-400 hover:text-slate-600'
                                         }`}
                                 >
                                     {role.replace('_', ' ')}
@@ -182,13 +206,13 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                 {/* Ecosystem Table */}
                 <div className="flex-1 overflow-x-auto custom-scrollbar">
                     <table className="w-full min-w-[800px]">
-                        <thead className="bg-slate-50/30 text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">
+                        <thead className="bg-slate-50/30 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">
                             <tr>
-                                <th className="px-6 md:px-10 py-4 md:py-6">Identity Node</th>
-                                <th className="px-6 md:px-10 py-4 md:py-6">Protocol / Role</th>
-                                <th className="px-6 md:px-10 py-4 md:py-6">Ecosystem Access</th>
-                                <th className="px-6 md:px-10 py-4 md:py-6">Sync Status</th>
-                                <th className="px-6 md:px-10 py-4 md:py-6 text-right">Action Cell</th>
+                                <th className="px-10 py-6 italic">User Info</th>
+                                <th className="px-10 py-6">Role</th>
+                                <th className="px-10 py-6">Contact</th>
+                                <th className="px-10 py-6">Status</th>
+                                <th className="px-10 py-6 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -200,7 +224,19 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                                         </td>
                                     </tr>
                                 ))
-                            ) : filteredUsers.map((user: Partner) => (
+                            ) : paginatedUsers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-10 py-20 text-center">
+                                        <div className="w-20 h-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 border border-slate-100">
+                                            <Users className="text-slate-200 w-10 h-10" />
+                                        </div>
+                                        <h5 className="text-sm font-black text-slate-800 uppercase tracking-widest">No Users Found</h5>
+                                        <p className="text-xs text-slate-400 mt-2 font-medium">
+                                            {filteredUsers.length === 0 ? 'No users match your search criteria.' : 'Start by adding users to your tenant.'}
+                                        </p>
+                                    </td>
+                                </tr>
+                            ) : paginatedUsers.map((user: Partner) => (
                                 <motion.tr
                                     key={user.id}
                                     layout
@@ -209,13 +245,13 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                                 >
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-5">
-                                            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 group-hover:bg-indigo-600 group-hover:border-indigo-600 transition-all duration-300">
-                                                <span className="text-indigo-600 font-black text-sm group-hover:text-white">
+                                            <div className="w-12 h-12 bg-primary-50 rounded-[18px] flex items-center justify-center border border-primary-100 group-hover:bg-primary-600 group-hover:border-primary-600 transition-all duration-300">
+                                                <span className="text-primary-600 font-black text-sm group-hover:text-white italic">
                                                     {user.profile?.firstName?.[0] || 'U'}
                                                 </span>
                                             </div>
                                             <div>
-                                                <p className="text-base font-black text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">
+                                                <p className="text-base font-black text-slate-900 tracking-tight group-hover:text-primary-600 transition-colors">
                                                     {user.profile?.firstName} {user.profile?.lastName}
                                                 </p>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -251,15 +287,17 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                                     <td className="px-10 py-6">
                                         <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${user.status === 'ACTIVE'
                                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                            : user.status === 'SUSPENDED' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+                                            : user.status === 'SUSPENDED' ? 'bg-rose-50 text-rose-600 border-rose-100' 
+                                            : user.status === 'PENDING_VERIFICATION' ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                            : 'bg-slate-50 text-slate-600 border-slate-100'
                                             }`}>
                                             <div className={`w-1.5 h-1.5 rounded-full mr-2 ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                                            {user.status}
+                                            {user.status === 'PENDING_VERIFICATION' ? 'PENDING' : user.status}
                                         </div>
                                     </td>
                                     <td className="px-10 py-6 text-right">
-                                        <button className="text-slate-400 group-hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-xl">
-                                            <ArrowRight className="w-6 h-6" />
+                                        <button className="text-slate-400 group-hover:text-primary-600 transition-colors p-3 hover:bg-primary-50 rounded-xl">
+                                            <ArrowRight className="w-5 h-5 translate-x-0 group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     </td>
                                 </motion.tr>
@@ -267,6 +305,86 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {!isLoading && filteredUsers.length > 0 && (
+                    <div className="px-6 md:px-10 py-6 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        {/* Results Info */}
+                        <div className="flex items-center gap-4">
+                            <p className="text-xs font-bold text-slate-500">
+                                Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+                            </p>
+                            
+                            {/* Page Size Selector */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-400">Show:</span>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => setPageSize(Number(e.target.value))}
+                                    className="px-3 py-1.5 bg-white border border-slate-100 rounded-lg text-xs font-bold text-slate-600 focus:border-primary-600 focus:ring-2 focus:ring-primary-500/10 outline-none"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Pagination Navigation */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center gap-2">
+                                {/* Previous Button */}
+                                <button
+                                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-lg border border-slate-100 text-slate-400 hover:text-primary-600 hover:border-primary-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+
+                                {/* Page Numbers */}
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
+                                                    currentPage === pageNum
+                                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-100'
+                                                        : 'text-slate-400 hover:text-primary-600 hover:bg-primary-50'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Next Button */}
+                                <button
+                                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-lg border border-slate-100 text-slate-400 hover:text-primary-600 hover:border-primary-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Deep Analytics Slideover/Modal */}
@@ -286,11 +404,13 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                             className="w-full max-w-6xl shadow-2xl"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <PartnerDetailView
-                                partner={selectedPartner}
-                                tenantId={tenantId}
-                                onClose={() => setSelectedPartner(null)}
-                            />
+                            {selectedPartner && (
+                                <PartnerDetailView
+                                    partner={selectedPartner}
+                                    tenantId={tenantId}
+                                    onClose={() => setSelectedPartner(null)}
+                                />
+                            )}
                         </motion.div>
                     </motion.div>
                 )}
@@ -313,51 +433,51 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                             className="bg-white w-full max-w-xl rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden border border-white/20 max-h-[95vh] flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="bg-indigo-600 p-6 md:p-10 text-white relative overflow-hidden flex-shrink-0">
+                             <div className="bg-primary-600 p-8 md:p-12 text-white relative overflow-hidden flex-shrink-0">
                                 <div className="relative z-10">
-                                    <div className="flex justify-between items-start mb-6 md:mb-10">
-                                        <div className="p-3 md:p-4 bg-white/10 rounded-2xl md:rounded-3xl border border-white/20 backdrop-blur-md">
-                                            <UserPlus className="w-6 h-6 md:w-8 md:h-8" />
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="p-4 bg-white/10 rounded-[24px] border border-white/20 backdrop-blur-md">
+                                            <UserPlus className="w-8 h-8" />
                                         </div>
                                         <button onClick={() => setIsOnboardModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                            <X className="w-5 h-5 md:w-6 md:h-6" />
+                                            <X className="w-6 h-6" />
                                         </button>
                                     </div>
-                                    <h3 className="text-2xl md:text-3xl font-black tracking-tight">Partner Ingress</h3>
-                                    <p className="text-white/60 text-xs md:text-sm font-medium mt-2">Initializing new entity node in the ecosystem.</p>
+                                    <h3 className="text-3xl font-black tracking-tight">Add User</h3>
+                                    <p className="text-white/60 text-xs font-medium mt-2">Create a new partner account in your network.</p>
                                 </div>
                                 <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                             </div>
 
-                            <div className="overflow-y-auto flex-1 custom-scrollbar">
+                            <div className="overflow-y-auto flex-1 custom-scrollbar rounded-t-[40px] -mt-8 bg-white relative z-20">
                                 <form onSubmit={handleOnboardSubmit} className="p-6 md:p-10 space-y-6 md:space-y-8 bg-slate-50/50">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Identity</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
                                             <input
                                                 required
                                                 type="text"
                                                 value={onboardForm.firstName}
                                                 onChange={(e) => setOnboardForm({ ...onboardForm, firstName: e.target.value })}
-                                                className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl font-bold text-sm focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all"
-                                                placeholder="Enter name..."
+                                                className="w-full px-6 py-5 bg-slate-50 border border-transparent rounded-[20px] font-bold text-sm focus:bg-white focus:border-primary-600 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all shadow-inner"
+                                                placeholder="Enter first name"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Identity</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
                                             <input
                                                 required
                                                 type="text"
                                                 value={onboardForm.lastName}
                                                 onChange={(e) => setOnboardForm({ ...onboardForm, lastName: e.target.value })}
-                                                className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl font-bold text-sm focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all"
-                                                placeholder="Enter surname..."
+                                                className="w-full px-6 py-5 bg-slate-50 border border-transparent rounded-[20px] font-bold text-sm focus:bg-white focus:border-primary-600 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all shadow-inner"
+                                                placeholder="Enter last name"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Node Address</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                         <div className="relative">
                                             <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                                             <input
@@ -365,28 +485,31 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                                                 type="email"
                                                 value={onboardForm.email}
                                                 onChange={(e) => setOnboardForm({ ...onboardForm, email: e.target.value })}
-                                                className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-2xl font-bold text-sm focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all"
-                                                placeholder="identity@ecosystem.network"
+                                                className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-transparent rounded-[20px] font-bold text-sm focus:bg-white focus:border-primary-600 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all shadow-inner"
+                                                placeholder="user@example.com"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Protocol Authorization</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Role</label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
                                             {[
-                                                { id: 'TRUCK_OWNER', label: 'Asset Owner', icon: Truck },
-                                                { id: 'CARGO_OWNER', label: 'Freight Node', icon: Box }
+                                                { id: 'TRUCK_OWNER', label: 'Truck Owner', icon: Truck },
+                                                { id: 'CARGO_OWNER', label: 'Cargo Owner', icon: Box },
+                                                { id: 'BROKER', label: 'Broker', icon: Gavel },
+                                                { id: 'DRIVER', label: 'Driver', icon: Navigation },
+                                                { id: 'LENDER', label: 'Lender', icon: DollarSign }
                                             ].map(role => (
                                                 <button
                                                     key={role.id}
                                                     type="button"
                                                     onClick={() => setOnboardForm({ ...onboardForm, role: role.id })}
-                                                    className={`p-6 rounded-[24px] border-2 transition-all flex flex-col items-center gap-3 ${onboardForm.role === role.id ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-100 bg-white hover:border-slate-200'
+                                                    className={`p-6 md:p-8 rounded-[30px] border-2 transition-all flex flex-col items-center gap-4 ${onboardForm.role === role.id ? 'border-primary-600 bg-primary-50/50' : 'border-slate-50 bg-slate-50 hover:bg-white hover:border-slate-200 shadow-inner hover:shadow-none'
                                                         }`}
                                                 >
-                                                    <role.icon className={`w-8 h-8 ${onboardForm.role === role.id ? 'text-indigo-600' : 'text-slate-300'}`} />
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${onboardForm.role === role.id ? 'text-indigo-600' : 'text-slate-400'}`}>{role.label}</span>
+                                                    <role.icon className={`w-6 h-6 md:w-8 md:h-8 ${onboardForm.role === role.id ? 'text-primary-600' : 'text-slate-300'}`} />
+                                                    <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest text-center ${onboardForm.role === role.id ? 'text-primary-600' : 'text-slate-400'}`}>{role.label}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -395,10 +518,10 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                                     <button
                                         type="submit"
                                         disabled={onboardMutation.isPending}
-                                        className="w-full py-4 md:py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[20px] md:rounded-[24px] font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-2xl shadow-indigo-100 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+                                        className="w-full py-6 bg-primary-600 hover:bg-primary-700 text-white rounded-[24px] font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-primary-100 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
                                     >
-                                        {onboardMutation.isPending ? 'Syncing...' : 'Complete Ingress'}
-                                        <ArrowRight className="w-4 h-4" />
+                                        {onboardMutation.isPending ? 'Saving...' : 'Create Account'}
+                                        <ArrowRight className="w-5 h-5" />
                                     </button>
                                 </form>
                             </div>

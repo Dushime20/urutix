@@ -18,9 +18,6 @@ async function bootstrap() {
   });
   console.log(`📁 Serving static files from: ${uploadsPath}`);
 
-  // Configure CORS origins.
-  // In development you can set ALLOWED_ORIGINS="http://localhost:5173,http://localhost:5713"
-  // otherwise we fall back to sensible localhost entries.
   // Configure CORS origins from environment variable ONLY
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
@@ -32,14 +29,44 @@ async function bootstrap() {
     console.log('✅ CORS Allowed Origins:', allowedOrigins);
   }
 
-  // Enable CORS for HTTP requests
+  // Enhanced CORS with wildcard subdomain support
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Check static allowed origins first
+      if (allowedOrigins.includes(origin)) {
+        console.log(`✅ CORS: Allowed request from ${origin} (static origin)`);
+        return callback(null, true);
+      }
+
+      // Wildcard pattern matching for subdomains
+      const allowedPatterns = [
+        /^http:\/\/localhost:\d+$/,                    // localhost:port
+        /^http:\/\/127\.0\.0\.1:\d+$/,                // 127.0.0.1:port
+        /^http:\/\/[^.]+\.localhost:\d+$/,            // *.localhost:port
+        /^https:\/\/[^.]+\.urutix\.com$/,             // *.urutix.com
+        /^https:\/\/urutix\.com$/,                    // main domain
+        /^http:\/\/[^.]+\.urutix\.com:\d+$/,          // *.urutix.com:port (dev)
+      ];
+
+      const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+      
+      if (isAllowed) {
+        console.log(`✅ CORS: Allowed request from ${origin} (pattern match)`);
+        callback(null, true);
+      } else {
+        console.log(`❌ CORS: Blocked request from ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'X-Tenant-Subdomain',  // Add subdomain header
       'x-tenant-id',
       'X-Tenant-ID',
       'Accept',

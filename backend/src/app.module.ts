@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -31,14 +31,19 @@ import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
 import { FuelModule } from './modules/fuel/fuel.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { UserKycModule } from './modules/user-kyc/user-kyc.module';
+import { KycModule } from './modules/kyc/kyc.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
+import { Tenant } from './entities/tenant.entity';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forFeature([Tenant]), // Add Tenant entity for middleware
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     EnhancedAuthModule,
@@ -68,9 +73,17 @@ import { ThrottlerModule } from '@nestjs/throttler';
     BrokersModule,
     FuelModule,
     SubscriptionModule,
+    KycModule,
+    UserKycModule,
 
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TenantSubdomainMiddleware)
+      .forRoutes('*'); // Apply to all routes
+  }
+}

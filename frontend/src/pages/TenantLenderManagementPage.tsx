@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
-import { 
-  FaTrash, 
-  FaPlus, 
-  FaEnvelope, 
-  FaPhone, 
-  FaBuilding, 
-  FaSearch,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaTimes
-} from 'react-icons/fa';
+import {
+  Plus, Search, Building2, Mail, Phone,
+  CheckCircle, AlertTriangle, X,
+  ArrowRight, Download, Filter
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Lender {
   id: string;
@@ -28,8 +23,6 @@ const TenantLenderManagementPage: React.FC = () => {
     phone: '',
   });
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [fetching, setFetching] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -60,8 +53,6 @@ const TenantLenderManagementPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess(false);
     try {
       await lendingApi.createTenantLender({
         name: form.name,
@@ -69,7 +60,6 @@ const TenantLenderManagementPage: React.FC = () => {
         callback_url: undefined
       });
       
-      setSuccess(true);
       setForm({ name: '', email: '', phone: '' });
       setShowModal(false);
       setLoading(false);
@@ -78,26 +68,8 @@ const TenantLenderManagementPage: React.FC = () => {
     } catch (err: any) {
       console.error('Error creating lender:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Error registering lender';
-      
-      // Simplify error message for email conflicts
-      let displayError = errorMessage;
-      if (errorMessage.includes('already exists') || errorMessage.includes('email') || errorMessage.toLowerCase().includes('user with')) {
-        displayError = 'Email already exists';
-      }
-      
-      setError(displayError);
+      toast.error(errorMessage);
       setLoading(false);
-      
-      // Show simple error toast for email conflicts
-      if (errorMessage.includes('already exists') || errorMessage.includes('email') || errorMessage.toLowerCase().includes('user with')) {
-        toast.error('Email already exists', {
-          duration: 5000,
-        });
-      } else {
-        toast.error(displayError, {
-          duration: 5000,
-        });
-      }
     }
   };
 
@@ -106,188 +78,263 @@ const TenantLenderManagementPage: React.FC = () => {
     lender.contact_email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const stats = {
+    total: lenders.length,
+    active: lenders.filter(l => (l.status || 'active') === 'active').length,
+    pending: lenders.filter(l => l.status === 'paused' || l.status === 'suspended').length
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Lender Management</h1>
-          <p className="text-gray-600">Manage lenders for your tenant</p>
+    <div className="space-y-8 pb-20">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+        {[
+          { label: 'Total Lenders', value: stats.total, icon: Building2, color: 'primary' },
+          { label: 'Active Lenders', value: stats.active, icon: CheckCircle, color: 'emerald' },
+          { label: 'Attention Needed', value: stats.pending, icon: AlertTriangle, color: 'rose' }
+        ].map((stat, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group"
+          >
+            <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white border border-slate-100 shadow-xl shadow-slate-100/20 overflow-hidden transition-all duration-500 group-hover:scale-110`}>
+              <stat.icon size={28} className="text-primary-600" />
+            </div>
+
+            <div className="flex flex-col">
+              <span className={`text-3xl font-black text-slate-800 tracking-tight leading-none mb-1.5`}>
+                {stat.value}
+              </span>
+              <span className="text-[11px] font-black text-slate-400 whitespace-nowrap uppercase tracking-[0.2em]">
+                {stat.label}
+              </span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Lender Registry Header */}
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="px-6 md:px-10 py-6 md:py-10 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="text-center sm:text-left">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 italic">Lender Registry</h3>
+            <h4 className="text-3xl font-black text-slate-900 tracking-tight">Active Lenders</h4>
+          </div>
+          <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-end">
+            <button className="p-4 bg-slate-50 border border-slate-100 rounded-[20px] text-slate-400 hover:text-primary-600 transition-all">
+              <Download className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex-1 sm:flex-none justify-center bg-primary-600 text-white px-8 md:px-10 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 flex items-center text-[11px] font-black uppercase tracking-widest"
+            >
+              <Plus className="w-4 h-4 mr-3" />
+              Add Lender
+            </button>
+          </div>
         </div>
 
-        {/* Actions Bar */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search lenders..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+        <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-50 flex flex-col lg:flex-row gap-4 md:gap-6 bg-slate-50/20">
+          <div className="flex-1 relative">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[20px] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-600 transition-all outline-none text-xs md:text-sm font-medium shadow-sm"
+            />
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="ml-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
-          >
-            <FaPlus /> New Lender
+          <button className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-100 rounded-[20px] text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary-600 transition-all">
+            <Filter className="w-4 h-4" />
+            Filter By Status
           </button>
         </div>
 
-        {/* Lenders List */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {fetching ? (
-            <div className="p-8 text-center text-gray-500">Loading lenders...</div>
-          ) : filteredLenders.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              {search ? 'No lenders found matching your search' : 'No lenders yet. Create your first lender to get started.'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+        {/* Table */}
+        <div className="flex-1 overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[800px]">
+            <thead className="bg-slate-50/30 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">
+              <tr>
+                <th className="px-10 py-6 italic">Lender Name</th>
+                <th className="px-10 py-6">Status</th>
+                <th className="px-10 py-6">Created On</th>
+                <th className="px-10 py-6">Admin Contact</th>
+                <th className="px-10 py-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {fetching ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={5} className="px-10 py-8">
+                      <div className="h-12 bg-slate-50 rounded-2xl w-full"></div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredLenders.map((lender) => (
-                    <tr key={lender.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <FaBuilding className="text-gray-400 mr-2" />
-                          <span className="text-sm font-medium text-gray-900">{lender.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FaEnvelope className="mr-2" />
-                          {lender.contact_email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          lender.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : lender.status === 'paused'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {lender.status || 'active'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {lender.created_at ? new Date(lender.created_at).toLocaleDateString() : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Create Lender Modal */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg relative">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-                  <FaPlus className="text-gray-600 text-xs" /> Register New Lender
-                </h2>
-                <button
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  onClick={() => {
-                    setShowModal(false);
-                    setForm({ name: '', email: '', phone: '' });
-                    setError('');
-                    setSuccess(false);
-                  }}
-                  title="Close"
+                ))
+              ) : filteredLenders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-10 py-20 text-center">
+                    <div className="w-20 h-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 border border-slate-100">
+                      <Building2 className="text-slate-200 w-10 h-10" />
+                    </div>
+                    <h5 className="text-sm font-black text-slate-800 uppercase tracking-widest">No Lenders Found</h5>
+                    <p className="text-xs text-slate-400 mt-2 font-medium">Start by adding a new lender to your tenant registry.</p>
+                  </td>
+                </tr>
+              ) : filteredLenders.map((lender) => (
+                <motion.tr
+                  key={lender.id}
+                  layout
+                  className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
                 >
-                  <FaTimes className="w-4 h-4" />
-                </button>
+                  <td className="px-10 py-6">
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 bg-primary-50 rounded-[18px] flex items-center justify-center border border-primary-100 group-hover:bg-primary-600 group-hover:border-primary-600 transition-all duration-300">
+                        <Building2 className="w-5 h-5 text-primary-600 group-hover:text-white" />
+                      </div>
+                      <div>
+                        <p className="text-base font-black text-slate-900 tracking-tight group-hover:text-primary-600 transition-colors">
+                          {lender.name}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                          Node ID: {lender.id.substring(0, 8)}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-10 py-6">
+                    <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${(lender.status || 'active') === 'active'
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                      : 'bg-rose-50 text-rose-600 border-rose-100'
+                      }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${(lender.status || 'active') === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                      {lender.status || 'active'}
+                    </div>
+                  </td>
+                  <td className="px-10 py-6">
+                    <span className="text-xs font-black text-slate-700">
+                      {lender.created_at ? new Date(lender.created_at).toLocaleDateString() : '-'}
+                    </span>
+                  </td>
+                  <td className="px-10 py-6">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                        <Mail className="w-3.5 h-3.5 text-slate-300" />
+                        <span>{lender.contact_email}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-10 py-6 text-right">
+                    <button className="text-slate-400 group-hover:text-primary-600 transition-colors p-3 hover:bg-primary-50 rounded-xl">
+                      <ArrowRight className="w-5 h-5 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add Lender Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden border border-white/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-primary-600 p-12 text-white relative overflow-hidden">
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-8">
+                    <div className="p-4 bg-white/10 rounded-[24px] border border-white/20 backdrop-blur-md">
+                      <Building2 className="w-8 h-8" />
+                    </div>
+                    <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                  <h3 className="text-3xl font-black tracking-tight">Add Lender</h3>
+                  <p className="text-white/60 text-xs font-medium mt-2">Register a new lending partner to the platform.</p>
+                </div>
+                <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
               </div>
-              <form onSubmit={handleSubmit} className="p-4 space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                    <FaBuilding className="text-gray-500 text-xs" /> Lender Name
-                  </label>
+
+              <form onSubmit={handleSubmit} className="p-10 space-y-8 bg-slate-50/50">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name</label>
                   <input
+                    required
                     type="text"
                     name="name"
                     value={form.name}
                     onChange={handleChange}
-                    required
-                    className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                    placeholder="Company Name"
+                    className="w-full px-6 py-5 bg-white border border-slate-100 rounded-[24px] font-black text-sm focus:border-primary-600 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all shadow-sm"
+                    placeholder="Enter lender name"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                    <FaEnvelope className="text-gray-500 text-xs" /> Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                    placeholder="Contact Email"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                    <FaPhone className="text-gray-500 text-xs" /> Phone
-                  </label>
-                  <input
-                    type="text"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                    placeholder="Contact Phone"
-                  />
-                </div>
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded p-2 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <FaExclamationTriangle className="text-red-600 flex-shrink-0 w-3 h-3" />
-                      <p className="text-red-700">{error}</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                      <input
+                        required
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-[24px] font-black text-sm focus:border-primary-600 outline-none transition-all shadow-sm"
+                        placeholder="lender@bank.com"
+                      />
                     </div>
                   </div>
-                )}
-                {success && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <FaCheckCircle className="text-green-600" />
-                      <p className="text-green-800 font-semibold">Lender registered successfully!</p>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                      <input
+                        required
+                        type="text"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-[24px] font-black text-sm focus:border-primary-600 outline-none transition-all shadow-sm"
+                        placeholder="+1 (555) 000-0000"
+                      />
                     </div>
                   </div>
-                )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-1.5 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors text-xs"
+                  className="w-full py-6 bg-primary-600 hover:bg-primary-700 text-white rounded-[24px] font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-primary-100 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
                 >
-                  {loading ? 'Registering...' : 'Register Lender'}
+                  {loading ? 'Processing...' : 'Register Lender'}
+                  <ArrowRight className="w-5 h-5" />
                 </button>
               </form>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };
 
 export default TenantLenderManagementPage;
-
