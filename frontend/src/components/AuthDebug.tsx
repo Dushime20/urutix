@@ -16,7 +16,7 @@ const AuthDebug: React.FC = () => {
     } catch (error) {
       const err = errorMessage(error, 'Network error occurred');
       console.error('Network Error:', err);
-      alert(`🔌 Network error: ${err}\nMake sure backend is running on http://localhost:3000`);
+      alert(`🔌 Network error: ${err}\nMake sure backend is running on http://localhost:3001`);
     }
   };
 

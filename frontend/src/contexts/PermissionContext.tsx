@@ -51,7 +51,7 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
         try {
             setIsLoading(true);
             const token = localStorage.getItem('accessToken');
-            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api';
+            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
             // Fetch user-specific permissions
             const response = await axios.get(`${baseURL}/auth/permissions`, {

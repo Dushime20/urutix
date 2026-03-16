@@ -1,39 +1,37 @@
-const { Pool } = require('pg');
+const { Client } = require('pg');
 require('dotenv').config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
 async function checkSchema() {
-  const client = await pool.connect();
-  try {
-    console.log('🔍 Checking role_permissions table schema...\n');
+  const client = new Client({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5433,
+    user: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || '123',
+    database: process.env.DB_NAME || 'urutix',
+  });
 
+  try {
+    await client.connect();
+    console.log('Connected to database');
+
+    // Check role_permissions table schema
     const result = await client.query(`
-      SELECT column_name, data_type, is_nullable
-      FROM information_schema.columns
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
       WHERE table_name = 'role_permissions'
       ORDER BY ordinal_position
     `);
 
-    console.log('📊 Columns in role_permissions table:');
+    console.log('\n📋 role_permissions Table Schema:');
+    console.log('==================================');
     result.rows.forEach(col => {
-      console.log(`   ${col.column_name} (${col.data_type}) - Nullable: ${col.is_nullable}`);
+      console.log(`${col.column_name}: ${col.data_type}`);
     });
 
-    // Sample data
-    console.log('\n📊 Sample role_permissions data:');
-    const sampleResult = await client.query(`
-      SELECT * FROM role_permissions LIMIT 3
-    `);
-    console.log(JSON.stringify(sampleResult.rows, null, 2));
-
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Error:', error.message);
   } finally {
-    client.release();
-    await pool.end();
+    await client.end();
   }
 }
 

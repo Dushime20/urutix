@@ -111,7 +111,7 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
                   {getStatusIcon(profile?.kycStatus)}
                 </Avatar>
                 <div>
-                  <Typography variant="h5" className="font-black text-slate-900 mb-1">
+                  <Typography variant="h5" className="font-black text-slate-900 mb-1 tracking-tight">
                     Verification Status
                   </Typography>
                   <div className="flex items-center gap-2">
@@ -130,10 +130,10 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
               </div>
               
               <div className="text-right">
-                <Typography variant="h3" className="font-black text-blue-600 mb-1">
+                <Typography variant="h3" className="font-black text-primary-600 mb-0 tracking-tighter">
                   {metrics?.complianceScore || 0}
                 </Typography>
-                <Typography variant="body2" className="text-slate-600 font-medium">
+                <Typography className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                   Compliance Score
                 </Typography>
               </div>
@@ -141,10 +141,10 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
 
             <Box className="mb-4">
               <div className="flex justify-between items-center mb-2">
-                <Typography variant="body2" className="font-bold text-slate-700">
+                <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Overall Progress
                 </Typography>
-                <Typography variant="body2" className="font-bold text-blue-600">
+                <Typography className="text-[10px] font-black text-primary-600 uppercase tracking-widest">
                   {completedSteps}/{verificationSteps.length} Steps
                 </Typography>
               </div>
@@ -178,7 +178,7 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 pl-1">
           Verification Checklist
         </Typography>
         
@@ -203,12 +203,12 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
                         {step.icon}
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Typography variant="h6" className="font-bold text-slate-900">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Typography className="text-base font-black text-slate-800 tracking-tight">
                             {step.label}
                           </Typography>
                           {step.completed && (
-                            <CheckCircle className="text-green-500 w-5 h-5" />
+                            <CheckCircle className="text-emerald-500 w-4 h-4" />
                           )}
                         </div>
                         <Typography variant="body2" className="text-slate-600 mb-3">
@@ -238,9 +238,11 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
       >
         <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
           <CardContent className="p-8">
-            <div className="flex items-center gap-3 mb-4">
-              <Star className="text-purple-600 w-6 h-6" />
-              <Typography variant="h6" className="font-black text-slate-900">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-primary-100 text-primary-600 rounded-xl">
+                <Star className="w-5 h-5" />
+              </div>
+              <Typography className="text-sm font-black text-slate-800 tracking-tight">
                 Recommended Next Steps
               </Typography>
             </div>
@@ -276,16 +278,16 @@ export const KycOverviewTab: React.FC<KycOverviewTabProps> = ({
 
             <Divider className="my-6" />
             
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button 
                 variant="contained" 
-                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 py-2 font-bold"
+                className="bg-primary-600 hover:bg-primary-700 text-white rounded-[16px] px-8 py-3 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-200"
               >
                 Continue Verification
               </Button>
               <Button 
                 variant="outlined" 
-                className="border-purple-200 text-purple-600 hover:bg-purple-50 rounded-xl px-6 py-2 font-bold"
+                className="border-slate-200 text-slate-600 hover:bg-slate-50 rounded-[16px] px-8 py-3 text-[10px] font-black uppercase tracking-widest"
               >
                 View Requirements
               </Button>

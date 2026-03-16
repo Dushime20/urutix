@@ -11,7 +11,7 @@ export interface StatCardProps {
   subtitle?: string;
   loading?: boolean;
   onClick?: () => void;
-  variant?: 'classic' | 'modern';
+  variant?: 'classic' | 'modern' | 'premium';
 }
 
 const colorClasses = {
@@ -112,6 +112,59 @@ export const StatCard: React.FC<StatCardProps> = ({
     if (trendDirection === 'down') return '↓';
     return '→';
   };
+
+  if (variant === 'premium') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        whileHover={{ y: -6, transition: { duration: 0.2 } }}
+        onClick={onClick}
+        className={`
+          relative group overflow-hidden bg-white rounded-[24px] p-5 
+          border border-slate-100 shadow-lg hover:shadow-xl 
+          transition-all duration-500 ${onClick ? 'cursor-pointer' : ''}
+        `}
+      >
+        <div className="relative z-10 flex flex-col gap-4">
+          <div className="flex items-start justify-between">
+            <div className={`p-3 rounded-[16px] ${colors.bg} backdrop-blur-md border border-white/50 group-hover:scale-105 transition-transform duration-500`}>
+              <div className={`text-xl ${colors.icon}`}>
+                {icon}
+              </div>
+            </div>
+            {trend && (
+              <div className={`px-2 py-1 rounded-full text-[9px] font-black flex items-center gap-1 shadow-sm ${getTrendColor()}`}>
+                <span>{getTrendIcon()}</span>
+                <span>{trend}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-0.5">
+            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">
+              {title}
+            </h3>
+            <div className="flex items-end gap-2">
+              <span className={`text-2xl font-black text-slate-900 tracking-tight`}>
+                {value}
+              </span>
+            </div>
+            {subtitle && (
+              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Decorative elements */}
+        <div className={`absolute -bottom-6 -right-6 w-24 h-24 rounded-full opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500 ${colors.bg}`} />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-slate-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      </motion.div>
+    );
+  }
 
   if (variant === 'modern') {
     return (

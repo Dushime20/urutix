@@ -36,7 +36,7 @@ const PricingCalculatorWidget: React.FC = () => {
     fetchRates();
 
     // Real-time updates via WebSocket
-    const socket: Socket = io('http://localhost:3002/pricing', { transports: ['websocket'] });
+    const socket: Socket = io('http://localhost:3001/pricing', { transports: ['websocket'] });
     socket.on('marketRates:update', (rates: number[]) => setMarketRates(rates));
     socket.on('competitorRates:update', (rates: number[]) => setCompetitorRates(rates));
     socket.on('historicalRates:update', (rates: number[]) => setHistoricalRates(rates));

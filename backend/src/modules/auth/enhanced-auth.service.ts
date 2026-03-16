@@ -448,6 +448,7 @@ export class EnhancedAuthService {
         // Check lock status
         if (user.lockedUntil && user.lockedUntil > new Date()) continue;
 
+        console.log(`[DEBUG] Comparing password (len: ${password.length}) for ${user.email}`);
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
         if (isPasswordValid) {
              // Additional status checks
@@ -1482,17 +1483,24 @@ export class EnhancedAuthService {
         };
       }
 
+      // Update phone on user entity if provided in profile data
+      if (updateProfileDto.profile?.phone) {
+        user.phone = updateProfileDto.profile.phone;
+        await this.userRepository.save(user);
+      }
+
       // Update other profile fields if provided
       if (updateProfileDto.profile) {
-        if (updateProfileDto.profile.firstName) {
-          userProfile.firstName = updateProfileDto.profile.firstName;
-        }
-        if (updateProfileDto.profile.lastName) {
-          userProfile.lastName = updateProfileDto.profile.lastName;
-        }
-        if (updateProfileDto.profile.companyName) {
-          userProfile.companyName = updateProfileDto.profile.companyName;
-        }
+        const fields = [
+          'firstName', 'lastName', 'companyName', 'phone', 
+          'address', 'bio', 'websiteUrl', 'postalCode', 'countryCode'
+        ];
+        
+        fields.forEach(field => {
+          if (updateProfileDto.profile[field] !== undefined) {
+            userProfile[field] = updateProfileDto.profile[field];
+          }
+        });
       }
 
       // Save updated profile

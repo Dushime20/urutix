@@ -170,19 +170,15 @@ export class Tenant {
   @Column({ nullable: true })
   kycNotes?: string;
 
-  @Column({ nullable: true })
-  kycReviewedBy?: string;
+  // @Column({ nullable: true })
+  // kycReviewedBy?: string; // Column doesn't exist in database
 
-  // Onboarding Fields
-  @Column({
-    type: 'enum',
-    enum: OnboardingStep,
-    default: OnboardingStep.STEP_1_BRANDING,
-  })
-  onboardingStep: OnboardingStep;
+  // Onboarding Fields - using integer to match database
+  @Column({ type: 'integer', default: 1 }) // Database uses integer, not enum
+  onboardingStep: number;
 
-  @Column({ nullable: true })
-  onboardingCompletedAt?: Date;
+  // @Column({ nullable: true })
+  // onboardingCompletedAt?: Date; // Column doesn't exist in database
 
   @CreateDateColumn()
   createdAt: Date;

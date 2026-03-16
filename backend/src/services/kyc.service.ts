@@ -106,7 +106,7 @@ export class KycService {
 
     // Update tenant KYC status
     tenant.kycStatus = status;
-    tenant.kycReviewedBy = reviewedBy;
+    // tenant.kycReviewedBy = reviewedBy; // Column doesn't exist in database
     tenant.kycNotes = notes;
 
     if (status === KycStatus.APPROVED) {

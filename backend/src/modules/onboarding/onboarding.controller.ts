@@ -92,7 +92,7 @@ export class OnboardingController {
         const tenant = await this.tenantService.findTenantById(user.tenantId);
 
         // Basic validation - check if all onboarding steps are completed
-        if (tenant.onboardingStep !== 'COMPLETED' && process.env.NODE_ENV !== 'development') {
+        if (tenant.onboardingStep < 4 && process.env.NODE_ENV !== 'development') {
             throw new BadRequestException('Please complete all onboarding steps first');
         }
 

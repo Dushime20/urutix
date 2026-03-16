@@ -40,6 +40,30 @@ export class ProfileDataDto {
   @IsOptional()
   companyName?: string;
 
+  @ApiProperty({ required: false, description: 'Phone number' })
+  @IsOptional()
+  phone?: string;
+
+  @ApiProperty({ required: false, description: 'Address' })
+  @IsOptional()
+  address?: string;
+
+  @ApiProperty({ required: false, description: 'Bio' })
+  @IsOptional()
+  bio?: string;
+
+  @ApiProperty({ required: false, description: 'Website URL' })
+  @IsOptional()
+  websiteUrl?: string;
+
+  @ApiProperty({ required: false, description: 'Postal Code' })
+  @IsOptional()
+  postalCode?: string;
+
+  @ApiProperty({ required: false, description: 'Country Code' })
+  @IsOptional()
+  countryCode?: string;
+
   @ApiProperty({ required: false, type: PreferencesDto, description: 'User preferences' })
   @IsOptional()
   @ValidateNested()

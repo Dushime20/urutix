@@ -117,6 +117,10 @@ import { UserKycDocument } from '../entities/user-kyc-document.entity';
 import { UserKycAuditLog } from '../entities/user-kyc-audit-log.entity';
 import { TenantKycDocument } from '../entities/tenant-kyc-document.entity';
 
+// Analytics entities
+import { CargoOwnerAnalytics } from '../entities/cargo-owner-analytics.entity';
+import { AnalyticsInsights } from '../entities/analytics-insights.entity';
+
 import { config } from 'dotenv';
 config();
 
@@ -249,6 +253,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     UserKycDocument,
     UserKycAuditLog,
     TenantKycDocument,
+    // Analytics entities
+    CargoOwnerAnalytics,
+    AnalyticsInsights,
 
   ],
   synchronize: false,
@@ -381,6 +388,9 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     UserKycDocument,
     UserKycAuditLog,
     TenantKycDocument,
+    // Analytics entities
+    CargoOwnerAnalytics,
+    AnalyticsInsights,
   ],
   synchronize: true,
   autoLoadEntities: false,

@@ -39,7 +39,7 @@ export class TenantManagementController {
    */
   @Get()
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:view_all_tenants')
   @ApiOperation({
     summary: 'Get all tenants with enriched data',
     description: 'Returns all tenants with subscription information, credit balance, and user statistics',
@@ -106,7 +106,7 @@ export class TenantManagementController {
    */
   @Get(':tenantId')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:view_all_tenants')
   @ApiOperation({
     summary: 'Get tenant details',
     description: 'Returns detailed information about a specific tenant',
@@ -135,7 +135,7 @@ export class TenantManagementController {
    */
   @Put(':tenantId')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:manage_tenants')
   @ApiOperation({
     summary: 'Update tenant settings',
     description: 'Updates tenant settings and logs the modification',
@@ -192,7 +192,7 @@ export class TenantManagementController {
    */
   @Post(':tenantId/status')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:manage_tenants')
   @ApiOperation({
     summary: 'Set tenant status',
     description: 'Activates or deactivates a tenant and logs the action',
@@ -248,7 +248,7 @@ export class TenantManagementController {
    */
   @Post('bulk/update')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:manage_tenants')
   @ApiOperation({
     summary: 'Bulk update tenants',
     description: 'Updates multiple tenants at once and logs each modification',
@@ -302,7 +302,7 @@ export class TenantManagementController {
    */
   @Get(':tenantId/health')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:view_all_tenants')
   @ApiOperation({
     summary: 'Get tenant health score',
     description: 'Returns tenant health score with factors and recommendations',
@@ -329,7 +329,7 @@ export class TenantManagementController {
    */
   @Get('health/all')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:view_all_tenants')
   @ApiOperation({
     summary: 'Get all tenant health scores',
     description: 'Returns health scores for all active tenants',
@@ -347,7 +347,7 @@ export class TenantManagementController {
    */
   @Get(':tenantId/resources')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
+  @RequirePermissions('admin:view_all_tenants')
   @ApiOperation({
     summary: 'Get tenant resource usage',
     description: 'Returns detailed resource usage statistics for a tenant',

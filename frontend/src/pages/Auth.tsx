@@ -366,12 +366,12 @@ const Auth = () => {
         {/* Form Container */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Form Header */}
-          <div className="px-8 pt-8 pb-4">
-            <h2 className="text-2xl font-black text-slate-900 mb-1 font-manrope tracking-tight">
+          <div className="px-8 pt-6 pb-2">
+            <h2 className="text-xl font-black text-slate-900 mb-1 tracking-tight uppercase">
               {isLogin ? <TranslatedText text="Welcome back" /> : <TranslatedText text="Create your account" />}
             </h2>
-            <p className="text-sm font-medium text-slate-500">
-              {isLogin ? <TranslatedText text="Sign in to access your dashboard" /> : <TranslatedText text="Join thousands of users in the logistics industry" />}
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {isLogin ? <TranslatedText text="Sign in to access your account" /> : <TranslatedText text="Join the logistics evolution" />}
             </p>
           </div>
 
@@ -421,7 +421,7 @@ const Auth = () => {
                     <input
                       {...loginForm.register('password')}
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
+                      className="w-full px-4 py-2 text-sm font-black text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal tracking-tight"
                       placeholder="Enter your password"
                       required
                     />
@@ -430,7 +430,7 @@ const Auth = () => {
                       className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
+                      {showPassword ? <FaEyeSlash className="h-3.5 w-3.5" /> : <FaEye className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                   {loginForm.formState.errors.password && (
@@ -456,15 +456,15 @@ const Auth = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-[11px]"
+                  className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-2.5 px-4 rounded-xl hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200 shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-[10px]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <FaSpinner className="animate-spin h-4 w-4" />
+                    <FaSpinner className="animate-spin h-3.5 w-3.5" />
                   ) : (
                     <>
                       <span><TranslatedText text="Sign In" /></span>
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
                 </button>
@@ -475,7 +475,7 @@ const Auth = () => {
                     <button
                       type="button"
                       onClick={() => setIsLogin(false)}
-                      className="text-primary-600 hover:text-primary-500 transition-colors"
+                      className="text-primary-600 hover:text-primary-500 transition-colors underline decoration-2 underline-offset-4"
                     >
                       <TranslatedText text="Sign up" />
                     </button>
@@ -502,19 +502,19 @@ const Auth = () => {
                           setSelectedTenantId('');
                           registerForm.setValue('companyName', '');
                         }}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center text-center space-y-2 ${selectedUserType === type.id
-                          ? `${type.borderColor} ${type.bgColor} border-opacity-100 shadow-md`
+                        className={`p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center text-center space-y-2 ${selectedUserType === type.id
+                          ? `${type.borderColor} ${type.bgColor} border-opacity-100 shadow-sm ring-1 ring-primary-100`
                           : 'border-slate-100 hover:border-slate-200 bg-slate-50'
                           }`}
                       >
-                        <div className={`p-2 rounded-lg ${selectedUserType === type.id ? 'bg-white' : 'bg-white shadow-sm'}`}>
-                          <type.icon className={`h-6 w-6 ${selectedUserType === type.id ? type.textColor : 'text-slate-400'}`} />
+                        <div className={`p-1.5 rounded-lg ${selectedUserType === type.id ? 'bg-white shadow-sm' : 'bg-white/50 shadow-sm'}`}>
+                          <type.icon className={`h-4 w-4 ${selectedUserType === type.id ? type.textColor : 'text-slate-400'}`} />
                         </div>
                         <div>
-                          <div className={`font-black text-[11px] uppercase tracking-wider font-manrope ${selectedUserType === type.id ? type.textColor : 'text-slate-600'}`}>
+                          <div className={`font-black text-[10px] uppercase tracking-widest ${selectedUserType === type.id ? type.textColor : 'text-slate-600'}`}>
                             <TranslatedText text={type.title} />
                           </div>
-                          <div className={`text-[10px] font-medium leading-tight ${selectedUserType === type.id ? 'text-slate-600' : 'text-slate-400'}`}>
+                          <div className={`text-[9px] font-medium leading-tight opacity-70 ${selectedUserType === type.id ? 'text-slate-600' : 'text-slate-400'}`}>
                             <TranslatedText text={type.description} />
                           </div>
                         </div>

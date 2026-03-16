@@ -16,6 +16,12 @@ const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDa
 const Analytics = lazy(() => import('./pages/Analytics'));
 const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
 
+// Analytics pages
+const FinancialAnalytics = lazy(() => import('./pages/analytics/FinancialAnalytics'));
+const OperationalAnalytics = lazy(() => import('./pages/analytics/OperationalAnalytics'));
+const AIInsights = lazy(() => import('./pages/analytics/AIInsights'));
+const AdvancedAnalytics = lazy(() => import('./pages/analytics/AdvancedAnalytics'));
+
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
 import FleetOwnerLayout from './components/Layout/FleetOwnerLayout';
@@ -214,6 +220,10 @@ function App() {
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
                       <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="analytics/financial" element={<FinancialAnalytics />} />
+                      <Route path="analytics/operational" element={<OperationalAnalytics />} />
+                      <Route path="analytics/ai-insights" element={<AIInsights />} />
+                      <Route path="analytics/advanced" element={<AdvancedAnalytics />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<UnifiedTrackingManagement />} />

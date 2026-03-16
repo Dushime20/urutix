@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
   Typography,
   Card,
   CardContent,
@@ -16,7 +15,6 @@ import {
   Schedule,
   Person,
   Security,
-  Description,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { EnhancedTable } from '../../EnliteUI/Tables/EnhancedTable';
@@ -33,7 +31,7 @@ export const KycActivityTab: React.FC = () => {
   const loadAuditLog = async () => {
     try {
       setLoading(true);
-      const response = await userKycApi.getAuditLog();
+      const response = await userKycApi.getMyAuditLog();
       setAuditLog(response.data || []);
     } catch (error) {
       console.error('Failed to load audit log:', error);
@@ -182,11 +180,11 @@ export const KycActivityTab: React.FC = () => {
                 <History className="text-blue-600 w-8 h-8" />
               </div>
               <div>
-                <Typography variant="h5" className="font-black text-slate-900 mb-1">
+                <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">
                   Activity Timeline
                 </Typography>
-                <Typography variant="body2" className="text-slate-600">
-                  Complete history of your verification activities and status changes
+                <Typography className="text-sm font-black text-slate-800 tracking-tight">
+                  Verification activities and status changes
                 </Typography>
               </div>
             </div>
@@ -210,7 +208,7 @@ export const KycActivityTab: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
           Recent Activities
         </Typography>
         
@@ -275,10 +273,10 @@ export const KycActivityTab: React.FC = () => {
                         {item.icon}
                       </div>
                       <div>
-                        <Typography variant="h4" className="font-black text-slate-900">
+                        <Typography variant="h4" className="font-black text-slate-900 mb-0 tracking-tighter">
                           {item.count}
                         </Typography>
-                        <Typography variant="body2" className="text-slate-600 font-medium">
+                        <Typography className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                           {item.label}
                         </Typography>
                       </div>

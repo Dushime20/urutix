@@ -29,7 +29,7 @@ export const useCargoOwnerNotifications = () => {
 
     // Connect to WebSocket server
     const token = localStorage.getItem('accessToken');
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3002';
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
     const newSocket = io(wsUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],

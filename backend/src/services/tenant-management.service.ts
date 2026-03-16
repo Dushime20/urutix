@@ -731,26 +731,57 @@ export class TenantManagementService {
 
   // Private helper method to enrich tenant data
   private async enrichTenantData(tenant: Tenant): Promise<EnrichedTenant> {
-    // Get subscription data
-    const subscription = await this.subscriptionRepository.findOne({
-      where: { tenantId: tenant.id },
-      order: { createdAt: 'DESC' },
-      relations: ['plan'],
-    });
+    // Get subscription data - using raw query to handle column name mismatch
+    let subscription = null;
+    try {
+      const subscriptionResult = await this.subscriptionRepository.query(`
+        SELECT ts.*, sp.name as plan_name, sp.id as plan_id
+        FROM tenant_subscriptions ts
+        LEFT JOIN subscription_plans sp ON ts.plan_id = sp.id
+        WHERE ts.tenant_id = $1
+        ORDER BY ts.created_at DESC
+        LIMIT 1
+      `, [tenant.id]);
+      
+      if (subscriptionResult.length > 0) {
+        subscription = subscriptionResult[0];
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to get subscription for tenant ${tenant.id}: ${err.message}`);
+    }
 
-    // Get credit account data
-    const creditAccount = await this.creditAccountRepository.findOne({
-      where: { tenantId: tenant.id },
-    });
+    // Get credit account data - using raw query to handle column name mismatch
+    let creditAccount = null;
+    try {
+      const creditResult = await this.creditAccountRepository.query(`
+        SELECT * FROM credit_accounts
+        WHERE tenant_id = $1
+        LIMIT 1
+      `, [tenant.id]);
+      
+      if (creditResult.length > 0) {
+        creditAccount = creditResult[0];
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to get credit account for tenant ${tenant.id}: ${err.message}`);
+    }
 
-    // Get last credit purchase
-    const lastPurchase = await this.creditTransactionRepository.findOne({
-      where: {
-        tenantId: tenant.id,
-        type: In(['PURCHASE', 'SUBSCRIPTION_GRANT']),
-      },
-      order: { createdAt: 'DESC' },
-    });
+    // Get last credit purchase - using raw query to handle column name mismatch
+    let lastPurchase = null;
+    try {
+      const purchaseResult = await this.creditTransactionRepository.query(`
+        SELECT * FROM credit_transactions
+        WHERE tenant_id = $1 AND type IN ('PURCHASE', 'SUBSCRIPTION_GRANT')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, [tenant.id]);
+      
+      if (purchaseResult.length > 0) {
+        lastPurchase = purchaseResult[0];
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to get last purchase for tenant ${tenant.id}: ${err.message}`);
+    }
 
     // Get user counts
     const totalUsers = await this.userRepository.count({
@@ -764,13 +795,23 @@ export class TenantManagementService {
       },
     });
 
-    // Get last activity
-    const lastActivity = await this.activityLogRepository.findOne({
-      where: {
-        user: { tenantId: tenant.id }
-      },
-      order: { createdAt: 'DESC' },
-    });
+    // Get last activity - using raw query to handle column name mismatch
+    let lastActivity = null;
+    try {
+      const activityResult = await this.activityLogRepository.query(`
+        SELECT al.* FROM activity_logs al
+        JOIN users u ON al.user_id = u.id
+        WHERE u."tenantId" = $1
+        ORDER BY al.created_at DESC
+        LIMIT 1
+      `, [tenant.id]);
+      
+      if (activityResult.length > 0) {
+        lastActivity = activityResult[0];
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to get last activity for tenant ${tenant.id}: ${err.message}`);
+    }
 
     // Calculate health score
     let healthScore = 0;
@@ -798,19 +839,19 @@ export class TenantManagementService {
       subdomain: tenant.subdomain || '',
       status,
       subscription: {
-        planName: subscription?.plan?.name || 'No Plan',
+        planName: subscription?.plan_name || 'No Plan',
         status: subscription?.status || 'INACTIVE',
-        expiresAt: subscription?.currentPeriodEnd || new Date(),
+        expiresAt: subscription?.current_period_end ? new Date(subscription.current_period_end) : new Date(),
       },
       credits: {
-        balance: creditAccount?.currentBalance || 0,
-        lastPurchase: lastPurchase?.createdAt || new Date(),
+        balance: creditAccount?.current_balance || 0,
+        lastPurchase: lastPurchase?.created_at ? new Date(lastPurchase.created_at) : new Date(),
       },
       users: {
         total: totalUsers,
         active: activeUsers,
       },
-      lastActivity: lastActivity?.createdAt || tenant.createdAt,
+      lastActivity: lastActivity?.created_at ? new Date(lastActivity.created_at) : tenant.createdAt,
       healthScore,
       contactEmail: tenant.contactEmail || '',
     };

@@ -147,7 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('Attempting to refresh access token...');
       
       // Use the same base URL configuration as the API service
-      const baseURL = getApiBaseUrl() || 'http://localhost:3002/api';
+      const baseURL = getApiBaseUrl() || 'http://localhost:3001/api';
       const response = await axios.post(`${baseURL}/auth/refresh`, {
         refreshToken,
       }, {
@@ -223,7 +223,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 // Preserve the original request's baseURL if it exists (from api instance)
                 // Otherwise, set it to the configured baseURL
                 if (!originalRequest.baseURL) {
-                  const baseURL = getApiBaseUrl() || 'http://localhost:3000/api';
+                  const baseURL = getApiBaseUrl() || 'http://localhost:3001/api';
                   originalRequest.baseURL = baseURL;
                 }
                 
@@ -501,7 +501,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     // Call logout endpoint to revoke refresh token
     if (refreshToken) {
-      const baseURL = getApiBaseUrl() || 'http://localhost:3002/api';
+      const baseURL = getApiBaseUrl() || 'http://localhost:3001/api';
       axios.post(`${baseURL}/auth/logout`, { refreshToken }).catch(console.error);
     }
 
@@ -520,7 +520,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const updateProfile = async (profileData: Partial<User>): Promise<boolean> => {
     try {
-      const baseURL = getApiBaseUrl() || 'http://localhost:3000/api';
+      const baseURL = getApiBaseUrl() || 'http://localhost:3001/api';
       const response = await axios.patch(`${baseURL}/auth/profile`, profileData, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,

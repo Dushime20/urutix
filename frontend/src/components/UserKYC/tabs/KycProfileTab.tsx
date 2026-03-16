@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-  Box,
   Typography,
   Card,
   CardContent,
   Chip,
   Avatar,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
@@ -19,11 +17,10 @@ import {
   Email,
   Phone,
   Business,
+  Security,
   LocationOn,
   AccountBalance,
-  Security,
   CheckCircle,
-  Warning,
   Schedule,
   Star,
   Verified,
@@ -126,7 +123,7 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
               </div>
               
               <div className="flex-1">
-                <Typography variant="h4" className="font-black text-slate-900 mb-2">
+                <Typography variant="h4" className="font-black text-slate-900 mb-2 tracking-tight">
                   {profile.firstName} {profile.lastName}
                 </Typography>
                 <div className="flex items-center gap-3 mb-3">
@@ -149,9 +146,9 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
                 </div>
                 
                 {profile.companyName && (
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Business className="w-4 h-4" />
-                    <Typography variant="body2" className="font-medium">
+                  <div className="flex items-center gap-2 text-slate-500">
+                    <Business className="w-3.5 h-3.5" />
+                    <Typography className="text-[10px] font-black uppercase tracking-widest">
                       {profile.companyName}
                     </Typography>
                   </div>
@@ -184,7 +181,7 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-4">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 pl-1">
           Contact Information
         </Typography>
         
@@ -197,10 +194,10 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
                     <Email className="text-blue-600 w-5 h-5" />
                   </div>
                   <div>
-                    <Typography variant="body2" className="text-slate-500 font-medium">
+                    <Typography className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
                       Email Address
                     </Typography>
-                    <Typography variant="body1" className="font-bold text-slate-900">
+                    <Typography className="text-sm font-black text-slate-800 tracking-tight">
                       {profile.user?.email || 'Not provided'}
                     </Typography>
                   </div>
@@ -223,10 +220,10 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
                     <Phone className="text-green-600 w-5 h-5" />
                   </div>
                   <div>
-                    <Typography variant="body2" className="text-slate-500 font-medium">
+                    <Typography className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
                       Phone Number
                     </Typography>
-                    <Typography variant="body1" className="font-bold text-slate-900">
+                    <Typography className="text-sm font-black text-slate-800 tracking-tight">
                       {profile.user?.phone || 'Not provided'}
                     </Typography>
                   </div>
@@ -249,7 +246,7 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
           Verification Details
         </Typography>
         
@@ -274,7 +271,7 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
                         {section.icon}
                       </div>
                       <div className="flex-1">
-                        <Typography variant="h6" className="font-bold text-slate-900">
+                        <Typography className="text-base font-black text-slate-800 tracking-tight">
                           {section.title}
                         </Typography>
                       </div>
@@ -292,8 +289,8 @@ export const KycProfileTab: React.FC<KycProfileTabProps> = ({ profile }) => {
                           <ListItemText 
                             primary={item.label}
                             primaryTypographyProps={{
-                              className: `text-sm font-medium ${
-                                item.status ? 'text-slate-900' : 'text-slate-500'
+                              className: `text-xs font-bold tracking-tight ${
+                                item.status ? 'text-slate-700' : 'text-slate-400'
                               }`
                             }}
                           />

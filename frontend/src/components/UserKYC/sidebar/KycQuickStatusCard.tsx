@@ -14,9 +14,7 @@ import {
   Schedule,
   Warning,
   TrendingUp,
-  Upload,
   Verified,
-  Star,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -70,8 +68,8 @@ export const KycQuickStatusCard: React.FC<KycQuickStatusCardProps> = ({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="bg-gradient-to-br from-white to-blue-50 border border-blue-100 shadow-xl">
-        <CardContent className="p-8">
+      <Card className="bg-white border border-slate-100 shadow-xl rounded-[32px] overflow-hidden">
+        <CardContent className="p-6">
           {/* Header */}
           <div className="flex items-center gap-4 mb-6">
             <div className="relative">
@@ -85,7 +83,7 @@ export const KycQuickStatusCard: React.FC<KycQuickStatusCardProps> = ({
               )}
             </div>
             <div className="flex-1">
-              <Typography variant="h6" className="font-black text-slate-900 mb-1">
+              <Typography className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 pl-1">
                 Quick Status
               </Typography>
               <Chip 
@@ -100,10 +98,10 @@ export const KycQuickStatusCard: React.FC<KycQuickStatusCardProps> = ({
           {/* Progress */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-              <Typography variant="body2" className="font-bold text-slate-700">
+              <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
                 Completion Progress
               </Typography>
-              <Typography variant="body2" className="font-bold text-blue-600">
+              <Typography className="text-[10px] font-black text-primary-600 uppercase tracking-widest">
                 {completionRate}%
               </Typography>
             </div>
@@ -129,19 +127,19 @@ export const KycQuickStatusCard: React.FC<KycQuickStatusCardProps> = ({
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="text-center">
-              <Typography variant="h4" className="font-black text-blue-600 mb-1">
+            <div className="text-center p-3 bg-slate-50 rounded-[20px] border border-slate-100">
+              <Typography variant="h4" className="font-black text-primary-600 mb-0 tracking-tighter">
                 {metrics?.documentsUploaded || 0}
               </Typography>
-              <Typography variant="caption" className="text-slate-500 font-medium">
+              <Typography className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                 Documents
               </Typography>
             </div>
-            <div className="text-center">
-              <Typography variant="h4" className="font-black text-green-600 mb-1">
+            <div className="text-center p-3 bg-slate-50 rounded-[20px] border border-slate-100">
+              <Typography variant="h4" className="font-black text-emerald-600 mb-0 tracking-tighter">
                 {metrics?.complianceScore || 0}
               </Typography>
-              <Typography variant="caption" className="text-slate-500 font-medium">
+              <Typography className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                 Score
               </Typography>
             </div>
@@ -151,14 +149,12 @@ export const KycQuickStatusCard: React.FC<KycQuickStatusCardProps> = ({
           <Button 
             variant="contained" 
             fullWidth
-            size="large"
-            startIcon={status === 'APPROVED' ? <Star /> : <Upload />}
             onClick={onAction}
-            className={`rounded-2xl py-3 font-black ${
+            className={`rounded-[20px] py-4 text-[10px] font-black uppercase tracking-widest ${
               status === 'APPROVED' 
-                ? 'bg-green-600 hover:bg-green-700' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            } text-white`}
+                ? 'bg-emerald-600 hover:bg-emerald-700' 
+                : 'bg-primary-600 hover:bg-primary-700'
+            } text-white shadow-lg shadow-primary-100 transition-all`}
           >
             {status === 'APPROVED' ? 'View Details' : 'Upload Documents'}
           </Button>

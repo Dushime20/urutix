@@ -14,11 +14,9 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
-  Upload,
   Description,
   CheckCircle,
   Schedule,
-  Warning,
   MoreVert,
   Download,
   Delete,
@@ -41,16 +39,13 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
   onUpload,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedDoc, setSelectedDoc] = useState<any>(null);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, doc: any) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, _doc: any) => {
     setAnchorEl(event.currentTarget);
-    setSelectedDoc(doc);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setSelectedDoc(null);
   };
 
   const getStatusColor = (verified: boolean) => {
@@ -78,7 +73,7 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
 
   const requiredDocTypes = requirements?.requiredDocuments || [];
   const uploadedDocTypes = documents.map(doc => doc.documentType);
-  const missingDocTypes = requiredDocTypes.filter(type => !uploadedDocTypes.includes(type));
+  const missingDocTypes = requiredDocTypes.filter((type: string) => !uploadedDocTypes.includes(type));
   const completionRate = requiredDocTypes.length > 0 
     ? ((requiredDocTypes.length - missingDocTypes.length) / requiredDocTypes.length) * 100 
     : 0;
@@ -159,19 +154,19 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
           <CardContent className="p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <Typography variant="h5" className="font-black text-slate-900 mb-2">
+                <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2">
                   Document Upload Progress
                 </Typography>
-                <Typography variant="body2" className="text-slate-600">
+                <Typography className="text-sm font-black text-slate-700 tracking-tight">
                   {documents.length} of {requiredDocTypes.length} required documents uploaded
                 </Typography>
               </div>
               
               <div className="text-right">
-                <Typography variant="h3" className="font-black text-blue-600 mb-1">
+                <Typography variant="h3" className="font-black text-primary-600 mb-0 tracking-tighter">
                   {Math.round(completionRate)}%
                 </Typography>
-                <Typography variant="body2" className="text-slate-600 font-medium">
+                <Typography className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                   Complete
                 </Typography>
               </div>
@@ -201,9 +196,8 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
 
             <Button 
               variant="contained" 
-              startIcon={<CloudUpload />}
               onClick={onUpload}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 py-3 font-bold"
+              className="bg-primary-600 hover:bg-primary-700 text-white rounded-[16px] px-8 py-3 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-100"
             >
               Upload Documents
             </Button>
@@ -218,7 +212,7 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Typography variant="h6" className="font-black text-slate-900 mb-4">
+          <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 pl-1">
             Required Documents
           </Typography>
           
@@ -247,7 +241,7 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
                             <Description />
                           </div>
                           <div className="flex-1">
-                            <Typography variant="h6" className="font-bold text-slate-900 mb-2">
+                            <Typography className="text-base font-black text-slate-800 tracking-tight mb-1">
                               {docType.replace(/_/g, ' ')}
                             </Typography>
                             
@@ -280,9 +274,8 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
                                 <Button 
                                   size="small"
                                   variant="outlined"
-                                  startIcon={<Upload />}
                                   onClick={onUpload}
-                                  className="border-blue-200 text-blue-600 hover:bg-blue-50 rounded-lg font-bold"
+                                  className="border-slate-200 text-slate-600 hover:bg-slate-50 rounded-[12px] px-6 py-2 text-[10px] font-black uppercase tracking-widest"
                                 >
                                   Upload
                                 </Button>
@@ -307,7 +300,7 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Typography variant="h6" className="font-black text-slate-900 mb-4">
+          <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 pl-1">
             Uploaded Documents
           </Typography>
           
@@ -331,7 +324,7 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
       >
         <MenuItem onClick={handleMenuClose} className="gap-3">
           <Visibility className="w-4 h-4" />
-          View Document
+          View
         </MenuItem>
         <MenuItem onClick={handleMenuClose} className="gap-3">
           <Download className="w-4 h-4" />

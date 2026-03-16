@@ -33,6 +33,7 @@ import { FuelModule } from './modules/fuel/fuel.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { UserKycModule } from './modules/user-kyc/user-kyc.module';
 import { KycModule } from './modules/kyc/kyc.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
@@ -75,6 +76,7 @@ import { Tenant } from './entities/tenant.entity';
     SubscriptionModule,
     KycModule,
     UserKycModule,
+    AnalyticsModule,
 
   ],
   controllers: [AppController],

@@ -51,7 +51,7 @@ import BillingDashboard from '../../pages/subscription/BillingDashboard';
 import Profile from '../../pages/Profile';
 import TenantLenderManagementPage from '../../pages/TenantLenderManagementPage';
 import TenantCommunication from '../../pages/tenant/TenantCommunication';
-import { KycManagementPage } from '../UserKYC/KycManagementPage';
+import { EnhancedKycVerificationCenter as KycManagementPage } from '../UserKYC';
 import { tenantApi, mockTenantData } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';

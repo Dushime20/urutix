@@ -26,6 +26,7 @@ import {
   FaCalendarAlt,
   FaClock
 } from 'react-icons/fa';
+import { TranslatedText } from '@/components/translated-text';
 
 interface ActivityLog {
   id: string;
@@ -260,84 +261,52 @@ const AdminHistory: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Activities</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{activityLogs.length}</p>
-              <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Activities', value: activityLogs.length, sub: 'Last 24 hours', icon: FaHistory, color: 'bg-[#345E85]' },
+          { label: 'User Actions', value: activityLogs.filter(l => l.category === 'user').length, sub: '+12% from yesterday', icon: FaUser, color: 'bg-emerald-500' },
+          { label: 'Security Events', value: activityLogs.filter(l => l.category === 'security').length, sub: '1 failed login', icon: FaShieldAlt, color: 'bg-rose-500' },
+          { label: 'System Events', value: activityLogs.filter(l => l.category === 'system').length, sub: 'All systems normal', icon: FaCog, color: 'bg-amber-500' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all group">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-10 h-10 rounded-2xl ${stat.color} flex items-center justify-center text-white shadow-lg shadow-opacity-20`}>
+                <stat.icon className="w-5 h-5" />
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <TranslatedText text={stat.sub} />
+              </div>
             </div>
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl">
-              <FaHistory className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">User Actions</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {activityLogs.filter(l => l.category === 'user').length}
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                <TranslatedText text={stat.label} />
               </p>
-              <p className="text-xs text-green-600 mt-1">+12% from yesterday</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl">
-              <FaUser className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Security Events</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {activityLogs.filter(l => l.category === 'security').length}
+              <p className="text-2xl font-black text-slate-900 tracking-tight">
+                {stat.value}
               </p>
-              <p className="text-xs text-red-600 mt-1">1 failed login</p>
-            </div>
-            <div className="bg-gradient-to-br from-red-500 to-red-600 p-3 rounded-xl">
-              <FaShieldAlt className="w-6 h-6 text-white" />
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">System Events</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {activityLogs.filter(l => l.category === 'system').length}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">All systems normal</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-xl">
-              <FaCog className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="bg-slate-50 border border-slate-100 rounded-3xl p-3 shadow-inner">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
             <input
               type="text"
               placeholder="Search activities..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-3 py-2.5 text-sm w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-11 pr-4 py-3 text-[11px] font-black uppercase tracking-widest w-full bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#345E85] focus:border-transparent transition-all placeholder:text-slate-300"
             />
           </div>
 
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-3 text-[11px] font-black uppercase tracking-widest bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#345E85] focus:border-transparent transition-all outline-none"
           >
             <option value="all">All Categories</option>
             <option value="user">User Actions</option>
@@ -352,7 +321,7 @@ const AdminHistory: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-3 text-[11px] font-black uppercase tracking-widest bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#345E85] focus:border-transparent transition-all outline-none"
           >
             <option value="all">All Status</option>
             <option value="success">Success</option>
@@ -363,21 +332,26 @@ const AdminHistory: React.FC = () => {
 
           <button
             onClick={handleExport}
-            className="px-4 py-2.5 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-2 shadow-md"
+            className="px-6 py-3 bg-[#345E85] text-white rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 text-[10px] font-black uppercase tracking-widest"
           >
-            <FaDownload className="w-4 h-4" />
+            <FaDownload className="w-3.5 h-3.5" />
             Export Logs
           </button>
         </div>
       </div>
 
       {/* Activity Timeline */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-          <h3 className="text-base font-bold text-gray-900">Activity Timeline</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Showing {filteredLogs.length} of {activityLogs.length} activities
-          </p>
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
+        <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+              <FaHistory className="w-4 h-4 text-[#345E85]" />
+              <TranslatedText text="Activity Timeline" />
+            </h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+              Showing {filteredLogs.length} of {activityLogs.length} activities
+            </p>
+          </div>
         </div>
 
         <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
@@ -396,38 +370,35 @@ const AdminHistory: React.FC = () => {
                 className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => setSelectedLog(log)}
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className={`p-2.5 rounded-lg ${getCategoryColor(log.category)}`}>
+                <div className="flex items-center gap-6">
+                  <div className="flex-shrink-0 relative">
+                    <div className={`w-12 h-12 rounded-2xl ${getCategoryColor(log.category)} flex items-center justify-center shadow-sm`}>
                       {getCategoryIcon(log.category)}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-sm">
+                      {getStatusIcon(log.status)}
                     </div>
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-semibold text-gray-900">{log.action}</h4>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(log.status)}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h4 className="text-sm font-black text-slate-900 tracking-tight">{log.action}</h4>
+                          <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${getStatusColor(log.status)}`}>
                             {log.status}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{log.description}</p>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
+                        <p className="text-xs text-slate-500 font-medium leading-relaxed">{log.description}</p>
+                        <div className="flex items-center gap-6 mt-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg">
                             <FaUser className="w-3 h-3" />
-                            {log.user} ({log.userRole})
-                          </span>
-                          <span className="flex items-center gap-1">
+                            {log.user}
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg">
                             <FaClock className="w-3 h-3" />
                             {formatDate(log.timestamp)}
-                          </span>
-                          {log.ipAddress && (
-                            <span className="flex items-center gap-1">
-                              <FaShieldAlt className="w-3 h-3" />
-                              {log.ipAddress}
-                            </span>
-                          )}
+                          </div>
                         </div>
                       </div>
 
@@ -436,7 +407,7 @@ const AdminHistory: React.FC = () => {
                           e.stopPropagation();
                           setSelectedLog(log);
                         }}
-                        className="flex-shrink-0 text-blue-600 hover:text-blue-800 transition-colors"
+                        className="p-2 rounded-xl bg-slate-50 text-[#345E85] hover:bg-[#345E85] hover:text-white transition-all duration-300"
                       >
                         <FaEye className="w-4 h-4" />
                       </button>
@@ -451,75 +422,86 @@ const AdminHistory: React.FC = () => {
 
       {/* Details Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Activity Details</h3>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm overflow-y-auto h-full w-full z-[100] p-4 flex items-center justify-center">
+          <div className="relative mx-auto p-8 border border-slate-100 w-full max-w-2xl shadow-2xl rounded-[2.5rem] bg-white animate-in zoom-in duration-300">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-2xl ${getCategoryColor(selectedLog.category)}`}>
+                  {getCategoryIcon(selectedLog.category)}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                    <TranslatedText text="Activity Details" />
+                  </h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                    ID: {selectedLog.id}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
               >
-                <FaTimesCircle className="w-6 h-6" />
+                <FaTimesCircle className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-6">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Activity ID</p>
-                  <p className="text-sm text-gray-900 mt-1">{selectedLog.id}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">User</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#345E85]">
+                      <FaUser className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-900">{selectedLog.user}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedLog.userRole}</p>
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Status</p>
-                  <div className="mt-1 flex items-center gap-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status</p>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl ${getStatusColor(selectedLog.status)} text-[10px] font-black uppercase tracking-widest`}>
                     {getStatusIcon(selectedLog.status)}
-                    <span className="text-sm text-gray-900 capitalize">{selectedLog.status}</span>
+                    {selectedLog.status}
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-6">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">User</p>
-                  <p className="text-sm text-gray-900 mt-1">{selectedLog.user}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Role</p>
-                  <p className="text-sm text-gray-900 mt-1">{selectedLog.userRole}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Category</p>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium mt-1 ${getCategoryColor(selectedLog.category)}`}>
-                    {getCategoryIcon(selectedLog.category)}
-                    <span className="ml-1 capitalize">{selectedLog.category}</span>
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Timestamp</p>
-                  <p className="text-sm text-gray-900 mt-1">{formatDate(selectedLog.timestamp)}</p>
-                </div>
-                {selectedLog.ipAddress && (
-                  <div className="col-span-2">
-                    <p className="text-sm font-medium text-gray-600">IP Address</p>
-                    <p className="text-sm text-gray-900 mt-1">{selectedLog.ipAddress}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Timestamp</p>
+                  <div className="flex items-center gap-3 text-slate-600">
+                    <FaClock className="w-3.5 h-3.5 text-slate-400" />
+                    <p className="text-sm font-black tracking-tight">{formatDate(selectedLog.timestamp)}</p>
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Network</p>
+                  <div className="flex items-center gap-3 text-slate-600">
+                    <FaShieldAlt className="w-3.5 h-3.5 text-slate-400" />
+                    <p className="text-sm font-black tracking-tight">{selectedLog.ipAddress || 'Internal'}</p>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <p className="text-sm font-medium text-gray-600">Action</p>
-                <p className="text-sm text-gray-900 mt-1">{selectedLog.action}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-600">Description</p>
-                <p className="text-sm text-gray-900 mt-1">{selectedLog.description}</p>
+              <div className="col-span-1 md:col-span-2 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Activity Description</p>
+                <p className="text-sm font-bold text-slate-700 leading-relaxed">
+                  {selectedLog.description}
+                </p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                className="px-8 py-3 bg-[#345E85] text-white rounded-2xl hover:bg-slate-800 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/10"
               >
-                Close
+                Done
               </button>
             </div>
           </div>

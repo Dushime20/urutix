@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
       strictPort: false, // Allow Vite to find another port if unavailable
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:3000',
+          target: env.VITE_API_URL || 'http://localhost:3001',
           changeOrigin: true,
           secure: false,
         },

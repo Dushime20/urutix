@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Box,
   Typography,
   Card,
   CardContent,
@@ -108,7 +107,7 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
           Verification Analytics
         </Typography>
         
@@ -122,18 +121,18 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
               trend={overallScore > 50 ? '+15%' : undefined}
               trendDirection={overallScore > 50 ? 'up' : 'neutral'}
               subtitle="Verification Progress"
-              variant="modern"
+              variant="premium"
             />
           </Grid>
           
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <StatCard
-              title="Compliance Level"
+              title="Compliance"
               value={profile?.complianceScore || 0}
               icon={<Shield />}
-              color="success"
+              color="emerald"
               subtitle="Security Rating"
-              variant="modern"
+              variant="premium"
             />
           </Grid>
           
@@ -142,20 +141,20 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
               title="Documents"
               value={metrics?.documentsUploaded || 0}
               icon={<CheckCircle />}
-              color="info"
+              color="primary"
               subtitle="Files Uploaded"
-              variant="modern"
+              variant="premium"
             />
           </Grid>
           
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <StatCard
-              title="Processing Time"
+              title="Est. Time"
               value={metrics?.estimatedCompletion || 'N/A'}
               icon={<Schedule />}
-              color="warning"
-              subtitle="Est. Completion"
-              variant="modern"
+              color="secondary"
+              subtitle="Processing"
+              variant="premium"
             />
           </Grid>
         </Grid>
@@ -167,7 +166,7 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
           Verification Breakdown
         </Typography>
         
@@ -191,10 +190,10 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
                         {metric.icon}
                       </div>
                       <div className="flex-1">
-                        <Typography variant="h6" className="font-bold text-slate-900">
+                        <Typography className="text-base font-black text-slate-800 tracking-tight mb-1">
                           {metric.title}
                         </Typography>
-                        <Typography variant="body2" className="text-slate-600">
+                        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-tight">
                           {metric.value}% Complete
                         </Typography>
                       </div>
@@ -234,7 +233,7 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
           Verification Timeline
         </Typography>
         
@@ -260,16 +259,16 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
                        <Timeline />}
                     </div>
                     
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <Typography variant="h6" className="font-bold text-slate-900">
+                    <div className="flex-1 border-l-2 border-slate-100 pl-4 py-1">
+                      <div className="flex flex-col mb-1">
+                        <Typography className="text-sm font-black text-slate-800 tracking-tight">
                           {event.title}
                         </Typography>
-                        <Typography variant="body2" className="text-slate-500">
+                        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                           {event.date.toLocaleDateString()}
                         </Typography>
                       </div>
-                      <Typography variant="body2" className="text-slate-600">
+                      <Typography className="text-[11px] font-bold text-slate-500 leading-relaxed">
                         {event.description}
                       </Typography>
                     </div>
@@ -297,7 +296,7 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        <Typography variant="h6" className="font-black text-slate-900 mb-6">
+        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
           Performance Insights
         </Typography>
         
@@ -306,8 +305,10 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <TrendingUp className="text-blue-600 w-6 h-6" />
-                  <Typography variant="h6" className="font-bold text-slate-900">
+                  <div className="p-2.5 bg-primary-50 text-primary-600 rounded-xl">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <Typography className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
                     Completion Rate
                   </Typography>
                 </div>
@@ -339,8 +340,10 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <Shield className="text-green-600 w-6 h-6" />
-                  <Typography variant="h6" className="font-bold text-slate-900">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <Typography className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
                     Security Level
                   </Typography>
                 </div>

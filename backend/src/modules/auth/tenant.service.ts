@@ -564,20 +564,12 @@ export class TenantService {
   async updateOnboardingStep(id: string, step: number): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
     
-    // Map number to enum
-    const stepMap = {
-      1: OnboardingStep.STEP_1_BRANDING,
-      2: OnboardingStep.STEP_2_KYC,
-      3: OnboardingStep.STEP_3_PLAN,
-      4: OnboardingStep.STEP_4_CONFIG,
-      5: OnboardingStep.COMPLETED,
-    };
-
-    tenant.onboardingStep = stepMap[step] || OnboardingStep.STEP_1_BRANDING;
+    // Since onboardingStep is now an integer in the database, just set it directly
+    tenant.onboardingStep = step;
     
-    if (step === 5) {
-      tenant.onboardingCompletedAt = new Date();
-    }
+    // if (step === 5) {
+    //   tenant.onboardingCompletedAt = new Date(); // Column doesn't exist in database
+    // }
 
     return this.tenantRepository.save(tenant);
   }

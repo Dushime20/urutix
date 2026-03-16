@@ -53,15 +53,15 @@ export const KycRequirementsCard: React.FC<KycRequirementsCardProps> = ({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <Card className="bg-white border border-slate-200 shadow-xl">
-        <CardContent className="p-8">
+      <Card className="bg-white border border-slate-100 shadow-xl rounded-[32px] overflow-hidden">
+        <CardContent className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                <Security className="text-purple-600 w-6 h-6" />
+              <div className="w-10 h-10 rounded-[16px] bg-primary-50 text-primary-600 flex items-center justify-center">
+                <Security className="w-5 h-5" />
               </div>
-              <Typography variant="h6" className="font-black text-slate-900">
+              <Typography className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
                 Requirements
               </Typography>
             </div>
@@ -75,7 +75,7 @@ export const KycRequirementsCard: React.FC<KycRequirementsCardProps> = ({
 
           {/* Required Documents */}
           <Box className="mb-6">
-            <Typography className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">
+            <Typography className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-1">
               Required Documents
             </Typography>
             <div className="space-y-2">
@@ -87,8 +87,8 @@ export const KycRequirementsCard: React.FC<KycRequirementsCardProps> = ({
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100"
                 >
-                  <div className="w-2 h-2 rounded-full bg-purple-400" />
-                  <Typography variant="body2" className="font-bold text-slate-700 flex-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary-400" />
+                  <Typography className="text-[11px] font-black text-slate-700 flex-1 tracking-tight">
                     {doc.replace(/_/g, ' ')}
                   </Typography>
                   <Description className="text-slate-400 w-4 h-4" />
@@ -101,7 +101,7 @@ export const KycRequirementsCard: React.FC<KycRequirementsCardProps> = ({
 
           {/* Verification Steps */}
           <Box className="mb-6">
-            <Typography className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">
+            <Typography className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-1">
               Verification Process
             </Typography>
             <List dense className="space-y-2">
@@ -114,14 +114,14 @@ export const KycRequirementsCard: React.FC<KycRequirementsCardProps> = ({
                 >
                   <ListItem className="px-0 py-2">
                     <ListItemIcon className="min-w-0 mr-3">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold border border-emerald-200">
+                      <div className="w-7 h-7 rounded-[12px] bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-black border border-emerald-100">
                         {index + 1}
                       </div>
                     </ListItemIcon>
                     <ListItemText 
                       primary={step.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       primaryTypographyProps={{
-                        className: "text-sm font-bold text-slate-700"
+                        className: "text-[11px] font-black text-slate-700 tracking-tight"
                       }}
                     />
                   </ListItem>

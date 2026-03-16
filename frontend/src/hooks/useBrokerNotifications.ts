@@ -23,7 +23,7 @@ export const useBrokerNotifications = () => {
 
     // Connect to WebSocket server
     const token = localStorage.getItem('token');
-    const newSocket = io(import.meta.env.VITE_WS_URL || 'ws://localhost:3002', {
+    const newSocket = io(import.meta.env.VITE_WS_URL || 'ws://localhost:3001', {
       auth: { token },
       transports: ['websocket', 'polling'],
     });

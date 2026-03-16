@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { config } from '../config/environment';
 
-const API_BASE_URL = config.api.baseUrl || 'http://localhost:3000';
+const API_BASE_URL = config.api.baseUrl || 'http://localhost:3001';
 
 // Create axios instance with auth interceptor
 const apiClient = axios.create({

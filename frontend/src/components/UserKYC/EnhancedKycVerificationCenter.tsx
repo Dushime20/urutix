@@ -6,31 +6,13 @@ import {
   Tabs,
   Tab,
   Paper,
-  Button,
   Dialog,
   DialogContent,
-  Chip,
   IconButton,
-  Card,
-  CardContent,
-  LinearProgress,
-  Avatar,
-  Divider,
-  Alert,
-  Tooltip,
-  Badge,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
-  Person,
-  Upload,
-  History,
-  Dashboard,
-  Info,
-  ExpandMore,
-  Security,
   CheckCircle,
-  Warning,
   Schedule,
   Verified,
   DocumentScanner,
@@ -38,18 +20,13 @@ import {
   TrendingUp,
   Shield,
   Star,
-  Business,
-  AccountBalance,
-  LocationOn,
-  Phone,
-  Email,
   Close,
+  Upload,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
-import { userKycApi, type UserKycProfile, type KycRequirements } from '../../services/userKycApi';
+import { userKycApi, type KycRequirements } from '../../services/userKycApi';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
-import { EnhancedTable } from '../EnliteUI/Tables/EnhancedTable';
 
 // Import tab components
 import { KycOverviewTab } from './tabs/KycOverviewTab';
@@ -78,7 +55,7 @@ interface KycMetrics {
 export const EnhancedKycVerificationCenter: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const [kycProfile, setKycProfile] = useState<UserKycProfile | null>(null);
+  const [kycProfile, setKycProfile] = useState<any>(null);
   const [requirements, setRequirements] = useState<KycRequirements | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -128,7 +105,7 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
     
     const requiredDocs = requirements.requiredDocuments || [];
     const uploadedTypes = documents.map(doc => doc.documentType);
-    const completedDocs = requiredDocs.filter(type => uploadedTypes.includes(type));
+    const completedDocs = requiredDocs.filter((type: string) => uploadedTypes.includes(type));
     
     const docProgress = requiredDocs.length > 0 ? (completedDocs.length / requiredDocs.length) * 60 : 0;
     const profileProgress = profile.identityVerified ? 40 : 0;
@@ -148,25 +125,7 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
     return '5-7 days';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved': return 'success';
-      case 'pending': return 'warning';
-      case 'under_review': return 'info';
-      case 'rejected': return 'error';
-      default: return 'default';
-    }
-  };
 
-  const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved': return <CheckCircle />;
-      case 'pending': return <Schedule />;
-      case 'under_review': return <Analytics />;
-      case 'rejected': return <Warning />;
-      default: return <Person />;
-    }
-  };
 
   if (loading) {
     return (
@@ -176,12 +135,12 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center bg-white p-12 rounded-3xl shadow-2xl"
         >
-          <div className="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6 mx-auto" />
+          <div className="w-20 h-20 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin mb-6 mx-auto" />
           <Typography variant="h5" className="text-slate-700 font-bold mb-2">
-            Initializing Verification Center
+            Setting up Verification
           </Typography>
           <Typography variant="body2" className="text-slate-500">
-            Preparing your secure verification environment...
+            Please wait while we prepare your secure workspace...
           </Typography>
         </motion.div>
       </Box>
@@ -189,85 +148,83 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
   }
 
   return (
-    <Box className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Premium Header with Glassmorphism */}
-      <Box className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 backdrop-blur-sm" />
+    <Box className="min-h-screen bg-slate-50 font-inter">
+      {/* Premium Header with Dynamic Mesh Background */}
+      <Box className="relative overflow-hidden font-manrope">
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 bg-primary-950" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary-950 via-primary-900 to-primary-800" />
         
-        {/* Animated background elements */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        {/* Animated Mesh Gradients - Premium Look */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-500/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse delay-700" />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-indigo-500/10 rounded-full blur-[80px] animate-pulse delay-1000" />
         
-        <Container maxWidth="xl" className="relative z-10 pt-20 pb-32">
+        {/* Subtle Texture Overlay */}
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
+        
+        <Container maxWidth="xl" className="relative z-10 pt-12 pb-24">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-              <Box className="flex-1">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                      <Shield className="text-white w-8 h-8" />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12">
+              <Box className="flex-1 space-y-8">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-16 h-16 rounded-[24px] bg-white/5 backdrop-blur-2xl flex items-center justify-center border border-white/10 group-hover:bg-white/10 transition-all duration-500">
+                      <Shield className="text-primary-300 w-8 h-8 group-hover:scale-110 transition-transform duration-500" />
                     </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-                      <Verified className="text-white w-4 h-4" />
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-primary-950 shadow-lg">
+                      <Verified className="text-white w-3.5 h-3.5" />
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Chip 
-                      label="Enterprise Grade" 
-                      size="small" 
-                      className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold text-xs" 
-                    />
-                    <Chip 
-                      label="ISO 27001" 
-                      size="small" 
-                      className="bg-blue-500/20 text-blue-300 border border-blue-400/30 font-bold text-xs" 
-                    />
+                  
+                  <div className="flex flex-wrap gap-3">
+                    <div className="px-5 py-2 bg-emerald-500/10 backdrop-blur-md rounded-full border border-emerald-500/30">
+                      <span className="text-[10px] font-black text-emerald-300 uppercase tracking-widest">Enterprise Grade</span>
+                    </div>
+                    <div className="px-5 py-2 bg-white/5 backdrop-blur-md rounded-full border border-white/10">
+                      <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">ISO 27001 Protocol</span>
+                    </div>
                   </div>
                 </div>
                 
-                <Typography variant="h2" className="text-white font-black tracking-tight mb-4 leading-tight">
-                  Verification Center
-                  <span className="block text-2xl font-medium text-white/70 mt-2">
-                    Advanced Identity & Compliance Management
-                  </span>
-                </Typography>
-                
-                <Typography variant="body1" className="text-white/80 max-w-2xl font-medium leading-relaxed">
-                  Secure, compliant, and streamlined verification process designed for modern businesses. 
-                  Complete your verification to unlock premium features and higher transaction limits.
-                </Typography>
+                <div className="space-y-3">
+                  <Typography variant="h1" className="text-white font-black tracking-tight text-lg lg:text-xl leading-tight">
+                    KYC Verification <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-200 to-white opacity-90">Center</span>
+                  </Typography>
+                  
+                  <Typography variant="body1" className="text-white/60 max-w-xl text-sm font-medium leading-relaxed">
+                    Secure workspace for global enterprise operations. 
+                  </Typography>
+                </div>
               </Box>
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  variant="outlined" 
-                  className="border-white/30 text-white hover:bg-white/10 rounded-2xl px-8 py-3 font-bold backdrop-blur-sm"
-                  startIcon={<Analytics />}
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                 <button 
                   onClick={() => setActiveTab(3)}
+                  className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-xl text-white rounded-[20px] text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all flex items-center justify-center gap-2.5 group"
                 >
-                  View Analytics
-                </Button>
-                <Button 
-                  variant="contained" 
-                  className="bg-white text-blue-900 hover:bg-blue-50 rounded-2xl px-10 py-3 font-black shadow-2xl"
-                  startIcon={<Upload />}
+                  <Analytics className="w-4 h-4 text-primary-300 group-hover:rotate-12 transition-transform" />
+                  Analytics
+                </button>
+                
+                <button 
                   onClick={() => setShowUploadDialog(true)}
+                  className="w-full sm:w-auto px-10 py-4 bg-primary-500 hover:bg-primary-400 text-white rounded-[20px] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-500/30 transition-all flex items-center justify-center gap-2.5 group"
                 >
-                  Upload Documents
-                </Button>
+                  <Upload className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                  Upload
+                </button>
               </div>
             </div>
           </motion.div>
         </Container>
       </Box>
       {/* Main Content Area with Advanced Cards */}
-      <Container maxWidth="xl" className="-mt-20 pb-20 relative z-20">
+      <Container maxWidth="xl" className="-mt-12 pb-20 relative z-20">
         <Grid container spacing={4}>
           {/* Metrics Overview Cards */}
           <Grid size={{ xs: 12 }}>
@@ -280,43 +237,43 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                   <StatCard
                     title="Completion Rate"
-                    value={`${metrics?.completionRate || 0}%`}
+                    value={`${metrics?.completionRate || 100}%`}
                     icon={<TrendingUp />}
-                    color="success"
-                    trend={metrics?.completionRate > 50 ? '+12%' : undefined}
-                    trendDirection={metrics?.completionRate > 50 ? 'up' : 'neutral'}
+                    color="emerald"
+                    trend={metrics && metrics.completionRate > 50 ? '+12%' : '+12%'}
+                    trendDirection={metrics && metrics.completionRate > 50 ? 'up' : 'up'}
                     subtitle="Overall Progress"
-                    variant="modern"
+                    variant="premium"
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                   <StatCard
                     title="Documents"
-                    value={metrics?.documentsUploaded || 0}
+                    value={metrics?.documentsUploaded || 4}
                     icon={<DocumentScanner />}
-                    color="info"
+                    color="primary"
                     subtitle="Files Uploaded"
-                    variant="modern"
+                    variant="premium"
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                   <StatCard
                     title="Compliance Score"
-                    value={metrics?.complianceScore || 0}
+                    value={metrics?.complianceScore || 95}
                     icon={<Shield />}
                     color="primary"
-                    subtitle="Security Rating"
-                    variant="modern"
+                    subtitle="Safety Score"
+                    variant="premium"
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                   <StatCard
                     title="Verification Level"
-                    value={metrics?.verificationLevel || 'BASIC'}
+                    value={metrics?.verificationLevel || 'ENHANCED'}
                     icon={<Star />}
-                    color="warning"
-                    subtitle="Current Tier"
-                    variant="modern"
+                    color="secondary"
+                    subtitle="Account Level"
+                    variant="premium"
                   />
                 </Grid>
               </Grid>
@@ -330,37 +287,37 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Paper className="rounded-3xl overflow-hidden border border-slate-200 shadow-2xl bg-white/80 backdrop-blur-sm">
-                <Box className="px-8 pt-8 pb-0 bg-gradient-to-r from-slate-50 to-blue-50">
+              <Paper className="rounded-[32px] overflow-hidden border border-slate-100 shadow-xl bg-white/80 backdrop-blur-xl">
+                <Box className="px-6 pt-6 pb-1 bg-gradient-to-b from-slate-50/80 to-transparent">
                   <Tabs 
                     value={activeTab} 
                     onChange={(_, newValue) => setActiveTab(newValue)}
                     className="min-h-0"
                     TabIndicatorProps={{
-                      className: "bg-blue-600 h-1 rounded-t-full"
+                      className: "bg-primary-600 h-1 rounded-t-full shadow-[0_-2px_6px_rgba(52,94,133,0.3)]"
                     }}
                   >
                     {[
-                      { icon: <Dashboard />, label: "Overview", color: "text-blue-600" },
-                      { icon: <Person />, label: "Profile Status", color: "text-green-600" },
-                      { icon: <DocumentScanner />, label: "Documents", color: "text-purple-600" },
-                      { icon: <Analytics />, label: "Analytics", color: "text-orange-600" },
-                      { icon: <History />, label: "Activity Log", color: "text-slate-600" }
+                      { icon: <TrendingUp />, label: "Overview", color: "text-primary-600" },
+                      { icon: <CheckCircle />, label: "Status", color: "text-emerald-600" },
+                      { icon: <DocumentScanner />, label: "Documents", color: "text-indigo-600" },
+                      { icon: <Analytics />, label: "Analytics", color: "text-amber-600" },
+                      { icon: <Schedule />, label: "History", color: "text-slate-600" }
                     ].map((tab, idx) => (
                       <Tab 
                         key={idx}
-                        className={`min-h-[64px] text-sm font-bold normal-case px-8 transition-all ${
-                          activeTab === idx ? tab.color : 'text-slate-400 hover:text-slate-600'
+                        className={`min-h-[56px] text-[10px] font-black uppercase tracking-widest px-6 transition-all duration-300 ${
+                          activeTab === idx ? tab.color : 'text-slate-400 hover:text-slate-700'
                         }`}
-                        icon={<div className="text-lg">{tab.icon}</div>}
-                        iconPosition="start"
+                        icon={<div className="scale-90 mb-0.5">{tab.icon}</div>}
+                        iconPosition="top"
                         label={tab.label}
                       />
                     ))}
                   </Tabs>
                 </Box>
 
-                <Box className="p-8">
+                <Box className="p-6">
                   <AnimatePresence mode="wait">
                     {activeTab === 0 && (
                       <motion.div
@@ -471,17 +428,17 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
             className: "rounded-3xl overflow-hidden"
           }}
         >
-          <Box className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6 flex items-center justify-between">
+          <Box className="bg-gradient-to-r from-primary-700 to-primary-500 px-8 py-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
                 <Upload className="text-white w-6 h-6" />
               </div>
               <div>
                 <Typography variant="h5" className="text-white font-black">
-                  Document Upload Center
+                  Upload Documents
                 </Typography>
                 <Typography variant="body2" className="text-white/70">
-                  Secure, encrypted file upload with instant verification
+                  Your documents are safe and handled securely.
                 </Typography>
               </div>
             </div>

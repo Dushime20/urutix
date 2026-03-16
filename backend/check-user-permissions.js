@@ -1,119 +1,114 @@
-const { Pool } = require('pg');
+/**
+ * Check User Permissions
+ */
+
+const { Client } = require('pg');
 require('dotenv').config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
 async function checkUserPermissions() {
-  const client = await pool.connect();
-  try {
-    console.log('🔍 Checking user permissions...\n');
+  const client = new Client({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5433,
+    user: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || '123',
+    database: process.env.DB_NAME || 'urutix',
+  });
 
-    // Get the user you're logged in as
-    // Try to get from command line argument, otherwise prompt
-    const userEmail = process.argv[2] || 'admin@test.com'; // Pass email as argument: node check-user-permissions.js user@email.com
+  try {
+    await client.connect();
+    console.log('Connected to database');
+
+    const email = 'cargo.owner@test.com';
+    
+    // Get user details
+    console.log(`\n👤 User Details for ${email}:`);
+    console.log('=====================================');
     
     const userResult = await client.query(`
-      SELECT id, email, role, "tenantId"
-      FROM users
+      SELECT id, email, role, status, "tenantId"
+      FROM users 
       WHERE email = $1
-    `, [userEmail]);
+    `, [email]);
 
     if (userResult.rows.length === 0) {
-      console.log(`❌ User ${userEmail} not found`);
+      console.log('❌ User not found');
       return;
     }
 
     const user = userResult.rows[0];
-    console.log('👤 User Information:');
-    console.log(`   Email: ${user.email}`);
-    console.log(`   Role: ${user.role}`);
-    console.log(`   Tenant ID: ${user.tenantId}`);
-    console.log(`   User ID: ${user.id}`);
+    console.log(`✅ User found:`);
+    console.log(`- ID: ${user.id}`);
+    console.log(`- Email: ${user.email}`);
+    console.log(`- Role: ${user.role}`);
+    console.log(`- Status: ${user.status}`);
+    console.log(`- Tenant: ${user.tenantId}`);
 
-    // Check if the role has truck:view permission
-    console.log('\n📊 Checking permissions for role:', user.role);
-    const permissionsResult = await client.query(`
-      SELECT p.id, p.name, p.resource, p.action, p.description
+    // Check role permissions
+    console.log(`\n🔐 Role Permissions for ${user.role}:`);
+    console.log('=====================================');
+    
+    const rolePermissionsResult = await client.query(`
+      SELECT p.name as permission_name, p.description
       FROM role_permissions rp
-      JOIN permissions p ON p.id = rp.permission_id
-      WHERE rp.role = $1 AND p.resource = 'truck'
-      ORDER BY p.action
+      JOIN permissions p ON rp.permission_id = p.id
+      WHERE rp.role = $1
+      ORDER BY p.name
     `, [user.role]);
 
-    if (permissionsResult.rows.length === 0) {
-      console.log(`   ❌ Role ${user.role} has NO truck permissions!`);
-      console.log(`   This is why you're getting the 403 error.`);
+    if (rolePermissionsResult.rows.length === 0) {
+      console.log(`❌ No permissions found for role ${user.role}`);
     } else {
-      console.log(`   ✅ Role ${user.role} has ${permissionsResult.rows.length} truck permissions:`);
-      permissionsResult.rows.forEach(perm => {
-        console.log(`      - ${perm.name} (${perm.resource}:${perm.action})`);
+      console.log(`✅ Found ${rolePermissionsResult.rows.length} permissions:`);
+      rolePermissionsResult.rows.forEach(perm => {
+        console.log(`- ${perm.permission_name}: ${perm.description || 'No description'}`);
       });
     }
 
-    // Check specifically for truck:view
-    const truckViewResult = await client.query(`
-      SELECT p.id, p.name, p.resource, p.action
+    // Check specifically for analytics permissions
+    console.log(`\n📊 Analytics Permissions for ${user.role}:`);
+    console.log('==========================================');
+    
+    const analyticsPermissionsResult = await client.query(`
+      SELECT p.name as permission_name, p.description
       FROM role_permissions rp
-      JOIN permissions p ON p.id = rp.permission_id
-      WHERE rp.role = $1 AND p.resource = 'truck' AND p.action = 'view'
+      JOIN permissions p ON rp.permission_id = p.id
+      WHERE rp.role = $1 AND p.name LIKE 'analytics:%'
+      ORDER BY p.name
     `, [user.role]);
 
-    console.log('\n🔍 Checking specifically for truck:view permission:');
-    if (truckViewResult.rows.length === 0) {
-      console.log(`   ❌ Role ${user.role} does NOT have truck:view permission`);
-      console.log(`   Adding it now...`);
-      
-      // Get the truck:view permission ID
-      const permResult = await client.query(`
-        SELECT id FROM permissions WHERE resource = 'truck' AND action = 'view'
-      `);
-      
-      if (permResult.rows.length > 0) {
-        const permId = permResult.rows[0].id;
-        
-        // Add to role
-        await client.query(`
-          INSERT INTO role_permissions (role, permission_id)
-          VALUES ($1, $2)
-          ON CONFLICT DO NOTHING
-        `, [user.role, permId]);
-        
-        console.log(`   ✅ Added truck:view permission to ${user.role}`);
-      } else {
-        console.log(`   ❌ truck:view permission doesn't exist in database!`);
-      }
+    if (analyticsPermissionsResult.rows.length === 0) {
+      console.log(`❌ No analytics permissions found for role ${user.role}`);
     } else {
-      console.log(`   ✅ Role ${user.role} HAS truck:view permission`);
+      console.log(`✅ Found ${analyticsPermissionsResult.rows.length} analytics permissions:`);
+      analyticsPermissionsResult.rows.forEach(perm => {
+        console.log(`- ${perm.permission_name}: ${perm.description || 'No description'}`);
+      });
     }
 
-    // List all roles and their truck:view status
-    console.log('\n📊 All roles and their truck:view permission status:');
-    const allRolesResult = await client.query(`
-      SELECT DISTINCT r.name as role_name
-      FROM roles r
-      ORDER BY r.name
+    // Check all available analytics permissions
+    console.log(`\n📋 All Available Analytics Permissions:`);
+    console.log('======================================');
+    
+    const allAnalyticsResult = await client.query(`
+      SELECT name, description
+      FROM permissions 
+      WHERE name LIKE 'analytics:%'
+      ORDER BY name
     `);
 
-    for (const role of allRolesResult.rows) {
-      const hasPermResult = await client.query(`
-        SELECT COUNT(*) as count
-        FROM role_permissions rp
-        JOIN permissions p ON p.id = rp.permission_id
-        WHERE rp.role = $1 AND p.resource = 'truck' AND p.action = 'view'
-      `, [role.role_name]);
-      
-      const hasPerm = hasPermResult.rows[0].count > 0;
-      console.log(`   ${hasPerm ? '✅' : '❌'} ${role.role_name}`);
+    if (allAnalyticsResult.rows.length === 0) {
+      console.log('❌ No analytics permissions found in system');
+    } else {
+      console.log(`✅ Found ${allAnalyticsResult.rows.length} analytics permissions in system:`);
+      allAnalyticsResult.rows.forEach(perm => {
+        console.log(`- ${perm.name}: ${perm.description || 'No description'}`);
+      });
     }
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('Error:', error.message);
   } finally {
-    client.release();
-    await pool.end();
+    await client.end();
   }
 }
 
