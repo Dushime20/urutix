@@ -28,8 +28,8 @@ import {
 } from '@nestjs/swagger';
 import { TrackingService } from './tracking.service';
 import { TrackingGateway } from './tracking.gateway';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { TenantGuard } from '../auth/tenant.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
 import {
   TripStatusDto,

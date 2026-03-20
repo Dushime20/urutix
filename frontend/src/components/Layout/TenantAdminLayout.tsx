@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AdminLayoutProvider } from '../../contexts/AdminLayoutContext';
 import DashboardLayout from './DashboardLayout';
 import DashboardFooter from './DashboardFooter';
+import MobileBottomNav from './MobileBottomNav';
 
 const TenantAdminLayoutContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -62,10 +63,11 @@ const TenantAdminLayoutContent: React.FC = () => {
     <>
       {isDashboardIndex ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 flex flex-col pb-20 lg:pb-0">
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>
+          <MobileBottomNav />
           <DashboardFooter />
         </div>
       ) : (

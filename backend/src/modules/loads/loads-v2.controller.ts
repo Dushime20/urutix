@@ -37,7 +37,7 @@ import {
 } from './dto/load-v2.dto';
 import { LoadResponseV2Dto } from './dto/load-response-v2.dto';
 import { User } from '../../entities/user.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('loads-v2')
 @Controller('loads-v2')

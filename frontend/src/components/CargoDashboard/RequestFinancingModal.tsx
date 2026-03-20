@@ -97,7 +97,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <DollarSign className="w-6 h-6 text-[#358c9c]" />
+                            <DollarSign className="w-6 h-6 text-primary-600" />
                             Request Financing
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
@@ -115,17 +115,17 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                 {/* Content */}
                 <div className="p-6">
                     {/* Cargo Details */}
-                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h3 className="text-sm font-semibold text-blue-900 mb-2">Cargo Details</h3>
+                    <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+                        <h3 className="text-sm font-semibold text-primary-900 mb-2">Cargo Details</h3>
                         <div className="space-y-1 text-sm">
-                            <p className="text-blue-800"><strong>Title:</strong> {cargo.title}</p>
-                            <p className="text-blue-700">
+                            <p className="text-primary-800"><strong>Title:</strong> {cargo.title}</p>
+                            <p className="text-primary-700">
                                 <strong>Route:</strong> {cargo.pickupLocation?.name || 'N/A'} → {cargo.deliveryLocation?.name || 'N/A'}
                             </p>
-                            <p className="text-blue-700">
+                            <p className="text-primary-700">
                                 <strong>Cargo Value:</strong> ${cargoValue.toLocaleString()}
                             </p>
-                            <p className="text-blue-700">
+                            <p className="text-primary-700">
                                 <strong>Max Loan Amount:</strong> ${maxLoanAmount.toLocaleString()} (80% of value)
                             </p>
                         </div>
@@ -147,7 +147,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                     max={maxLoanAmount}
                                     value={loanAmount || ''}
                                     onChange={(e) => setLoanAmount(Number(e.target.value))}
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#358c9c] focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="Enter loan amount"
                                 />
                             </div>
@@ -166,7 +166,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                 <select
                                     value={loanTerm}
                                     onChange={(e) => setLoanTerm(Number(e.target.value))}
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#358c9c] focus:border-transparent appearance-none"
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
                                 >
                                     <option value={7}>7 Days</option>
                                     <option value={14}>14 Days</option>
@@ -196,9 +196,9 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
 
                         {/* Loan Summary */}
                         {loanAmount > 0 && (
-                            <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-[#358c9c]/20 rounded-lg">
+                            <div className="p-4 bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <TrendingUp className="w-5 h-5 text-[#358c9c]" />
+                                    <TrendingUp className="w-5 h-5 text-primary-600" />
                                     <h4 className="text-sm font-semibold text-gray-900">Loan Summary</h4>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -216,7 +216,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                     </div>
                                     <div>
                                         <p className="text-gray-600">Total Repayment</p>
-                                        <p className="font-semibold text-[#2c7380]">${totalRepayment.toLocaleString()}</p>
+                                        <p className="font-semibold text-primary-600">${totalRepayment.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </div>
@@ -231,10 +231,10 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                             >
                                 Cancel
                             </button>
-                            <button
+                             <button
                                 type="submit"
                                 disabled={loading || loanAmount <= 0 || loanAmount > maxLoanAmount}
-                                className="flex-1 px-4 py-2.5 bg-[#358c9c] text-white rounded-lg hover:bg-[#2c7380] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <>

@@ -8,33 +8,32 @@ import {
   DollarSign,
   Truck,
   AlertTriangle,
-  Thermometer,
-  Shield,
   Weight,
   Volume,
-  Star,
   TrendingUp,
-  Users,
   FileText,
-  Edit,
-  Trash2,
-  Eye,
-  Mail,
   Globe,
   Navigation,
   Clock3,
   AlertCircle,
-  Info,
   Zap,
-  Route,
   Target,
+  Upload,
+  Download,
+  Info,
+  Star,
+  Users,
+  Mail,
+  Edit,
+  Trash2,
+  Eye,
+  Route,
+  Award,
   Search,
   Filter,
-  MessageSquare,
-  Award,
+  Shield,
   CheckCircle,
-  Upload,
-  Download
+  MessageSquare
 } from 'lucide-react';
 
 import { loadsAPI } from '@/services/load';
@@ -67,7 +66,7 @@ interface CargoDetailsModalProps {
   cargoId: string | null;
 }
 
-import { createPortal } from 'react-dom';
+import BottomSheet from '@/components/common/BottomSheet';
 
 const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps) => {
   const { user } = useAuth();
@@ -139,50 +138,42 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
     retry: 1,
   });
 
-  if (!isOpen) return null;
-
-  return createPortal(
+  return (
     <>
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4"
-        onClick={onClose}
-      >
-        <div
-          className="bg-[#f8fafc] rounded-[2rem] shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-white"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-                {cargo && <div className="text-[#345E85]">{getCargoTypeIcon(cargo.cargoType)}</div>}
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">
-                  {cargo?.title || 'Cargo Details'}
-                </h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
-                  Cargo ID: {cargoId}
-                </p>
-              </div>
+      <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="6xl"
+      className="p-0"
+    >
+      <div className="flex flex-col h-full bg-[#f8fafc]">
+        {/* Header - Integrating into the content since it has complex logic */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+              {cargo && <div className="text-[#345E85]">{getCargoTypeIcon(cargo.cargoType)}</div>}
             </div>
-            <div className="flex items-center gap-3">
-              {cargo && (
-                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusColor(cargo.status)}`}>
-                  {getStatusDisplayName(cargo.status)}
-                </span>
-              )}
-              <button
-                onClick={onClose}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-[#0f172a] tracking-tight">
+                {cargo?.title || 'Cargo Details'}
+              </h2>
+              <p className="hidden sm:block text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                Cargo ID: {cargoId}
+              </p>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            {cargo && (
+              <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusColor(cargo.status)}`}>
+                {getStatusDisplayName(cargo.status)}
+              </span>
+            )}
+            {/* Standard modal closes button is in the BottomSheet wrapper, but we keep this one for consistency if needed, though usually redundant */}
+          </div>
+        </div>
 
-          {/* Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center p-12">
                 <div className="text-center">
@@ -1324,36 +1315,35 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
               </div>
             )
             }
-          </div>
         </div>
       </div>
+    </BottomSheet>
 
-      {/* Document Preview Modal */}
-      {previewDoc && (
-        <DocumentPreviewModal
-          isOpen={!!previewDoc}
-          onClose={() => setPreviewDoc(null)}
-          documentId={previewDoc!.id}
-          title={previewDoc!.title}
-          fileName={previewDoc!.fileName}
-        />
-      )}
-
-      {/* Document Upload Modal */}
-      <DocumentUploadModal
-        isOpen={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
-        onSuccess={() => refetchDocuments()}
-        initialEntityType="CARGO"
-        initialEntityId={cargoId}
-        lockEntity={true}
+    {/* Document Preview Modal */}
+    {previewDoc && (
+      <DocumentPreviewModal
+        isOpen={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        documentId={previewDoc!.id}
+        title={previewDoc!.title}
+        fileName={previewDoc!.fileName}
       />
+    )}
 
-      {/* Confirmation Dialog */}
-      {DialogComponent}
-    </>,
-    document.body
-  );
+    {/* Document Upload Modal */}
+    <DocumentUploadModal
+      isOpen={showUploadModal}
+      onClose={() => setShowUploadModal(false)}
+      onSuccess={() => refetchDocuments()}
+      initialEntityType="CARGO"
+      initialEntityId={cargoId}
+      lockEntity={true}
+    />
+
+    {/* Confirmation Dialog */}
+    {DialogComponent}
+  </>
+);
 };
 
 export default CargoDetailsModal;

@@ -9,8 +9,8 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse, ApiParam } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { TenantGuard } from '../auth/tenant.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 import { CreditService } from '../../services/credit.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';

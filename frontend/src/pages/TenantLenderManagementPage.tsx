@@ -7,6 +7,7 @@ import {
   ArrowRight, Download, Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TranslatedText } from '../components/translated-text';
 
 interface Lender {
   id: string;
@@ -89,9 +90,9 @@ const TenantLenderManagementPage: React.FC = () => {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
         {[
-          { label: 'Total Lenders', value: stats.total, icon: Building2, color: 'primary' },
-          { label: 'Active Lenders', value: stats.active, icon: CheckCircle, color: 'emerald' },
-          { label: 'Attention Needed', value: stats.pending, icon: AlertTriangle, color: 'rose' }
+          { label: <TranslatedText text="Total Lenders" />, value: stats.total, icon: Building2, color: 'primary' },
+          { label: <TranslatedText text="Active Lenders" />, value: stats.active, icon: CheckCircle, color: 'emerald' },
+          { label: <TranslatedText text="Attention Needed" />, value: stats.pending, icon: AlertTriangle, color: 'rose' }
         ].map((stat, i) => (
           <motion.div
             key={i}
@@ -120,8 +121,8 @@ const TenantLenderManagementPage: React.FC = () => {
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
         <div className="px-6 md:px-10 py-6 md:py-10 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-center sm:text-left">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 italic">Lender Registry</h3>
-            <h4 className="text-3xl font-black text-slate-900 tracking-tight">Active Lenders</h4>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 italic"><TranslatedText text="Lender Registry" /></h3>
+            <h4 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Active Lenders" /></h4>
           </div>
           <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-end">
             <button className="p-4 bg-slate-50 border border-slate-100 rounded-[20px] text-slate-400 hover:text-primary-600 transition-all">
@@ -132,7 +133,7 @@ const TenantLenderManagementPage: React.FC = () => {
               className="flex-1 sm:flex-none justify-center bg-primary-600 text-white px-8 md:px-10 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 flex items-center text-[11px] font-black uppercase tracking-widest"
             >
               <Plus className="w-4 h-4 mr-3" />
-              Add Lender
+              <TranslatedText text="Add Lender" />
             </button>
           </div>
         </div>
@@ -150,7 +151,7 @@ const TenantLenderManagementPage: React.FC = () => {
           </div>
           <button className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-100 rounded-[20px] text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary-600 transition-all">
             <Filter className="w-4 h-4" />
-            Filter By Status
+            <TranslatedText text="Filter By Status" />
           </button>
         </div>
 

@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Tenant, KycStatus } from '../entities/tenant.entity';
-import { TenantKycDocument, DocumentType } from '../entities/tenant-kyc-document.entity';
-import { TenantKycAuditLog, KycAuditAction } from '../entities/tenant-kyc-audit-log.entity';
+import { Tenant, KycStatus } from './../entities/tenant.entity';
+import { TenantKycDocument, DocumentType } from './../entities/tenant-kyc-document.entity';
+import { TenantKycAuditLog, KycAuditAction } from './../entities/tenant-kyc-audit-log.entity';
 
 export interface KycSubmissionData {
   registrationNumber?: string;

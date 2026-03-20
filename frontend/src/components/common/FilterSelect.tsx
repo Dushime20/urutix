@@ -1,4 +1,6 @@
 import React from "react";
+import { TranslatedText } from "../translated-text";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export interface FilterSelectOption {
   value: string;
@@ -30,15 +32,16 @@ export const FilterSelect: React.FC<FilterSelectProps> = ({
   name,
   "aria-label": ariaLabel,
 }) => {
+  const { tSync } = useTranslation();
   const computedPlaceholder =
-    placeholder ?? label ?? (options[0]?.label ?? "Select option");
+    placeholder ?? (typeof label === 'string' ? label : (options[0]?.label ?? "Select option"));
 
   return (
     <label
       className={`filter-select-wrapper ${className}`}
       aria-label={label ? undefined : ariaLabel}
     >
-      {label ? <span className="filter-select-label">{typeof label === 'string' ? label : label}</span> : null}
+      {label ? <span className="filter-select-label">{typeof label === 'string' ? <TranslatedText text={label} /> : label}</span> : null}
       <div className="relative flex items-center">
         {icon ? (
           <span className="pointer-events-none absolute left-3 text-base text-slate-400">
@@ -53,12 +56,12 @@ export const FilterSelect: React.FC<FilterSelectProps> = ({
           data-icon={icon ? "true" : "false"}
           aria-label={ariaLabel}
         >
-          <option value="">{computedPlaceholder}</option>
+          <option value="">{tSync(computedPlaceholder)}</option>
           {options
             .filter((option) => option.value !== "")
             .map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {tSync(option.label)}
               </option>
             ))}
         </select>

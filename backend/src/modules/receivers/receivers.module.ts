@@ -7,7 +7,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { Load } from '../../entities/load.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { CargoInspection } from '../../entities/cargo-inspection.entity';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({

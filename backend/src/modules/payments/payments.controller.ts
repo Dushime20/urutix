@@ -31,7 +31,7 @@ import {
   ReconciliationRequestDto,
   ReconciliationResponseDto,
 } from './dto/provider-payment.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import {

@@ -7,12 +7,12 @@ import {
   Param,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../guards/permission.guard';
 import { RequirePermissions } from '../../auth/decorators/require-permissions.decorator';
-import { OperationalAnalyticsService } from '../services/operational-analytics.service';
-import { CarrierIntelligenceService } from '../services/carrier-intelligence.service';
-import { MarketIntelligenceService } from '../services/market-intelligence.service';
+import { OperationalAnalyticsService } from './../services/operational-analytics.service';
+import { CarrierIntelligenceService } from './../services/carrier-intelligence.service';
+import { MarketIntelligenceService } from './../services/market-intelligence.service';
 
 @ApiTags('Operational Analytics')
 @ApiBearerAuth()
@@ -26,7 +26,7 @@ export class OperationalAnalyticsController {
   ) {}
 
   @Get('performance')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get operational performance metrics' })
   @ApiResponse({ status: 200, description: 'Performance metrics retrieved successfully' })
   async getPerformanceMetrics(
@@ -34,27 +34,27 @@ export class OperationalAnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const { tenantId, userId } = req.user;
+    const { tenantId, userId, role } = req.user;
     
     const period = {
       start: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       end: endDate ? new Date(endDate) : new Date(),
     };
 
-    return this.operationalAnalyticsService.getPerformanceMetrics(tenantId, userId, period);
+    return this.operationalAnalyticsService.getPerformanceMetrics(tenantId, userId, role, period);
   }
 
   @Get('routes')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get route performance analysis' })
   @ApiResponse({ status: 200, description: 'Route performance data retrieved successfully' })
   async getRoutePerformance(@Request() req) {
-    const { tenantId, userId } = req.user;
-    return this.operationalAnalyticsService.getRoutePerformance(tenantId, userId);
+    const { tenantId, userId, role } = req.user;
+    return this.operationalAnalyticsService.getRoutePerformance(tenantId, userId, role);
   }
 
   @Get('carriers')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get carrier performance analysis' })
   @ApiResponse({ status: 200, description: 'Carrier performance data retrieved successfully' })
   async getCarrierPerformance(
@@ -73,7 +73,7 @@ export class OperationalAnalyticsController {
   }
 
   @Get('carriers/:carrierId/scorecard')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get detailed carrier scorecard' })
   @ApiResponse({ status: 200, description: 'Carrier scorecard retrieved successfully' })
   async getCarrierScorecard(
@@ -85,7 +85,7 @@ export class OperationalAnalyticsController {
   }
 
   @Get('carriers/recommendations/:routeHash')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get carrier recommendations for specific route' })
   @ApiResponse({ status: 200, description: 'Carrier recommendations retrieved successfully' })
   async getCarrierRecommendationsForRoute(
@@ -101,7 +101,7 @@ export class OperationalAnalyticsController {
   }
 
   @Get('market/benchmarks')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get industry benchmarks (anonymized)' })
   @ApiResponse({ status: 200, description: 'Industry benchmarks retrieved successfully' })
   @ApiResponse({ status: 403, description: 'Insufficient data for benchmarking' })
@@ -111,7 +111,7 @@ export class OperationalAnalyticsController {
   }
 
   @Get('market/trends')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get market trends analysis' })
   @ApiResponse({ status: 200, description: 'Market trends retrieved successfully' })
   async getMarketTrends(
@@ -130,7 +130,7 @@ export class OperationalAnalyticsController {
   }
 
   @Get('market/positioning')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get competitive positioning analysis' })
   @ApiResponse({ status: 200, description: 'Competitive positioning retrieved successfully' })
   async getCompetitivePositioning(

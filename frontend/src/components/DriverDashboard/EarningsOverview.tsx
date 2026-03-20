@@ -11,7 +11,10 @@ import {
   Briefcase,
   DollarSign,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Trophy,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { driverApi } from '../../services/driverApi';
@@ -29,6 +32,7 @@ import {
   Filler,
 } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../../utils/cn';
 
 ChartJS.register(
   CategoryScale,
@@ -264,6 +268,72 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
         </div>
       </div>
 
+      {/* AI Earnings Engine - Compact & Bright */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative overflow-hidden bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40"
+      >
+        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/40 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="flex flex-col xl:flex-row items-center gap-8 relative z-10">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 shadow-sm">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h3 className="text-[9px] font-black text-[#345E85] uppercase tracking-[0.3em] mb-0.5">AI Engine</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Intelligence Projection</p>
+              </div>
+            </div>
+            
+            <h2 className="text-2xl font-black text-[#0f172a] uppercase tracking-tighter mb-3">
+              Monthly Projection: <span className="text-emerald-500 italic">{formatCurrency(totalEarnings * 1.45)}</span>
+            </h2>
+            <p className="text-slate-500 text-[11px] font-medium max-w-xl leading-relaxed italic border-l-2 border-slate-100 pl-4">
+              "Your current <span className="text-[#345E85] font-black">12% growth streak</span> puts you on track to exceed your monthly average by $450."
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full xl:w-auto shrink-0">
+             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-center min-w-[180px] shadow-inner">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Target to Goal</p>
+                <div className="flex items-center justify-between">
+                    <p className="text-xl font-black text-[#0f172a] italic">{formatCurrency(5000)}</p>
+                    <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md">
+                        <TrendingUp size={10} />
+                        <span>82%</span>
+                    </div>
+                </div>
+             </div>
+             <div className="p-4 bg-[#345E85] rounded-2xl border border-[#345E85] flex flex-col justify-center min-w-[200px] group transition-all hover:bg-[#2a4b6d] cursor-pointer shadow-lg shadow-[#345E85]/20">
+                <div className="flex items-start justify-between mb-1">
+                  <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest">Recommendation</p>
+                  <ArrowRight size={12} className="text-white opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <p className="text-[10px] font-black text-white uppercase tracking-tight leading-tight">Pick up 2 High-Yield Missions</p>
+                <p className="text-[9px] font-bold text-blue-100 italic mt-2 pt-2 border-t border-white/10 uppercase tracking-widest">Unlock +$380</p>
+             </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center gap-4 overflow-x-auto pb-1 scrollbar-none">
+           {[
+             { label: 'Pace vs Avg', val: '+18.5%', color: 'text-emerald-600' },
+             { label: 'Predicted Bonus', val: '$520.00', color: 'text-[#345E85]' },
+             { label: 'Market Demand', val: 'High (1.2x)', color: 'text-amber-600' },
+             { label: 'Net Payout', val: formatCurrency(totalEarnings * 1.55), color: 'text-[#0f172a]' }
+           ].map((stat) => (
+             <div key={stat.label} className="shrink-0 flex items-center gap-2 px-4 py-1.5 bg-slate-50/50 rounded-lg border border-slate-100/50">
+                <div className="w-1 h-1 rounded-full bg-slate-300" />
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{stat.label}:</span>
+                <span className={cn("text-[9px] font-black uppercase tracking-widest", stat.color)}>{stat.val}</span>
+             </div>
+           ))}
+        </div>
+      </motion.div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Revenue - Blue Theme */}
@@ -383,7 +453,6 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
             <Line data={earningsChartData} options={chartOptions} />
           </div>
         </div>
-
         {/* Distribution Chart */}
         <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-8">
@@ -400,6 +469,61 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
           </div>
         </div>
       </div>
+
+      {/* Incentive Roadmap - Compact & Bright */}
+      <section className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-emerald-50/30 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative z-10">
+           <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+                 <Trophy size={18} />
+              </div>
+              <div>
+                 <h3 className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-0.5">Incentive Roadmap</h3>
+                 <p className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Active Performance Goals</p>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                 { title: 'Distance Milestone', target: '5,000 km', current: '3,840 km', progress: 76, reward: '$250', color: 'bg-emerald-500' },
+                 { title: 'Optimal Fuel Usage', target: '95% Efficiency', current: '92%', progress: 92, reward: '$100', color: 'bg-[#345E85]' },
+                 { title: 'Safe Transit Streak', target: '10 Trips', current: '8 Trips', progress: 80, reward: '$150', color: 'bg-rose-500' }
+              ].map((goal, idx) => (
+                 <div key={idx} className="bg-slate-50 border border-slate-100 rounded-[1.5rem] p-4 group hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 transition-all cursor-default">
+                    <div className="flex justify-between items-start mb-4">
+                       <div>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{goal.title}</p>
+                          <h4 className="text-base font-black text-[#0f172a]">{goal.reward} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Bonus</span></h4>
+                       </div>
+                       <div className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-100">
+                          Live
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <div className="flex justify-between items-end text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                          <span>Current Progress</span>
+                          <span className="text-[#345E85]">{goal.progress}%</span>
+                       </div>
+                       <div className="h-1.5 bg-slate-200/50 rounded-full overflow-hidden">
+                          <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: `${goal.progress}%` }}
+                             transition={{ duration: 1, ease: "easeOut" }}
+                             className={cn("h-full rounded-full", goal.color)} 
+                          />
+                       </div>
+                       <div className="flex justify-between text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-2 px-0.5">
+                          <span className="italic">{goal.current}</span>
+                          <span className="text-slate-300">Target: {goal.target}</span>
+                       </div>
+                    </div>
+                 </div>
+              ))}
+           </div>
+        </div>
+      </section>
 
       {/* Detailed Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

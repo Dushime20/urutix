@@ -17,14 +17,14 @@ import {
 } from './exceptions/lending.exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
-import { Lender, LenderStatus } from '../../entities/Lender';
-import { LenderPolicy } from '../../entities/LenderPolicy';
-import { LoanRequest, LoanRequestStatus } from '../../entities/LoanRequest';
+import { Lender, LenderStatus } from '../../entities/lender.entity';
+import { LenderPolicy } from '../../entities/lender-policy.entity';
+import { LoanRequest, LoanRequestStatus } from '../../entities/loan-request.entity';
 import {
   LoanDisbursement,
   DisbursementStatus,
-} from '../../entities/LoanDisbursement';
-import { LoanRepayment } from '../../entities/LoanRepayment';
+} from '../../entities/loan-disbursement.entity';
+import { LoanRepayment } from '../../entities/loan-repayment.entity';
 import { CreateLenderDto, LenderResponseDto } from './dto/create-lender.dto';
 import { CreateLenderPolicyDto } from './dto/create-lender-policy.dto';
 import { CreateLoanRequestDto, LoanApprovalDto } from './dto/loan-request.dto';
@@ -52,12 +52,12 @@ import {
   LenderRole,
   LenderPermission,
   LenderUserStatus,
-} from '../../entities/LenderTeam';
+} from '../../entities/lender-team.entity';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { Trip } from '../../entities/trip.entity';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import { UrutiLendingIntegrationService } from './services/uruti-lending-integration.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';

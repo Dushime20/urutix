@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RateLimit } from '../entities/rate-limit.entity';
+import { RateLimit } from './../entities/rate-limit.entity';
 
 export interface RateLimitConfig {
   maxRequests: number;

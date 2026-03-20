@@ -1,0 +1,100 @@
+[src/entities/audit-event.entity.ts:205]
+
+    return changeDescriptions.join(''; ');
+  }
+------------------
+[src/modules/admin/admin.module.ts:53]
+// EmailService is imported from EnhancedAuthModule
+import { NotificationsModule } from '../notifications/notifications.module;
+
+------------------
+[src/modules/auth/services/auth.service.ts:675]
+    // For now, use default tenant
+    return '00000000-0000-0000-0000-000000000001;
+  }
+------------------
+[src/modules/auth/services/email.service.ts:191]
+    // This will work on whatever port the frontend is running on
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    // Remove trailing slash if present and construct the full URL
+------------------
+[src/modules/auth/services/email.service.ts:333]
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+------------------
+[src/modules/auth/services/email.service.ts:463]
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+------------------
+[src/modules/auth/services/email.service.ts:593]
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+------------------
+[src/modules/auth/services/email.service.ts:726]
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+------------------
+[src/modules/auth/services/email.service.ts:860]
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+------------------
+[src/modules/auth/services/email.service.ts:994]
+    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173;
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+------------------
+[src/modules/documents/document.controller.ts:342]
+    // TODO: Get tenantId from context or pass as parameter
+    const tenantId = 'temp-tenant-id; // Placeholder
+    return this.documentService.searchDocuments(searchDto, tenantId);
+------------------
+[src/modules/fleet/fleet.service.ts:884]
+        // Not null violation - extract the column name from the error message
+        const errorMessage = error.message || error.toString() ||';
+        this.logger.error(`❌ Database constraint violation (23502): ${errorMessage}`);
+------------------
+[src/modules/lending/controllers/uruti-lending-admin.controller.ts:184]
+      ? lender.callback_url.replace(/\/api\/?$/, '')
+      :';
+
+------------------
+[src/modules/lending/lending.service.ts:1022]
+            if (paymentsService) {
+              const { PaymentMethod, PaymentType } = await import(@/payment.entity');
+              
+------------------
+[src/modules/lending/services/uruti-lending-integration.service.ts:163]
+      lender.metadata?.defaultLoanProductCode ||
+      'PL-001;
+
+------------------
+[src/modules/loads/loads.controller.ts:772]
+      // Generic error with user-friendly message
+      const errorMessage = error.message || 'An unexpected error occurred while creating cargo from 'template';
+      throw new HttpException(
+------------------
+[src/modules/matching/matching.service.ts:9]
+  Logger,
+} from '@nestjs/common;
+import { InjectRepository } from '@nestjs/typeorm';
+------------------
+[src/modules/notifications/notification.service.ts:943]
+      const recipientEmail =
+        notification.metadata?.recipientEmail || 'placeholder@example.com;
+      await this.emailService.sendEmail(
+------------------
+[src/modules/notifications/notification.service.ts:972]
+      const recipientPhone =
+        notification.metadata?.recipientPhone || '+1234567890;
+      await this.smsService.sendSms(recipientPhone, notification.message);
+------------------
+[src/modules/notifications/notification.service.ts:999]
+      const deviceToken =
+        notification.metadata?.deviceToken || 'placeholder-device-token;
+      await this.pushNotificationService.sendPushNotification(
+------------------

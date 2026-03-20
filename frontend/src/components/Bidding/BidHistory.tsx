@@ -32,6 +32,7 @@ interface Bid {
   successProbability?: number;
   advancePaymentPercentage?: number | null;
   requireAdvancePayment?: boolean;
+  isCounterOffer?: boolean;
   createdAt: string;
   load: {
     id: string;
@@ -64,7 +65,7 @@ interface Bid {
 }
 
 interface BidHistoryProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER';
 }
 
 const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
@@ -218,6 +219,13 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     );
   };
 
+  const getAINegotiationBadge = () => (
+    <span className="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full bg-blue-500 text-white border border-blue-400 shadow-lg shadow-blue-500/20 flex items-center gap-1.5 animate-pulse">
+      <span className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,1)]" />
+      Neural AI Counter
+    </span>
+  );
+
 
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
@@ -342,7 +350,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   <thead>
                     <tr>
                       <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Context</th>
-                      {userRole === 'CARGO_OWNER' && (
+                      {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && (
                         <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Bidder</th>
                       )}
                       <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Financials</th>
@@ -370,7 +378,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                               </div>
                             </div>
                           </td>
-                          {userRole === 'CARGO_OWNER' && (
+                          {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && (
                             <td className="px-6 py-4 bg-white border-y border-slate-100 group-hover:bg-slate-50/50">
                               <div className="flex flex-col">
                                 <span className="text-xs font-black text-slate-900">{truckOwnerName}</span>
@@ -387,7 +395,10 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                             )}
                           </td>
                           <td className="px-6 py-4 bg-white border-y border-slate-100 group-hover:bg-slate-50/50">
-                            {getStatusBadge(bid.status)}
+                            <div className="flex flex-col gap-1.5">
+                              {getStatusBadge(bid.status)}
+                              {bid.isCounterOffer && getAINegotiationBadge()}
+                            </div>
                           </td>
                           <td className="px-6 py-4 bg-white border-y border-slate-100 group-hover:bg-slate-50/50">
                             <div className="flex items-center gap-2 text-slate-400">
@@ -414,7 +425,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                                   <Trash2 size={18} />
                                 </button>
                               )}
-                              {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && (
+                              {(bid.status === 'PENDING' && (userRole === 'CARGO_OWNER' || userRole === 'BROKER')) && (
                                 <button
                                   onClick={() => handleAcceptBid(bid.id)}
                                   className="p-2.5 text-emerald-400 hover:text-emerald-600 hover:bg-white rounded-xl transition-all shadow-sm border border-transparent hover:border-emerald-100"
@@ -444,6 +455,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                       <div className="flex justify-between items-start mb-6">
                         <div className="flex flex-wrap gap-2">
                           {getStatusBadge(bid.status)}
+                          {bid.isCounterOffer && getAINegotiationBadge()}
                         </div>
                         <div className="w-8 h-8 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center">
                           <History size={16} />
@@ -459,7 +471,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                         </p>
                       </div>
 
-                      {userRole === 'CARGO_OWNER' && (
+                      {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && (
                         <div className="mb-4 pt-4 border-t border-gray-50">
                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Truck Owner</p>
                           <p className="text-xs font-black text-gray-900">{truckOwnerName}</p>
@@ -501,7 +513,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                             <Trash2 size={16} />
                           </button>
                         )}
-                        {bid.status === 'PENDING' && userRole === 'CARGO_OWNER' && (
+                        {(bid.status === 'PENDING' && (userRole === 'CARGO_OWNER' || userRole === 'BROKER')) && (
                           <button
                             onClick={() => handleAcceptBid(bid.id)}
                             className="p-2 text-emerald-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
@@ -566,7 +578,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   </div>
                 </div>
 
-                {userRole === 'CARGO_OWNER' && selectedBid.status === 'ACCEPTED' && (
+                {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && selectedBid.status === 'ACCEPTED' && (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-blue-50 text-[#345E85] rounded-xl flex items-center justify-center border border-blue-100">
@@ -643,7 +655,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
                   </div>
                 )}
 
-                {userRole === 'CARGO_OWNER' && selectedBid.truckOwner && (
+                {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && selectedBid.truckOwner && (
                   <div className="pt-8 border-t border-slate-100">
                     <h5 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em] mb-6">Entity contact intelligence</h5>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

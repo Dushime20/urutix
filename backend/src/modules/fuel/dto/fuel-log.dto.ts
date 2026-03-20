@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNumber, IsOptional, IsString, IsUUID, IsDateString, Min } from 'class-validator';
-import { FuelLogStatus } from 'src/entities/fuel-log.entity';
+import { FuelLogStatus } from '../../../entities/fuel-log.entity';
 
 export class CreateFuelLogDto {
     @ApiProperty({

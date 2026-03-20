@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, DollarSign, TrendingUp, Mail, Building2 } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
 import { brokerAPI } from '../../services/brokerApi';
 import toast from 'react-hot-toast';
 
@@ -203,7 +204,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Assign Broker to Load</h2>
+            <h2 className="text-xl font-semibold text-gray-900"><TranslatedText text="Assign Broker to Load" /></h2>
             {loadTitle && (
               <p className="text-sm text-gray-500 mt-1">{loadTitle}</p>
             )}
@@ -227,7 +228,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                   <User className="w-5 h-5 text-blue-600" />
                   <div>
                     <span className="text-sm font-medium text-blue-900 block">
-                      Load already has an assigned broker
+                      <TranslatedText text="Load already has an assigned broker" />
                     </span>
                     {(() => {
                       const currentBroker = brokers.find(b => b.id === currentBrokerId);
@@ -238,7 +239,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                             : currentBroker.email);
                         return (
                           <span className="text-xs text-blue-700 mt-1 block">
-                            Current: {brokerName}
+                            <TranslatedText text="Current" />: {brokerName}
                           </span>
                         );
                       }
@@ -251,7 +252,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                   disabled={assigning}
                   className="text-sm text-red-600 hover:text-red-800 font-medium disabled:opacity-50 px-3 py-1.5 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                 >
-                  {assigning ? 'Unassigning...' : 'Unassign'}
+                  {assigning ? <TranslatedText text="Unassigning..." /> : <TranslatedText text="Unassign" />}
                 </button>
               </div>
               <div className="mt-3 pt-3 border-t border-blue-200">
@@ -266,7 +267,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
           {loadValue > 0 && (
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Load Value:</span>
+                <span className="text-sm text-gray-600"><TranslatedText text="Load Value" />:</span>
                 <span className="text-lg font-semibold text-gray-900">
                   {new Intl.NumberFormat('en-US', {
                     style: 'currency',
@@ -280,7 +281,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
           {/* Broker Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Broker
+              <TranslatedText text="Select Broker" />
             </label>
             
             {/* Search Input */}
@@ -301,7 +302,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
               </div>
             ) : filteredBrokers.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                {searchTerm ? 'No brokers found matching your search' : 'No brokers available'}
+                {searchTerm ? <TranslatedText text="No brokers found matching your search" /> : <TranslatedText text="No brokers available" />}
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -372,14 +373,14 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                     {isCurrentBroker && (
                       <div className="mt-2 pt-2 border-t border-gray-200">
                         <span className="text-xs font-medium text-blue-600">
-                          ✓ Currently assigned to this load
+                          ✓ <TranslatedText text="Currently assigned to this load" />
                         </span>
                       </div>
                     )}
                     {isDisabled && (
                       <div className="mt-2 pt-2 border-t border-gray-200">
                         <span className="text-xs text-gray-500">
-                          ⚠️ Unassign current broker first
+                          ⚠️ <TranslatedText text="Unassign current broker first" />
                         </span>
                       </div>
                     )}
@@ -393,7 +394,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
           {/* Commission Rate */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Commission Rate (%)
+              <TranslatedText text="Commission Rate" /> (%)
             </label>
             <div className="flex items-center space-x-4">
               <input
@@ -441,7 +442,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
             disabled={assigning}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
           >
-            Cancel
+            <TranslatedText text="Cancel" />
           </button>
           <button
             onClick={handleAssign}
@@ -451,12 +452,12 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
             {assigning ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Assigning...</span>
+                <span><TranslatedText text="Assigning..." /></span>
               </>
             ) : (
               <>
                 <User className="w-4 h-4" />
-                <span>Assign Broker</span>
+                <span><TranslatedText text="Assign Broker" /></span>
               </>
             )}
           </button>

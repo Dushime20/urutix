@@ -8,7 +8,7 @@ import {
   IsArray,
   IsObject,
 } from 'class-validator';
-import { GeofenceType } from '../entities/geofence.entity';
+import { GeofenceType } from './../entities/geofence.entity';
 
 export class CreateGeofenceDto {
   @ApiProperty({

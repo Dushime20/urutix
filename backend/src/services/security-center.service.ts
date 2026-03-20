@@ -5,9 +5,9 @@ import {
   SecurityEvent,
   SecurityEventType,
   SecuritySeverity,
-} from '../entities/security-event.entity';
-import { ActivityLog } from '../entities/activity-log.entity';
-import { UserSession } from '../entities/user-session.entity';
+} from './../entities/security-event.entity';
+import { ActivityLog } from './../entities/activity-log.entity';
+import { UserSession } from './../entities/user-session.entity';
 import { ActivityLogService } from './activity-log.service';
 
 // Interfaces for service methods

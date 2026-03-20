@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Permission } from '../entities/permission.entity';
-import { Role } from '../entities/role.entity';
-import { UserPermissionOverride } from '../entities/user-permission-override.entity';
+import { Permission } from './../entities/permission.entity';
+import { Role } from './../entities/role.entity';
+import { UserPermissionOverride } from './../entities/user-permission-override.entity';
 
 export interface CreatePermissionDto {
     resource: string;

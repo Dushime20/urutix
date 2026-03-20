@@ -10,7 +10,7 @@ import {
     Query,
 } from '@nestjs/common';
 import { RolePermissionService, CreateRoleDto, UpdateRoleDto, GrantPermissionOverrideDto } from '../../services/permission.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';

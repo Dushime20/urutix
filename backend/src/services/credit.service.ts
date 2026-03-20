@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { CreditAccount } from '../entities/credit-account.entity';
+import { CreditAccount } from './../entities/credit-account.entity';
 import {
   CreditTransaction,
   CreditTransactionType,
-} from '../entities/credit-transaction.entity';
-import { FeatureCreditCost } from '../entities/feature-credit-cost.entity';
-import { User } from '../entities/user.entity';
+} from './../entities/credit-transaction.entity';
+import { FeatureCreditCost } from './../entities/feature-credit-cost.entity';
+import { User } from './../entities/user.entity';
 
 export interface CreditBalanceResponse {
   currentBalance: number;

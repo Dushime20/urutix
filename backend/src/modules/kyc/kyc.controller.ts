@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiResponse } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { KycService, KycSubmissionData } from '../../services/kyc.service';
 import { KycStatus } from '../../entities/tenant.entity';
 import { DocumentType } from '../../entities/tenant-kyc-document.entity';

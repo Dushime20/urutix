@@ -8,10 +8,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../guards/permission.guard';
 import { RequirePermissions } from '../../auth/decorators/require-permissions.decorator';
-import { FinancialAnalyticsService } from '../services/financial-analytics.service';
+import { FinancialAnalyticsService } from './../services/financial-analytics.service';
 import {
   CostFiltersDto,
   ProfitabilityFiltersDto,
@@ -32,7 +32,7 @@ export class FinancialAnalyticsController {
   ) {}
 
   @Get('cost-trends')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get cost trends analysis' })
   @ApiResponse({ 
     status: 200, 
@@ -48,7 +48,7 @@ export class FinancialAnalyticsController {
   }
 
   @Get('profitability')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get shipment profitability analysis' })
   @ApiResponse({ 
     status: 200, 
@@ -64,7 +64,7 @@ export class FinancialAnalyticsController {
   }
 
   @Post('pricing-recommendations')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get pricing recommendations for a route' })
   @ApiResponse({ 
     status: 200, 
@@ -80,7 +80,7 @@ export class FinancialAnalyticsController {
   }
 
   @Get('summary')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get financial summary for dashboard' })
   @ApiResponse({ 
     status: 200, 

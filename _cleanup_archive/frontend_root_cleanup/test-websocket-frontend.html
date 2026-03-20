@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    <div id="status"></div>
+    <div id="logs"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            console.log(message);
+            logsDiv.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+
+        log('Starting WebSocket connection test...');
+
+        // Test connection to events namespace (like the frontend hooks do)
+        const wsUrl = 'http://localhost:3001';
+        log('Connecting to: ' + wsUrl + '/events');
+
+        const socket = io(wsUrl + '/events', {
+            transports: ['websocket', 'polling'],
+            // No auth token for this test
+        });
+
+        socket.on('connect', () => {
+            statusDiv.innerHTML = '<span style="color: green;">✅ Connected to /events namespace</span>';
+            log('✅ Successfully connected to /events namespace');
+            log('Socket ID: ' + socket.id);
+        });
+
+        socket.on('disconnect', () => {
+            statusDiv.innerHTML = '<span style="color: red;">❌ Disconnected from /events namespace</span>';
+            log('❌ Disconnected from /events namespace');
+        });
+
+        socket.on('connect_error', (error) => {
+            statusDiv.innerHTML = '<span style="color: red;">❌ Connection Error</span>';
+            log('❌ Connection error: ' + error.message);
+        });
+
+        // Test tracking namespace too
+        const trackingSocket = io(wsUrl + '/tracking', {
+            transports: ['websocket', 'polling'],
+        });
+
+        trackingSocket.on('connect', () => {
+            log('✅ Successfully connected to /tracking namespace');
+            log('Tracking Socket ID: ' + trackingSocket.id);
+        });
+
+        trackingSocket.on('connect_error', (error) => {
+            log('❌ Tracking connection error: ' + error.message);
+        });
+    </script>
+</body>
+</html>

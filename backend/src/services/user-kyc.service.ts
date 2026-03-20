@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from '../entities/user.entity';
-import { UserProfile, KycStatus, KycRequirementLevel } from '../entities/user-profile.entity';
-import { UserKycDocument, UserDocumentType, DocumentCategory } from '../entities/user-kyc-document.entity';
-import { KycRoleRequirements } from '../entities/kyc-role-requirements.entity';
-import { UserKycAuditLog, UserKycAuditAction } from '../entities/user-kyc-audit-log.entity';
+import { User, UserRole } from './../entities/user.entity';
+import { UserProfile, KycStatus, KycRequirementLevel } from './../entities/user-profile.entity';
+import { UserKycDocument, UserDocumentType, DocumentCategory } from './../entities/user-kyc-document.entity';
+import { KycRoleRequirements } from './../entities/kyc-role-requirements.entity';
+import { UserKycAuditLog, UserKycAuditAction } from './../entities/user-kyc-audit-log.entity';
 
 export interface UserKycSubmissionData {
   // Personal Information

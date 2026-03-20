@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 interface LandingHeaderProps {
   onGetStarted?: () => void;
@@ -44,6 +45,7 @@ const LandingHeader: React.FC<LandingHeaderProps> = ({ onGetStarted }) => {
             <a href="#testimonials" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
               Testimonials
             </a>
+            <LanguageSwitcher />
             <button
               onClick={handleGetStarted}
               className="px-6 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors"
@@ -85,6 +87,10 @@ const LandingHeader: React.FC<LandingHeaderProps> = ({ onGetStarted }) => {
               Testimonials
             </a>
             <div className="px-4 space-y-2">
+              <div className="flex items-center justify-between py-2 mb-2 border-b border-gray-100">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Language</span>
+                <LanguageSwitcher />
+              </div>
               <button
                 onClick={handleGetStarted}
                 className="w-full px-6 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700"

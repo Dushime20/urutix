@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerDispute, type CreateDisputeData, type ResolveDisputeData } from '../../services/brokerApi';
-import { AlertTriangle, Plus, Search, Filter, MessageSquare, CheckCircle2, Clock, Loader2, Eye, Gavel } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Filter, MessageSquare, CheckCircle2, Clock, Loader2, Eye, Gavel, Shield, Activity, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const DisputeResolution: React.FC = () => {
@@ -21,7 +21,7 @@ const DisputeResolution: React.FC = () => {
     if (user && user.role === 'BROKER') {
       fetchDisputes();
     }
-  }, [user, filters]);
+  }, [user, filters.status, filters.category]);
 
   const fetchDisputes = async () => {
     if (!user?.id) return;
@@ -31,12 +31,11 @@ const DisputeResolution: React.FC = () => {
         status: filters.status || undefined,
         category: filters.category || undefined,
       });
-      // Handle different response structures
       const disputesData = response.data || response || [];
       setDisputes(Array.isArray(disputesData) ? disputesData : []);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to fetch disputes');
-      setDisputes([]); // Ensure disputes is always an array
+      setDisputes([]);
     } finally {
       setLoading(false);
     }
@@ -75,304 +74,205 @@ const DisputeResolution: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case 'RESOLVED':
       case 'CLOSED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'MEDIATION':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-indigo-50 text-indigo-600 border-indigo-100';
       case 'OPEN':
       case 'UNDER_REVIEW':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'ESCALATED':
-        return 'bg-red-100 text-red-800';
+        return 'bg-rose-50 text-rose-600 border-rose-100';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-50 text-slate-500 border-slate-100';
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL':
-        return 'bg-red-100 text-red-800';
-      case 'HIGH':
-        return 'bg-orange-100 text-orange-800';
-      case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  if (loading && disputes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading cases...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dispute Resolution</h1>
-          <p className="text-gray-600 mt-1">Manage and mediate disputes between parties</p>
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Disputes Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <Gavel size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Disputes</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Resolution & Mediation</p>
+          </div>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Create Dispute</span>
-        </button>
+
+        <div className="relative z-10 hidden md:flex items-center gap-12 mr-4 text-white">
+          <div className="text-center">
+            <p className="text-xl font-black tracking-tighter leading-none">{disputes.length}</p>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Total Cases</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{disputes.filter(d => d.status === 'RESOLVED').length}</p>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Resolved</p>
+          </div>
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-[10px]"
+          >
+            <Plus size={14} /> Open Case
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 flex space-x-4">
-        <div className="flex-1">
+      {/* Terminal Grid Filters */}
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end relative group overflow-hidden">
+        <div className="flex-1 space-y-4">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Filter Resolutions</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
             <input
               type="text"
-              placeholder="Search disputes..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              placeholder="Search case descriptions..."
+              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 outline-none focus:bg-white transition-all placeholder:text-slate-300"
             />
           </div>
         </div>
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">All Status</option>
-          <option value="OPEN">Open</option>
-          <option value="UNDER_REVIEW">Under Review</option>
-          <option value="MEDIATION">Mediation</option>
-          <option value="RESOLVED">Resolved</option>
-          <option value="CLOSED">Closed</option>
-        </select>
-        <select
-          value={filters.category}
-          onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">All Categories</option>
-          <option value="DAMAGE">Damage</option>
-          <option value="DELAY">Delay</option>
-          <option value="PAYMENT">Payment</option>
-          <option value="QUALITY">Quality</option>
-          <option value="ROUTE">Route</option>
-          <option value="COMMUNICATION">Communication</option>
-        </select>
+        <div className="flex gap-4 w-full lg:w-auto">
+          <select
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
+          >
+            <option value="">All Statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="MEDIATION">Mediation</option>
+            <option value="RESOLVED">Resolved</option>
+          </select>
+          <select
+            value={filters.category}
+            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
+          >
+            <option value="">All Categories</option>
+            <option value="DAMAGE">Damage</option>
+            <option value="DELAY">Delay</option>
+            <option value="PAYMENT">Payment</option>
+          </select>
+        </div>
       </div>
 
-      {/* Disputes List */}
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        </div>
-      ) : disputes.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No disputes found</h3>
-          <p className="text-gray-600">Create a dispute to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {disputes.map((dispute) => (
-            <div key={dispute.id} className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(dispute.status)}`}>
+      {/* Case Core */}
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
+        {disputes.length === 0 ? (
+          <div className="py-48 text-center space-y-8 opacity-50">
+            <AlertTriangle className="w-24 h-24 text-slate-100 mx-auto" />
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No disputes found in record core.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-10">
+            {disputes.map((dispute) => (
+              <div key={dispute.id} className="group bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm">
+                        <AlertTriangle size={18} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">Case #{dispute.id.slice(0, 6)}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{dispute.category}</p>
+                      </div>
+                    </div>
+                    <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(dispute.status)}`}>
                       {dispute.status.replace('_', ' ')}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(dispute.severity)}`}>
-                      {dispute.severity}
-                    </span>
-                    <span className="text-sm text-gray-500">{dispute.category}</span>
                   </div>
-                  <p className="text-gray-900 font-medium mb-1">{dispute.description}</p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span>Load: {dispute.loadId.slice(0, 8)}</span>
-                    {dispute.claimedAmount && (
-                      <span>Claimed: {dispute.claimedAmount.toLocaleString()} KES</span>
-                    )}
-                    <span>Created: {new Date(dispute.createdAt).toLocaleDateString()}</span>
-                  </div>
+
+                  <p className="text-sm font-bold text-slate-900 leading-relaxed mb-8 line-clamp-3 min-h-[3rem]">{dispute.description}</p>
                 </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setSelectedDispute(dispute)}
-                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
-                  >
-                    <Eye className="w-5 h-5" />
-                  </button>
-                  {dispute.status === 'OPEN' && (
-                    <button
-                      onClick={() => handleStartMediation(dispute.id)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                      title="Start Mediation"
+
+                <div className="space-y-6 pt-8 border-t border-slate-50">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span>Claimed Amount</span>
+                    <span className="text-slate-900">{dispute.claimedAmount?.toLocaleString() || 0} KES</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setSelectedDispute(dispute)}
+                      className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
                     >
-                      <Gavel className="w-5 h-5" />
+                      <Eye size={14} /> Review Case
                     </button>
-                  )}
-                  {dispute.status === 'MEDIATION' && (
-                    <button
-                      onClick={() => {
-                        setSelectedDispute(dispute);
-                        setShowResolveModal(true);
-                      }}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
-                      title="Resolve Dispute"
-                    >
-                      <CheckCircle2 className="w-5 h-5" />
-                    </button>
-                  )}
+                    {dispute.status === 'OPEN' && (
+                      <button 
+                        onClick={() => handleStartMediation(dispute.id)}
+                        className="py-4 px-6 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center"
+                        title="Mediate"
+                      >
+                        <Gavel size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Create Dispute Modal */}
-      {showCreateModal && (
-        <CreateDisputeModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateDispute}
-        />
-      )}
-
-      {/* View/Resolve Dispute Modal */}
-      {selectedDispute && (
-        <ViewDisputeModal
-          dispute={selectedDispute}
-          onClose={() => {
-            setSelectedDispute(null);
-            setShowResolveModal(false);
-          }}
-          onResolve={showResolveModal ? (data) => handleResolveDispute(selectedDispute.id, data) : undefined}
-        />
-      )}
+      {showCreateModal && <CreateDisputeModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateDispute} />}
+      {selectedDispute && <ViewDisputeModal dispute={selectedDispute} onClose={() => { setSelectedDispute(null); setShowResolveModal(false); }} onResolve={showResolveModal ? (data) => handleResolveDispute(selectedDispute.id, data) : undefined} />}
     </div>
   );
 };
 
-// Create Dispute Modal
-const CreateDisputeModal: React.FC<{
-  onClose: () => void;
-  onSubmit: (data: CreateDisputeData) => void;
-}> = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState<CreateDisputeData>({
-    loadId: '',
-    disputedWithId: '',
-    category: 'OTHER',
-    severity: 'MEDIUM',
-    description: '',
-  });
+const CreateDisputeModal: React.FC<{ onClose: () => void, onSubmit: (data: CreateDisputeData) => void }> = ({ onClose, onSubmit }) => {
+  const [formData, setFormData] = useState<CreateDisputeData>({ loadId: '', disputedWithId: '', category: 'OTHER', severity: 'MEDIUM', description: '', claimedAmount: 0 });
   const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await onSubmit(formData);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSubmitting(true); await onSubmit(formData); setSubmitting(false); };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Create Dispute</h2>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
+      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+        <div className="p-12 bg-slate-900 text-white flex justify-between items-center overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <div className="space-y-2 relative z-10">
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Open <span className="text-white">Case</span></h2>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Initiate professional dispute resolution protocol</p>
+          </div>
+          <button onClick={onClose} className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white relative z-10 hover:bg-white hover:text-slate-900 transition-all"><X size={24} /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Load ID</label>
-            <input
-              type="text"
-              required
-              value={formData.loadId}
-              onChange={(e) => setFormData({ ...formData, loadId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Disputed With (User ID)</label>
-            <input
-              type="text"
-              required
-              value={formData.disputedWithId}
-              onChange={(e) => setFormData({ ...formData, disputedWithId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="DAMAGE">Damage</option>
-                <option value="DELAY">Delay</option>
-                <option value="PAYMENT">Payment</option>
-                <option value="QUALITY">Quality</option>
-                <option value="ROUTE">Route</option>
-                <option value="COMMUNICATION">Communication</option>
-                <option value="OTHER">Other</option>
-              </select>
+        
+        <form onSubmit={handleSubmit} className="p-12 md:p-16 overflow-y-auto space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-4">
+               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Load Reference</label>
+               <input type="text" required value={formData.loadId} onChange={(e) => setFormData({ ...formData, loadId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
-              <select
-                value={formData.severity}
-                onChange={(e) => setFormData({ ...formData, severity: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="CRITICAL">Critical</option>
-              </select>
+            <div className="space-y-4">
+               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Disputed Party ID</label>
+               <input type="text" required value={formData.disputedWithId} onChange={(e) => setFormData({ ...formData, disputedWithId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              required
-              rows={4}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
+          <div className="space-y-4">
+             <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Issue Description</label>
+             <textarea required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="Provide objective details of the occurrence..." />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Claimed Amount (KES)</label>
-            <input
-              type="number"
-              value={formData.claimedAmount || ''}
-              onChange={(e) => setFormData({ ...formData, claimedAmount: parseFloat(e.target.value) || undefined })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
-            >
-              {submitting ? 'Creating...' : 'Create Dispute'}
-            </button>
+          <div className="flex justify-end pt-12 border-t border-slate-100">
+             <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-rose-600 transition-all flex items-center gap-4">
+               {submitting ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />} Open Investigation
+             </button>
           </div>
         </form>
       </div>
@@ -380,114 +280,57 @@ const CreateDisputeModal: React.FC<{
   );
 };
 
-// View Dispute Modal
-const ViewDisputeModal: React.FC<{
-  dispute: BrokerDispute;
-  onClose: () => void;
-  onResolve?: (data: ResolveDisputeData) => void;
-}> = ({ dispute, onClose, onResolve }) => {
+const ViewDisputeModal: React.FC<{ dispute: BrokerDispute, onClose: () => void, onResolve?: (data: ResolveDisputeData) => void }> = ({ dispute, onClose, onResolve }) => {
   const [resolution, setResolution] = useState('');
-  const [resolvedAmount, setResolvedAmount] = useState<number | undefined>(dispute.claimedAmount);
   const [submitting, setSubmitting] = useState(false);
-
-  const handleResolve = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!onResolve) return;
-    setSubmitting(true);
-    try {
-      await onResolve({
-        resolution,
-        resolvedAmount,
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const handleResolve = async (e: React.FormEvent) => { e.preventDefault(); if (!onResolve) return; setSubmitting(true); await onResolve({ resolution, resolvedAmount: dispute.claimedAmount }); setSubmitting(false); };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Dispute Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            ×
-          </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
+      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+        <div className="p-12 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <div className="space-y-2 relative z-10">
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Case <span className="text-white">Details</span></h2>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Active investigation reference #{dispute.id.slice(0, 8)}</p>
+          </div>
+          <button onClick={onClose} className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all relative z-10"><X size={24} /></button>
         </div>
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Status</label>
-              <p className="text-gray-900">{dispute.status}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Category</label>
-              <p className="text-gray-900">{dispute.category}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Severity</label>
-              <p className="text-gray-900">{dispute.severity}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Claimed Amount</label>
-              <p className="text-gray-900">{dispute.claimedAmount?.toLocaleString() || 'N/A'} KES</p>
-            </div>
+
+        <div className="p-12 md:p-16 overflow-y-auto space-y-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+             {[
+               { label: 'Status', value: dispute.status.replace('_', ' '), icon: Activity },
+               { label: 'Category', value: dispute.category, icon: Shield },
+               { label: 'Severity', value: dispute.severity, icon: AlertTriangle },
+               { label: 'Identifier', value: dispute.loadId.slice(0, 8), icon: Clock },
+             ].map((meta, i) => (
+               <div key={i} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all">
+                 <meta.icon size={18} className="text-slate-300 mb-6 group-hover:text-primary-600 transition-colors" />
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{meta.label}</p>
+                 <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{meta.value}</p>
+               </div>
+             ))}
           </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Description</label>
-            <p className="text-gray-900 mt-1">{dispute.description}</p>
+
+          <div className="p-10 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare size={120} /></div>
+             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Case Statement</p>
+             <p className="text-lg font-bold leading-relaxed relative z-10">{dispute.description}</p>
           </div>
-          {dispute.evidence && dispute.evidence.length > 0 && (
-            <div>
-              <label className="text-sm font-medium text-gray-500">Evidence</label>
-              <div className="mt-2 space-y-2">
-                {dispute.evidence.map((ev, idx) => (
-                  <div key={idx} className="p-2 bg-gray-50 rounded">
-                    <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                      {ev.type}: {ev.description || ev.url}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
           {onResolve && (
-            <form onSubmit={handleResolve} className="pt-4 border-t border-gray-200 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Resolution</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={resolution}
-                  onChange={(e) => setResolution(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Describe the resolution..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Resolved Amount (KES)</label>
-                <input
-                  type="number"
-                  value={resolvedAmount || ''}
-                  onChange={(e) => setResolvedAmount(parseFloat(e.target.value) || undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {submitting ? 'Resolving...' : 'Resolve Dispute'}
-                </button>
-              </div>
+            <form onSubmit={handleResolve} className="space-y-10 pt-12 border-t border-slate-100">
+               <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Final Resolution Protocol</label>
+                  <textarea required rows={4} value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="State the final ruling and agreement..." />
+               </div>
+               <div className="flex justify-end">
+                  <button type="submit" disabled={submitting} className="px-16 py-6 bg-emerald-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-emerald-700 transition-all flex items-center gap-4">
+                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Close Case Successfully
+                  </button>
+               </div>
             </form>
           )}
         </div>
@@ -497,4 +340,3 @@ const ViewDisputeModal: React.FC<{
 };
 
 export default DisputeResolution;
-

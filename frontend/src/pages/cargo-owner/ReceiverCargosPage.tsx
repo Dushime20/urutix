@@ -7,6 +7,8 @@ import { Search, Grid, Table, Package, User, Eye } from 'lucide-react';
 import CargoDetailsModal from '../../components/CargoDetailsModal';
 import FilterSelect from '../../components/common/FilterSelect';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Cargo {
   id: string;
@@ -38,6 +40,7 @@ interface Cargo {
 }
 
 const ReceiverCargosPage: React.FC = () => {
+  const { tSync } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cargos, setCargos] = useState<Cargo[]>([]);

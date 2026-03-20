@@ -29,7 +29,7 @@ import {
   ApiConflictResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DriverService } from './driver.service';
 import {
   CreateDriverDto,
@@ -603,6 +603,25 @@ export class DriverController {
     return { message: 'Truck assigned successfully' };
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/announcements')
+  @ApiOperation({
+    summary: 'Get announcements for driver',
+    description: 'Retrieve system-wide or driver-specific announcements and notifications',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiOkResponse({
+    description: 'Announcements retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async getAnnouncements(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ): Promise<any[]> {
+    return this.driverService.getAnnouncements(id, req.user.tenantId);
+  }
+
   @Put(':id/unassign-truck')
   @ApiOperation({
     summary: 'Unassign truck from driver',
@@ -627,5 +646,24 @@ export class DriverController {
     @Body('documentUrl') documentUrl: string,
   ) {
     return await this.driverService.extractDriverDocumentText(documentUrl);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/report-incident')
+  @ApiOperation({
+    summary: 'Report safety incident',
+    description: 'Report an accident, violation, or hazard',
+  })
+  async reportIncident(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() incidentData: any,
+    @Request() req,
+  ) {
+    return this.driverService.reportIncident(
+      id,
+      incidentData,
+      req.user.tenantId,
+      req.user.id,
+    );
   }
 }

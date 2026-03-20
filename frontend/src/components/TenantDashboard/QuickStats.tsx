@@ -5,6 +5,8 @@ import {
   Route, AlertTriangle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Metrics {
   totalRevenue: number;
@@ -22,6 +24,7 @@ interface QuickStatsProps {
 }
 
 const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
+  const { tSync } = useTranslation();
   const formatCurrency = (amount: number | undefined) => {
     return new Intl.NumberFormat('en-RW', {
       style: 'currency',
@@ -44,65 +47,65 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
       title: 'Total Earnings',
       value: formatCurrency(metrics?.totalRevenue),
       icon: DollarSign,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'Trips Today',
       value: formatNumber(metrics?.totalShipments),
       icon: Box,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'Active Trucks',
       value: (metrics?.activeFleet || 0).toString(),
       icon: Truck,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'On-Time Delivery',
       value: formatPercentage(metrics?.onTimeDelivery),
       icon: CheckCircle,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'Customer Rating',
       value: `${metrics?.customerSatisfaction || 0}/5`,
       icon: Star,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'Fuel Efficiency',
       value: `${metrics?.fuelEfficiency || 0} km/L`,
       icon: Route,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'Truck Capacity',
       value: formatPercentage(metrics?.averageLoadUtilization),
       icon: Box,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     },
     {
       title: 'Reported Issues',
       value: formatPercentage(metrics?.disputeRate),
       icon: AlertTriangle,
-      themeColor: 'text-primary-600',
-      borderColor: 'border-primary-100',
-      shadowColor: 'shadow-primary-100/20'
+      themeColor: 'text-primary-600 dark:text-primary-400',
+      borderColor: 'border-primary-100 dark:border-primary-900/30',
+      shadowColor: 'shadow-primary-100/20 dark:shadow-none'
     }
   ];
 
@@ -134,16 +137,16 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
             variants={item}
             className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group"
           >
-            <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white border ${stat.borderColor} shadow-xl ${stat.shadowColor} overflow-hidden transition-all duration-500 group-hover:scale-110`}>
-              <Icon size={28} className="text-primary-600" />
+            <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white dark:bg-slate-900 border ${stat.borderColor} shadow-xl ${stat.shadowColor} overflow-hidden transition-all duration-500 group-hover:scale-110`}>
+              <Icon size={28} className="text-primary-600 dark:text-primary-400" />
             </div>
 
             <div className="flex flex-col">
               <span className={`text-4xl font-black ${stat.themeColor} tracking-tight leading-none mb-1.5`}>
-                {stat.value}
+                {stat.title === 'Fuel Efficiency' ? `${metrics?.fuelEfficiency || 0} ${tSync('km/L')}` : stat.value}
               </span>
-              <span className="text-[11px] font-black text-slate-400 whitespace-nowrap uppercase tracking-[0.2em]">
-                {stat.title}
+              <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 whitespace-nowrap uppercase tracking-[0.2em]">
+                <TranslatedText text={stat.title} />
               </span>
             </div>
           </motion.div>

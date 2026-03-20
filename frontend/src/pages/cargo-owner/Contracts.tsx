@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { FileText, Search, Filter, Download, Eye } from 'lucide-react';
+import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Contract {
   id: string;
@@ -13,6 +15,7 @@ interface Contract {
 }
 
 const Contracts = () => {
+  const { tSync } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -67,8 +70,8 @@ const Contracts = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">My Contracts</h1>
-        <p className="text-gray-600">View and manage your cargo transportation contracts</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2"><TranslatedText text="My Contracts" /></h1>
+        <p className="text-gray-600"><TranslatedText text="View and manage your cargo transportation contracts" /></p>
       </div>
 
       {/* Filters */}
@@ -79,7 +82,7 @@ const Contracts = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search contracts..."
+              placeholder={tSync('Search contracts...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -94,11 +97,11 @@ const Contracts = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all"><TranslatedText text="All Status" /></option>
+              <option value="active"><TranslatedText text="Active" /></option>
+              <option value="completed"><TranslatedText text="Completed" /></option>
+              <option value="pending"><TranslatedText text="Pending" /></option>
+              <option value="cancelled"><TranslatedText text="Cancelled" /></option>
             </select>
           </div>
         </div>
@@ -109,11 +112,11 @@ const Contracts = () => {
         {filteredContracts.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No contracts found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2"><TranslatedText text="No contracts found" /></h3>
             <p className="text-gray-600">
               {searchTerm || statusFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Your contracts will appear here once you book cargo shipments'}
+                ? <TranslatedText text="Try adjusting your filters" />
+                : <TranslatedText text="Your contracts will appear here once you book cargo shipments" />}
             </p>
           </div>
         ) : (
@@ -124,11 +127,11 @@ const Contracts = () => {
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">{contract.contractNumber}</h3>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
-                      {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                      <TranslatedText text={contract.status.charAt(0).toUpperCase() + contract.status.slice(1)} />
                     </span>
                   </div>
                   <p className="text-gray-600 mb-1">{contract.cargoDescription}</p>
-                  <p className="text-sm text-gray-500">Truck Owner: {contract.truckOwner}</p>
+                  <p className="text-sm text-gray-500"><TranslatedText text="Truck Owner" />: {contract.truckOwner}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-gray-900">RWF {contract.amount.toLocaleString()}</p>
@@ -141,11 +144,11 @@ const Contracts = () => {
               <div className="flex gap-2 pt-4 border-t border-gray-200">
                 <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
                   <Eye className="w-4 h-4" />
-                  View Details
+                  <TranslatedText text="View Details" />
                 </button>
                 <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                   <Download className="w-4 h-4" />
-                  Download PDF
+                  <TranslatedText text="Download PDF" />
                 </button>
               </div>
             </div>

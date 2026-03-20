@@ -6,6 +6,7 @@ import {
   FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaPiggyBank,
   FaReceipt, FaMoneyBillWave, FaUniversity, FaHandshake, FaShoppingCart
 } from 'react-icons/fa';
+import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Transaction {
@@ -207,8 +208,8 @@ const FinancialDashboard: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Financial Dashboard"
-      description="Monitor transactions, revenue, and financial metrics"
+      title={<TranslatedText text="Financial Dashboard" />}
+      description={<TranslatedText text="Monitor transactions, revenue, and financial metrics" />}
     >
 
       {/* Financial Metrics Cards */}
@@ -217,11 +218,11 @@ const FinancialDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-3xl font-bold text-gray-800">${metrics.totalRevenue.toLocaleString()}</p>
-              <p className="text-gray-600">Total Revenue</p>
+              <p className="text-gray-600"><TranslatedText text="Total Revenue" /></p>
               <div className="flex items-center mt-2">
                 <FaCaretUp className="text-green-500 mr-1" />
                 <span className="text-green-600 text-sm font-medium">+{metrics.monthlyGrowth}%</span>
-                <span className="text-gray-500 text-sm ml-1">this month</span>
+                <span className="text-gray-500 text-sm ml-1"><TranslatedText text="this month" /></span>
               </div>
             </div>
             <FaDollarSign className="text-green-500 text-4xl" />
@@ -232,10 +233,10 @@ const FinancialDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-3xl font-bold text-gray-800">{metrics.totalTransactions.toLocaleString()}</p>
-              <p className="text-gray-600">Total Transactions</p>
+              <p className="text-gray-600"><TranslatedText text="Total Transactions" /></p>
               <div className="flex items-center mt-2">
                 <span className="text-blue-600 text-sm font-medium">${metrics.averageTransactionValue}</span>
-                <span className="text-gray-500 text-sm ml-1">avg value</span>
+                <span className="text-gray-500 text-sm ml-1"><TranslatedText text="avg value" /></span>
               </div>
             </div>
             <FaExchangeAlt className="text-blue-500 text-4xl" />
@@ -246,11 +247,11 @@ const FinancialDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-3xl font-bold text-gray-800">${metrics.pendingAmount.toLocaleString()}</p>
-              <p className="text-gray-600">Pending Amount</p>
+              <p className="text-gray-600"><TranslatedText text="Pending Amount" /></p>
               <div className="flex items-center mt-2">
                 <FaClock className="text-yellow-500 mr-1" />
                 <span className="text-yellow-600 text-sm font-medium">
-                  {transactions.filter(t => t.status === 'pending').length} transactions
+                  {transactions.filter(t => t.status === 'pending').length} <TranslatedText text="transactions" />
                 </span>
               </div>
             </div>
@@ -262,10 +263,10 @@ const FinancialDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-3xl font-bold text-gray-800">${metrics.escrowBalance.toLocaleString()}</p>
-              <p className="text-gray-600">Escrow Balance</p>
+              <p className="text-gray-600"><TranslatedText text="Escrow Balance" /></p>
               <div className="flex items-center mt-2">
                 <FaPiggyBank className="text-purple-500 mr-1" />
-                <span className="text-purple-600 text-sm font-medium">Secured funds</span>
+                <span className="text-purple-600 text-sm font-medium"><TranslatedText text="Secured funds" /></span>
               </div>
             </div>
             <FaPiggyBank className="text-purple-500 text-4xl" />

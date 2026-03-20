@@ -18,6 +18,8 @@ import {
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import StatCard from '../../components/EnliteUI/Cards/StatCard';
+import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface CreditTransaction {
   id: string;
@@ -39,6 +41,7 @@ interface CreditBalance {
 
 const TruckOwnerCredits: React.FC = () => {
   const { user } = useAuth();
+  const { tSync } = useTranslation();
   const [filterType, setFilterType] = useState<'all' | 'DEBIT' | 'CREDIT'>('all');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
@@ -135,28 +138,28 @@ const TruckOwnerCredits: React.FC = () => {
       {/* Credit Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
-            title="Current Balance"
+            title={<TranslatedText text="Current Balance" />}
             value={creditData?.balance || 0}
             icon={<CreditCard />}
-            subtitle="Available Credits"
+            subtitle={<TranslatedText text="Available Credits" />}
             color="primary"
             loading={isLoading}
           />
 
           <StatCard
-            title="Total Earned"
+            title={<TranslatedText text="Total Earned" />}
             value={creditData?.totalEarned || 0}
             icon={<TrendingUp />}
-            subtitle="All Time"
+            subtitle={<TranslatedText text="All Time" />}
             color="success"
             loading={isLoading}
           />
 
           <StatCard
-            title="Total Spent"
+            title={<TranslatedText text="Total Spent" />}
             value={creditData?.totalSpent || 0}
             icon={<TrendingDown />}
-            subtitle="All Time"
+            subtitle={<TranslatedText text="All Time" />}
             color="accent"
             loading={isLoading}
           />
@@ -168,35 +171,39 @@ const TruckOwnerCredits: React.FC = () => {
             <div className="flex items-center gap-3">
               <Filter size={18} className="text-slate-400" />
               <h3 className="text-sm font-black uppercase tracking-widest text-slate-600">
-                Filter Transactions
+                <TranslatedText text="Filter Transactions" />
               </h3>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">Type:</span>
+                <span className="text-xs font-bold text-slate-500">
+                  <TranslatedText text="Type:" />
+                </span>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as any)}
                   className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 >
-                  <option value="all">All Types</option>
-                  <option value="CREDIT">Credits</option>
-                  <option value="DEBIT">Debits</option>
+                  <option value="all">{tSync('All Types')}</option>
+                  <option value="CREDIT">{tSync('Credits')}</option>
+                  <option value="DEBIT">{tSync('Debits')}</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">Period:</span>
+                <span className="text-xs font-bold text-slate-500">
+                  <TranslatedText text="Period:" />
+                </span>
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value as any)}
                   className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 >
-                  <option value="7d">Last 7 Days</option>
-                  <option value="30d">Last 30 Days</option>
-                  <option value="90d">Last 90 Days</option>
-                  <option value="all">All Time</option>
+                  <option value="7d">{tSync('Last 7 Days')}</option>
+                  <option value="30d">{tSync('Last 30 Days')}</option>
+                  <option value="90d">{tSync('Last 90 Days')}</option>
+                  <option value="all">{tSync('All Time')}</option>
                 </select>
               </div>
             </div>
@@ -209,10 +216,10 @@ const TruckOwnerCredits: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                  Transaction History
+                  <TranslatedText text="Transaction History" />
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''}
+                  {filteredTransactions.length} {tSync('transaction')}{filteredTransactions.length !== 1 ? tSync('s') : ''}
                 </p>
               </div>
             </div>
@@ -222,14 +229,18 @@ const TruckOwnerCredits: React.FC = () => {
             {isLoading ? (
               <div className="p-20 text-center">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-                <p className="mt-4 text-sm font-bold text-slate-400">Loading transactions...</p>
+                <p className="mt-4 text-sm font-bold text-slate-400">
+                  <TranslatedText text="Loading transactions..." />
+                </p>
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="p-20 text-center">
                 <Package size={48} className="mx-auto text-slate-300 mb-4" />
-                <p className="text-sm font-bold text-slate-400">No transactions found</p>
+                <p className="text-sm font-bold text-slate-400">
+                  <TranslatedText text="No transactions found" />
+                </p>
                 <p className="text-xs text-slate-400 mt-2">
-                  Your credit transactions will appear here
+                  <TranslatedText text="Your credit transactions will appear here" />
                 </p>
               </div>
             ) : (
@@ -281,10 +292,10 @@ const TruckOwnerCredits: React.FC = () => {
                     <div className="text-right flex-shrink-0">
                       <p className={`text-lg font-black ${getTransactionColor(transaction.type)}`}>
                         {transaction.type === 'DEBIT' ? '-' : '+'}
-                        {transaction.amount} credits
+                        {transaction.amount} {tSync('credits')}
                       </p>
                       <p className="text-xs text-slate-400 font-bold mt-1">
-                        Balance: {transaction.balance}
+                        {tSync('Balance')}: {transaction.balance}
                       </p>
                     </div>
                   </div>

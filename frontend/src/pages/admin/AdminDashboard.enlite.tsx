@@ -7,6 +7,7 @@ import {
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { StatCard, DataCard, EnhancedTable, Column } from '../../components/EnliteUI';
 import api from '../../services/api';
+import { TranslatedText } from '../../components/translated-text';
 
 interface DashboardStats {
   totalTenants: number;
@@ -107,53 +108,53 @@ const AdminDashboardEnlite: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Dashboard"
-      description="Overview of your system performance and metrics"
+      title={<TranslatedText text="Dashboard" />}
+      description={<TranslatedText text="Overview of your system performance and metrics" />}
     >
       <div className="space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Total Tenants"
+            title={<TranslatedText text="Total Tenants" />}
             value={stats?.totalTenants || 0}
             icon={<FaBuilding />}
             trend="+12%"
             trendDirection="up"
             color="primary"
-            subtitle="Last 30 days"
+            subtitle={<TranslatedText text="Last 30 days" />}
             loading={statsLoading}
           />
 
           <StatCard
-            title="Active Trucks"
+            title={<TranslatedText text="Active Trucks" />}
             value={stats?.activeTrucks || 0}
             icon={<FaTruck />}
             trend="+8%"
             trendDirection="up"
             color="success"
-            subtitle="Currently active"
+            subtitle={<TranslatedText text="Currently active" />}
             loading={statsLoading}
           />
 
           <StatCard
-            title="Total Users"
+            title={<TranslatedText text="Total Users" />}
             value={stats?.totalUsers || 0}
             icon={<FaUsers />}
             trend="+15%"
             trendDirection="up"
             color="info"
-            subtitle="Registered users"
+            subtitle={<TranslatedText text="Registered users" />}
             loading={statsLoading}
           />
 
           <StatCard
-            title="Monthly Revenue"
+            title={<TranslatedText text="Monthly Revenue" />}
             value={`$${stats?.monthlyRevenue?.toLocaleString() || 0}`}
             icon={<FaChartLine />}
             trend="+23%"
             trendDirection="up"
             color="warning"
-            subtitle="This month"
+            subtitle={<TranslatedText text="This month" />}
             loading={statsLoading}
           />
         </div>
@@ -161,55 +162,55 @@ const AdminDashboardEnlite: React.FC = () => {
         {/* Secondary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Active Subscriptions"
+            title={<TranslatedText text="Active Subscriptions" />}
             value={stats?.activeSubscriptions || 0}
             icon={<FaCreditCard />}
             color="secondary"
-            subtitle="Current subscriptions"
+            subtitle={<TranslatedText text="Current subscriptions" />}
             loading={statsLoading}
           />
 
           <StatCard
-            title="Total Credits"
+            title={<TranslatedText text="Total Credits" />}
             value={stats?.totalCredits?.toLocaleString() || 0}
             icon={<FaCoins />}
             trend="-5%"
             trendDirection="down"
             color="warning"
-            subtitle="Available credits"
+            subtitle={<TranslatedText text="Available credits" />}
             loading={statsLoading}
           />
 
           <StatCard
-            title="Pending Approvals"
+            title={<TranslatedText text="Pending Approvals" />}
             value={stats?.pendingApprovals || 0}
             icon={<FaExclamationTriangle />}
             color="error"
-            subtitle="Requires attention"
+            subtitle={<TranslatedText text="Requires attention" />}
             loading={statsLoading}
           />
 
           <StatCard
-            title="System Health"
+            title={<TranslatedText text="System Health" />}
             value={`${stats?.systemHealth || 0}%`}
             icon={<FaCheckCircle />}
             trend="Excellent"
             trendDirection="up"
             color="success"
-            subtitle="All systems operational"
+            subtitle={<TranslatedText text="All systems operational" />}
             loading={statsLoading}
           />
         </div>
 
         {/* Recent Activities Table */}
         <DataCard
-          title="Recent Activities"
-          subtitle="Latest system activities and events"
+          title={<TranslatedText text="Recent Activities" />}
+          subtitle={<TranslatedText text="Latest system activities and events" />}
           icon={<FaChartLine />}
           headerColor="primary"
           actions={
             <button className="px-4 py-2 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold text-sm">
-              View All
+              <TranslatedText text="View All" />
             </button>
           }
         >
@@ -220,7 +221,7 @@ const AdminDashboardEnlite: React.FC = () => {
             sortKey={sortKey}
             sortDirection={sortDirection}
             loading={activitiesLoading}
-            emptyMessage="No recent activities"
+            emptyMessage={<TranslatedText text="No recent activities" />}
             hoverable
             striped
           />
@@ -228,23 +229,23 @@ const AdminDashboardEnlite: React.FC = () => {
 
         {/* Quick Actions */}
         <DataCard
-          title="Quick Actions"
-          subtitle="Common administrative tasks"
+          title={<TranslatedText text="Quick Actions" />}
+          subtitle={<TranslatedText text="Common administrative tasks" />}
           icon={<FaUsers />}
           headerColor="secondary"
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button className="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all">
               <FaBuilding className="text-2xl mb-2" />
-              <p className="font-semibold">Add Tenant</p>
+              <p className="font-semibold"><TranslatedText text="Add Tenant" /></p>
             </button>
             <button className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all">
               <FaTruck className="text-2xl mb-2" />
-              <p className="font-semibold">Register Truck</p>
+              <p className="font-semibold"><TranslatedText text="Register Truck" /></p>
             </button>
             <button className="p-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all">
               <FaUsers className="text-2xl mb-2" />
-              <p className="font-semibold">Manage Users</p>
+              <p className="font-semibold"><TranslatedText text="Manage Users" /></p>
             </button>
           </div>
         </DataCard>

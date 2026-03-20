@@ -28,6 +28,7 @@ import {
   Tab,
   Tabs,
 } from '@mui/material';
+import { TranslatedText } from '../../components/translated-text';
 import {
   Refresh as RefreshIcon,
   Download as DownloadIcon,
@@ -289,19 +290,19 @@ const SecurityCenter: React.FC = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Security Center
+            <TranslatedText text="Security Center" />
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            Monitor security events, sessions, and access patterns
+            <TranslatedText text="Monitor security events, sessions, and access patterns" />
           </Typography>
         </Box>
         <Box>
-          <Tooltip title="Refresh">
+          <Tooltip title={<TranslatedText text="Refresh" />}>
             <IconButton onClick={fetchAllData} color="primary">
               <RefreshIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Export Security Logs">
+          <Tooltip title={<TranslatedText text="Export Security Logs" />}>
             <IconButton onClick={handleExportSecurityLogs} color="primary">
               <DownloadIcon />
             </IconButton>
@@ -319,7 +320,7 @@ const SecurityCenter: React.FC = () => {
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Security Events"
+            title={<TranslatedText text="Security Events" />}
             value={securityEvents.length.toString()}
             trend="stable"
             color="primary"
@@ -328,7 +329,7 @@ const SecurityCenter: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Failed Logins"
+            title={<TranslatedText text="Failed Logins" />}
             value={failedLogins.length.toString()}
             trend={failedLogins.length > 10 ? 'up' : 'stable'}
             color={failedLogins.length > 10 ? 'warning' : 'success'}
@@ -337,7 +338,7 @@ const SecurityCenter: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Active Sessions"
+            title={<TranslatedText text="Active Sessions" />}
             value={activeSessions.length.toString()}
             trend="stable"
             color="info"
@@ -346,7 +347,7 @@ const SecurityCenter: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Flagged Accounts"
+            title={<TranslatedText text="Flagged Accounts" />}
             value={flaggedAccounts.length.toString()}
             trend={flaggedAccounts.length > 0 ? 'up' : 'stable'}
             color={flaggedAccounts.length > 0 ? 'error' : 'success'}
@@ -358,30 +359,30 @@ const SecurityCenter: React.FC = () => {
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-          <Tab label="Security Events" />
-          <Tab label="Failed Logins" />
-          <Tab label="Active Sessions" />
-          <Tab label="Flagged Accounts" />
-          <Tab label="Permission History" />
+          <Tab label={<TranslatedText text="Security Events" />} />
+          <Tab label={<TranslatedText text="Failed Logins" />} />
+          <Tab label={<TranslatedText text="Active Sessions" />} />
+          <Tab label={<TranslatedText text="Flagged Accounts" />} />
+          <Tab label={<TranslatedText text="Permission History" />} />
         </Tabs>
       </Paper>
 
       {/* Tab Content */}
       {activeTab === 0 && (
-        <DataCard title="Security Events">
+        <DataCard title={<TranslatedText text="Security Events" />}>
           <Box mb={2}>
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Filter by Severity</InputLabel>
+              <InputLabel><TranslatedText text="Filter by Severity" /></InputLabel>
               <Select
                 value={selectedSeverity}
                 onChange={(e) => setSelectedSeverity(e.target.value)}
                 label="Filter by Severity"
               >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="low">Low</MenuItem>
-                <MenuItem value="medium">Medium</MenuItem>
-                <MenuItem value="high">High</MenuItem>
-                <MenuItem value="critical">Critical</MenuItem>
+                <MenuItem value=""><TranslatedText text="All" /></MenuItem>
+                <MenuItem value="low"><TranslatedText text="Low" /></MenuItem>
+                <MenuItem value="medium"><TranslatedText text="Medium" /></MenuItem>
+                <MenuItem value="high"><TranslatedText text="High" /></MenuItem>
+                <MenuItem value="critical"><TranslatedText text="Critical" /></MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -390,12 +391,12 @@ const SecurityCenter: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Severity</TableCell>
-                  <TableCell>Event Type</TableCell>
-                  <TableCell>User ID</TableCell>
-                  <TableCell>Tenant ID</TableCell>
-                  <TableCell>IP Address</TableCell>
-                  <TableCell>Timestamp</TableCell>
+                  <TableCell><TranslatedText text="Severity" /></TableCell>
+                  <TableCell><TranslatedText text="Event Type" /></TableCell>
+                  <TableCell><TranslatedText text="User ID" /></TableCell>
+                  <TableCell><TranslatedText text="Tenant ID" /></TableCell>
+                  <TableCell><TranslatedText text="IP Address" /></TableCell>
+                  <TableCell><TranslatedText text="Timestamp" /></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -419,7 +420,7 @@ const SecurityCenter: React.FC = () => {
                 {securityEvents.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      No security events found
+                      <TranslatedText text="No security events found" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -430,23 +431,23 @@ const SecurityCenter: React.FC = () => {
       )}
 
       {activeTab === 1 && (
-        <DataCard title="Failed Login Attempts">
+        <DataCard title={<TranslatedText text="Failed Login Attempts" />}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>User ID</TableCell>
-                  <TableCell>Tenant ID</TableCell>
-                  <TableCell>Attempts</TableCell>
-                  <TableCell>IP Address</TableCell>
-                  <TableCell>Browser</TableCell>
-                  <TableCell>Last Attempt</TableCell>
+                  <TableCell><TranslatedText text="User ID" /></TableCell>
+                  <TableCell><TranslatedText text="Tenant ID" /></TableCell>
+                  <TableCell><TranslatedText text="Attempts" /></TableCell>
+                  <TableCell><TranslatedText text="IP Address" /></TableCell>
+                  <TableCell><TranslatedText text="Browser" /></TableCell>
+                  <TableCell><TranslatedText text="Last Attempt" /></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {failedLogins.map((login) => (
                   <TableRow key={login.id}>
-                    <TableCell>{login.userId || 'Unknown'}</TableCell>
+                    <TableCell>{login.userId || <TranslatedText text="Unknown" />}</TableCell>
                     <TableCell>{login.tenantId || 'N/A'}</TableCell>
                     <TableCell>
                       <Chip
@@ -463,7 +464,7 @@ const SecurityCenter: React.FC = () => {
                 {failedLogins.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      No failed login attempts
+                      <TranslatedText text="No failed login attempts" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -474,18 +475,18 @@ const SecurityCenter: React.FC = () => {
       )}
 
       {activeTab === 2 && (
-        <DataCard title="Active User Sessions">
+        <DataCard title={<TranslatedText text="Active User Sessions" />}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>User ID</TableCell>
-                  <TableCell>Tenant ID</TableCell>
-                  <TableCell>IP Address</TableCell>
-                  <TableCell>Browser</TableCell>
-                  <TableCell>Started At</TableCell>
-                  <TableCell>Last Activity</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell><TranslatedText text="User ID" /></TableCell>
+                  <TableCell><TranslatedText text="Tenant ID" /></TableCell>
+                  <TableCell><TranslatedText text="IP Address" /></TableCell>
+                  <TableCell><TranslatedText text="Browser" /></TableCell>
+                  <TableCell><TranslatedText text="Started At" /></TableCell>
+                  <TableCell><TranslatedText text="Last Activity" /></TableCell>
+                  <TableCell><TranslatedText text="Actions" /></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -498,7 +499,7 @@ const SecurityCenter: React.FC = () => {
                     <TableCell>{formatDate(session.startedAt)}</TableCell>
                     <TableCell>{formatDate(session.lastActivity)}</TableCell>
                     <TableCell>
-                      <Tooltip title="Terminate Session">
+                      <Tooltip title={<TranslatedText text="Terminate Session" />}>
                         <IconButton
                           size="small"
                           color="error"
@@ -516,7 +517,7 @@ const SecurityCenter: React.FC = () => {
                 {activeSessions.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
-                      No active sessions
+                      <TranslatedText text="No active sessions" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -527,19 +528,19 @@ const SecurityCenter: React.FC = () => {
       )}
 
       {activeTab === 3 && (
-        <DataCard title="Flagged Accounts">
+        <DataCard title={<TranslatedText text="Flagged Accounts" />}>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Accounts with more than 5 failed login attempts in the last 15 minutes
+            <TranslatedText text="Accounts with more than 5 failed login attempts in the last 15 minutes" />
           </Alert>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>User ID</TableCell>
-                  <TableCell>Tenant ID</TableCell>
-                  <TableCell>Failed Attempts</TableCell>
-                  <TableCell>IP Addresses</TableCell>
-                  <TableCell>Last Attempt</TableCell>
+                  <TableCell><TranslatedText text="User ID" /></TableCell>
+                  <TableCell><TranslatedText text="Tenant ID" /></TableCell>
+                  <TableCell><TranslatedText text="Failed Attempts" /></TableCell>
+                  <TableCell><TranslatedText text="IP Addresses" /></TableCell>
+                  <TableCell><TranslatedText text="Last Attempt" /></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -561,7 +562,7 @@ const SecurityCenter: React.FC = () => {
                 {flaggedAccounts.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} align="center">
-                      No flagged accounts
+                      <TranslatedText text="No flagged accounts" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -572,16 +573,16 @@ const SecurityCenter: React.FC = () => {
       )}
 
       {activeTab === 4 && (
-        <DataCard title="Permission Change History">
+        <DataCard title={<TranslatedText text="Permission Change History" />}>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Actor</TableCell>
-                  <TableCell>Action</TableCell>
-                  <TableCell>Resource</TableCell>
-                  <TableCell>IP Address</TableCell>
-                  <TableCell>Timestamp</TableCell>
+                  <TableCell><TranslatedText text="Actor" /></TableCell>
+                  <TableCell><TranslatedText text="Action" /></TableCell>
+                  <TableCell><TranslatedText text="Resource" /></TableCell>
+                  <TableCell><TranslatedText text="IP Address" /></TableCell>
+                  <TableCell><TranslatedText text="Timestamp" /></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -597,7 +598,7 @@ const SecurityCenter: React.FC = () => {
                 {permissionHistory.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} align="center">
-                      No permission changes
+                      <TranslatedText text="No permission changes" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -609,16 +610,18 @@ const SecurityCenter: React.FC = () => {
 
       {/* Terminate Session Dialog */}
       <Dialog open={terminateDialogOpen} onClose={() => setTerminateDialogOpen(false)}>
-        <DialogTitle>Terminate Session</DialogTitle>
+        <DialogTitle><TranslatedText text="Terminate Session" /></DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to terminate this session? The user will be logged out immediately.
+            <TranslatedText text="Are you sure you want to terminate this session? The user will be logged out immediately." />
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setTerminateDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setTerminateDialogOpen(false)}>
+            <TranslatedText text="Cancel" />
+          </Button>
           <Button onClick={handleTerminateSession} color="error" variant="contained">
-            Terminate
+            <TranslatedText text="Terminate" />
           </Button>
         </DialogActions>
       </Dialog>

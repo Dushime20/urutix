@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserPermissionEditor } from '../../components/Admin/Permissions/UserPermissionEditor';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
+import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import {
     Search, User, Mail, Shield,
@@ -58,8 +59,8 @@ const PermissionManagement = () => {
 
     return (
         <AdminPageLayout
-            title="Permission Management"
-            description="Manage user-specific permissions and access control"
+            title={<TranslatedText text="Permission Management" />}
+            description={<TranslatedText text="Manage user-specific permissions and access control" />}
         >
             {!selectedUser ? (
                 <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6">
@@ -80,7 +81,7 @@ const PermissionManagement = () => {
                             className="bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-gray-800 font-bold shadow-lg shadow-gray-200 transition-all text-xs uppercase tracking-wider flex items-center gap-2"
                         >
                             <Search className="w-4 h-4" />
-                            Search
+                            <TranslatedText text="Search" />
                         </button>
                     </form>
 
@@ -95,10 +96,10 @@ const PermissionManagement = () => {
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 border-b border-gray-100">
                                     <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Identity</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Control</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="User Identity" /></th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Role" /></th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Access Control" /></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -136,7 +137,7 @@ const PermissionManagement = () => {
                                                     className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-lg transition-all text-xs font-bold shadow-sm"
                                                 >
                                                     <Lock className="w-3 h-3" />
-                                                    Manage Access
+                                                    <TranslatedText text="Manage Access" />
                                                 </button>
                                             </td>
                                         </tr>
@@ -147,7 +148,7 @@ const PermissionManagement = () => {
                                                 <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                                                     <Search className="w-5 h-5 text-gray-400" />
                                                 </div>
-                                                <p className="text-sm font-medium">No users found</p>
+                                                <p className="text-sm font-medium"><TranslatedText text="No users found" /></p>
                                             </td>
                                         </tr>
                                     )}

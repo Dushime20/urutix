@@ -13,7 +13,11 @@ import {
   AlertCircle,
   Upload,
   FileText,
-  Loader2
+  Loader2,
+  Shield,
+  Activity,
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 
 const BrokerProfile: React.FC = () => {
@@ -61,7 +65,7 @@ const BrokerProfile: React.FC = () => {
       };
 
       await brokerAPI.updateBroker(broker.id, updateData);
-      setSuccess('Profile updated successfully!');
+      setSuccess('Profile synchronized successfully!');
       loadBrokerProfile();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update profile');
@@ -72,218 +76,148 @@ const BrokerProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accessing Identity...</p>
       </div>
     );
   }
 
   if (!broker) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Broker profile not found</p>
+      <div className="bg-rose-50 border border-rose-100 rounded-[2rem] p-10 text-center space-y-4">
+        <AlertCircle size={48} className="text-rose-600 mx-auto" />
+        <h3 className="text-xl font-black text-rose-900 uppercase tracking-tighter">Identity Not Found</h3>
+        <p className="text-xs font-bold text-rose-700 uppercase tracking-widest leading-relaxed">System failed to resolve broker profile reference.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Broker Profile</h1>
-        <p className="text-gray-600 mt-1">Manage your profile and verification status</p>
-      </div>
-
-      {/* Verification Status */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Verification Status</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Email Verified</p>
-                <p className="text-xs text-gray-500">Your email address is verified</p>
-              </div>
-            </div>
-            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-              Verified
-            </span>
+    <div className="max-w-[1200px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Profile Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <User size={24} className="text-white" />
           </div>
-          
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">KYC Documents</p>
-                <p className="text-xs text-gray-500">Upload required documents for verification</p>
-              </div>
-            </div>
-            <button className="px-3 py-1 bg-primary-100 text-primary-800 text-xs rounded-full hover:bg-primary-200">
-              Upload
-            </button>
+          <div>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Profile</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Identity & Verification</p>
           </div>
+        </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Commission Account</p>
-                <p className="text-xs text-gray-500">Add bank account for commission payouts</p>
-              </div>
-            </div>
-            <button className="px-3 py-1 bg-primary-100 text-primary-800 text-xs rounded-full hover:bg-primary-200">
-              Add Account
-            </button>
+        <div className="relative z-10 hidden md:flex items-center gap-12 mr-4">
+          <div className="text-center">
+            <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">Verified</p>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Status</p>
+          </div>
+          <div className="text-center">
+             <p className="text-xl font-black tracking-tighter leading-none text-white italic">{broker.defaultCommissionRate}%</p>
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Standard Yield</p>
           </div>
         </div>
       </div>
 
-      {/* Profile Information */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h2>
-        <form onSubmit={handleUpdate} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
-          
-          {success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800 text-sm">{success}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* First Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-2" />
-                First Name
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                defaultValue={broker.profile?.firstName || ''}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Last Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-2" />
-                Last Name
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                defaultValue={broker.profile?.lastName || ''}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Mail className="w-4 h-4 inline mr-2" />
-                Email
-              </label>
-              <input
-                type="email"
-                value={broker.email}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-              />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Phone className="w-4 h-4 inline mr-2" />
-                Phone
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                defaultValue={broker.profile?.phone || ''}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Company Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Building2 className="w-4 h-4 inline mr-2" />
-                Company Name
-              </label>
-              <input
-                type="text"
-                value={broker.profile?.companyName || ''}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-              />
-            </div>
-
-            {/* Default Commission Rate */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Percent className="w-4 h-4 inline mr-2" />
-                Default Commission Rate (%)
-              </label>
-              <input
-                type="number"
-                name="commissionRate"
-                min="0"
-                max="100"
-                step="0.1"
-                defaultValue={broker.defaultCommissionRate || 0}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-              />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+        {/* Compliance Guard */}
+        <div className="lg:col-span-1 space-y-10">
+          <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm space-y-8">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+               <Shield size={18} className="text-emerald-600" /> Compliance Status
+            </h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Email Authority', status: 'Verified', icon: CheckCircle2, color: 'emerald' },
+                { label: 'Identity Vault', status: 'Pending', icon: Clock, color: 'amber' },
+                { label: 'Payout Terminal', status: 'Incomplete', icon: AlertCircle, color: 'rose' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
+                  <div className="flex items-center gap-4">
+                    <item.icon size={18} className={`${item.color === 'emerald' ? 'text-emerald-500' : item.color === 'amber' ? 'text-amber-500' : 'text-rose-500'}`} />
+                    <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{item.label}</p>
+                  </div>
+                  <span className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${item.color === 'emerald' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : item.color === 'amber' ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
+                    {item.status}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={updating}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              {updating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Updating...</span>
-                </>
-              ) : (
-                <span>Update Profile</span>
-              )}
-            </button>
+          <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-8 opacity-5"><Zap size={120} /></div>
+             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Security Protocol</p>
+             <p className="text-lg font-bold leading-relaxed relative z-10">Your profile is currently limited until identity validation is confirmed.</p>
+             <button className="mt-8 px-8 py-4 bg-white/10 hover:bg-white hover:text-slate-900 transition-all text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
+               Start Validation <ArrowRight size={14} />
+             </button>
           </div>
-        </form>
-      </div>
+        </div>
 
-      {/* KYC Documents Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">KYC Documents</h2>
-        <DocumentUpload
-          onUploadComplete={(files) => {
-            console.log('Uploaded files:', files);
-            setSuccess('Documents uploaded successfully!');
-          }}
-          maxFiles={5}
-          acceptedTypes={['image/*', 'application/pdf']}
-          maxSizeMB={10}
-          label="Upload identification documents (ID, Passport, Business License)"
-        />
+        {/* Identity Form */}
+        <div className="lg:col-span-2 space-y-12 animate-slide-up">
+          <div className="bg-white rounded-[3.5rem] p-10 md:p-14 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-12">
+               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Core Identity</h3>
+            </div>
+
+            <form onSubmit={handleUpdate} className="space-y-10">
+              {error && <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-black uppercase tracking-widest">{error}</div>}
+              {success && <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-600 text-xs font-black uppercase tracking-widest">{success}</div>}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">First Name</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input type="text" name="firstName" defaultValue={broker.profile?.firstName || ''} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" required />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Last Name</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input type="text" name="lastName" defaultValue={broker.profile?.lastName || ''} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" required />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Contact Phone</label>
+                  <div className="relative">
+                    <Phone size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                    <input type="tel" name="phone" defaultValue={broker.profile?.phone || ''} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Default Comm. Rate (%)</label>
+                   <div className="relative">
+                     <Percent size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                     <input type="number" name="commissionRate" min="0" max="100" step="0.1" defaultValue={broker.defaultCommissionRate || 0} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" required />
+                   </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-8">
+                <button type="submit" disabled={updating} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
+                  {updating ? <Loader2 size={16} className="animate-spin" /> : <Activity size={16} />} Sync Identity
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-[3.5rem] p-10 md:p-14 border border-slate-100 shadow-sm space-y-10">
+             <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Document Registry</h3>
+                <span className="px-4 py-2 bg-slate-50 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest">Vault Enabled</span>
+             </div>
+             <DocumentUpload onUploadComplete={(files) => { setSuccess('Vault updated successfully!'); }} maxFiles={5} acceptedTypes={['image/*', 'application/pdf']} maxSizeMB={10} label="Inject identification records into the vault (ID, Passport, License)" />
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default BrokerProfile;
-

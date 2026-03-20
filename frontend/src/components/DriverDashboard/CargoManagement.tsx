@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { CargoDetails } from './CargoDetails';
 import { CargoInspection } from './CargoInspection';
+import { ProofOfDelivery } from './ProofOfDelivery';
 import { driverApi } from '../../services/driverApi';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -67,7 +68,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   const [cargos, setCargos] = useState<CargoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCargo, setSelectedCargo] = useState<CargoItem | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'details' | 'inspection'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'details' | 'inspection' | 'delivery'>('list');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,17 +235,63 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     }
   };
 
-  const handleAcceptCargo = async () => {
-    if (!selectedCargo || !driverId) return;
+  const handleDeliverCargo = (cargo: CargoItem) => {
+    setSelectedCargo(cargo);
+    setViewMode('delivery');
+  };
+
+  const handlePODSubmit = async (podData: { recipientName: string; signatureBase64: string; photoFile?: File }) => {
+    if (!selectedCargo) return;
 
     try {
-      await driverApi.acceptAndLoad(driverId, selectedCargo.id);
+      toast.loading('Uploading Proof of Delivery...', { id: 'pod-upload' });
+      
+      // 1. In a real app, we would upload the photoFile and signature to the server
+      // For now, call the finish delivery endpoint
+      await driverApi.completeDelivery(driverId, selectedCargo.id, podData);
+
       setCargos(prev => prev.map(cargo =>
         cargo.id === selectedCargo.id
+          ? { ...cargo, status: 'DELIVERED', updatedAt: new Date().toISOString() }
+          : cargo
+      ));
+      
+      toast.success('Delivery finalized! Proof of Delivery transmitted.', { id: 'pod-upload' });
+      setViewMode('list');
+      setSelectedCargo(null);
+    } catch (error: any) {
+      console.error('Error completing delivery:', error);
+      toast.error('Failed to finalize delivery', { id: 'pod-upload' });
+    }
+  };
+
+  const handleAcceptCargo = async (cargoToLoad: CargoItem | null = null) => {
+    const target = cargoToLoad || selectedCargo;
+    if (!target || !driverId) return;
+
+    // Enforce inspection before loading
+    if (target.inspectionStatus !== 'COMPLETED') {
+      toast.error('Mandatory inspection must be completed before loading cargo.');
+      return;
+    }
+
+    try {
+      await driverApi.acceptAndLoad(driverId, target.id);
+      
+      // Notify Owners (Cargo Owner and Truck Owner)
+      try {
+        await driverApi.notifyCargoLoaded(driverId, target.id);
+      } catch (notifyError) {
+        console.warn('Failed to send automated notifications to owners:', notifyError);
+        // We don't block the UI for notification failure, but we log it
+      }
+
+      setCargos(prev => prev.map(cargo =>
+        cargo.id === target.id
           ? { ...cargo, status: 'LOADED', updatedAt: new Date().toISOString() }
           : cargo
       ));
-      toast.success('Cargo accepted and loaded successfully!');
+      toast.success('Cargo loaded! Owners have been notified.');
       setViewMode('list');
       setSelectedCargo(null);
     } catch (error: any) {
@@ -277,6 +324,15 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   const handleProceedJourney = async () => {
     if (checkedCargos.size === 0) {
       toast.error('Please select at least one cargo to proceed');
+      return;
+    }
+
+    // Verify all selected cargos are inspected
+    const selectedCargosData = cargos.filter(c => checkedCargos.has(c.id));
+    const pendingInspections = selectedCargosData.filter(c => c.inspectionStatus !== 'COMPLETED');
+
+    if (pendingInspections.length > 0) {
+      toast.error(`Mandatory inspection required for ${pendingInspections.length} cargo item(s) before starting journey.`);
       return;
     }
 
@@ -346,6 +402,16 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       <CargoInspection
         cargoId={selectedCargo.id}
         onInspectionComplete={handleInspectionComplete}
+        onCancel={() => setViewMode('list')}
+      />
+    );
+  }
+
+  if (viewMode === 'delivery' && selectedCargo) {
+    return (
+      <ProofOfDelivery
+        cargoId={selectedCargo.id}
+        onPODComplete={handlePODSubmit}
         onCancel={() => setViewMode('list')}
       />
     );
@@ -537,6 +603,20 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                           </span>
                         </div>
                         <p className="text-sm font-medium text-slate-500 max-w-2xl">{cargo.description}</p>
+                        
+                        <div className="flex items-center gap-3 pt-1">
+                          {cargo.inspectionStatus === 'COMPLETED' ? (
+                            <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border border-emerald-100 backdrop-blur-sm">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Inspection Verified
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border border-amber-100 animate-pulse">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              Mandatory Inspection Required
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -650,12 +730,41 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                       </button>
 
                       {cargo.status === 'PENDING' && (
+                        <div className="flex flex-col gap-2 w-full">
+                          <button
+                            onClick={() => handleInspectCargo(cargo)}
+                            className={`flex-1 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
+                              cargo.inspectionStatus === 'COMPLETED' 
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' 
+                                : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100 animate-pulse'
+                            }`}
+                          >
+                            <Search className="w-3.5 h-3.5" />
+                            {cargo.inspectionStatus === 'COMPLETED' ? 'Re-inspect' : 'Start Inspection'}
+                          </button>
+
+                          {cargo.inspectionStatus === 'COMPLETED' && (
+                            <button
+                              onClick={() => { 
+                                setSelectedCargo(cargo);
+                                handleAcceptCargo(cargo);
+                              }}
+                              className="flex-1 px-4 py-3 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-900 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
+                            >
+                              <Truck className="w-3.5 h-3.5" />
+                              Load & Confirm
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {(cargo.status === 'IN_TRANSIT' || cargo.status === 'LOADED') && (
                         <button
-                          onClick={() => handleInspectCargo(cargo)}
-                          className="flex-1 px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                          onClick={() => handleDeliverCargo(cargo)}
+                          className="w-full px-4 py-4 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 animate-pulse shadow-lg shadow-emerald-900/10"
                         >
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          Inspect
+                          <CheckCircle className="w-4 h-4" />
+                          Complete Delivery
                         </button>
                       )}
 

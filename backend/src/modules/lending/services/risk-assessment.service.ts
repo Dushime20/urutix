@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoanRequest } from '../../../entities/LoanRequest';
-import { Borrower } from '../../../entities/Borrower';
+import { LoanRequest } from '../../../entities/loan-request.entity';
+import { Borrower } from '../../../entities/borrower.entity';
 import { Trip } from '../../../entities/trip.entity';
 import { Load } from '../../../entities/load.entity';
 

@@ -320,7 +320,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           onChange={(e) => handleInputChange('title', e.target.value)}
           placeholder="e.g., Electronics Shipment to NYC"
           required
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
       </div>
 
@@ -332,7 +332,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           rows={3}
           placeholder="Describe your cargo, special handling requirements, etc."
           required
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
       </div>
 
@@ -343,7 +343,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             value={formData.cargoType}
             onChange={(e) => handleInputChange('cargoType', e.target.value)}
             required
-            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Select cargo type</option>
             {cargoTypes.map(type => (
@@ -363,7 +363,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             onChange={(e) => handleInputChange('weight', parseFloat(e.target.value))}
             placeholder="Enter weight in kilograms"
             required
-            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
       </div>
@@ -379,21 +379,21 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             placeholder="Length"
             value={formData.dimensions.length}
             onChange={(e) => handleInputChange('dimensions.length', parseFloat(e.target.value))}
-            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
           <input
             type="number"
             placeholder="Width"
             value={formData.dimensions.width}
             onChange={(e) => handleInputChange('dimensions.width', parseFloat(e.target.value))}
-            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
           <input
             type="number"
             placeholder="Height"
             value={formData.dimensions.height}
             onChange={(e) => handleInputChange('dimensions.height', parseFloat(e.target.value))}
-            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
       </div>
@@ -405,7 +405,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           value={formData.estimatedValue}
           onChange={(e) => handleInputChange('estimatedValue', parseFloat(e.target.value))}
           placeholder="Enter estimated value"
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
       </div>
 
@@ -435,14 +435,14 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
       <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <FaMapMarkerAlt className="text-blue-600" />
+            <FaMapMarkerAlt className="text-primary-600" />
             Interactive Map Selection
           </h3>
           <div className="flex gap-2 text-xs">
             <button
               type="button"
               onClick={() => setActiveMapField('pickup')}
-              className={`px-3 py-1.5 rounded-lg border transition-all ${activeMapField === 'pickup' ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}
+              className={`px-3 py-1.5 rounded-lg border transition-all ${activeMapField === 'pickup' ? 'bg-primary-600 text-white border-primary-600 shadow-lg shadow-primary-500/30' : 'bg-white text-gray-600 border-gray-300 hover:border-primary-400'}`}
             >
               {activeMapField === 'pickup' ? 'Click on Map for Pickup' : 'Set Pickup'}
             </button>
@@ -459,8 +459,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
         <div className="h-64 w-full rounded-xl overflow-hidden shadow-inner border border-gray-300 relative z-0">
           {isGeocoding && (
             <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-[1000] flex items-center justify-center">
-              <div className="bg-white px-4 py-2 rounded-full shadow-lg text-xs font-bold text-blue-600 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full animate-ping"></span>
+              <div className="bg-white px-4 py-2 rounded-full shadow-lg text-xs font-bold text-primary-600 flex items-center gap-2">
+                <span className="w-2 h-2 bg-primary-600 rounded-full animate-ping"></span>
                 Getting Address...
               </div>
             </div>
@@ -493,10 +493,10 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-900 flex items-center">
-            <FaMapMarkerAlt className="inline mr-2 text-blue-500 w-4 h-4" />
+            <FaMapMarkerAlt className="inline mr-2 text-primary-500 w-4 h-4" />
             Pickup Details
           </h3>
-          <div className="space-y-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+          <div className="space-y-3 p-3 bg-primary-50/50 rounded-lg border border-primary-100">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Address *</label>
               <input
@@ -505,7 +505,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                 onChange={(e) => handleInputChange('pickupLocation.address', e.target.value)}
                 placeholder="Street address"
                 required
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -517,7 +517,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                   onChange={(e) => handleInputChange('pickupLocation.city', e.target.value)}
                   placeholder="City"
                   required
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
               <div>
@@ -527,7 +527,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                   value={formData.pickupLocation.state}
                   onChange={(e) => handleInputChange('pickupLocation.state', e.target.value)}
                   placeholder="State"
-                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             </div>
@@ -538,7 +538,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                 value={formData.pickupLocation.zipCode}
                 onChange={(e) => handleInputChange('pickupLocation.zipCode', e.target.value)}
                 placeholder="ZIP code"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </div>
@@ -609,7 +609,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             value={formData.pickupDate}
             onChange={(e) => handleInputChange('pickupDate', e.target.value)}
             required
-            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <div>
@@ -622,24 +622,24 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             value={formData.deliveryDate}
             onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
             required
-            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
       </div>
 
       {/* Route Intelligence Display */}
       {routeInsight && (
-        <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-xl p-4 transition-all duration-500 animate-fadeIn">
-          <h4 className="text-sm font-bold text-indigo-900 flex items-center mb-3">
-            <FaRoad className="mr-2 text-indigo-600" />
+        <div className="mt-4 bg-primary-50 border border-primary-200 rounded-xl p-4 transition-all duration-500 animate-fadeIn">
+          <h4 className="text-sm font-bold text-primary-900 flex items-center mb-3">
+            <FaRoad className="mr-2 text-primary-600" />
             Smart Route Intelligence
-            <span className="ml-auto text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">
+            <span className="ml-auto text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full border border-primary-200">
               {routeInsight.priority === 'high' ? 'High Traffic Route' : 'Standard Route'}
             </span>
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs mb-3">
-            <div className="flex items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm">
+            <div className="flex items-center p-2 bg-white rounded-lg border border-primary-100 shadow-sm">
               <div className="p-1.5 bg-blue-100 rounded-full mr-2 text-blue-600">
                 <FaClock />
               </div>
@@ -673,8 +673,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           {(routeInsight.weatherConditions || routeInsight.trafficLevel === 'heavy') && (
             <div className="space-y-2">
               {routeInsight.weatherConditions && (
-                <div className="text-xs text-indigo-800 flex items-start bg-indigo-100/50 p-2 rounded-lg">
-                  <FaSnowflake className="mr-2 mt-0.5 flex-shrink-0 text-indigo-500" />
+                <div className="text-xs text-primary-800 flex items-start bg-primary-100/50 p-2 rounded-lg">
+                  <FaSnowflake className="mr-2 mt-0.5 flex-shrink-0 text-primary-500" />
                   <span><strong>Weather Alert:</strong> {routeInsight.weatherConditions}</span>
                 </div>
               )}
@@ -695,7 +695,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-          <FaShieldAlt className="inline mr-2 text-blue-500 w-4 h-4" />
+          <FaShieldAlt className="inline mr-2 text-primary-500 w-4 h-4" />
           Special Requirements
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -750,7 +750,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             />
             <div>
               <div className="text-xs font-medium">
-                <FaSnowflake className="inline mr-1 text-blue-500 w-3 h-3" />
+                <FaSnowflake className="inline mr-1 text-primary-500 w-3 h-3" />
                 Refrigerated
               </div>
               <div className="text-[10px] text-gray-500">Temperature-controlled transport</div>
@@ -769,7 +769,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           multiple
           accept="image/*"
           onChange={handleFileUpload}
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
         {formData.photos.length > 0 && (
           <div className="mt-1.5 text-xs text-gray-600">
@@ -782,16 +782,16 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
         <button
           type="button"
           onClick={generateAiSuggestions}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           Get AI Suggestions
         </button>
       </div>
 
       {aiSuggestions && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <h4 className="text-xs font-medium text-blue-900 mb-2">AI Recommendations</h4>
-          <div className="space-y-1.5 text-xs text-blue-800">
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-3">
+          <h4 className="text-xs font-medium text-primary-900 mb-2">AI Recommendations</h4>
+          <div className="space-y-1.5 text-xs text-primary-800">
             <div><strong>Truck Type:</strong> {aiSuggestions.recommendedTruckType}</div>
             <div><strong>Packaging:</strong> {aiSuggestions.packagingTips}</div>
             <div><strong>Route:</strong> {aiSuggestions.routeOptimization}</div>
@@ -866,7 +866,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
         {currentTab === 'basic' && (
           <button
             onClick={() => setShowTemplateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-md"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-md"
           >
             <FaBox /> Use Template
           </button>
@@ -902,7 +902,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
 
           {/* Active Progress Bar */}
           <div
-            className="absolute top-1/2 left-0 h-1 bg-blue-600 rounded-full -translate-y-1/2 transition-all duration-500 ease-in-out z-0"
+            className="absolute top-1/2 left-0 h-1 bg-primary-600 rounded-full -translate-y-1/2 transition-all duration-500 ease-in-out z-0"
             style={{
               width: `${(['basic', 'location', 'special', 'review'].indexOf(currentTab) / 3) * 100}%`
             }}
@@ -930,9 +930,9 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                       relative flex items-center justify-center w-12 h-12 rounded-full border-2 
                       transition-all duration-300 z-10 bg-white
                       ${isActive
-                        ? 'border-blue-600 text-blue-600 shadow-xl shadow-blue-200 scale-110'
+                        ? 'border-primary-600 text-primary-600 shadow-xl shadow-primary-200 scale-110'
                         : isCompleted
-                          ? 'bg-blue-600 border-blue-600 text-white'
+                          ? 'bg-primary-600 border-primary-600 text-white'
                           : 'border-gray-200 text-gray-300'
                       }
                     `}
@@ -947,7 +947,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                   <div className="absolute mt-14 flex flex-col items-center">
                     <span className={`
                       text-xs font-bold uppercase tracking-wider transition-colors duration-300 mb-1
-                      ${isActive ? 'text-blue-600' : isCompleted ? 'text-blue-600' : 'text-gray-400'}
+                      ${isActive ? 'text-primary-600' : isCompleted ? 'text-primary-600' : 'text-gray-400'}
                     `}>
                       Step {index + 1}
                     </span>
@@ -1008,7 +1008,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center px-8 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+                    className="flex items-center px-8 py-2.5 bg-primary-600 text-white rounded-2xl transition-all font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-900/10 hover:bg-primary-700"
                   >
                     {loading ? 'PROCESSING...' : 'POST CARGO NOW'}
                     {!loading && <FaCheck className="ml-2 w-3 h-3" />}
@@ -1023,7 +1023,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                         setCurrentTab(tabs[currentIndex + 1] as any);
                       }
                     }}
-                    className="flex items-center px-6 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+                    className="flex items-center px-6 py-2.5 bg-primary-600 text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-primary-900/10 hover:bg-primary-700"
                   >
                     NEXT STEP
                     <FaArrowRight className="ml-2 w-3 h-3" />
@@ -1036,14 +1036,14 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
 
         {/* Contextual Help Panel */}
         <div className="hidden lg:block lg:col-span-1">
-          <div className="bg-blue-50/50 rounded-2xl border border-blue-100 p-6 sticky top-6">
-            <div className="flex items-center gap-3 mb-4 text-blue-800">
+          <div className="bg-primary-50/50 rounded-2xl border border-primary-100 p-6 sticky top-6">
+            <div className="flex items-center gap-3 mb-4 text-primary-800">
               <FaInfoCircle className="w-5 h-5" />
               <h3 className="font-bold text-lg">Helpful Tips</h3>
             </div>
 
             {currentTab === 'basic' && (
-              <div className="space-y-4 text-sm text-blue-900/80">
+              <div className="space-y-4 text-sm text-primary-900/80">
                 <p><strong>Cargo Type:</strong> Selecting the right type helps us match you with trucks equipped for your goods.</p>
                 <p><strong>Weight & Dimensions:</strong> Be as accurate as possible. Underestimating can lead to extra charges or rejected pickups.</p>
                 <p><strong>Value:</strong> Used for insurance purposes. High-value loads might require special carriers.</p>
@@ -1051,14 +1051,14 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             )}
 
             {currentTab === 'location' && (
-              <div className="space-y-4 text-sm text-blue-900/80">
+              <div className="space-y-4 text-sm text-primary-900/80">
                 <p><strong>Interactive Map:</strong> Click "Set Pickup" and tap on the map to auto-fill address details. Do the same for Delivery.</p>
                 <p><strong>Dates:</strong> Flexible dates can often get you better rates.</p>
               </div>
             )}
 
             {currentTab === 'special' && (
-              <div className="space-y-4 text-sm text-blue-900/80">
+              <div className="space-y-4 text-sm text-primary-900/80">
                 <p><strong>Hazmat:</strong> Essential for safety compliance. Failure to declare can lead to severe fines.</p>
                 <p><strong>Photos:</strong> Uploading photos of packed cargo increases driver confidence and reduces disputes.</p>
                 <p><strong>AI Suggestions:</strong> Click the button to get smart tips on packaging and vehicles!</p>
@@ -1066,7 +1066,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             )}
 
             {currentTab === 'review' && (
-              <div className="space-y-4 text-sm text-blue-900/80">
+              <div className="space-y-4 text-sm text-primary-900/80">
                 <p><strong>Double Check:</strong> Review all details carefully before posting.</p>
                 <p><strong>Next Steps:</strong> After posting, you can instantly assign a broker or wait for bids.</p>
               </div>

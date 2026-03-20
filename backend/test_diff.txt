@@ -1,0 +1,24 @@
+diff --git a/backend/src/guards/cargo-owner.guard.ts b/backend/src/guards/cargo-owner.guard.ts
+index cdd4269..f1dac54 100644
+--- a/backend/src/guards/cargo-owner.guard.ts
++++ b/backend/src/guards/cargo-owner.guard.ts
+@@ -1,7 +1,7 @@
+ import { Injectable, CanActivate, ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
+ import { InjectRepository } from '@nestjs/typeorm';
+ import { Repository } from 'typeorm';
+-import { Load } from '../entities/load.entity';
++import { Load } from '../../entities/load.entity';
+ 
+ /**
+  * Guard to verify cargo owner has permission to access/modify a load
+@@ -20,8 +20,8 @@ export class CargoOwnerGuard implements CanActivate {
+     const request = context.switchToHttp().getRequest();
+     const user = request.user;
+ 
+-    // Extract loadId from params or body
+-    const loadId = request.params.id || request.params.loadId || request.body.loadId;
++    // Extract loadId from 'params or body
++    const loadId = request.params.id || request.params.loadId || request.body.loadId';
+ 
+     if (!loadId) {
+       // If no loadId, let the controller handle it

@@ -4,7 +4,7 @@ import { SubscriptionService } from './subscription.service';
 import { CreditService } from './credit.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TenantSubscription, SubscriptionStatus } from '../entities/tenant-subscription.entity';
+import { TenantSubscription, SubscriptionStatus } from './../entities/tenant-subscription.entity';
 
 @Injectable()
 export class SubscriptionSchedulerService {

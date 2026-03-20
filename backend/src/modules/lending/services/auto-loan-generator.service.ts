@@ -4,8 +4,8 @@ import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Load } from '../../../entities/load.entity';
 import { Trip } from '../../../entities/trip.entity';
-import { LoanRequest } from '../../../entities/LoanRequest';
-import { LenderPolicy } from '../../../entities/LenderPolicy';
+import { LoanRequest } from '../../../entities/loan-request.entity';
+import { LenderPolicy } from '../../../entities/lender-policy.entity';
 import { RiskAssessmentService, RiskScore } from './risk-assessment.service';
 
 export interface AutoLoanConfig {

@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { RenewalStatus, RenewalType } from '../entities/policy-renewal.entity';
+import { RenewalStatus, RenewalType } from './../entities/policy-renewal.entity';
 
 export class CreateRenewalDto {
   @ApiProperty({ description: 'Renewal number (unique identifier)' })

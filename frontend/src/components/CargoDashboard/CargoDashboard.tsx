@@ -2,14 +2,12 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom";
 
 import {
-  FaSync,
-  FaDownload,
   FaExclamationTriangle,
   FaPlus,
   FaClock,
 } from "react-icons/fa";
 import { FiGrid, FiList } from "react-icons/fi";
-import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, BarChart3, Home, ChevronRight as ChevronRightIcon, X, ArrowUpDown, ArrowUp, ArrowDown, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, BarChart3, Home, ChevronRight as ChevronRightIcon, X, ArrowUp, ArrowDown, Plus } from "lucide-react";
 
 import { CargoFilters } from "./CargoFilters";
 import { CargoModal } from "./CargoModal";
@@ -40,6 +38,7 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { TranslatedText } from "../translated-text";
+import { useTranslation } from "../../hooks/useTranslation";
 import { draftCargoApi } from "../../services/draftCargoApi";
 import {
   batchEnrichCargoLocations,
@@ -49,7 +48,6 @@ import { cargoTemplateService, type CargoTemplate } from '@/services/cargoTempla
 import TemplateCard from './TemplateCard';
 import { AdvancedSearch } from './AdvancedSearch';
 import { CargoDistributionCharts } from './CargoDistributionCharts';
-import { CargoEmptyState } from './CargoEmptyState';
 import { RateTransporterModal } from './RateTransporterModal';
 import { CargoTrackingModal } from './CargoTrackingModal';
 // import type { Cargo, CargoFilters as CargoFiltersType, CargoData } from '../../types/cargo';
@@ -197,6 +195,7 @@ import { Button } from "../ui";
 
 
 export const CargoDashboard: React.FC = () => {
+  const { tSync } = useTranslation();
   const { confirm, DialogComponent } = useConfirmDialog();
   const layoutContext = useCargoOwnerLayout();
   const setHideHeader = layoutContext?.setHideHeader;
@@ -216,8 +215,6 @@ export const CargoDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedCargo, setSelectedCargo] = useState<Cargo | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  // const [isBulkActionLoading, setIsBulkActionLoading] = useState(false);
-  const [view, setView] = useState<"grid" | "list">("grid");
   const [filters, setFilters] = useState<CargoFiltersType>({});
   const [search, setSearch] = useState("");
   const [hasMore, setHasMore] = useState(true);
@@ -256,36 +253,6 @@ export const CargoDashboard: React.FC = () => {
     }
   };
 
-  // Apply sorting to cargos
-  const sortedCargos = useMemo(() => {
-    const sorted = [...cargos];
-
-    sorted.sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortField) {
-        case 'date':
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          break;
-        case 'value':
-          comparison = (a.loadValue || 0) - (b.loadValue || 0);
-          break;
-        case 'status':
-          comparison = (a.status || '').localeCompare(b.status || '');
-          break;
-        case 'urgency':
-          const urgencyOrder = { 'CRITICAL': 4, 'HIGH': 3, 'NORMAL': 2, 'LOW': 1 };
-          const aUrgency = urgencyOrder[a.urgencyLevel as keyof typeof urgencyOrder] || 0;
-          const bUrgency = urgencyOrder[b.urgencyLevel as keyof typeof urgencyOrder] || 0;
-          comparison = aUrgency - bUrgency;
-          break;
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-
-    return sorted;
-  }, [cargos, sortField, sortDirection]);
 
   // Rating handlers
   const handleRateTransporter = (cargo: Cargo) => {
@@ -594,11 +561,11 @@ export const CargoDashboard: React.FC = () => {
         a.click();
 
         toast.dismiss(toastId);
-        toast.success("Enriched data exported");
+        toast.success(tSync("Enriched data exported"));
         return;
       } catch (e) {
         console.error(e);
-        toast.error("Failed to export enriched data");
+        toast.error(tSync("Failed to export enriched data"));
       }
     }
 
@@ -629,7 +596,7 @@ export const CargoDashboard: React.FC = () => {
         setSelectedIds([]);
       } catch (err) {
         console.error("Failed to enrich cargos:", err);
-        toast.error("Failed to enrich selected cargos");
+        toast.error(tSync("Failed to enrich selected cargos"));
       } finally {
         // setIsBulkActionLoading(false);
       }
@@ -821,11 +788,11 @@ export const CargoDashboard: React.FC = () => {
   const handleSaveDraft = useCallback(async (cargoData: any) => {
     try {
       await draftCargoApi.saveAsDraft(cargoData);
-      toast.success("Draft saved successfully");
+      toast.success(tSync("Draft saved successfully"));
       loadCargos(true); // Refresh list to show new draft
     } catch (error: any) {
       console.error("Error saving draft:", error);
-      toast.error("Failed to save draft");
+      toast.error(tSync("Failed to save draft"));
       throw error;
     }
   }, [loadCargos]);
@@ -1191,13 +1158,13 @@ export const CargoDashboard: React.FC = () => {
           <nav className="mb-6 flex items-center gap-2 text-xs sm:text-sm text-slate-500 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-1 hover:text-teal-600 transition-colors font-medium"
+              className="flex items-center gap-1 hover:text-primary-600 transition-colors font-medium"
             >
               <Home className="size-3.5 sm:size-4" />
-              <span>Dashboard</span>
+              <span><TranslatedText text="Dashboard" /></span>
             </button>
             <ChevronRightIcon className="size-3 sm:size-3.5 text-slate-300" />
-            <span className="text-slate-900 font-bold">Cargo Management</span>
+            <span className="text-slate-900 font-bold"><TranslatedText text="Cargo Management" /></span>
           </nav>
 
           {/* Stats Cards */}
@@ -1205,41 +1172,41 @@ export const CargoDashboard: React.FC = () => {
           {/* Stats Cards - ENLITE STYLE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
-              title="Total Shipments"
+              title={<TranslatedText text="Total Shipments" />}
               value={stats.total}
               icon={<Package />}
               color="primary"
               trend="+12%"
               trendDirection="up"
-              subtitle="All Time"
+              subtitle={<TranslatedText text="All Time" />}
               variant="modern"
             />
             <StatCard
-              title="Active / Published"
+              title={<TranslatedText text="Active / Published" />}
               value={stats.published}
               icon={<TrendingUp />}
               color="primary"
-              trend="Active"
+              trend={<TranslatedText text="Active" />}
               trendDirection="neutral"
-              subtitle="Currently Live"
+              subtitle={<TranslatedText text="Currently Live" />}
               variant="modern"
             />
             <StatCard
-              title="In Transit"
+              title={<TranslatedText text="In Transit" />}
               value={stats.inTransit}
               icon={<MapPin />}
               color="primary"
-              trend="En Route"
+              trend={<TranslatedText text="En Route" />}
               trendDirection="neutral"
-              subtitle="Live Tracking"
+              subtitle={<TranslatedText text="Live Tracking" />}
               variant="modern"
             />
             <StatCard
-              title="Total Value"
+              title={<TranslatedText text="Total Value" />}
               value={`$${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })} `}
               icon={<BarChart3 />}
               color="primary"
-              subtitle="Asset Valuation"
+              subtitle={<TranslatedText text="Asset Valuation" />}
               variant="modern"
             />
           </div>
@@ -1249,23 +1216,23 @@ export const CargoDashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-8 border-b border-slate-100">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-blue-50 p-2 rounded-xl">
-                    <Package className="w-5 h-5 text-[#345E85]" />
+                  <div className="bg-primary-50 p-2 rounded-xl">
+                    <Package className="w-5 h-5 text-primary-500" />
                   </div>
                   <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
                     <TranslatedText text="Cargo Dashboard" />
                   </h1>
                 </div>
-                <p className="text-slate-500 font-medium">Manage your cargo and shipments.</p>
+                <p className="text-slate-500 font-medium"><TranslatedText text="Manage your cargo and shipments." /></p>
               </div>
 
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleCreateNew}
-                  className="px-6 py-3 bg-[#345E85] text-white rounded-2xl font-bold text-sm shadow-md hover:bg-slate-800 transition-all flex items-center gap-2"
+                  className="px-6 py-3 bg-primary-500 text-white rounded-2xl font-bold text-sm shadow-md hover:bg-primary-600 transition-all flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Create Cargo
+                  <TranslatedText text="Create Cargo" />
                 </button>
               </div>
             </div>
@@ -1297,8 +1264,8 @@ export const CargoDashboard: React.FC = () => {
                   <button
                     key={option.value}
                     onClick={() => handleSort(option.value as any)}
-                    className={`inline - flex items - center gap - 2 px - 3 py - 1.5 rounded - lg text - sm font - medium border transition - all ${sortField === option.value
-                      ? 'bg-[#345E85] text-white border-[#345E85]'
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${sortField === option.value
+                      ? 'bg-primary-500 text-white border-primary-500'
                       : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
                       } `}
                   >
@@ -1330,7 +1297,7 @@ export const CargoDashboard: React.FC = () => {
                     gray: isActive ? 'bg-gray-600 text-white border-gray-600' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400',
                     yellow: isActive ? 'bg-yellow-600 text-white border-yellow-600' : 'bg-white text-yellow-700 border-yellow-300 hover:border-yellow-400',
                     green: isActive ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-700 border-green-300 hover:border-green-400',
-                    blue: isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-300 hover:border-blue-400',
+                    blue: isActive ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-primary-700 border-primary-300 hover:border-primary-400',
                     purple: isActive ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-300 hover:border-purple-400',
                   };
 
@@ -1341,7 +1308,7 @@ export const CargoDashboard: React.FC = () => {
                         setFilters({ ...filters, status: statusFilter.value || undefined });
                         setPage(1);
                       }}
-                      className={`inline - flex items - center gap - 2 px - 3 py - 1.5 rounded - full text - sm font - medium border transition - all ${colorClasses[statusFilter.color as keyof typeof colorClasses]
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${colorClasses[statusFilter.color as keyof typeof colorClasses]
                         } ${isActive ? 'shadow-md scale-105' : 'hover:shadow-sm'} `}
                     >
                       <span>{statusFilter.icon}</span>
@@ -1412,16 +1379,16 @@ export const CargoDashboard: React.FC = () => {
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                   <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No cargos found</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2"><TranslatedText text="No cargos found" /></h3>
                 <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
                   {search || Object.keys(filters).length > 0
-                    ? "Try adjusting your search or filters to find what you're looking for."
-                    : "Get started by creating your first cargo shipment."}
+                    ? <TranslatedText text="Try adjusting your search or filters to find what you're looking for." />
+                    : <TranslatedText text="Get started by creating your first cargo shipment." />}
                 </p>
                 {(!search && Object.keys(filters).length === 0) && (
                   <Button
                     onClick={handleCreateNew}
-                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
+                    className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
                   >
                     <FaPlus className="w-4 h-4" />
                     <TranslatedText text="Create New Cargo" />
@@ -1433,7 +1400,6 @@ export const CargoDashboard: React.FC = () => {
                 <CargoTable
                   cargos={allCargos.slice((page - 1) * itemsPerPage, page * itemsPerPage) || []}
                   lastCargoRef={lastCargoRef}
-                  view={view}
                   onRowClick={setSelectedCargo}
                   selectedIds={selectedIds}
                   onSelectionChange={setSelectedIds}
@@ -1467,7 +1433,7 @@ export const CargoDashboard: React.FC = () => {
                           <select
                             value={itemsPerPage}
                             onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                            className="h-9 sm:h-9 rounded-md border border-gray-300 bg-white px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 touch-manipulation min-h-[44px] sm:min-h-0"
+                            className="h-9 sm:h-9 rounded-md border border-gray-300 bg-white px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 touch-manipulation min-h-[44px] sm:min-h-0"
                           >
                             <option value={10}>10</option>
                             <option value={25}>25</option>
@@ -1511,7 +1477,7 @@ export const CargoDashboard: React.FC = () => {
                                 onClick={() => handlePageChange(pageNum)}
                                 disabled={loading}
                                 className={`min - w - [40px] sm: min - w - [40px] touch - manipulation min - h - [44px] sm: min - h - 0 ${page === pageNum
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                                  ? "bg-primary-600 text-white hover:bg-primary-700"
                                   : "hover:bg-gray-50"
                                   } disabled: opacity - 50 disabled: cursor - not - allowed`}
                               >

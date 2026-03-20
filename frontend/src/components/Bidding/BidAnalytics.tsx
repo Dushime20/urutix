@@ -21,7 +21,7 @@ interface LoadPerformance {
 }
 
 interface BidAnalyticsProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER';
 }
 
 const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {

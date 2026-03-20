@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../../components/translated-text';
 import {
   FaCreditCard,
   FaSearch,
@@ -222,11 +223,11 @@ const TenantSubscriptions: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AdminPageLayout title="Tenant Subscriptions" description="Manage all tenant subscriptions">
+      <AdminPageLayout title={<TranslatedText text="Tenant Subscriptions" />} description={<TranslatedText text="Manage all tenant subscriptions" />}>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-slate-600">Loading subscriptions...</p>
+            <p className="mt-4 text-slate-600"><TranslatedText text="Loading subscriptions..." /></p>
           </div>
         </div>
       </AdminPageLayout>
@@ -235,15 +236,15 @@ const TenantSubscriptions: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Tenant Subscriptions"
-      description="View and manage all tenant subscriptions and billing"
+      title={<TranslatedText text="Tenant Subscriptions" />}
+      description={<TranslatedText text="View and manage all tenant subscriptions and billing" />}
       actions={
         <button
           onClick={() => refetch()}
           className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium shadow-sm"
         >
           <FaSync className="text-sm" />
-          Refresh
+          <TranslatedText text="Refresh" />
         </button>
       }
     >

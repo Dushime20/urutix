@@ -14,12 +14,12 @@ import {
   Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../guards/permission.guard';
 import { RequirePermissions } from '../../auth/decorators/require-permissions.decorator';
-import { MLPipelineService } from '../services/ml-pipeline.service';
-import { RealTimeProcessorService } from '../services/real-time-processor.service';
-import { ApiMarketplaceService } from '../services/api-marketplace.service';
+import { MLPipelineService } from './../services/ml-pipeline.service';
+import { RealTimeProcessorService } from './../services/real-time-processor.service';
+import { ApiMarketplaceService } from './../services/api-marketplace.service';
 
 @ApiTags('Advanced Analytics & ML Pipeline')
 @ApiBearerAuth()

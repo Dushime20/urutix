@@ -17,7 +17,7 @@ import {
   ClaimType,
   ClaimStatus,
   ClaimPriority,
-} from '../entities/insurance-claim.entity';
+} from '../../../entities/insurance-claim.entity';
 
 export class CreateClaimDto {
   @ApiProperty({ description: 'Claim number (unique identifier)' })

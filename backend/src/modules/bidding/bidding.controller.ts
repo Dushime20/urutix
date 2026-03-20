@@ -26,7 +26,7 @@ import {
 } from './bidding.service';
 import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { errorMessage } from 'src/utils/error';
 import { UserRole } from '../../entities/user.entity';
 

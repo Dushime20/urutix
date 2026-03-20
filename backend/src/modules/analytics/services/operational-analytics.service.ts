@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CargoOwnerAnalytics } from '../../../entities/cargo-owner-analytics.entity';
 import { Load } from '../../../entities/load.entity';
+import { UserRole } from '../../auth/enums/user-role.enum';
 
 @Injectable()
 export class OperationalAnalyticsService {
@@ -18,14 +19,20 @@ export class OperationalAnalyticsService {
    */
   async getPerformanceMetrics(
     tenantId: string,
-    cargoOwnerId: string,
+    userId: string,
+    role: string,
     period: { start: Date; end: Date }
   ) {
     // Query existing Load entities with performance data
-    const loads = await this.loadRepository
+    const query = this.loadRepository
       .createQueryBuilder('load')
-      .where('load.tenantId = :tenantId', { tenantId })
-      .andWhere('load.cargoOwnerId = :cargoOwnerId', { cargoOwnerId })
+      .where('load.tenantId = :tenantId', { tenantId });
+
+    if (role !== UserRole.TENANT_ADMIN && role !== UserRole.SUPER_ADMIN && role !== UserRole.ADMIN) {
+      query.andWhere('load.cargoOwnerId = :userId', { userId });
+    }
+
+    const loads = await query
       .andWhere('load.createdAt BETWEEN :start AND :end', {
         start: period.start,
         end: period.end
@@ -49,10 +56,11 @@ export class OperationalAnalyticsService {
    */
   async getRoutePerformance(
     tenantId: string,
-    cargoOwnerId: string
+    userId: string,
+    role: string
   ) {
     // Use existing Load entity route data
-    const routeData = await this.analyticsRepository
+    const query = this.analyticsRepository
       .createQueryBuilder('analytics')
       .select([
         'analytics.routeHash',
@@ -63,8 +71,13 @@ export class OperationalAnalyticsService {
         'COUNT(*) as shipmentCount',
         'AVG(CASE WHEN analytics.onTimeDelivery THEN 1 ELSE 0 END) as onTimeRate'
       ])
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .andWhere('analytics.cargoOwnerId = :cargoOwnerId', { cargoOwnerId })
+      .where('analytics.tenantId = :tenantId', { tenantId });
+
+    if (role !== UserRole.TENANT_ADMIN && role !== UserRole.SUPER_ADMIN && role !== UserRole.ADMIN) {
+      query.andWhere('analytics.cargoOwnerId = :userId', { userId });
+    }
+
+    const routeData = await query
       .groupBy('analytics.routeHash, analytics.originCity, analytics.destinationCity')
       .getRawMany();
 

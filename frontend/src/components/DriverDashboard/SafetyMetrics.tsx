@@ -6,7 +6,6 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
-  Calendar,
   FileText,
   Award,
   Eye,
@@ -17,11 +16,13 @@ import {
   Navigation
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
 import { driverApi } from '../../services/driverApi';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SafetyMetricsProps {
   driverId: string;
+  onReportIncident?: () => void;
 }
 
 interface SafetyData {
@@ -60,7 +61,10 @@ interface SafetyData {
   }[];
 }
 
-export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
+export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ 
+  driverId,
+  onReportIncident 
+}) => {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [showViolations, setShowViolations] = useState(false);
   const [showCertifications, setShowCertifications] = useState(false);
@@ -234,6 +238,73 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
+        </div>
+      </div>
+
+      {/* HOS (Hours of Service) Tracker - Compact & Bright */}
+      <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/50 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm text-[#345E85] shrink-0">
+               <Clock size={24} strokeWidth={2} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Hours of Service</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-tight text-[#0f172a]">Mission Readiness</h3>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mt-1">Status: Operational</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+            <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-center min-w-[120px]">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Driving Today</p>
+              <p className="text-xl font-black text-[#0f172a]">4.5<span className="text-[10px] text-slate-400 ml-0.5 uppercase tracking-tighter">h</span></p>
+              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
+                <div className="bg-[#345E85] h-full w-[40%]" />
+              </div>
+            </div>
+
+            <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-center min-w-[120px]">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Consecutive</p>
+              <p className="text-xl font-black text-[#0f172a]">2.8<span className="text-[10px] text-slate-400 ml-0.5 uppercase tracking-tighter">h</span></p>
+              <p className="text-[8px] font-black text-amber-600 uppercase mt-2 tracking-widest">Break in 1.2h</p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={async () => {
+                   try {
+                     await driverApi.startBreak(driverId);
+                     toast.success('Break started');
+                   } catch {
+                     toast.error('Failed to start break');
+                   }
+                }}
+                className="h-11 px-6 bg-[#345E85] hover:bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
+              >
+                <Clock size={14} />
+                Start Break
+              </button>
+              <button 
+                onClick={async () => {
+                  try {
+                    await driverApi.endBreak(driverId);
+                    toast.success('Break ended');
+                  } catch {
+                    toast.error('Failed to end break');
+                  }
+               }}
+                className="h-9 px-6 bg-white hover:bg-slate-50 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-95 border border-slate-100"
+              >
+                End Break
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -534,9 +605,12 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({ driverId }) => {
             <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span>Download Docs</span>
           </button>
-          <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
-            <Calendar className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span>Schedule Training</span>
+          <button 
+            onClick={onReportIncident}
+            className="py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-rose-100 shadow-sm"
+          >
+            <AlertTriangle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span>Report Incident</span>
           </button>
         </div>
       </div>

@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
-import { UserRole } from 'src/entities/user.entity';
+import { UserRole } from '../../../entities/user.entity';
 
 export class RegisterDto {
   @ApiProperty({

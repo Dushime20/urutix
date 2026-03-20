@@ -4,7 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
 import { Notification } from '../../entities/notification.entity';
 import { NotificationTemplate } from './entities/notification-template.entity';
-import { NotificationPreference } from './entities/notification-preference.entity';
+import { NotificationPreference } from '../../entities/notification-preference.entity';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { NotificationService } from './services/notification.service';

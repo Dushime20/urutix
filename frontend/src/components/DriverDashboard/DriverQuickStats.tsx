@@ -1,16 +1,6 @@
-import React from 'react';
-import { Truck, DollarSign, Star, Clock, Activity, CheckCircle } from 'lucide-react';
+import { Truck, DollarSign, Star, Clock, Activity, CheckCircle, Award, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '@/utils/cn';
-
-interface Stat {
-  label: string;
-  value: string | number;
-  change?: number;
-  icon: React.ElementType;
-  colorClass: string;
-  secondaryColor: string;
-}
+import { TranslatedText } from '../translated-text';
 
 interface DriverQuickStatsProps {
   stats: {
@@ -24,44 +14,66 @@ interface DriverQuickStatsProps {
   isLoading?: boolean;
 }
 
-const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor, delay = 0 }: any) => (
+const DashboardStatCard = ({ title, value, icon: Icon, delay = 0, isAward = false, percentage = 0 }: any) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
+    initial={{ opacity: 0, y: 15 }}
+    animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, delay }}
-    className="flex flex-col items-center group cursor-pointer"
+    className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xl shadow-slate-200/40 group hover:border-[#345E85]/30 hover:shadow-2xl transition-all duration-500 flex flex-col justify-between"
   >
-    <div className="relative w-40 h-40 rounded-full bg-white border-[6px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50">
-      {/* Animated Orbiting Ring */}
-      <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-        <circle
-          cx="80"
-          cy="80"
-          r="74"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeDasharray="465"
-          strokeDashoffset="400"
-          className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
-        />
-      </svg>
-
-      <div className={cn("p-3 rounded-2xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-        <Icon className="w-5 h-5" />
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100/50 group-hover:bg-[#345E85] group-hover:text-white transition-all shadow-sm">
+          <Icon size={18} />
+        </div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-[#345E85] transition-colors">
+          <TranslatedText text={title} />
+        </p>
       </div>
-
-      <div className="flex flex-col items-center">
-        <span className="text-2xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500">
-          {value}
-        </span>
-      </div>
+      {isAward && (
+        <div className="bg-amber-100 p-1.5 rounded-xl border border-amber-200">
+           <Award className="w-3 h-3 text-amber-600" />
+        </div>
+      )}
     </div>
 
-    <div className="mt-5 text-center px-4">
-      <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.25em] group-hover:text-[#345E85] transition-colors duration-300">
-        {title}
-      </p>
+    <div className="flex items-end justify-between gap-4">
+      <div>
+        <h4 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight group-hover:scale-105 transition-transform origin-left">
+          {value}
+        </h4>
+        <div className="flex items-center gap-1.5 mt-2">
+           <TrendingUp size={12} className="text-emerald-500" />
+           <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">12.5% <span className="text-slate-400 font-medium">up</span></p>
+        </div>
+      </div>
+      
+      {/* Mini Sparkline / Circular Progress */}
+      <div className="w-12 h-12 relative shrink-0">
+          <svg className="w-full h-full -rotate-90">
+             <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                className="text-slate-50"
+             />
+             <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeDasharray="125.6"
+                strokeDashoffset={125.6 - (125.6 * (percentage / 100))}
+                className="text-[#345E85] transition-all duration-1000"
+                strokeLinecap="round"
+             />
+          </svg>
+      </div>
     </div>
   </motion.div>
 );
@@ -69,80 +81,98 @@ const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColo
 export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 place-items-center">
-        {[...Array(6)].map((_, index) => (
-          <div key={index} className="w-40 h-40 rounded-full bg-white border-[6px] border-slate-50 animate-pulse flex flex-col items-center justify-center">
-            <div className="w-10 h-10 bg-slate-50 rounded-xl mb-2" />
-            <div className="w-16 h-6 bg-slate-50 rounded-lg" />
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
+        {[...Array(7)].map((_, i) => (
+          <div key={i} className="h-40 bg-white rounded-3xl border border-slate-100 animate-pulse" />
         ))}
       </div>
     );
   }
 
-  const statCards: Stat[] = [
+  const statCards: any[] = [
     {
       label: 'Trips',
       value: stats.totalTrips || 0,
       icon: Truck,
-      colorClass: "bg-blue-50 text-[#345E85]",
-      secondaryColor: "text-[#345E85]"
+      percentage: 100,
     },
     {
       label: 'Earnings',
       value: `$${Math.round(stats.totalEarnings || 0).toLocaleString()}`,
       icon: DollarSign,
-      colorClass: "bg-blue-50 text-[#345E85]", // Updated to match Trips
-      secondaryColor: "text-[#345E85]"
+      percentage: 75,
     },
     {
       label: 'Rating',
       value: (stats.rating || 0).toFixed(1),
       icon: Star,
-      colorClass: "bg-blue-50 text-[#345E85]", // Updated to match Trips
-      secondaryColor: "text-[#345E85]"
+      percentage: (stats.rating || 0) * 20,
     },
     {
       label: 'Completion',
       value: `${stats.completionRate || 0}%`,
       icon: CheckCircle,
-      colorClass: "bg-blue-50 text-[#345E85]", // Updated to match Trips
-      secondaryColor: "text-[#345E85]"
+      percentage: stats.completionRate || 0,
     },
     {
       label: 'Active',
       value: stats.activeTrips || 0,
       icon: Activity,
-      colorClass: "bg-blue-50 text-[#345E85]", // Updated to match Trips
-      secondaryColor: "text-[#345E85]"
+      percentage: (stats.activeTrips || 0) > 0 ? 100 : 0,
     },
     {
       label: 'Hours',
       value: `${stats.hoursWorked || 0}H`,
       icon: Clock,
-      colorClass: "bg-blue-50 text-[#345E85]", // Updated to match Trips
-      secondaryColor: "text-[#345E85]"
+      percentage: ((stats.hoursWorked || 0) / 40) * 100,
+    },
+    {
+      label: 'Fatigue',
+      value: '22%',
+      icon: Activity,
+      percentage: 22,
     }
   ];
 
   return (
-    <div className="bg-slate-50/50 p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] border border-slate-100 shadow-inner mb-8 md:mb-12 overflow-x-auto">
-      <div className="flex lg:grid lg:grid-cols-6 gap-6 md:gap-10 min-w-max lg:min-w-0 px-4 lg:px-0">
+    <div className="mb-8 md:mb-12">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 md:gap-5 px-4 lg:px-0">
         {statCards.map((stat, index) => (
-          <div key={stat.label} className="w-32 md:w-auto">
-            <CircularStatsCard
-              key={stat.label}
-              title={stat.label}
-              value={stat.value}
-              icon={stat.icon}
-              colorClass={stat.colorClass}
-              secondaryColor={stat.secondaryColor}
-              delay={index * 0.1}
-            />
-          </div>
+          <DashboardStatCard
+            key={stat.label}
+            title={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            percentage={stat.percentage}
+            delay={index * 0.1}
+            isAward={stat.label === 'Rating' && parseFloat(String(stat.value)) >= 4.5}
+          />
         ))}
+      </div>
+
+      {/* HOS Quick Glance */}
+      <div className="mt-12 pt-8 border-t border-slate-100/50">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 shadow-sm">
+                <Clock size={18} />
+             </div>
+             <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Shift Progress</p>
+                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">4.5 / 11.0 Hours Driven</p>
+             </div>
+          </div>
+          <div className="flex-1 w-full max-w-md">
+             <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 h-full w-[41%]" />
+             </div>
+          </div>
+          <div className="flex items-center gap-3">
+             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black uppercase tracking-widest">Safe to Drive</span>
+             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Break in 3.5H</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
-

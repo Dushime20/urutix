@@ -2,12 +2,11 @@ module.exports = {
   apps: [
     {
       name: 'urutix-backend',
-      script: './dist/main.js',
+      script: 'npm',
+      args: 'run start:prod', // Runs "migration:check && node dist/main" automatically
       cwd: '/root/project/urutix/backend',
-      instances: 1,
-      exec_mode: 'fork',
-      // Pre-start hook to check migrations
-      pre_start: 'npm run migration:check',
+      instances: 2,           // Redundancy
+      exec_mode: 'cluster',    // High-availability mode
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
@@ -23,37 +22,12 @@ module.exports = {
       merge_logs: true,
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
+      max_memory_restart: '1.5G',
       node_args: '--max-old-space-size=2048',
       // Restart delay to allow database to be ready
-      restart_delay: 3000,
-      // Kill timeout
+      restart_delay: 4000,
+      // Kill timeout for graceful shutdown of transactions
       kill_timeout: 5000,
-    },
-    {
-      name: 'urutix-frontend',
-      script: 'npm',
-      args: 'run preview',
-      cwd: '/root/project/urutix/frontend',
-      instances: 1,
-      exec_mode: 'fork',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 5713,
-      },
-      env_production: {
-        NODE_ENV: 'production',
-        PORT: 5713,
-      },
-      error_file: '/root/project/urutix/logs/frontend-error.log',
-      out_file: '/root/project/urutix/logs/frontend-out.log',
-      log_file: '/root/project/urutix/logs/frontend-combined.log',
-      time: true,
-      merge_logs: true,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '500M',
     },
   ],
 };
-

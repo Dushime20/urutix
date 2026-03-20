@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SubscriptionPlan } from '../entities/subscription-plan.entity';
+import { SubscriptionPlan } from './../entities/subscription-plan.entity';
 import {
   TenantSubscription,
   SubscriptionStatus,
   BillingCycle,
-} from '../entities/tenant-subscription.entity';
-import { Tenant } from '../entities/tenant.entity';
+} from './../entities/tenant-subscription.entity';
+import { Tenant } from './../entities/tenant.entity';
 import { CreditService } from './credit.service';
 import { PricingService } from './pricing.service';
 

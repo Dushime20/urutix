@@ -61,10 +61,10 @@ import {
 } from '../../entities/load.entity';
 import { DocumentType } from '../../entities/document.entity';
 import { AlertType, AlertSeverity } from '../../entities/alert.entity';
-import { Roles, RolesGuard } from '../auth/roles.guard';
+import { Roles, RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { TenantGuard } from '../auth/tenant.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { CargoOwnerGuard } from '../../guards/cargo-owner.guard';
 
@@ -518,6 +518,7 @@ export class LoadsController {
         searchCriteria,
         req.user.tenantId,
         req.user.userId,
+        req.user.role,
       );
 
       return {
@@ -768,7 +769,7 @@ export class LoadsController {
       }
 
       // Generic error with user-friendly message
-      const errorMessage = error.message || 'An unexpected error occurred while creating cargo from template';
+      const errorMessage = error.message || "An unexpected error occurred while creating cargo from 'template'";
       throw new HttpException(
         {
           message: errorMessage,
@@ -981,6 +982,7 @@ export class LoadsController {
       return await this.loadsService.getLoadStatistics(
         req.user.tenantId,
         req.user.userId,
+        req.user.role,
       );
     } catch (error) {
       throw new HttpException(

@@ -12,10 +12,6 @@ import {
   ArrowRight,
   ThumbsUp,
   ThumbsDown,
-  Globe,
-  Settings,
-  ShieldCheck,
-  Award,
   ChevronLeft
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -236,7 +232,7 @@ You'll be notified about:
       >
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         <HelpCircle size={18} className="relative z-10 group-hover:rotate-12 transition-transform" />
-        <span className="text-xs font-black uppercase tracking-widest relative z-10">Help</span>
+        <span className="hidden sm:inline text-xs font-black uppercase tracking-widest relative z-10">Help</span>
       </button>
 
       {/* Help Modal - Enlite Prime Aesthetic */}
@@ -315,7 +311,6 @@ You'll be notified about:
                         <div key={category} className="space-y-4">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-[11px] font-black uppercase tracking-widest text-[#345E85]">{category} Mapping</h3>
-                            <span className="h-[1px] flex-1 mx-6 bg-slate-100" />
                           </div>
 
                           <div className="grid grid-cols-1 gap-4">

@@ -4,23 +4,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { PermissionProvider } from './contexts/PermissionContext';
 import { I18nProvider } from './contexts/i18n-context';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
-
-// Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const CargoDashboard = lazy(() => import('./pages/CargoDashboard'));
-const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
-const FleetSafety = lazy(() => import('./pages/FleetSafety'));
-const DriverDashboard = lazy(() => import('./components/DriverDashboard/DriverDashboard'));
-const Analytics = lazy(() => import('./pages/Analytics'));
-const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
-
-// Analytics pages
-const FinancialAnalytics = lazy(() => import('./pages/analytics/FinancialAnalytics'));
-const OperationalAnalytics = lazy(() => import('./pages/analytics/OperationalAnalytics'));
-const AIInsights = lazy(() => import('./pages/analytics/AIInsights'));
-const AdvancedAnalytics = lazy(() => import('./pages/analytics/AdvancedAnalytics'));
 
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
@@ -40,6 +26,13 @@ import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 
+// Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
+// Analytics pages
+const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
+const MultiModalTracking = lazy(() => import('./components/Tracking/MultiModalTracking'));
+const MasterNeuralOverview = lazy(() => import('./components/Analytics/MasterNeuralOverview'));
+const PredictiveLogistics = lazy(() => import('./components/Analytics/PredictiveLogistics'));
+
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
 const CargoOwnerContracts = lazy(() => import('./pages/cargo-owner/Contracts'));
@@ -47,9 +40,16 @@ const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/En
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
+// Dashboard components - create placeholders for missing ones
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CargoDashboard = lazy(() => import('./pages/CargoDashboard'));
+const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
+const FleetSafety = lazy(() => import('./pages/FleetSafety'));
+const DriverDashboard = lazy(() => import('./pages/driver/DriverDashboard'));
+
 // Subscription pages
-// Subscription pages
-// Billing dashboard lazy imported within Tenant Dashboard.
 const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPlans'));
 
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
@@ -62,6 +62,7 @@ const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
 const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
 const DriverHelpSupport = lazy(() => import('./pages/DriverHelpSupport'));
 const RoutesPage = lazy(() => import('./pages/Routes'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AnalyticsManagement'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminTrucks = lazy(() => import('./pages/AdminTrucks'));
 const AdminLoads = lazy(() => import('./pages/AdminLoads'));
@@ -118,7 +119,6 @@ const SmartBookingRequests = lazy(() => import('./pages/SmartBookingsPage'));
 const FuelManagement = lazy(() => import('./pages/FuelPage'));
 const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputation'));
 const UnifiedAccountManagement = lazy(() => import('./pages/dashboard/account'));
-const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
 const UnifiedTrackingManagement = lazy(() => import('./pages/dashboard/tracking'));
 const UnifiedBiddingManagement = lazy(() => import('./pages/dashboard/bidding/UnifiedBiddingManagement'));
 const ReceiversPage = lazy(() => import('./pages/cargo-owner/ReceiversPage'));
@@ -142,7 +142,7 @@ const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagement
 const SimpleBrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
 
 const BrokerProfile = lazy(() => import('./pages/broker/BrokerProfile'));
-const BrokerBidding = lazy(() => import('./pages/broker/BrokerDashboard')); // Use dashboard for now
+const BrokerBidding = lazy(() => import('./pages/broker/BrokerBidding'));
 const CargoDiscovery = lazy(() => import('./pages/broker/CargoDiscovery'));
 const DealFacilitation = lazy(() => import('./pages/broker/DealFacilitation'));
 const CommissionsPage = lazy(() => import('./pages/broker/CommissionsPage'));
@@ -160,6 +160,7 @@ const MarketIntelligence = lazy(() => import('./pages/broker/MarketIntelligence'
 const CreditManagement = lazy(() => import('./pages/broker/CreditManagement'));
 const MultiStopManagement = lazy(() => import('./pages/broker/MultiStopManagement'));
 const PerformanceAnalytics = lazy(() => import('./pages/broker/PerformanceAnalytics'));
+const PayoutsPage = lazy(() => import('./pages/broker/PayoutsPage'));
 
 // Loading fallback component for lazy-loaded pages
 const PageLoadingFallback = () => (
@@ -188,7 +189,8 @@ function App() {
         defaultLanguage="en"
         googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
       >
-        <AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
           <PermissionProvider>
             <NotificationProvider>
               <Router>
@@ -219,14 +221,16 @@ function App() {
                       <Route path="contracts" element={<CargoOwnerContracts />} />
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-                      <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
-                      <Route path="analytics/financial" element={<FinancialAnalytics />} />
-                      <Route path="analytics/operational" element={<OperationalAnalytics />} />
-                      <Route path="analytics/ai-insights" element={<AIInsights />} />
-                      <Route path="analytics/advanced" element={<AdvancedAnalytics />} />
+                      <Route path="analytics" element={<MasterNeuralOverview />} />
+                      <Route path="analytics/operational" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="analytics/advanced" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="analytics/detailed" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="analytics/predictive" element={<PredictiveLogistics />} />
+                      <Route path="analytics/financial" element={<UnifiedFinancialManagement />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="multi-modal" element={<MultiModalTracking />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
                       <Route path="profile" element={<UnifiedAccountManagement />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />
@@ -375,7 +379,7 @@ function App() {
                       <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
                       <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
                       <Route path="borrowers" element={<AdminBorrowersPage />} />
-                      <Route path="analytics" element={<Analytics />} />
+                      <Route path="analytics" element={<AdminAnalytics />} />
                       <Route path="monitoring" element={<MonitoringDashboard />} />
                       <Route path="bidding" element={<BiddingManagement />} />
                       <Route path="disputes" element={<DisputeManagement />} />
@@ -460,7 +464,7 @@ function App() {
                       <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
                       <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
                       <Route path="bidding" element={<BrokerBidding />} />
-                      <Route path="tracking" element={<LoadTracking />} />
+                      <Route path="tracking" element={<UnifiedTrackingManagement />} />
                       <Route path="discovery" element={<CargoDiscovery />} />
                       <Route path="deals" element={<DealFacilitation />} />
                       <Route path="commissions" element={<CommissionsPage />} />
@@ -481,6 +485,7 @@ function App() {
                       <Route path="credit-management" element={<CreditManagement />} />
                       <Route path="multi-stop" element={<MultiStopManagement />} />
                       <Route path="performance" element={<PerformanceAnalytics />} />
+                      <Route path="payouts" element={<PayoutsPage />} />
                     </Route>
 
                     {/* Alias: support /dashboard/admin by redirecting to /admin */}
@@ -491,7 +496,8 @@ function App() {
             </NotificationProvider>
           </PermissionProvider>
         </AuthProvider>
-        <Toaster
+      </ThemeProvider>
+      <Toaster
           position="bottom-right"
           toastOptions={{ duration: 2000 }}
           containerClassName="!z-[99999]"

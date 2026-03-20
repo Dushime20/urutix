@@ -28,8 +28,8 @@ import { User } from '../../entities/user.entity';
 import { Location } from '../../entities/location.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
-import { LoanRequest } from '../../entities/LoanRequest';
-import { Lender } from '../../entities/Lender';
+import { LoanRequest } from '../../entities/loan-request.entity';
+import { Lender } from '../../entities/lender.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoadValidationV2Service } from './services/load-validation-v2.service';
 

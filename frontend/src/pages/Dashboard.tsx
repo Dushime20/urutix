@@ -46,8 +46,6 @@ import UnifiedTrackingManagement from './dashboard/tracking/UnifiedTrackingManag
 import UnifiedAccountManagement from './dashboard/account/UnifiedAccountManagement';
 import CargoHelpSupport from './CargoHelpSupport';
 import CargoOwnerContracts from './cargo-owner/Contracts';
-import DashboardHeader from '../components/Layout/DashboardHeader';
-import DashboardFooter from '../components/Layout/DashboardFooter';
 import QuickCreateModal from '../components/Cargo/QuickCreateModal';
 import QuickActionPanel from '../components/Cargo/QuickActionPanel';
 import QuickActionFlow from '../components/Dashboard/QuickActionFlow';
@@ -1114,9 +1112,7 @@ const CargoOwnerDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Use shared DashboardHeader component */}
-      <DashboardHeader />
+    <div className="space-y-6">
 
       {/* Modern Welcome Section - Clean White Theme */}
       <div className="bg-white shadow-sm">
@@ -1186,8 +1182,6 @@ const CargoOwnerDashboard = () => {
         {activeTab === 'Support' && <CargoHelpSupport />}
       </div>
 
-      {/* Use shared DashboardFooter component */}
-      <DashboardFooter />
 
       {/* Floating Action Button */}
       <button

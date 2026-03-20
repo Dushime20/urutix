@@ -163,7 +163,7 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 90) return 'text-green-600';
-    if (confidence >= 80) return 'text-blue-600';
+    if (confidence >= 80) return 'text-primary-600';
     if (confidence >= 70) return 'text-orange-600';
     return 'text-red-600';
   };
@@ -192,7 +192,7 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
         <div className="p-6">
           {loading && (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
               <p className="text-gray-600">Analyzing your cargo and generating smart suggestions...</p>
             </div>
           )}
@@ -216,15 +216,15 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                       key={suggestion.id}
                       className={`border-2 rounded-lg p-6 transition-all duration-200 cursor-pointer ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-primary-600 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => handleSuggestionToggle(suggestion.id)}
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center">
-                          <div className="bg-blue-100 rounded-full p-2 mr-3">
-                            <Icon className="text-blue-600" size={20} />
+                          <div className="bg-primary-100 rounded-full p-2 mr-3">
+                            <Icon className="text-primary-600" size={20} />
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-gray-900">{suggestion.title}</h3>
@@ -240,7 +240,7 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                         </div>
                         <div className="flex items-center">
                           {isSelected && (
-                            <FaCheck className="text-blue-600 mr-2" />
+                            <FaCheck className="text-primary-600 mr-2" />
                           )}
                         </div>
                       </div>
@@ -295,7 +295,7 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                   </div>
                   <div>
                     <span className="text-gray-600">Time Saved:</span>
-                    <span className="font-medium text-blue-600 ml-2">
+                    <span className="font-medium text-primary-600 ml-2">
                       {suggestions
                         .filter(s => selectedSuggestions.includes(s.id) && s.estimatedTime)
                         .reduce((sum, s) => sum + (s.estimatedTime || 0), 0)} minutes
@@ -315,7 +315,7 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
                 <button
                   onClick={handleApplySuggestions}
                   disabled={selectedSuggestions.length === 0}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
                 >
                   <FaLightbulb className="w-4 h-4 mr-2" />
                   Apply Selected Suggestions ({selectedSuggestions.length})
@@ -325,9 +325,9 @@ const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({
           )}
 
           {/* AI Benefits */}
-          <div className="mt-8 bg-blue-50 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">How AI Suggestions Help</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+          <div className="mt-8 bg-primary-50 rounded-lg p-4">
+            <h4 className="font-medium text-primary-900 mb-2">How AI Suggestions Help</h4>
+            <ul className="text-sm text-primary-800 space-y-1">
               <li>• Optimize packaging for better protection and cost efficiency</li>
               <li>• Find the fastest and most cost-effective routes</li>
               <li>• Match with the most suitable truck types and features</li>

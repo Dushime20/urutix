@@ -75,7 +75,7 @@ export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
     const colors: Record<string, string> = {
       DRAFT: 'bg-gray-100 text-gray-600',
       PUBLISHED: 'bg-green-100 text-green-600',
-      IN_TRANSIT: 'bg-blue-100 text-blue-600',
+      IN_TRANSIT: 'bg-primary-100 text-primary-600',
       DELIVERED: 'bg-purple-100 text-purple-600',
       CANCELLED: 'bg-red-100 text-red-600',
     };
@@ -86,7 +86,7 @@ export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
   const getUrgencyColor = (urgency: string) => {
     const colors: Record<string, string> = {
       LOW: 'bg-yellow-100 text-yellow-600',
-      NORMAL: 'bg-blue-100 text-blue-600',
+      NORMAL: 'bg-primary-100 text-primary-600',
       HIGH: 'bg-orange-100 text-orange-600',
       CRITICAL: 'bg-red-100 text-red-600',
     };
@@ -112,12 +112,12 @@ export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
         </div>
 
         {/* Average Delivery Time */}
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-primary-100 rounded-lg">
+              <Clock className="w-5 h-5 text-primary-600" />
             </div>
-            <Package className="w-4 h-4 text-blue-500" />
+            <Package className="w-4 h-4 text-primary-500" />
           </div>
           <div className="space-y-1">
             <p className="text-2xl font-bold text-gray-900">{analytics.avgDeliveryTime.toFixed(1)} days</p>

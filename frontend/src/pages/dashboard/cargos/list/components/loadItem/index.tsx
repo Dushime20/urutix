@@ -183,10 +183,27 @@ export default function LoadItem({
                   {getCargoTypeIcon(load.cargoType)}
                 </div>
                 <div className="min-w-0 flex-1 overflow-hidden">
-                  <h3 className="text-base font-semibold text-gray-900 break-words overflow-wrap-anywhere">
+                  <h3 className="text-base font-black text-slate-800 break-words overflow-wrap-anywhere leading-tight">
                     {load.title ||
                       `${getCargoTypeDisplayName(load.cargoType)} Shipment`}
                   </h3>
+                  <div className="mt-1 flex flex-col gap-0.5">
+                    <div className="text-[10px] sm:text-xs font-bold text-slate-500 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      <span className="truncate">{getLocationDisplay(load)}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] sm:text-xs font-bold text-slate-400">
+                       <span className="flex items-center gap-1">
+                          <Weight className="w-3 h-3" />
+                          {formatWeight(load.weight)}
+                       </span>
+                       {load.offeredPrice && (
+                         <span className="text-primary-600 font-black">
+                            {formatCurrency(load.offeredPrice, load.currencyCode)}
+                         </span>
+                       )}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

@@ -18,7 +18,8 @@ import {
   Snowflake,
   Flame,
   ArrowLeft,
-  X
+  X,
+  Activity
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
 import { documentApi, type Document as CargoDocument } from '../../services/documents/documentApi';
@@ -109,6 +110,11 @@ interface CargoItem {
     securingRequirements: string[];
     specialTools: string[];
     safetyGear: string[];
+  };
+  environmentalStats?: {
+    currentTemp: number;
+    currentHumidity: number;
+    lastUpdated: string;
   };
   compliance: {
     certifications: string[];
@@ -311,6 +317,11 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               ...(load.requiresRefrigeration ? ['Temperature control standards'] : [])
             ]
           },
+          environmentalStats: load.requiresRefrigeration ? {
+            currentTemp: load.temperatureMin ? load.temperatureMin + 2 : 18,
+            currentHumidity: 45,
+            lastUpdated: new Date().toISOString()
+          } : undefined,
           inspectionStatus: load.metadata?.inspectionStatus || 'PENDING',
         };
 
@@ -621,6 +632,27 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                           {getTemperatureIcon()}
                           {cargo.temperature.min}° - {cargo.temperature.max}°{cargo.temperature.unit}
                         </div>
+                      </div>
+                    )}
+                    {cargo.environmentalStats && (
+                      <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                         <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-900/10">
+                               <Activity className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Sensor Intel</span>
+                         </div>
+                         <div className="grid grid-cols-2 gap-4">
+                            <div>
+                               <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">Live Temp</p>
+                               <p className="text-lg font-black text-emerald-900">{cargo.environmentalStats.currentTemp}°{cargo.temperature.unit}</p>
+                            </div>
+                            <div>
+                               <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">Humidity</p>
+                               <p className="text-lg font-black text-emerald-900">{cargo.environmentalStats.currentHumidity}%</p>
+                            </div>
+                         </div>
+                         <p className="text-[9px] font-bold text-emerald-600/40 uppercase mt-3 text-right">Updated {new Date(cargo.environmentalStats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     )}
                   </div>

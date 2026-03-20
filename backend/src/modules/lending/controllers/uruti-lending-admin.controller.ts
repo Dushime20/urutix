@@ -24,13 +24,13 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { UserRole } from '../../../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Lender, LenderStatus } from '../../../entities/Lender';
+import { Lender, LenderStatus } from '../../../entities/lender.entity';
 import {
   ConfigureUrutiLendingDto,
   UrutiLendingConfigResponseDto,
   TestWebhookDto,
 } from '../dto/uruti-lending-config.dto';
-import { UrutiLendingIntegrationService } from '../services/uruti-lending-integration.service';
+import { UrutiLendingIntegrationService } from './../services/uruti-lending-integration.service';
 import { encryptString, decryptString } from '../../../common/utils/crypto.util';
 import { ConfigService } from '@nestjs/config';
 
@@ -182,6 +182,7 @@ export class UrutiLendingAdminController {
     const baseUrl = lender.callback_url
       ? lender.callback_url.replace(/\/api\/?$/, '')
       : '';
+
 
     // Generate webhook URL
     const frontendUrl =

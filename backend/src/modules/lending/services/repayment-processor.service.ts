@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LoanRequest } from '../../../entities/LoanRequest';
-import { LoanRepayment } from '../../../entities/LoanRepayment';
-import { LoanDisbursement } from '../../../entities/LoanDisbursement';
+import { LoanRequest } from '../../../entities/loan-request.entity';
+import { LoanRepayment } from '../../../entities/loan-repayment.entity';
+import { LoanDisbursement } from '../../../entities/loan-disbursement.entity';
 
 export interface RepaymentSchedule {
   loan_id: string;

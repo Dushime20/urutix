@@ -2,13 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export interface StatCardProps {
-  title: string;
+  title: React.ReactNode;
   value: number | string;
   icon: React.ReactNode;
-  trend?: string;
+  trend?: React.ReactNode;
   trendDirection?: 'up' | 'down' | 'neutral';
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'accent' | 'purple' | 'pink' | 'emerald';
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   loading?: boolean;
   onClick?: () => void;
   variant?: 'classic' | 'modern' | 'premium';
@@ -16,74 +16,74 @@ export interface StatCardProps {
 
 const colorClasses = {
   primary: {
-    bg: 'bg-blue-50/30',
-    icon: 'text-[#345E85]', // Primary Brand Blue
-    border: 'border-[#345E85]',
-    accent: 'text-[#345E85]',
-    circle: 'border-[#345E85]',
+    bg: 'bg-blue-50/30 dark:bg-blue-900/20',
+    icon: 'text-[#345E85] dark:text-blue-400', // Primary Brand Blue
+    border: 'border-[#345E85] dark:border-blue-500',
+    accent: 'text-[#345E85] dark:text-blue-400',
+    circle: 'border-[#345E85] dark:border-blue-500',
   },
   secondary: {
-    bg: 'bg-slate-50',
-    icon: 'text-slate-600',
-    border: 'border-slate-400',
-    accent: 'text-slate-900',
-    circle: 'border-slate-100',
+    bg: 'bg-slate-50 dark:bg-slate-800/50',
+    icon: 'text-slate-600 dark:text-slate-400',
+    border: 'border-slate-400 dark:border-slate-600',
+    accent: 'text-slate-900 dark:text-slate-100',
+    circle: 'border-slate-100 dark:border-slate-700',
   },
   success: {
-    bg: 'bg-green-50',
-    icon: 'text-green-600',
-    border: 'border-green-600',
-    accent: 'text-green-900',
-    circle: 'border-green-100',
+    bg: 'bg-green-50 dark:bg-green-900/20',
+    icon: 'text-green-600 dark:text-green-400',
+    border: 'border-green-600 dark:border-green-500',
+    accent: 'text-green-900 dark:text-green-300',
+    circle: 'border-green-100 dark:border-green-900',
   },
   warning: {
-    bg: 'bg-orange-50',
-    icon: 'text-orange-500',
-    border: 'border-orange-500',
-    accent: 'text-orange-900',
-    circle: 'border-orange-100',
+    bg: 'bg-orange-50 dark:bg-orange-900/20',
+    icon: 'text-orange-500 dark:text-orange-400',
+    border: 'border-orange-500 dark:border-orange-400',
+    accent: 'text-orange-900 dark:text-orange-300',
+    circle: 'border-orange-100 dark:border-orange-900',
   },
   error: {
-    bg: 'bg-rose-50',
-    icon: 'text-rose-500',
-    border: 'border-rose-500',
-    accent: 'text-rose-900',
-    circle: 'border-rose-100',
+    bg: 'bg-rose-50 dark:bg-rose-900/20',
+    icon: 'text-rose-500 dark:text-rose-400',
+    border: 'border-rose-500 dark:border-rose-400',
+    accent: 'text-rose-900 dark:text-rose-300',
+    circle: 'border-rose-100 dark:border-rose-900',
   },
   info: {
-    bg: 'bg-blue-50',
-    icon: 'text-blue-500',
-    border: 'border-blue-500',
-    accent: 'text-blue-900',
-    circle: 'border-blue-100',
+    bg: 'bg-blue-50 dark:bg-blue-900/20',
+    icon: 'text-blue-500 dark:text-blue-400',
+    border: 'border-blue-500 dark:border-blue-400',
+    accent: 'text-blue-900 dark:text-blue-300',
+    circle: 'border-blue-100 dark:border-blue-900',
   },
   accent: {
-    bg: 'bg-indigo-50',
-    icon: 'text-indigo-600',
-    border: 'border-indigo-600',
-    accent: 'text-indigo-900',
-    circle: 'border-indigo-100',
+    bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+    icon: 'text-indigo-600 dark:text-indigo-400',
+    border: 'border-indigo-600 dark:border-indigo-400',
+    accent: 'text-indigo-900 dark:text-indigo-300',
+    circle: 'border-indigo-100 dark:border-indigo-900',
   },
   purple: {
-    bg: 'bg-purple-50',
-    icon: 'text-purple-600',
-    border: 'border-purple-600',
-    accent: 'text-purple-900',
-    circle: 'border-purple-100',
+    bg: 'bg-purple-50 dark:bg-purple-900/20',
+    icon: 'text-purple-600 dark:text-purple-400',
+    border: 'border-purple-600 dark:border-purple-400',
+    accent: 'text-purple-900 dark:text-purple-300',
+    circle: 'border-purple-100 dark:border-purple-900',
   },
   pink: {
-    bg: 'bg-rose-50',
-    icon: 'text-rose-600',
-    border: 'border-rose-600',
-    accent: 'text-rose-900',
-    circle: 'border-rose-100',
+    bg: 'bg-rose-50 dark:bg-rose-900/20',
+    icon: 'text-rose-600 dark:text-rose-400',
+    border: 'border-rose-600 dark:border-rose-400',
+    accent: 'text-rose-900 dark:text-rose-300',
+    circle: 'border-rose-100 dark:border-rose-900',
   },
   emerald: {
-    bg: 'bg-emerald-50',
-    icon: 'text-emerald-600',
-    border: 'border-emerald-600',
-    accent: 'text-emerald-900',
-    circle: 'border-emerald-100',
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    icon: 'text-emerald-600 dark:text-emerald-400',
+    border: 'border-emerald-600 dark:border-emerald-400',
+    accent: 'text-emerald-900 dark:text-emerald-300',
+    circle: 'border-emerald-100 dark:border-emerald-900',
   }
 };
 
@@ -102,9 +102,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   const colors = colorClasses[color];
 
   const getTrendColor = () => {
-    if (trendDirection === 'up') return 'text-green-600 bg-green-50';
-    if (trendDirection === 'down') return 'text-red-600 bg-red-50';
-    return 'text-gray-600 bg-gray-50';
+    if (trendDirection === 'up') return 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20';
+    if (trendDirection === 'down') return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20';
+    return 'text-gray-600 bg-gray-50 dark:text-slate-400 dark:bg-slate-800';
   };
 
   const getTrendIcon = () => {
@@ -122,14 +122,14 @@ export const StatCard: React.FC<StatCardProps> = ({
         whileHover={{ y: -6, transition: { duration: 0.2 } }}
         onClick={onClick}
         className={`
-          relative group overflow-hidden bg-white rounded-[24px] p-5 
-          border border-slate-100 shadow-lg hover:shadow-xl 
+          relative group overflow-hidden bg-white dark:bg-slate-900 rounded-[24px] p-5 
+          border border-slate-100 dark:border-slate-800 shadow-lg hover:shadow-xl 
           transition-all duration-500 ${onClick ? 'cursor-pointer' : ''}
         `}
       >
         <div className="relative z-10 flex flex-col gap-4">
           <div className="flex items-start justify-between">
-            <div className={`p-3 rounded-[16px] ${colors.bg} backdrop-blur-md border border-white/50 group-hover:scale-105 transition-transform duration-500`}>
+            <div className={`p-3 rounded-[16px] ${colors.bg} backdrop-blur-md border border-white/50 dark:border-white/5 group-hover:scale-105 transition-transform duration-500`}>
               <div className={`text-xl ${colors.icon}`}>
                 {icon}
               </div>
@@ -147,7 +147,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               {title}
             </h3>
             <div className="flex items-end gap-2">
-              <span className={`text-2xl font-black text-slate-900 tracking-tight`}>
+              <span className={`text-2xl font-black text-slate-900 dark:text-white tracking-tight`}>
                 {value}
               </span>
             </div>
@@ -175,7 +175,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         whileHover={{ y: -2, transition: { duration: 0.2 } }}
         onClick={onClick}
         className={`
-          flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-100
+          flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800
           ${onClick ? 'cursor-pointer' : ''}
           transition-all duration-300
         `}
@@ -186,7 +186,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           w-16 h-16 rounded-full border p-1
           ${colors.border}
         `}>
-          <div className="flex items-center justify-center w-full h-full rounded-full bg-white">
+          <div className="flex items-center justify-center w-full h-full rounded-full bg-white dark:bg-slate-900">
             <div className={`${colors.icon} text-2xl`}>
               {icon}
             </div>
@@ -197,8 +197,8 @@ export const StatCard: React.FC<StatCardProps> = ({
         <div className="flex flex-col">
           {loading ? (
             <div className="space-y-2">
-              <div className="h-8 w-16 bg-gray-100 animate-pulse rounded" />
-              <div className="h-4 w-24 bg-gray-50 animate-pulse rounded" />
+              <div className="h-8 w-16 bg-gray-100 dark:bg-slate-800 animate-pulse rounded" />
+              <div className="h-4 w-24 bg-gray-50 dark:bg-slate-800/50 animate-pulse rounded" />
             </div>
           ) : (
             <>
@@ -236,7 +236,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       onClick={onClick}
       className={`
         relative overflow-hidden
-        bg-white rounded-2xl border border-slate-100
+        bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800
         border-l-4 ${colors.border}
         p-6 transition-all duration-300
         ${onClick ? 'cursor-pointer' : ''}
@@ -272,19 +272,19 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
 
         {/* Title */}
-        <h3 className="text-gray-600 text-sm font-medium mb-2 uppercase tracking-wide">
+        <h3 className="text-gray-600 dark:text-slate-400 text-sm font-medium mb-2 uppercase tracking-wide">
           {title}
         </h3>
 
         {/* Value */}
         {loading ? (
-          <div className="h-10 bg-gray-200 rounded animate-pulse" />
+          <div className="h-10 bg-gray-200 dark:bg-slate-800 rounded animate-pulse" />
         ) : (
           <motion.p
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl font-bold text-gray-900 mb-1"
+            className="text-4xl font-bold text-gray-900 dark:text-white mb-1"
           >
             {value}
           </motion.p>

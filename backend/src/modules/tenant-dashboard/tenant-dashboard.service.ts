@@ -396,4 +396,33 @@ export class TenantDashboardService {
     const values = Object.values(data);
     return `${headers.join(',')}\n${values.join(',')}`;
   }
+
+  async getTruckOwnerPerformance(tenantId: string): Promise<any[]> {
+    const rawData = await this.tripRepository
+      .createQueryBuilder('trip')
+      .leftJoin('trucks', 'truck', 'trip.truckId = truck.id')
+      .leftJoin('users', 'user', 'truck.ownerId = user.id')
+      .leftJoin('user_profiles', 'profile', 'user.id = profile.userId')
+      .leftJoin('loads', 'load', 'trip.loadId = load.id')
+      .select('user.email', 'email')
+      .addSelect('profile.companyName', 'companyName')
+      .addSelect('COUNT(trip.id)', 'totalTrips')
+      .addSelect("COUNT(CASE WHEN trip.status = 'COMPLETED' THEN 1 END)", 'completedTrips')
+      .addSelect('AVG(load.rating)', 'averageRating')
+      .addSelect('SUM(trip.agreedPrice)', 'totalRevenue')
+      .where('trip.tenantId = :tenantId', { tenantId })
+      .groupBy('user.email')
+      .addGroupBy('profile.companyName')
+      .orderBy('COUNT(trip.id)', 'DESC')
+      .getRawMany();
+
+    return rawData.map(item => ({
+      email: item.email,
+      companyName: item.companyName,
+      totalTrips: parseInt(item.totalTrips),
+      completedTrips: parseInt(item.completedTrips),
+      averageRating: parseFloat(item.averageRating || 0),
+      totalRevenue: parseFloat(item.totalRevenue || 0),
+    }));
+  }
 }

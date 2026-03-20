@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadDocument, type CreateDocumentData } from '../../services/brokerApi';
-import { FileText, Plus, Search, Filter, Upload, Download, CheckCircle2, Clock, Loader2, Eye, FileCheck, Receipt } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Upload, Download, CheckCircle2, Loader2, Eye, FileCheck, Receipt, Clock, Activity, Zap, ArrowRight, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const DocumentManagement: React.FC = () => {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<LoadDocument[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedLoadId, setSelectedLoadId] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<LoadDocument | null>(null);
@@ -27,12 +27,11 @@ const DocumentManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await brokerAPI.getLoadDocuments(selectedLoadId, filters.type || undefined);
-      // Handle different response structures
       const documentsData = response.data || response || [];
       setDocuments(Array.isArray(documentsData) ? documentsData : []);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to fetch documents');
-      setDocuments([]); // Ensure documents is always an array
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -41,7 +40,7 @@ const DocumentManagement: React.FC = () => {
   const handleUploadDocument = async (data: CreateDocumentData) => {
     try {
       await brokerAPI.uploadDocument(data);
-      toast.success('Document uploaded successfully');
+      toast.success('Document imported successfully');
       setShowUploadModal(false);
       fetchDocuments();
     } catch (err: any) {
@@ -52,7 +51,7 @@ const DocumentManagement: React.FC = () => {
   const handleGenerateBOL = async (loadId: string) => {
     try {
       await brokerAPI.generateBOL(loadId);
-      toast.success('Bill of Lading generated successfully');
+      toast.success('BOL issued successfully');
       fetchDocuments();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to generate BOL');
@@ -62,7 +61,7 @@ const DocumentManagement: React.FC = () => {
   const handleGeneratePOD = async (loadId: string, tripId: string) => {
     try {
       await brokerAPI.generatePOD(loadId, tripId);
-      toast.success('Proof of Delivery generated successfully');
+      toast.success('POD issued successfully');
       fetchDocuments();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to generate POD');
@@ -71,217 +70,161 @@ const DocumentManagement: React.FC = () => {
 
   const handleVerifyDocument = async (documentId: string) => {
     try {
-      await brokerAPI.verifyDocument(documentId, 'Document verified by broker');
-      toast.success('Document verified successfully');
+      await brokerAPI.verifyDocument(documentId, 'Authorized by broker');
+      toast.success('Record authorized');
       fetchDocuments();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to verify document');
+      toast.error(err.response?.data?.message || 'Failed to authorize document');
     }
   };
 
   const getDocumentTypeIcon = (type: string) => {
     switch (type) {
-      case 'BILL_OF_LADING':
-        return <FileText className="w-5 h-5 text-blue-600" />;
-      case 'PROOF_OF_DELIVERY':
-        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
+      case 'BILL_OF_LADING': return <FileText className="w-5 h-5" />;
+      case 'PROOF_OF_DELIVERY': return <CheckCircle2 className="w-5 h-5" />;
       case 'INVOICE':
-      case 'COMMISSION_INVOICE':
-        return <Receipt className="w-5 h-5 text-purple-600" />;
-      default:
-        return <FileText className="w-5 h-5 text-gray-600" />;
+      case 'COMMISSION_INVOICE': return <Receipt className="w-5 h-5" />;
+      default: return <FileText className="w-5 h-5" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'VERIFIED':
-      case 'SIGNED':
-        return 'bg-green-100 text-green-800';
-      case 'PENDING_SIGNATURE':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      case 'REJECTED':
-      case 'EXPIRED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
-    }
-  };
+  if (loading && selectedLoadId) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scanning Database...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Document Management</h1>
-          <p className="text-gray-600 mt-1">Manage load documents, BOL, POD, and invoices</p>
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Archive Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <FileText size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Archive</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Operational Records</p>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2"
-          >
-            <Upload className="w-5 h-5" />
-            <span>Upload Document</span>
-          </button>
+
+        <div className="relative z-10 flex items-center gap-12 mr-4">
+           <div className="text-center hidden md:block">
+             <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{documents.length}</p>
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Total Records</p>
+           </div>
+           <button onClick={() => setShowUploadModal(true)} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+             <Upload size={14} /> Import
+           </button>
         </div>
       </div>
 
-      {/* Load Selection */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Load ID</label>
-        <div className="flex space-x-4">
-          <input
-            type="text"
-            placeholder="Enter Load ID"
-            value={selectedLoadId}
-            onChange={(e) => setSelectedLoadId(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          />
+      {/* Command Terminal */}
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm relative group overflow-hidden">
+        <div className="space-y-10">
+          <div className="flex flex-col lg:flex-row gap-8 items-end">
+            <div className="flex-1 space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Target Load ID</label>
+              <div className="relative">
+                <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                <input
+                  type="text"
+                  placeholder="Scan Load ID..."
+                  value={selectedLoadId}
+                  onChange={(e) => setSelectedLoadId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-black uppercase tracking-widest text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none"
+                />
+              </div>
+            </div>
+            
+            {selectedLoadId && (
+              <div className="flex gap-4">
+                <button onClick={() => handleGenerateBOL(selectedLoadId)} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
+                  <FileText size={16} /> Issue BOL
+                </button>
+                <button onClick={() => { const tripId = prompt('Ref Trip ID:'); if (tripId) handleGeneratePOD(selectedLoadId, tripId); }} className="px-10 py-5 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-3">
+                  <CheckCircle2 size={16} /> Issue POD
+                </button>
+              </div>
+            )}
+          </div>
+
           {selectedLoadId && (
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleGenerateBOL(selectedLoadId)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <FileText className="w-5 h-5" />
-                <span>Generate BOL</span>
-              </button>
-              <button
-                onClick={() => {
-                  const tripId = prompt('Enter Trip ID for POD generation:');
-                  if (tripId) handleGeneratePOD(selectedLoadId, tripId);
-                }}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Generate POD</span>
-              </button>
+            <div className="pt-8 border-t border-slate-50 flex gap-6">
+              <div className="flex-1 relative">
+                <Filter size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                <input type="text" placeholder="Filter files..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="w-full bg-slate-50/50 rounded-xl pl-14 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+              </div>
+              <select value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })} className="bg-slate-50/50 rounded-xl px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all cursor-pointer">
+                <option value="">All Classes</option>
+                <option value="BILL_OF_LADING">BOL</option>
+                <option value="PROOF_OF_DELIVERY">POD</option>
+                <option value="INVOICE">Invoices</option>
+                <option value="CONTRACT">Legal</option>
+              </select>
             </div>
           )}
         </div>
       </div>
 
-      {/* Filters */}
-      {selectedLoadId && (
-        <div className="bg-white rounded-lg shadow-sm p-4 flex space-x-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search documents..."
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">All Types</option>
-            <option value="BILL_OF_LADING">Bill of Lading</option>
-            <option value="PROOF_OF_DELIVERY">Proof of Delivery</option>
-            <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
-            <option value="INVOICE">Invoice</option>
-            <option value="COMMISSION_INVOICE">Commission Invoice</option>
-            <option value="CONTRACT">Contract</option>
-            <option value="WEIGHT_TICKET">Weight Ticket</option>
-            <option value="DELIVERY_RECEIPT">Delivery Receipt</option>
-          </select>
-        </div>
-      )}
-
-      {/* Documents List */}
+      {/* Data Stream */}
       {!selectedLoadId ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Load</h3>
-          <p className="text-gray-600">Enter a Load ID above to view and manage documents</p>
+        <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm opacity-50 border border-slate-50">
+          <Zap className="w-16 h-16 text-slate-200 mx-auto" />
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Awaiting load reference to sync archive.</p>
         </div>
-      ) : loading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      ) : documents.length === 0 && !loading ? (
+        <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm border border-slate-50">
+          <X className="w-16 h-16 text-slate-200 mx-auto" />
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">No records found for this reference.</p>
         </div>
-      ) : documents.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No documents found</h3>
-          <p className="text-gray-600">Upload or generate documents for this load</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">File Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+      ) : documents.length > 0 && (
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Record Class</th>
+                <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Auth Level</th>
+                <th className="px-10 py-8 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Volume</th>
+                <th className="px-10 py-8 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Log Date</th>
+                <th className="px-10 py-8 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {documents.map((document) => (
-                <tr key={document.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getDocumentTypeIcon(document.documentType)}
-                      <span className="text-sm text-gray-900">
-                        {document.documentType.replace('_', ' ')}
-                      </span>
+            <tbody className="divide-y divide-slate-50">
+              {documents.map((doc) => (
+                <tr key={doc.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => setSelectedDocument(doc)}>
+                  <td className="px-10 py-10">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                        {getDocumentTypeIcon(doc.documentType)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">{doc.documentType.replace('_', ' ')}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 max-w-[150px] truncate">{doc.fileName}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{document.fileName}</div>
-                    {document.description && (
-                      <div className="text-sm text-gray-500">{document.description}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(document.status)}`}>
-                      {document.status.replace('_', ' ')}
+                  <td className="px-10 py-10">
+                    <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 w-fit ${doc.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${doc.status === 'VERIFIED' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                      {doc.status.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {document.fileSize ? `${(document.fileSize / 1024).toFixed(2)} KB` : 'N/A'}
+                  <td className="px-10 py-10 text-center">
+                    <p className="text-xs font-black text-slate-900">{doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(document.createdAt).toLocaleDateString()}
+                  <td className="px-10 py-10 text-center">
+                    <p className="text-xs font-black text-slate-900">{new Date(doc.createdAt).toLocaleDateString()}</p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setSelectedDocument(document)}
-                        className="text-primary-600 hover:text-primary-900"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                      {document.fileUrl && (
-                        <a
-                          href={document.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <Download className="w-5 h-5" />
-                        </a>
-                      )}
-                      {document.status === 'DRAFT' && (
-                        <button
-                          onClick={() => handleVerifyDocument(document.id)}
-                          className="text-green-600 hover:text-green-900"
-                          title="Verify Document"
-                        >
-                          <FileCheck className="w-5 h-5" />
-                        </button>
-                      )}
+                  <td className="px-10 py-10">
+                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+                      <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"><Eye size={16} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); if (doc.fileUrl) window.open(doc.fileUrl); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all shadow-sm"><Download size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -291,240 +234,128 @@ const DocumentManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Upload Document Modal */}
+      {/* Upload/Import Modal */}
       {showUploadModal && (
-        <UploadDocumentModal
-          loadId={selectedLoadId}
-          onClose={() => setShowUploadModal(false)}
-          onSubmit={handleUploadDocument}
-        />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+           <div className="w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-slide-up">
+              <div className="p-10 bg-slate-900 text-white flex items-center justify-between">
+                 <div>
+                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">Import Record</h2>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Operational Injection</p>
+                 </div>
+                 <button onClick={() => setShowUploadModal(false)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-rose-600 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-10">
+                 <UploadForm loadId={selectedLoadId} onSubmit={handleUploadDocument} onCancel={() => setShowUploadModal(false)} />
+              </div>
+           </div>
+        </div>
       )}
 
-      {/* View Document Modal */}
+      {/* View/Authorize Modal */}
       {selectedDocument && (
-        <ViewDocumentModal
-          document={selectedDocument}
-          onClose={() => setSelectedDocument(null)}
-          onVerify={handleVerifyDocument}
-        />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-xl animate-fade-in">
+           <div className="w-full max-w-4xl bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
+              <div className="p-10 bg-slate-900 text-white flex items-center justify-between">
+                 <div>
+                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">Record <span className="text-primary-400">Analysis</span></h2>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Authorization Terminal</p>
+                 </div>
+                 <button onClick={() => setSelectedDocument(null)} className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-rose-600 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-12 overflow-y-auto space-y-10">
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Class</p>
+                       <p className="text-xs font-black uppercase text-slate-900">{selectedDocument.documentType.replace('_', ' ')}</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Auth Level</p>
+                       <p className="text-xs font-black uppercase text-slate-900">{selectedDocument.status}</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Volume</p>
+                       <p className="text-xs font-black uppercase text-slate-900">{selectedDocument.fileSize ? `${(selectedDocument.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Logged</p>
+                       <p className="text-xs font-black uppercase text-slate-900">{new Date(selectedDocument.createdAt).toLocaleDateString()}</p>
+                    </div>
+                 </div>
+
+                 {selectedDocument.documentContent && (
+                    <div className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 font-mono text-xs leading-relaxed text-slate-600">
+                       {selectedDocument.documentContent}
+                    </div>
+                 )}
+
+                 <div className="flex items-center justify-between pt-10 border-t border-slate-50">
+                    <div className="flex gap-4">
+                       <button onClick={() => setSelectedDocument(null)} className="px-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 transition-all">Close</button>
+                    </div>
+                    <div className="flex gap-4">
+                       {selectedDocument.fileUrl && (
+                          <a href={selectedDocument.fileUrl} target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-slate-100 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-3">
+                             <Download size={14} /> Download
+                          </a>
+                       )}
+                       {selectedDocument.status !== 'VERIFIED' && (
+                          <button onClick={() => handleVerifyDocument(selectedDocument.id)} className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+                             <FileCheck size={14} /> Authorize
+                          </button>
+                       )}
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
     </div>
   );
 };
 
-// Upload Document Modal
-const UploadDocumentModal: React.FC<{
+const UploadForm: React.FC<{
   loadId: string;
-  onClose: () => void;
   onSubmit: (data: CreateDocumentData) => void;
-}> = ({ loadId, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState<CreateDocumentData>({
-    loadId: loadId || '',
-    documentType: 'OTHER',
-    fileName: '',
-    fileUrl: '',
-  });
+  onCancel: () => void;
+}> = ({ loadId, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState<CreateDocumentData>({ loadId: loadId || '', documentType: 'OTHER' as any, fileName: '', fileUrl: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.loadId) {
-      toast.error('Please enter a Load ID');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await onSubmit(formData);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Upload Document</h2>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Load ID</label>
-            <input
-              type="text"
-              required
-              value={formData.loadId}
-              onChange={(e) => setFormData({ ...formData, loadId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
+    <form onSubmit={async (e) => { e.preventDefault(); setSubmitting(true); try { await onSubmit(formData); } finally { setSubmitting(false); } }} className="space-y-8">
+       <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-3">
+             <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Reference ID</label>
+             <input type="text" value={formData.loadId} onChange={e => setFormData({...formData, loadId: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white focus:border-primary-600 transition-all" required />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
-            <select
-              required
-              value={formData.documentType}
-              onChange={(e) => setFormData({ ...formData, documentType: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="BILL_OF_LADING">Bill of Lading</option>
-              <option value="PROOF_OF_DELIVERY">Proof of Delivery</option>
-              <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
-              <option value="INVOICE">Invoice</option>
-              <option value="COMMISSION_INVOICE">Commission Invoice</option>
-              <option value="CONTRACT">Contract</option>
-              <option value="WEIGHT_TICKET">Weight Ticket</option>
-              <option value="DELIVERY_RECEIPT">Delivery Receipt</option>
-              <option value="DAMAGE_REPORT">Damage Report</option>
-              <option value="OTHER">Other</option>
-            </select>
+          <div className="space-y-3">
+             <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Record Class</label>
+             <select value={formData.documentType} onChange={e => setFormData({...formData, documentType: e.target.value as any})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all cursor-pointer">
+                <option value="BILL_OF_LADING">BOL</option>
+                <option value="PROOF_OF_DELIVERY">POD</option>
+                <option value="INVOICE">Invoice</option>
+                <option value="CONTRACT">Legal</option>
+                <option value="OTHER">Generic</option>
+             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">File Name</label>
-            <input
-              type="text"
-              required
-              value={formData.fileName}
-              onChange={(e) => setFormData({ ...formData, fileName: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              placeholder="document.pdf"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">File URL</label>
-            <input
-              type="url"
-              required
-              value={formData.fileUrl}
-              onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              placeholder="https://storage.example.com/document.pdf"
-            />
-            <p className="text-xs text-gray-500 mt-1">Upload file to storage first, then paste URL here</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-            <textarea
-              rows={3}
-              value={formData.description || ''}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
-            >
-              {submitting ? 'Uploading...' : 'Upload Document'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// View Document Modal
-const ViewDocumentModal: React.FC<{
-  document: LoadDocument;
-  onClose: () => void;
-  onVerify: (id: string) => void;
-}> = ({ document, onClose, onVerify }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Document Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            ×
+       </div>
+       <div className="space-y-3">
+          <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Display Name</label>
+          <input type="text" placeholder="e.g. Manifest_01.pdf" value={formData.fileName} onChange={e => setFormData({...formData, fileName: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all" required />
+       </div>
+       <div className="space-y-3">
+          <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Source URL</label>
+          <input type="url" placeholder="https://..." value={formData.fileUrl} onChange={e => setFormData({...formData, fileUrl: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all" required />
+       </div>
+       <div className="flex justify-end gap-4 pt-6">
+          <button type="button" onClick={onCancel} className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Abort</button>
+          <button type="submit" disabled={submitting} className="px-12 py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-primary-600 transition-all flex items-center gap-3">
+             {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Inject Record
           </button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Type</label>
-              <p className="text-gray-900">{document.documentType.replace('_', ' ')}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Status</label>
-              <p className="text-gray-900">{document.status}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">File Name</label>
-              <p className="text-gray-900">{document.fileName}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">File Size</label>
-              <p className="text-gray-900">
-                {document.fileSize ? `${(document.fileSize / 1024).toFixed(2)} KB` : 'N/A'}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Created</label>
-              <p className="text-gray-900">{new Date(document.createdAt).toLocaleString()}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Verified</label>
-              <p className="text-gray-900">
-                {document.verifiedAt ? new Date(document.verifiedAt).toLocaleString() : 'Not verified'}
-              </p>
-            </div>
-          </div>
-          {document.description && (
-            <div>
-              <label className="text-sm font-medium text-gray-500">Description</label>
-              <p className="text-gray-900 mt-1">{document.description}</p>
-            </div>
-          )}
-          {document.documentContent && (
-            <div>
-              <label className="text-sm font-medium text-gray-500">Content</label>
-              <div className="mt-2 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 whitespace-pre-wrap">
-                {document.documentContent}
-              </div>
-            </div>
-          )}
-          {document.fileUrl && (
-            <div>
-              <a
-                href={document.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-              >
-                <Download className="w-5 h-5" />
-                <span>Download Document</span>
-              </a>
-            </div>
-          )}
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Close
-            </button>
-            {document.status === 'DRAFT' && (
-              <button
-                onClick={() => onVerify(document.id)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Verify Document
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+       </div>
+    </form>
   );
 };
 
 export default DocumentManagement;
-

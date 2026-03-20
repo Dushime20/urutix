@@ -7,6 +7,7 @@ import {
     Users, AlertTriangle, CheckCircle, Loader2,
     Download, RefreshCw, BarChart2, Globe
 } from 'lucide-react';
+import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 const SystemMonitoring: React.FC = () => {
@@ -108,8 +109,8 @@ const SystemMonitoring: React.FC = () => {
 
     return (
         <AdminPageLayout
-            title="System Monitoring"
-            description="Real-time system health, performance metrics, and audit logs across the platform."
+            title={<TranslatedText text="System Monitoring" />}
+            description={<TranslatedText text="Real-time system health, performance metrics, and audit logs across the platform." />}
             actions={
                 <div className="flex gap-3">
                     <button
@@ -120,13 +121,13 @@ const SystemMonitoring: React.FC = () => {
                             }`}
                     >
                         <Activity size={14} className={autoRefresh ? 'animate-pulse' : ''} />
-                        Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
+                        <TranslatedText text="Auto-refresh" /> {autoRefresh ? <TranslatedText text="ON" /> : <TranslatedText text="OFF" />}
                     </button>
                     <button
                         onClick={() => refetchHealth()}
                         className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all"
                     >
-                        <RefreshCw size={14} /> Refresh Now
+                        <RefreshCw size={14} /> <TranslatedText text="Refresh Now" />
                     </button>
                 </div>
             }
@@ -140,14 +141,14 @@ const SystemMonitoring: React.FC = () => {
                             <div className="p-2 bg-emerald-50 rounded-lg">
                                 {getStatusIcon(health?.status || 'unknown')}
                             </div>
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</h3>
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="System Status" /></h3>
                         </div>
                     </div>
                     <div className={`text-2xl font-black mb-1 leading-none tracking-tight ${getStatusColor(health?.status || 'unknown')} bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-emerald-400`}>
                         {health?.status?.toUpperCase() || 'UNKNOWN'}
                     </div>
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-2">
-                        Uptime: {health?.uptime.formatted || 'N/A'}
+                        <TranslatedText text="Uptime" />: {health?.uptime.formatted || 'N/A'}
                     </div>
                 </div>
 
@@ -157,13 +158,13 @@ const SystemMonitoring: React.FC = () => {
                         <div className="p-2 bg-blue-50 rounded-lg">
                             <Database className="text-blue-600 w-5 h-5" />
                         </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Database</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Database" /></h3>
                     </div>
                     <div className={`text-2xl font-black mb-1 leading-none tracking-tight ${health?.services.database.status === 'healthy' ? 'text-emerald-600' : 'text-slate-600'}`}>
                         {health?.services.database.status?.toUpperCase() || 'UNKNOWN'}
                     </div>
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-2">
-                        Response: {health?.services.database.responseTime || 'N/A'}
+                        <TranslatedText text="Response" />: {health?.services.database.responseTime || 'N/A'}
                     </div>
                 </div>
 
@@ -173,14 +174,14 @@ const SystemMonitoring: React.FC = () => {
                         <div className="p-2 bg-purple-50 rounded-lg">
                             <HardDrive className="text-purple-600 w-5 h-5" />
                         </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Memory</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Memory" /></h3>
                     </div>
                     <div className="text-2xl font-black text-purple-600 mb-1 leading-none tracking-tight">
                         {health?.resources.memory.system.usagePercent || 0}%
                     </div>
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-2 flex justify-between">
-                        <span>{health?.resources.memory.system.used || 0}GB Used</span>
-                        <span>{health?.resources.memory.system.total || 0}GB Total</span>
+                        <span>{health?.resources.memory.system.used || 0}GB <TranslatedText text="Used" /></span>
+                        <span>{health?.resources.memory.system.total || 0}GB <TranslatedText text="Total" /></span>
                     </div>
                     <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
@@ -196,10 +197,10 @@ const SystemMonitoring: React.FC = () => {
                         <div className="p-2 bg-orange-50 rounded-lg">
                             <Cpu className="text-orange-600 w-5 h-5" />
                         </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CPU</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="CPU" /></h3>
                     </div>
                     <div className="text-2xl font-black text-orange-600 mb-1 leading-none tracking-tight">
-                        {health?.resources.cpu.cores || 0} Cores
+                        {health?.resources.cpu.cores || 0} <TranslatedText text="Cores" />
                     </div>
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none truncate mt-2">
                         {health?.resources.cpu.model || 'Unknown'}

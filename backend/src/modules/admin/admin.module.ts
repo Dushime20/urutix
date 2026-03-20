@@ -16,7 +16,7 @@ import { Route } from '../../entities/route.entity';
 import { AdminPermissionsController } from './admin-permissions.controller';
 import { AdminMonitoringController } from './admin-monitoring.controller';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
-import { MonitoringService } from '../../services/monitoringService';
+import { MonitoringService } from '../../services/monitoring.service';
 
 // New imports for advanced admin features
 import { ActivityLog } from '../../entities/activity-log.entity';

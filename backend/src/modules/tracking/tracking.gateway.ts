@@ -200,7 +200,7 @@ interface GatewayConfig {
 @WebSocketGateway({
   namespace: '/tracking',
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'],
     credentials: true,
   },
   transports: ['websocket', 'polling'],
@@ -747,7 +747,7 @@ export class TrackingGateway
   }
 
   // Import TripEventType from the correct file at the top:
-  // import { TripEventType } from './entities/trip-event.entity';
+  // import { TripEventType } from @/trip-event.entity;
 
   private getEventTypeFromStatus(status: TripStatus): TripEventType {
     const statusMap: Record<TripStatus, TripEventType> = {

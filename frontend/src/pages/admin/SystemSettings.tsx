@@ -202,7 +202,7 @@ const SystemSettings: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Site Name</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2"><TranslatedText text="Site Name" /></label>
           <input
             type="text"
             value={settings.general.siteName}
@@ -211,7 +211,7 @@ const SystemSettings: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Contact Email</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2"><TranslatedText text="Contact Email" /></label>
           <input
             type="email"
             value={settings.general.contactEmail}
@@ -222,7 +222,7 @@ const SystemSettings: React.FC = () => {
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Site Description</label>
+        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2"><TranslatedText text="Site Description" /></label>
         <textarea
           value={settings.general.siteDescription}
           onChange={(e) => handleInputChange('general', 'siteDescription', e.target.value)}
@@ -605,8 +605,8 @@ const SystemSettings: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="System Settings"
-      description="Configure platform settings and preferences"
+      title={<TranslatedText text="System Settings" />}
+      description={<TranslatedText text="Configure platform settings and preferences" />}
       actions={
         unsavedChanges && (
           <div className="flex gap-3">

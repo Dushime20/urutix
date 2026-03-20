@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotificationLog, NotificationStatus } from '../entities/notification-log.entity';
-import { NotificationPreference, NotificationChannel, NotificationType } from '../entities/notification-preference.entity';
+import { NotificationLog, NotificationStatus } from './../entities/notification-log.entity';
+import { NotificationPreference, NotificationChannel, NotificationType } from './../entities/notification-preference.entity';
 
 export interface NotificationPayload {
   tenantId: string;

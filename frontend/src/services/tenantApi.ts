@@ -415,7 +415,6 @@ export const tenantApi = {
     }
 
     // Check if we have a specific endpoint, otherwise fall back to a generic one or mock
-    // For now, we'll try to hit a plausible endpoint
     try {
       const response = await api.get(`/tenant-dashboard/${tenantId}/bids`, { params });
       return response.data.data || [];
@@ -423,6 +422,18 @@ export const tenantApi = {
       console.warn('Failed to fetch bids, using empty array or mock', error);
       return [];
     }
+  },
+
+  // Get route performance analysis
+  getRoutePerformance: async (): Promise<any[]> => {
+    const response = await api.get('/analytics/operational/routes');
+    return response.data.data || response.data;
+  },
+
+  // Get truck owner performance analysis
+  getTruckOwnerPerformance: async (tenantId: string): Promise<any[]> => {
+    const response = await api.get(`/tenant-dashboard/${tenantId}/truck-owner-performance`);
+    return response.data.data || response.data;
   },
 };
 

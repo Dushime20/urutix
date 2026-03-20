@@ -517,25 +517,25 @@ const Profile: React.FC = () => {
                    <div className="relative z-10 space-y-12">
                       <div className="flex items-center gap-8">
                          <div className="w-24 h-24 bg-gradient-to-br from-primary-500 to-primary-700 rounded-[28px] flex items-center justify-center text-white text-4xl font-black shadow-3xl shadow-primary-500/20">
-                            {tenant.name.charAt(0)}
+                             {tenant.name?.[0] || 'O'}
                          </div>
                          <div>
-                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">{tenant.name}</h2>
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Tenant ID: {tenant.id.split('-')[0]}</p>
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">{tenant.name || 'Organization'}</h2>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Tenant ID: {tenant.id?.split('-')[0] || 'N/A'}</p>
                          </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          <StatCard 
                             title="Subscription"
-                            value={tenant.subscription.plan.toUpperCase()}
+                            value={tenant.subscription?.plan?.toUpperCase() || 'FREE'}
                             icon={<CreditCard />}
                             color="purple"
-                            subtitle={`Active until ${new Date(tenant.subscription.expiresAt).toLocaleDateString()}`}
+                            subtitle={`Active until ${tenant.subscription?.expiresAt ? new Date(tenant.subscription.expiresAt).toLocaleDateString() : 'Unknown'}`}
                          />
                          <StatCard 
                             title="Operational Level"
-                            value={tenant.type.replace('-', ' ').toUpperCase()}
+                            value={tenant.type?.replace('-', ' ').toUpperCase() || 'STANDARD'}
                             icon={<Activity />}
                             color="emerald"
                             subtitle="Primary Domain"
@@ -552,17 +552,17 @@ const Profile: React.FC = () => {
                       <div className="space-y-6 pt-6">
                          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Company Contact Information</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1">
+                             <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1">
                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</span>
-                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo.email}</p>
+                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo?.email || 'N/A'}</p>
                             </div>
                             <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1">
                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</span>
-                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo.phone}</p>
+                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo?.phone || 'N/A'}</p>
                             </div>
                             <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1 md:col-span-2">
                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Office Address</span>
-                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo.address}</p>
+                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo?.address || 'N/A'}</p>
                             </div>
                          </div>
                       </div>

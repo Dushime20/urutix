@@ -12,7 +12,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { Load } from '../../entities/load.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { CargoInspection, InspectionStatus } from '../../entities/cargo-inspection.entity';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';

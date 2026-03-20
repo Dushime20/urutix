@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EmailTemplate } from '../entities/email-template.entity';
-import { BulkEmailLog } from '../entities/bulk-email-log.entity';
-import { Tenant } from '../entities/tenant.entity';
-import { User } from '../entities/user.entity';
-import { EmailService } from '../modules/auth/email.service';
+import { EmailTemplate } from './../entities/email-template.entity';
+import { BulkEmailLog } from './../entities/bulk-email-log.entity';
+import { Tenant } from './../entities/tenant.entity';
+import { User } from './../entities/user.entity';
+import { EmailService } from './../modules/auth/services/email.service';
 
 @Injectable()
 export class BulkEmailService {

@@ -1,8 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { FaUsers, FaUserPlus, FaUserCheck, FaArrowRight, FaSpinner } from 'react-icons/fa';
+import { Users, UserPlus, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { fetchAllUsers } from '../../../services/adminApi';
+import { DataCard } from '../../EnliteUI';
+import { TranslatedText } from '../../translated-text';
 
 const UserManagementWidget: React.FC = () => {
     const navigate = useNavigate();
@@ -10,7 +12,7 @@ const UserManagementWidget: React.FC = () => {
     const { data: users, isLoading } = useQuery({
         queryKey: ['admin-users-widget'],
         queryFn: () => fetchAllUsers(),
-        refetchInterval: 30000, // Refresh every 30s
+        refetchInterval: 30000,
     });
 
     const usersArray = Array.isArray(users) ? users : [];
@@ -29,73 +31,67 @@ const UserManagementWidget: React.FC = () => {
     const recentUsers = usersArray.slice(0, 3) || [];
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <FaUsers className="text-blue-600" size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-800">User Management</h3>
-                        <p className="text-xs text-slate-500">Platform users overview</p>
-                    </div>
-                </div>
+        <DataCard
+            title={<TranslatedText text="User Management" />}
+            subtitle={<TranslatedText text="Platform census overview" />}
+            headerColor="secondary"
+            icon={<Users size={20} />}
+            actions={
                 <button
                     onClick={() => navigate('/admin/users')}
-                    className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    className="text-[10px] font-black text-white hover:text-primary-200 flex items-center gap-1 uppercase tracking-widest transition-all"
                 >
-                    View All <FaArrowRight size={12} />
+                    <TranslatedText text="View All" /> <ArrowRight size={10} />
                 </button>
-            </div>
-
+            }
+        >
             {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                    <FaSpinner className="animate-spin text-blue-600" size={24} />
+                <div className="flex items-center justify-center h-48">
+                    <Loader2 className="animate-spin text-primary-600" size={24} />
                 </div>
             ) : (
-                <>
+                <div className="space-y-6">
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="text-center p-3 bg-slate-50 rounded-lg">
-                            <div className="text-2xl font-black text-slate-800">{stats.total}</div>
-                            <div className="text-xs text-slate-500 font-medium mt-1">Total Users</div>
-                        </div>
-                        <div className="text-center p-3 bg-emerald-50 rounded-lg">
-                            <div className="text-2xl font-black text-emerald-600">{stats.active}</div>
-                            <div className="text-xs text-emerald-600 font-medium mt-1">Active</div>
-                        </div>
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                            <div className="text-2xl font-black text-blue-600">{stats.newThisWeek}</div>
-                            <div className="text-xs text-blue-600 font-medium mt-1">New (7d)</div>
-                        </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            { label: 'Total', value: stats.total, color: 'text-slate-800', bg: 'bg-slate-50' },
+                            { label: 'Active', value: stats.active, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                            { label: 'Growth', value: `+${stats.newThisWeek}`, color: 'text-primary-600', bg: 'bg-primary-50' }
+                        ].map((stat, i) => (
+                            <div key={i} className={`text-center p-3 ${stat.bg} rounded-2xl border border-transparent hover:border-slate-200 transition-all`}>
+                                <div className={`text-2xl font-black ${stat.color} leading-none mb-1`}>{stat.value}</div>
+                                <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{stat.label}</div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Recent Users */}
+                    {/* Recent Users List */}
                     <div>
-                        <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                            Recent Users
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+                            Recent Platform Deployments
                         </h4>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {recentUsers.map((user: any, idx: number) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg transition-colors"
+                                    className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center text-white text-[10px] font-black group-hover:scale-105 transition-transform">
                                             {user.firstName?.[0]}{user.lastName?.[0]}
                                         </div>
                                         <div>
-                                            <div className="text-sm font-semibold text-slate-800">
+                                            <div className="text-xs font-black text-slate-800 uppercase tracking-tight">
                                                 {user.firstName} {user.lastName}
                                             </div>
-                                            <div className="text-xs text-slate-500">{user.role}</div>
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{user.role}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {user.status === 'active' && (
-                                            <FaUserCheck className="text-emerald-500" size={14} />
+                                            <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                                <CheckCircle size={14} />
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -106,13 +102,14 @@ const UserManagementWidget: React.FC = () => {
                     {/* Quick Action */}
                     <button
                         onClick={() => navigate('/admin/users')}
-                        className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                        className="w-full mt-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-100 group"
                     >
-                        <FaUserPlus size={14} /> Create New User
+                        <UserPlus size={14} className="group-hover:scale-110 transition-transform" /> 
+                        <TranslatedText text="Initialize New User" />
                     </button>
-                </>
+                </div>
             )}
-        </div>
+        </DataCard>
     );
 };
 

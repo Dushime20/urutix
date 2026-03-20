@@ -23,8 +23,8 @@ const AdvancedSettings: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Advanced Settings"
-      description="Configure system-wide settings and preferences"
+      title={<TranslatedText text="Advanced Settings" />}
+      description={<TranslatedText text="Configure system-wide settings and preferences" />}
     >
       <div className="space-y-6">
         {/* Notification Settings */}
@@ -34,15 +34,15 @@ const AdvancedSettings: React.FC = () => {
               <Bell size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Notification Settings</h3>
-              <p className="text-xs text-slate-500">Configure system notifications</p>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="Notification Settings" /></h3>
+              <p className="text-xs text-slate-500"><TranslatedText text="Configure system notifications" /></p>
             </div>
           </div>
           <div className="p-8 space-y-6">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
               <div>
-                <h4 className="text-sm font-bold text-gray-900">Email Notifications</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Receive email alerts for important events</p>
+                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Email Notifications" /></h4>
+                <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Receive email alerts for important events" /></p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -57,8 +57,8 @@ const AdvancedSettings: React.FC = () => {
 
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
               <div>
-                <h4 className="text-sm font-bold text-gray-900">Push Notifications</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Receive push notifications in browser</p>
+                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Push Notifications" /></h4>
+                <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Receive push notifications in browser" /></p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -80,15 +80,15 @@ const AdvancedSettings: React.FC = () => {
               <Shield size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Security Settings</h3>
-              <p className="text-xs text-slate-500">Manage security and authentication</p>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="Security Settings" /></h3>
+              <p className="text-xs text-slate-500"><TranslatedText text="Manage security and authentication" /></p>
             </div>
           </div>
           <div className="p-8 space-y-6">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
               <div>
-                <h4 className="text-sm font-bold text-gray-900">Two-Factor Authentication</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Add an extra layer of security</p>
+                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Two-Factor Authentication" /></h4>
+                <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Add an extra layer of security" /></p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -104,13 +104,13 @@ const AdvancedSettings: React.FC = () => {
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                 <Clock size={12} />
-                Session Timeout
+                <TranslatedText text="Session Timeout" />
               </label>
               <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none bg-gray-50">
-                <option>15 minutes</option>
-                <option>30 minutes</option>
-                <option>1 hour</option>
-                <option>2 hours</option>
+                <option><TranslatedText text="15 minutes" /></option>
+                <option><TranslatedText text="30 minutes" /></option>
+                <option><TranslatedText text="1 hour" /></option>
+                <option><TranslatedText text="2 hours" /></option>
               </select>
             </div>
           </div>
@@ -123,8 +123,8 @@ const AdvancedSettings: React.FC = () => {
               <SettingsIcon size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">System Settings</h3>
-              <p className="text-xs text-slate-500">Configure system behavior</p>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="System Settings" /></h3>
+              <p className="text-xs text-slate-500"><TranslatedText text="Configure system behavior" /></p>
             </div>
           </div>
           <div className="p-8 space-y-6">
@@ -134,8 +134,8 @@ const AdvancedSettings: React.FC = () => {
                   <AlertTriangle size={16} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900">Maintenance Mode</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">Put system in maintenance mode</p>
+                  <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Maintenance Mode" /></h4>
+                  <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Put system in maintenance mode" /></p>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -152,7 +152,7 @@ const AdvancedSettings: React.FC = () => {
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                 <Globe size={12} />
-                Timezone
+                <TranslatedText text="Timezone" />
               </label>
               <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none bg-gray-50">
                 <option>UTC</option>
@@ -171,8 +171,8 @@ const AdvancedSettings: React.FC = () => {
               <Zap size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Quick Actions</h3>
-              <p className="text-xs text-slate-500">Common administrative tasks</p>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="Quick Actions" /></h3>
+              <p className="text-xs text-slate-500"><TranslatedText text="Common administrative tasks" /></p>
             </div>
           </div>
           <div className="p-8">
@@ -181,24 +181,24 @@ const AdvancedSettings: React.FC = () => {
                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Database size={20} />
                 </div>
-                <h4 className="text-sm font-bold text-gray-900">Backup Database</h4>
-                <p className="text-xs text-slate-500 mt-1">Create a comprehensive system backup</p>
+                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Backup Database" /></h4>
+                <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Create a comprehensive system backup" /></p>
               </button>
 
               <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
                 <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Mail size={20} />
                 </div>
-                <h4 className="text-sm font-bold text-gray-900">Test Email</h4>
-                <p className="text-xs text-slate-500 mt-1">Send a test email to verify SMTP settings</p>
+                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Test Email" /></h4>
+                <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Send a test email to verify SMTP settings" /></p>
               </button>
 
               <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Trash2 size={20} />
                 </div>
-                <h4 className="text-sm font-bold text-gray-900">Clear Cache</h4>
-                <p className="text-xs text-slate-500 mt-1">Flush system cache and temporary files</p>
+                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Clear Cache" /></h4>
+                <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Flush system cache and temporary files" /></p>
               </button>
             </div>
           </div>

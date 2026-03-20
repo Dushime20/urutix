@@ -5,8 +5,8 @@ import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
-import { LoanRequest } from '../../entities/LoanRequest';
-import { Lender } from '../../entities/Lender';
+import { LoanRequest } from '../../entities/loan-request.entity';
+import { Lender } from '../../entities/lender.entity';
 
 import { LoadsV2Service } from './loads-v2.service';
 import { LoadsV2Controller } from './loads-v2.controller';

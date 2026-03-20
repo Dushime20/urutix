@@ -8,7 +8,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RewardStatus } from '../../entities/user-reward.entity';
 
 @Controller('rewards')

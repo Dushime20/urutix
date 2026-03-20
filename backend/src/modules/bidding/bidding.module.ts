@@ -12,8 +12,10 @@ import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 import { LoadContract } from '../../entities/load-contract.entity';
 import { BiddingService } from './bidding.service';
+import { BiddingIntelligenceService } from './bidding-intelligence.service';
 import { BiddingController } from './bidding.controller';
 import { NotificationModule } from '../notifications/notification.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
@@ -31,10 +33,11 @@ import { NotificationModule } from '../notifications/notification.module';
       LoadContract,
     ]),
     NotificationModule,
+    AnalyticsModule,
   ],
-  providers: [BiddingService],
+  providers: [BiddingService, BiddingIntelligenceService],
   controllers: [BiddingController],
-  exports: [BiddingService],
+  exports: [BiddingService, BiddingIntelligenceService],
 })
 export class BiddingModule {
   constructor() {

@@ -13,8 +13,8 @@ import {
   TenantTrends,
   TenantActivity,
 } from './tenant-dashboard.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { TenantGuard } from '../auth/tenant.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
 
 @ApiTags('Tenant Dashboard')
@@ -227,6 +227,23 @@ export class TenantDashboardController {
       success: true,
       statusCode: 200,
       message: 'Low credit notifications sent successfully',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get(':tenantId/truck-owner-performance')
+  @ApiOperation({ summary: 'Get performance metrics for truck owners' })
+  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
+  @ApiOkResponse({ description: 'Truck owner performance retrieved successfully' })
+  async getTruckOwnerPerformance(
+    @Param('tenantId') tenantId: string,
+  ): Promise<ApiResponseDto<any[]>> {
+    const performance = await this.tenantDashboardService.getTruckOwnerPerformance(tenantId);
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Truck owner performance retrieved successfully',
+      data: performance,
       timestamp: new Date().toISOString(),
     };
   }

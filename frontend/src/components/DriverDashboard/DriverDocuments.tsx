@@ -11,7 +11,10 @@ import {
     CheckCircle,
     XCircle,
     AlertCircle,
-    Calendar
+    Calendar,
+    ShieldCheck,
+    AlertTriangle,
+    Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { documentApi } from '../../services/documents/documentApi';
@@ -115,8 +118,89 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
         );
     }
 
+    const requiredTypes = ['DRIVER_LICENSE', 'DRIVER_ID', 'DRIVER_INSURANCE'];
+    const completionRate = Math.round((documents.filter(d => requiredTypes.includes(d.documentType)).length / requiredTypes.length) * 100);
+    
+    const expiringDocs = documents.filter(doc => {
+        if (!doc.expiryDate) return false;
+        const daysToExpiry = (new Date(doc.expiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24);
+        return daysToExpiry > 0 && daysToExpiry < 30;
+    });
+
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-10 animate-in fade-in duration-500">
+            {/* Digital Safe Status - Compact & Brand Blue */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-[#345E85] rounded-[2rem] p-6 relative overflow-hidden group border border-white/5 shadow-xl shadow-[#345E85]/20">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-24 -mt-24 transition-transform group-hover:scale-110" />
+                    <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                        <div className="relative">
+                            <svg className="w-20 h-20 transform -rotate-90">
+                                <circle
+                                    cx="40"
+                                    cy="40"
+                                    r="34"
+                                    stroke="currentColor"
+                                    strokeWidth="6"
+                                    fill="transparent"
+                                    className="text-white/10"
+                                />
+                                <circle
+                                    cx="40"
+                                    cy="40"
+                                    r="34"
+                                    stroke="currentColor"
+                                    strokeWidth="6"
+                                    fill="transparent"
+                                    strokeDasharray={213.6}
+                                    strokeDashoffset={213.6 - (213.6 * completionRate) / 100}
+                                    className="text-white transition-all duration-1000"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-base font-black text-white">{completionRate}%</span>
+                            </div>
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                           <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                                <Lock className="text-white/60 w-3 h-3" />
+                                <h3 className="text-[8px] font-black text-white/60 uppercase tracking-[0.3em]">My Digital Safe</h3>
+                           </div>
+                           <h2 className="text-xl font-black text-white uppercase tracking-tight mb-1">Security & Compliance</h2>
+                           <p className="text-blue-100/70 text-[10px] font-medium max-w-sm leading-tight">
+                               Your personal vault for all logistics documents. Keep your safe 100% full.
+                           </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-xl shadow-slate-200/50 flex flex-col">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100 shrink-0">
+                            <AlertTriangle size={16} />
+                        </div>
+                        <h4 className="text-[11px] font-black text-[#0f172a] uppercase tracking-tight">Need Attention</h4>
+                    </div>
+                    <div className="flex-1 space-y-3">
+                        {expiringDocs.length > 0 ? expiringDocs.map(doc => (
+                            <div key={doc.id} className="flex items-center gap-3 p-2 bg-amber-50/50 border border-amber-100 rounded-xl">
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] font-black text-[#0f172a] uppercase truncate">{doc.title}</p>
+                                    <p className="text-[8px] font-bold text-amber-600 uppercase">Expiring Soon</p>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-2">
+                                <ShieldCheck size={24} className="text-emerald-500 mb-1" />
+                                <p className="text-[8px] font-black uppercase tracking-widest leading-none">All Docs Active</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Header Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="relative flex-1 w-full md:max-w-md">

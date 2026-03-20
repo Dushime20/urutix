@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   NotificationChannel,
   NotificationCategory,
-} from '../entities/notification-preference.entity';
+} from '../../../entities/notification.entity';
 
 interface RateLimitRule {
   channel: NotificationChannel;
@@ -36,7 +36,7 @@ export class RateLimitService {
     },
     {
       channel: NotificationChannel.EMAIL,
-      category: NotificationCategory.PAYMENT,
+      category: NotificationCategory.FINANCIAL,
       maxPerHour: 5,
       maxPerDay: 20,
     },
@@ -80,7 +80,7 @@ export class RateLimitService {
     },
     {
       channel: NotificationChannel.SMS,
-      category: NotificationCategory.PAYMENT,
+      category: NotificationCategory.FINANCIAL,
       maxPerHour: 3,
       maxPerDay: 10,
     },
@@ -124,7 +124,7 @@ export class RateLimitService {
     },
     {
       channel: NotificationChannel.PUSH,
-      category: NotificationCategory.PAYMENT,
+      category: NotificationCategory.FINANCIAL,
       maxPerHour: 8,
       maxPerDay: 30,
     },
@@ -168,7 +168,7 @@ export class RateLimitService {
     },
     {
       channel: NotificationChannel.IN_APP,
-      category: NotificationCategory.PAYMENT,
+      category: NotificationCategory.FINANCIAL,
       maxPerHour: 10,
       maxPerDay: 50,
     },

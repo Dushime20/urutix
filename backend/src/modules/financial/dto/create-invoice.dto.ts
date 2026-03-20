@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { InvoiceStatus, InvoiceItemType } from '../entities/invoice.entity';
+import { InvoiceStatus, InvoiceItemType } from './../entities/invoice.entity';
 
 export class CreateInvoiceItemDto {
   @ApiProperty({ description: 'Item description' })

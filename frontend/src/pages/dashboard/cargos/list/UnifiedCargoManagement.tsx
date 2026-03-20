@@ -12,6 +12,7 @@ import {
   Package,
   FileText,
   Users,
+  Filter,
   Eye,
 } from "lucide-react";
 import { CargoLoadConfirmation } from "@/components/LoanRequest";
@@ -124,6 +125,7 @@ const UnifiedCargoManagement = () => {
   const [editingCargo, setEditingCargo] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
@@ -701,57 +703,96 @@ const UnifiedCargoManagement = () => {
               {/* Filters - Only show for list views */}
               {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
                 <div className="mb-4 sm:mb-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-                    <div className="relative flex-1 w-full">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform text-slate-400 w-4 h-4" />
-                      <input
-                        type="text"
-                        placeholder="Search cargo by title, ID or type..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 pl-11 text-sm text-slate-700 transition focus:border-[#345E85] focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                        aria-label="Search cargo"
-                      />
+                    <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center">
+                      <div className="relative flex-1 w-full flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform text-slate-400 w-4 h-4" />
+                          <input
+                            type="text"
+                            placeholder="Search cargo..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 pl-11 text-sm text-slate-700 transition focus:border-[#345E85] focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                            aria-label="Search cargo"
+                          />
+                        </div>
+                        <button
+                          onClick={() => setShowFiltersMobile(!showFiltersMobile)}
+                          className={cn(
+                            "sm:hidden p-3 rounded-2xl border transition-all flex items-center justify-center gap-2 font-bold text-xs min-h-[46px]",
+                            showFiltersMobile 
+                              ? "bg-[#345E85] border-blue-600 text-white shadow-lg shadow-blue-900/10" 
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          )}
+                        >
+                          <Filter className="w-4 h-4" />
+                          <span>FILTERS</span>
+                        </button>
+                      </div>
+
+                      {/* Horizontal Status Chips for Mobile Quick Filter */}
+                      <div className="flex sm:hidden overflow-x-auto pb-1 scrollbar-hide gap-2 -mx-1 px-1">
+                         {['', 'DRAFT', 'PUBLISHED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED'].map((status) => (
+                           <button
+                             key={status}
+                             onClick={() => setStatusFilter(status)}
+                             className={cn(
+                               "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border",
+                               statusFilter === status
+                                 ? "bg-[#345E85] border-[#345E85] text-white shadow-md"
+                                 : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                             )}
+                           >
+                             {status === '' ? 'ALL' : status.replace('_', ' ')}
+                           </button>
+                         ))}
+                      </div>
+
+                      {/* Desktop Filters / Mobile Expanded Filters */}
+                      <div className={cn(
+                        "flex flex-col gap-4 lg:flex-row lg:items-end w-full sm:w-auto",
+                        !showFiltersMobile ? "hidden sm:flex" : "flex"
+                      )}>
+                        <div className="w-full sm:w-auto">
+                          <FilterSelect
+                            label="Status"
+                            icon={<FaLayerGroup className="text-gray-500" />}
+                            value={statusFilter}
+                            placeholder="All Status"
+                            options={[
+                              { value: "DRAFT", label: "Draft" },
+                              { value: "PUBLISHED", label: "Published" },
+                              { value: "ASSIGNED", label: "Assigned" },
+                              { value: "IN_TRANSIT", label: "In Transit" },
+                              { value: "DELIVERED", label: "Delivered" },
+                              { value: "COMPLETED", label: "Completed" },
+                              { value: "CANCELLED", label: "Cancelled" },
+                            ]}
+                            onChange={setStatusFilter}
+                            className="w-full sm:min-w-[180px]"
+                          />
+                        </div>
+                        <div className="w-full sm:w-auto">
+                          <FilterSelect
+                            label="Cargo Type"
+                            icon={<FaBox className="text-gray-500" />}
+                            value={cargoTypeFilter}
+                            placeholder="All Types"
+                            options={[
+                              { value: "GENERAL", label: "General" },
+                              { value: "FRAGILE", label: "Fragile" },
+                              { value: "HAZARDOUS", label: "Hazardous" },
+                              { value: "REFRIGERATED", label: "Refrigerated" },
+                              { value: "LIQUID", label: "Liquid" },
+                              { value: "OVERSIZED", label: "Oversized" },
+                              { value: "VALUABLE", label: "Valuable" },
+                            ]}
+                            onChange={setCargoTypeFilter}
+                            className="w-full sm:min-w-[180px]"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="w-full sm:w-auto">
-                      <FilterSelect
-                        label="Status"
-                        icon={<FaLayerGroup className="text-gray-500" />}
-                        value={statusFilter}
-                        placeholder="All Status"
-                        options={[
-                          { value: "DRAFT", label: "Draft" },
-                          { value: "PUBLISHED", label: "Published" },
-                          { value: "ASSIGNED", label: "Assigned" },
-                          { value: "IN_TRANSIT", label: "In Transit" },
-                          { value: "DELIVERED", label: "Delivered" },
-                          { value: "COMPLETED", label: "Completed" },
-                          { value: "CANCELLED", label: "Cancelled" },
-                        ]}
-                        onChange={setStatusFilter}
-                        className="w-full sm:min-w-[180px]"
-                      />
-                    </div>
-                    <div className="w-full sm:w-auto">
-                      <FilterSelect
-                        label="Cargo Type"
-                        icon={<FaBox className="text-gray-500" />}
-                        value={cargoTypeFilter}
-                        placeholder="All Types"
-                        options={[
-                          { value: "GENERAL", label: "General" },
-                          { value: "FRAGILE", label: "Fragile" },
-                          { value: "HAZARDOUS", label: "Hazardous" },
-                          { value: "REFRIGERATED", label: "Refrigerated" },
-                          { value: "LIQUID", label: "Liquid" },
-                          { value: "OVERSIZED", label: "Oversized" },
-                          { value: "VALUABLE", label: "Valuable" },
-                        ]}
-                        onChange={setCargoTypeFilter}
-                        className="w-full sm:min-w-[180px]"
-                      />
-                    </div>
-                  </div>
 
                   {/* View Mode Toggle - Prime Style */}
                   <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100">

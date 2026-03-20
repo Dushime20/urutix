@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FaSave, FaUser, FaEnvelope, FaLock, FaCheck, FaTimes } from 'react-icons/fa';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { DataCard, Button, Modal, Input, Select, Textarea } from '../../components/EnliteUI';
+import { TranslatedText } from '../../components/translated-text';
 
 const ComponentShowcase: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,70 +22,70 @@ const ComponentShowcase: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Component Showcase"
-      description="Explore all Enlite UI components"
+      title={<TranslatedText text="Component Showcase" />}
+      description={<TranslatedText text="Explore all Enlite UI components" />}
     >
       <div className="space-y-6">
         {/* Buttons Section */}
         <DataCard
-          title="Buttons"
-          subtitle="Various button styles and variants"
+          title={<TranslatedText text="Buttons" />}
+          subtitle={<TranslatedText text="Various button styles and variants" />}
           headerColor="primary"
         >
           <div className="space-y-6">
             {/* Primary Variants */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Color Variants</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="Color Variants" /></h4>
               <div className="flex flex-wrap gap-3">
-                <Button variant="primary">Primary</Button>
-                <Button variant="secondary">Secondary</Button>
-                <Button variant="success">Success</Button>
-                <Button variant="warning">Warning</Button>
-                <Button variant="error">Error</Button>
-                <Button variant="info">Info</Button>
-                <Button variant="outline">Outline</Button>
-                <Button variant="ghost">Ghost</Button>
+                <Button variant="primary"><TranslatedText text="Primary" /></Button>
+                <Button variant="secondary"><TranslatedText text="Secondary" /></Button>
+                <Button variant="success"><TranslatedText text="Success" /></Button>
+                <Button variant="warning"><TranslatedText text="Warning" /></Button>
+                <Button variant="error"><TranslatedText text="Error" /></Button>
+                <Button variant="info"><TranslatedText text="Info" /></Button>
+                <Button variant="outline"><TranslatedText text="Outline" /></Button>
+                <Button variant="ghost"><TranslatedText text="Ghost" /></Button>
               </div>
             </div>
 
             {/* Sizes */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Sizes</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="Sizes" /></h4>
               <div className="flex flex-wrap items-center gap-3">
-                <Button size="sm" variant="primary">Small</Button>
-                <Button size="md" variant="primary">Medium</Button>
-                <Button size="lg" variant="primary">Large</Button>
+                <Button size="sm" variant="primary"><TranslatedText text="Small" /></Button>
+                <Button size="md" variant="primary"><TranslatedText text="Medium" /></Button>
+                <Button size="lg" variant="primary"><TranslatedText text="Large" /></Button>
               </div>
             </div>
 
             {/* With Icons */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">With Icons</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="With Icons" /></h4>
               <div className="flex flex-wrap gap-3">
                 <Button variant="success" icon={<FaSave />}>
-                  Save
+                  <TranslatedText text="Save" />
                 </Button>
                 <Button variant="primary" icon={<FaUser />} iconPosition="right">
-                  Profile
+                  <TranslatedText text="Profile" />
                 </Button>
                 <Button variant="error" icon={<FaTimes />}>
-                  Cancel
+                  <TranslatedText text="Cancel" />
                 </Button>
               </div>
             </div>
 
             {/* States */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">States</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="States" /></h4>
               <div className="flex flex-wrap gap-3">
                 <Button variant="primary" loading>
-                  Loading...
+                  <TranslatedText text="Loading..." />
                 </Button>
                 <Button variant="secondary" disabled>
-                  Disabled
+                  <TranslatedText text="Disabled" />
                 </Button>
                 <Button variant="success" fullWidth>
-                  Full Width
+                  <TranslatedText text="Full Width" />
                 </Button>
               </div>
             </div>
@@ -93,8 +94,8 @@ const ComponentShowcase: React.FC = () => {
 
         {/* Form Components Section */}
         <DataCard
-          title="Form Components"
-          subtitle="Input fields, selects, and textareas"
+          title={<TranslatedText text="Form Components" />}
+          subtitle={<TranslatedText text="Input fields, selects, and textareas" />}
           headerColor="success"
         >
           <div className="space-y-6">

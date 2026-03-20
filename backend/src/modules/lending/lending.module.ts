@@ -13,19 +13,19 @@ import { UrutiLendingIntegrationService } from './services/uruti-lending-integra
 import { UrutiLendingWebhookController } from './controllers/uruti-lending-webhook.controller';
 import { UrutiLendingAdminController } from './controllers/uruti-lending-admin.controller';
 import { LendingExceptionFilter } from './filters/lending-exception.filter';
-import { Lender } from '../../entities/Lender';
-import { LenderPolicy } from '../../entities/LenderPolicy';
-import { LoanRequest } from '../../entities/LoanRequest';
-import { LoanDisbursement } from '../../entities/LoanDisbursement';
-import { LoanRepayment } from '../../entities/LoanRepayment';
-import { Borrower } from '../../entities/Borrower';
+import { Lender } from '../../entities/lender.entity';
+import { LenderPolicy } from '../../entities/lender-policy.entity';
+import { LoanRequest } from '../../entities/loan-request.entity';
+import { LoanDisbursement } from '../../entities/loan-disbursement.entity';
+import { LoanRepayment } from '../../entities/loan-repayment.entity';
+import { Borrower } from '../../entities/borrower.entity';
 import { Load } from '../../entities/load.entity';
 import { Trip } from '../../entities/trip.entity';
 import {
   LenderUser,
   LenderRole,
   LenderPermission,
-} from '../../entities/LenderTeam';
+} from '../../entities/lender-team.entity';
 import { User } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';

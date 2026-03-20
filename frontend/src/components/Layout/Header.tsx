@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Bell, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import LanguageSwitcher from '../LanguageSwitcher';
 import { TranslatedText } from '../translated-text';
 
 interface HeaderProps {
@@ -31,7 +31,7 @@ const Header = ({ onLogout }: HeaderProps) => {
         {/* Right side */}
         <div className="flex items-center space-x-4">
           {/* Language Switcher */}
-          <LanguageSwitcher variant="default" />
+          <LanguageSwitcher />
           
           {/* Notifications */}
           <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">

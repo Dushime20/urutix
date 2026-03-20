@@ -6,30 +6,20 @@ import {
   Camera,
   FileText,
   Package,
-  Truck,
-  MapPin,
-  Clock,
-  User,
   AlertCircle,
   Info,
-  Shield,
-  Thermometer,
-  Weight,
-  Ruler,
-  Palette,
   Eye,
-  Edit3,
   Save,
   Upload,
   ArrowRight,
-  ArrowLeft,
-  X
+  X,
+  ShieldCheck
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
-import api from '../../services/api';
 import { documentApi } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TranslatedText } from '../translated-text';
 
 interface CargoItem {
   id: string;
@@ -93,7 +83,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 }) => {
   const [cargo, setCargo] = useState<CargoItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const [inspectionStep, setInspectionStep] = useState<'overview' | 'physical' | 'documentation' | 'final'>('overview');
+  const [inspectionStep, setInspectionStep] = useState<'overview' | 'physical' | 'documentation' | 'securement' | 'final'>('overview');
   const [inspectionResult, setInspectionResult] = useState<Partial<InspectionResult>>({
     cargoId,
     status: 'PASSED',
@@ -111,8 +101,12 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     seals: null,
     labels: null,
     contents: null,
-    temperature: null,
     security: null,
+    straps: null,
+    weightDist: null,
+    blocking: null,
+    currentTemp: null,
+    currentHumidity: null
   });
 
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; file?: File; id: string }>>([]);
@@ -183,14 +177,6 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     }));
   };
 
-  const updateIssue = (issueId: string, updates: Partial<InspectionIssue>) => {
-    setInspectionResult(prev => ({
-      ...prev,
-      issues: prev.issues?.map(issue =>
-        issue.id === issueId ? { ...issue, ...updates } : issue
-      ) || []
-    }));
-  };
 
   const handleChecklistItem = (itemId: string, status: 'passed' | 'failed') => {
     setChecklistStatus(prev => ({
@@ -204,7 +190,8 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         severity: 'MEDIUM',
         description: `Issue found with ${itemId.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
         location: 'General',
-        actionRequired: 'Document and report issue'
+        actionRequired: 'Document and report issue',
+        resolved: false
       });
     }
   };
@@ -325,9 +312,10 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
   const steps = [
     { id: 'overview', label: 'Overview', icon: Eye },
-    { id: 'physical', label: 'Physical Check', icon: Package },
+    { id: 'physical', label: 'Condition', icon: Package },
     { id: 'documentation', label: 'Documents', icon: FileText },
-    { id: 'final', label: 'Final Review', icon: CheckCircle }
+    { id: 'securement', label: 'Securement', icon: ShieldCheck },
+    { id: 'final', label: 'Review', icon: CheckCircle }
   ];
 
   return (
@@ -347,26 +335,33 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
       </div>
 
       {/* Modern Stepper */}
-      <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
-        <div className="flex items-center justify-between relative px-4 md:px-12">
+      <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm overflow-x-auto custom-scrollbar">
+        <div className="flex items-center justify-between min-w-[500px] relative px-4 md:px-12">
           {/* Line Background */}
           <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-100 -z-10" />
 
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = inspectionStep === step.id;
-            const isCompleted = ['overview', 'physical', 'documentation', 'final'].indexOf(inspectionStep) > index;
+            const isCompleted = steps.findIndex(s => s.id === inspectionStep) > index;
 
             return (
               <div key={step.id} className="flex flex-col items-center gap-2 bg-white px-2">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive ? 'border-[#345E85] bg-[#345E85] text-white scale-110 shadow-lg shadow-blue-900/20' :
+                <button 
+                  onClick={() => {
+                    const stepIdx = steps.findIndex(s => s.id === step.id);
+                    const currentIdx = steps.findIndex(s => s.id === inspectionStep);
+                    if (stepIdx < currentIdx) setInspectionStep(step.id as any);
+                  }}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive ? 'border-[#345E85] bg-[#345E85] text-white scale-110 shadow-lg shadow-blue-900/20' :
                     isCompleted ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-200 bg-slate-50 text-slate-300'
-                  }`}>
+                  }`}
+                >
                   {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                </div>
+                </button>
                 <span className={`text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-[#345E85]' : isCompleted ? 'text-emerald-600' : 'text-slate-300'
                   }`}>
-                  {step.label}
+                  <TranslatedText text={step.label} />
                 </span>
               </div>
             );
@@ -445,7 +440,9 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                   { id: 'labels', label: 'Labels & Markings', description: 'Legible and correct placement' },
                   { id: 'contents', label: 'Content Verification', description: 'Matches manifest quantity' },
                   { id: 'temperature', label: 'Temp Control', description: 'Within required range' },
-                  { id: 'security', label: 'Security Features', description: 'Locks and safety checks' }
+                  { id: 'security', label: 'Security Features', description: 'Locks and safety checks' },
+                  { id: 'currentTemp', label: 'Actual Temperature', description: 'Real-time cargo temp reading' },
+                  { id: 'currentHumidity', label: 'Actual Humidity', description: 'Storage area humidity level' }
                 ].map((item) => {
                   const status = checklistStatus[item.id];
                   return (
@@ -576,13 +573,80 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                   onClick={() => setInspectionStep('physical')}
                   className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
                 >
-                  Back
+                  <TranslatedText text="Back" />
+                </button>
+                <button
+                  onClick={() => setInspectionStep('securement')}
+                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                >
+                  <TranslatedText text="Securement Check" /> <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* SECUREMENT STEP */}
+          {inspectionStep === 'securement' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-slate-400" />
+                  <TranslatedText text="Loading & Securement Check" />
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { id: 'straps', label: 'Ratchet Straps & Chains', description: 'Tensioned and double-locked' },
+                    { id: 'weightDist', label: 'Load Distribution', description: 'Weight centered over axles' },
+                    { id: 'blocking', label: 'Blocking & Bracing', description: 'No lateral movement possible' },
+                    { id: 'tarping', label: 'Tarping & Protection', description: 'Weatherproofed and secured' }
+                  ].map((item) => {
+                    const status = checklistStatus[item.id];
+                    return (
+                      <div key={item.id} className={`p-4 rounded-xl border-2 transition-all ${status === 'passed' ? 'bg-emerald-50 border-emerald-100' :
+                          status === 'failed' ? 'bg-red-50 border-red-100' :
+                            'bg-white border-slate-100'
+                        }`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-slate-700 text-sm">
+                            <TranslatedText text={item.label} />
+                          </h4>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleChecklistItem(item.id, 'passed')}
+                              className={`p-1.5 rounded-lg transition-colors ${status === 'passed' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleChecklistItem(item.id, 'failed')}
+                              className={`p-1.5 rounded-lg transition-colors ${status === 'failed' ? 'bg-red-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight italic">
+                           <TranslatedText text={item.description} />
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={() => setInspectionStep('documentation')}
+                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
+                >
+                  <TranslatedText text="Back" />
                 </button>
                 <button
                   onClick={() => setInspectionStep('final')}
                   className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
                 >
-                  Review & Sign <ArrowRight className="w-4 h-4" />
+                  <TranslatedText text="Review & Sign" /> <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

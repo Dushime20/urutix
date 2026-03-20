@@ -21,9 +21,10 @@ export const useBrokerNotifications = () => {
   useEffect(() => {
     if (!user || user.role !== 'BROKER') return;
 
-    // Connect to WebSocket server
-    const token = localStorage.getItem('token');
-    const newSocket = io(import.meta.env.VITE_WS_URL || 'ws://localhost:3001', {
+    // Connect to WebSocket server using events namespace
+    const token = localStorage.getItem('accessToken'); // Use accessToken instead of token
+    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3001';
+    const newSocket = io(`${wsUrl}/events`, { // Use /events namespace
       auth: { token },
       transports: ['websocket', 'polling'],
     });

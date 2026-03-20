@@ -10,11 +10,11 @@ import {
   Param,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../guards/permission.guard';
 import { RequirePermissions } from '../../auth/decorators/require-permissions.decorator';
-import { AIInsightsService } from '../services/ai-insights.service';
-import { PredictiveAnalyticsService } from '../services/predictive-analytics.service';
+import { AIInsightsService } from './../services/ai-insights.service';
+import { PredictiveAnalyticsService } from './../services/predictive-analytics.service';
 
 @ApiTags('AI Insights & Predictive Analytics')
 @ApiBearerAuth()
@@ -27,7 +27,7 @@ export class AIInsightsController {
   ) {}
 
   @Get('insights/comprehensive')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get comprehensive AI insights and recommendations' })
   @ApiResponse({ status: 200, description: 'AI insights retrieved successfully' })
   async getComprehensiveInsights(@Request() req) {
@@ -36,7 +36,7 @@ export class AIInsightsController {
   }
 
   @Get('predictions/costs')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get cost predictions using AI models' })
   @ApiResponse({ status: 200, description: 'Cost predictions retrieved successfully' })
   async getCostPredictions(
@@ -54,7 +54,7 @@ export class AIInsightsController {
   }
 
   @Get('predictions/carrier/:carrierId')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get carrier performance predictions' })
   @ApiResponse({ status: 200, description: 'Carrier predictions retrieved successfully' })
   async getCarrierPredictions(
@@ -66,7 +66,7 @@ export class AIInsightsController {
   }
 
   @Get('predictions/demand')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get demand forecasting predictions' })
   @ApiResponse({ status: 200, description: 'Demand predictions retrieved successfully' })
   async getDemandPredictions(
@@ -78,7 +78,7 @@ export class AIInsightsController {
   }
 
   @Get('recommendations/routes')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get AI-powered route optimization recommendations' })
   @ApiResponse({ status: 200, description: 'Route recommendations retrieved successfully' })
   async getRouteRecommendations(@Request() req) {
@@ -87,7 +87,7 @@ export class AIInsightsController {
   }
 
   @Get('alerts/risks')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get AI-detected risk alerts and anomalies' })
   @ApiResponse({ status: 200, description: 'Risk alerts retrieved successfully' })
   async getRiskAlerts(@Request() req) {
@@ -96,7 +96,7 @@ export class AIInsightsController {
   }
 
   @Get('forecasting/costs')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get advanced cost forecasting using time series analysis' })
   @ApiResponse({ status: 200, description: 'Cost forecasting retrieved successfully' })
   async getCostForecasting(
@@ -114,7 +114,7 @@ export class AIInsightsController {
   }
 
   @Get('forecasting/carrier/:carrierId')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get carrier performance forecasting' })
   @ApiResponse({ status: 200, description: 'Carrier forecasting retrieved successfully' })
   async getCarrierForecasting(
@@ -132,7 +132,7 @@ export class AIInsightsController {
   }
 
   @Get('forecasting/seasonal')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get seasonal demand pattern predictions' })
   @ApiResponse({ status: 200, description: 'Seasonal forecasting retrieved successfully' })
   async getSeasonalForecasting(
@@ -144,7 +144,7 @@ export class AIInsightsController {
   }
 
   @Get('forecasting/route/:routeHash/efficiency')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get route efficiency predictions' })
   @ApiResponse({ status: 200, description: 'Route efficiency forecasting retrieved successfully' })
   async getRouteEfficiencyForecasting(
@@ -156,7 +156,7 @@ export class AIInsightsController {
   }
 
   @Post('insights/generate')
-  @RequirePermissions('analytics:insights')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Generate new AI insights (consumes credits)' })
   @ApiResponse({ status: 201, description: 'AI insights generated successfully' })
@@ -171,7 +171,7 @@ export class AIInsightsController {
   }
 
   @Get('dashboard/summary')
-  @RequirePermissions('analytics:view')
+  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get AI insights dashboard summary' })
   @ApiResponse({ status: 200, description: 'Dashboard summary retrieved successfully' })
   async getAIDashboardSummary(@Request() req) {

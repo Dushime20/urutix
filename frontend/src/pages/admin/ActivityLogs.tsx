@@ -13,6 +13,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useSocket } from '../../contexts/SocketContext';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../../components/translated-text';
 
 interface ActivityLog {
     id: string;
@@ -194,34 +195,34 @@ const ActivityLogs: React.FC = () => {
 
     return (
         <AdminPageLayout
-            title="Activity Logs & Sessions"
-            description="Monitor user activities, track sessions, and detect suspicious behavior across the platform"
+            title={<TranslatedText text="Activity Logs & Sessions" />}
+            description={<TranslatedText text="Monitor user activities, track sessions, and detect suspicious behavior across the platform" />}
             actions={
                 <div className="flex items-center gap-3">
                     {socketConnected && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-xs font-medium text-green-700">Live</span>
+                            <span className="text-xs font-medium text-green-700"><TranslatedText text="Live" /></span>
                         </div>
                     )}
                     <button
                         onClick={() => setShowFilters(!showFilters)}
                         className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-all"
                     >
-                        <FaFilter size={14} /> {showFilters ? 'Hide' : 'Show'} Filters
+                        <FaFilter size={14} /> <TranslatedText text={showFilters ? 'Hide' : 'Show'} /> <TranslatedText text="Filters" />
                     </button>
                     <button
                         onClick={() => activeTab === 'logs' ? refetchLogs() : refetchSessions()}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition-all"
                     >
-                        <FaSync size={14} /> Refresh
+                        <FaSync size={14} /> <TranslatedText text="Refresh" />
                     </button>
                     {activeTab === 'logs' && (
                         <button
                             onClick={handleExport}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-md transition-all"
                         >
-                            <FaDownload size={14} /> Export
+                            <FaDownload size={14} /> <TranslatedText text="Export" />
                         </button>
                     )}
                 </div>
@@ -237,8 +238,8 @@ const ActivityLogs: React.FC = () => {
                         </div>
                         <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{logsData?.total || 0}</span>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Activities</p>
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Last 24 hours</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Total Activities" /></p>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity"><TranslatedText text="Last 24 hours" /></p>
                 </div>
 
                 <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-emerald-100 transition-all group">
@@ -248,8 +249,8 @@ const ActivityLogs: React.FC = () => {
                         </div>
                         <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{sessionsData?.length || 0}</span>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Sessions</p>
-                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Currently online</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Sessions" /></p>
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity"><TranslatedText text="Currently online" /></p>
                 </div>
 
                 <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-rose-100 transition-all group">
@@ -259,8 +260,8 @@ const ActivityLogs: React.FC = () => {
                         </div>
                         <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{suspiciousData?.length || 0}</span>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Anomalies Detected</p>
-                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Requires Attention</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Anomalies Detected" /></p>
+                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity"><TranslatedText text="Requires Attention" /></p>
                 </div>
 
                 <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group">
@@ -270,8 +271,8 @@ const ActivityLogs: React.FC = () => {
                         </div>
                         <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analyticsData?.uniqueUsers || 0}</span>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Operatives</p>
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Last 24 hours</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Operatives" /></p>
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity"><TranslatedText text="Last 24 hours" /></p>
                 </div>
             </div>
 
@@ -282,9 +283,9 @@ const ActivityLogs: React.FC = () => {
                         <FaExclamationTriangle className="text-rose-500 text-xl" />
                     </div>
                     <div>
-                        <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Security Protocol Alert</h3>
+                        <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1"><TranslatedText text="Security Protocol Alert" /></h3>
                         <p className="text-sm font-black text-gray-900 tracking-tight uppercase">
-                            {suspiciousData.length} suspicious activities require immediate validation
+                            <TranslatedText text={`${suspiciousData.length} suspicious activities require immediate validation`} />
                         </p>
                     </div>
                 </div>
@@ -304,7 +305,7 @@ const ActivityLogs: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <FileText size={14} className={activeTab === 'logs' ? 'text-indigo-600' : 'text-slate-400'} />
                                 <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'logs' ? 'text-gray-900' : 'text-slate-400 group-hover:text-gray-600'}`}>
-                                    Operation Logs
+                                    <TranslatedText text="Operation Logs" />
                                 </span>
                                 {logsData?.total && (
                                     <span className="ml-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black tracking-tighter">
@@ -323,7 +324,7 @@ const ActivityLogs: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <FaDesktop size={14} className={activeTab === 'sessions' ? 'text-indigo-600' : 'text-slate-400'} />
                                 <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'sessions' ? 'text-gray-900' : 'text-slate-400 group-hover:text-gray-600'}`}>
-                                    Active Matrix
+                                    <TranslatedText text="Active Matrix" />
                                 </span>
                                 {sessionsData?.length > 0 && (
                                     <span className="ml-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black tracking-tighter">
@@ -342,7 +343,7 @@ const ActivityLogs: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <FaChartLine size={14} className={activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400'} />
                                 <span className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'analytics' ? 'text-gray-900' : 'text-slate-400 group-hover:text-gray-600'}`}>
-                                    Pattern Analysis
+                                    <TranslatedText text="Pattern Analysis" />
                                 </span>
                             </div>
                         </button>
@@ -376,13 +377,13 @@ const ActivityLogs: React.FC = () => {
                                         onChange={(e) => setFilters({ ...filters, action: e.target.value, page: 1 })}
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
                                     >
-                                        <option value="">All Actions</option>
-                                        <option value="LOGIN">Login</option>
-                                        <option value="LOGOUT">Logout</option>
-                                        <option value="CREATE">Create</option>
-                                        <option value="UPDATE">Update</option>
-                                        <option value="DELETE">Delete</option>
-                                        <option value="VIEW">View</option>
+                                        <option value=""><TranslatedText text="All Actions" /></option>
+                                        <option value="LOGIN"><TranslatedText text="Login" /></option>
+                                        <option value="LOGOUT"><TranslatedText text="Logout" /></option>
+                                        <option value="CREATE"><TranslatedText text="Create" /></option>
+                                        <option value="UPDATE"><TranslatedText text="Update" /></option>
+                                        <option value="DELETE"><TranslatedText text="Delete" /></option>
+                                        <option value="VIEW"><TranslatedText text="View" /></option>
                                     </select>
 
                                     <select
@@ -390,13 +391,13 @@ const ActivityLogs: React.FC = () => {
                                         onChange={(e) => setFilters({ ...filters, resource: e.target.value, page: 1 })}
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
                                     >
-                                        <option value="">All Resources</option>
-                                        <option value="users">Users</option>
-                                        <option value="loads">Loads</option>
-                                        <option value="trucks">Trucks</option>
-                                        <option value="payments">Payments</option>
-                                        <option value="permissions">Permissions</option>
-                                        <option value="roles">Roles</option>
+                                        <option value=""><TranslatedText text="All Resources" /></option>
+                                        <option value="users"><TranslatedText text="Users" /></option>
+                                        <option value="loads"><TranslatedText text="Loads" /></option>
+                                        <option value="trucks"><TranslatedText text="Trucks" /></option>
+                                        <option value="payments"><TranslatedText text="Payments" /></option>
+                                        <option value="permissions"><TranslatedText text="Permissions" /></option>
+                                        <option value="roles"><TranslatedText text="Roles" /></option>
                                     </select>
 
                                     <select
@@ -404,9 +405,9 @@ const ActivityLogs: React.FC = () => {
                                         onChange={(e) => setFilters({ ...filters, isSuspicious: e.target.value, page: 1 })}
                                         className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
                                     >
-                                        <option value="">All Activities</option>
-                                        <option value="true">Suspicious Only</option>
-                                        <option value="false">Normal Only</option>
+                                        <option value=""><TranslatedText text="All Activities" /></option>
+                                        <option value="true"><TranslatedText text="Suspicious Only" /></option>
+                                        <option value="false"><TranslatedText text="Normal Only" /></option>
                                     </select>
 
                                     <input
@@ -428,12 +429,12 @@ const ActivityLogs: React.FC = () => {
 
                                 {/* Quick Filters */}
                                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                    <span className="text-xs font-medium text-slate-600">Quick Filters:</span>
+                                    <span className="text-xs font-medium text-slate-600"><TranslatedText text="Quick Filters:" /></span>
                                     <button
                                         onClick={() => setFilters({ ...filters, startDate: new Date().toISOString().split('T')[0], endDate: '', page: 1 })}
                                         className="px-3 py-1 text-xs bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
                                     >
-                                        Today
+                                        <TranslatedText text="Today" />
                                     </button>
                                     <button
                                         onClick={() => {
@@ -443,13 +444,13 @@ const ActivityLogs: React.FC = () => {
                                         }}
                                         className="px-3 py-1 text-xs bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
                                     >
-                                        Last 7 Days
+                                        <TranslatedText text="Last 7 Days" />
                                     </button>
                                     <button
                                         onClick={() => setFilters({ ...filters, isSuspicious: 'true', page: 1 })}
                                         className="px-3 py-1 text-xs bg-red-50 border border-red-200 text-red-700 rounded-md hover:bg-red-100 transition-colors"
                                     >
-                                        Suspicious Only
+                                        <TranslatedText text="Suspicious Only" />
                                     </button>
 
                                     {/* Tenant Filter Badge */}
@@ -457,7 +458,7 @@ const ActivityLogs: React.FC = () => {
                                         <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md">
                                             <FaBuilding className="text-indigo-600 text-xs" />
                                             <span className="text-xs font-medium text-indigo-700">
-                                                Tenant: {tenantFilter.name}
+                                                <TranslatedText text="Tenant:" /> {tenantFilter.name}
                                             </span>
                                             <button
                                                 onClick={() => setTenantFilter(null)}
@@ -475,7 +476,7 @@ const ActivityLogs: React.FC = () => {
                                         }}
                                         className="px-3 py-1 text-xs bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 transition-colors ml-auto"
                                     >
-                                        Clear All
+                                        <TranslatedText text="Clear All" />
                                     </button>
                                 </div>
                             </div>
@@ -484,13 +485,13 @@ const ActivityLogs: React.FC = () => {
                         {logsLoading ? (
                             <div className="text-center py-12">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                                <p className="mt-4 text-slate-600">Loading activities...</p>
+                                <p className="mt-4 text-slate-600"><TranslatedText text="Loading activities..." /></p>
                             </div>
                         ) : logsData?.activities?.length === 0 ? (
                             <div className="text-center py-16">
                                 <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                                <h3 className="text-lg font-bold text-slate-700 mb-2">No Activities Found</h3>
-                                <p className="text-slate-500">Try adjusting your filters or check back later.</p>
+                                <h3 className="text-lg font-bold text-slate-700 mb-2"><TranslatedText text="No Activities Found" /></h3>
+                                <p className="text-slate-500"><TranslatedText text="Try adjusting your filters or check back later." /></p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -579,7 +580,7 @@ const ActivityLogs: React.FC = () => {
                                 {logsData && logsData.totalPages > 1 && (
                                     <div className="flex items-center justify-between pt-4">
                                         <p className="text-sm text-slate-600">
-                                            Page {logsData.page} of {logsData.totalPages} ({logsData.total} total)
+                                            <TranslatedText text="Page" /> {logsData.page} <TranslatedText text="of" /> {logsData.totalPages} ({logsData.total} <TranslatedText text="total" />)
                                         </p>
                                         <div className="flex gap-2">
                                             <button
@@ -587,14 +588,14 @@ const ActivityLogs: React.FC = () => {
                                                 disabled={filters.page === 1}
                                                 className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                Previous
+                                                <TranslatedText text="Previous" />
                                             </button>
                                             <button
                                                 onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
                                                 disabled={filters.page === logsData.totalPages}
                                                 className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                Next
+                                                <TranslatedText text="Next" />
                                             </button>
                                         </div>
                                     </div>
@@ -610,13 +611,13 @@ const ActivityLogs: React.FC = () => {
                         {sessionsLoading ? (
                             <div className="text-center py-12">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                                <p className="mt-4 text-slate-600">Loading sessions...</p>
+                                <p className="mt-4 text-slate-600"><TranslatedText text="Loading sessions..." /></p>
                             </div>
                         ) : sessionsData?.length === 0 ? (
                             <div className="text-center py-16">
                                 <FaDesktop className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                                <h3 className="text-lg font-bold text-slate-700 mb-2">No Active Sessions</h3>
-                                <p className="text-slate-500">There are currently no active user sessions.</p>
+                                <h3 className="text-lg font-bold text-slate-700 mb-2"><TranslatedText text="No Active Sessions" /></h3>
+                                <p className="text-slate-500"><TranslatedText text="There are currently no active user sessions." /></p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -650,19 +651,19 @@ const ActivityLogs: React.FC = () => {
                                         </div>
                                         <div className="grid grid-cols-2 gap-3 text-sm">
                                             <div>
-                                                <p className="text-slate-500 text-xs mb-1">IP Address</p>
+                                                <p className="text-slate-500 text-xs mb-1"><TranslatedText text="IP Address" /></p>
                                                 <p className="font-medium text-slate-700">{session.ipAddress}</p>
                                             </div>
                                             <div>
-                                                <p className="text-slate-500 text-xs mb-1">Location</p>
+                                                <p className="text-slate-500 text-xs mb-1"><TranslatedText text="Location" /></p>
                                                 <p className="font-medium text-slate-700">{session.location?.city || 'Unknown'}, {session.location?.country || 'N/A'}</p>
                                             </div>
                                             <div>
-                                                <p className="text-slate-500 text-xs mb-1">Last Activity</p>
+                                                <p className="text-slate-500 text-xs mb-1"><TranslatedText text="Last Activity" /></p>
                                                 <p className="font-medium text-slate-700">{new Date(session.lastActivity).toLocaleString()}</p>
                                             </div>
                                             <div>
-                                                <p className="text-slate-500 text-xs mb-1">Session Started</p>
+                                                <p className="text-slate-500 text-xs mb-1"><TranslatedText text="Session Started" /></p>
                                                 <p className="font-medium text-slate-700">{new Date(session.createdAt).toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -679,29 +680,29 @@ const ActivityLogs: React.FC = () => {
                         {analyticsLoading ? (
                             <div className="text-center py-12">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                                <p className="mt-4 text-slate-600">Loading analytics...</p>
+                                <p className="mt-4 text-slate-600"><TranslatedText text="Loading analytics..." /></p>
                             </div>
                         ) : (
                             <div className="space-y-6">
                                 {/* Coming Soon Message */}
                                 <div className="text-center py-16 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
                                     <TrendingUp className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
-                                    <h3 className="text-xl font-bold text-slate-800 mb-2">Analytics Dashboard Coming Soon</h3>
+                                    <h3 className="text-xl font-bold text-slate-800 mb-2"><TranslatedText text="Analytics Dashboard Coming Soon" /></h3>
                                     <p className="text-slate-600 max-w-md mx-auto">
-                                        We're building comprehensive analytics to help you understand activity patterns, user behavior, and security trends.
+                                        <TranslatedText text="We're building comprehensive analytics to help you understand activity patterns, user behavior, and security trends." />
                                     </p>
                                     <div className="mt-6 flex items-center justify-center gap-4 text-sm text-slate-600">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            <span>Activity Trends</span>
+                                            <span><TranslatedText text="Activity Trends" /></span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            <span>User Insights</span>
+                                            <span><TranslatedText text="User Insights" /></span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                            <span>Security Reports</span>
+                                            <span><TranslatedText text="Security Reports" /></span>
                                         </div>
                                     </div>
                                 </div>
@@ -717,8 +718,8 @@ const ActivityLogs: React.FC = () => {
                     <div className="bg-white rounded-[32px] max-w-2xl w-full overflow-hidden shadow-2xl animate-enter" onClick={(e) => e.stopPropagation()}>
                         <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-50 p-8 flex items-center justify-between z-10">
                             <div>
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Analysis Protocol</h3>
-                                <p className="text-xl font-black text-gray-900 tracking-tight uppercase">Activity Matrix Details</p>
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Analysis Protocol" /></h3>
+                                <p className="text-xl font-black text-gray-900 tracking-tight uppercase"><TranslatedText text="Activity Matrix Details" /></p>
                             </div>
                             <button
                                 onClick={() => setSelectedLog(null)}
@@ -730,7 +731,7 @@ const ActivityLogs: React.FC = () => {
                         <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
                             <div className="grid grid-cols-2 gap-8">
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Operation Type</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Operation Type" /></p>
                                     <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${selectedLog.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border-rose-100' :
                                         selectedLog.action.includes('CREATE') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                             selectedLog.action.includes('UPDATE') ? 'bg-blue-50 text-blue-600 border-blue-100' :
@@ -740,23 +741,23 @@ const ActivityLogs: React.FC = () => {
                                     </span>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Subject Resource</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Subject Resource" /></p>
                                     <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedLog.resource || 'SYSTEM CORE'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Matrix Operative</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Matrix Operative" /></p>
                                     <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedLog.user?.email || 'SYSTEM AUTOMATION'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Source Protocol (IP)</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Source Protocol (IP)" /></p>
                                     <p className="text-sm font-black text-gray-900 tracking-tight uppercase font-mono">{selectedLog.ipAddress}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Temporal Marker</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Temporal Marker" /></p>
                                     <p className="text-sm font-black text-gray-900 tracking-tight uppercase">{new Date(selectedLog.createdAt).toLocaleString()}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Security Status</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Security Status" /></p>
                                     {selectedLog.isSuspicious ? (
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-600 text-white rounded-full text-[9px] font-black uppercase tracking-widest">
                                             <FaExclamationTriangle size={10} /> SECURITY ALERT
@@ -771,7 +772,7 @@ const ActivityLogs: React.FC = () => {
 
                             {selectedLog.userAgent && (
                                 <div className="p-6 bg-[#fafafa] rounded-[24px] border border-gray-100">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Client Interface (User Agent)</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><TranslatedText text="Client Interface (User Agent)" /></p>
                                     <p className="text-xs font-medium text-gray-600 leading-relaxed font-mono break-all italic">
                                         {selectedLog.userAgent}
                                     </p>
@@ -780,7 +781,7 @@ const ActivityLogs: React.FC = () => {
 
                             {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
                                 <div className="p-6 bg-gray-900 rounded-[24px] border border-gray-800">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Extended Payload</p>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3"><TranslatedText text="Extended Payload" /></p>
                                     <pre className="text-[11px] text-emerald-400 font-mono overflow-x-auto custom-scrollbar">
                                         {JSON.stringify(selectedLog.details, null, 2)}
                                     </pre>

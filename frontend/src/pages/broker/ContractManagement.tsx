@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadContract, type CreateContractData } from '../../services/brokerApi';
-import { FileText, Plus, Search, CheckCircle2, X, Loader2, Eye, Download } from 'lucide-react';
+import { Plus, Search, CheckCircle2, X, Eye, Download, Shield, TrendingUp, Lock, FileCheck, DollarSign, Activity, AlertCircle, Clock, Loader2, FileText, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type BrokerContractData } from '../../templates/brokerContract';
+
 import jsPDF from 'jspdf';
 
 const ContractManagement: React.FC = () => {
@@ -21,30 +21,18 @@ const ContractManagement: React.FC = () => {
     if (user && user.role === 'BROKER') {
       fetchContracts();
     }
-  }, [user, filters]);
+  }, [user, filters.status]);
 
   const fetchContracts = async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
-      console.log('Fetching contracts for broker:', user.id, 'with filters:', filters);
       const response = await brokerAPI.getContracts({
         status: filters.status || undefined,
       });
-      console.log('Contracts API response:', response);
-
       const contractsData = response.data || response || [];
-      const contractsArray = Array.isArray(contractsData) ? contractsData : [];
-
-      console.log(`Found ${contractsArray.length} contracts`);
-      setContracts(contractsArray);
-
-      if (contractsArray.length === 0) {
-        console.log('No contracts found. This might be expected if no contracts have been assigned yet.');
-      }
+      setContracts(Array.isArray(contractsData) ? contractsData : []);
     } catch (err: any) {
-      console.error('API Error:', err.response?.status, err.response?.data?.message);
-      console.error('Full error:', err);
       toast.error(err.response?.data?.message || 'Failed to fetch contracts');
       setContracts([]);
     } finally {
@@ -80,466 +68,275 @@ const ContractManagement: React.FC = () => {
       });
       toast.success('Contract signed successfully');
       fetchContracts();
+      setSelectedContract(null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to sign contract');
     }
   };
 
-  const handleGenerateContract = (contract: LoadContract) => {
-    // Extract broker details from current user
-    const brokerName = user?.firstName && user?.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user?.email || 'Broker';
-    const brokerEmail = user?.email || 'N/A';
-
-    const contractData: BrokerContractData = {
-      cargoOwner: {
-        name: 'Cargo Owner',
-        company: 'N/A',
-        address: 'N/A',
-        phone: 'N/A',
-        email: 'N/A'
-      },
-      broker: {
-        name: brokerName,
-        company: 'N/A',
-        address: 'N/A',
-        phone: 'N/A',
-        email: brokerEmail
-      },
-      load: {
-        id: contract.loadId,
-        title: `Load ${contract.loadId.slice(0, 8)}`,
-        description: 'Transportation service',
-        transportationFee: contract.agreedRate,
-        currency: contract.currencyCode,
-        weight: 0,
-        cargoType: 'GENERAL',
-        pickupLocation: 'N/A',
-        deliveryLocation: 'N/A',
-        pickupDate: contract.pickupDate
-          ? new Date(contract.pickupDate).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
-        deliveryDate: contract.deliveryDate
-          ? new Date(contract.deliveryDate).toISOString().split('T')[0]
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      commission: {
-        rate: contract.commissionRate,
-        amount: contract.commissionAmount,
-        paymentTerms: contract.paymentTerms || 'Net 30 days',
-        paymentMethod: 'Bank Transfer'
-      },
-      contract: {
-        id: contract.id,
-        date: contract.createdAt
-          ? new Date(contract.createdAt).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
-        effectiveDate: contract.pickupDate
-          ? new Date(contract.pickupDate).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
-        jurisdiction: 'Kenya'
-      }
-    };
-
-    // Generate PDF
+  const generatePDF = (contract: LoadContract) => {
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 20;
-    let yPosition = 30;
+    let y = 30;
 
-    // Header
-    pdf.setFontSize(20);
+    pdf.setFontSize(22);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('BROKER SERVICE AGREEMENT', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 20;
-
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Contract ID: ${contractData.contract.id}`, margin, yPosition);
-    pdf.text(`Date: ${contractData.contract.date}`, pageWidth - margin - 60, yPosition);
-    yPosition += 20;
-
-    // Parties Section
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('PARTIES:', margin, yPosition);
-    yPosition += 15;
-
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('1. CARGO OWNER ("Principal"):', margin, yPosition);
-    yPosition += 8;
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Name: ${contractData.cargoOwner.name}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Company: ${contractData.cargoOwner.company}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Address: ${contractData.cargoOwner.address}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Phone: ${contractData.cargoOwner.phone}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Email: ${contractData.cargoOwner.email}`, margin + 5, yPosition);
-    yPosition += 15;
-
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('2. BROKER ("Agent"):', margin, yPosition);
-    yPosition += 8;
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Name: ${contractData.broker.name}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Company: ${contractData.broker.company}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Address: ${contractData.broker.address}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Phone: ${contractData.broker.phone}`, margin + 5, yPosition);
-    yPosition += 6;
-    pdf.text(`Email: ${contractData.broker.email}`, margin + 5, yPosition);
-    yPosition += 20;
-
-    // Load Details
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('LOAD DETAILS:', margin, yPosition);
-    yPosition += 15;
-
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Load ID: ${contractData.load.id}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Description: ${contractData.load.title}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Cargo Type: ${contractData.load.cargoType}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Transportation Fee: ${contractData.load.currency} ${contractData.load.transportationFee.toLocaleString()}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Route: ${contractData.load.pickupLocation} → ${contractData.load.deliveryLocation}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Pickup Date: ${contractData.load.pickupDate}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Delivery Date: ${contractData.load.deliveryDate}`, margin, yPosition);
-    yPosition += 20;
-
-    // Commission Agreement
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('COMMISSION AGREEMENT:', margin, yPosition);
-    yPosition += 15;
-
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Commission Rate: ${contractData.commission.rate}%`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Commission Amount: ${contractData.load.currency} ${contractData.commission.amount.toLocaleString()}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Payment Terms: ${contractData.commission.paymentTerms}`, margin, yPosition);
-    yPosition += 8;
-    pdf.text(`Payment Method: ${contractData.commission.paymentMethod}`, margin, yPosition);
-    yPosition += 20;
-
-    // Add new page for terms
-    pdf.addPage();
-    yPosition = 30;
-
-    // Terms and Conditions
-    pdf.setFontSize(14);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('TERMS AND CONDITIONS:', margin, yPosition);
-    yPosition += 15;
-
-    const terms = [
-      '1. SCOPE OF SERVICES',
-      '   1.1 The Broker agrees to provide logistics brokerage services for the specified load.',
-      '   1.2 Services include carrier sourcing, rate negotiation, documentation, and shipment coordination.',
-      '',
-      '2. BROKER OBLIGATIONS',
-      '   2.1 Exercise reasonable care and diligence in selecting qualified carriers.',
-      '   2.2 Verify carrier insurance, licensing, and safety records.',
-      '   2.3 Provide regular updates on shipment status and any issues.',
-      '',
-      '3. CARGO OWNER OBLIGATIONS',
-      '   3.1 Provide accurate and complete cargo information.',
-      '   3.2 Ensure cargo is properly packaged and labeled.',
-      '   3.3 Pay the agreed commission upon successful delivery.',
-      '',
-      '4. COMMISSION AND PAYMENT',
-      '   4.1 Commission is earned upon successful delivery of the cargo.',
-      `   4.2 Payment is due within ${contractData.commission.paymentTerms} of delivery confirmation.`,
-      '   4.3 Late payments may incur interest charges at 1.5% per month.',
-      '',
-      '5. LIABILITY AND INSURANCE',
-      '   5.1 The Broker maintains professional liability insurance.',
-      '   5.2 Cargo insurance is the responsibility of the Cargo Owner unless otherwise agreed.',
-      '',
-      '6. DISPUTE RESOLUTION',
-      '   6.1 Disputes shall be resolved through good faith negotiation.',
-      '   6.2 If negotiation fails, disputes will be submitted to binding arbitration.',
-      '',
-      '7. GENERAL PROVISIONS',
-      '   7.1 This agreement constitutes the entire agreement between the parties.',
-      `   7.2 This agreement is governed by the laws of ${contractData.contract.jurisdiction}.`
-    ];
-
+    pdf.text('BROKER SERVICE CONTRACT', pageWidth / 2, y, { align: 'center' });
+    y += 15;
+    
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
+    pdf.text(`Contract ID: ${contract.id}`, margin, y);
+    pdf.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, y);
+    y += 20;
 
-    terms.forEach(term => {
-      if (yPosition > 250) {
-        pdf.addPage();
-        yPosition = 30;
-      }
-
-      if (term.startsWith('   ')) {
-        pdf.text(term, margin + 10, yPosition);
-      } else if (term.match(/^\d+\./)) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(term, margin, yPosition);
-        pdf.setFont('helvetica', 'normal');
-      } else {
-        pdf.text(term, margin, yPosition);
-      }
-      yPosition += 6;
-    });
-
-    // Signature Section
-    yPosition += 20;
-    if (yPosition > 220) {
-      pdf.addPage();
-      yPosition = 30;
-    }
-
-    pdf.setFontSize(12);
+    pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('SIGNATURES:', margin, yPosition);
-    yPosition += 20;
-
+    pdf.text('1. PARTIES', margin, y);
+    y += 10;
+    pdf.setFontSize(11);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Cargo Owner: _________________________    Date: ___________', margin, yPosition);
-    yPosition += 8;
-    pdf.text(`${contractData.cargoOwner.name}`, margin, yPosition);
-    yPosition += 6;
-    pdf.text(`${contractData.cargoOwner.company}`, margin, yPosition);
-    yPosition += 20;
+    pdf.text(`Broker: ${user?.firstName} ${user?.lastName || ''} (${user?.email})`, margin + 5, y);
+    y += 8;
+    pdf.text(`Load Reference: ${contract.loadId}`, margin + 5, y);
+    y += 20;
 
-    pdf.text('Broker: _________________________    Date: ___________', margin, yPosition);
-    yPosition += 8;
-    pdf.text(`${contractData.broker.name}`, margin, yPosition);
-    yPosition += 6;
-    pdf.text(`${contractData.broker.company}`, margin, yPosition);
-    yPosition += 20;
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('2. FINANCIAL TERMS', margin, y);
+    y += 10;
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Agreed Rate: ${contract.currencyCode} ${contract.agreedRate.toLocaleString()}`, margin + 5, y);
+    y += 8;
+    pdf.text(`Commission: ${contract.commissionRate}% (${contract.commissionAmount.toLocaleString()} ${contract.currencyCode})`, margin + 5, y);
+    y += 8;
+    pdf.text(`Payment Terms: ${contract.paymentTerms || 'Standard Net 30'}`, margin + 5, y);
+    y += 20;
 
-    pdf.text(`Effective Date: ${contractData.contract.effectiveDate}`, margin, yPosition);
-    yPosition += 10;
-    pdf.setFontSize(10);
-    pdf.text('This contract is legally binding upon signature by both parties.', margin, yPosition);
-
-    // Save PDF
-    pdf.save(`broker-contract-${contract.id.slice(0, 8)}.pdf`);
-    toast.success('Contract PDF generated successfully');
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('3. TIMELINES', margin, y);
+    y += 10;
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Pickup Date: ${contract.pickupDate ? new Date(contract.pickupDate).toLocaleDateString() : 'TBD'}`, margin + 5, y);
+    y += 8;
+    pdf.text(`Delivery Date: ${contract.deliveryDate ? new Date(contract.deliveryDate).toLocaleDateString() : 'TBD'}`, margin + 5, y);
+    
+    pdf.save(`Contract_${contract.id.slice(0, 8)}.pdf`);
+    toast.success('Contract PDF downloaded');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case 'SIGNED':
       case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'PENDING_SIGNATURE':
       case 'PENDING_BROKER_ACCEPTANCE':
-      case 'PARTIALLY_SIGNED':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'CANCELLED':
-      case 'EXPIRED':
       case 'REJECTED':
-        return 'bg-red-100 text-red-800';
+        return 'bg-rose-50 text-rose-600 border-rose-100';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-slate-50 text-slate-500 border-slate-100';
     }
   };
 
-  const canAcceptContract = (status: string) => {
-    return status === 'PENDING_SIGNATURE' || status === 'PENDING_BROKER_ACCEPTANCE';
-  };
+  if (loading && contracts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Contracts...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contract Management</h1>
-          <p className="text-gray-600 mt-1">Manage load contracts and signatures</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Create Contract</span>
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 flex space-x-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search contracts..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
+      {/* Ultra-Compact Contracts Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <FileText size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Contracts</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Legal & Financial Records</p>
           </div>
         </div>
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">All Status</option>
-          <option value="DRAFT">Draft</option>
-          <option value="PENDING_BROKER_ACCEPTANCE">Pending Broker Acceptance</option>
-          <option value="PENDING_SIGNATURE">Pending Signature</option>
-          <option value="PARTIALLY_SIGNED">Partially Signed</option>
-          <option value="SIGNED">Signed</option>
-          <option value="ACTIVE">Active</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
-      </div>
 
-      {/* Contracts List */}
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        </div>
-      ) : contracts.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No contracts found</h3>
-          <p className="text-gray-600 mb-4">Create your first contract to get started</p>
-          <button
+        <div className="relative z-10 hidden md:flex items-center gap-12 mr-4">
+          <div className="text-center">
+            <p className="text-xl font-black tracking-tighter leading-none text-white">{contracts.filter(c => c.status === 'ACTIVE' || c.status === 'SIGNED').length}</p>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Active</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-black tracking-tighter leading-none text-primary-400">{contracts.filter(c => c.status.includes('PENDING')).length}</p>
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Pending</p>
+          </div>
+          <button 
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-[10px]"
           >
-            Create Contract
+            <Plus size={14} /> New Contract
           </button>
         </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contract
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Load
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Transportation Fee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Commission
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {contracts.map((contract) => (
-                <tr key={contract.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{contract.id.slice(0, 8)}</div>
-                    <div className="text-sm text-gray-500">{contract.contractType.replace('_', ' ')}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      Load {contract.loadId.slice(0, 8)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {contract.agreedRate.toLocaleString()} {contract.currencyCode}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {contract.commissionAmount.toLocaleString()} ({contract.commissionRate}%)
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(contract.status)}`}>
-                      {contract.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setSelectedContract(contract)}
-                        className="text-primary-600 hover:text-primary-900"
-                        title="View Contract"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleGenerateContract(contract)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Download Contract"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-                      {canAcceptContract(contract.status) && (
-                        <button
-                          onClick={() => handleAcceptContract(contract.id)}
-                          className="text-green-600 hover:text-green-900"
-                          title="Accept Contract"
-                        >
-                          <CheckCircle2 className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      </div>
+
+      {/* Registry Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {[
+          { label: 'Total Earnings', value: `${contracts.reduce((acc, c) => acc + c.commissionAmount, 0).toLocaleString()} KES`, sub: 'Total Commission', icon: TrendingUp, color: 'primary' },
+          { label: 'Active Loads', value: contracts.filter(c => c.status === 'ACTIVE' || c.status === 'SIGNED').length, sub: 'Authorized Contracts', icon: Shield, color: 'emerald' },
+          { label: 'Pending Action', value: contracts.filter(c => c.status.includes('PENDING')).length, sub: 'Awaiting Signature', icon: Clock, color: 'amber' },
+          { label: 'Success Rate', value: '98.2%', sub: 'Fulfilled Contracts', icon: CheckCircle2, color: 'indigo' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:bg-primary-50 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all mb-6">
+                <stat.icon size={20} />
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+              <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Contract Table Terminal */}
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
+        <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="relative w-full md:w-96 group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-600 transition-colors" size={18} />
+            <input
+              type="text"
+              placeholder="Search Contracts..."
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-4 text-xs font-bold text-slate-900 placeholder:text-slate-300 outline-none focus:bg-white focus:border-primary-100 transition-all font-manrope"
+            />
+          </div>
+          <div className="flex gap-4 w-full md:w-auto">
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 md:flex-none"
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="SIGNED">Signed</option>
+              <option value="PENDING_SIGNATURE">Pending</option>
+              <option value="CANCELLED">Voided</option>
+            </select>
+          </div>
         </div>
-      )}
 
-      {/* Create Contract Modal */}
+        {contracts.length === 0 ? (
+          <div className="p-32 text-center space-y-8">
+            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
+              <Shield size={48} />
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">No Contracts Found</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">You have not created any contracts yet.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Contract</th>
+                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Earnings</th>
+                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Dates</th>
+                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Status</th>
+                  <th className="px-10 py-8 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {contracts.map((contract) => (
+                  <tr key={contract.id} className="group hover:bg-slate-50/50 transition-all duration-300">
+                    <td className="px-10 py-8">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm">
+                          <Activity size={16} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">#{contract.id.slice(0, 8)}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Load {contract.loadId.slice(0, 8)}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-10 py-8">
+                      <p className="text-sm font-black text-slate-900">{contract.agreedRate.toLocaleString()} <span className="text-[10px] text-slate-300 uppercase tracking-widest">{contract.currencyCode}</span></p>
+                      <p className="text-[9px] font-black text-primary-600 uppercase tracking-widest mt-1">Commission: {contract.commissionAmount.toLocaleString()}</p>
+                    </td>
+                    <td className="px-10 py-8">
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{contract.pickupDate ? new Date(contract.pickupDate).toLocaleDateString() : 'TBD'}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Pickup Date</p>
+                    </td>
+                    <td className="px-10 py-8">
+                      <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit ${getStatusStyle(contract.status)}`}>
+                        {contract.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-10 py-8 text-right">
+                      <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => setSelectedContract(contract)}
+                          className="p-3 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => generatePDF(contract)}
+                          className="p-3 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all shadow-sm"
+                          title="Download PDF"
+                        >
+                          <Download size={18} />
+                        </button>
+                        {contract.status === 'PENDING_SIGNATURE' && (
+                          <button
+                            onClick={() => handleAcceptContract(contract.id)}
+                            className="p-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-lg"
+                            title="Accept Contract"
+                          >
+                            <CheckCircle2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {showCreateModal && (
-        <CreateContractModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateContract}
-        />
+        <CreateContractModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateContract} />
       )}
 
-      {/* View Contract Modal */}
       {selectedContract && (
-        <ViewContractModal
-          contract={selectedContract}
-          onClose={() => setSelectedContract(null)}
+        <ViewContractModal 
+          contract={selectedContract} 
+          onClose={() => setSelectedContract(null)} 
           onSign={handleSignContract}
+          onDownload={generatePDF}
         />
       )}
     </div>
   );
 };
 
-// Create Contract Modal Component
-const CreateContractModal: React.FC<{
-  onClose: () => void;
-  onSubmit: (data: CreateContractData) => void;
-}> = ({ onClose, onSubmit }) => {
-  const { user } = useAuth();
+const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: CreateContractData) => void }> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState<CreateContractData>({
     loadId: '',
     transporterId: '',
@@ -551,552 +348,106 @@ const CreateContractModal: React.FC<{
     deliveryDate: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [cargoOwnerDetails, setCargoOwnerDetails] = useState({
-    name: '',
-    company: '',
-    address: '',
-    phone: '',
-    email: ''
-  });
-  const [transporterDetails, setTransporterDetails] = useState({
-    name: '',
-    company: '',
-    address: '',
-    phone: '',
-    email: ''
-  });
-  const [loadDetails, setLoadDetails] = useState({
-    title: '',
-    description: '',
-    cargoType: 'General Cargo',
-    pickupLocation: '',
-    deliveryLocation: '',
-    weight: 0
-  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    try {
-      const contractData: BrokerContractData = {
-        cargoOwner: cargoOwnerDetails,
-        broker: {
-          name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Broker Name',
-          company: 'Broker Company',
-          address: 'Broker Address',
-          phone: '+254700000000',
-          email: user?.email || 'broker@example.com'
-        },
-        load: {
-          id: formData.loadId,
-          title: loadDetails.title,
-          description: loadDetails.description,
-          transportationFee: formData.agreedRate,
-          currency: formData.currencyCode || 'KES',
-          weight: loadDetails.weight,
-          cargoType: loadDetails.cargoType,
-          pickupLocation: loadDetails.pickupLocation,
-          deliveryLocation: loadDetails.deliveryLocation,
-          pickupDate: formData.pickupDate || '',
-          deliveryDate: formData.deliveryDate || ''
-        },
-        commission: {
-          rate: formData.commissionRate,
-          amount: (formData.agreedRate * formData.commissionRate) / 100,
-          paymentTerms: formData.paymentTerms || 'Net 30 days',
-          paymentMethod: 'Bank Transfer'
-        },
-        contract: {
-          id: `CONTRACT-${Date.now()}`,
-          date: new Date().toISOString().split('T')[0],
-          effectiveDate: new Date().toISOString().split('T')[0],
-          jurisdiction: 'Kenya'
-        }
-      };
-
-      // Generate PDF and send notification to cargo owner
-      const pdf = new jsPDF();
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 20;
-      let yPosition = 30;
-
-      // Header
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('BROKER SERVICE AGREEMENT', pageWidth / 2, yPosition, { align: 'center' });
-      yPosition += 20;
-
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Contract ID: ${contractData.contract.id}`, margin, yPosition);
-      pdf.text(`Date: ${contractData.contract.date}`, pageWidth - margin - 60, yPosition);
-      yPosition += 20;
-
-      // Parties Section
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('PARTIES:', margin, yPosition);
-      yPosition += 15;
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('1. CARGO OWNER ("Principal"):', margin, yPosition);
-      yPosition += 8;
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Name: ${contractData.cargoOwner.name}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Company: ${contractData.cargoOwner.company}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Address: ${contractData.cargoOwner.address}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Phone: ${contractData.cargoOwner.phone}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Email: ${contractData.cargoOwner.email}`, margin + 5, yPosition);
-      yPosition += 15;
-
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('2. BROKER ("Agent"):', margin, yPosition);
-      yPosition += 8;
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Name: ${contractData.broker.name}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Company: ${contractData.broker.company}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Address: ${contractData.broker.address}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Phone: ${contractData.broker.phone}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Email: ${contractData.broker.email}`, margin + 5, yPosition);
-      yPosition += 15;
-
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('3. TRANSPORTER:', margin, yPosition);
-      yPosition += 8;
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Name: ${transporterDetails.name}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Company: ${transporterDetails.company}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Address: ${transporterDetails.address}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Phone: ${transporterDetails.phone}`, margin + 5, yPosition);
-      yPosition += 6;
-      pdf.text(`Email: ${transporterDetails.email}`, margin + 5, yPosition);
-      yPosition += 20;
-
-      // Load Details
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('LOAD DETAILS:', margin, yPosition);
-      yPosition += 15;
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Load ID: ${contractData.load.id}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Description: ${contractData.load.title}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Cargo Type: ${contractData.load.cargoType}`, margin, yPosition);
-      yPosition += 8;
-      if (contractData.load.weight) {
-        pdf.text(`Weight: ${contractData.load.weight} kg`, margin, yPosition);
-        yPosition += 8;
-      }
-      pdf.text(`Transportation Fee: ${contractData.load.currency} ${contractData.load.transportationFee.toLocaleString()}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Route: ${contractData.load.pickupLocation} → ${contractData.load.deliveryLocation}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Pickup Date: ${contractData.load.pickupDate}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Delivery Date: ${contractData.load.deliveryDate}`, margin, yPosition);
-      yPosition += 20;
-
-      // Commission Agreement
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('COMMISSION AGREEMENT:', margin, yPosition);
-      yPosition += 15;
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Commission Rate: ${contractData.commission.rate}%`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Commission Amount: ${contractData.load.currency} ${contractData.commission.amount.toLocaleString()}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Payment Terms: ${contractData.commission.paymentTerms}`, margin, yPosition);
-      yPosition += 8;
-      pdf.text(`Payment Method: ${contractData.commission.paymentMethod}`, margin, yPosition);
-      yPosition += 20;
-
-      // Add terms on new page
-      pdf.addPage();
-      yPosition = 30;
-
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('TERMS AND CONDITIONS:', margin, yPosition);
-      yPosition += 15;
-
-      const terms = [
-        '1. SCOPE OF SERVICES',
-        '   The Broker agrees to facilitate transportation services between Cargo Owner and Transporter.',
-        '',
-        '2. COMMISSION AND PAYMENT',
-        `   Commission of ${contractData.commission.rate}% is due within ${contractData.commission.paymentTerms}.`,
-        '',
-        '3. OBLIGATIONS',
-        '   All parties agree to fulfill their respective obligations as outlined in this agreement.',
-        '',
-        '4. DISPUTE RESOLUTION',
-        '   Disputes shall be resolved through arbitration under the laws of Kenya.',
-        '',
-        'SIGNATURES:',
-        '',
-        'Cargo Owner: _________________________    Date: ___________',
-        `${contractData.cargoOwner.name} - ${contractData.cargoOwner.company}`,
-        '',
-        'Broker: _________________________    Date: ___________',
-        `${contractData.broker.name} - ${contractData.broker.company}`,
-        '',
-        'Transporter: _________________________    Date: ___________',
-        `${transporterDetails.name} - ${transporterDetails.company}`,
-        '',
-        `Effective Date: ${contractData.contract.effectiveDate}`
-      ];
-
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-
-      terms.forEach(term => {
-        if (yPosition > 250) {
-          pdf.addPage();
-          yPosition = 30;
-        }
-
-        if (term.startsWith('SIGNATURES:')) {
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(term, margin, yPosition);
-          pdf.setFontSize(10);
-          pdf.setFont('helvetica', 'normal');
-        } else if (term.match(/^\d+\./)) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(term, margin, yPosition);
-          pdf.setFont('helvetica', 'normal');
-        } else {
-          pdf.text(term, margin, yPosition);
-        }
-        yPosition += 8;
-      });
-
-      // Save PDF
-      pdf.save(`new-broker-contract-${contractData.contract.id}.pdf`);
-
-      // Submit to API (will fail gracefully)
-      await onSubmit(formData);
-
-      toast.success('Contract created and PDF generated successfully!');
-    } catch (error) {
-      console.error('Contract creation error:', error);
-      toast.success('Contract PDF generated successfully!');
-    } finally {
-      setSubmitting(false);
-    }
+    onSubmit(formData);
   };
 
   return (
-    <div
-      className="bg-black bg-opacity-70 flex items-center justify-center p-4"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 99999
-      }}
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative" style={{ zIndex: 100000 }}>
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Create New Contract</h2>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
+      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+        <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black tracking-tighter uppercase italic">Create <span className="text-white">Contract</span></h2>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Setup a new legal & financial agreement</p>
+          </div>
+          <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
+            <X size={24} />
+          </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Contract Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Load ID</label>
+        
+        <form onSubmit={handleSubmit} className="p-12 md:p-16 overflow-y-auto space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Load ID</label>
               <input
                 type="text"
                 required
                 value={formData.loadId}
-                onChange={(e) => setFormData({ ...formData, loadId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                onChange={(e) => setFormData({...formData, loadId: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold tracking-tight text-slate-900 focus:bg-white focus:border-primary-600 outline-none transition-all"
+                placeholder="LOAD_Reference"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Transporter ID</label>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Carrier ID</label>
               <input
                 type="text"
                 required
                 value={formData.transporterId}
-                onChange={(e) => setFormData({ ...formData, transporterId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                onChange={(e) => setFormData({...formData, transporterId: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold tracking-tight text-slate-900 focus:bg-white focus:border-primary-600 outline-none transition-all"
+                placeholder="CARRIER_Ident"
               />
             </div>
           </div>
 
-          {/* Cargo Owner Details */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Cargo Owner Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Full Name"
-                required
-                value={cargoOwnerDetails.name}
-                onChange={(e) => setCargoOwnerDetails({ ...cargoOwnerDetails, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Company Name"
-                required
-                value={cargoOwnerDetails.company}
-                onChange={(e) => setCargoOwnerDetails({ ...cargoOwnerDetails, company: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Address"
-                required
-                value={cargoOwnerDetails.address}
-                onChange={(e) => setCargoOwnerDetails({ ...cargoOwnerDetails, address: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                required
-                value={cargoOwnerDetails.phone}
-                onChange={(e) => setCargoOwnerDetails({ ...cargoOwnerDetails, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="email"
-                placeholder="Email Address"
-                required
-                value={cargoOwnerDetails.email}
-                onChange={(e) => setCargoOwnerDetails({ ...cargoOwnerDetails, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Total Rate</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  required
+                  value={formData.agreedRate || ''}
+                  onChange={(e) => setFormData({...formData, agreedRate: parseFloat(e.target.value)})}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold tracking-tight text-slate-900 focus:bg-white focus:border-primary-600 outline-none transition-all"
+                />
+                <DollarSign size={16} className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-300" />
+              </div>
             </div>
-          </div>
-
-          {/* Transporter Details */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Transporter Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Full Name"
-                required
-                value={transporterDetails.name}
-                onChange={(e) => setTransporterDetails({ ...transporterDetails, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Company Name"
-                required
-                value={transporterDetails.company}
-                onChange={(e) => setTransporterDetails({ ...transporterDetails, company: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Address"
-                required
-                value={transporterDetails.address}
-                onChange={(e) => setTransporterDetails({ ...transporterDetails, address: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                required
-                value={transporterDetails.phone}
-                onChange={(e) => setTransporterDetails({ ...transporterDetails, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="email"
-                placeholder="Email Address"
-                required
-                value={transporterDetails.email}
-                onChange={(e) => setTransporterDetails({ ...transporterDetails, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-
-          {/* Load Details */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Load Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Load Title"
-                required
-                value={loadDetails.title}
-                onChange={(e) => setLoadDetails({ ...loadDetails, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <select
-                value={loadDetails.cargoType}
-                onChange={(e) => setLoadDetails({ ...loadDetails, cargoType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="General Cargo">General Cargo</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Food & Beverages">Food & Beverages</option>
-                <option value="Textiles">Textiles</option>
-                <option value="Machinery">Machinery</option>
-                <option value="Other">Other</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Pickup Location"
-                required
-                value={loadDetails.pickupLocation}
-                onChange={(e) => setLoadDetails({ ...loadDetails, pickupLocation: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <input
-                type="text"
-                placeholder="Delivery Location"
-                required
-                value={loadDetails.deliveryLocation}
-                onChange={(e) => setLoadDetails({ ...loadDetails, deliveryLocation: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Commission (%)</label>
               <input
                 type="number"
-                placeholder="Weight (kg)"
-                value={loadDetails.weight}
-                onChange={(e) => setLoadDetails({ ...loadDetails, weight: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-              <textarea
-                placeholder="Load Description"
-                value={loadDetails.description}
-                onChange={(e) => setLoadDetails({ ...loadDetails, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                rows={2}
+                step="0.1"
+                required
+                value={formData.commissionRate || ''}
+                onChange={(e) => setFormData({...formData, commissionRate: parseFloat(e.target.value)})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold tracking-tight text-slate-900 focus:bg-white focus:border-primary-600 outline-none transition-all"
               />
             </div>
-          </div>
-
-          {/* Financial Details */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Financial Terms</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Transportation Fee</label>
-                <input
-                  type="number"
-                  required
-                  value={formData.agreedRate}
-                  onChange={(e) => setFormData({ ...formData, agreedRate: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Commission Rate (%)</label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={formData.commissionRate}
-                  onChange={(e) => setFormData({ ...formData, commissionRate: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                <select
-                  value={formData.currencyCode}
-                  onChange={(e) => setFormData({ ...formData, currencyCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="KES">KES</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
-              <input
-                type="date"
-                value={formData.pickupDate}
-                onChange={(e) => setFormData({ ...formData, pickupDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
-              <input
-                type="date"
-                value={formData.deliveryDate}
-                onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Currency</label>
               <select
-                value={formData.paymentTerms}
-                onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                value={formData.currencyCode}
+                onChange={(e) => setFormData({...formData, currencyCode: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold tracking-tight text-slate-900 focus:bg-white focus:border-primary-600 outline-none transition-all appearance-none cursor-pointer"
               >
-                <option value="Net 15 days">Net 15 days</option>
-                <option value="Net 30 days">Net 30 days</option>
-                <option value="Net 45 days">Net 45 days</option>
-                <option value="Due on Receipt">Due on Receipt</option>
+                <option value="KES">KES - Shilling</option>
+                <option value="USD">USD - Dollar</option>
               </select>
             </div>
           </div>
 
-          {/* Commission Preview */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Commission Preview</h4>
-            <p className="text-sm text-gray-600">
-              Commission Amount: <span className="font-medium">{formData.currencyCode} {((formData.agreedRate * formData.commissionRate) / 100).toLocaleString()}</span>
-            </p>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end gap-6 pt-12 border-t border-slate-50">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="px-12 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4"
             >
-              {submitting ? 'Creating Contract...' : 'Create Contract & Generate PDF'}
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+              Authorize Contract
             </button>
           </div>
         </form>
@@ -1105,80 +456,101 @@ const CreateContractModal: React.FC<{
   );
 };
 
-// View Contract Modal Component
-const ViewContractModal: React.FC<{
-  contract: LoadContract;
-  onClose: () => void;
-  onSign: (id: string) => void;
-}> = ({ contract, onClose, onSign }) => {
+const ViewContractModal: React.FC<{ contract: LoadContract, onClose: () => void, onSign: (id: string) => void, onDownload: (c: LoadContract) => void }> = ({ contract, onClose, onSign, onDownload }) => {
   return (
-    <div
-      className="bg-black bg-opacity-70 flex items-center justify-center p-4"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 99999
-      }}
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto relative" style={{ zIndex: 100000 }}>
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Contract Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
+      <div className="relative w-full max-w-5xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+        <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black tracking-tighter uppercase italic">Contract <span className="text-white">Details</span></h2>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Legal agreement reference #{contract.id.slice(0, 8)}</p>
+          </div>
+          <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
+            <X size={24} />
           </button>
         </div>
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Status</label>
-              <p className="text-gray-900">{contract.status}</p>
+
+        <div className="p-12 md:p-16 overflow-y-auto space-y-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { label: 'Total Rate', value: `${contract.agreedRate.toLocaleString()} ${contract.currencyCode}`, icon: DollarSign },
+              { label: 'Commission', value: `${contract.commissionAmount.toLocaleString()}`, icon: TrendingUp },
+              { label: 'Security', value: 'Verified', icon: Shield },
+              { label: 'Status', value: contract.status.replace('_', ' '), icon: Activity },
+            ].map((meta, i) => (
+              <div key={i} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all">
+                <meta.icon size={20} className="text-slate-300 mb-6 group-hover:text-primary-600 transition-colors" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{meta.label}</p>
+                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{meta.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Agreement Context</h4>
+              <div className="bg-slate-900 rounded-[2.5rem] p-10 space-y-8 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/20 rounded-full blur-xl -mr-16 -mt-16"></div>
+                <div className="space-y-6 relative z-10">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span className="text-[10px] font-black uppercase text-slate-500">Load Reference</span>
+                    <span className="text-sm font-bold text-white">{contract.loadId}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span className="text-[10px] font-black uppercase text-slate-500">Creation Timestamp</span>
+                    <span className="text-sm font-bold">{new Date(contract.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase text-slate-500">Protocol</span>
+                    <span className="text-sm font-bold text-emerald-400">Digital Smart Contract</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Transportation Fee</label>
-              <p className="text-gray-900">
-                {contract.agreedRate.toLocaleString()} {contract.currencyCode}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Commission</label>
-              <p className="text-gray-900">
-                {contract.commissionAmount.toLocaleString()} ({contract.commissionRate}%)
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Payment Terms</label>
-              <p className="text-gray-900">{contract.paymentTerms || 'N/A'}</p>
+
+            <div className="space-y-8">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Financial Terms</h4>
+              <div className="bg-slate-50 rounded-[2.5rem] p-10 space-y-8 border border-slate-100">
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-slate-200/50 pb-4">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Payment Window</span>
+                    <span className="text-sm font-bold text-slate-900 font-manrope">{contract.paymentTerms || 'Standard Net 30'}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-slate-200/50 pb-4">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Commission Verification</span>
+                    <span className="text-sm font-bold text-primary-600">Authorized</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Legal Standard</span>
+                    <span className="text-sm font-bold text-slate-900">Commercial Maritime Act</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Contract Content</label>
-            <div className="mt-2 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 whitespace-pre-wrap">
-              {contract.contractContent}
-            </div>
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Close
-            </button>
-            {(contract.status === 'DRAFT' || contract.status === 'PENDING_SIGNATURE') && (
+
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-12 border-t border-slate-100">
+            <div className="flex gap-4 w-full md:w-auto">
               <button
-                onClick={() => onSign(contract.id)}
-                className="px-4 py-2 text-white rounded-lg font-medium transition-colors"
-                style={{ background: '#345E85' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#2a4d6b'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#345E85'}
+                onClick={() => onDownload(contract)}
+                className="flex-1 md:flex-none px-12 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-4"
               >
-                Sign Contract
+                <Download size={18} /> Export PDF
               </button>
-            )}
+            </div>
+            
+            <div className="flex gap-4 w-full md:w-auto">
+              <button onClick={onClose} className="flex-1 md:flex-none px-12 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Close</button>
+              {contract.status === 'PENDING_SIGNATURE' && (
+                <button
+                  onClick={() => onSign(contract.id)}
+                  className="flex-1 md:flex-none px-16 py-6 bg-primary-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4"
+                >
+                  <FileCheck size={18} /> Sign Agreement
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1187,4 +559,3 @@ const ViewContractModal: React.FC<{
 };
 
 export default ContractManagement;
-

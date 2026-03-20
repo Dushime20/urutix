@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
-import { ActivityLog } from '../entities/activity-log.entity';
-import { UserSession } from '../entities/user-session.entity';
-import { EventsGateway } from '../modules/events/events.gateway';
+import { ActivityLog } from './../entities/activity-log.entity';
+import { UserSession } from './../entities/user-session.entity';
+import { EventsGateway } from './../modules/events/events.gateway';
 import { SystemSettingsService } from './system-settings.service';
 
 export interface LogActivityDto {

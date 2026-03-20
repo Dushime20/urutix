@@ -30,6 +30,8 @@ import {
   ArcElement,
   Filler,
 } from 'chart.js';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 import TenantHeader from './TenantHeader';
 import QuickStats from './QuickStats';
@@ -56,6 +58,8 @@ import { tenantApi, mockTenantData } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { TripTracker } from '../TripTracker/TripTracker';
+import RoutePerformance from './RoutePerformance';
+import TruckOwnerPerformance from './TruckOwnerPerformance';
 
 ChartJS.register(
   CategoryScale,
@@ -82,6 +86,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   defaultView = 'overview'
 }) => {
   const { user } = useAuth();
+  const { tSync } = useTranslation();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -204,13 +209,13 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   };
 
   const handleNotifyLowCredit = async () => {
-    const notifyToast = toast.loading('Broadcasting alerts to partners...');
+    const notifyToast = toast.loading(tSync('Broadcasting alerts to partners...'));
     try {
       await tenantApi.notifyLowCreditPartners(tenantId || 'default-tenant');
-      toast.success('Alerts broadcasted successfully', { id: notifyToast });
+      toast.success(tSync('Alerts broadcasted successfully'), { id: notifyToast });
     } catch (error) {
       console.error('Failed to notify partners:', error);
-      toast.error('Failed to broadcast alerts', { id: notifyToast });
+      toast.error(tSync('Failed to broadcast alerts'), { id: notifyToast });
     }
   };
 
@@ -396,7 +401,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   };
 
   return (
-    <div className={`min - h - screen bg - white ${className} `}>
+    <div className={`min-h-screen bg-white dark:bg-slate-950 ${className}`}>
       {/* Header */}
       <TenantHeader
         tenant={currentTenant}
@@ -409,19 +414,19 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8">
         {/* Loading State - Premium Skeleton */}
         {isLoading && <SkeletonDashboard />}
 
         {/* Error State */}
         {error && (
-          <div className="bg-amber-50 border border-amber-100 rounded-[20px] p-6 mb-8 flex items-center">
-            <div className="p-3 bg-amber-100 rounded-xl mr-4">
-              <FaExclamationTriangle className="text-amber-600 w-5 h-5" />
+          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-[20px] p-6 mb-8 flex items-center">
+            <div className="p-3 bg-amber-100 dark:bg-amber-900/20 rounded-xl mr-4">
+              <FaExclamationTriangle className="text-amber-600 dark:text-amber-500 w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-amber-900 uppercase tracking-tight">Intelligence Offline</h3>
-              <p className="text-[13px] text-amber-700 mt-0.5 font-medium">Using local backup data. Reconnecting to node...</p>
+              <h3 className="text-sm font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight"><TranslatedText text="Intelligence Offline" /></h3>
+              <p className="text-[13px] text-amber-700 dark:text-amber-400 mt-0.5 font-medium"><TranslatedText text="Using local backup data. Reconnecting to node..." /></p>
             </div>
           </div>
         )}
@@ -454,27 +459,27 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
+                  className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
                 >
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Financial Momentum</h3>
-                      <h4 className="text-xl font-black text-slate-800 tracking-tight">Weekly Revenue</h4>
+                      <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Financial Momentum" /></h3>
+                      <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Weekly Revenue" /></h4>
                     </div>
                     <div className="flex items-center space-x-3">
                       <select
                         value={timeRange}
                         onChange={(e) => handleTimeRangeChange(e.target.value)}
-                        className="text-[11px] font-bold text-slate-600 bg-gray-50 border-none rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20"
+                        className="text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 border-none rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
                       >
-                        <option value="7d">Last 7d</option>
-                        <option value="30d">Last 30d</option>
-                        <option value="90d">Last 90d</option>
+                        <option value="7d"><TranslatedText text="Last 7d" /></option>
+                        <option value="30d"><TranslatedText text="Last 30d" /></option>
+                        <option value="90d"><TranslatedText text="Last 90d" /></option>
                       </select>
                       <button
                         onClick={() => handleExportData('csv')}
-                        className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                        title="Export Data"
+                        className="p-2 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                        title={tSync("Export Data")}
                       >
                         <Download className="w-4 h-4" />
                       </button>
@@ -490,15 +495,15 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
+                  className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
                 >
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Asset Optimization</h3>
-                      <h4 className="text-xl font-black text-slate-800 tracking-tight">Fleet Utilization</h4>
+                      <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Asset Optimization" /></h3>
+                      <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Fleet Utilization" /></h4>
                     </div>
-                    <div className="px-3 py-1 bg-emerald-50 rounded-full">
-                      <span className="text-[11px] font-black text-emerald-600 uppercase tracking-wider">Avg: {data.metrics.averageLoadUtilization}%</span>
+                    <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
+                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider"><TranslatedText text="Avg:" /> {data.metrics.averageLoadUtilization}%</span>
                     </div>
                   </div>
                   <div className="h-72">
@@ -507,16 +512,22 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                 </motion.div>
               </div>
 
+              {/* Route Performance Intelligence */}
+              <RoutePerformance tenantId={tenantId} />
+
+              {/* Truck Owner Performance Highlights */}
+              <TruckOwnerPerformance tenantId={tenantId} />
+
               {/* Performance Metrics */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8"
+                className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
               >
                 <div className="mb-8">
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Operational Health</h3>
-                  <h4 className="text-xl font-black text-slate-800 tracking-tight">Performance Radar</h4>
+                  <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Operational Health" /></h3>
+                  <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Performance Radar" /></h4>
                 </div>
                 <div className="h-80">
                   <Bar data={performanceData} options={{
@@ -638,7 +649,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 
       {/* Track Event Modal — Enlite Prime Style */}
       <Dialog open={isTrackModalOpen} onOpenChange={setIsTrackModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 rounded-[32px] border-none shadow-2xl bg-white flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 rounded-[32px] border-none shadow-2xl bg-white dark:bg-slate-950 flex flex-col">
           {(() => {
             const theme = getStatusTheme(trackingActivity?.status);
             const TypeIcon = getTypeIcon(trackingActivity?.type);
@@ -659,47 +670,47 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest border border-white/20">
-                            {trackingActivity?.type}
+                           <TranslatedText text={trackingActivity?.type} />
                           </span>
                           <span className="text-white/60 font-black text-[10px] uppercase tracking-widest">•</span>
                           <span className="flex items-center gap-1.5 text-white font-black text-[10px] uppercase tracking-widest">
                             <StatusIcon size={12} />
-                            {trackingActivity?.status}
+                            <TranslatedText text={trackingActivity?.status} />
                           </span>
                         </div>
                         <DialogTitle className="text-3xl font-black text-white tracking-tight">
-                          {trackingActivity?.action}
+                          <TranslatedText text={trackingActivity?.action} />
                         </DialogTitle>
                         <p className="text-white/80 text-sm font-medium mt-1">
-                          Reference: {trackingActivity?.description}
+                          <TranslatedText text="Reference" />: <TranslatedText text={trackingActivity?.description} />
                         </p>
                       </div>
                     </div>
                   </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto bg-gray-50/50 p-10 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-slate-900/50 p-10 custom-scrollbar">
                   {trackingActivity?.metadata?.tripId ? (
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-[28px] border border-gray-100 shadow-xl shadow-slate-200/50 overflow-hidden"
+                      className="bg-white dark:bg-slate-900 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
                     >
                       <TripTracker tripId={trackingActivity.metadata.tripId} />
                     </motion.div>
                   ) : (
                     <div className="space-y-8">
-                      <div className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-12 text-center relative overflow-hidden">
+                      <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm p-12 text-center relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8">
-                          <Activity className="text-slate-50 w-32 h-32" />
+                          <Activity className="text-slate-50 dark:text-slate-800 w-32 h-32" />
                         </div>
                         <div className="relative z-10">
-                          <div className={`w-24 h-24 ${theme.lightBg} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                          <div className={`w-24 h-24 ${theme.lightBg} dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6`}>
                             <StatusIcon className={`w-12 h-12 ${theme.text}`} />
                           </div>
-                          <h3 className="text-2xl font-black text-slate-800 mb-3 tracking-tight">Activity Details</h3>
-                          <p className="text-slate-500 max-w-sm mx-auto mb-10 font-medium leading-relaxed">
-                            We're showing the state of this activity at the time it happened.
+                          <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-3 tracking-tight"><TranslatedText text="Activity Details" /></h3>
+                          <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-10 font-medium leading-relaxed">
+                            <TranslatedText text="We're showing the state of this activity at the time it happened." />
                           </p>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -708,10 +719,10 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                               { label: 'Current Status', value: trackingActivity?.status, icon: StatusIcon },
                               { label: 'Time', value: trackingActivity?.timestamp, icon: Clock },
                             ].map((item, id) => (
-                              <div key={id} className="p-6 bg-slate-50/80 rounded-[20px] border border-white flex flex-col items-center text-center group hover:bg-white hover:shadow-md transition-all duration-300">
-                                <item.icon className="w-5 h-5 text-slate-400 mb-3 group-hover:scale-110 transition-transform" />
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</span>
-                                <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{item.value}</span>
+                              <div key={id} className="p-6 bg-slate-50/80 dark:bg-slate-800/50 rounded-[20px] border border-white dark:border-slate-700 flex flex-col items-center text-center group hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all duration-300">
+                                <item.icon className="w-5 h-5 text-slate-400 dark:text-slate-500 mb-3 group-hover:scale-110 transition-transform" />
+                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text={item.label} /></span>
+                                <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight"><TranslatedText text={item.value} /></span>
                               </div>
                             ))}
                           </div>
@@ -723,26 +734,26 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                           <div className="p-2 bg-white/10 rounded-lg">
                             <MapPin size={18} />
                           </div>
-                          <p className="text-xs font-bold">Need more details about this event?</p>
+                          <p className="text-xs font-bold"><TranslatedText text="Need more details about this event?" /></p>
                         </div>
                         <button className="px-4 py-2 bg-white text-primary-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-lg">
-                          Request Full History
+                          <TranslatedText text="Request Full History" />
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
                 
-                <div className="px-10 py-6 bg-white border-t border-gray-50 flex items-center justify-between shrink-0">
-                   <div className="flex items-center gap-2 text-slate-400">
+                <div className="px-10 py-6 bg-white dark:bg-slate-950 border-t border-gray-50 dark:border-slate-800 flex items-center justify-between shrink-0">
+                   <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
                       <Clock size={14} />
-                      <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5">Logged: {trackingActivity?.timestamp}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5"><TranslatedText text="Logged" />: <TranslatedText text={trackingActivity?.timestamp} /></span>
                    </div>
                    <button 
                      onClick={() => setIsTrackModalOpen(false)}
-                     className="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-inner"
+                     className="px-8 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-inner dark:shadow-none"
                    >
-                     Close
+                     <TranslatedText text="Close" />
                    </button>
                 </div>
               </>

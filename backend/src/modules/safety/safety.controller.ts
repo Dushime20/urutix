@@ -35,8 +35,8 @@ import {
   TrainingStatus,
   TrainingType,
 } from './dto/create-safety-training.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @ApiTags('Safety Management')
 @ApiBearerAuth()

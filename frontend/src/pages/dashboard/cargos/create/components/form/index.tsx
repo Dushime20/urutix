@@ -23,12 +23,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui";
 import CargoFormSections from "./CargoFormSections";
 import TruckSelectionModal from "./TruckSelectionModal";
@@ -36,6 +30,9 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import { FileText } from "lucide-react";
 import { Icon } from "leaflet";
 import HelpTooltip from "@/components/common/HelpTooltip";
+import { TranslatedText } from "@/components/translated-text";
+import { useTranslation } from "@/hooks/useTranslation";
+import BottomSheet from "@/components/common/BottomSheet";
 
 import "leaflet/dist/leaflet.css";
 import type {
@@ -89,6 +86,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   uploadedPhotos = [],
   aiSuggestions,
 }) => {
+  const { tSync } = useTranslation();
   // Debug logging
   console.log("EnhancedCargoForm rendered with:", {
     isOpen,
@@ -739,62 +737,59 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-hidden p-0">
-        {/* Header */}
-        <DialogHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-slate-100 bg-white">
+    <>
+      <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="6xl"
+      className="p-0"
+    >
+      <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-none">
+        {/* Header - Ported from DialogHeader */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
-                <FaBox className="w-5 h-5 text-[#345E85]" />
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                <FaBox className="w-5 h-5 text-[#345E85] dark:text-blue-400" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-black text-[#0f172a] tracking-tight">
+                <h2 className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight leading-none">
                   {mode === "create" ? "Create Cargo" : "Edit Cargo"}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                </h2>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-1">
                   Detailed Specifications & Intelligence
-                </DialogDescription>
+                </p>
               </div>
             </div>
 
             {/* Progress Indicator - COMPACT */}
             <div className="mt-4 max-w-md">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#345E85] mb-1">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#345E85] dark:text-blue-400 mb-1">
                 <span>Completion Status</span>
                 <span>{completionPercentage}%</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5">
+              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
                 <div
                   className="bg-[#345E85] h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${completionPercentage}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mt-1">
-                {draftSaved ? (
-                  <span className="text-green-600 flex items-center gap-1">
-                    <FaCheck className="w-2 h-2" />
-                    SAVED
-                  </span>
-                ) : lastSaved ? (
-                  <span>LAST SAVED: {lastSaved.toLocaleTimeString()}</span>
-                ) : <span></span>}
-                <span>{sections.filter(s => completedSections[s.id]).length}/{sections.length} SECTIONS</span>
-              </div>
             </div>
           </div>
           {/* Mobile Sidebar Toggle */}
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Toggle navigation"
-          >
-            <FaCogs className="w-5 h-5 text-gray-600" />
-          </button>
-        </DialogHeader>
+          <div className="flex items-center gap-2 mt-4 sm:mt-0">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 transition-colors"
+              aria-label="Toggle navigation"
+            >
+              <FaCogs className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </button>
+          </div>
+        </div>
 
-        <div className="flex flex-col lg:flex-row h-[calc(90vh-180px)] min-h-0">
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Sidebar Navigation */}
           <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-64 bg-slate-50 border-r border-slate-100 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0`}>
             <nav className="p-2 sm:p-3 space-y-1.5">
@@ -1300,7 +1295,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
               )}
 
               {/* Stepper Navigation & Form Actions */}
-              <DialogFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200">
                 <div className="flex gap-2 w-full sm:w-auto">
                   <button
                     type="button"
@@ -1375,11 +1370,12 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     )}
                   </button>
                 </div>
-              </DialogFooter>
+              </div>
             </form>
           </div>
         </div>
-      </DialogContent>
+      </div>
+    </BottomSheet>
 
       {/* Truck Selection Modal */}
       {showTruckSelectionModal && createdCargoId && (
@@ -1404,7 +1400,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           cargoData={createdCargoData}
         />
       )}
-    </Dialog>
+    </>
   );
 };
 

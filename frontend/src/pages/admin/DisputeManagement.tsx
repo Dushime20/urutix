@@ -4,10 +4,11 @@ import {
   Eye, Calendar, Clock, User, Truck,
   CheckCircle, XCircle, Hourglass, Scale,
   FileText, DollarSign, Flag, Shield, X,
-  ChevronDown, MoreHorizontal
+  ChevronDown, MoreHorizontal, MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../../components/translated-text';
 
 interface Dispute {
   id: string;
@@ -277,20 +278,20 @@ const DisputeManagement: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Dispute Management"
-      description="Manage and resolve customer disputes efficiently"
+      title={<TranslatedText text="Dispute Management" />}
+      description={<TranslatedText text="Manage and resolve customer disputes efficiently" />}
     >
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
         {[
-          { label: 'Total', value: stats.total, icon: Gavel, color: 'text-gray-600', bg: 'bg-gray-50' },
-          { label: 'Open', value: stats.open, icon: Flag, color: 'text-gray-600', bg: 'bg-gray-50' },
-          { label: 'Investigating', value: stats.investigating, icon: Search, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Mediating', value: stats.mediating, icon: Scale, color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'Resolved', value: stats.resolved, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Value', value: `$${(stats.totalAmount / 1000).toFixed(1)}k`, fullValue: `$${stats.totalAmount.toLocaleString()}`, icon: DollarSign, color: 'text-gray-600', bg: 'bg-gray-50' },
-          { label: 'Avg Time', value: stats.avgResolutionTime, icon: Clock, color: 'text-gray-600', bg: 'bg-gray-50' },
+          { label: <TranslatedText text="Total" />, value: stats.total, icon: Gavel, color: 'text-gray-600', bg: 'bg-gray-50' },
+          { label: <TranslatedText text="Open" />, value: stats.open, icon: Flag, color: 'text-gray-600', bg: 'bg-gray-50' },
+          { label: <TranslatedText text="Investigating" />, value: stats.investigating, icon: Search, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: <TranslatedText text="Mediating" />, value: stats.mediating, icon: Scale, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: <TranslatedText text="Resolved" />, value: stats.resolved, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+          { label: <TranslatedText text="Value" />, value: `$${(stats.totalAmount / 1000).toFixed(1)}k`, fullValue: `$${stats.totalAmount.toLocaleString()}`, icon: DollarSign, color: 'text-gray-600', bg: 'bg-gray-50' },
+          { label: <TranslatedText text="Avg Time" />, value: stats.avgResolutionTime, icon: Clock, color: 'text-gray-600', bg: 'bg-gray-50' },
         ].map((item, index) => (
           <div key={index} className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-full group hover:border-gray-200 transition-all">
             <div className="flex justify-between items-start mb-2">
@@ -329,13 +330,13 @@ const DisputeManagement: React.FC = () => {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium appearance-none cursor-pointer"
             >
-              <option value="">All Status</option>
-              <option value="open">Open</option>
-              <option value="investigating">Investigating</option>
-              <option value="mediating">Mediating</option>
-              <option value="resolved">Resolved</option>
-              <option value="escalated">Escalated</option>
-              <option value="closed">Closed</option>
+              <option value=""><TranslatedText text="All Status" /></option>
+              <option value="open"><TranslatedText text="Open" /></option>
+              <option value="investigating"><TranslatedText text="Investigating" /></option>
+              <option value="mediating"><TranslatedText text="Mediating" /></option>
+              <option value="resolved"><TranslatedText text="Resolved" /></option>
+              <option value="escalated"><TranslatedText text="Escalated" /></option>
+              <option value="closed"><TranslatedText text="Closed" /></option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           </div>
@@ -345,12 +346,12 @@ const DisputeManagement: React.FC = () => {
               onChange={(e) => setFilterType(e.target.value)}
               className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium appearance-none cursor-pointer"
             >
-              <option value="">All Types</option>
-              <option value="payment">Payment</option>
-              <option value="delivery">Delivery</option>
-              <option value="damage">Damage</option>
-              <option value="service">Service</option>
-              <option value="contract">Contract</option>
+              <option value=""><TranslatedText text="All Types" /></option>
+              <option value="payment"><TranslatedText text="Payment" /></option>
+              <option value="delivery"><TranslatedText text="Delivery" /></option>
+              <option value="damage"><TranslatedText text="Damage" /></option>
+              <option value="service"><TranslatedText text="Service" /></option>
+              <option value="contract"><TranslatedText text="Contract" /></option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           </div>
@@ -360,22 +361,22 @@ const DisputeManagement: React.FC = () => {
               onChange={(e) => setFilterPriority(e.target.value)}
               className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium appearance-none cursor-pointer"
             >
-              <option value="">All Priorities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value=""><TranslatedText text="All Priorities" /></option>
+              <option value="critical"><TranslatedText text="Critical" /></option>
+              <option value="high"><TranslatedText text="High" /></option>
+              <option value="medium"><TranslatedText text="Medium" /></option>
+              <option value="low"><TranslatedText text="Low" /></option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           </div>
           <div className="md:col-span-2 flex gap-2">
             <button className="flex-1 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-sm font-bold">
               <Filter className="w-4 h-4" />
-              <span className="hidden lg:inline">Filter</span>
+              <span className="hidden lg:inline"><TranslatedText text="Filter" /></span>
             </button>
             <button className="flex-1 bg-white border border-gray-200 text-gray-700 px-3 py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-sm font-bold">
               <Download className="w-4 h-4" />
-              <span className="hidden lg:inline">Export</span>
+              <span className="hidden lg:inline"><TranslatedText text="Export" /></span>
             </button>
           </div>
         </div>
@@ -387,13 +388,13 @@ const DisputeManagement: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Dispute</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Parties</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Timeline</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Dispute" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Parties" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Amount" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Timeline" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Assigned" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
@@ -403,7 +404,7 @@ const DisputeManagement: React.FC = () => {
                     <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
                       <Gavel className="w-8 h-8 text-gray-300" />
                     </div>
-                    No disputes found matching your criteria
+                    <TranslatedText text="No disputes found matching your criteria" />
                   </td>
                 </tr>
               ) : (
@@ -519,7 +520,7 @@ const DisputeManagement: React.FC = () => {
                   <Gavel className="w-5 h-5 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Dispute Details</h3>
+                  <h3 className="text-lg font-bold text-gray-900"><TranslatedText text="Dispute Details" /></h3>
                   <p className="text-xs text-gray-500 font-medium">{selectedDispute.disputeNumber}</p>
                 </div>
               </div>
@@ -535,25 +536,25 @@ const DisputeManagement: React.FC = () => {
               {/* Dispute Header Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Status" /></div>
                   <div className="flex items-center gap-1.5">
                     {getStatusIcon(selectedDispute.status)}
                     <span className="text-sm font-bold text-gray-900 capitalize">{selectedDispute.status}</span>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Type</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Type" /></div>
                   <div className="flex items-center gap-1.5">
                     {getTypeIcon(selectedDispute.type)}
                     <span className="text-sm font-bold text-gray-900 capitalize">{selectedDispute.type}</span>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Priority</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Priority" /></div>
                   {getPriorityBadge(selectedDispute.priority)}
                 </div>
                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Amount</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Amount" /></div>
                   <div className="text-sm font-black text-gray-900">${selectedDispute.amount.toLocaleString()}</div>
                 </div>
               </div>

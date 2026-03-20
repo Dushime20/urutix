@@ -2,9 +2,9 @@
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-slate-100 text-slate-800',
-  CREATED: 'bg-blue-100 text-[#345E85]',
+  CREATED: 'bg-primary-50 text-primary-600',
   PUBLISHED: 'bg-emerald-100 text-emerald-800',
-  IN_TRANSIT: 'bg-blue-100 text-[#345E85]',
+  IN_TRANSIT: 'bg-primary-50 text-primary-600',
   delivered: 'bg-emerald-100 text-emerald-800',
   delayed: 'bg-amber-100 text-amber-800',
   cancelled: 'bg-rose-100 text-rose-800',

@@ -1,8 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { FaBuilding, FaPlus, FaArrowRight, FaSpinner, FaCrown, FaStar, FaGem } from 'react-icons/fa';
+import { Building2, Plus, ArrowRight, Loader2, Star, Trophy, Crown } from 'lucide-react';
 import { fetchTenants } from '../../../services/adminApi';
+import { DataCard } from '../../EnliteUI';
+import { TranslatedText } from '../../translated-text';
 
 const TenantManagementWidget: React.FC = () => {
     const navigate = useNavigate();
@@ -17,119 +19,86 @@ const TenantManagementWidget: React.FC = () => {
 
     const stats = {
         total: tenantsArray.length || 0,
-        active: tenantsArray.filter((t: any) => t.status === 'active').length || 0,
-        free: tenantsArray.filter((t: any) => t.subscriptionPlan === 'FREE').length || 0,
-        pro: tenantsArray.filter((t: any) => t.subscriptionPlan === 'PRO').length || 0,
+        active: tenantsArray.filter((t: any) => t.status === 'active' || t.status === 'ACTIVE').length || 0,
+        free: tenantsArray.filter((t: any) => t.subscriptionPlan === 'FREE' || t.subscriptionPlan === 'STARTER').length || 0,
+        pro: tenantsArray.filter((t: any) => t.subscriptionPlan === 'PRO' || t.subscriptionPlan === 'PROFESSIONAL').length || 0,
         enterprise: tenantsArray.filter((t: any) => t.subscriptionPlan === 'ENTERPRISE').length || 0,
     };
 
     const getPlanIcon = (plan: string) => {
-        switch (plan) {
-            case 'FREE': return <FaStar className="text-slate-500" size={12} />;
-            case 'PRO': return <FaCrown className="text-amber-500" size={12} />;
-            case 'ENTERPRISE': return <FaGem className="text-purple-500" size={12} />;
-            default: return null;
+        const p = plan?.toUpperCase();
+        switch (p) {
+            case 'FREE':
+            case 'STARTER': return <Star className="text-slate-400" size={14} />;
+            case 'PRO':
+            case 'PROFESSIONAL': return <Trophy className="text-amber-500" size={14} />;
+            case 'ENTERPRISE': return <Crown className="text-purple-500" size={14} />;
+            default: return <Star className="text-slate-400" size={14} />;
         }
     };
 
     const recentTenants = tenantsArray.slice(0, 3) || [];
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-                        <FaBuilding className="text-indigo-600" size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-800">Tenant Management</h3>
-                        <p className="text-xs text-slate-500">Organizations overview</p>
-                    </div>
-                </div>
+        <DataCard
+            title={<TranslatedText text="Tenant Management" />}
+            subtitle={<TranslatedText text="Organizations & Infrastructure" />}
+            headerColor="secondary"
+            icon={<Building2 size={20} />}
+            actions={
                 <button
                     onClick={() => navigate('/admin/tenants')}
-                    className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                    className="text-[10px] font-black text-white hover:text-primary-200 flex items-center gap-1 uppercase tracking-widest transition-all"
                 >
-                    View All <FaArrowRight size={12} />
+                    <TranslatedText text="View All" /> <ArrowRight size={10} />
                 </button>
-            </div>
-
+            }
+        >
             {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                    <FaSpinner className="animate-spin text-indigo-600" size={24} />
+                <div className="flex items-center justify-center h-48">
+                    <Loader2 className="animate-spin text-primary-600" size={24} />
                 </div>
             ) : (
-                <>
+                <div className="space-y-6">
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="col-span-2 text-center p-3 bg-slate-50 rounded-lg">
-                            <div className="text-2xl font-black text-slate-800">{stats.total}</div>
-                            <div className="text-xs text-slate-500 font-medium mt-1">Total Tenants</div>
-                        </div>
-                        <div className="text-center p-3 bg-emerald-50 rounded-lg">
-                            <div className="text-xl font-black text-emerald-600">{stats.active}</div>
-                            <div className="text-xs text-emerald-600 font-medium mt-1">Active</div>
-                        </div>
-                        <div className="text-center p-3 bg-slate-50 rounded-lg">
-                            <div className="text-xl font-black text-slate-600">{stats.free}</div>
-                            <div className="text-xs text-slate-600 font-medium mt-1">Free Plan</div>
-                        </div>
-                    </div>
-
-                    {/* Subscription Distribution */}
-                    <div className="mb-6">
-                        <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                            Subscription Plans
-                        </h4>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <FaStar className="text-slate-500" size={12} />
-                                    <span className="text-sm font-medium text-slate-700">Free</span>
-                                </div>
-                                <span className="text-sm font-bold text-slate-800">{stats.free}</span>
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            { label: 'Total', value: stats.total, color: 'text-slate-800', bg: 'bg-slate-50' },
+                            { label: 'Live', value: stats.active, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                            { label: 'Pro', value: stats.pro + stats.enterprise, color: 'text-amber-600', bg: 'bg-amber-50' }
+                        ].map((stat, i) => (
+                            <div key={i} className={`text-center p-3 ${stat.bg} rounded-2xl border border-transparent hover:border-slate-200 transition-all`}>
+                                <div className={`text-2xl font-black ${stat.color} leading-none mb-1`}>{stat.value}</div>
+                                <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{stat.label}</div>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <FaCrown className="text-amber-500" size={12} />
-                                    <span className="text-sm font-medium text-slate-700">Pro</span>
-                                </div>
-                                <span className="text-sm font-bold text-slate-800">{stats.pro}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <FaGem className="text-purple-500" size={12} />
-                                    <span className="text-sm font-medium text-slate-700">Enterprise</span>
-                                </div>
-                                <span className="text-sm font-bold text-slate-800">{stats.enterprise}</span>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Recent Tenants */}
                     <div>
-                        <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
-                            Recent Tenants
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+                            Recent Org Allocations
                         </h4>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {recentTenants.map((tenant: any, idx: number) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg transition-colors"
+                                    className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center text-white text-[10px] font-black group-hover:scale-105 transition-transform">
                                             {tenant.name?.[0]}
                                         </div>
                                         <div>
-                                            <div className="text-sm font-semibold text-slate-800">
+                                            <div className="text-xs font-black text-slate-800 uppercase tracking-tight">
                                                 {tenant.name}
                                             </div>
-                                            <div className="text-xs text-slate-500">{tenant.subdomain}</div>
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{tenant.subdomain}</div>
                                         </div>
                                     </div>
-                                    {getPlanIcon(tenant.subscriptionPlan)}
+                                    <div className="flex items-center gap-2">
+                                        {getPlanIcon(tenant.subscriptionPlan)}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -138,13 +107,14 @@ const TenantManagementWidget: React.FC = () => {
                     {/* Quick Action */}
                     <button
                         onClick={() => navigate('/admin/tenants')}
-                        className="w-full mt-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                        className="w-full mt-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-100 group"
                     >
-                        <FaPlus size={14} /> Create New Tenant
+                        <Plus size={14} className="group-hover:scale-110 transition-transform" /> 
+                        <TranslatedText text="Provision New Org" />
                     </button>
-                </>
+                </div>
             )}
-        </div>
+        </DataCard>
     );
 };
 

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Load, LoadStatus } from '../../../entities/load.entity';
 import { Trip, TripStatus } from '../../../entities/trip.entity';
-import { RateLimit } from '../entities/rate-limit.entity';
+import { RateLimit } from './../entities/rate-limit.entity';
 
 export interface MarketConditions {
   currentDemand: number; // 0-1 scale (0 = low demand, 1 = high demand)

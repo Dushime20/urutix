@@ -21,6 +21,8 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // Register Chart.js components
 ChartJS.register(
@@ -42,6 +44,7 @@ interface FinancialMetricsProps {
 }
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) => {
+  const { tSync } = useTranslation();
   const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState<'overview' | 'breakdown' | 'history'>('overview');
 
@@ -214,46 +217,46 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
   };
 
   return (
-    <div className={`bg-[#F9FAFB] rounded-[32px] border border-slate-200 shadow-2xl overflow-hidden flex flex-col h-full max-h-[95vh] text-[#1F2937] antialiased ${className}`}>
+    <div className={`bg-[#F9FAFB] dark:bg-slate-950 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col h-full max-h-[95vh] text-[#1F2937] antialiased ${className}`}>
       {/* Header */}
-      <div className="px-10 py-8 bg-white border-b border-slate-100 flex items-center justify-between">
+      <div className="px-10 py-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div>
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Financial Status</h3>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">Balance & Revenue</h2>
+          <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1"><TranslatedText text="Financial Status" /></h3>
+          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white"><TranslatedText text="Balance & Revenue" /></h2>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
             {(['7d', '30d', '90d'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setTimeRange(r)}
-                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${timeRange === r ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${timeRange === r ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                   }`}
               >
                 {r}
               </button>
             ))}
           </div>
-          <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-100 flex items-center text-[10px] font-black uppercase tracking-widest">
+          <button className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-100 dark:shadow-slate-950/20 flex items-center text-[10px] font-black uppercase tracking-widest">
             <Download className="w-4 h-4 mr-2" />
-            Download Report
+            <TranslatedText text="Download Report" />
           </button>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="px-10 bg-white border-b border-slate-100 flex items-center justify-between">
+      <div className="px-10 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div className="flex gap-8">
           {(['overview', 'breakdown', 'history'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`py-5 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+              className={`py-5 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                 }`}
             >
-            {tab === 'overview' && 'Summary'}
-            {tab === 'breakdown' && 'Revenue Breakdown'}
-            {tab === 'history' && 'Transactions'}
+            {tab === 'overview' && tSync('Summary')}
+            {tab === 'breakdown' && tSync('Revenue Breakdown')}
+            {tab === 'history' && tSync('Transactions')}
             {activeTab === tab && (
               <motion.div
                 layoutId="finTabIndicator"
@@ -265,12 +268,12 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
         </div>
         <div className="hidden md:flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue</span>
+            <div className="w-2 h-2 rounded-full bg-primary-500"></div>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Revenue" /></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expenses</span>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Expenses" /></span>
           </div>
         </div>
       </div>
@@ -289,10 +292,10 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               {/* Core KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { label: 'Total Earnings', value: financialData.summary.totalRevenue, trend: 12.5, icon: DollarSign, color: 'indigo' },
-                  { label: 'Net Profit', value: financialData.summary.netProfit, trend: 18.7, icon: TrendingUp, color: 'emerald' },
-                  { label: 'Average Trip Income', value: financialData.summary.averageRevenuePerLoad, trend: 4.2, icon: Landmark, color: 'blue' },
-                  { label: 'Remaining Credits', value: creditBalance?.currentBalance ?? 0, trend: 0, icon: Wallet, color: 'violet', isCredit: true } // Add Credit Card
+                  { label: tSync('Total Earnings'), value: financialData.summary.totalRevenue, trend: 12.5, icon: DollarSign, color: 'primary' },
+                  { label: tSync('Net Profit'), value: financialData.summary.netProfit, trend: 18.7, icon: TrendingUp, color: 'emerald' },
+                  { label: tSync('Average Trip Income'), value: financialData.summary.averageRevenuePerLoad, trend: 4.2, icon: Landmark, color: 'blue' },
+                  { label: tSync('Remaining Credits'), value: creditBalance?.currentBalance ?? 0, trend: 0, icon: Wallet, color: 'violet', isCredit: true } // Add Credit Card
                 ].map((kpi, i) => {
                   const isCredit = (kpi as any).isCredit;
                   const isPercent = (kpi as any).isPercent;
@@ -303,20 +306,20 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.05 }}
-                      className="bg-white p-8 rounded-[24px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] group hover:border-indigo-100 transition-all"
+                      className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] group hover:border-primary-100 dark:hover:border-primary-800 transition-all"
                     >
                       <div className="flex justify-between items-start mb-6">
-                        <div className={`p-4 rounded-[18px] bg-${kpi.color}-50`}>
-                          <kpi.icon className={`w-6 h-6 text-${kpi.color}-600`} />
+                        <div className={`p-4 rounded-[18px] bg-${kpi.color}-50 dark:bg-${kpi.color}-900/20`}>
+                          <kpi.icon className={`w-6 h-6 text-${kpi.color}-600 dark:text-${kpi.color}-400`} />
                         </div>
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg">
                           {getTrendIcon(kpi.trend)}
-                          <span className="text-[10px] font-black text-slate-600">{kpi.trend}%</span>
+                          <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{kpi.trend}%</span>
                         </div>
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</p>
-                        <p className="text-2xl font-black text-slate-900 tracking-tight">
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
+                        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                           {isCredit ? (kpi.value).toLocaleString() : (isPercent ? `${kpi.value}%` : formatCurrency(kpi.value))}
                         </p>
                       </div>
@@ -326,17 +329,17 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               </div>
 
               {/* Main Chart Section */}
-              <div className="bg-white p-10 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+               <div className="bg-white dark:bg-slate-900 p-10 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                 <div className="flex items-center justify-between mb-10">
                   <div>
-                    <h4 className="text-lg font-black text-slate-900 tracking-tight">Earnings Overview</h4>
-                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Income vs Spend (12 Month History)</p>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Earnings Overview" /></h4>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest italic"><TranslatedText text="Income vs Spend (12 Month History)" /></p>
                   </div>
                   <div className="flex gap-4">
-                    <button className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
+                    <button className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 transition-all">
                       <Filter className="w-5 h-5" />
                     </button>
-                    <button className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-white transition-all">
+                    <button className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 transition-all">
                       <Calendar className="w-5 h-5" />
                     </button>
                   </div>
@@ -347,53 +350,53 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               </div>
 
               {/* Detail Metrics Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 bg-white p-8 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Revenue Segments</h4>
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6"><TranslatedText text="Revenue Segments" /></h4>
                   <div className="h-48 mb-6">
                     <Doughnut data={doughnutData} options={{ ...chartOptions, plugins: { legend: { display: false } } }} />
                   </div>
                   <div className="space-y-3">
                     {financialData.breakdown.revenue.map(item => (
-                      <div key={item.label} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                      <div key={item.label} className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{item.label}</span>
+                          <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{tSync(item.label)}</span>
                         </div>
-                        <span className="text-xs font-black text-slate-900">{formatCurrency(item.value)}</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white">{formatCurrency(item.value)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="lg:col-span-2 bg-white p-8 rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expense Hierarchy</h4>
-                    <button className="text-[10px] font-black text-indigo-600 hover:underline">View All Costs</button>
+                    <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Expense Hierarchy" /></h4>
+                    <button className="text-[10px] font-black text-primary-600 dark:text-primary-400 hover:underline"><TranslatedText text="View All Costs" /></button>
                   </div>
                   <div className="space-y-6">
                     {financialData.breakdown.expenses.slice(0, 4).map(item => (
                       <div key={item.label} className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                          <span>{item.label}</span>
-                          <span className="text-slate-900">{formatCurrency(item.value)}</span>
+                        <div className="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+                          <span>{tSync(item.label)}</span>
+                          <span className="text-slate-900 dark:text-slate-100">{formatCurrency(item.value)}</span>
                         </div>
-                        <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(item.value / financialData.summary.totalExpenses) * 100}%` }}
-                            className="h-full bg-indigo-500 rounded-full"
+                            className="h-full bg-primary-500 rounded-full"
                           />
                         </div>
                       </div>
                     ))}
-                    <div className="mt-8 pt-8 border-t border-slate-50 grid grid-cols-2 gap-8">
+                    <div className="mt-8 pt-8 border-t border-slate-50 dark:border-slate-800 grid grid-cols-2 gap-8">
                       <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Operating Ratio</p>
-                        <p className="text-xl font-black text-slate-900">71.2%</p>
+                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Operating Ratio" /></p>
+                        <p className="text-xl font-black text-slate-900 dark:text-white">71.2%</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Burn Rate (Monthly)</p>
+                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Burn Rate" /> (<TranslatedText text="Monthly" />)</p>
                         <p className="text-xl font-black text-rose-500">{formatCurrency(741000)}</p>
                       </div>
                     </div>
@@ -409,15 +412,15 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="py-12 flex flex-col items-center justify-center bg-indigo-600 rounded-[40px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden group"
+              className="py-12 flex flex-col items-center justify-center bg-primary-600 dark:bg-primary-700 rounded-[40px] text-white shadow-xl shadow-primary-100 dark:shadow-slate-950/20 relative overflow-hidden group"
             >
               <div className="relative z-10 text-center">
                 <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
                   <PieChart className="w-8 h-8 text-white" />
                 </div>
-                <h4 className="text-xl font-black tracking-tight">Advanced Fiscal Segmentation</h4>
-                <p className="text-sm text-white/70 font-medium mb-6">Deep dive into cost centers and revenue streams with multi-dimensional filters.</p>
-                <button className="bg-white text-indigo-600 px-8 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-xl">Launch Fiscal Lab</button>
+                <h4 className="text-xl font-black tracking-tight"><TranslatedText text="Advanced Fiscal Segmentation" /></h4>
+                <p className="text-sm text-white/70 font-medium mb-6 italic px-10"><TranslatedText text="Deep dive into cost centers and revenue streams with multi-dimensional filters." /></p>
+                <button className="bg-white text-primary-600 px-8 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-xl"><TranslatedText text="Launch Fiscal Lab" /></button>
               </div>
               <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 backdrop-blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
             </motion.div>
@@ -429,34 +432,34 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-white rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden"
             >
               <table className="w-full text-left">
-                <thead className="bg-slate-50/50 border-b border-slate-100">
+                <thead className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800">
                   <tr>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Details" /></th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Category" /></th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Amount" /></th>
+                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right"><TranslatedText text="Actions" /></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {[1, 2, 3, 4, 5].map(i => (
-                    <tr key={i} className="hover:bg-slate-50/50 transition-all">
+                    <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-all">
                       <td className="px-10 py-6">
                         <div>
-                          <p className="text-sm font-black text-slate-900">Freight Segment-00{i}</p>
-                          <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Oct 2{i}, 2023 · #482910</p>
+                          <p className="text-sm font-black text-slate-900 dark:text-slate-100"><TranslatedText text="Freight Segment" />-00{i}</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">Oct 2{i}, 2023 · #482910</p>
                         </div>
                       </td>
                       <td className="px-10 py-6">
-                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Operational Revenue</span>
+                        <span className="px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-full text-[9px] font-black uppercase tracking-widest"><TranslatedText text="Operational Revenue" /></span>
                       </td>
-                      <td className="px-10 py-6 text-sm font-black text-slate-900">
+                      <td className="px-10 py-6 text-sm font-black text-slate-900 dark:text-slate-100">
                         {formatCurrency(125000 * i)}
                       </td>
                       <td className="px-10 py-6 text-right">
-                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-all">
+                        <button className="p-2 text-slate-400 dark:text-slate-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
                           <Eye className="w-5 h-5" />
                         </button>
                       </td>
@@ -480,8 +483,14 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
           background: #E2E8F0;
           border-radius: 10px;
         }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #334155;
+        }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #94A3B8;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #475569;
         }
       `}</style>
     </div>

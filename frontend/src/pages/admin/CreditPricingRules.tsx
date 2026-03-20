@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../../components/translated-text';
 import api from '../../services/api';
 
 interface PricingRule {
@@ -160,16 +161,15 @@ const CreditPricingRules: React.FC = () => {
   };
 
   return (
-    <AdminPageLayout title="Credit Pricing Rules">
+    <AdminPageLayout title={<TranslatedText text="Credit Pricing Rules" />}>
       <div className="space-y-6">
         {/* Info Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
           <FaInfoCircle className="text-blue-500 mt-1 flex-shrink-0" />
           <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Business Rules Configuration</p>
+            <p className="font-medium mb-1"><TranslatedText text="Business Rules Configuration" /></p>
             <p>
-              Configure how credits are consumed based on cargo weight, distance, time, or flat rates.
-              Example: 1 ton = 5 USD worth of credits.
+              <TranslatedText text="Configure how credits are consumed based on cargo weight, distance, time, or flat rates. Example: 1 ton = 5 USD worth of credits." />
             </p>
           </div>
         </div>
@@ -178,13 +178,13 @@ const CreditPricingRules: React.FC = () => {
         {isCreating && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">
-              {editingId ? 'Edit Pricing Rule' : 'Create New Pricing Rule'}
+              {editingId ? <TranslatedText text="Edit Pricing Rule" /> : <TranslatedText text="Create New Pricing Rule" />}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Rule Name
+                    <TranslatedText text="Rule Name" />
                   </label>
                   <input
                     type="text"
@@ -198,23 +198,23 @@ const CreditPricingRules: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Rule Type
+                    <TranslatedText text="Rule Type" />
                   </label>
                   <select
                     value={formData.ruleType}
                     onChange={(e) => setFormData({ ...formData, ruleType: e.target.value as any })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
-                    <option value="weight">Weight-based</option>
-                    <option value="distance">Distance-based</option>
-                    <option value="time">Time-based</option>
-                    <option value="flat">Flat Rate</option>
+                    <option value="weight"><TranslatedText text="Weight-based" /></option>
+                    <option value="distance"><TranslatedText text="Distance-based" /></option>
+                    <option value="time"><TranslatedText text="Time-based" /></option>
+                    <option value="flat"><TranslatedText text="Flat Rate" /></option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Unit
+                    <TranslatedText text="Unit" />
                   </label>
                   <input
                     type="text"
@@ -228,7 +228,7 @@ const CreditPricingRules: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Credit Cost (per unit)
+                    <TranslatedText text="Credit Cost (per unit)" />
                   </label>
                   <input
                     type="number"
@@ -242,7 +242,7 @@ const CreditPricingRules: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Min Value (optional, for tiered pricing)
+                    <TranslatedText text="Min Value (optional, for tiered pricing)" />
                   </label>
                   <input
                     type="number"
@@ -256,7 +256,7 @@ const CreditPricingRules: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Value (optional, for tiered pricing)
+                    <TranslatedText text="Max Value (optional, for tiered pricing)" />
                   </label>
                   <input
                     type="number"
@@ -270,7 +270,7 @@ const CreditPricingRules: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
+                    <TranslatedText text="Priority" />
                   </label>
                   <input
                     type="number"
@@ -278,7 +278,7 @@ const CreditPricingRules: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Higher priority rules apply first</p>
+                  <p className="text-xs text-gray-500 mt-1"><TranslatedText text="Higher priority rules apply first" /></p>
                 </div>
 
                 <div className="flex items-center">
@@ -289,7 +289,7 @@ const CreditPricingRules: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
-                    <span className="ml-2 text-sm font-medium text-gray-700">Active</span>
+                    <span className="ml-2 text-sm font-medium text-gray-700"><TranslatedText text="Active" /></span>
                   </label>
                 </div>
               </div>
@@ -301,7 +301,7 @@ const CreditPricingRules: React.FC = () => {
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
                 >
                   <FaSave />
-                  {editingId ? 'Update Rule' : 'Create Rule'}
+                  {editingId ? <TranslatedText text="Update Rule" /> : <TranslatedText text="Create Rule" />}
                 </button>
                 <button
                   type="button"
@@ -309,7 +309,7 @@ const CreditPricingRules: React.FC = () => {
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
                 >
                   <FaTimes />
-                  Cancel
+                  <TranslatedText text="Cancel" />
                 </button>
               </div>
             </form>
@@ -323,7 +323,7 @@ const CreditPricingRules: React.FC = () => {
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
           >
             <FaPlus />
-            Create New Rule
+            <TranslatedText text="Create New Rule" />
           </button>
         )}
 
@@ -334,25 +334,25 @@ const CreditPricingRules: React.FC = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rule Name
+                    <TranslatedText text="Rule Name" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    <TranslatedText text="Type" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cost
+                    <TranslatedText text="Cost" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Range
+                    <TranslatedText text="Range" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
+                    <TranslatedText text="Priority" />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    <TranslatedText text="Status" />
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    <TranslatedText text="Actions" />
                   </th>
                 </tr>
               </thead>
@@ -360,13 +360,13 @@ const CreditPricingRules: React.FC = () => {
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      Loading pricing rules...
+                      <TranslatedText text="Loading pricing rules..." />
                     </td>
                   </tr>
                 ) : rules.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      No pricing rules found. Create one to get started.
+                      <TranslatedText text="No pricing rules found. Create one to get started." />
                     </td>
                   </tr>
                 ) : (
@@ -392,7 +392,7 @@ const CreditPricingRules: React.FC = () => {
                               {rule.maxValue ? `${rule.maxValue}` : ''}
                             </>
                           ) : (
-                            'All values'
+                            <TranslatedText text="All values" />
                           )}
                         </div>
                       </td>
@@ -407,7 +407,7 @@ const CreditPricingRules: React.FC = () => {
                               : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {rule.isActive ? 'Active' : 'Inactive'}
+                          {rule.isActive ? <TranslatedText text="Active" /> : <TranslatedText text="Inactive" />}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

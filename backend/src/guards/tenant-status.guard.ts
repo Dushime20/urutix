@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Tenant, TenantStatus } from '../entities/tenant.entity';
+import { Tenant, TenantStatus } from './../entities/tenant.entity';
 
 /**
  * Guard to enforce access control for deactivated tenants

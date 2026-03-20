@@ -23,7 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { FinancialService } from './financial.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
 
 @ApiTags('Financial Management')

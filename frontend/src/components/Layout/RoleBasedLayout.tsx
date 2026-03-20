@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { FaBars, FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog } from 'react-icons/fa';
+import { FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import MobileBottomNav from './MobileBottomNav';
 
 const RoleBasedLayout: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -55,35 +56,6 @@ const RoleBasedLayout: React.FC = () => {
   console.log('RoleBasedLayout: Rendering with user:', user);
 
 
-  const handleLogout = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    setShowUserMenu(false);
-    
-    try {
-      console.log('🔄 Starting logout process...');
-      
-      // Direct logout approach - clear tokens immediately
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      
-      // Call logout function if available
-      if (logout && typeof logout === 'function') {
-        logout();
-      }
-      
-      // Force immediate redirect
-      setTimeout(() => {
-        window.location.href = '/auth';
-      }, 100);
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-      // Even if logout fails, redirect to auth page
-      window.location.href = '/auth';
-    }
-  };
 
   // Get search placeholder based on user role
   const getSearchPlaceholder = () => {
@@ -126,8 +98,8 @@ const RoleBasedLayout: React.FC = () => {
 
             {/* Right Side Header */}
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-              {/* Notifications */}
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
+              {/* Notifications - Hidden on mobile as it's in the bottom nav */}
+              <button className="hidden lg:block p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
                 <FaBell className="w-5 h-5 text-gray-600" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   3
@@ -207,11 +179,12 @@ const RoleBasedLayout: React.FC = () => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 pb-20 lg:pb-0">
           <div className="container mx-auto px-6 py-8">
             <Outlet />
           </div>
         </main>
+        <MobileBottomNav />
       </div>
     </div>
   );

@@ -192,6 +192,90 @@ const analyticsApiBase = {
     const response = await api.post('/analytics/backfill');
     return response.data;
   },
+
+  // Predictive Logistics
+  getETAPrediction: async (origin: string, destination: string): Promise<any> => {
+    const response = await api.get('/analytics/predictive/eta', {
+      params: { origin, destination },
+    });
+    return response.data;
+  },
+
+  getDemandHeatmap: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/demand-heatmap');
+    return response.data;
+  },
+
+  getPricingRecommendation: async (origin: string, destination: string, weight?: number): Promise<any> => {
+    const response = await api.get('/analytics/predictive/pricing-engine', {
+      params: { origin, destination, weight },
+    });
+    return response.data;
+  },
+
+  getBenchmarking: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/benchmarking');
+    return response.data;
+  },
+
+  getLaneRecommendations: async (origin: string, destination: string): Promise<any> => {
+    const response = await api.get('/analytics/predictive/recommendations', {
+      params: { origin, destination },
+    });
+    return response.data;
+  },
+
+  getCarrierScores: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/carrier-scores');
+    return response.data;
+  },
+
+  getSustainability: async (origin: string, destination: string, weight: number): Promise<any> => {
+    const response = await api.get('/analytics/predictive/sustainability', {
+      params: { origin, destination, weight },
+    });
+    return response.data;
+  },
+
+  getConsolidation: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/consolidation');
+    return response.data;
+  },
+
+  getDriverSafety: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/driver-safety');
+    return response.data;
+  },
+
+  getMaintenance: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/maintenance');
+    return response.data;
+  },
+
+  getDiversions: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/diversions');
+    return response.data;
+  },
+
+  getDamageRisk: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/damage');
+    return response.data;
+  },
+
+  getCapacityForecast: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/capacity');
+    return response.data;
+  },
+
+  getUtilization: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/utilization');
+    return response.data;
+  },
+
+  getAnomalies: async (): Promise<any> => {
+    const response = await api.get('/analytics/predictive/anomalies');
+    return response.data;
+  },
 };
 
 // Operational Analytics Types

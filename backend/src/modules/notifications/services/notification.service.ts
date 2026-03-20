@@ -13,8 +13,8 @@ import {
 import {
   NotificationTemplate,
   TemplateType,
-} from '../entities/notification-template.entity';
-import { NotificationPreference } from '../entities/notification-preference.entity';
+} from './../entities/notification-template.entity';
+import { NotificationPreference } from '../../../entities/notification-preference.entity';
 import { EmailService } from './email.service';
 import { SmsService } from './sms.service';
 import { PushService } from './push.service';
@@ -441,7 +441,7 @@ export class NotificationService {
 
     for (const channel of requestedChannels) {
       const preference = preferences.find(
-        (p) => (p.category as any) === (category as any),
+        (p) => (p as any).notificationType === (category as any),
       );
 
       if (!preference) {
@@ -451,19 +451,9 @@ export class NotificationService {
       }
 
       // Check if channel is enabled for this category
-      switch (channel) {
-        case NotificationChannel.EMAIL:
-          if (preference.emailEnabled) enabledChannels.push(channel);
-          break;
-        case NotificationChannel.SMS:
-          if (preference.smsEnabled) enabledChannels.push(channel);
-          break;
-        case NotificationChannel.PUSH:
-          if (preference.pushEnabled) enabledChannels.push(channel);
-          break;
-        case NotificationChannel.IN_APP:
-          if (preference.inAppEnabled) enabledChannels.push(channel);
-          break;
+      const isChannelEnabled = preference.enabledChannels.includes(channel as any);
+      if (isChannelEnabled) {
+        enabledChannels.push(channel);
       }
     }
 

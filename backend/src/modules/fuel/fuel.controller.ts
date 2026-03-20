@@ -17,7 +17,7 @@ import {
     ApiBearerAuth,
     ApiQuery,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { FuelService } from './fuel.service';
 import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-log.dto';

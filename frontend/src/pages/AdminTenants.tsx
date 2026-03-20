@@ -21,6 +21,7 @@ import {
   Heart, Clock
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 interface Tenant {
   id: string;
@@ -512,24 +513,26 @@ const AdminTenants: React.FC = () => {
     });
   };
 
-  const stats = [
+  const getStatsData = () => [
     { label: 'Total Tenants', value: tenants.length, icon: Building2, color: 'from-gray-600 to-gray-700' },
     { label: 'Active Tenants', value: tenants.filter((t: Tenant) => t.status === 'active').length, icon: Check, color: 'from-gray-600 to-gray-700' },
     { label: 'Total Users', value: tenants.reduce((sum: number, t: Tenant) => sum + (t.userCount || 0), 0), icon: Users, color: 'from-gray-600 to-gray-700' },
     { label: 'Total Revenue', value: `$${tenants.reduce((sum: number, t: Tenant) => sum + (t.revenue || 0), 0).toLocaleString()}`, icon: TrendingUp, color: 'from-gray-600 to-gray-700' },
   ];
 
+  const stats = getStatsData();
+
   return (
     <AdminPageLayout
-      title="Tenant Management"
-      description="Manage platform tenants and their configurations"
+      title={<TranslatedText text="Tenant Management" />}
+      description={<TranslatedText text="Manage platform tenants and their configurations" />}
       actions={
         <button
           onClick={() => setShowCreateModal(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 text-sm font-bold"
         >
           <Plus size={16} />
-          <span>Add Tenant</span>
+          <span><TranslatedText text="Add Tenant" /></span>
         </button>
       }
     >
@@ -547,7 +550,7 @@ const AdminTenants: React.FC = () => {
                   <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300 shadow-sm">
                     <Icon size={18} />
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{stat.label}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text={stat.label} /></p>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">{stat.value}</h3>

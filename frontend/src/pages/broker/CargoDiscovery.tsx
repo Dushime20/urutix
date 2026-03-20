@@ -5,27 +5,21 @@ import {
   Package, 
   Search, 
   MapPin, 
-  DollarSign, 
-  Calendar,
-  Filter,
   ArrowRight,
-  Loader2,
-  Eye,
   Grid3x3,
   List,
   Map as MapIcon,
   SlidersHorizontal,
   Sparkles,
   Target,
-  TrendingUp,
-  X,
   Bookmark,
   Clock,
-  Weight,
-  Truck,
   Zap,
-  Star,
-  AlertCircle
+  Eye,
+  Activity,
+  Shield,
+  Filter,
+  X
 } from 'lucide-react';
 
 interface Load {
@@ -73,639 +67,267 @@ const CargoDiscovery: React.FC = () => {
   const loadAvailableLoads = async () => {
     try {
       setLoading(true);
-      const params: any = {
-        status: filters.status,
-        page: 1,
-        limit: 20,
-      };
-
+      const params: any = { status: filters.status, page: 1, limit: 20 };
       if (filters.minValue) params.minLoadValue = filters.minValue;
       if (filters.maxValue) params.maxLoadValue = filters.maxValue;
       if (filters.cargoType) params.cargoType = filters.cargoType;
       if (searchTerm) params.search = searchTerm;
 
       const response = await brokerAPI.getAvailableLoads(params);
-      // Handle different response structures
       const responseData = response.data || response || {};
       const loadsData = responseData.items || responseData || [];
       setLoads(Array.isArray(loadsData) ? loadsData : []);
     } catch (err: any) {
       console.error('Failed to load loads:', err);
-      setLoads([]); // Ensure loads is always an array
+      setLoads([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadAvailableLoads();
-  };
-
-  const handleProposeMatch = (loadId: string) => {
-    navigate(`/dashboard/broker/deals?loadId=${loadId}`);
-  };
-
-  const handleFindTransporters = (loadId: string) => {
-    navigate(`/dashboard/broker/smart-matching?loadId=${loadId}`);
-  };
+  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadAvailableLoads(); };
+  const handleFindTransporters = (loadId: string) => navigate(`/dashboard/broker/smart-matching?loadId=${loadId}`);
 
   const getSortedLoads = () => {
     const sorted = [...loads];
-    
     switch (sortBy) {
-      case 'newest':
-        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-      case 'value-high':
-        sorted.sort((a, b) => b.loadValue - a.loadValue);
-        break;
-      case 'value-low':
-        sorted.sort((a, b) => a.loadValue - b.loadValue);
-        break;
-      case 'urgent':
-        sorted.sort((a, b) => {
-          const dateA = a.pickupDate ? new Date(a.pickupDate).getTime() : Infinity;
-          const dateB = b.pickupDate ? new Date(b.pickupDate).getTime() : Infinity;
-          return dateA - dateB;
-        });
-        break;
-      case 'recommended':
-        // Smart sorting: high value + recent + good route
-        sorted.sort((a, b) => {
-          const scoreA = a.loadValue / 1000 + (Date.now() - new Date(a.createdAt).getTime()) / (1000 * 60 * 60);
-          const scoreB = b.loadValue / 1000 + (Date.now() - new Date(b.createdAt).getTime()) / (1000 * 60 * 60);
-          return scoreB - scoreA;
-        });
-        break;
+      case 'newest': sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
+      case 'value-high': sorted.sort((a, b) => b.loadValue - a.loadValue); break;
+      case 'value-low': sorted.sort((a, b) => a.loadValue - b.loadValue); break;
+      case 'urgent': sorted.sort((a, b) => (a.pickupDate ? new Date(a.pickupDate).getTime() : Infinity) - (b.pickupDate ? new Date(b.pickupDate).getTime() : Infinity)); break;
+      case 'recommended': sorted.sort((a, b) => (b.loadValue / 1000 + (Date.now() - new Date(b.createdAt).getTime()) / (1000 * 60 * 60)) - (a.loadValue / 1000 + (Date.now() - new Date(a.createdAt).getTime()) / (1000 * 60 * 60))); break;
     }
-    
     return sorted;
   };
 
-  const getRecommendedLoads = () => {
-    // Return top 3 recommended loads
-    return getSortedLoads().slice(0, 3);
-  };
-
   const clearFilters = () => {
-    setFilters({
-      status: 'PUBLISHED',
-      minValue: '',
-      maxValue: '',
-      cargoType: '',
-      equipmentType: '',
-      urgency: '',
-      route: '',
-    });
+    setFilters({ status: 'PUBLISHED', minValue: '', maxValue: '', cargoType: '', equipmentType: '', urgency: '', route: '' });
     setSearchTerm('');
   };
 
   const sortedLoads = getSortedLoads();
-  const recommendedLoads = getRecommendedLoads();
+  const recommendedLoads = sortedLoads.slice(0, 3);
   const hasActiveFilters = filters.minValue || filters.maxValue || filters.cargoType || filters.equipmentType || filters.urgency || filters.route || searchTerm;
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scanning Inventory...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200">
-        <div className="flex items-center justify-between">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Discovery Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <Search size={24} className="text-white" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold mb-2 text-gray-900">🔍 Cargo Discovery</h1>
-            <p className="text-gray-600 text-lg">
-              Find profitable loads and connect them with reliable transporters
-            </p>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Discovery</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Global Inventory</p>
           </div>
-          <div className="bg-gray-100 rounded-xl p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Available Loads</p>
-            <p className="text-4xl font-bold text-gray-900">{loads.length}</p>
-          </div>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-12 mr-4 text-right">
+           <div className="text-center hidden md:block">
+             <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{loads.length}</p>
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Inventory</p>
+           </div>
+           <button onClick={() => navigate('/dashboard/broker/smart-matching')} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+             <Zap size={14} /> Match
+           </button>
         </div>
       </div>
 
-      {/* Smart Recommendations */}
-      {!loading && recommendedLoads.length > 0 && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-gray-100 rounded-lg p-2">
-              <Sparkles className="w-5 h-5 text-violet-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">AI Recommended for You</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {recommendedLoads.map((load) => (
-              <div
-                key={load.id}
-                className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer"
-                onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="w-4 h-4 text-violet-600" />
-                  <h3 className="font-semibold text-gray-900 text-sm truncate flex-1">{load.title}</h3>
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full flex items-center gap-1">
-                    <Star className="w-3 h-3 text-emerald-600" />
-                    95%
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 mb-3 line-clamp-2">{load.description || 'No description'}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-violet-600">
-                    {load.currencyCode} {load.loadValue.toLocaleString()}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFindTransporters(load.id);
-                    }}
-                    className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1"
-                  >
-                    Match <Zap className="w-3 h-3 text-violet-600" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Search, View Modes, and Sort */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search Bar */}
-          <div className="flex-1">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search by title, location, cargo type..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
-              />
-            </form>
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'list'
-                  ? 'bg-white shadow-sm text-violet-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="List View"
-            >
-              <List className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('card')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'card'
-                  ? 'bg-white shadow-sm text-violet-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="Card View"
-            >
-              <Grid3x3 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'map'
-                  ? 'bg-white shadow-sm text-violet-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="Map View"
-            >
-              <MapIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white"
-          >
-            <option value="recommended">🌟 Recommended</option>
-            <option value="newest">🆕 Newest First</option>
-            <option value="value-high">💰 Highest Value</option>
-            <option value="value-low">💵 Lowest Value</option>
-            <option value="urgent">⚡ Most Urgent</option>
-          </select>
-
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
-              showFilters || hasActiveFilters
-                ? 'bg-violet-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <SlidersHorizontal className="w-5 h-5" />
-            Filters
-            {hasActiveFilters && (
-              <span className="bg-white text-violet-600 text-xs px-2 py-0.5 rounded-full font-bold">
-                {[filters.minValue, filters.maxValue, filters.cargoType, filters.equipmentType, filters.urgency, filters.route, searchTerm].filter(Boolean).length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Advanced Filters Panel */}
-        {showFilters && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1"
-                >
-                  <X className="w-4 h-4" />
-                  Clear All
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Route Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="w-4 h-4 inline mr-1" />
-                  Route
-                </label>
+      {/* Control Terminal */}
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm space-y-8 relative overflow-hidden group">
+        <div className="flex flex-col lg:flex-row gap-8 items-end">
+          <div className="flex-1 space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Identify Target</label>
+            <div className="relative">
+              <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+              <form onSubmit={handleSearch}>
                 <input
                   type="text"
-                  value={filters.route}
-                  onChange={(e) => setFilters({ ...filters, route: e.target.value })}
-                  placeholder="e.g., Nairobi-Mombasa"
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  placeholder="Scan load title or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-black uppercase tracking-widest text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none"
                 />
-              </div>
+              </form>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <div className="flex items-center p-1 bg-slate-50 rounded-2xl border border-slate-100">
+               {[
+                 { mode: 'list', icon: List },
+                 { mode: 'card', icon: Grid3x3 }
+               ].map(({ mode, icon: Icon }) => (
+                 <button key={mode} onClick={() => setViewMode(mode as any)} className={`p-4 rounded-xl transition-all ${viewMode === mode ? 'bg-white shadow-sm text-primary-600' : 'text-slate-400 hover:text-slate-900'}`}><Icon size={18} /></button>
+               ))}
+            </div>
+            <button onClick={() => setShowFilters(!showFilters)} className={`px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${(showFilters || hasActiveFilters) ? 'bg-primary-600 text-white shadow-xl' : 'bg-slate-900 text-white'}`}>
+              <Filter size={16} /> Parameters
+            </button>
+          </div>
+        </div>
 
-              {/* Cargo Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Package className="w-4 h-4 inline mr-1" />
-                  Cargo Type
-                </label>
-                <select
-                  value={filters.cargoType}
-                  onChange={(e) => setFilters({ ...filters, cargoType: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                >
-                  <option value="">All Types</option>
-                  <option value="GENERAL">General Cargo</option>
-                  <option value="FRAGILE">Fragile Items</option>
-                  <option value="HAZARDOUS">Hazardous Materials</option>
-                  <option value="REFRIGERATED">Refrigerated</option>
-                  <option value="ELECTRONICS">Electronics</option>
-                  <option value="FURNITURE">Furniture</option>
-                </select>
-              </div>
-
-              {/* Equipment Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Truck className="w-4 h-4 inline mr-1" />
-                  Equipment Type
-                </label>
-                <select
-                  value={filters.equipmentType}
-                  onChange={(e) => setFilters({ ...filters, equipmentType: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                >
-                  <option value="">Any Equipment</option>
-                  <option value="DRY_VAN">Dry Van</option>
-                  <option value="FLATBED">Flatbed</option>
-                  <option value="REFRIGERATED">Refrigerated Truck</option>
-                  <option value="CONTAINER">Container</option>
-                  <option value="TANKER">Tanker</option>
-                </select>
-              </div>
-
-              {/* Urgency */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="w-4 h-4 inline mr-1" />
-                  Urgency
-                </label>
-                <select
-                  value={filters.urgency}
-                  onChange={(e) => setFilters({ ...filters, urgency: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                >
-                  <option value="">Any Time</option>
-                  <option value="URGENT">🔴 Urgent (24-48hrs)</option>
-                  <option value="SOON">🟡 Soon (3-7 days)</option>
-                  <option value="FLEXIBLE">🟢 Flexible (7+ days)</option>
-                </select>
-              </div>
-
-              {/* Min Value */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <DollarSign className="w-4 h-4 inline mr-1" />
-                  Min Value
-                </label>
-                <input
-                  type="number"
-                  value={filters.minValue}
-                  onChange={(e) => setFilters({ ...filters, minValue: e.target.value })}
-                  placeholder="$0"
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                />
-              </div>
-
-              {/* Max Value */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <DollarSign className="w-4 h-4 inline mr-1" />
-                  Max Value
-                </label>
-                <input
-                  type="number"
-                  value={filters.maxValue}
-                  onChange={(e) => setFilters({ ...filters, maxValue: e.target.value })}
-                  placeholder="$999,999"
-                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                />
-              </div>
-
-              {/* Apply Button - spans remaining columns */}
-              <div className="md:col-span-2 lg:col-span-2 flex items-end">
-                <button
-                  onClick={handleSearch}
-                  className="w-full px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  <Filter className="w-5 h-5" />
-                  Apply Filters
-                </button>
-              </div>
+        {showFilters && (
+          <div className="pt-8 border-t border-slate-50 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 animate-slide-up">
+            <div className="space-y-2">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Route</p>
+               <input type="text" value={filters.route} onChange={e => setFilters({...filters, route: e.target.value})} placeholder="e.g. EU-20-80" className="w-full bg-slate-50/50 rounded-xl px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+            </div>
+            <div className="space-y-2">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Class</p>
+               <select value={filters.cargoType} onChange={e => setFilters({...filters, cargoType: e.target.value})} className="w-full bg-slate-50/50 rounded-xl px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all cursor-pointer">
+                  <option value="">Any Class</option>
+                  <option value="GENERAL">General</option>
+                  <option value="FROZEN">Frozen</option>
+               </select>
+            </div>
+            <div className="space-y-2">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Floor Price</p>
+               <input type="number" value={filters.minValue} onChange={e => setFilters({...filters, minValue: e.target.value})} placeholder="Min USD" className="w-full bg-slate-50/50 rounded-xl px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-900 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+            </div>
+            <div className="flex items-end">
+               <button onClick={clearFilters} className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-xl transition-all">Clear Selection</button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Results Count & Map View Placeholder */}
-      {!loading && loads.length > 0 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{sortedLoads.length}</span> available loads
-            {hasActiveFilters && <span className="text-violet-600"> (filtered)</span>}
-          </p>
+      {/* Suggested System */}
+      {recommendedLoads.length > 0 && (
+        <div className="space-y-8">
+           <div className="flex items-center gap-3">
+             <Sparkles className="text-primary-600" size={24} />
+             <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase italic">Suggested</h2>
+           </div>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             {recommendedLoads.map((load) => (
+                <div key={load.id} onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm cursor-pointer group hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl">
+                   <div className="flex justify-between items-start mb-8">
+                      <div className="p-3 bg-slate-50 rounded-xl text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"><Target size={20} /></div>
+                      <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-widest">Precision 98%</span>
+                   </div>
+                   <h3 className="text-lg font-black text-slate-900 tracking-tighter mb-8 leading-tight line-clamp-2 italic">{load.title}</h3>
+                   <div className="pt-8 border-t border-slate-50 flex items-center justify-between">
+                      <span className="text-2xl font-black text-primary-600 tracking-tighter">${load.loadValue.toLocaleString()}</span>
+                      <div className="p-3 bg-slate-50 rounded-xl text-slate-300 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm"><ArrowRight size={18} /></div>
+                   </div>
+                </div>
+             ))}
+           </div>
         </div>
       )}
 
-      {/* Loads Display */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mb-4" />
-          <p className="text-gray-600">Finding available cargo...</p>
+      {/* Stream Field */}
+      <div className="space-y-8">
+        <div className="flex items-center justify-between px-4">
+           <div className="flex items-center gap-3">
+             <Activity className="text-slate-400" size={18} />
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sync Results: {sortedLoads.length} Items</span>
+           </div>
+           <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="bg-transparent border-none text-[10px] font-black text-slate-900 uppercase tracking-widest outline-none cursor-pointer">
+              <option value="recommended">Priority</option>
+              <option value="newest">Recent</option>
+              <option value="value-high">Value</option>
+           </select>
         </div>
-      ) : loads.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-16 text-center">
-          <Package className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No cargo found</h3>
-          <p className="text-gray-600 mb-6">
-            {hasActiveFilters 
-              ? 'Try adjusting your filters to see more results'
-              : 'No available loads at the moment. Check back soon!'}
-          </p>
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 font-semibold"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      ) : viewMode === 'map' ? (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <MapIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">Map view coming soon!</p>
-          <p className="text-sm text-gray-500">We're working on an interactive map to visualize load locations.</p>
-        </div>
-      ) : viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {sortedLoads.map((load) => (
-            <div
-              key={load.id}
-              className="bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-gray-400 hover:shadow-xl transition-all overflow-hidden group"
-            >
-              {/* Card Header */}
-              <div className="bg-gray-100 p-4 text-gray-900">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-lg line-clamp-2 flex-1">{load.title}</h3>
-                  <button className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-200 hover:bg-gray-300 rounded-lg p-1.5">
-                    <Bookmark className="w-4 h-4" />
-                  </button>
+
+        {sortedLoads.length === 0 ? (
+          <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm opacity-50 border border-slate-50">
+            <Package className="w-16 h-16 text-slate-100 mx-auto" />
+            <p className="text-xs font-black text-slate-300 uppercase tracking-[0.3em]">No vector matches in current field.</p>
+          </div>
+        ) : viewMode === 'card' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sortedLoads.map((load) => (
+              <div key={load.id} className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm hover:shadow-2xl transition-all duration-500 group relative overflow-hidden">
+                <div className="flex justify-between items-center mb-8">
+                   <span className="px-4 py-1.5 bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest rounded-xl transition-all group-hover:bg-slate-900 group-hover:text-white">{load.status}</span>
+                   <button className="text-slate-200 hover:text-primary-600 transition-colors"><Bookmark size={20} /></button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">
-                    {load.status}
-                  </span>
-                  {load.cargoType && (
-                    <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">
-                      {load.cargoType}
-                    </span>
-                  )}
+                <h3 className="text-xl font-black text-slate-900 tracking-tighter mb-8 group-hover:text-primary-600 transition-all line-clamp-2 italic">{load.title}</h3>
+                
+                <div className="space-y-6 mb-8">
+                  <div className="flex items-center gap-4">
+                     <div className="w-1 h-12 bg-slate-50 rounded-full relative overflow-hidden"><div className="absolute top-0 w-full h-1/2 bg-emerald-500"></div></div>
+                     <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-xs font-bold text-slate-700"><MapPin size={14} className="text-emerald-500" /> {load.pickupLocation?.name || 'Locking Point...'}</div>
+                        <div className="flex items-center gap-3 text-xs font-bold text-slate-700"><MapPin size={14} className="text-rose-500" /> {load.deliveryLocation?.name || 'Target Point...'}</div>
+                     </div>
+                  </div>
+                </div>
+
+                <div className="pt-8 border-t border-slate-50 flex items-center justify-between">
+                   <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Authorization</p>
+                      <p className="text-2xl font-black text-slate-900 tracking-tighter">${load.loadValue.toLocaleString()}</p>
+                   </div>
+                   <div className="flex gap-3">
+                      <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="px-6 py-4 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition-all">Analyze</button>
+                      <button onClick={(e) => { e.stopPropagation(); handleFindTransporters(load.id); }} className="w-12 h-12 bg-primary-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary-200 group-hover:scale-110 transition-all"><Zap size={18} /></button>
+                   </div>
                 </div>
               </div>
-
-              {/* Card Body */}
-              <div className="p-5">
-                {load.description && (
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{load.description}</p>
-                )}
-
-                {/* Route */}
-                {load.pickupLocation && load.deliveryLocation && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="flex items-center gap-1 flex-1">
-                        <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="font-medium text-gray-900 truncate">
-                          {load.pickupLocation.name || 'Pickup'}
-                        </span>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <div className="flex items-center gap-1 flex-1 justify-end">
-                        <MapPin className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                        <span className="font-medium text-gray-900 truncate">
-                          {load.deliveryLocation.name || 'Delivery'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Key Details */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-gray-100 rounded-lg p-2">
-                      <DollarSign className="w-4 h-4 text-violet-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Load Value</p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {load.currencyCode} {load.loadValue.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {load.weight && (
-                    <div className="flex items-center gap-2">
-                      <div className="bg-gray-100 rounded-lg p-2">
-                        <Weight className="w-4 h-4 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Weight</p>
-                        <p className="text-sm font-bold text-gray-900">
-                          {load.weight.toLocaleString()} kg
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {load.pickupDate && (
-                  <div className="flex items-center gap-2 text-xs text-gray-600 mb-4 p-2 bg-gray-50 rounded-lg">
-                    <Clock className="w-4 h-4 text-amber-600" />
-                    <span>Pickup: {new Date(load.pickupDate).toLocaleDateString()}</span>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-                    className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-all flex items-center justify-center gap-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View
-                  </button>
-                  <button
-                    onClick={() => handleFindTransporters(load.id)}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
-                  >
-                    <Zap className="w-4 h-4" />
-                    Match
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        // List View
-        <div className="space-y-4">
-          {sortedLoads.map((load) => (
-            <div
-              key={load.id}
-              className="bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-gray-400 hover:shadow-lg transition-all p-5"
-            >
-              <div className="flex items-start gap-4">
-                {/* Icon */}
-                <div className="bg-gray-100 rounded-xl p-3 flex-shrink-0">
-                  <Package className="w-6 h-6 text-violet-600" />
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">{load.title}</h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
-                          {load.status}
-                        </span>
-                        {load.cargoType && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
-                            {load.cargoType}
-                          </span>
-                        )}
-                        {load.pickupDate && (
-                          <span className="flex items-center gap-1 text-xs text-gray-600">
-                            <Clock className="w-3 h-3" />
-                            {new Date(load.pickupDate).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-xs text-gray-500 mb-1">Load Value</p>
-                      <p className="text-xl font-bold text-violet-600">
-                        {load.currencyCode} {load.loadValue.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {load.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{load.description}</p>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    {/* Route */}
-                    {load.pickupLocation && load.deliveryLocation && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-emerald-600" />
-                          <span className="font-medium text-gray-900">
-                            {load.pickupLocation.name || 'Pickup'}
-                          </span>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden">
+             <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Cargo Unit</th>
+                    <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Route</th>
+                    <th className="px-10 py-8 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Value</th>
+                    <th className="px-10 py-8 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Command</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {sortedLoads.map((load) => (
+                    <tr key={load.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}>
+                      <td className="px-10 py-10">
+                        <div className="flex items-center gap-6">
+                           <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"><Package size={22} /></div>
+                           <div>
+                              <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">{load.title}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{load.cargoType || 'General'}</p>
+                           </div>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-gray-400" />
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-rose-600" />
-                          <span className="font-medium text-gray-900">
-                            {load.deliveryLocation.name || 'Delivery'}
-                          </span>
+                      </td>
+                      <td className="px-10 py-10">
+                        <div className="flex items-center gap-4 text-xs font-bold text-slate-700">
+                           <span>{load.pickupLocation?.name?.split(',')[0]}</span>
+                           <ArrowRight size={14} className="text-slate-300" />
+                           <span>{load.deliveryLocation?.name?.split(',')[0]}</span>
                         </div>
-                        {load.weight && (
-                          <>
-                            <span className="text-gray-300">•</span>
-                            <div className="flex items-center gap-1 text-gray-600">
-                              <Weight className="w-4 h-4" />
-                              <span>{load.weight.toLocaleString()} kg</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-                        className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-all flex items-center gap-2"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View Details
-                      </button>
-                      <button
-                        onClick={() => handleFindTransporters(load.id)}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2"
-                      >
-                        <Zap className="w-4 h-4" />
-                        Find Transporters
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                      </td>
+                      <td className="px-10 py-10 text-center">
+                        <p className="text-xl font-black text-primary-600 tracking-tighter">${load.loadValue.toLocaleString()}</p>
+                      </td>
+                      <td className="px-10 py-10">
+                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+                           <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"><Eye size={16} /></button>
+                           <button onClick={(e) => { e.stopPropagation(); handleFindTransporters(load.id); }} className="p-4 bg-primary-600 text-white rounded-xl shadow-lg shadow-primary-200 hover:scale-110 transition-all"><Zap size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+             </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default CargoDiscovery;
-

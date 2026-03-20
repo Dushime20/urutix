@@ -19,6 +19,7 @@ import {
   DriverStatus,
   EmploymentType,
 } from '../../entities/driver.entity';
+import { SafetyIncident } from '../../entities/safety-incident.entity';
 import { Load, LoadStatus } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import {
@@ -49,6 +50,8 @@ export class DriverService {
     private loadRepository: Repository<Load>,
     @InjectRepository(Truck)
     private truckRepository: Repository<Truck>,
+    @InjectRepository(SafetyIncident)
+    private readonly safetyIncidentRepository: Repository<SafetyIncident>,
     private readonly ocrService: OcrService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -975,5 +978,92 @@ export class DriverService {
   async extractDriverDocumentText(documentUrl: string): Promise<string> {
     const result = await this.ocrService.extractText(documentUrl);
     return result.text;
+  }
+
+  async getAnnouncements(driverId: string, tenantId: string): Promise<any[]> {
+    try {
+      this.logger.log(`📢 Fetching announcements for driver ${driverId}`);
+
+      const driver = await this.driverRepository.findOne({
+        where: { id: driverId, tenantId },
+      });
+
+      if (!driver) {
+        this.logger.warn(`Driver ${driverId} not found for announcements`);
+        return [];
+      }
+
+      // Return notifications specific to this driver user
+      const result = await this.notificationService.getNotifications(
+        {
+          recipientId: driver.userId,
+          limit: 20,
+        },
+        tenantId,
+      );
+
+      return result.notifications || [];
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch announcements for driver ${driverId}: ${error.message}`,
+      );
+      return [];
+    }
+  }
+
+  async reportIncident(
+    driverId: string,
+    incidentData: any,
+    tenantId: string,
+    userId: string,
+  ): Promise<any> {
+    try {
+      this.logger.log(
+        `🚨 Driver ${driverId} reporting incident: ${incidentData.type}`,
+      );
+
+      const driver = await this.driverRepository.findOne({
+        where: { id: driverId, tenantId },
+      });
+
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      const incident = new SafetyIncident();
+      Object.assign(incident, {
+        ...incidentData,
+        driverId,
+        driverName: `${driver.firstName} ${driver.lastName}`,
+        truckId: driver.currentTruckId,
+        tenantId,
+        createdBy: userId,
+        date: incidentData.date ? new Date(incidentData.date) : new Date(),
+        status: incidentData.status || 'reported',
+      });
+
+      const savedIncident = await this.safetyIncidentRepository.save(incident);
+
+      // Trigger notification to fleet managers
+      await this.notificationService.createNotification({
+        recipientId: driver.employerId, // Notify the fleet owner/manager
+        tenantId,
+        title: `🚨 Incident Reported: ${incident.type.toUpperCase()}`,
+        message: `Driver ${driver.firstName} ${driver.lastName} reported a ${incident.severity} severity ${incident.type} at ${incident.location}.`,
+        notificationType: NotificationType.ALERT,
+        category: NotificationCategory.SAFETY,
+        priority: NotificationPriority.HIGH,
+        entityId: savedIncident.id,
+        entityType: EntityType.DRIVER,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        actionUrl: `/dashboard/fleet/safety/${savedIncident.id}`,
+        actionText: 'View Incident',
+      });
+
+      return savedIncident;
+    } catch (error) {
+      this.logger.error(`❌ Failed to report incident: ${error.message}`);
+      throw error;
+    }
   }
 }

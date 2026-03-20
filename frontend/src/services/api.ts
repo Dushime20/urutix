@@ -133,6 +133,7 @@ export const tenantAPI = {
   createTenant: (data: any) => api.post("/tenant", data),
   searchTenants: (params?: TenantSearchParams) =>
     api.get<IPaginatedRes<Tenant>>("/tenants/search", { params }),
+  getActiveTenantsForSignup: () => api.get("/auth/tenants"),
 };
 
 // Financial API

@@ -14,6 +14,7 @@ import {
   AlertTriangle, Play, Pause,
   Trash2, Wrench, Layers, Milestone
 } from 'lucide-react';
+import { TranslatedText } from '../components/translated-text';
 
 interface Truck extends FleetItem {
   tenantId?: string;
@@ -377,30 +378,30 @@ const AdminTrucks: React.FC = () => {
   // Calculate stats (use filtered trucks for accurate counts)
   const stats = [
     {
-      label: 'Total Trucks',
+      label: <TranslatedText text="Total Trucks" />,
       value: filteredTrucks.length,
-      description: tenantFilter !== 'all' ? 'In selected tenant' : 'All registered trucks',
+      description: tenantFilter !== 'all' ? <TranslatedText text="In selected tenant" /> : <TranslatedText text="All registered trucks" />,
       color: 'bg-gray-800',
       icon: LucideTruck
     },
     {
-      label: 'Available',
+      label: <TranslatedText text="Available" />,
       value: filteredTrucks.filter((t: Truck) => t.status === 'available').length,
-      description: 'Ready for assignment',
+      description: <TranslatedText text="Ready for assignment" />,
       color: 'bg-gray-800',
       icon: Check
     },
     {
-      label: 'In Use',
+      label: <TranslatedText text="In Use" />,
       value: filteredTrucks.filter((t: Truck) => t.status === 'in_use' || t.status === 'on_trip').length,
-      description: 'Currently assigned',
+      description: <TranslatedText text="Currently assigned" />,
       color: 'bg-gray-800',
       icon: Play
     },
     {
-      label: 'Maintenance',
+      label: <TranslatedText text="Maintenance" />,
       value: filteredTrucks.filter((t: Truck) => t.status === 'maintenance').length,
-      description: 'Under maintenance',
+      description: <TranslatedText text="Under maintenance" />,
       color: 'bg-gray-800',
       icon: Wrench
     }
@@ -432,7 +433,7 @@ const AdminTrucks: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-        <span className="ml-2 text-sm text-gray-600">Loading trucks...</span>
+        <span className="ml-2 text-sm text-gray-600"><TranslatedText text="Loading trucks..." /></span>
       </div>
     );
   }
@@ -443,13 +444,13 @@ const AdminTrucks: React.FC = () => {
         <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="text-red-600" size={24} />
         </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Error Loading Trucks</h2>
-        <p className="text-sm text-gray-600 mb-4">Failed to load truck data. Please try again later.</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-2"><TranslatedText text="Error Loading Trucks" /></h2>
+        <p className="text-sm text-gray-600 mb-4"><TranslatedText text="Failed to load truck data. Please try again later." /></p>
         <button
           onClick={() => window.location.reload()}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
         >
-          Retry
+          <TranslatedText text="Retry" />
         </button>
       </div>
     );
@@ -457,8 +458,8 @@ const AdminTrucks: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Truck Management"
-      description="Manage fleet trucks and assignments"
+      title={<TranslatedText text="Truck Management" />}
+      description={<TranslatedText text="Manage fleet trucks and assignments" />}
       actions={
         canManageTrucks ? (
           <button
@@ -466,7 +467,7 @@ const AdminTrucks: React.FC = () => {
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 text-sm font-bold"
           >
             <Plus size={16} />
-            <span>Add Truck</span>
+            <span><TranslatedText text="Add Truck" /></span>
           </button>
         ) : undefined
       }
@@ -519,12 +520,12 @@ const AdminTrucks: React.FC = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">ALL STATUS</option>
-            <option value="available">AVAILABLE</option>
-            <option value="in_use">IN USE</option>
-            <option value="on_trip">ON TRIP</option>
-            <option value="maintenance">MAINTENANCE</option>
-            <option value="unavailable">UNAVAILABLE</option>
+            <option value="all"><TranslatedText text="ALL STATUS" /></option>
+            <option value="available"><TranslatedText text="AVAILABLE" /></option>
+            <option value="in_use"><TranslatedText text="IN USE" /></option>
+            <option value="on_trip"><TranslatedText text="ON TRIP" /></option>
+            <option value="maintenance"><TranslatedText text="MAINTENANCE" /></option>
+            <option value="unavailable"><TranslatedText text="UNAVAILABLE" /></option>
           </select>
 
           <select
@@ -532,7 +533,7 @@ const AdminTrucks: React.FC = () => {
             value={tenantFilter}
             onChange={(e) => setTenantFilter(e.target.value)}
           >
-            <option value="all">ALL TENANTS ({tenantsWithTrucks.length})</option>
+            <option value="all"><TranslatedText text="ALL TENANTS" /> ({tenantsWithTrucks.length})</option>
             {tenantsWithTrucks.map((tenant) => (
               <option key={tenant.id} value={tenant.id}>
                 {tenant.name.toUpperCase()} ({tenant.truckCount})
@@ -548,12 +549,12 @@ const AdminTrucks: React.FC = () => {
               }`}
           >
             <Layers size={14} />
-            <span>{groupByOwner ? 'UNGROUP' : 'GROUP BY OWNER'}</span>
+            <span>{groupByOwner ? <TranslatedText text="UNGROUP" /> : <TranslatedText text="GROUP BY OWNER" />}</span>
           </button>
 
           <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:border-indigo-200 text-slate-600 bg-white hover:text-indigo-600 transition-all shadow-sm">
             <Download size={14} />
-            <span>EXPORT</span>
+            <span><TranslatedText text="EXPORT" /></span>
           </button>
         </div>
 
@@ -611,24 +612,24 @@ const AdminTrucks: React.FC = () => {
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Identity</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Truck Identity" /></span>
                     <ChevronsUpDown size={12} className="text-slate-300" />
                   </button>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specifications</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Specifications" /></span>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></span>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Organization" /></span>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Performance" /></span>
                 </th>
                 <th className="px-6 py-4 text-center">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Action" /></span>
                 </th>
               </tr>
             </thead>
@@ -640,8 +641,8 @@ const AdminTrucks: React.FC = () => {
                       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                         <LucideTruck className="w-8 h-8 text-gray-400" />
                       </div>
-                      <h3 className="text-sm font-medium text-gray-900 mb-1">No trucks found</h3>
-                      <p className="text-xs text-gray-500">Try adjusting your search or filters</p>
+                      <h3 className="text-sm font-medium text-gray-900 mb-1"><TranslatedText text="No trucks found" /></h3>
+                      <p className="text-xs text-gray-500"><TranslatedText text="Try adjusting your search or filters" /></p>
                     </div>
                   </td>
                 </tr>
@@ -712,11 +713,11 @@ const AdminTrucks: React.FC = () => {
                             onChange={(e) => handleStatusUpdate(truck.id, e.target.value)}
                             disabled={isUpdatingStatus}
                           >
-                            <option value="available">AVAILABLE</option>
-                            <option value="in_use">IN USE</option>
-                            <option value="on_trip">ON TRIP</option>
-                            <option value="maintenance">MAINTENANCE</option>
-                            <option value="unavailable">UNAVAILABLE</option>
+                            <option value="available"><TranslatedText text="AVAILABLE" /></option>
+                            <option value="in_use"><TranslatedText text="IN USE" /></option>
+                            <option value="on_trip"><TranslatedText text="ON TRIP" /></option>
+                            <option value="maintenance"><TranslatedText text="MAINTENANCE" /></option>
+                            <option value="unavailable"><TranslatedText text="UNAVAILABLE" /></option>
                           </select>
                         ) : (
                           <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(truck.status)} shadow-sm`}>
@@ -736,7 +737,7 @@ const AdminTrucks: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-gray-900 uppercase tracking-tight leading-none">{truck.tenantName || 'N/A'}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">TENANT LOG</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="TENANT LOG" /></p>
                           </div>
                         </div>
 
@@ -745,8 +746,8 @@ const AdminTrucks: React.FC = () => {
                             <User size={12} />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-none">{truck.ownerName || 'NO OWNER'}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none">CAPITAL OWNER</p>
+                            <p className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-none">{truck.ownerName || <TranslatedText text="NO OWNER" />}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="CAPITAL OWNER" /></p>
                           </div>
                         </div>
                       </div>
@@ -756,11 +757,11 @@ const AdminTrucks: React.FC = () => {
                     <td className="px-6 py-5">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between gap-4 p-2 bg-slate-50 rounded-lg border border-slate-100">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">FISCAL TRIPS</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="FISCAL TRIPS" /></span>
                           <span className="text-[10px] font-black text-slate-900">{truck.totalTrips || 0}</span>
                         </div>
                         <div className="flex items-center justify-between gap-4 p-2 bg-emerald-50 rounded-lg border border-emerald-100">
-                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">YIELD RATING</span>
+                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest"><TranslatedText text="YIELD RATING" /></span>
                           <div className="flex items-center gap-1">
                             <span className="text-[10px] font-black text-emerald-700">
                               {Number(truck.averageRating || 0).toFixed(1)}
@@ -780,7 +781,7 @@ const AdminTrucks: React.FC = () => {
                             setShowDetailsModal(true);
                           }}
                           className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                          title="View Details"
+                          title={<TranslatedText text="View Details" />}
                         >
                           <Eye size={14} />
                         </button>
@@ -791,7 +792,7 @@ const AdminTrucks: React.FC = () => {
                               window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
                             }}
                             className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                            title="View Location on Map"
+                            title={<TranslatedText text="View Location on Map" />}
                           >
                             <MapPin size={14} />
                           </button>
@@ -801,14 +802,14 @@ const AdminTrucks: React.FC = () => {
                             <button
                               onClick={() => handleEditTruck(truck)}
                               className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                              title="Edit"
+                              title={<TranslatedText text="Edit" />}
                             >
                               <Edit size={14} />
                             </button>
                             <button
                               onClick={() => handleDeleteTruck(truck.id)}
                               className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                              title="Delete"
+                              title={<TranslatedText text="Delete" />}
                             >
                               <Trash2 size={14} />
                             </button>
@@ -826,9 +827,9 @@ const AdminTrucks: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50 bg-[#fafafa]">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              IDENTIFIED <span className="text-gray-900">{startIdx + 1}</span> -{' '}
-              <span className="text-gray-900">{Math.min(endIdx, total)}</span> OF{' '}
-              <span className="text-gray-900">{total}</span> TRUCK ENTITIES
+              <TranslatedText text="IDENTIFIED" /> <span className="text-gray-900">{startIdx + 1}</span> -{' '}
+              <span className="text-gray-900">{Math.min(endIdx, total)}</span> <TranslatedText text="OF" />{' '}
+              <span className="text-gray-900">{total}</span> <TranslatedText text="TRUCK ENTITIES" />
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -837,7 +838,7 @@ const AdminTrucks: React.FC = () => {
               onClick={() => setPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
-              PREV
+              <TranslatedText text="PREV" />
             </button>
             <div className="flex items-center gap-1.5">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -870,7 +871,7 @@ const AdminTrucks: React.FC = () => {
               onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
-              NEXT
+              <TranslatedText text="NEXT" />
             </button>
           </div>
         </div>
@@ -882,8 +883,8 @@ const AdminTrucks: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300">
             <div className="bg-slate-900 px-8 py-6 flex items-center justify-between">
               <div>
-                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Fleet Expansion</h2>
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">Register New Asset</h3>
+                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1"><TranslatedText text="Fleet Expansion" /></h2>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight"><TranslatedText text="Register New Asset" /></h3>
               </div>
               <button
                 onClick={() => { setShowCreateModal(false); resetForm(); }}
@@ -898,11 +899,11 @@ const AdminTrucks: React.FC = () => {
                 <div>
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Identity & Manufacturing
+                    <TranslatedText text="Identity & Manufacturing" />
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Plate Number</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Plate Number" /></label>
                       <input
                         type="text"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -912,7 +913,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturing Year</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Manufacturing Year" /></label>
                       <input
                         type="number"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -922,7 +923,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturer (Make)</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Manufacturer (Make)" /></label>
                       <input
                         type="text"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -932,7 +933,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Model Specification</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Model Specification" /></label>
                       <input
                         type="text"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -947,11 +948,11 @@ const AdminTrucks: React.FC = () => {
                 <div>
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Technical Capacity
+                    <TranslatedText text="Technical Capacity" />
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Weight Capacity (KG)</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Weight Capacity (KG)" /></label>
                       <div className="relative">
                         <input
                           type="number"
@@ -964,7 +965,7 @@ const AdminTrucks: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Volume Capacity (M³)</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Volume Capacity (M³)" /></label>
                       <div className="relative">
                         <input
                           type="number"
@@ -982,18 +983,18 @@ const AdminTrucks: React.FC = () => {
                 <div>
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Asset Status
+                    <TranslatedText text="Asset Status" />
                   </h4>
                   <select
                     className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm cursor-pointer"
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                   >
-                    <option value="available">AVAILABLE</option>
-                    <option value="in_use">IN USE</option>
-                    <option value="on_trip">ON TRIP</option>
-                    <option value="maintenance">MAINTENANCE</option>
-                    <option value="unavailable">UNAVAILABLE</option>
+                    <option value="available"><TranslatedText text="AVAILABLE" /></option>
+                    <option value="in_use"><TranslatedText text="IN USE" /></option>
+                    <option value="on_trip"><TranslatedText text="ON TRIP" /></option>
+                    <option value="maintenance"><TranslatedText text="MAINTENANCE" /></option>
+                    <option value="unavailable"><TranslatedText text="UNAVAILABLE" /></option>
                   </select>
                 </div>
               </div>
@@ -1003,14 +1004,14 @@ const AdminTrucks: React.FC = () => {
                   onClick={() => { setShowCreateModal(false); resetForm(); }}
                   className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  Discard
+                  <TranslatedText text="Discard" />
                 </button>
                 <button
                   onClick={() => createTruck()}
                   disabled={isCreating || !plateNumber || !make || !model || !capacityWeight || !capacityVolume}
                   className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {isCreating ? 'PROCESSING...' : 'INITIALIZE ASSET'}
+                  {isCreating ? <TranslatedText text="PROCESSING..." /> : <TranslatedText text="INITIALIZE ASSET" />}
                 </button>
               </div>
             </div>
@@ -1024,8 +1025,8 @@ const AdminTrucks: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300">
             <div className="bg-indigo-600 px-8 py-6 flex items-center justify-between">
               <div>
-                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Asset Modification</h2>
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">Edit Truck Identity</h3>
+                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1"><TranslatedText text="Asset Modification" /></h2>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight"><TranslatedText text="Edit Truck Identity" /></h3>
               </div>
               <button
                 onClick={() => { setShowEditModal(false); setEditingTruck(null); }}
@@ -1040,11 +1041,11 @@ const AdminTrucks: React.FC = () => {
                 <div>
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Core Identity
+                    <TranslatedText text="Core Identity" />
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Plate Number</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Plate Number" /></label>
                       <input
                         type="text"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -1053,7 +1054,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturing Year</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Manufacturing Year" /></label>
                       <input
                         type="number"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -1062,7 +1063,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Manufacturer</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Manufacturer" /></label>
                       <input
                         type="text"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -1071,7 +1072,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Model</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Model" /></label>
                       <input
                         type="text"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -1085,11 +1086,11 @@ const AdminTrucks: React.FC = () => {
                 <div>
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Load Parameters
+                    <TranslatedText text="Load Parameters" />
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Weight Capacity (KG)</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Weight Capacity (KG)" /></label>
                       <input
                         type="number"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -1098,7 +1099,7 @@ const AdminTrucks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Volume Capacity (M³)</label>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1"><TranslatedText text="Volume Capacity (M³)" /></label>
                       <input
                         type="number"
                         className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
@@ -1112,18 +1113,18 @@ const AdminTrucks: React.FC = () => {
                 <div>
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Operational Status
+                    <TranslatedText text="Operational Status" />
                   </h4>
                   <select
                     className="w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm cursor-pointer"
                     value={editingTruck.status || 'available'}
                     onChange={(e) => setEditingTruck({ ...editingTruck, status: e.target.value })}
                   >
-                    <option value="available">AVAILABLE</option>
-                    <option value="in_use">IN USE</option>
-                    <option value="on_trip">ON TRIP</option>
-                    <option value="maintenance">MAINTENANCE</option>
-                    <option value="unavailable">UNAVAILABLE</option>
+                    <option value="available"><TranslatedText text="AVAILABLE" /></option>
+                    <option value="in_use"><TranslatedText text="IN USE" /></option>
+                    <option value="on_trip"><TranslatedText text="ON TRIP" /></option>
+                    <option value="maintenance"><TranslatedText text="MAINTENANCE" /></option>
+                    <option value="unavailable"><TranslatedText text="UNAVAILABLE" /></option>
                   </select>
                 </div>
               </div>
@@ -1133,14 +1134,14 @@ const AdminTrucks: React.FC = () => {
                   onClick={() => { setShowEditModal(false); setEditingTruck(null); }}
                   className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  Discard
+                  <TranslatedText text="Discard" />
                 </button>
                 <button
                   onClick={() => updateTruck()}
                   disabled={isUpdating || !editingTruck.plateNumber || !editingTruck.make || !editingTruck.model}
                   className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {isUpdating ? 'SAVING...' : 'COMMIT CHANGES'}
+                  {isUpdating ? <TranslatedText text="SAVING..." /> : <TranslatedText text="COMMIT CHANGES" />}
                 </button>
               </div>
             </div>
@@ -1173,7 +1174,7 @@ const AdminTrucks: React.FC = () => {
                   onClick={() => { handleEditTruck(selectedTruck); setShowDetailsModal(false); }}
                   className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/10"
                 >
-                  Modify Asset
+                  <TranslatedText text="Modify Asset" />
                 </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
@@ -1188,10 +1189,10 @@ const AdminTrucks: React.FC = () => {
               {/* Performance Metrics Section */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Weight Capacity', value: `${(selectedTruck.capacityWeight || 0).toLocaleString()}`, unit: 'KG', icon: Milestone, color: 'indigo' },
-                  { label: 'Volume Capacity', value: `${(selectedTruck.capacityVolume || 0).toLocaleString()}`, unit: 'M³', icon: LucideTruck, color: 'slate' },
-                  { label: 'Asset Utilization', value: `${selectedTruck.totalTrips || 0}`, unit: 'TRIPS', icon: Check, color: 'emerald' },
-                  { label: 'Driver Satisfaction', value: `${Number(selectedTruck.averageRating || 0).toFixed(1)}`, unit: '/ 5.0', icon: Clock, color: 'amber' }
+                  { label: <TranslatedText text="Weight Capacity" />, value: `${(selectedTruck.capacityWeight || 0).toLocaleString()}`, unit: 'KG', icon: Milestone, color: 'indigo' },
+                  { label: <TranslatedText text="Volume Capacity" />, value: `${(selectedTruck.capacityVolume || 0).toLocaleString()}`, unit: 'M³', icon: LucideTruck, color: 'slate' },
+                  { label: <TranslatedText text="Asset Utilization" />, value: `${selectedTruck.totalTrips || 0}`, unit: <TranslatedText text="TRIPS" />, icon: Check, color: 'emerald' },
+                  { label: <TranslatedText text="Driver Satisfaction" />, value: `${Number(selectedTruck.averageRating || 0).toFixed(1)}`, unit: '/ 5.0', icon: Clock, color: 'amber' }
                 ].map((metric, i) => (
                   <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
                     <metric.icon className="absolute -right-4 -bottom-4 text-gray-100 group-hover:text-gray-200 transition-colors" size={80} />
@@ -1211,16 +1212,16 @@ const AdminTrucks: React.FC = () => {
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Asset Intelligence
+                    <TranslatedText text="Asset Intelligence" />
                   </h4>
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                     {[
-                      { label: 'Registry Plate', value: selectedTruck.plateNumber },
-                      { label: 'Manufacturer', value: selectedTruck.make },
-                      { label: 'Model Spec', value: selectedTruck.model },
-                      { label: 'Odometer (KM)', value: `${(selectedTruck.mileage || 0).toLocaleString()} km` },
-                      { label: 'Current Vector', value: selectedTruck.currentLocationString || 'STATIONARY' },
-                      { label: 'Efficiency', value: selectedTruck.fuelEfficiency ? `${selectedTruck.fuelEfficiency} km/L` : 'CALCULATING...' }
+                      { label: <TranslatedText text="Registry Plate" />, value: selectedTruck.plateNumber },
+                      { label: <TranslatedText text="Manufacturer" />, value: selectedTruck.make },
+                      { label: <TranslatedText text="Model Spec" />, value: selectedTruck.model },
+                      { label: <TranslatedText text="Odometer (KM)" />, value: `${(selectedTruck.mileage || 0).toLocaleString()} km` },
+                      { label: <TranslatedText text="Current Vector" />, value: selectedTruck.currentLocationString || <TranslatedText text="STATIONARY" /> },
+                      { label: <TranslatedText text="Efficiency" />, value: selectedTruck.fuelEfficiency ? `${selectedTruck.fuelEfficiency} km/L` : <TranslatedText text="CALCULATING..." /> }
                     ].map((row, i) => (
                       <div key={i} className="px-6 py-4 flex items-center justify-between border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
@@ -1234,11 +1235,11 @@ const AdminTrucks: React.FC = () => {
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-                    Operational Structure
+                    <TranslatedText text="Operational Structure" />
                   </h4>
                   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                     <div className="p-6 border-b border-gray-50">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Total Asset Revenue</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="Total Asset Revenue" /></p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-[10px] font-black text-slate-400">RWF</span>
                         <span className="text-4xl font-black text-slate-900 tracking-tighter">
@@ -1247,9 +1248,9 @@ const AdminTrucks: React.FC = () => {
                       </div>
                     </div>
                     {[
-                      { label: 'Assigned Tenant', value: selectedTruck.tenantName || 'UNASSIGNED' },
-                      { label: 'Equity Owner', value: selectedTruck.ownerName || 'PLATFORM ASSET' },
-                      { label: 'Registry Date', value: new Date(selectedTruck.createdAt).toLocaleDateString() }
+                      { label: <TranslatedText text="Assigned Tenant" />, value: selectedTruck.tenantName || <TranslatedText text="UNASSIGNED" /> },
+                      { label: <TranslatedText text="Equity Owner" />, value: selectedTruck.ownerName || <TranslatedText text="PLATFORM ASSET" /> },
+                      { label: <TranslatedText text="Registry Date" />, value: new Date(selectedTruck.createdAt).toLocaleDateString() }
                     ].map((row, i) => (
                       <div key={i} className="px-6 py-4 flex items-center justify-between border-b border-gray-50 last:border-0">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
@@ -1265,7 +1266,7 @@ const AdminTrucks: React.FC = () => {
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    Assigned Human Capital
+                    <TranslatedText text="Assigned Human Capital" />
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {selectedTruck.assignedDrivers.map((driver: any, index: number) => (
@@ -1275,12 +1276,12 @@ const AdminTrucks: React.FC = () => {
                             <User className="text-emerald-600" size={18} />
                           </div>
                           <div>
-                            <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{driver.driverName || 'IDENTIFYING...'}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Operator</p>
+                            <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{driver.driverName || <TranslatedText text="IDENTIFYING..." />}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Operator" /></p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Commissioned</p>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Commissioned" /></p>
                           <p className="text-[10px] font-black text-slate-600 tracking-tight">{new Date(driver.assignmentDate).toLocaleDateString()}</p>
                         </div>
                       </div>

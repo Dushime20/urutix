@@ -37,9 +37,19 @@ const UnifiedTrackingManagement = () => {
   // Update route when tab changes (for navigation)
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    // Extract base path (either /dashboard or /cargo-owner)
-    const pathParts = location.pathname.split("/").filter(Boolean);
-    const basePath = pathParts[0] ? `/${pathParts[0]}` : "/dashboard";
+    
+    let basePath = "/dashboard";
+    if (location.pathname.startsWith("/dashboard/broker")) {
+      basePath = "/dashboard/broker";
+    } else if (location.pathname.startsWith("/cargo-owner")) {
+      basePath = "/cargo-owner";
+    } else if (location.pathname.startsWith("/tenant-admin")) {
+      basePath = "/tenant-admin";
+    } else if (location.pathname.startsWith("/dashboard/driver")) {
+      basePath = "/dashboard/driver";
+    } else if (location.pathname.startsWith("/dashboard/fleet")) {
+      basePath = "/dashboard/fleet";
+    }
 
     if (tab === "routes") {
       navigate(`${basePath}/routes`, { replace: true });
@@ -80,17 +90,17 @@ const UnifiedTrackingManagement = () => {
                 <Navigation className="w-7 h-7" />
               </div>
               <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
-                Logistics <span className="text-[#345E85]">Nexus</span>
+                Live <span className="text-[#345E85]">Tracking</span>
               </h1>
             </div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] max-w-xl">
-              Real-time geospatial tracking & strategic route optimization
+              Track your shipments and plan delivery routes
             </p>
           </div>
 
           <button className="flex items-center gap-2 px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all">
             <Plus className="w-4 h-4" />
-            New Map Instance
+            New Tracking
           </button>
         </div>
 
@@ -126,7 +136,7 @@ const UnifiedTrackingManagement = () => {
               <Suspense fallback={
                 <div className="flex flex-col items-center justify-center h-64 gap-4">
                   <Loader2 className="animate-spin text-[#345E85]" size={32} />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Synchronizing Satellite Uplink...</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Tracking Info...</p>
                 </div>
               }>
                 <Tracking />

@@ -6,6 +6,8 @@ import {
   Rocket as FaRocket, Layers as FaLayerGroup
 } from 'lucide-react';
 import { Line, Bar } from "react-chartjs-2";
+import { TranslatedText } from "../translated-text";
+import { useTranslation } from "../../hooks/useTranslation";
 import FilterSelect from "@/components/common/FilterSelect";
 
 interface CargoAnalyticsProps {
@@ -13,6 +15,7 @@ interface CargoAnalyticsProps {
 }
 
 const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
+  const { tSync } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [timeRange, setTimeRange] = useState("7d");
@@ -143,7 +146,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
       case 'in-transit': return 'text-sky-600 bg-sky-50 border-sky-100';
       case 'pending': return 'text-amber-600 bg-amber-50 border-amber-100';
       case 'cancelled': return 'text-rose-600 bg-rose-50 border-rose-100';
-      default: return 'text-slate-500 bg-slate-50 border-slate-100';
+      default: return 'text-slate-500 bg-slate-50 border-slate-100 dark:bg-slate-900/50';
     }
   };
 
@@ -283,19 +286,19 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Shipments', value: cargoData.summary.totalLoads.toLocaleString(), icon: Box, color: 'indigo' },
-          { label: 'Success Rate', value: `${cargoData.summary.onTimeDelivery}%`, icon: Route, color: 'amber' },
-          { label: 'Delivered', value: cargoData.summary.completedLoads.toLocaleString(), icon: CheckCircle, color: 'emerald' },
-          { label: 'Earnings', value: formatCurrency(cargoData.summary.totalRevenue), icon: DollarSign, color: 'primary' }
+          { label: tSync('Total Shipments'), value: cargoData.summary.totalLoads.toLocaleString(), icon: Box, color: 'indigo' },
+          { label: tSync('Success Rate'), value: `${cargoData.summary.onTimeDelivery}%`, icon: Route, color: 'amber' },
+          { label: tSync('Delivered'), value: cargoData.summary.completedLoads.toLocaleString(), icon: CheckCircle, color: 'emerald' },
+          { label: tSync('Earnings'), value: formatCurrency(cargoData.summary.totalRevenue), icon: DollarSign, color: 'primary' }
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 hover:shadow-md transition-all duration-300">
+          <div key={i} className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-6 hover:shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                <p className="text-2xl font-black text-slate-800 tracking-tight leading-tight">{stat.value}</p>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-tight">{stat.value}</p>
               </div>
-              <div className={`p-3 bg-primary-50 rounded-xl`}>
-                <stat.icon className={`w-6 h-6 text-primary-600`} />
+              <div className={`p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl`}>
+                <stat.icon className={`w-6 h-6 text-primary-600 dark:text-primary-400`} />
               </div>
             </div>
           </div>
@@ -305,22 +308,22 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Shipment Trend */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Volume Analysis</h3>
-              <h4 className="text-xl font-black text-slate-800 tracking-tight">Shipment Trend</h4>
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Volume Analysis" /></h3>
+              <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Shipment Trend" /></h4>
             </div>
             <FilterSelect
               value={timeRange}
               onChange={(value) => setTimeRange(value || "7d")}
-              placeholder="Select range"
+              placeholder={tSync("Select range")}
               options={[
-                { value: "7d", label: "7 Days" },
-                { value: "30d", label: "30 Days" },
-                { value: "90d", label: "90 Days" },
+                { value: "7d", label: tSync("7 Days") },
+                { value: "30d", label: tSync("30 Days") },
+                { value: "90d", label: tSync("90 Days") },
               ]}
-              icon={<Filter className="w-3.5 h-3.5 text-indigo-500" />}
+              icon={<Filter className="w-3.5 h-3.5 text-primary-500" />}
               className="w-36"
             />
           </div>
@@ -330,10 +333,10 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
         </div>
 
         {/* Revenue Trend */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
           <div className="mb-8">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Financial Performance</h3>
-            <h4 className="text-xl font-black text-slate-800 tracking-tight">Earnings Trend</h4>
+            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Financial Performance" /></h3>
+            <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Earnings Trend" /></h4>
           </div>
           <div className="h-72">
             <Line data={revenueData} options={chartOptions} />
@@ -342,15 +345,15 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
       </div>
 
       {/* Cargo Type Distribution */}
-      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Cargo Breakdown</h3>
-            <h4 className="text-xl font-black text-slate-800 tracking-tight">Revenue by Category</h4>
+            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Cargo Breakdown" /></h3>
+            <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Revenue by Category" /></h4>
           </div>
-          <div className="px-4 py-1.5 bg-gray-50 rounded-full border border-gray-100">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Total: {formatCurrency(cargoData.cargoTypes.reduce((sum, item) => sum + item.revenue, 0))}
+          <div className="px-4 py-1.5 bg-gray-50 dark:bg-slate-800 rounded-full border border-gray-100 dark:border-slate-700">
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              <TranslatedText text="Total" />: {formatCurrency(cargoData.cargoTypes.reduce((sum, item) => sum + item.revenue, 0))}
             </span>
           </div>
         </div>
@@ -360,47 +363,47 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
       </div>
 
       {/* Loads Table */}
-      <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-gray-50 bg-gray-50/30">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-50 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-800/20">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Logistics Core</h3>
-              <h4 className="text-xl font-black text-slate-800 tracking-tight">Cargo Loads</h4>
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 italic"><TranslatedText text="Logistics Core" /></h3>
+              <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Cargo Loads" /></h4>
             </div>
-            <button className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 flex items-center text-sm font-black uppercase tracking-widest">
+            <button className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 dark:shadow-slate-950/20 flex items-center text-sm font-black uppercase tracking-widest">
               <Plus className="w-4 h-4 mr-2" />
-              New Shipment
+              <TranslatedText text="New Shipment" />
             </button>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="px-8 py-5 border-b border-gray-50">
+        <div className="px-8 py-5 border-b border-gray-50 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-300 w-4 h-4" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-300 dark:text-slate-600 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Query loads..."
+                  placeholder={tSync("Query loads...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium text-slate-600"
+                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-none rounded-xl focus:ring-2 focus:ring-primary-500/20 text-sm font-medium"
                 />
               </div>
             </div>
             <FilterSelect
-              label="Status"
+              label={tSync("Status")}
               value={selectedFilter}
               onChange={setSelectedFilter}
-              placeholder="Global Filter"
+              placeholder={tSync("Global Filter")}
               options={[
-                { value: "pending", label: "Pending" },
-                { value: "in-transit", label: "In Transit" },
-                { value: "completed", label: "Completed" },
-                { value: "cancelled", label: "Cancelled" },
+                { value: "pending", label: tSync("Pending") },
+                { value: "in-transit", label: tSync("In Transit") },
+                { value: "completed", label: tSync("Completed") },
+                { value: "cancelled", label: tSync("Cancelled") },
               ]}
-              icon={<FaLayerGroup className="w-3.5 h-3.5 text-indigo-500" />}
+              icon={<FaLayerGroup className="w-3.5 h-3.5 text-primary-500" />}
               className="sm:min-w-[180px]"
             />
           </div>
@@ -408,57 +411,57 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-50">
-            <thead className="bg-gray-50/50">
+          <table className="min-w-full divide-y divide-gray-50 dark:divide-slate-800">
+            <thead className="bg-gray-50/50 dark:bg-slate-800/10">
               <tr>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Shipment ID</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Weight</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Income</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck/Driver</th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Shipment ID" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Category" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Route" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Weight" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Income" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Truck/Driver" /></th>
+                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right"><TranslatedText text="Actions" /></th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-50">
+            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-50 dark:divide-slate-800">
               {paginatedLoads.map((load) => (
-                <tr key={load.id} className="hover:bg-indigo-50/10 transition-colors">
+                <tr key={load.id} className="hover:bg-primary-50/10 dark:hover:bg-primary-900/10 transition-colors">
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <span className="text-sm font-black text-slate-800">{load.id}</span>
+                    <span className="text-sm font-black text-slate-800 dark:text-slate-100">{load.id}</span>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <span className="text-sm font-bold text-slate-600">{load.cargoType}</span>
+                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{tSync(load.cargoType)}</span>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
                     <div className="flex items-center">
-                      <FaMapMarkerAlt className="w-3.5 h-3.5 text-indigo-400 mr-2.5" />
+                      <FaMapMarkerAlt className="w-3.5 h-3.5 text-primary-400 mr-2.5" />
                       <div>
-                        <div className="text-[13px] font-black text-slate-800">{load.origin}</div>
-                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">→ {load.destination}</div>
+                        <div className="text-[13px] font-black text-slate-800 dark:text-slate-200">{tSync(load.origin)}</div>
+                        <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">→ {tSync(load.destination)}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(load.status)}`}>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(load.status)} dark:bg-slate-900/50`}>
                       {getStatusIcon(load.status)}
-                      <span className="ml-1.5">{load.status}</span>
+                      <span className="ml-1.5">{tSync(load.status)}</span>
                     </span>
                   </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-xs font-black text-slate-800 uppercase tracking-wider">
+                  <td className="px-8 py-5 whitespace-nowrap text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
                     {load.weight}
                   </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-sm font-black text-slate-800">
+                  <td className="px-8 py-5 whitespace-nowrap text-sm font-black text-slate-800 dark:text-slate-100">
                     {formatFullCurrency(load.revenue)}
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-600">{load.driver}</span>
-                      <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">{load.truck}</span>
+                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{load.driver}</span>
+                      <span className="text-[11px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{load.truck}</span>
                     </div>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap text-right">
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                    <button className="p-2 text-slate-400 dark:text-slate-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg transition-all">
                       <Eye className="w-4 h-4" />
                     </button>
                   </td>
@@ -470,24 +473,24 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-8 py-4 bg-gray-50/30 border-t border-gray-50 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-              Showing page {currentPage} of {totalPages}
+          <div className="px-8 py-4 bg-gray-50/30 dark:bg-slate-800/20 border-t border-gray-50 dark:border-slate-800 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest">
+              <TranslatedText text="Showing page" /> {currentPage} <TranslatedText text="of" /> {totalPages}
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-black uppercase tracking-widest text-slate-600 disabled:opacity-50 transition-all hover:bg-primary-50 hover:text-primary-600"
+                className="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 disabled:opacity-50 transition-all hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 shadow-sm"
               >
-                Prev
+                <TranslatedText text="Prev" />
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 bg-white border border-gray-100 rounded-lg text-xs font-black uppercase tracking-widest text-slate-600 disabled:opacity-50 transition-all hover:bg-primary-50 hover:text-primary-600"
+                className="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 disabled:opacity-50 transition-all hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 shadow-sm"
               >
-                Next
+                <TranslatedText text="Next" />
               </button>
             </div>
           </div>

@@ -5,7 +5,7 @@ import {
   NotificationTemplate,
   TemplateType,
   TemplateCategory,
-} from '../entities/notification-template.entity';
+} from './../entities/notification-template.entity';
 
 @Injectable()
 export class TemplateService {

@@ -1,681 +1,442 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerStatistics, type BrokerLoad } from '../../services/brokerApi';
-import BrokerOnboardingTour from '../../components/Onboarding/BrokerOnboardingTour';
-import { useBrokerOnboardingStore } from '../../stores/brokerOnboardingStore';
 import DashboardHeader from '../../components/Layout/DashboardHeader';
 import DashboardFooter from '../../components/Layout/DashboardFooter';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+} from 'recharts';
 import {
   Package,
   DollarSign,
   TrendingUp,
-  CheckCircle2,
   Clock,
   ArrowRight,
-  Loader2,
-  Zap,
   Target,
   Sparkles,
   Shield,
   FileText,
-  BarChart3,
+  Search,
+  Activity,
+  Award,
+  ChevronRight,
+  Bell,
   MapPin,
-  Truck
+  Layers,
+  ArrowUpRight,
+  LayoutDashboard
 } from 'lucide-react';
 
 const BrokerDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { incrementLoginCount } = useBrokerOnboardingStore();
   const [statistics, setStatistics] = useState<BrokerStatistics | null>(null);
   const [recentLoads, setRecentLoads] = useState<BrokerLoad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [activeTab, setActiveTab] = useState<'all' | 'high_yield' | 'expiring'>('all');
+
+  // Simple chart data
+  const revenueData = [
+    { name: 'Mon', value: 4200 },
+    { name: 'Tue', value: 3800 },
+    { name: 'Wed', value: 5100 },
+    { name: 'Thu', value: 4800 },
+    { name: 'Fri', value: 6200 },
+    { name: 'Sat', value: 7800 },
+    { name: 'Sun', value: 9400 },
+  ];
 
   useEffect(() => {
     if (!user || user.role !== 'BROKER') {
       navigate('/auth');
       return;
     }
-
-    // Increment login count for onboarding
-    incrementLoginCount();
     loadDashboardData();
-  }, [user, navigate, incrementLoginCount]);
+  }, [user, navigate]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      // Load statistics and recent loads in parallel
       const [statsResponse, loadsResponse] = await Promise.all([
         brokerAPI.getBrokerStatistics(user!.id),
         brokerAPI.getBrokerLoads(user!.id, { limit: 5, status: 'ACTIVE' })
       ]);
-
       setStatistics(statsResponse.data);
       setRecentLoads(loadsResponse.data || []);
     } catch (err: any) {
-      console.error('Failed to load broker dashboard:', err);
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
+      console.error('Failed to load dashboard:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const filteredLoads = useMemo(() => {
+    if (activeTab === 'high_yield') return recentLoads.filter(l => (l.loadValue || 0) > 40000);
+    if (activeTab === 'expiring') return recentLoads.slice(0, 2);
+    return recentLoads;
+  }, [recentLoads, activeTab]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      <div className="flex flex-col items-center justify-center min-h-screen gap-8 bg-[#FDFDFF]">
+        <div className="w-16 h-16 border-t-2 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-400">Loading Dashboard...</p>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">{error}</p>
-      </div>
-    );
-  }
-
-  // Render Overview Tab
-  const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Welcome Header with Gradient */}
-      <div className="bg-gradient-to-r from-orange-500 via-rose-600 to-violet-600 rounded-xl shadow-lg p-8 text-white relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
-                Welcome back, {user?.firstName || 'Broker'}! 👋
-              </h1>
-              <p className="text-orange-100 text-lg">
-                Professional logistics facilitation at your fingertips
-              </p>
-            </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center">
-              <p className="text-sm text-orange-100 mb-1">Your Commission Rate</p>
-              <p className="text-4xl font-bold">
-                {(user as any)?.defaultCommissionRate || 10}%
-              </p>
-            </div>
-          </div>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
-      </div>
-
-      {/* Smart Insights Section */}
-      <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-200">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-violet-600 rounded-lg p-2">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900">Smart Insights for Today</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Hot Route Alert */}
-          <div className="bg-white rounded-lg p-4 border border-orange-200 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-4 h-4 text-orange-600" />
-              <h3 className="font-semibold text-gray-900 text-sm">Hot Route Alert!</h3>
-            </div>
-            <p className="text-xs text-gray-600 mb-3">
-              Nairobi-Mombasa paying <span className="font-bold text-orange-600">20% more</span> this week
-            </p>
-            <button
-              onClick={() => navigate('/dashboard/broker/discovery?route=nairobi-mombasa')}
-              className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
-            >
-              View Loads <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Perfect Match */}
-          <div className="bg-white rounded-lg p-4 border border-emerald-200 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="w-4 h-4 text-emerald-600" />
-              <h3 className="font-semibold text-gray-900 text-sm">Perfect Matches</h3>
-            </div>
-            <p className="text-xs text-gray-600 mb-3">
-              <span className="font-bold text-emerald-600">3 loads</span> match your top transporters (95% score)
-            </p>
-            <button
-              onClick={() => navigate('/dashboard/broker/smart-matching')}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
-            >
-              View Matches <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Market Trend */}
-          <div className="bg-white rounded-lg p-4 border border-blue-200 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-blue-600" />
-              <h3 className="font-semibold text-gray-900 text-sm">Market Trend</h3>
-            </div>
-            <p className="text-xs text-gray-600 mb-3">
-              Electronics shipments up <span className="font-bold text-blue-600">35%</span> this month
-            </p>
-            <button
-              onClick={() => navigate('/dashboard/broker/market-intelligence')}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-            >
-              Learn More <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Priority Actions */}
-      {recentLoads.length > 0 && (
-        <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-amber-600 rounded-lg p-2">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Priority Actions</h2>
-          </div>
-
-          <div className="space-y-3">
-            <div className="bg-white rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <Shield className="w-5 h-5 text-amber-600" />
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">Verify transporter insurance</p>
-                  <p className="text-xs text-gray-500">2 transporters need verification</p>
-                </div>
-              </div>
-              <button className="px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium">
-                Verify Now
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">Review contract signatures</p>
-                  <p className="text-xs text-gray-500">1 contract waiting for your signature</p>
-                </div>
-              </div>
-              <button
-                onClick={() => navigate('/dashboard/broker/contracts')}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium"
-              >
-                Review
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Commissions */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-violet-600 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Commissions</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                ${statistics?.totalCommissions.toLocaleString() || '0.00'}
-              </p>
-              <p className="text-xs text-emerald-600 font-medium mt-1">↗ +15% this month</p>
-            </div>
-            <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl p-4 shadow-lg">
-              <DollarSign className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Total Earned */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-emerald-600 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Earned</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                ${statistics?.totalEarned.toLocaleString() || '0.00'}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">All-time earnings</p>
-            </div>
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-4 shadow-lg">
-              <CheckCircle2 className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Commissions */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-amber-600 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pending</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                ${statistics?.totalPending.toLocaleString() || '0.00'}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Awaiting payment</p>
-            </div>
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-4 shadow-lg">
-              <Clock className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Total Loads */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-rose-600 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Loads</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                {statistics?.totalLoads || 0}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Currently managing</p>
-            </div>
-            <div className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-4 shadow-lg">
-              <Package className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions Grid */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Cargo Discovery */}
-          <div
-            className="rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
-            style={{ background: '#345E85' }}
-            onClick={() => navigate('/dashboard/broker/discovery')}
-          >
-            <div className="bg-white/20 rounded-lg p-3 w-fit mb-3">
-              <Package className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold mb-2">Discover Cargo</h3>
-            <p className="text-sm text-orange-100 mb-3">
-              Find available loads & opportunities
-            </p>
-            <div className="flex items-center text-sm font-semibold">
-              Explore <ArrowRight className="w-4 h-4 ml-2" />
-            </div>
-          </div>
-
-          {/* Smart Matching */}
-          <div
-            className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
-            onClick={() => navigate('/dashboard/broker/smart-matching')}
-          >
-            <div className="bg-white/20 rounded-lg p-3 w-fit mb-3">
-              <Truck className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold mb-2">Smart Matching</h3>
-            <p className="text-sm text-violet-100 mb-3">
-              AI-powered transporter recommendations
-            </p>
-            <div className="flex items-center text-sm font-semibold">
-              Match Now <ArrowRight className="w-4 h-4 ml-2" />
-            </div>
-          </div>
-
-          {/* My Loads */}
-          <div
-            className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
-            onClick={() => navigate('/dashboard/broker/loads')}
-          >
-            <div className="bg-white/20 rounded-lg p-3 w-fit mb-3">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold mb-2">My Loads</h3>
-            <p className="text-sm text-emerald-100 mb-3">
-              Manage assigned loads & tracking
-            </p>
-            <div className="flex items-center text-sm font-semibold">
-              View All <ArrowRight className="w-4 h-4 ml-2" />
-            </div>
-          </div>
-
-          {/* Commissions */}
-          <div
-            className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-white"
-            onClick={() => navigate('/dashboard/broker/commissions')}
-          >
-            <div className="bg-white/20 rounded-lg p-3 w-fit mb-3">
-              <DollarSign className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold mb-2">Commissions</h3>
-            <p className="text-sm text-amber-100 mb-3">
-              Track earnings & manage payouts
-            </p>
-            <div className="flex items-center text-sm font-semibold">
-              View Earnings <ArrowRight className="w-4 h-4 ml-2" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Loads & Professional Services */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Active Loads */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Active Loads</h2>
-            <button
-              onClick={() => navigate('/dashboard/broker/loads')}
-              className="text-sm text-orange-600 hover:text-orange-700 font-medium"
-            >
-              View All
-            </button>
-          </div>
-
-          {recentLoads.length > 0 ? (
-            <div className="space-y-3">
-              {recentLoads.slice(0, 3).map((load) => (
-                <div
-                  key={load.id}
-                  onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-                  className="p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 text-sm">{load.title}</h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {load.pickupLocation} → {load.deliveryLocation}
-                      </p>
-                    </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${load.status === 'ACTIVE'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {load.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-                    <span className="text-xs text-gray-600">
-                      Commission: <span className="font-semibold text-emerald-600">
-                        ${load.brokerCommissionAmount?.toLocaleString() || '0'}
-                      </span>
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm mb-3">No active loads yet</p>
-              <button
-                onClick={() => navigate('/dashboard/broker/discovery')}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium"
-              >
-                Discover Loads
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Professional Services */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Professional Services</h2>
-          <div className="space-y-3">
-            <div
-              onClick={() => navigate('/dashboard/broker/contracts')}
-              className="p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 rounded-lg p-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Contracts</h3>
-                  <p className="text-xs text-gray-500">Manage load agreements</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-
-            <div
-              onClick={() => navigate('/dashboard/broker/insurance')}
-              className="p-4 bg-gradient-to-r from-emerald-50 to-white rounded-lg border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-emerald-100 rounded-lg p-2">
-                  <Shield className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Insurance Verification</h3>
-                  <p className="text-xs text-gray-500">Verify transporter compliance</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-
-            <div
-              onClick={() => navigate('/dashboard/broker/escrow')}
-              className="p-4 bg-gradient-to-r from-violet-50 to-white rounded-lg border border-violet-200 hover:border-violet-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-violet-100 rounded-lg p-2">
-                  <DollarSign className="w-5 h-5 text-violet-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Escrow Management</h3>
-                  <p className="text-xs text-gray-500">Secure payment handling</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-
-            <div
-              onClick={() => navigate('/dashboard/broker/market-intelligence')}
-              className="p-4 bg-gradient-to-r from-amber-50 to-white rounded-lg border border-amber-200 hover:border-amber-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-amber-100 rounded-lg p-2">
-                  <BarChart3 className="w-5 h-5 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Market Intelligence</h3>
-                  <p className="text-xs text-gray-500">Real-time market insights</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-2 sm:-m-4">
-      {/* Broker Onboarding Tour */}
-      <BrokerOnboardingTour />
-
-      {/* Dashboard Header */}
+    <div className="min-h-screen bg-[#FDFDFF] pb-24 font-manrope selection:bg-primary-100 selection:text-primary-900 overflow-x-hidden">
       <DashboardHeader />
-
-      {/* Welcome Section with Tabs */}
-      <div className="bg-[#1a1f37] text-white -mt-8 sm:-mt-12 relative overflow-hidden">
-        {/* Decorative Background */}
-        <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-orange-500/10 rounded-full blur-3xl -mr-8 sm:-mr-16 -mt-8 sm:-mt-16 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-48 sm:w-64 h-48 sm:h-64 bg-rose-500/10 rounded-full blur-3xl -ml-8 sm:-ml-16 -mb-8 sm:-mb-16 pointer-events-none"></div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-8 sm:pt-12 pb-3 sm:pb-4">
-          {/* Welcome Message */}
-          <div className="mb-4 sm:mb-6">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">
-              {(() => {
-                const hour = new Date().getHours();
-                const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                // Get firstName from user object, fallback to profile.firstName, then to 'Broker'
-                const firstName = (user?.firstName && user.firstName.trim()) || 
-                                  ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
-                                  'Broker';
-                return `${greeting}, ${firstName}!`;
-              })()}
-            </h1>
-            <p className="text-gray-300 text-sm sm:text-base">
-              {statistics?.totalLoads && statistics.totalLoads > 0
-                ? `You're managing ${statistics.totalLoads} active load${statistics.totalLoads !== 1 ? 's' : ''} with ${statistics.totalCommissions ? `$${statistics.totalCommissions.toLocaleString()}` : '$0'} in commissions.`
-                : 'Ready to facilitate your first deal? Explore available loads below!'}
-            </p>
+      
+      <main className="max-w-7xl mx-auto px-6 sm:px-9 md:px-10 lg:px-12 xl:px-14 pt-12 space-y-16">
+        
+        {/* Simple Header */}
+        <section className="relative">
+          <div className="absolute inset-0 bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden">
+            <div className="absolute -top-1/2 -right-1/4 w-full h-full bg-primary-600/10 rounded-full blur-[120px]"></div>
           </div>
 
-          {/* Horizontal Tab Navigation */}
-          <div className="flex gap-2 sm:gap-4 border-b border-white/10 text-xs sm:text-sm font-medium overflow-x-auto pb-3 sm:pb-4 scrollbar-hide">
-            {[
-              { id: 'Overview', label: 'Overview' },
-              { id: 'Loads', label: 'My Loads' },
-              { id: 'Discovery', label: 'Discovery' },
-              { id: 'Matching', label: 'Matching' },
-              { id: 'Commissions', label: 'Commissions' },
-              { id: 'Contracts', label: 'Contracts' },
-              { id: 'Insurance', label: 'Insurance' },
-              { id: 'Analytics', label: 'Analytics' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`pb-2.5 sm:pb-3 relative transition-colors whitespace-nowrap flex-shrink-0 px-2 sm:px-0 touch-manipulation min-h-[44px] sm:min-h-0 flex items-center ${activeTab === tab.id ? 'text-white' : 'text-gray-400 active:text-gray-300'
-                  }`}
-              >
-                <span className="text-xs sm:text-sm">{tab.label}</span>
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white rounded-t-full"></div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 mt-0 sm:mt-2 relative z-20 min-h-[400px] sm:min-h-[500px] pb-6">
-        {activeTab === 'Overview' && renderOverview()}
-
-        {activeTab === 'Loads' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">My Loads</h2>
-            <p className="text-gray-500">Loads management component will be integrated here</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/loads')}
-              className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-            >
-              View All Loads
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'Discovery' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Cargo Discovery</h2>
-            <p className="text-gray-500">Cargo discovery component will be integrated here</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/discovery')}
-              className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-            >
-              Explore Available Loads
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'Matching' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Smart Matching</h2>
-            <p className="text-gray-500">Smart matching component will be integrated here</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/smart-matching')}
-              className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-            >
-              View Recommendations
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'Commissions' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Commission Management</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-lg p-6">
-                <p className="text-sm text-gray-600 mb-2">Total Earned</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  ${statistics?.totalEarned.toLocaleString() || '0'}
-                </p>
+          <div className="relative z-10 p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-8">
+              <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center">
+                <LayoutDashboard size={40} className="text-white" />
               </div>
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-6">
-                <p className="text-sm text-gray-600 mb-2">This Month</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  ${statistics?.totalCommissions.toLocaleString() || '0'}
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-6">
-                <p className="text-sm text-gray-600 mb-2">Pending</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  ${statistics?.totalPending.toLocaleString() || '0'}
-                </p>
+              
+              <div className="text-center lg:text-left">
+                <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter mb-2">
+                  Broker <span className="text-primary-400">Dashboard</span>
+                </h1>
+                <p className="text-slate-400 text-sm font-medium">Managing {recentLoads.length} active loads for you today.</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate('/dashboard/broker/commissions')}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-            >
-              View Commission History
-            </button>
-          </div>
-        )}
 
-        {activeTab === 'Contracts' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Contract Management</h2>
-            <p className="text-gray-500">Contract management component will be integrated here</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/contracts')}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Manage Contracts
-            </button>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-12 p-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem]">
+               <div className="text-center">
+                 <p className="text-3xl font-black text-white tracking-tighter leading-none">{statistics?.totalLoads || 0}</p>
+                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mt-3">Active Loads</p>
+               </div>
+               <div className="text-center border-l border-white/10 px-6 lg:px-12">
+                 <p className="text-3xl font-black text-emerald-400 tracking-tighter leading-none">94.2%</p>
+                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mt-3">Success Rate</p>
+               </div>
+               <div className="text-center border-l border-white/10 px-6 lg:px-12 hidden md:block">
+                 <p className="text-3xl font-black text-primary-400 tracking-tighter leading-none">Fast</p>
+                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mt-3">Connection</p>
+               </div>
+            </div>
           </div>
-        )}
+        </section>
 
-        {activeTab === 'Insurance' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Insurance Verification</h2>
-            <p className="text-gray-500">Insurance verification component will be integrated here</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/insurance')}
-              className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+        {/* Market News Bar */}
+        <section className="bg-white rounded-full border border-slate-100 p-2 shadow-sm flex items-center overflow-hidden">
+           <div className="bg-slate-900 px-6 py-3 rounded-full flex items-center gap-3 shrink-0">
+             <Layers size={14} className="text-primary-400" />
+             <span className="text-[10px] font-black text-white uppercase tracking-widest">Market News</span>
+           </div>
+           <div className="flex-1 px-8 overflow-hidden relative">
+              <div className="whitespace-nowrap flex gap-12 animate-marquee-slow">
+                 {[
+                   'Nairobi-Mombasa: High shipment volume today (+18%)',
+                   'Fuel Prices: Stabilizing costs across the region',
+                   'Demand Update: Export demand expected to rise soon',
+                   'Load Rewards: You are close to your next bonus level'
+                 ].map((msg, i) => (
+                   <span key={i} className="text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-4">
+                     <span className="w-1.5 h-1.5 rounded-full bg-primary-500"></span> {msg}
+                   </span>
+                 ))}
+              </div>
+           </div>
+           <div className="px-6 border-l border-slate-100 hidden md:flex items-center gap-4">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">New Bids</span>
+              <div className="flex -space-x-2">
+                 {[1,2,3].map(i => <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200" />)}
+              </div>
+           </div>
+        </section>
+
+        {/* Main Stats Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+          {[
+            { label: 'Total Earned', value: `${statistics?.totalEarned.toLocaleString() || '0'} KES`, sub: 'Real-time Earnings', icon: DollarSign, trend: '↑ 12.4%', color: 'primary', data: revenueData },
+            { label: 'Active Pipeline', value: statistics?.totalLoads || 0, sub: 'Loads in Transit', icon: Package, trend: 'Good', color: 'emerald', data: revenueData.map(d => ({ ...d, value: d.value * 0.8 })) },
+            { label: 'Pending Payments', value: `${statistics?.totalPending.toLocaleString() || '0'} KES`, sub: 'Awaiting clearance', icon: Clock, trend: '↓ 4.1%', color: 'rose', data: revenueData.map(d => ({ ...d, value: Math.random() * 5000 })) },
+            { label: 'Success Rate', value: '94.2%', sub: 'Based on matches', icon: Sparkles, trend: '↑ 2.1%', color: 'indigo', data: revenueData.map(d => ({ ...d, value: 5000 + Math.random() * 2000 })) },
+          ].map((stat, i) => (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              key={i} 
+              className="group bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2 relative overflow-hidden"
             >
-              Verify Insurance
-            </button>
-          </div>
-        )}
+               <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-10">
+                     <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"><stat.icon size={20} /></div>
+                     <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full ${stat.trend.includes('↑') ? 'bg-emerald-50 text-emerald-600' : stat.trend.includes('↓') ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-400'}`}>{stat.trend}</span>
+                  </div>
+                  <div className="mb-6">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">{stat.label}</p>
+                     <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
+                  </div>
+                  
+                  <div className="h-16 w-full -mx-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={stat.data}>
+                        <defs>
+                          <linearGradient id={`gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={stat.color === 'primary' ? '#2563eb' : stat.color === 'emerald' ? '#10b981' : '#6366f1'} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={stat.color === 'primary' ? '#2563eb' : stat.color === 'emerald' ? '#10b981' : '#6366f1'} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <Area 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke={stat.color === 'primary' ? '#2563eb' : stat.color === 'emerald' ? '#10b981' : '#6366f1'} 
+                          strokeWidth={2}
+                          fillOpacity={1} 
+                          fill={`url(#gradient-${i})`} 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-4">{stat.sub}</p>
+               </div>
+            </motion.div>
+          ))}
+        </section>
 
-        {activeTab === 'Analytics' && (
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Performance Analytics</h2>
-            <p className="text-gray-500">Analytics component will be integrated here</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/analytics')}
-              className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-            >
-              View Analytics
-            </button>
-          </div>
-        )}
-      </div>
+        {/* Tools & Loads */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-12 items-start">
+           
+           {/* Broker Tools */}
+           <section className="xl:col-span-2 space-y-12">
+              <div className="bg-white rounded-[4rem] border border-slate-100 p-12 shadow-sm space-y-12 group relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.4em] flex items-center gap-4">
+                    <div className="w-3 h-3 bg-primary-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"></div> Broker Tools
+                  </h3>
+                </div>
 
-      {/* Dashboard Footer */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  {[
+                    { title: 'Smart Matching', desc: 'Find 12 potential loads for your trucks.', path: '/dashboard/broker/smart-matching', icon: Target, tag: 'High Value', impact: '+12%' },
+                    { title: 'Market Trends', desc: 'See current route prices and suggestions.', path: '/dashboard/broker/market-intelligence', icon: TrendingUp, tag: 'Latest', impact: '+8%' }
+                  ].map((it, i) => (
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      key={i} 
+                      onClick={() => navigate(it.path)} 
+                      className="p-10 bg-slate-50/50 rounded-[3rem] border border-slate-50 cursor-pointer group/it hover:bg-white hover:shadow-2xl transition-all duration-500 relative"
+                    >
+                       <div className="flex justify-between items-start mb-10">
+                          <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-primary-600 shadow-sm group-hover/it:bg-slate-900 group-hover/it:text-white transition-all"><it.icon size={28} /></div>
+                          <div className="text-right">
+                             <span className="text-[8px] font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-widest">{it.tag}</span>
+                             <p className="text-emerald-500 font-bold text-xs mt-2">{it.impact}</p>
+                          </div>
+                       </div>
+                       <h4 className="text-2xl font-black text-slate-900 mb-3 tracking-tighter">{it.title}</h4>
+                       <p className="text-xs font-bold text-slate-400 leading-relaxed mb-10">{it.desc}</p>
+                       <div className="flex items-center gap-2 text-primary-600 text-[10px] font-black uppercase tracking-widest">Open {it.title} <ArrowRight size={14} className="group-hover/it:translate-x-2 transition-transform" /></div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active Loads Stream */}
+              <div className="bg-white rounded-[4rem] border border-slate-100 p-12 shadow-sm space-y-10 group relative overflow-hidden">
+                <div className="flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md py-4 z-20 -mx-12 px-12 -mt-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.4em] flex items-center gap-4">
+                      <div className="w-3 h-3 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)]"></div> Active Loads
+                    </h3>
+                    <div className="flex gap-2 ml-8">
+                       {['all', 'high_yield', 'expiring'].map((t) => (
+                         <button 
+                           key={t}
+                           onClick={() => setActiveTab(t as any)}
+                           className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === t ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                         >
+                            {t.replace('_', ' ')}
+                         </button>
+                       ))}
+                    </div>
+                  </div>
+                  <button onClick={() => navigate('/dashboard/broker/loads')} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-primary-600 hover:text-white transition-all shadow-sm"><Layers size={18} /></button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Load Name</th>
+                        <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Route</th>
+                        <th className="px-8 py-6 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Value</th>
+                        <th className="px-8 py-6 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      <AnimatePresence mode="popLayout">
+                        {filteredLoads.map((load) => (
+                          <motion.tr 
+                            layout
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            key={load.id} 
+                            className="group hover:bg-slate-50/50 transition-all cursor-pointer" 
+                            onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
+                          >
+                            <td className="px-8 py-8">
+                               <div className="flex items-center gap-6">
+                                 <div className="w-12 h-12 bg-white rounded-2xl border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                                   <Package size={20} />
+                                 </div>
+                                 <div>
+                                   <p className="text-sm font-black text-slate-900 tracking-tighter uppercase">{load.title}</p>
+                                   <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest line-clamp-1 opacity-60">ID: {load.id.slice(0, 12)}</p>
+                                 </div>
+                               </div>
+                            </td>
+                            <td className="px-8 py-8">
+                               <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                                  <MapPin size={12} className="text-slate-300" />
+                                  <span>{load.pickupLocation}</span>
+                                  <ChevronRight size={14} className="text-slate-300" />
+                                  <span>{load.deliveryLocation}</span>
+                               </div>
+                            </td>
+                            <td className="px-8 py-8 text-right">
+                               <p className="text-sm font-black text-slate-900 tracking-tighter">{load.loadValue?.toLocaleString()} <span className="text-[9px] text-slate-300">KES</span></p>
+                               <span className="text-[8px] font-black text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full uppercase">+{load.brokerCommissionRate || 10}%</span>
+                            </td>
+                            <td className="px-8 py-8 text-right">
+                               <span className="px-4 py-2 bg-white border border-slate-100 text-[8px] font-black uppercase tracking-widest rounded-2xl text-slate-400 group-hover:bg-slate-900 group-hover:text-white shadow-sm transition-all">{load.status}</span>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </AnimatePresence>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+           </section>
+
+           {/* Quick Actions Sidebar */}
+           <aside className="space-y-12 h-sticky top-32">
+              <div className="grid grid-cols-1 gap-6">
+                {[
+                  { label: 'Find Loads', icon: Search, path: '/dashboard/broker/discovery', count: 12 },
+                  { label: 'Contracts', icon: FileText, path: '/dashboard/broker/contracts', count: 3 },
+                  { label: 'Security', icon: Shield, path: '/dashboard/broker/insurance', count: 1 },
+                  { label: 'Analytics', icon: Award, path: '/dashboard/broker/analytics', count: null }
+                ].map((action, i) => (
+                  <motion.button 
+                    whileTap={{ scale: 0.98 }}
+                    key={i} 
+                    onClick={() => navigate(action.path)} 
+                    className="group p-8 bg-white border border-slate-100 rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 flex items-center justify-between"
+                  >
+                     <div className="flex items-center gap-6">
+                        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"><action.icon size={22} /></div>
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-900">{action.label}</span>
+                     </div>
+                     {action.count !== null && (
+                       <div className="w-6 h-6 rounded-full bg-slate-50 group-hover:bg-primary-600 group-hover:text-white flex items-center justify-center text-[10px] font-black transition-all">
+                         {action.count}
+                       </div>
+                     )}
+                     <ArrowUpRight size={16} className="text-slate-200 group-hover:text-primary-600 transition-all" />
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* Security Status Widget */}
+              <div className="bg-slate-900 rounded-[4rem] p-12 text-white relative overflow-hidden shadow-2xl group border border-white/5">
+                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:scale-110 transition-transform"><Shield size={160} /></div>
+                 <div className="flex items-center gap-3 mb-10">
+                    <div className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-ping"></div>
+                    <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Security Status</h3>
+                 </div>
+                 
+                 <div className="space-y-8 mb-12">
+                    <div className="flex justify-between items-end">
+                       <div className="space-y-1">
+                          <p className="text-2xl font-black tracking-tighter uppercase">Protected</p>
+                          <p className="text-[9px] font-bold uppercase text-slate-500 tracking-[0.2em]">Data protection is active</p>
+                       </div>
+                       <Shield size={32} className="text-primary-600 opacity-40" />
+                    </div>
+                    
+                    <div className="space-y-4">
+                       <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
+                          <span>System Uptime</span>
+                          <span className="text-primary-400 font-bold">99.9%</span>
+                       </div>
+                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: '99.9%' }}
+                            transition={{ duration: 2, delay: 0.5 }}
+                            className="h-full bg-primary-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.6)]"
+                          />
+                       </div>
+                    </div>
+                 </div>
+
+                 <button onClick={() => navigate('/dashboard/broker/documents')} className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center justify-center gap-3">
+                   View Audit Logs <Activity size={14} />
+                 </button>
+              </div>
+
+              {/* Weekly Performance */}
+              <div className="p-10 bg-indigo-600 rounded-[3.5rem] text-white relative overflow-hidden">
+                 <div className="relative z-10 flex items-center justify-between">
+                    <div>
+                       <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200 mb-1">Weekly Growth</p>
+                       <h3 className="text-3xl font-black tracking-tighter">+24%</h3>
+                    </div>
+                    <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                       <TrendingUp size={24} className="text-white" />
+                    </div>
+                 </div>
+              </div>
+           </aside>
+        </div>
+      </main>
       <DashboardFooter />
+      
+      {/* Notifications */}
+      <div className="fixed bottom-12 right-12 z-[100]">
+         <motion.button 
+           whileHover={{ scale: 1.1 }}
+           whileTap={{ scale: 0.9 }}
+           className="w-16 h-16 bg-slate-900 text-white rounded-3xl flex items-center justify-center shadow-2xl relative group"
+         >
+            <Bell size={24} />
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-600 rounded-full border-4 border-slate-900 text-[10px] font-black flex items-center justify-center">2</span>
+            
+            <div className="absolute bottom-full right-0 mb-6 opacity-0 translate-y-4 scale-90 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
+               <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-2xl w-64 text-slate-900">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Active Signals</p>
+                  <div className="space-y-4">
+                     <div className="flex gap-4 p-3 bg-slate-50 rounded-2xl">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5"></div>
+                        <p className="text-[10px] font-bold leading-tight uppercase tracking-tight">A new load from Mombasa is available now.</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </motion.button>
+      </div>
     </div>
   );
 };
 
 export default BrokerDashboard;
-
-

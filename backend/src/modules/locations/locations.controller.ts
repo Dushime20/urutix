@@ -18,8 +18,8 @@ import { OpenStreetMapLocationService } from './openstreetmap-location.service';
 import { OSMLocationEnrichmentService } from './osm-location-enrichment.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { TenantGuard } from '../auth/tenant.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 
 @Controller('locations')

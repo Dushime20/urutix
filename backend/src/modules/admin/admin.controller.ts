@@ -7,7 +7,7 @@ import {
   ApiParam,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { AdminService } from './admin.service';
 import { Body, Query } from '@nestjs/common';

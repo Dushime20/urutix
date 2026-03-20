@@ -8,6 +8,7 @@ import {
   ArrowUp
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Transaction {
@@ -265,11 +266,11 @@ const FinancialAdminDashboard: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Financial Dashboard"
-      description="Monitor platform revenue, transactions, and financial health"
+      title={<TranslatedText text="Financial Dashboard" />}
+      description={<TranslatedText text="Monitor platform revenue, transactions, and financial health" />}
       actions={
         <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all">
-          <Download size={14} /> Export Report
+          <Download size={14} /> <TranslatedText text="Export Report" />
         </button>
       }
     >
@@ -285,7 +286,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all duration-300 shadow-sm">
                   <DollarSign size={18} />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Revenue</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Total Revenue" /></p>
               </div>
               <div className="flex items-baseline gap-2">
                 <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
@@ -296,7 +297,7 @@ const FinancialAdminDashboard: React.FC = () => {
                   <span className="text-[10px] font-black">{metrics.monthlyGrowth}%</span>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">Active yield this month</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Active yield this month" /></p>
             </div>
           </div>
 
@@ -309,7 +310,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-amber-600 group-hover:bg-amber-50 transition-all duration-300 shadow-sm">
                   <Activity size={18} />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Transactions</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Transactions" /></p>
               </div>
               <div className="flex items-baseline gap-2">
                 <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
@@ -317,7 +318,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 </h3>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${metrics.averageTransactionValue} AVG</span>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">Network throughput</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Network throughput" /></p>
             </div>
           </div>
 
@@ -330,7 +331,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300 shadow-sm">
                   <Timer size={18} />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Pending</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Pending" /></p>
               </div>
               <div className="flex items-baseline gap-2">
                 <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
@@ -340,7 +341,7 @@ const FinancialAdminDashboard: React.FC = () => {
                   {transactions.filter(t => t.status === 'pending').length} TXN
                 </span>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">Assets in processing</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Assets in processing" /></p>
             </div>
           </div>
 
@@ -353,7 +354,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-purple-600 group-hover:bg-purple-50 transition-all duration-300 shadow-sm">
                   <PiggyBank size={18} />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Escrow Balance</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Escrow Balance" /></p>
               </div>
               <div className="flex items-baseline gap-2">
                 <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
@@ -361,7 +362,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 </h3>
                 <div className="bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter">SECURED</div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">Guaranteed liquidity</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Guaranteed liquidity" /></p>
             </div>
           </div>
         </div>

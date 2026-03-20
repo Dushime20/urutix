@@ -8,7 +8,7 @@ import {
     Req,
 } from '@nestjs/common';
 import { ActivityLogService } from '../../services/activity-log.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';

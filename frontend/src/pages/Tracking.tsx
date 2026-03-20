@@ -8,6 +8,7 @@ import type { ShipmentUpdate } from '../services/websocket';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAuth } from '../contexts/AuthContext';
 import receiverService from '../services/receiverService';
+import { brokerAPI } from '../services/brokerApi';
 import { cn } from '@/utils/cn';
 
 const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
@@ -221,17 +222,17 @@ const Tracking: React.FC = () => {
             pickupLocation: {
               name: c.pickupLocation || 'Pickup Point',
               address: c.pickupLocation || '',
-              latitude: -1.2921, // Mock lat/lng if not available
+              latitude: -1.2921,
               longitude: 36.8219,
             },
             deliveryLocation: {
               name: c.deliveryLocation || 'Delivery Point',
               address: c.deliveryLocation || '',
-              latitude: -4.0435, // Mock lat/lng
+              latitude: -4.0435,
               longitude: 39.6682,
             },
             currentLocation: {
-              latitude: -2.5, // Mock current location
+              latitude: -2.5,
               longitude: 38.0,
               timestamp: new Date().toISOString(),
             },
@@ -244,9 +245,56 @@ const Tracking: React.FC = () => {
               type: c.assignedTruck?.model || 'Truck',
             },
             estimatedDelivery: c.deliveryDate || new Date().toISOString(),
-            progress: 50, // Mock progress
+            progress: 50,
             etaConfidence: 85,
             distanceRemaining: 120
+          }));
+
+          setShipments(mappedShipments);
+        } else if (user?.role === 'BROKER') {
+          // Fetch real broker loads
+          const brokerLoadsResponse = await brokerAPI.getBrokerLoads(user.id);
+          const brokerLoads = brokerLoadsResponse.data || [];
+          
+          // Filter for active tracking (in transit, etc.)
+          const activeLoads = brokerLoads.filter((l: any) => 
+            l.status === 'IN_TRANSIT' || l.status === 'PICKED_UP' || l.status === 'ON_ROUTE'
+          );
+
+          const mappedShipments: Shipment[] = activeLoads.map((l: any) => ({
+            id: l.id,
+            cargoId: l.id.substring(0, 8).toUpperCase(),
+            cargoTitle: l.title || 'Load',
+            status: l.status as any,
+            pickupLocation: {
+              name: l.pickupLocation || 'Pickup',
+              address: l.pickupLocation || '',
+              latitude: -1.2921,
+              longitude: 36.8219,
+            },
+            deliveryLocation: {
+              name: l.deliveryLocation || 'Delivery',
+              address: l.deliveryLocation || '',
+              latitude: -4.0435,
+              longitude: 39.6682,
+            },
+            currentLocation: {
+              latitude: l.currentLocation?.latitude || -1.5,
+              longitude: l.currentLocation?.longitude || 36.5,
+              timestamp: new Date().toISOString(),
+            },
+            driver: {
+              name: l.driverName || 'Truck Driver',
+              phone: l.driverPhone || '',
+            },
+            vehicle: {
+              plateNumber: l.plateNumber || 'T123',
+              type: l.vehicleType || 'Truck',
+            },
+            estimatedDelivery: l.deliveryDate || new Date().toISOString(),
+            progress: l.progress || 50,
+            etaConfidence: 90,
+            distanceRemaining: 150
           }));
 
           setShipments(mappedShipments);
@@ -392,7 +440,7 @@ const Tracking: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <Loader2 className="animate-spin text-[#345E85]" size={32} />
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accessing Tracking Nexus...</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Info...</p>
       </div>
     );
   }
@@ -406,28 +454,28 @@ const Tracking: React.FC = () => {
       {/* Search & Global Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100 shadow-inner">
         <StatsCard
-          title="Active Channels"
+          title="Active Tracking"
           value={activeCount}
           icon={Activity}
           colorClass="bg-blue-50 text-[#345E85]"
           secondaryColor="text-[#345E85]"
         />
         <StatsCard
-          title="Fulfillment"
+          title="Delivered"
           value={deliveryCount}
           icon={CheckCircle}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
         <StatsCard
-          title="Schedule Integrity"
+          title="On-time Rate"
           value={`${onTimeRate}%`}
           icon={Shield}
           colorClass="bg-amber-50 text-amber-600"
           secondaryColor="text-amber-600"
         />
         <StatsCard
-          title="Network Velocity"
+          title="Avg Speed"
           value="42 KM/H"
           icon={TrendingUp}
           colorClass="bg-purple-50 text-purple-600"
@@ -442,9 +490,9 @@ const Tracking: React.FC = () => {
             <Wifi size={20} className={wsConnected ? 'animate-pulse' : ''} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest">Telemetry Stream</h3>
+            <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest">Live Updates</h3>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {wsConnected ? 'Encrypted live data active' : 'Connecting to infrastructure...'}
+              {wsConnected ? 'Live tracking active' : 'Connecting...'}
             </p>
           </div>
         </div>
@@ -461,7 +509,7 @@ const Tracking: React.FC = () => {
               }
             }}>
             <AlertTriangle size={14} />
-            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Re-establish link</span>
+            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Try Reconnecting</span>
           </div>
         )}
       </div>
@@ -487,9 +535,9 @@ const Tracking: React.FC = () => {
         {/* Shipment List */}
         <div className="lg:col-span-1 space-y-6">
           <div className="flex items-center justify-between px-2">
-            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Manifests</h5>
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Shipments</h5>
             <div className="px-3 py-1 bg-slate-100 rounded-full">
-              <span className="text-[10px] font-black text-slate-900">{shipments.length} UNIT(S)</span>
+              <span className="text-[10px] font-black text-slate-900">{shipments.length} UNITS</span>
             </div>
           </div>
 
@@ -544,7 +592,7 @@ const Tracking: React.FC = () => {
                 {/* Simplified Progress */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-end">
-                    <span className={cn("text-[10px] font-black uppercase tracking-widest", selectedShipment?.id === shipment.id ? "text-white" : "text-slate-400")}>Quantum Progress</span>
+                    <span className={cn("text-[10px] font-black uppercase tracking-widest", selectedShipment?.id === shipment.id ? "text-white" : "text-slate-400")}>Progress</span>
                     <span className={cn("text-xs font-black", selectedShipment?.id === shipment.id ? "text-white" : "text-[#0f172a]")}>{shipment.progress}%</span>
                   </div>
                   <div className={cn("w-full h-1.5 rounded-full overflow-hidden", selectedShipment?.id === shipment.id ? "bg-white/20" : "bg-slate-100")}>
@@ -568,11 +616,11 @@ const Tracking: React.FC = () => {
                 <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100">
                   <Navigation size={18} />
                 </div>
-                <h2 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Geospatial View</h2>
+                <h2 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Tracking Map</h2>
               </div>
               {selectedShipment && (
                 <div className="px-4 py-2 bg-blue-50 text-[#345E85] rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                  Tracking Instance: {selectedShipment.cargoId}
+                  Tracking ID: {selectedShipment.cargoId}
                 </div>
               )}
             </div>
@@ -598,7 +646,7 @@ const Tracking: React.FC = () => {
                     >
                       <Popup>
                         <div className="p-2">
-                          <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-1">Origin Point</h3>
+                          <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-1">Pickup Location</h3>
                           <p className="text-[10px] font-bold text-slate-600">{selectedShipment.pickupLocation.address}</p>
                         </div>
                       </Popup>
@@ -610,7 +658,7 @@ const Tracking: React.FC = () => {
                     >
                       <Popup>
                         <div className="p-2">
-                          <h3 className="text-xs font-black uppercase tracking-widest text-red-600 mb-1">Final Destination</h3>
+                          <h3 className="text-xs font-black uppercase tracking-widest text-red-600 mb-1">Delivery Location</h3>
                           <p className="text-[10px] font-bold text-slate-600">{selectedShipment.deliveryLocation.address}</p>
                         </div>
                       </Popup>
@@ -622,7 +670,7 @@ const Tracking: React.FC = () => {
                     >
                       <Popup>
                         <div className="p-2">
-                          <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 mb-1">Current Coordinates</h3>
+                          <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 mb-1">Current Location</h3>
                           <p className="text-[10px] font-bold text-slate-600">Updated: {new Date(selectedShipment.currentLocation.timestamp).toLocaleTimeString()}</p>
                         </div>
                       </Popup>
@@ -644,30 +692,30 @@ const Tracking: React.FC = () => {
                     <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
                       <Shield size={20} />
                     </div>
-                    <h2 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Intelligence Report</h2>
+                    <h2 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Shipment Details</h2>
                   </div>
                   {wsConnected && (
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                      Telemeteric Active
+                      Live Tracking
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Operational Dynamics</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">General Info</h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Instance ID</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Shipment ID</span>
                         <span className="text-[10px] font-black text-[#0f172a]">{selectedShipment.cargoId}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Manifest</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Description</span>
                         <span className="text-[10px] font-black text-[#0f172a] truncate ml-4">{selectedShipment.cargoTitle}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Temporal Bound (ETA)</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ETA</span>
                         <span className="text-[10px] font-black text-[#0f172a]">{new Date(selectedShipment.estimatedDelivery).toLocaleDateString()}</span>
                       </div>
                       <div className="flex justify-between items-center p-4 bg-[#345E85]/5 rounded-[2rem] border border-[#345E85]/10">
@@ -681,7 +729,7 @@ const Tracking: React.FC = () => {
                   </div>
 
                   <div className="space-y-6">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trajectory Milestones</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tracking Events</h3>
                     <div className="relative pl-6 space-y-6">
                       <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-slate-100" />
                       {selectedShipment.milestones?.map((milestone, index) => (
@@ -716,7 +764,7 @@ const Tracking: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{selectedShipment.driver.name}</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Dispatcher</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Driver</p>
                     </div>
                   </div>
 
@@ -725,7 +773,7 @@ const Tracking: React.FC = () => {
                     className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#345E85] transition-all shadow-lg flex items-center gap-2"
                   >
                     <Activity size={14} />
-                    Secure Comm-Link
+                    Message Driver
                   </button>
                 </div>
               </div>
@@ -739,7 +787,7 @@ const Tracking: React.FC = () => {
                   <div className="w-10 h-10 bg-slate-50 text-[#345E85] rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
                     <MessageCircle size={20} />
                   </div>
-                  <h3 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Secure Dispatch: {selectedShipment.driver.name}</h3>
+                  <h3 className="text-[10px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Chat with: {selectedShipment.driver.name}</h3>
                 </div>
                 <button onClick={() => setShowMessaging(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                   <X size={24} />
@@ -749,7 +797,7 @@ const Tracking: React.FC = () => {
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 opacity-50">
                     <MessageSquare size={24} className="text-slate-400" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Awaiting Initial Transmission...</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No messages yet...</p>
                   </div>
                 ) : (
                   messages.map((msg) => (
@@ -781,7 +829,7 @@ const Tracking: React.FC = () => {
                       setMessageInput('');
                     }
                   }}
-                  placeholder="ENCRYPTED MESSAGE..."
+                  placeholder="Type a message..."
                   className="flex-1 px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-[#345E85] transition-all"
                 />
                 <button
@@ -793,7 +841,7 @@ const Tracking: React.FC = () => {
                   }}
                   className="px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg"
                 >
-                  Transmit
+                  Send
                 </button>
               </div>
             </div>

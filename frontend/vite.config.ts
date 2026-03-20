@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
       strictPort: false, // Allow Vite to find another port if unavailable
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:3001',
+          target: env.VITE_API_URL || 'http://localhost:3000',
           changeOrigin: true,
           secure: false,
         },
@@ -80,7 +80,7 @@ export default defineConfig(({ mode }) => {
       port: parseInt(env.PORT) || 5173,
       host: '0.0.0.0',
       strictPort: false, // Allow fallback port
-      allowedHosts: ['urutix.com', 'www.urutix.com', '161.97.148.53'],
+      allowedHosts: ['urutix.com', 'www.urutix.com', '.urutix.com', '161.97.148.53'],
     },
   }
 })

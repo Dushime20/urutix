@@ -30,6 +30,7 @@ import {
 } from 'recharts';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { DataCard } from '../../components/EnliteUI/Cards/DataCard';
+import { TranslatedText } from '../../components/translated-text';
 import {
   fetchCurrentSystemHealth,
   fetchHistoricalSystemHealth,
@@ -235,7 +236,7 @@ const SystemHealthDashboard: React.FC = () => {
   if (!metrics) {
     return (
       <Box p={3}>
-        <Alert severity="info">No metrics available</Alert>
+        <Alert severity="info"><TranslatedText text="No metrics available" /></Alert>
       </Box>
     );
   }
@@ -246,19 +247,19 @@ const SystemHealthDashboard: React.FC = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            System Health Dashboard
+            <TranslatedText text="System Health Dashboard" />
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            Last updated: {lastUpdate.toLocaleString()}
+            <TranslatedText text="Last updated" />: {lastUpdate.toLocaleString()}
           </Typography>
         </Box>
         <Box>
-          <Tooltip title="Refresh">
+          <Tooltip title={<TranslatedText text="Refresh" />}>
             <IconButton onClick={fetchCurrentMetrics} color="primary">
               <RefreshIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Export CSV">
+          <Tooltip title={<TranslatedText text="Export CSV" />}>
             <IconButton onClick={handleExport} color="primary">
               <DownloadIcon />
             </IconButton>
@@ -270,7 +271,7 @@ const SystemHealthDashboard: React.FC = () => {
       {violations.length > 0 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="subtitle2" gutterBottom>
-            {violations.length} Threshold Violation{violations.length > 1 ? 's' : ''} Detected
+            {violations.length} <TranslatedText text="Threshold Violation" />{violations.length > 1 ? 's' : ''} <TranslatedText text="Detected" />
           </Typography>
           <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
             {violations.map((violation, index) => (
@@ -288,12 +289,12 @@ const SystemHealthDashboard: React.FC = () => {
 
       {/* Server Metrics */}
       <Typography variant="h6" gutterBottom>
-        Server Metrics
+        <TranslatedText text="Server Metrics" />
       </Typography>
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="CPU Usage"
+            title={<TranslatedText text="CPU Usage" />}
             value={`${metrics.server.cpuUsage.toFixed(1)}%`}
             trend={metrics.server.cpuUsage > 70 ? 'up' : 'stable'}
             color={metrics.server.cpuUsage > 90 ? 'error' : metrics.server.cpuUsage > 70 ? 'warning' : 'success'}
@@ -301,7 +302,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Memory Usage"
+            title={<TranslatedText text="Memory Usage" />}
             value={`${metrics.server.memoryUsage.toFixed(1)}%`}
             trend={metrics.server.memoryUsage > 80 ? 'up' : 'stable'}
             color={metrics.server.memoryUsage > 95 ? 'error' : metrics.server.memoryUsage > 80 ? 'warning' : 'success'}
@@ -309,7 +310,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Disk Usage"
+            title={<TranslatedText text="Disk Usage" />}
             value={formatBytes(metrics.server.diskUsage)}
             trend="stable"
             color="info"
@@ -317,7 +318,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Network I/O"
+            title={<TranslatedText text="Network I/O" />}
             value={`${formatBytes(metrics.server.networkIn)} / ${formatBytes(metrics.server.networkOut)}`}
             trend="stable"
             color="info"
@@ -327,12 +328,12 @@ const SystemHealthDashboard: React.FC = () => {
 
       {/* Database Metrics */}
       <Typography variant="h6" gutterBottom>
-        Database Metrics
+        <TranslatedText text="Database Metrics" />
       </Typography>
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Connections"
+            title={<TranslatedText text="Connections" />}
             value={metrics.database.connectionCount.toString()}
             trend="stable"
             color="primary"
@@ -340,7 +341,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Active Queries"
+            title={<TranslatedText text="Active Queries" />}
             value={metrics.database.activeQueries.toString()}
             trend="stable"
             color="primary"
@@ -348,7 +349,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Avg Query Time"
+            title={<TranslatedText text="Avg Query Time" />}
             value={`${metrics.database.avgQueryTime.toFixed(1)}ms`}
             trend={metrics.database.avgQueryTime > 100 ? 'up' : 'stable'}
             color={metrics.database.avgQueryTime > 500 ? 'error' : metrics.database.avgQueryTime > 100 ? 'warning' : 'success'}
@@ -356,7 +357,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Slow Queries"
+            title={<TranslatedText text="Slow Queries" />}
             value={metrics.database.slowQueries.toString()}
             trend={metrics.database.slowQueries > 10 ? 'up' : 'stable'}
             color={metrics.database.slowQueries > 50 ? 'error' : metrics.database.slowQueries > 10 ? 'warning' : 'success'}
@@ -366,12 +367,12 @@ const SystemHealthDashboard: React.FC = () => {
 
       {/* API Metrics */}
       <Typography variant="h6" gutterBottom>
-        API Metrics
+        <TranslatedText text="API Metrics" />
       </Typography>
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Requests/Min"
+            title={<TranslatedText text="Requests/Min" />}
             value={metrics.api.requestsPerMinute.toString()}
             trend="stable"
             color="secondary"
@@ -379,7 +380,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Avg Response Time"
+            title={<TranslatedText text="Avg Response Time" />}
             value={`${metrics.api.avgResponseTime.toFixed(1)}ms`}
             trend={metrics.api.avgResponseTime > 200 ? 'up' : 'stable'}
             color={metrics.api.avgResponseTime > 1000 ? 'error' : metrics.api.avgResponseTime > 200 ? 'warning' : 'success'}
@@ -387,7 +388,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Error Rate"
+            title={<TranslatedText text="Error Rate" />}
             value={`${metrics.api.errorRate.toFixed(2)}%`}
             trend={metrics.api.errorRate > 1 ? 'up' : 'stable'}
             color={metrics.api.errorRate > 5 ? 'error' : metrics.api.errorRate > 1 ? 'warning' : 'success'}
@@ -395,7 +396,7 @@ const SystemHealthDashboard: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="P95 Response"
+            title={<TranslatedText text="P95 Response" />}
             value={`${metrics.api.p95ResponseTime.toFixed(1)}ms`}
             trend="stable"
             color="secondary"
@@ -405,11 +406,11 @@ const SystemHealthDashboard: React.FC = () => {
 
       {/* Historical Trends */}
       <Typography variant="h6" gutterBottom>
-        Historical Trends (Last 24 Hours)
+        <TranslatedText text="Historical Trends (Last 24 Hours)" />
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <DataCard title="CPU Usage Over Time">
+          <DataCard title={<TranslatedText text="CPU Usage Over Time" />}>
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={prepareChartData('cpuUsage')}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -422,7 +423,7 @@ const SystemHealthDashboard: React.FC = () => {
           </DataCard>
         </Grid>
         <Grid item xs={12} md={6}>
-          <DataCard title="Memory Usage Over Time">
+          <DataCard title={<TranslatedText text="Memory Usage Over Time" />}>
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={prepareChartData('memoryUsage')}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -435,7 +436,7 @@ const SystemHealthDashboard: React.FC = () => {
           </DataCard>
         </Grid>
         <Grid item xs={12} md={6}>
-          <DataCard title="Database Query Time">
+          <DataCard title={<TranslatedText text="Database Query Time" />}>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={prepareChartData('avgQueryTime')}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -449,7 +450,7 @@ const SystemHealthDashboard: React.FC = () => {
           </DataCard>
         </Grid>
         <Grid item xs={12} md={6}>
-          <DataCard title="API Response Time">
+          <DataCard title={<TranslatedText text="API Response Time" />}>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={prepareChartData('avgResponseTime')}>
                 <CartesianGrid strokeDasharray="3 3" />

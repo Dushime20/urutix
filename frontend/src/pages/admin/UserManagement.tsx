@@ -8,6 +8,7 @@ import {
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { TranslatedText } from '../../components/translated-text';
 
 interface User {
   id: string;
@@ -258,18 +259,18 @@ const UserManagement: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="User Management"
-      description="Manage all platform users and their permissions"
+      title={<TranslatedText text="User Management" />}
+      description={<TranslatedText text="Manage all platform users and their permissions" />}
       actions={
         <>
           <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold shadow-lg transition-all">
             <FaDownload size={14} />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline"><TranslatedText text="Export" /></span>
           </button>
           {canCreateUsers && (
             <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all">
               <FaPlus size={14} />
-              <span className="hidden sm:inline">Add User</span>
+              <span className="hidden sm:inline"><TranslatedText text="Add User" /></span>
             </button>
           )}
         </>
@@ -282,7 +283,7 @@ const UserManagement: React.FC = () => {
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search users, companies..."
+              placeholder={<TranslatedText text="Search users, companies..." />}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -293,35 +294,35 @@ const UserManagement: React.FC = () => {
             onChange={(e) => setFilterRole(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="CARGO_OWNER">Cargo Owner</option>
-            <option value="TRUCK_OWNER">Truck Owner</option>
-            <option value="DRIVER">Driver</option>
-            <option value="BROKER">Broker</option>
-            <option value="AGENT">Agent</option>
-            <option value="LENDER">Lender</option>
+            <option value=""><TranslatedText text="All Roles" /></option>
+            <option value="ADMIN"><TranslatedText text="Admin" /></option>
+            <option value="CARGO_OWNER"><TranslatedText text="Cargo Owner" /></option>
+            <option value="TRUCK_OWNER"><TranslatedText text="Truck Owner" /></option>
+            <option value="DRIVER"><TranslatedText text="Driver" /></option>
+            <option value="BROKER"><TranslatedText text="Broker" /></option>
+            <option value="AGENT"><TranslatedText text="Agent" /></option>
+            <option value="LENDER"><TranslatedText text="Lender" /></option>
           </select>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-            <option value="suspended">Suspended</option>
+            <option value=""><TranslatedText text="All Status" /></option>
+            <option value="active"><TranslatedText text="Active" /></option>
+            <option value="inactive"><TranslatedText text="Inactive" /></option>
+            <option value="pending"><TranslatedText text="Pending" /></option>
+            <option value="suspended"><TranslatedText text="Suspended" /></option>
           </select>
           <select
             value={filterVerification}
             onChange={(e) => setFilterVerification(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">All Verification</option>
-            <option value="verified">Verified</option>
-            <option value="unverified">Unverified</option>
-            <option value="pending">Pending</option>
+            <option value=""><TranslatedText text="All Verification" /></option>
+            <option value="verified"><TranslatedText text="Verified" /></option>
+            <option value="unverified"><TranslatedText text="Unverified" /></option>
+            <option value="pending"><TranslatedText text="Pending" /></option>
           </select>
         </div>
       </div>
@@ -332,13 +333,13 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <span className="text-sm font-medium text-blue-800">
-                {selectedUsers.length} user(s) selected
+                {selectedUsers.length} <TranslatedText text="user(s) selected" />
               </span>
               <button
                 onClick={() => setSelectedUsers([])}
                 className="text-blue-600 hover:text-blue-800 text-sm"
               >
-                Clear selection
+                <TranslatedText text="Clear selection" />
               </button>
             </div>
             <div className="flex space-x-2">
@@ -347,14 +348,14 @@ const UserManagement: React.FC = () => {
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm flex items-center space-x-1"
               >
                 <FaCheck />
-                <span>Activate</span>
+                <span><TranslatedText text="Activate" /></span>
               </button>
               <button
                 onClick={() => handleBulkAction('suspend')}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm flex items-center space-x-1"
               >
                 <FaBan />
-                <span>Suspend</span>
+                <span><TranslatedText text="Suspend" /></span>
               </button>
               {canDeleteUsers && (
                 <button
@@ -362,7 +363,7 @@ const UserManagement: React.FC = () => {
                   className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center space-x-1"
                 >
                   <FaTrash />
-                  <span>Delete</span>
+                  <span><TranslatedText text="Delete" /></span>
                 </button>
               )}
             </div>
@@ -392,13 +393,13 @@ const UserManagement: React.FC = () => {
                     }}
                     className="flex items-center space-x-1 hover:text-slate-900 transition-colors"
                   >
-                    <span>User</span>
+                    <span><TranslatedText text="User" /></span>
                     <FaSort className="text-[10px]" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Verification</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Role" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Verification" /></th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   <button
                     onClick={() => {
@@ -407,11 +408,11 @@ const UserManagement: React.FC = () => {
                     }}
                     className="flex items-center space-x-1 hover:text-slate-900 transition-colors"
                   >
-                    <span>Join Date</span>
+                    <span><TranslatedText text="Join Date" /></span>
                     <FaSort className="text-[10px]" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -463,23 +464,23 @@ const UserManagement: React.FC = () => {
                         <button
                           onClick={() => openUserModal(user)}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                          title="View Details"
+                          title={<TranslatedText text="View Details" />}
                         >
                           <FaEye />
                         </button>
                       )}
                       {canManageUsers && (
-                        <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors" title="Edit">
+                        <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors" title={<TranslatedText text="Edit" />}>
                           <FaEdit />
                         </button>
                       )}
                       {canManageUsers && (
-                        <button className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors" title="Permissions">
+                        <button className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors" title={<TranslatedText text="Permissions" />}>
                           <FaShieldAlt />
                         </button>
                       )}
                       <div className="relative">
-                        <button className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors" title="More Actions">
+                        <button className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors" title={<TranslatedText text="More Actions" />}>
                           <FaEllipsisV />
                         </button>
                         {/* Dropdown menu would go here */}
@@ -499,7 +500,7 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Total Users</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Total Users" /></p>
             </div>
             <FaUsers className="text-blue-500 text-3xl" />
           </div>
@@ -508,7 +509,7 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.status === 'active').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Active Users</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Active Users" /></p>
             </div>
             <FaUserCheck className="text-green-500 text-3xl" />
           </div>
@@ -517,7 +518,7 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.status === 'pending').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Pending Users</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Pending Users" /></p>
             </div>
             <FaUserTimes className="text-yellow-500 text-3xl" />
           </div>
@@ -526,7 +527,7 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.role === 'ADMIN').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Admins</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Admins" /></p>
             </div>
             <FaShieldAlt className="text-purple-500 text-3xl" />
           </div>
@@ -535,7 +536,7 @@ const UserManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.verificationStatus === 'verified').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none">Verified</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Verified" /></p>
             </div>
             <FaCheck className="text-green-500 text-3xl" />
           </div>
@@ -547,7 +548,7 @@ const UserManagement: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-800">User Details</h3>
+              <h3 className="text-xl font-semibold text-gray-800"><TranslatedText text="User Details" /></h3>
               <button
                 onClick={closeUserModal}
                 className="text-gray-400 hover:text-gray-600"
@@ -581,37 +582,37 @@ const UserManagement: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <FaCalendarAlt className="text-gray-400" />
-                  <span className="text-gray-700">Joined {new Date(selectedUser.joinDate).toLocaleDateString()}</span>
+                  <span className="text-gray-700"><TranslatedText text="Joined" /> {new Date(selectedUser.joinDate).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <FaEnvelope className="text-gray-400" />
-                  <span className="text-gray-700">Last login: {selectedUser.lastLogin}</span>
+                  <span className="text-gray-700"><TranslatedText text="Last login" />: {selectedUser.lastLogin}</span>
                 </div>
               </div>
 
               {/* Status & Actions */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Status" /></label>
                   <select
                     value={selectedUser.status}
                     onChange={(e) => handleStatusChange(selectedUser.id, e.target.value as User['status'])}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="pending">Pending</option>
-                    <option value="suspended">Suspended</option>
+                    <option value="active"><TranslatedText text="Active" /></option>
+                    <option value="inactive"><TranslatedText text="Inactive" /></option>
+                    <option value="pending"><TranslatedText text="Pending" /></option>
+                    <option value="suspended"><TranslatedText text="Suspended" /></option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Role" /></label>
                   <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-lg ${getRoleColor(selectedUser.role)}`}>
                     {selectedUser.role.replace('_', ' ')}
                   </span>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Verification</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Verification" /></label>
                   <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-lg ${getVerificationColor(selectedUser.verificationStatus)}`}>
                     {selectedUser.verificationStatus}
                   </span>
@@ -623,13 +624,13 @@ const UserManagement: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedUser.totalShipments !== undefined && (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">Total Shipments</p>
+                      <p className="text-sm text-gray-600"><TranslatedText text="Total Shipments" /></p>
                       <p className="text-2xl font-bold text-gray-800">{selectedUser.totalShipments}</p>
                     </div>
                   )}
                   {selectedUser.totalRevenue !== undefined && (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">Total Revenue</p>
+                      <p className="text-sm text-gray-600"><TranslatedText text="Total Revenue" /></p>
                       <p className="text-2xl font-bold text-gray-800">RWF {selectedUser.totalRevenue?.toLocaleString()}</p>
                     </div>
                   )}
@@ -640,15 +641,15 @@ const UserManagement: React.FC = () => {
               <div className="flex space-x-3 pt-4 border-t">
                 {canManageUsers && (
                   <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                    Edit User
+                    <TranslatedText text="Edit User" />
                   </button>
                 )}
                 <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors">
-                  Send Message
+                  <TranslatedText text="Send Message" />
                 </button>
                 {canDeleteUsers && (
                   <button className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg transition-colors">
-                    Delete User
+                    <TranslatedText text="Delete User" />
                   </button>
                 )}
               </div>

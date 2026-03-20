@@ -10,10 +10,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiHeader } from '@nestjs/swagger';
-import { UrutiLendingIntegrationService } from '../services/uruti-lending-integration.service';
+import { UrutiLendingIntegrationService } from './../services/uruti-lending-integration.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Lender } from '../../../entities/Lender';
+import { Lender } from '../../../entities/lender.entity';
 import { decryptString } from '../../../common/utils/crypto.util';
 
 export class WebhookPayloadDto {

@@ -7,7 +7,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ScoringService } from './scoring.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ScoreCategory } from '../../entities/user-score.entity';
 
 @Controller('scoring')

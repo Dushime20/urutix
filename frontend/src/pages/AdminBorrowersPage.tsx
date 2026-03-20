@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { fetchUsers } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 import {
   User, Mail, Phone, Building2,
   MoreHorizontal, Search, TrendingUp,
@@ -545,8 +546,8 @@ const AdminBorrowersPage: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Borrower Management"
-      description="Comprehensive overview and management of all borrowers"
+      title={<TranslatedText text="Borrower Management" />}
+      description={<TranslatedText text="Comprehensive overview and management of all borrowers" />}
       actions={
         <div className="flex gap-4">
           <button
@@ -556,7 +557,7 @@ const AdminBorrowersPage: React.FC = () => {
             <div className="absolute inset-0 bg-gray-50/50 translate-y-full group-hover:translate-y-0 transition-transform"></div>
             <Users size={14} className="relative z-10" />
             <span className="text-[10px] font-black uppercase tracking-widest relative z-10">
-              {groupByLender ? 'Ungroup' : 'Group'} Matrix
+              <TranslatedText text={groupByLender ? 'Ungroup' : 'Group'} /> <TranslatedText text="Matrix" />
             </span>
           </button>
           <button
@@ -566,7 +567,7 @@ const AdminBorrowersPage: React.FC = () => {
             <div className="absolute inset-0 bg-gray-50/50 translate-y-full group-hover:translate-y-0 transition-transform"></div>
             <TrendingUp size={14} className="relative z-10" />
             <span className="text-[10px] font-black uppercase tracking-widest relative z-10">
-              {showAnalytics ? 'Hide' : 'Show'} Intelligence
+              <TranslatedText text={showAnalytics ? 'Hide' : 'Show'} /> <TranslatedText text="Intelligence" />
             </span>
           </button>
           <button
@@ -574,7 +575,7 @@ const AdminBorrowersPage: React.FC = () => {
             className="px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-black transition-all shadow-lg shadow-gray-200 flex items-center gap-2 group"
           >
             <Download size={14} className="group-hover:translate-y-0.5 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Export Registry</span>
+            <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Export Registry" /></span>
           </button>
         </div>
       }
@@ -597,7 +598,7 @@ const AdminBorrowersPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Borrowers</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Total Borrowers" /></p>
             </div>
 
             <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
@@ -614,7 +615,7 @@ const AdminBorrowersPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Matrix</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Matrix" /></p>
             </div>
 
             <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
@@ -631,7 +632,7 @@ const AdminBorrowersPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Issuance (RWF)</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Total Issuance (RWF)" /></p>
             </div>
 
             <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
@@ -646,7 +647,7 @@ const AdminBorrowersPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency Core</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Efficiency Core" /></p>
             </div>
           </div>
 

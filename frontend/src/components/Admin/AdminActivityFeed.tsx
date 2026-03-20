@@ -1,8 +1,9 @@
 import React from 'react';
+import { TranslatedText } from '../translated-text';
 import {
     CheckCircle,
     Bell,
-    AlertTriangle, // Changed from ExclamationTriangle
+    AlertTriangle,
     Info,
     Shield,
     DollarSign,
@@ -76,7 +77,7 @@ const AdminActivityFeed: React.FC = () => {
         switch (status) {
             case 'success': return 'text-emerald-500 bg-emerald-50';
             case 'warning': return 'text-amber-500 bg-amber-50';
-            case 'error': return 'text-red-500 bg-red-50';
+            case 'error': return 'text-rose-500 bg-rose-50';
             default: return 'text-slate-400 bg-slate-50';
         }
     };
@@ -91,7 +92,7 @@ const AdminActivityFeed: React.FC = () => {
     };
 
     return (
-        <div className="space-y-1">
+        <div className="space-y-4">
             {activities.map((activity) => {
                 const StatusIcon = getStatusIcon(activity.status);
                 const TypeIcon = getTypeIcon(activity.type);
@@ -100,10 +101,10 @@ const AdminActivityFeed: React.FC = () => {
                 return (
                     <div
                         key={activity.id}
-                        className="flex gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all group cursor-pointer border border-transparent hover:border-slate-100"
+                        className="flex gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all group cursor-pointer border border-transparent hover:border-slate-100"
                     >
                         <div className="relative">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-slate-100 text-slate-500 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-600">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-500 group-hover:text-white">
                                 <TypeIcon size={18} />
                             </div>
                             <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${statusColors}`}>
@@ -112,20 +113,20 @@ const AdminActivityFeed: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                                <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-indigo-600 transition-colors">
+                                <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate group-hover:text-primary-600 transition-colors">
                                     {activity.title}
                                 </h4>
-                                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap bg-slate-50 px-1.5 py-0.5 rounded uppercase">
-                                    {activity.timestamp}
+                                <span className="text-[9px] font-black text-slate-400 whitespace-nowrap bg-slate-100 px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                                    <TranslatedText text={activity.timestamp} />
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-500 mt-1 line-clamp-1">{activity.description}</p>
-                            <div className="mt-2 flex items-center gap-3">
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
-                                    {activity.type}
+                            <p className="text-[10px] font-black text-slate-400 mt-1 line-clamp-1 uppercase tracking-widest opacity-80">{activity.description}</p>
+                            <div className="mt-2 flex items-center justify-between">
+                                <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-[0.2em] bg-slate-100 text-slate-500 border border-slate-200">
+                                    <TranslatedText text={activity.type} />
                                 </span>
-                                <button className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                    Details <ArrowRight size={10} />
+                                <button className="text-[9px] font-black text-slate-400 hover:text-primary-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest">
+                                    <TranslatedText text="Details" /> <ArrowRight size={10} />
                                 </button>
                             </div>
                         </div>

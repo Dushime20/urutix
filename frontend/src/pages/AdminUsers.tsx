@@ -22,6 +22,7 @@ import {
 import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermissionEditor';
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 interface User {
   id: string;
@@ -302,7 +303,7 @@ const AdminUsers: React.FC = () => {
   // In a real scenario we'd count this from backend or extend User interface
   const usersWithOverrides = 3; // Placeholder for visually demonstrating the stat during UI dev
 
-  const stats = [
+  const getStatsData = () => [
     {
       label: 'Total Users',
       value: users.length.toString(),
@@ -341,6 +342,8 @@ const AdminUsers: React.FC = () => {
     },
   ];
 
+  const stats = getStatsData();
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'SUPER_ADMIN': return 'bg-purple-100 text-purple-800';
@@ -362,14 +365,14 @@ const AdminUsers: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="User Management"
-      description="Monitor, manage, and audit user accounts, roles, and permissions across the platform."
+      title={<TranslatedText text="User Management" />}
+      description={<TranslatedText text="Monitor, manage, and audit user accounts, roles, and permissions across the platform." />}
       actions={
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-all"
         >
-          <Plus size={16} /> Create New User
+          <Plus size={16} /> <TranslatedText text="Create New User" />
         </button>
       }
     >
@@ -379,22 +382,22 @@ const AdminUsers: React.FC = () => {
         <button
           onClick={() => setActiveTab('users')}
           className={`pb-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all relative ${activeTab === 'users'
-            ? 'text-indigo-600'
-            : 'text-slate-400 hover:text-slate-600'
+            ? 'text-primary-600'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
             }`}
         >
-          <Users size={14} /> User Management
-          {activeTab === 'users' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" />}
+          <Users size={14} /> <TranslatedText text="User Management" />
+          {activeTab === 'users' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full" />}
         </button>
         <button
           onClick={() => setActiveTab('roles')}
           className={`pb-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all relative ${activeTab === 'roles'
-            ? 'text-indigo-600'
-            : 'text-slate-400 hover:text-slate-600'
+            ? 'text-primary-600'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
             }`}
         >
-          <ShieldCheck size={14} /> Role Permissions
-          {activeTab === 'roles' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" />}
+          <ShieldCheck size={14} /> <TranslatedText text="Role Permissions" />
+          {activeTab === 'roles' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full" />}
         </button>
       </div>
 
@@ -404,24 +407,24 @@ const AdminUsers: React.FC = () => {
             {stats.map((stat, idx) => {
               const Icon = stat.icon;
               return (
-                <div key={idx} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
+                <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-slate-950/50 transition-all duration-300 group relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-                    <Icon size={100} className="text-gray-900" />
+                    <Icon size={100} className="text-gray-900 dark:text-white" />
                   </div>
                   <div className="relative">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300 shadow-sm">
+                      <div className="w-10 h-10 bg-gray-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-gray-400 dark:text-slate-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 transition-all duration-300 shadow-sm">
                         <Icon size={18} />
                       </div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{stat.label}</p>
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none"><TranslatedText text={stat.label} /></p>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">{stat.value}</h3>
+                      <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none tracking-tight">{stat.value}</h3>
                       <span className={`text-[10px] font-black tracking-widest uppercase ${stat.changeType === 'positive' ? 'text-emerald-500' : stat.changeType === 'negative' ? 'text-rose-500' : 'text-slate-400'}`}>
                         {stat.change}
                       </span>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">{stat.description}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 leading-none"><TranslatedText text={stat.description} /></p>
                   </div>
                 </div>
               );
@@ -429,9 +432,9 @@ const AdminUsers: React.FC = () => {
           </div>
 
           {/* Users Content Card */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             {/* Filters Header */}
-            <div className="p-6 border-b border-gray-100 bg-[#fafafa] flex flex-col md:flex-row gap-6 items-center justify-between">
+            <div className="p-6 border-b border-gray-100 dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900/50 flex flex-col md:flex-row gap-6 items-center justify-between">
               <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                 <div className="relative group">
                   <input
@@ -439,12 +442,12 @@ const AdminUsers: React.FC = () => {
                     placeholder="SEARCH USERS..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-64 bg-white transition-all shadow-sm"
+                    className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all shadow-sm"
                   />
-                  <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-indigo-500 transition-colors w-3.5 h-3.5" />
+                  <Search className="absolute left-3.5 top-3 text-slate-400 dark:text-slate-500 group-hover:text-primary-500 transition-colors w-3.5 h-3.5" />
                 </div>
                 <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all font-black"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm cursor-pointer hover:border-primary-200 dark:hover:border-primary-800 transition-all font-black"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
@@ -456,7 +459,7 @@ const AdminUsers: React.FC = () => {
                 </select>
 
                 <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all font-black"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm cursor-pointer hover:border-primary-200 dark:hover:border-primary-800 transition-all font-black"
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
                 >
@@ -472,7 +475,7 @@ const AdminUsers: React.FC = () => {
                 </select>
 
                 <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all font-black"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm cursor-pointer hover:border-primary-200 dark:hover:border-primary-800 transition-all font-black"
                   value={tenantFilter}
                   onChange={(e) => setTenantFilter(e.target.value)}
                 >
@@ -483,11 +486,11 @@ const AdminUsers: React.FC = () => {
                 </select>
               </div>
               <div className="flex items-center gap-3">
-                <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all shadow-sm text-slate-600">
-                  <Download className="w-3 h-3" /> Export
+                <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 transition-all shadow-sm text-slate-600 dark:text-slate-400">
+                  <Download className="w-3 h-3" /> <TranslatedText text="Export" />
                 </button>
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-gray-100/50 px-4 py-2.5 rounded-xl border border-gray-100">
-                  {total} IDENTIFIED
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-gray-100/50 dark:bg-slate-800/50 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-slate-800">
+                  {total} <TranslatedText text="IDENTIFIED" />
                 </div>
               </div>
             </div>
@@ -495,34 +498,34 @@ const AdminUsers: React.FC = () => {
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-[#fafafa] border-b border-gray-100">
+                <thead className="bg-[#fafafa] dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
                   <tr>
                     <th className="px-6 py-4">
                       <button
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-gray-900 transition-colors"
+                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-gray-900 dark:hover:text-white transition-colors"
                         onClick={() => {
                           setSortBy('email');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
                       >
-                        User Details
-                        <ChevronsUpDown className="w-3 h-3 text-gray-400" />
+                        <TranslatedText text="User Details" />
+                        <ChevronsUpDown className="w-3 h-3 text-gray-400 dark:text-slate-600" />
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">Tenant</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:table-cell">Activity</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Role" /></th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden md:table-cell"><TranslatedText text="Tenant" /></th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden lg:table-cell"><TranslatedText text="Activity" /></th>
+                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Action" /></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                   {isLoadingUsers ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                          <span className="text-sm text-gray-500">Loading users...</span>
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+                          <span className="text-sm text-gray-500 dark:text-slate-400"><TranslatedText text="Loading users..." /></span>
                         </div>
                       </td>
                     </tr>
@@ -530,57 +533,57 @@ const AdminUsers: React.FC = () => {
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                          <div className="w-12 h-12 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-gray-400 dark:text-slate-500">
                             <Users size={20} />
                           </div>
-                          <span className="text-gray-900 font-medium">No users found</span>
-                          <p className="text-sm text-gray-500 mt-1">Try adjusting your filters</p>
+                          <span className="text-gray-900 dark:text-white font-medium"><TranslatedText text="No users found" /></span>
+                          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1"><TranslatedText text="Try adjusting your filters" /></p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     pagedUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden relative group-hover:scale-105 transition-transform duration-300 bg-gradient-to-br ${getRoleColor(user.role).includes('blue') ? 'from-blue-500 to-indigo-600 shadow-indigo-200' : 'from-slate-700 to-slate-900 shadow-slate-200'}`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden relative group-hover:scale-105 transition-transform duration-300 bg-gradient-to-br ${getRoleColor(user.role).includes('blue') || getRoleColor(user.role).includes('indigo') ? 'from-primary-500 to-primary-700 shadow-primary-200 dark:shadow-primary-900/40' : 'from-slate-700 to-slate-900 shadow-slate-200 dark:shadow-slate-950/40'}`}>
                               <span className="relative z-10">{user.firstName ? user.firstName[0] : user.email[0].toUpperCase()}</span>
                               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                             <div>
-                              <div className="text-sm font-black text-gray-900 tracking-tight leading-tight">
+                              <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-tight">
                                 {user.firstName && user.lastName
                                   ? `${user.firstName} ${user.lastName}`
                                   : user.email.split('@')[0]}
                               </div>
-                              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5 leading-none">
-                                <Mail className="w-3 h-3 text-indigo-400" />
+                              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-1.5 leading-none">
+                                <Mail className="w-3 h-3 text-primary-400 dark:text-primary-500" />
                                 {user.email}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getRoleColor(user.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-indigo-100 shadow-sm`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getRoleColor(user.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100 shadow-sm`}>
                             {formatRole(user.role)}
                           </span>
                         </td>
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-2 h-2 rounded-full shadow-sm ${user.status === 'ACTIVE' ? 'bg-emerald-500 shadow-emerald-200' : user.status === 'SUSPENDED' ? 'bg-rose-500 shadow-rose-200' : 'bg-amber-500 shadow-amber-200'}`}></div>
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{(user.status || '').replace('_', ' ')}</span>
+                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text={(user.status || '').replace('_', ' ')} /></span>
                           </div>
                         </td>
-                        <td className="px-6 py-5 hidden md:table-cell text-sm font-black text-gray-900 tracking-tight leading-none text-right">
-                          <div className="flex items-center justify-end gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                            <Building2 size={12} className="text-indigo-400" />
+                        <td className="px-6 py-5 hidden md:table-cell text-sm font-black text-gray-900 dark:text-white tracking-tight leading-none text-right">
+                          <div className="flex items-center justify-end gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+                            <Building2 size={12} className="text-primary-400 dark:text-primary-500" />
                             <span>{user.tenantName || 'N/A'}</span>
                           </div>
                         </td>
                         <td className="px-6 py-5 hidden lg:table-cell">
                           <div className="space-y-1">
-                            <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest leading-none">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'NEVER'}</p>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">LAST LOGIN</p>
+                            <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest leading-none">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : <TranslatedText text="NEVER" />}</p>
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none"><TranslatedText text="LAST LOGIN" /></p>
                           </div>
                         </td>
                         <td className="px-6 py-5">
@@ -590,29 +593,29 @@ const AdminUsers: React.FC = () => {
                                 setSelectedUser(user);
                                 setShowDetailsModal(true);
                               }}
-                              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEditUser(user)}
-                              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setPermissionUser(user)}
-                              className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
                               title="Manage Permissions"
                             >
                               <ShieldCheck className="w-4 h-4" />
                             </button>
-                            {user.status === 'SUSPENDED' ? (
+                             {user.status === 'SUSPENDED' ? (
                               <button
                                 onClick={() => activateUserMutation(user.id)}
-                                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
                                 title="Activate"
                               >
                                 <Unlock className="w-4 h-4" />
@@ -620,7 +623,7 @@ const AdminUsers: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => suspendUserMutation({ userId: user.id })}
-                                className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
                                 title="Suspend"
                               >
                                 <Ban className="w-4 h-4" />
@@ -628,7 +631,7 @@ const AdminUsers: React.FC = () => {
                             )}
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -644,25 +647,25 @@ const AdminUsers: React.FC = () => {
 
             {/* Pagination */}
             {pagedUsers.length > 0 && (
-              <div className="px-6 py-5 border-t border-gray-100 bg-[#fafafa] flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Showing <span className="text-gray-900">{startIdx + 1}-{Math.min(endIdx, total)}</span> of <span className="text-gray-900">{total}</span> identified
+              <div className="px-6 py-5 border-t border-gray-100 dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  <TranslatedText text="Showing" /> <span className="text-gray-900 dark:text-white">{startIdx + 1}-{Math.min(endIdx, total)}</span> <TranslatedText text="of" /> <span className="text-gray-900 dark:text-white">{total}</span> <TranslatedText text="identified" />
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm shadow-gray-100 hover:border-indigo-200"
+                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all shadow-sm shadow-gray-100 dark:shadow-none hover:border-primary-200 dark:hover:border-primary-800"
                     onClick={() => setPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                   >
-                    Previous
+                    <TranslatedText text="Previous" />
                   </button>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mx-2">Page <span className="text-gray-900 font-black">{currentPage}</span> of <span className="text-gray-900 font-black">{totalPages}</span></span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mx-2"><TranslatedText text="Page" /> <span className="text-gray-900 dark:text-white font-black">{currentPage}</span> <TranslatedText text="of" /> <span className="text-gray-900 dark:text-white font-black">{totalPages}</span></span>
                   <button
-                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm shadow-gray-100 hover:border-indigo-200"
+                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all shadow-sm shadow-gray-100 dark:shadow-none hover:border-primary-200 dark:hover:border-primary-800"
                     onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                   >
-                    Next
+                    <TranslatedText text="Next" />
                   </button>
                 </div>
               </div>
@@ -677,11 +680,11 @@ const AdminUsers: React.FC = () => {
       {/* Create User Modal */}
       {
         showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="p-3 border-b border-gray-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl">
+              <div className="p-6 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-gray-900">Create New User</h2>
+                  <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Create New User" /></h2>
                   <button
                     onClick={() => {
                       setShowCreateModal(false);
@@ -694,18 +697,18 @@ const AdminUsers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+               <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Tenant *
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                      <TranslatedText text="Tenant" /> *
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       value={tenantId}
                       onChange={(e) => setTenantId(e.target.value)}
                     >
-                      <option value="">Select tenant</option>
+                      <option value=""><TranslatedText text="Select tenant" /></option>
                       {tenants.map((tenant) => (
                         <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                       ))}
@@ -713,46 +716,46 @@ const AdminUsers: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Role *
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                      <TranslatedText text="Role" /> *
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       value={role}
                       onChange={(e) => setRole(e.target.value as any)}
                     >
-                      <option value="CARGO_OWNER">Cargo Owner</option>
-                      <option value="TRUCK_OWNER">Truck Owner</option>
-                      <option value="DRIVER">Driver</option>
-                      <option value="AGENT">Agent</option>
-                      <option value="LENDER">Lender</option>
-                      <option value="TENANT_ADMIN">Tenant Admin</option>
+                      <option value="CARGO_OWNER">CARGO OWNER</option>
+                      <option value="TRUCK_OWNER">TRUCK OWNER</option>
+                      <option value="DRIVER">DRIVER</option>
+                      <option value="AGENT">AGENT</option>
+                      <option value="LENDER">LENDER</option>
+                      <option value="TENANT_ADMIN">TENANT ADMIN</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      First Name *
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                      <TranslatedText text="First Name" /> *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter first name"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
+                      placeholder="ENTER FIRST NAME..."
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Last Name *
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                      <TranslatedText text="Last Name" /> *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter last name"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
+                      placeholder="ENTER LAST NAME..."
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                     />
@@ -765,7 +768,7 @@ const AdminUsers: React.FC = () => {
                   </label>
                   <input
                     type="email"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="Enter email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -779,7 +782,7 @@ const AdminUsers: React.FC = () => {
                     </label>
                     <input
                       type="password"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -792,7 +795,7 @@ const AdminUsers: React.FC = () => {
                     </label>
                     <input
                       type="tel"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter phone number"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
@@ -806,19 +809,19 @@ const AdminUsers: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="Enter company name (optional)"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="bg-primary-50 border border-primary-200 rounded-lg p-2">
                   <div className="flex items-start gap-1.5">
-                    <ShieldCheck className="text-blue-600 mt-0.5" size={12} />
+                    <ShieldCheck className="text-primary-600 mt-0.5" size={12} />
                     <div>
-                      <h4 className="font-semibold text-blue-900 text-xs">User Information</h4>
-                      <p className="text-[10px] text-blue-700 mt-0.5">
+                      <h4 className="font-semibold text-primary-900 text-xs">User Information</h4>
+                      <p className="text-[10px] text-primary-700 mt-0.5">
                         A new user account will be created. The user will receive an email with login instructions.
                       </p>
                     </div>
@@ -839,7 +842,7 @@ const AdminUsers: React.FC = () => {
                 <button
                   onClick={handleCreateUser}
                   disabled={isCreating || !tenantId || !email || !password || !firstName || !lastName}
-                  className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
+                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium shadow-lg shadow-primary-200"
                 >
                   {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                   <span>{isCreating ? 'Creating...' : 'Create User'}</span>
@@ -892,7 +895,7 @@ const AdminUsers: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter first name"
                       value={editFirstName}
                       onChange={(e) => setEditFirstName(e.target.value)}
@@ -905,7 +908,7 @@ const AdminUsers: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter last name"
                       value={editLastName}
                       onChange={(e) => setEditLastName(e.target.value)}
@@ -920,7 +923,7 @@ const AdminUsers: React.FC = () => {
                     </label>
                     <input
                       type="tel"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter phone number"
                       value={editPhone}
                       onChange={(e) => setEditPhone(e.target.value)}
@@ -933,7 +936,7 @@ const AdminUsers: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter company name"
                       value={editCompanyName}
                       onChange={(e) => setEditCompanyName(e.target.value)}
@@ -947,7 +950,7 @@ const AdminUsers: React.FC = () => {
                       Role
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       value={editRole}
                       onChange={(e) => setEditRole(e.target.value)}
                     >
@@ -967,7 +970,7 @@ const AdminUsers: React.FC = () => {
                       Status
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       value={editStatus}
                       onChange={(e) => setEditStatus(e.target.value)}
                     >
@@ -979,12 +982,12 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="bg-primary-50 border border-primary-200 rounded-lg p-2">
                   <div className="flex items-start gap-1.5">
-                    <ShieldCheck className="text-blue-600 mt-0.5" size={12} />
+                    <ShieldCheck className="text-primary-600 mt-0.5" size={12} />
                     <div>
-                      <h4 className="font-semibold text-blue-900 text-xs">Update Information</h4>
-                      <p className="text-[10px] text-blue-700 mt-0.5">
+                      <h4 className="font-semibold text-primary-900 text-xs">Update Information</h4>
+                      <p className="text-[10px] text-primary-700 mt-0.5">
                         Changes will be saved immediately. Email and tenant cannot be changed from this form.
                       </p>
                     </div>
@@ -1005,7 +1008,7 @@ const AdminUsers: React.FC = () => {
                 <button
                   onClick={() => updateUserMutation()}
                   disabled={isUpdating || !editFirstName || !editLastName}
-                  className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
+                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium shadow-lg shadow-primary-100"
                 >
                   {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                   <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
@@ -1024,7 +1027,7 @@ const AdminUsers: React.FC = () => {
               <div className="p-8 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl bg-gradient-to-br ${getRoleColor(selectedUser.role).includes('blue') ? 'from-blue-500 to-indigo-600' : 'from-slate-700 to-slate-900'}`}>
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl bg-gradient-to-br ${getRoleColor(selectedUser.role).includes('blue') || getRoleColor(selectedUser.role).includes('indigo') ? 'from-primary-500 to-primary-700' : 'from-slate-700 to-slate-900'}`}>
                       {selectedUser.firstName ? selectedUser.firstName[0] : selectedUser.email[0].toUpperCase()}
                     </div>
                     <div>
@@ -1034,13 +1037,13 @@ const AdminUsers: React.FC = () => {
                             ? `${selectedUser.firstName} ${selectedUser.lastName}`
                             : selectedUser.email.split('@')[0]}
                         </h2>
-                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getRoleColor(selectedUser.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-indigo-100 shadow-sm`}>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getRoleColor(selectedUser.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100 shadow-sm`}>
                           {formatRole(selectedUser.role)}
                         </span>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                          <Mail className="w-3.5 h-3.5 text-primary-400" />
                           {selectedUser.email}
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -1066,7 +1069,7 @@ const AdminUsers: React.FC = () => {
                       setShowDetailsModal(false);
                       handleEditUser(selectedUser);
                     }}
-                    className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                    className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-200"
                   >
                     Modify Access Profile
                   </button>
@@ -1076,7 +1079,7 @@ const AdminUsers: React.FC = () => {
                   <div className="space-y-8">
                     <div>
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50" />
+                        <div className="w-2 h-2 rounded-full bg-primary-500 shadow-lg shadow-primary-500/50" />
                         Authentication Matrix
                       </h3>
                       <div className="space-y-6">

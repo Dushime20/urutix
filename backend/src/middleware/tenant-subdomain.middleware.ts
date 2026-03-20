@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware, NotFoundException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Tenant, TenantStatus } from '../entities/tenant.entity';
+import { Tenant, TenantStatus } from './../entities/tenant.entity';
 
 @Injectable()
 export class TenantSubdomainMiddleware implements NestMiddleware {

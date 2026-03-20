@@ -8,7 +8,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { RatingsService } from './ratings.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RatingType, RatingCategory } from '../../entities/user-rating.entity';
 
 @Controller('ratings')

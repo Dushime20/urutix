@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import {
-  Send, History, Edit2, Eye, FileText, Users,
+  Send, Edit2, Eye, FileText,
   CheckCircle, XCircle, Filter, RefreshCw, Megaphone,
   Mail, MessageSquare, Smartphone, Bell, ChevronDown, ChevronUp,
   Zap, BarChart2, Clock,
 } from 'lucide-react';
+import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,16 +62,17 @@ const STATUS_OPTIONS = [
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const ChannelBadge: React.FC<{ ch: Channel }> = ({ ch }) => {
+  const { tSync } = useTranslation();
   const cfg = CHANNELS.find(c => c.id === ch);
   if (!cfg) return null;
   const Icon = cfg.icon;
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${cfg.bg}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${cfg.bg} dark:bg-slate-800`}
       style={{ color: cfg.color }}
     >
       <Icon size={10} />
-      {cfg.label}
+      {tSync(cfg.label)}
     </span>
   );
 };
@@ -77,6 +80,7 @@ const ChannelBadge: React.FC<{ ch: Channel }> = ({ ch }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const TenantBulkEmail: React.FC = () => {
+  const { tSync } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('compose');
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [logs, setLogs] = useState<CampaignLog[]>([]);
@@ -209,31 +213,33 @@ const TenantBulkEmail: React.FC = () => {
     <div className="space-y-6">
       {/* ── Page Header ── */}
       <div
-        className="rounded-3xl p-8 flex items-center justify-between overflow-hidden relative"
-        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #1a3a5c 100%)` }}
+        className="rounded-[40px] p-10 flex flex-col md:flex-row md:items-center justify-between overflow-hidden relative border border-white/5 shadow-2xl"
+        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #0f172a 100%)` }}
       >
         {/* decorative circles */}
-        <div className="absolute right-0 top-0 w-64 h-64 rounded-full opacity-10 bg-white translate-x-1/4 -translate-y-1/4" />
-        <div className="absolute right-20 bottom-0 w-32 h-32 rounded-full opacity-5 bg-white translate-y-1/2" />
+        <div className="absolute right-0 top-0 w-96 h-96 rounded-full opacity-10 bg-primary-400 blur-3xl translate-x-1/4 -translate-y-1/4" />
+        <div className="absolute left-0 bottom-0 w-64 h-64 rounded-full opacity-5 bg-emerald-400 blur-3xl -translate-x-1/4 translate-y-1/4" />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-white/20 rounded-2xl">
-              <Megaphone className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg">
+              <Megaphone className="w-6 h-6 text-primary-400" />
             </div>
-            <span className="text-white/60 text-[10px] font-black uppercase tracking-widest">Communications Hub</span>
+            <span className="text-primary-300 text-[10px] font-black uppercase tracking-[0.2em]"><TranslatedText text="Communications Hub" /></span>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Partner Outreach</h1>
-          <p className="text-white/60 text-sm mt-1 font-medium">Reach your partners via Email, SMS, WhatsApp & In-App</p>
+          <h1 className="text-4xl font-black text-white tracking-tight"><TranslatedText text="Partner Outreach" /></h1>
+          <p className="text-slate-400 font-medium mt-3 max-w-lg">
+            <TranslatedText text="Strategic communication across multiple channels: Email, SMS, WhatsApp, and In-App messaging." />
+          </p>
         </div>
 
-        <div className="relative z-10 flex gap-2 flex-wrap">
+        <div className="relative z-10 flex gap-3 flex-wrap mt-8 md:mt-0">
           {CHANNELS.map(ch => {
             const Icon = ch.icon;
             return (
-              <div key={ch.id} className="flex flex-col items-center gap-1 px-4 py-3 bg-white/10 rounded-2xl backdrop-blur-sm">
-                <Icon className="w-5 h-5 text-white" />
-                <span className="text-[9px] font-black text-white/80 uppercase tracking-wider">{ch.label}</span>
+              <div key={ch.id} className="flex flex-col items-center gap-2 px-6 py-4 bg-white/5 backdrop-blur-md rounded-[24px] border border-white/5 hover:bg-white/10 transition-all group">
+                <Icon className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{tSync(ch.label)}</span>
               </div>
             );
           })}
@@ -241,18 +247,18 @@ const TenantBulkEmail: React.FC = () => {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex items-center gap-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-1.5 w-fit">
+      <div className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-2 w-fit">
         {tabs.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
           return (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
-              style={active ? { background: PRIMARY, color: '#fff', boxShadow: `0 4px 14px ${PRIMARY}40` } : { color: '#64748b' }}
+              className="flex items-center gap-3 px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all relative overflow-hidden group"
+              style={active ? { background: PRIMARY, color: '#fff', boxShadow: `0 8px 20px ${PRIMARY}40` } : {}}
             >
-              <Icon size={14} strokeWidth={active ? 2.5 : 2} />
-              {label}
+              <Icon size={16} strokeWidth={active ? 3 : 2} className={active ? 'text-white' : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500'} />
+              <span className={active ? 'text-white' : 'text-slate-500 dark:text-slate-400'}><TranslatedText text={label} /></span>
             </button>
           );
         })}
@@ -264,11 +270,11 @@ const TenantBulkEmail: React.FC = () => {
           {/* Left: Channel selector + filters */}
           <div className="space-y-4">
             {/* Channel Picker Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                1. Choose Channels
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                1. <TranslatedText text="Choose Channels" />
               </p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {CHANNELS.map(ch => {
                   const Icon = ch.icon;
                   const active = selectedChannels.includes(ch.id);
@@ -276,68 +282,74 @@ const TenantBulkEmail: React.FC = () => {
                     <button
                       key={ch.id}
                       onClick={() => toggleChannel(ch.id)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left"
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left group"
                       style={{
-                        borderColor: active ? ch.color : '#e2e8f0',
-                        background: active ? `${ch.color}0d` : '#fff',
+                        borderColor: active ? ch.color : 'transparent',
+                        background: active ? `${ch.color}0d` : '',
                       }}
                     >
                       <div
-                        className="p-2 rounded-xl"
-                        style={{ background: active ? `${ch.color}20` : '#f1f5f9', color: active ? ch.color : '#94a3b8' }}
+                        className="p-3 rounded-xl transition-transform group-hover:scale-110"
+                        style={{ background: active ? `${ch.color}20` : '', color: active ? ch.color : '#94a3b8' }}
                       >
-                        <Icon size={16} />
+                        <Icon size={18} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-800">{ch.label}</p>
-                        <p className="text-[10px] text-slate-400 font-medium truncate">{ch.desc}</p>
+                        <p className="text-sm font-black text-slate-800 dark:text-slate-200">{tSync(ch.label)}</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">{tSync(ch.desc)}</p>
                       </div>
                       <div
-                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                        className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all shadow-sm"
                         style={{ borderColor: active ? ch.color : '#cbd5e1', background: active ? ch.color : 'transparent' }}
                       >
-                        {active && <CheckCircle size={12} className="text-white" />}
+                        {active && <CheckCircle size={14} className="text-white" />}
                       </div>
                     </button>
                   );
                 })}
               </div>
               {selectedChannels.length === 0 && (
-                <p className="text-xs text-red-400 font-medium text-center mt-3">Select at least one channel</p>
+                <p className="text-xs text-red-400 font-bold text-center mt-4">
+                  <TranslatedText text="Select at least one channel" />
+                </p>
               )}
             </div>
 
             {/* Recipient Filters */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
               <button
-                className="w-full flex items-center justify-between px-5 py-4"
+                className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 onClick={() => setShowFilters(v => !v)}
               >
-                <div className="flex items-center gap-2">
-                  <Filter size={14} className="text-slate-400" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Recipients</span>
+                <div className="flex items-center gap-3">
+                  <Filter size={16} className="text-slate-400" />
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                    2. <TranslatedText text="Recipients" />
+                  </span>
                   {(filterRoles.length + filterStatus.length) > 0 && (
                     <span
-                      className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white"
+                      className="text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow-lg shadow-primary-500/20"
                       style={{ background: PRIMARY }}
                     >
                       {filterRoles.length + filterStatus.length}
                     </span>
                   )}
                 </div>
-                {showFilters ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+                {showFilters ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
               </button>
 
               {showFilters && (
-                <div className="px-5 pb-5 space-y-4 border-t border-slate-100">
-                  <div className="pt-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">By Role</p>
-                    <div className="space-y-1.5">
+                <div className="px-6 pb-6 space-y-6 border-t border-slate-100 dark:border-slate-800">
+                  <div className="pt-5">
+                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 italic">
+                      <TranslatedText text="Filter By Role" />
+                    </p>
+                    <div className="space-y-2">
                       {ROLE_OPTIONS.map(opt => (
-                        <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
+                        <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
                           <input
                             type="checkbox"
-                            className="w-4 h-4 rounded"
+                            className="w-5 h-5 rounded-lg border-2 border-slate-200 dark:border-slate-700 checked:bg-primary-600 transition-all"
                             style={{ accentColor: PRIMARY }}
                             checked={filterRoles.includes(opt.value)}
                             onChange={e => {
@@ -345,19 +357,23 @@ const TenantBulkEmail: React.FC = () => {
                               else setFilterRoles(filterRoles.filter(r => r !== opt.value));
                             }}
                           />
-                          <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900">{opt.label}</span>
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                             {tSync(opt.label)}
+                          </span>
                         </label>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">By Status</p>
-                    <div className="space-y-1.5">
+                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 italic">
+                      <TranslatedText text="Filter By Status" />
+                    </p>
+                    <div className="space-y-2">
                       {STATUS_OPTIONS.map(opt => (
-                        <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
+                        <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
                           <input
                             type="checkbox"
-                            className="w-4 h-4 rounded"
+                            className="w-5 h-5 rounded-lg border-2 border-slate-200 dark:border-slate-700 checked:bg-primary-600 transition-all"
                             style={{ accentColor: PRIMARY }}
                             checked={filterStatus.includes(opt.value)}
                             onChange={e => {
@@ -365,7 +381,9 @@ const TenantBulkEmail: React.FC = () => {
                               else setFilterStatus(filterStatus.filter(s => s !== opt.value));
                             }}
                           />
-                          <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900">{opt.label}</span>
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                            {tSync(opt.label)}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -373,13 +391,19 @@ const TenantBulkEmail: React.FC = () => {
                   {(filterRoles.length + filterStatus.length) > 0 && (
                     <button
                       onClick={() => { setFilterRoles([]); setFilterStatus([]); }}
-                      className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest"
+                      className="text-[10px] font-black text-rose-500 dark:text-rose-400 hover:text-rose-700 uppercase tracking-widest flex items-center gap-2 transition-colors"
                     >
-                      Clear Filters
+                      <RefreshCw size={10} />
+                      <TranslatedText text="Clear Filter Selection" />
                     </button>
                   )}
                   {filterRoles.length === 0 && filterStatus.length === 0 && (
-                    <p className="text-[10px] text-slate-400 font-medium">All partners · No filter applied</p>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                       <CheckCircle size={10} className="text-emerald-500" />
+                       <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight">
+                         <TranslatedText text="Global Broadcast · All Partners" />
+                       </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -388,13 +412,13 @@ const TenantBulkEmail: React.FC = () => {
 
           {/* Right: Composer */}
           <div className="xl:col-span-2 space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5">
-                3. Compose Message
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-8">
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">
+                3. <TranslatedText text="Compose Message" />
               </p>
 
               {/* Source toggle (template vs custom) */}
-              <div className="flex gap-3 mb-5">
+              <div className="flex gap-3 mb-6">
                 {[
                   { use: false, icon: Edit2, label: 'Custom' },
                   { use: true,  icon: FileText, label: 'Template' },
@@ -404,70 +428,75 @@ const TenantBulkEmail: React.FC = () => {
                     <button
                       key={String(use)}
                       onClick={() => setUseTemplate(use)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all"
-                      style={active ? { borderColor: PRIMARY, background: `${PRIMARY}10`, color: PRIMARY } : { borderColor: '#e2e8f0', color: '#64748b' }}
+                      className="flex items-center gap-2.5 px-5 py-3 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all shadow-sm"
+                      style={active ? { borderColor: PRIMARY, background: `${PRIMARY}10`, color: PRIMARY } : { borderColor: 'transparent', color: '#64748b' }}
                     >
-                      <Icon size={13} />
-                      {label}
+                      <Icon size={14} />
+                      <TranslatedText text={label} />
                     </button>
                   );
                 })}
               </div>
 
               {useTemplate ? (
-                <div className="space-y-3">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                    Select Template
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <TranslatedText text="Select Communication Template" />
                   </label>
                   <select
                     value={selectedTemplate}
                     onChange={e => setSelectedTemplate(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': PRIMARY } as any}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
                   >
-                    <option value="">Choose a template…</option>
+                    <option value="">{tSync('Choose a template…')}</option>
                     {templates.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
                   {templates.length === 0 && (
-                    <p className="text-xs text-slate-400">No templates yet. Ask a Super Admin to create some.</p>
+                    <p className="text-xs text-slate-400 font-medium italic">
+                       <TranslatedText text="No templates yet. Ask a Super Admin to create some." />
+                    </p>
                   )}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {/* Subject — always shown */}
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Subject / Title</label>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                       <TranslatedText text="Subject / Title" />
+                    </label>
                     <input
                       type="text"
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
-                      placeholder="E.g. Important update for all truck owners"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      placeholder={tSync("E.g. Important update for all truck owners")}
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
                     />
                   </div>
 
                   {/* Plain-text message — for SMS / WhatsApp / In-App */}
                   {needsMessage && (
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                        Message
-                        <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 normal-case text-[9px] font-bold">
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                        <TranslatedText text="Message Content" />
+                        <span className="ml-3 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 normal-case text-[9px] font-black border border-slate-200 dark:border-slate-700">
                           SMS · WhatsApp · In-App
                         </span>
                       </label>
                       <textarea
-                        rows={4}
+                        rows={5}
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        placeholder="Write a concise message (SMS max 160 chars recommended)"
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                        placeholder={tSync("Write a concise message (SMS max 160 chars recommended)")}
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none resize-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
                       />
-                      <div className="flex justify-between mt-1">
-                        <p className="text-[10px] text-slate-400 font-medium">Tip: Keep under 160 chars for SMS compatibility</p>
-                        <p className={`text-[10px] font-bold tabular-nums ${message.length > 160 ? 'text-amber-500' : 'text-slate-400'}`}>
-                          {message.length} chars
+                      <div className="flex justify-between mt-2 px-1">
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight">
+                           <TranslatedText text="Tip: Keep under 160 chars for SMS compatibility" />
+                        </p>
+                        <p className={`text-[10px] font-black tabular-nums tracking-widest ${message.length > 160 ? 'text-rose-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                          {message.length} <TranslatedText text="CHARS" />
                         </p>
                       </div>
                     </div>
@@ -478,19 +507,19 @@ const TenantBulkEmail: React.FC = () => {
                     <div>
                       <button
                         onClick={() => setShowHtml(v => !v)}
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 hover:text-slate-700 transition-colors"
+                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 hover:text-primary-600 transition-colors group"
                       >
-                        <Mail size={11} />
-                        Email HTML Body (optional – uses plain message if blank)
-                        {showHtml ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                        <Mail size={12} className="group-hover:scale-110 transition-transform" />
+                        <TranslatedText text="Email HTML Body (uses plain message if blank)" />
+                        {showHtml ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                       </button>
                       {showHtml && (
                         <textarea
-                          rows={8}
+                          rows={10}
                           value={htmlBody}
                           onChange={e => setHtmlBody(e.target.value)}
-                          placeholder="<p>Dear Partner,</p><p>Write your rich HTML email here…</p>"
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-700 outline-none resize-y focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                          placeholder={tSync("<p>Dear Partner,</p><p>Write your rich HTML email here…</p>")}
+                          className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-sm text-slate-700 dark:text-slate-200 outline-none resize-y focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
                         />
                       )}
                     </div>
@@ -500,35 +529,42 @@ const TenantBulkEmail: React.FC = () => {
             </div>
 
             {/* Channel summary + actions */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6 justify-between border-b-4" style={{ borderColor: PRIMARY }}>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sending via</p>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                   <TranslatedText text="Distribution Channels" />
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {selectedChannels.length === 0
-                    ? <span className="text-xs text-red-400 font-medium">No channels selected</span>
+                    ? <span className="text-xs text-rose-500 font-black uppercase tracking-widest italic animate-pulse">
+                        <TranslatedText text="No channels selected" />
+                      </span>
                     : selectedChannels.map(ch => <ChannelBadge key={ch} ch={ch} />)
                   }
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
                 {needsHtml && !useTemplate && (
                   <button
                     onClick={handlePreview}
                     disabled={!canSend}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="flex items-center justify-center gap-3 px-6 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-[20px] font-black text-[10px] uppercase tracking-[0.15em] hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                   >
-                    <Eye size={14} /> Preview
+                    <Eye size={16} /> <TranslatedText text="Preview" />
                   </button>
                 )}
                 <button
                   onClick={handleSend}
                   disabled={loading || !canSend}
-                  className="flex items-center gap-2 px-7 py-2.5 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 transition-all"
-                  style={{ background: PRIMARY, boxShadow: `0 6px 20px ${PRIMARY}40` }}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-10 py-3.5 text-white rounded-[20px] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-1 transition-all active:scale-95 relative overflow-hidden group"
+                  style={{ background: PRIMARY, boxShadow: `0 12px 24px ${PRIMARY}50` }}
                 >
-                  {loading ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                  {loading ? 'Sending…' : 'Launch Campaign'}
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  <span className="relative z-10 flex items-center gap-3">
+                    {loading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />}
+                    {loading ? tSync('Sending…') : tSync('Launch Campaign')}
+                  </span>
                 </button>
               </div>
             </div>
@@ -538,51 +574,54 @@ const TenantBulkEmail: React.FC = () => {
 
       {/* ══════════════════════════ TEMPLATES TAB ══════════════════════════ */}
       {activeTab === 'templates' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm p-10 mt-6 transition-all">
+          <div className="flex items-center justify-between mb-10">
             <div>
-              <h3 className="text-lg font-black text-slate-800">Email Templates</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Managed by Super Admins · use for Rich Email campaigns</p>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Communication Templates" /></h3>
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2">
+                <TranslatedText text="Centrally managed by administrators" /> · <TranslatedText text="Rich HTML format" />
+              </p>
             </div>
           </div>
 
           {templates.length === 0 ? (
-            <div className="py-20 text-center">
-              <div className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
-                <FileText className="text-slate-300" size={32} />
+            <div className="py-24 text-center">
+              <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-6">
+                <FileText className="text-slate-300 dark:text-slate-600" size={36} />
               </div>
-              <p className="font-bold text-slate-500">No templates available</p>
-              <p className="text-xs text-slate-400 mt-2">Ask a Super Admin to create shared email templates for your org.</p>
+              <h4 className="text-lg font-black text-slate-800 dark:text-white"><TranslatedText text="No Templates Available" /></h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 max-w-sm mx-auto font-medium italic">
+                 <TranslatedText text="Collaborate with your organization's Super Admin to establish standardized communication templates." />
+              </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-100">
+            <div className="overflow-hidden rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm transition-all shadow-slate-100 dark:shadow-none">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-100">
+                <thead className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Internal Template Name" /></th>
+                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Broadcast Subject" /></th>
+                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Operational Status" /></th>
+                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Action" /></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {templates.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-700 text-sm">{t.name}</td>
-                      <td className="px-6 py-4 text-slate-600 text-sm max-w-sm truncate">{t.subject}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${t.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                          {t.isActive ? 'Active' : 'Inactive'}
+                    <tr key={t.id} className="hover:bg-primary-50/20 dark:hover:bg-primary-900/10 transition-colors group">
+                      <td className="px-8 py-6 font-black text-slate-700 dark:text-slate-200 text-sm group-hover:text-primary-600 transition-colors">{t.name}</td>
+                      <td className="px-8 py-6 text-slate-500 dark:text-slate-400 text-sm max-w-sm truncate italic">{t.subject}</td>
+                      <td className="px-8 py-6 text-center">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${t.isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}>
+                          {t.isActive ? tSync('Active') : tSync('Inactive')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-8 py-6 text-right">
                         <button
                           disabled={!t.isActive}
                           onClick={() => { setSelectedTemplate(t.id); setUseTemplate(true); setActiveTab('compose'); }}
-                          className="text-[10px] font-black px-4 py-1.5 rounded-xl text-white disabled:opacity-40 transition-all"
-                          style={{ background: PRIMARY }}
+                          className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest hover:bg-primary-600 dark:hover:bg-primary-500 shadow-lg disabled:opacity-30 transition-all active:scale-95"
                         >
-                          Use
+                          <TranslatedText text="Utilize" />
                         </button>
                       </td>
                     </tr>
@@ -596,68 +635,72 @@ const TenantBulkEmail: React.FC = () => {
 
       {/* ══════════════════════════ HISTORY TAB ══════════════════════════ */}
       {activeTab === 'history' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm p-10 mt-6 transition-all">
+          <div className="flex items-center justify-between mb-10">
             <div>
-              <h3 className="text-lg font-black text-slate-800">Campaign History</h3>
-              <p className="text-xs text-slate-400 mt-0.5">{logs.length} campaign{logs.length !== 1 ? 's' : ''} found</p>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Campaign Transmission Audit" /></h3>
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2">
+                {logs.length} <TranslatedText text="Historical Campaigns Identified" />
+              </p>
             </div>
             <button
               onClick={fetchLogs}
               disabled={logsLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-all"
+              className="flex items-center gap-3 px-6 py-3 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-white dark:hover:bg-slate-700 hover:border-primary-500 transition-all shadow-sm active:scale-95 group"
             >
-              <RefreshCw size={13} className={logsLoading ? 'animate-spin' : ''} />
-              Refresh
+              <RefreshCw size={14} className={`${logsLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
+              <TranslatedText text="Refresh Audit Log" />
             </button>
           </div>
 
           {logs.length === 0 ? (
-            <div className="py-20 text-center">
-              <div className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
-                <Clock className="text-slate-300" size={32} />
+            <div className="py-24 text-center">
+              <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-6">
+                <Clock className="text-slate-300 dark:text-slate-600" size={36} />
               </div>
-              <p className="font-bold text-slate-500">No campaigns yet</p>
-              <p className="text-xs text-slate-400 mt-2">Your sent campaigns will appear here.</p>
+              <h4 className="text-lg font-black text-slate-800 dark:text-white"><TranslatedText text="No Historical Data" /></h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 max-w-sm mx-auto font-medium italic">
+                <TranslatedText text="Strategic outreach initiatives launched from this portal will be logged for administrative review." />
+              </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-100">
+            <div className="overflow-hidden rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm transition-all shadow-slate-100 dark:shadow-none">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-100">
+                <thead className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Recipients</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Sent</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Failed</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Subject Matter" /></th>
+                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Targets" /></th>
+                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Success" /></th>
+                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Failures" /></th>
+                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Execution Status" /></th>
+                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Timestamp" /></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-slate-700 text-sm max-w-xs truncate">{log.subject}</p>
+                    <tr key={log.id} className="hover:bg-primary-50/20 dark:hover:bg-primary-900/10 transition-colors group">
+                      <td className="px-8 py-6">
+                        <p className="font-black text-slate-700 dark:text-slate-200 text-sm max-w-xs truncate group-hover:text-primary-600 transition-colors">{log.subject}</p>
                       </td>
-                      <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600">{log.recipientsCount}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{log.sentCount}</span>
+                      <td className="px-8 py-6 text-center font-black text-xs text-slate-500 dark:text-slate-400 tabular-nums">{log.recipientsCount}</td>
+                      <td className="px-8 py-6 text-center">
+                        <span className="font-black text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800/50 tabular-nums">{log.sentCount}</span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{log.failedCount}</span>
+                      <td className="px-8 py-6 text-center">
+                        <span className="font-black text-xs text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-lg border border-rose-100 dark:border-rose-800/50 tabular-nums">{log.failedCount}</span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                      <td className="px-8 py-6 text-center">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
                           log.status === 'sent' || log.status === 'sending'
-                            ? 'bg-emerald-50 text-emerald-600'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
                             : log.status === 'failed'
-                            ? 'bg-red-50 text-red-600'
-                            : 'bg-amber-50 text-amber-600'
+                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
+                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
                         }`}>
-                          {log.status}
+                          {tSync(log.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right text-xs text-slate-400 font-medium tabular-nums">
+                      <td className="px-8 py-6 text-right text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-tighter tabular-nums">
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
                     </tr>
@@ -671,19 +714,32 @@ const TenantBulkEmail: React.FC = () => {
 
       {/* ── Preview Modal ── */}
       {previewOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-50 p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-[40px] w-full max-w-4xl overflow-hidden shadow-2xl border border-white/5">
+            <div className="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-black text-slate-800">Email Preview</h2>
-                <p className="text-[10px] text-slate-400 mt-0.5">{previewContent.subject}</p>
+                <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Campaign Visual Preview" /></h2>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2">{previewContent.subject}</p>
               </div>
-              <button onClick={() => setPreviewOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
-                <XCircle size={22} />
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="p-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all text-slate-400 active:scale-90"
+              >
+                <XCircle size={24} />
               </button>
             </div>
-            <div className="h-[500px] overflow-y-auto">
-              <iframe srcDoc={previewContent.html} className="w-full h-full border-0 block" title="Email Preview" />
+            <div className="h-[600px] bg-slate-50 dark:bg-slate-950 p-8">
+              <div className="w-full h-full bg-white dark:bg-white rounded-2xl shadow-inner overflow-hidden border border-slate-200 dark:border-slate-800">
+                <iframe srcDoc={previewContent.html} className="w-full h-full border-0" title="Campaign Preview" />
+              </div>
+            </div>
+            <div className="px-10 py-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+               <button
+                 onClick={() => setPreviewOpen(false)}
+                 className="px-8 py-3 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary-600 transition-all active:scale-95 shadow-lg"
+               >
+                 <TranslatedText text="Close Preview" />
+               </button>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { SystemHealthLog, HealthStatus, ServiceType } from '../entities/system-health.entity';
+import { SystemHealthLog, HealthStatus, ServiceType } from './../entities/system-health.entity';
 import * as os from 'os';
 import * as fs from 'fs';
 

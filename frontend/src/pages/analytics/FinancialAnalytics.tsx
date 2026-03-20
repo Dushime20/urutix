@@ -22,11 +22,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, type CostFilters } from '../../services/analyticsApi';
 import { CostTrendsChart } from '../../components/Analytics/CostTrendsChart';
 import { ProfitabilityChart } from '../../components/Analytics/ProfitabilityChart';
+import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 import DataCard from '../../components/EnliteUI/Cards/DataCard';
 
 const FinancialAnalytics: React.FC = () => {
   const { user } = useAuth();
+  const { tSync } = useTranslation();
   const [filters, setFilters] = useState<CostFilters>({
     timeRange: 'last_30_days',
     groupBy: 'week',

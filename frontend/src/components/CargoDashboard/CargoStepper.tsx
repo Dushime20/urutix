@@ -307,8 +307,8 @@ const CargoStepper: React.FC<CargoStepperProps> = ({
                       ${status === 'completed' 
                         ? 'bg-green-500 border-green-500 text-white' 
                         : status === 'current'
-                        ? 'bg-primary-500 border-primary-500 text-white'
-                        : 'bg-gray-100 border-gray-300 text-gray-400'
+                        ? 'bg-primary-600 border-primary-600 text-white'
+                        : 'bg-primary-50 border-primary-200 text-primary-600'
                       }
                     `}>
                       {status === 'completed' ? (
@@ -462,7 +462,7 @@ const CargoStepper: React.FC<CargoStepperProps> = ({
             
             {loading && (
               <div className="flex items-center text-gray-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500 mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
                 Processing...
               </div>
             )}

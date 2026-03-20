@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SystemSettings } from '../entities/system-settings.entity';
-import { EventsGateway } from '../modules/events/events.gateway';
+import { SystemSettings } from './../entities/system-settings.entity';
+import { EventsGateway } from './../modules/events/events.gateway';
 
 export interface CreateSettingDto {
     category: string;

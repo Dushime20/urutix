@@ -28,7 +28,7 @@ import { TripStatus } from '../../entities/trip.entity';
 import { TripsService } from './trips.service';
 import { CreateTripDto, CreateTripResponseDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   ApiResponseDto,
   PaginatedResponseDto,

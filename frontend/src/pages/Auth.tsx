@@ -73,48 +73,27 @@ const Auth = () => {
 
   // Fetch active tenants for dropdown (for both CARGO_OWNER and TRUCK_OWNER)
   const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
-    queryKey: ['active-tenants'],
+    queryKey: ['active-tenants-signup'],
     queryFn: async () => {
-      console.log('🔍 Fetching all tenants for signup dropdown...');
-      const response = await tenantAPI.searchTenants({});
+      console.log('🔍 Fetching active tenants for signup dropdown...');
+      const response = await tenantAPI.getActiveTenantsForSignup();
+      
       // Extract tenants from response
-      let allTenants: Tenant[] = [];
-
-      if (response.data?.success && response.data?.data?.results) {
-        allTenants = response.data.data.results;
-      } else if (response.data?.data?.results) {
-        allTenants = response.data.data.results;
+      let tenants: Tenant[] = [];
+      if (response.data?.success && response.data?.data) {
+        tenants = response.data.data;
+      } else if (response.data?.data) {
+        tenants = response.data.data;
       } else if (Array.isArray(response.data)) {
-        allTenants = response.data;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
-        allTenants = response.data.data;
+        tenants = response.data;
       }
 
-      // Show ALL tenants as requested by user
-      console.log('📋 Total tenants fetched for signup:', allTenants.length);
-
-      // Robust extraction like in AdminTenants
-      let finalTenants: Tenant[] = [];
-      const data = response.data as any;
-
-      if (data?.data?.results && Array.isArray(data.data.results)) {
-        finalTenants = data.data.results;
-      } else if (data?.data && Array.isArray(data.data)) {
-        finalTenants = data.data;
-      } else if (data?.results && Array.isArray(data.results)) {
-        finalTenants = data.results;
-      } else if (Array.isArray(data)) {
-        finalTenants = data;
-      } else {
-        finalTenants = allTenants;
-      }
-
-      console.log('✅ Extracted tenants for dropdown:', finalTenants.length);
-      return finalTenants;
+      console.log('📋 Active tenants fetched for signup:', tenants.length);
+      return tenants;
     },
     enabled: true, // Always fetch tenants for both user types
-    staleTime: 0, // Ensure we always get fresh tenants when the page loads
-    refetchOnWindowFocus: true, // Refetch when window regains focus to get latest tenants
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Handle errors for tenants fetch in Auth

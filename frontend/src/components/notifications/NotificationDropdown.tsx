@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Trash2, X, ExternalLink, Clock, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { Bell, CheckCheck, X, ExternalLink, Clock } from 'lucide-react';
+import type { UrutixNotification } from '../../hooks/useNotifications';
+import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 interface NotificationDropdownProps {
   className?: string;
@@ -23,6 +25,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<UrutixNotification | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -83,56 +86,94 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
     return icons[type] || '🔔';
   };
 
-  // Get priority badge color
-  const getPriorityColor = (priority?: string): string => {
-    switch (priority) {
-      case 'CRITICAL': return 'bg-red-100 text-red-800 border-red-200';
-      case 'URGENT': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'HIGH': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'NORMAL': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'LOW': return 'bg-gray-100 text-gray-600 border-gray-200';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200';
-    }
-  };
 
-  // Get priority icon
-  const getPriorityIcon = (priority?: string) => {
-    switch (priority) {
-      case 'CRITICAL': return <AlertCircle className="w-3 h-3" />;
-      case 'URGENT': return <AlertTriangle className="w-3 h-3" />;
-      case 'HIGH': return <Info className="w-3 h-3" />;
-      default: return null;
-    }
-  };
-
-  // Format timestamp
-  const formatTimestamp = (timestamp: string): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  const handleNotificationClick = (notification: typeof notifications[0]) => {
-    // We rely on the close-effect to mark as read, or specific button?
-    // User probably expects clicking item to "read" it immediately or navigate?
-    // Current logic marks read + navigates + closes.
-    markAsRead(notification.id);
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
-    }
-    // Don't close immediately if just expanding? 
-    // Assuming navigation implies closing.
+  const handleNotificationClick = (n: UrutixNotification) => {
+    markAsRead(n.id);
+    setSelectedNotification(n);
     setIsOpen(false);
+  };
+
+  const renderNotificationModal = () => {
+    return createPortal(
+      <AnimatePresence>
+        {selectedNotification && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedNotification(null)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+            >
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <Bell size={20} className="text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">Notification Detail</h3>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Enlite Prime Network</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedNotification(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-gray-400 hover:text-gray-600" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                    {selectedNotification.type?.split(':')[0] || 'System'}
+                  </span>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <Clock size={12} />
+                    {new Date(selectedNotification.timestamp).toLocaleString()}
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  {selectedNotification.title}
+                </h2>
+
+                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-8">
+                  <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                    {selectedNotification.message}
+                  </p>
+                </div>
+
+                {selectedNotification.actionUrl && (
+                  <button 
+                    onClick={() => {
+                      const url = selectedNotification.actionUrl;
+                      if (url) {
+                        navigate(url);
+                      }
+                      setSelectedNotification(null);
+                    }}
+                    className="w-full py-4 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 focus:outline-none"
+                  >
+                    {selectedNotification.actionText || 'Proceed to Link'}
+                    <ExternalLink size={16} />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>,
+      document.body
+    );
   };
 
   const handleViewAll = () => {
@@ -141,15 +182,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
     setIsOpen(false);
   };
 
-  const getCategoryColor = (type: string) => {
-    // Map categories/types to pill styles
-    return 'bg-white border border-gray-200 text-gray-700'; 
-  };
-
-  const getCardStyle = (priority: string) => {
-     // Light styling for cards
-     return 'bg-blue-50/50';
-  };
 
   return (
     <>
@@ -327,7 +359,9 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
                                className="text-xs font-medium text-[#4F46E5] hover:text-[#4338ca] flex items-center gap-1"
                                onClick={(e) => {
                                  e.stopPropagation();
-                                 navigate(notification.actionUrl!);
+                                 if (notification.actionUrl) {
+                                   navigate(notification.actionUrl);
+                                 }
                                  setIsOpen(false);
                                }}
                             >
@@ -345,6 +379,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
         </div>,
         document.body
       )}
+      {renderNotificationModal()}
     </>
   );
 };

@@ -14,6 +14,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { authAPI } from '../services/api';
 import { fetchAllUsers, createTenantUser, updateUser, deleteUser } from '../services/adminApi';
 import { TranslatedText } from '../components/translated-text';
@@ -158,11 +159,17 @@ const Settings: React.FC = () => {
     }));
   };
 
+  const { setTheme } = useTheme();
+
   const handlePreferenceChange = (key: string, value: any) => {
     setPreferences(prev => ({
       ...prev,
       [key]: value,
     }));
+    
+    if (key === 'theme') {
+      setTheme(value);
+    }
   };
 
   const saveSettings = async () => {

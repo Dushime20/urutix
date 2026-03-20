@@ -9,6 +9,7 @@ import {
   FaUser, FaDollarSign, FaWeightHanging, FaBarcode
 } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 interface Trip {
   id: string;
@@ -443,47 +444,47 @@ const AdminTrips: React.FC = () => {
 
   const stats = [
     {
-      label: 'Total Trips',
+      label: <TranslatedText text="Total Trips" />,
       value: mappedTrips.length,
       icon: FaTruck,
       color: 'from-gray-600 to-gray-700',
-      description: 'All registered trips'
+      description: <TranslatedText text="All registered trips" />
     },
     {
-      label: 'Active Trips',
+      label: <TranslatedText text="Active Trips" />,
       value: mappedTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length,
       icon: FaShippingFast,
       color: 'from-gray-600 to-gray-700',
-      description: 'Currently active'
+      description: <TranslatedText text="Currently active" />
     },
     {
-      label: 'Total Revenue',
+      label: <TranslatedText text="Total Revenue" />,
       value: `RWF ${mappedTrips.reduce((sum: number, t: Trip) => sum + (t.revenue ?? 0), 0).toLocaleString()}`,
       icon: FaDollarSign,
       color: 'from-gray-600 to-gray-700',
-      description: 'Combined trip revenue'
+      description: <TranslatedText text="Combined trip revenue" />
     },
     {
-      label: 'Completed Today',
+      label: <TranslatedText text="Completed Today" />,
       value: mappedTrips.filter((t: Trip) => t.status === 'completed' &&
         new Date(t.endTime || '').toDateString() === new Date().toDateString()).length,
       icon: FaCheck,
       color: 'from-gray-600 to-gray-700',
-      description: 'Trips completed today'
+      description: <TranslatedText text="Trips completed today" />
     },
   ];
 
   return (
     <AdminPageLayout
-      title="Trip Management"
-      description="Monitor and manage all logistics trips across tenants"
+      title={<TranslatedText text="Trip Management" />}
+      description={<TranslatedText text="Monitor and manage all logistics trips across tenants" />}
       actions={
         <div className="flex items-center gap-2">
           <div className="text-sm text-slate-400 mr-2">
-            <span className="font-bold text-white">{mappedTrips.filter(t => t.status === 'in_progress').length}</span> active trips
+            <span className="font-bold text-white">{mappedTrips.filter(t => t.status === 'in_progress').length}</span> <TranslatedText text="active trips" />
           </div>
           <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-50 text-white rounded-lg font-bold shadow-lg shadow-indigo-600/20 transition-all text-xs">
-            <FaDownload size={14} /> Export Report
+            <FaDownload size={14} /> <TranslatedText text="Export Report" />
           </button>
         </div>
       }
@@ -492,7 +493,7 @@ const AdminTrips: React.FC = () => {
       {isLoading && (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-          <span className="ml-2 text-sm text-gray-600">Loading trips...</span>
+          <span className="ml-2 text-sm text-gray-600"><TranslatedText text="Loading trips..." /></span>
         </div>
       )}
 
@@ -501,8 +502,8 @@ const AdminTrips: React.FC = () => {
           <div className="flex items-center gap-2">
             <FaExclamationTriangle className="text-red-600" />
             <div>
-              <h3 className="text-sm font-semibold text-red-900">Error Loading Trips</h3>
-              <p className="text-xs text-red-700 mt-0.5">Failed to load trip data. Please try again.</p>
+              <h3 className="text-sm font-semibold text-red-900"><TranslatedText text="Error Loading Trips" /></h3>
+              <p className="text-xs text-red-700 mt-0.5"><TranslatedText text="Failed to load trip data. Please try again." /></p>
             </div>
           </div>
         </div>
@@ -555,12 +556,12 @@ const AdminTrips: React.FC = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="all">All Status</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="delayed">Delayed</option>
+                <option value="all"><TranslatedText text="All Status" /></option>
+                <option value="scheduled"><TranslatedText text="Scheduled" /></option>
+                <option value="in_progress"><TranslatedText text="In Progress" /></option>
+                <option value="completed"><TranslatedText text="Completed" /></option>
+                <option value="cancelled"><TranslatedText text="Cancelled" /></option>
+                <option value="delayed"><TranslatedText text="Delayed" /></option>
               </select>
 
               <select
@@ -568,7 +569,7 @@ const AdminTrips: React.FC = () => {
                 value={tenantFilter}
                 onChange={(e) => setTenantFilter(e.target.value)}
               >
-                <option value="all">All Tenants</option>
+                <option value="all"><TranslatedText text="All Tenants" /></option>
                 {tenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                 ))}
@@ -579,15 +580,15 @@ const AdminTrips: React.FC = () => {
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
-                <option value="all">All Priorities</option>
-                <option value="high">High Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="low">Low Priority</option>
+                <option value="all"><TranslatedText text="All Priorities" /></option>
+                <option value="high"><TranslatedText text="High Priority" /></option>
+                <option value="medium"><TranslatedText text="Medium Priority" /></option>
+                <option value="low"><TranslatedText text="Low Priority" /></option>
               </select>
 
               <button className="px-3 py-2 text-xs border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-all font-black uppercase tracking-widest text-slate-400">
                 <FaDownload className="w-3.5 h-3.5" />
-                <span>Export</span>
+                <span><TranslatedText text="Export" /></span>
               </button>
             </div>
           </div>
@@ -606,21 +607,21 @@ const AdminTrips: React.FC = () => {
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
                       >
-                        Trip Reference
+                        <TranslatedText text="Trip Reference" />
                         <FaSort size={10} />
                       </button>
                     </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Route & Progress</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Driver & Assets</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Detail</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Financials</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Route & Progress" /></th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Driver & Assets" /></th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Cargo Detail" /></th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Financials" /></th>
+                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Action" /></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {pagedTrips.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-black uppercase tracking-widest text-[10px]">No trips identified.</td>
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-black uppercase tracking-widest text-[10px]"><TranslatedText text="No trips identified." /></td>
                     </tr>
                   ) : (
                     pagedTrips.map((trip: Trip) => (
@@ -683,7 +684,7 @@ const AdminTrips: React.FC = () => {
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatWeight(trip.cargoWeight)}</span>
                               </div>
                               {trip.isFragile && (
-                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Fragile</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded"><TranslatedText text="Fragile" /></span>
                               )}
                             </div>
                           </div>
@@ -692,7 +693,7 @@ const AdminTrips: React.FC = () => {
                           <div className="space-y-1">
                             <div className="text-sm font-black text-gray-900 tracking-tight">{formatCurrency(trip.revenue)}</div>
                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                              Net Profit: <span className="text-indigo-600">{formatCurrency(calculateProfit(trip.revenue, trip.fuelCost, trip.tollCost))}</span>
+                              <TranslatedText text="Net Profit" />: <span className="text-indigo-600">{formatCurrency(calculateProfit(trip.revenue, trip.fuelCost, trip.tollCost))}</span>
                             </div>
                           </div>
                         </td>
@@ -722,7 +723,7 @@ const AdminTrips: React.FC = () => {
             {/* Pagination Controls */}
             <div className="px-6 py-5 border-t border-gray-50 flex items-center justify-between bg-[#fafafa]">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Showing {startIdx + 1}-{Math.min(endIdx, total)} of {total} Records
+                <TranslatedText text="Showing" /> {startIdx + 1}-{Math.min(endIdx, total)} <TranslatedText text="of" /> {total} <TranslatedText text="Records" />
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -730,7 +731,7 @@ const AdminTrips: React.FC = () => {
                   onClick={() => setPage(page - 1)}
                   className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 border border-gray-200 rounded-xl disabled:opacity-30 hover:bg-white transition-all"
                 >
-                  Prev
+                  <TranslatedText text="Prev" />
                 </button>
                 <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-[10px] font-black text-gray-900">
                   {currentPage} <span className="mx-1 text-slate-300">/</span> {totalPages}
@@ -740,7 +741,7 @@ const AdminTrips: React.FC = () => {
                   onClick={() => setPage(page + 1)}
                   className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 border border-gray-200 rounded-xl disabled:opacity-30 hover:bg-white transition-all"
                 >
-                  Next
+                  <TranslatedText text="Next" />
                 </button>
               </div>
             </div>
@@ -764,7 +765,7 @@ const AdminTrips: React.FC = () => {
                       {(selectedTrip.status || 'scheduled').replace('_', ' ')}
                     </span>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      Tenant Identifier: <span className="text-gray-900">{selectedTrip.tenantName}</span>
+                      <TranslatedText text="Tenant Identifier" />: <span className="text-gray-900">{selectedTrip.tenantName}</span>
                     </span>
                   </div>
                 </div>
@@ -780,19 +781,19 @@ const AdminTrips: React.FC = () => {
             <div className="p-10 overflow-y-auto custom-scrollbar bg-white">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Route Distance</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="Route Distance" /></p>
                   <h4 className="text-3xl font-black text-gray-900 tracking-tight">{formatDistance(selectedTrip.distance)}</h4>
                 </div>
                 <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Current Duration</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="Current Duration" /></p>
                   <h4 className="text-3xl font-black text-gray-900 tracking-tight">{formatDuration((selectedTrip.actualDuration || selectedTrip.estimatedDuration) || 0)}</h4>
                 </div>
                 <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Payload Weight</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="Payload Weight" /></p>
                   <h4 className="text-3xl font-black text-gray-900 tracking-tight">{formatWeight(selectedTrip.cargoWeight)}</h4>
                 </div>
                 <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-100 group hover:border-indigo-100 transition-all">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Gross Revenue</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="Gross Revenue" /></p>
                   <h4 className="text-3xl font-black text-indigo-600 tracking-tight">{formatCurrency(selectedTrip.revenue)}</h4>
                 </div>
               </div>
@@ -803,15 +804,15 @@ const AdminTrips: React.FC = () => {
                     <div>
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50" />
-                        Operation Actors
+                        <TranslatedText text="Operation Actors" />
                       </h3>
                       <div className="space-y-6">
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Driver</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Driver" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{selectedTrip.driverName}</span>
                         </div>
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Truck Num</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Truck Num" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{selectedTrip.truckNumber}</span>
                         </div>
                       </div>
@@ -820,15 +821,15 @@ const AdminTrips: React.FC = () => {
                     <div>
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
-                        Manifest Details
+                        <TranslatedText text="Manifest Details" />
                       </h3>
                       <div className="space-y-6">
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Type</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Cargo Type" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{selectedTrip.cargoType}</span>
                         </div>
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Load Value</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Load Value" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{formatCurrency(selectedTrip.loadValue ?? 0)}</span>
                         </div>
                       </div>
@@ -839,23 +840,23 @@ const AdminTrips: React.FC = () => {
                     <div>
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-rose-500 shadow-lg shadow-rose-500/50" />
-                        Logistic Schedule
+                        <TranslatedText text="Logistic Schedule" />
                       </h3>
                       <div className="space-y-6">
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Departure</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Departure" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{formatDateTime(selectedTrip.startTime || '')}</span>
                         </div>
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated End</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Estimated End" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{formatDateTime(selectedTrip.endTime ?? '')}</span>
                         </div>
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Origin</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Origin" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight truncate ml-4 text-right">{(selectedTrip.origin || '').split(',')[0]}</span>
                         </div>
                         <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Destination</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Destination" /></span>
                           <span className="text-sm font-black text-gray-900 tracking-tight truncate ml-4 text-right">{(selectedTrip.destination || '').split(',')[0]}</span>
                         </div>
                       </div>
@@ -865,24 +866,24 @@ const AdminTrips: React.FC = () => {
 
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Financial Analytics</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6"><TranslatedText text="Financial Analytics" /></h3>
                     <div className="bg-gray-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-gray-900/40 relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-1000">
                         <FaDollarSign size={80} />
                       </div>
                       <div className="relative space-y-6">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Net Economic Win</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Net Economic Win" /></p>
                           <h4 className="text-3xl font-black text-indigo-400">{formatCurrency(calculateProfit(selectedTrip.revenue, selectedTrip.fuelCost, selectedTrip.tollCost))}</h4>
                         </div>
                         <div className="h-px bg-white/10" />
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Profit Margin</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Profit Margin" /></p>
                             <p className="text-xl font-black">{getProfitMargin(selectedTrip.revenue, selectedTrip.fuelCost, selectedTrip.tollCost)}%</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Logistic Cost</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1"><TranslatedText text="Logistic Cost" /></p>
                             <p className="text-xl font-black text-rose-400">{formatCurrency((selectedTrip.fuelCost ?? 0) + (selectedTrip.tollCost ?? 0))}</p>
                           </div>
                         </div>
@@ -892,7 +893,7 @@ const AdminTrips: React.FC = () => {
 
                   {selectedTrip.notes && (
                     <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Dispatcher Notes</h3>
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="Dispatcher Notes" /></h3>
                       <div className="bg-indigo-50/50 rounded-3xl p-6 border border-indigo-100/50 italic text-sm text-indigo-900/70 leading-relaxed shadow-inner">
                         "{selectedTrip.notes}"
                       </div>

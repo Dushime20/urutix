@@ -19,8 +19,8 @@ import { LocationsModule } from '../locations/locations.module';
 import { MatchingModule } from '../matching/matching.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { BrokersModule } from '../brokers/brokers.module';
-import { RolesGuard } from '../auth/roles.guard';
-import { TenantGuard } from '../auth/tenant.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { TenantGuard } from '../auth/guards/tenant.guard';
 
 @Module({
   imports: [

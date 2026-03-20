@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
+import { TranslatedText } from '../../translated-text';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-    FaServer, FaArrowRight, FaSpinner, FaCheckCircle,
-    FaExclamationTriangle, FaDatabase, FaMemory
-} from 'react-icons/fa';
-import { Cpu, Activity } from 'lucide-react';
+    Activity, ArrowRight, Loader2, CheckCircle,
+    AlertCircle, Database, Server, Cpu, HardDrive
+} from 'lucide-react';
 import { monitoringApi } from '../../../services/monitoringApi';
+import { DataCard } from '../../EnliteUI';
 
 const SystemHealthWidget: React.FC = () => {
     const navigate = useNavigate();
     const [lastUpdate, setLastUpdate] = useState(new Date());
 
-    const { data: health, isLoading, refetch } = useQuery({
+    const { data: health, isLoading } = useQuery({
         queryKey: ['system-health-widget'],
         queryFn: () => monitoringApi.getSystemHealth(),
-        refetchInterval: 10000, // Refresh every 10s
+        refetchInterval: 10000,
     });
 
     useEffect(() => {
@@ -26,161 +27,123 @@ const SystemHealthWidget: React.FC = () => {
     }, []);
 
     const metrics = {
-        serverStatus: health?.data?.server?.status || 'unknown',
-        dbStatus: health?.data?.database?.status || 'unknown',
-        cpuUsage: health?.data?.cpu?.usage || 0,
-        memoryUsage: health?.data?.memory?.usage || 0,
-        activeConnections: health?.data?.connections?.active || 0,
-        responseTime: health?.data?.performance?.avgResponseTime || 0,
+        serverStatus: health?.services?.api?.status || 'unknown',
+        dbStatus: health?.services?.database?.status || 'unknown',
+        cpuUsage: health?.resources?.cpu?.loadAverage ? Math.round(health.resources.cpu.loadAverage[0] * 100) : 0,
+        memoryUsage: Math.round(health?.resources?.memory?.system?.usagePercent || 0),
+        activeConnections: 0,
+        responseTime: health?.services?.database?.responseTime ? parseInt(health.services.database.responseTime) : 0,
     };
 
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'healthy':
-            case 'operational':
-                return 'text-emerald-500';
-            case 'warning':
-                return 'text-amber-500';
+            case 'operational': return 'text-emerald-500 bg-emerald-50';
+            case 'warning': return 'text-amber-500 bg-amber-50';
             case 'error':
-            case 'down':
-                return 'text-red-500';
-            default:
-                return 'text-slate-500';
+            case 'down': return 'text-rose-500 bg-rose-50';
+            default: return 'text-slate-500 bg-slate-50';
         }
     };
 
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'healthy':
-            case 'operational':
-                return <FaCheckCircle className="text-emerald-500" size={16} />;
-            case 'warning':
-                return <FaExclamationTriangle className="text-amber-500" size={16} />;
+            case 'operational': return <CheckCircle size={14} />;
+            case 'warning': return <AlertCircle size={14} />;
             case 'error':
-            case 'down':
-                return <FaExclamationTriangle className="text-red-500" size={16} />;
-            default:
-                return <FaSpinner className="animate-spin text-slate-500" size={16} />;
+            case 'down': return <AlertCircle size={14} />;
+            default: return <Loader2 className="animate-spin" size={14} />;
         }
     };
 
     const getUsageColor = (usage: number) => {
         if (usage < 50) return 'bg-emerald-500';
         if (usage < 80) return 'bg-amber-500';
-        return 'bg-red-500';
+        return 'bg-rose-500';
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                        <FaServer className="text-purple-600" size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-800">System Health</h3>
-                        <p className="text-xs text-slate-500">Real-time monitoring</p>
-                    </div>
-                </div>
+        <DataCard
+            title={<TranslatedText text="System Health" />}
+            subtitle={<TranslatedText text="Real-time Node Monitoring" />}
+            headerColor="secondary"
+            icon={<Activity size={20} />}
+            actions={
                 <button
                     onClick={() => navigate('/admin/monitoring')}
-                    className="text-sm font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                    className="text-[10px] font-black text-white hover:text-primary-200 flex items-center gap-1 uppercase tracking-widest transition-all"
                 >
-                    Details <FaArrowRight size={12} />
+                    <TranslatedText text="Details" /> <ArrowRight size={10} />
                 </button>
-            </div>
-
+            }
+        >
             {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                    <FaSpinner className="animate-spin text-purple-600" size={24} />
+                <div className="flex items-center justify-center h-48">
+                    <Loader2 className="animate-spin text-primary-600" size={24} />
                 </div>
             ) : (
-                <>
-                    {/* Status Indicators */}
-                    <div className="space-y-3 mb-6">
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <FaServer className="text-slate-600" size={14} />
-                                <span className="text-sm font-medium text-slate-700">Server</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {getStatusIcon(metrics.serverStatus)}
-                                <span className={`text-sm font-bold capitalize ${getStatusColor(metrics.serverStatus)}`}>
-                                    {metrics.serverStatus}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <FaDatabase className="text-slate-600" size={14} />
-                                <span className="text-sm font-medium text-slate-700">Database</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {getStatusIcon(metrics.dbStatus)}
-                                <span className={`text-sm font-bold capitalize ${getStatusColor(metrics.dbStatus)}`}>
-                                    {metrics.dbStatus}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Resource Usage */}
-                    <div className="space-y-3 mb-6">
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Cpu size={14} className="text-slate-600" />
-                                    <span className="text-xs font-medium text-slate-700">CPU Usage</span>
+                <div className="space-y-6">
+                    {/* Status Tiles */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { label: 'API SERVER', status: metrics.serverStatus, icon: Server },
+                            { label: 'DATABASE', status: metrics.dbStatus, icon: Database }
+                        ].map((item, i) => {
+                            const Icon = item.icon;
+                            const statusStyle = getStatusColor(item.status);
+                            return (
+                                <div key={i} className="p-3 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-100 transition-all group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="w-8 h-8 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-400 group-hover:text-primary-600 transition-colors">
+                                            <Icon size={14} />
+                                        </div>
+                                        <div className={`p-1.5 rounded-lg ${statusStyle}`}>
+                                            {getStatusIcon(item.status)}
+                                        </div>
+                                    </div>
+                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">{item.label}</div>
+                                    <div className={`text-[10px] font-black uppercase tracking-tight mt-1 ${statusStyle.split(' ')[0]}`}>{item.status}</div>
                                 </div>
-                                <span className="text-xs font-bold text-slate-800">{metrics.cpuUsage}%</span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full transition-all ${getUsageColor(metrics.cpuUsage)}`}
-                                    style={{ width: `${metrics.cpuUsage}%` }}
-                                ></div>
-                            </div>
-                        </div>
+                            );
+                        })}
+                    </div>
 
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <FaMemory size={14} className="text-slate-600" />
-                                    <span className="text-xs font-medium text-slate-700">Memory Usage</span>
+                    {/* Resources */}
+                    <div className="space-y-4">
+                        {[
+                            { label: 'CPU LOAD', usage: metrics.cpuUsage, icon: Cpu },
+                            { label: 'MEMORY LOAD', usage: metrics.memoryUsage, icon: HardDrive }
+                        ].map((res, i) => (
+                            <div key={i}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <res.icon size={12} className="text-slate-400" />
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{res.label}</span>
+                                    </div>
+                                    <span className="text-xs font-black text-slate-900">{res.usage}%</span>
                                 </div>
-                                <span className="text-xs font-bold text-slate-800">{metrics.memoryUsage}%</span>
+                                <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-1000 ${getUsageColor(res.usage)}`}
+                                        style={{ width: `${res.usage}%` }}
+                                    ></div>
+                                </div>
                             </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2">
-                                <div
-                                    className={`h-2 rounded-full transition-all ${getUsageColor(metrics.memoryUsage)}`}
-                                    style={{ width: `${metrics.memoryUsage}%` }}
-                                ></div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="text-center p-2 bg-blue-50 rounded-lg">
-                            <div className="text-lg font-black text-blue-600">{metrics.activeConnections}</div>
-                            <div className="text-[10px] text-blue-600 font-medium mt-0.5">Active Users</div>
+                    {/* Meta Stats */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-50 font-black text-[9px] text-slate-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>LATENCY: {metrics.responseTime}MS</span>
                         </div>
-                        <div className="text-center p-2 bg-emerald-50 rounded-lg">
-                            <div className="text-lg font-black text-emerald-600">{metrics.responseTime}ms</div>
-                            <div className="text-[10px] text-emerald-600 font-medium mt-0.5">Response Time</div>
-                        </div>
+                        <span>SYNC: {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                     </div>
-
-                    {/* Last Update */}
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Auto-refresh: 10s</span>
-                        <span>Updated: {lastUpdate.toLocaleTimeString()}</span>
-                    </div>
-                </>
+                </div>
             )}
-        </div>
+        </DataCard>
     );
 };
 

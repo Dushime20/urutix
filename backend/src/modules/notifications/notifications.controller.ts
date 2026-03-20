@@ -20,7 +20,7 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NotificationService } from './services/notification.service';
 import { TemplateService } from './services/template.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';

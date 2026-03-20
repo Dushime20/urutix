@@ -117,12 +117,13 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 relative overflow-hidden"
+      className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 relative overflow-hidden"
     >
-      <div className="px-10 py-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+
+      <div className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-50 bg-slate-50/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-[#345E85] shadow-sm">
-            <Calendar size={20} />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-[#345E85] shadow-sm">
+            <Calendar size={18} />
           </div>
           <div>
             <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Upcoming Trips</h3>
@@ -131,11 +132,12 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
         </div>
         <button
           onClick={() => setShowAll(!showAll)}
-          className="px-6 py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm"
+          className="w-full sm:w-auto px-6 py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm"
         >
           {showAll ? 'Collapse' : `View All (${currentTrips.length})`}
         </button>
       </div>
+
 
       <div className="divide-y divide-slate-50">
         <AnimatePresence mode="popLayout">
@@ -146,8 +148,9 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="p-10 hover:bg-slate-50/50 transition-all group"
+              className="p-6 sm:p-10 hover:bg-slate-50/50 transition-all group"
             >
+
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div className="flex-1 space-y-8">
                   {/* Header Info */}

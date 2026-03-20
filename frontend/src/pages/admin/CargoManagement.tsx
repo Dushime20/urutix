@@ -21,6 +21,7 @@ import {
   FaSync,
 } from "react-icons/fa";
 import FilterSelect from "@/components/common/FilterSelect";
+import { TranslatedText } from '../../components/translated-text';
 
 interface Cargo {
   id: string;
@@ -137,15 +138,15 @@ const CargoManagement: React.FC = () => {
       <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Cargo Management</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Cargo Management" /></h1>
             <p className="text-slate-500 font-medium mt-1">
-              Monitor and manage all cargo shipments and logistics
+              <TranslatedText text="Monitor and manage all cargo shipments and logistics" />
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2">
               <FaPlus className="text-xs" />
-              Add Cargo
+              <TranslatedText text="Add Cargo" />
             </button>
           </div>
         </div>
@@ -171,12 +172,12 @@ const CargoManagement: React.FC = () => {
             value={filterStatus}
             placeholder="All Status"
             options={[
-              { value: '', label: 'All Status' },
-              { value: 'draft', label: 'Draft' },
-              { value: 'published', label: 'Published' },
-              { value: 'assigned', label: 'Assigned' },
-              { value: 'in_transit', label: 'In Transit' },
-              { value: 'delivered', label: 'Delivered' },
+              { value: '', label: <TranslatedText text="All Status" /> },
+              { value: 'draft', label: <TranslatedText text="Draft" /> },
+              { value: 'published', label: <TranslatedText text="Published" /> },
+              { value: 'assigned', label: <TranslatedText text="Assigned" /> },
+              { value: 'in_transit', label: <TranslatedText text="In Transit" /> },
+              { value: 'delivered', label: <TranslatedText text="Delivered" /> },
             ]}
             onChange={setFilterStatus}
           />
@@ -187,18 +188,18 @@ const CargoManagement: React.FC = () => {
             value={filterType}
             placeholder="All Types"
             options={[
-              { value: '', label: 'All Types' },
-              { value: 'GENERAL', label: 'General' },
-              { value: 'FRAGILE', label: 'Fragile' },
-              { value: 'HAZARDOUS', label: 'Hazardous' },
-              { value: 'REFRIGERATED', label: 'Refrigerated' },
+              { value: '', label: <TranslatedText text="All Types" /> },
+              { value: 'GENERAL', label: <TranslatedText text="General" /> },
+              { value: 'FRAGILE', label: <TranslatedText text="Fragile" /> },
+              { value: 'HAZARDOUS', label: <TranslatedText text="Hazardous" /> },
+              { value: 'REFRIGERATED', label: <TranslatedText text="Refrigerated" /> },
             ]}
             onChange={setFilterType}
           />
 
           <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:scale-[1.01] hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-1">
             <FaFilter />
-            <span>Advanced Filters</span>
+            <span><TranslatedText text="Advanced Filters" /></span>
           </button>
 
           <div className="flex gap-3">
@@ -212,11 +213,11 @@ const CargoManagement: React.FC = () => {
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition hover:scale-[1.01] hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-1"
             >
               <FaSync className="text-xs" />
-              Reset
+              <TranslatedText text="Reset" />
             </button>
             <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-gray-900/15 transition hover:scale-[1.01] hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-1">
               <FaDownload />
-              Export
+              <TranslatedText text="Export" />
             </button>
           </div>
         </div>
@@ -227,7 +228,7 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Cargos</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Cargos" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.length}</p>
             </div>
             <FaBox className="text-purple-500 text-3xl" />
@@ -236,7 +237,7 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">In Transit</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="In Transit" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.status === 'in_transit').length}</p>
             </div>
             <FaTruck className="text-green-500 text-3xl" />
@@ -245,7 +246,7 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Critical</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Critical" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.urgency === 'critical').length}</p>
             </div>
             <FaClock className="text-red-500 text-3xl" />
@@ -254,7 +255,7 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Hazardous</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Hazardous" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.isHazardous).length}</p>
             </div>
             <FaExclamationTriangle className="text-yellow-500 text-3xl" />
@@ -263,7 +264,7 @@ const CargoManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Value</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Value" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">${cargos.reduce((acc, c) => acc + c.value, 0).toLocaleString()}</p>
             </div>
             <FaDollarSign className="text-blue-500 text-3xl" />
@@ -277,12 +278,12 @@ const CargoManagement: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Cargo</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Route</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Details</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Cargo" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Route" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Details" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Timeline" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">

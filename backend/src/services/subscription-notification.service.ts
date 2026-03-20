@@ -2,14 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { CreditAccount } from '../entities/credit-account.entity';
-import { TenantSubscription, SubscriptionStatus } from '../entities/tenant-subscription.entity';
-import { Tenant } from '../entities/tenant.entity';
-import { User } from '../entities/user.entity';
+import { CreditAccount } from './../entities/credit-account.entity';
+import { TenantSubscription, SubscriptionStatus } from './../entities/tenant-subscription.entity';
+import { Tenant } from './../entities/tenant.entity';
+import { User } from './../entities/user.entity';
 import { CreditService } from './credit.service';
 import { SubscriptionService } from './subscription.service';
 import { NotificationDeliveryService } from './notification-delivery.service';
-import { NotificationType } from '../entities/notification-preference.entity';
+import { NotificationType } from './../entities/notification-preference.entity';
 
 export interface NotificationData {
   type: 'LOW_BALANCE' | 'SUBSCRIPTION_EXPIRING' | 'TRIAL_EXPIRING' | 'PAYMENT_FAILED' | 'CREDITS_EXPIRED';

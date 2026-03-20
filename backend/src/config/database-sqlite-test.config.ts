@@ -5,9 +5,9 @@
  * This configuration may be kept for reference or future SQLite test support.
  */
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { Load } from '../entities/load.entity';
-import { Location } from '../entities/location.entity';
-import { User } from '../entities/user.entity';
+import { Load } from './../entities/load.entity';
+import { Location } from './../entities/location.entity';
+import { User } from './../entities/user.entity';
 // Exclude UserProfile and other entities with jsonb fields for SQLite testing
 
 export const databaseSqliteTestConfig: TypeOrmModuleOptions = {

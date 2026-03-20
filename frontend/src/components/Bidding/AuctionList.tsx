@@ -53,7 +53,7 @@ interface Auction {
 }
 
 interface AuctionListProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER';
   showWatchedOnly?: boolean;
 }
 
@@ -279,7 +279,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         bidCurrency: 'USD',
         proposedPickupDate: proposedPickupDate,
         proposedDeliveryDate: proposedDeliveryDate,
-        bidNotes: 'Quick bid from Truck Owner',
+        bidNotes: `Quick bid from ${userRole === 'BROKER' ? 'Broker' : 'Truck Owner'}`,
         advancePaymentPercentage: quickRequireAdvancePayment ? advancePercentage : undefined,
         requireAdvancePayment: quickRequireAdvancePayment,
         bidDetails: { truckSpecifications: {} },
@@ -1177,7 +1177,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   Bidding available on ACTIVE auctions only — this auction is {detailsAuction.status}
                 </p>
               )}
-              {userRole === 'TRUCK_OWNER' && (
+              {(userRole === 'TRUCK_OWNER' || userRole === 'BROKER') && (
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => { setShowDetailsModal(false); openQuickBidModal(detailsAuction); }}
@@ -1201,7 +1201,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   </button>
                 </div>
               )}
-              {userRole !== 'TRUCK_OWNER' && (
+              {(userRole !== 'TRUCK_OWNER' && userRole !== 'BROKER') && (
                 <button onClick={() => setShowDetailsModal(false)} className="py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
                   Close
                 </button>

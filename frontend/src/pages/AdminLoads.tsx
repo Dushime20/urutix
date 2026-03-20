@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { loadsAPI } from '../services/load';
 import { fetchTenants, fetchAllUsers, fetchAllLoads } from '../services/adminApi';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 import {
   Package, Search, Download,
@@ -263,30 +264,30 @@ const AdminLoads: React.FC = () => {
   // Calculate stats
   const stats = [
     {
-      label: 'Total Loads',
+      label: <TranslatedText text="Total Loads" />,
       value: loads.length,
-      description: 'All registered loads',
+      description: <TranslatedText text="All registered loads" />,
       color: 'bg-gray-800',
       icon: Package
     },
     {
-      label: 'Active',
+      label: <TranslatedText text="Active" />,
       value: loads.filter((l: Load) => l.status === 'CREATED' || l.status === 'PUBLISHED' || l.status === 'IN_PROGRESS').length,
-      description: 'Currently active',
+      description: <TranslatedText text="Currently active" />,
       color: 'bg-gray-800',
       icon: Play
     },
     {
-      label: 'Draft',
+      label: <TranslatedText text="Draft" />,
       value: loads.filter((l: Load) => l.status === 'DRAFT').length,
-      description: 'Draft loads',
+      description: <TranslatedText text="Draft loads" />,
       color: 'bg-gray-800',
       icon: Pause
     },
     {
-      label: 'Completed',
+      label: <TranslatedText text="Completed" />,
       value: loads.filter((l: Load) => l.status === 'COMPLETED' || l.status === 'DELIVERED').length,
-      description: 'Completed deliveries',
+      description: <TranslatedText text="Completed deliveries" />,
       color: 'bg-gray-800',
       icon: Check
     }
@@ -332,7 +333,7 @@ const AdminLoads: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-        <span className="ml-2 text-sm text-gray-600">Loading loads...</span>
+        <span className="ml-2 text-sm text-gray-600"><TranslatedText text="Loading loads..." /></span>
       </div>
     );
   }
@@ -345,8 +346,8 @@ const AdminLoads: React.FC = () => {
             <AlertTriangle className="text-red-600" size={20} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">Error Loading Loads</h2>
-            <p className="text-sm text-gray-600 mt-0.5">Please try refreshing the page or contact support.</p>
+            <h2 className="text-base font-bold text-gray-900"><TranslatedText text="Error Loading Loads" /></h2>
+            <p className="text-sm text-gray-600 mt-0.5"><TranslatedText text="Please try refreshing the page or contact support." /></p>
           </div>
         </div>
       </div>
@@ -355,8 +356,8 @@ const AdminLoads: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Load Management"
-      description="Manage cargo loads and shipments"
+      title={<TranslatedText text="Load Management" />}
+      description={<TranslatedText text="Manage cargo loads and shipments" />}
     >
 
       {/* Stats Grid */}
@@ -402,14 +403,14 @@ const AdminLoads: React.FC = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All Status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="CREATED">Created</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="DELIVERED">Delivered</option>
-            <option value="CANCELLED">Cancelled</option>
+            <option value="all"><TranslatedText text="All Status" /></option>
+            <option value="DRAFT"><TranslatedText text="Draft" /></option>
+            <option value="CREATED"><TranslatedText text="Created" /></option>
+            <option value="PUBLISHED"><TranslatedText text="Published" /></option>
+            <option value="IN_PROGRESS"><TranslatedText text="In Progress" /></option>
+            <option value="COMPLETED"><TranslatedText text="Completed" /></option>
+            <option value="DELIVERED"><TranslatedText text="Delivered" /></option>
+            <option value="CANCELLED"><TranslatedText text="Cancelled" /></option>
           </select>
 
           <select
@@ -417,18 +418,18 @@ const AdminLoads: React.FC = () => {
             value={cargoTypeFilter}
             onChange={(e) => setCargoTypeFilter(e.target.value)}
           >
-            <option value="all">All Types</option>
-            <option value="GENERAL">General</option>
-            <option value="FRAGILE">Fragile</option>
-            <option value="HAZARDOUS">Hazardous</option>
-            <option value="REFRIGERATED">Refrigerated</option>
-            <option value="LIVESTOCK">Livestock</option>
-            <option value="VEHICLES">Vehicles</option>
+            <option value="all"><TranslatedText text="All Types" /></option>
+            <option value="GENERAL"><TranslatedText text="General" /></option>
+            <option value="FRAGILE"><TranslatedText text="Fragile" /></option>
+            <option value="HAZARDOUS"><TranslatedText text="Hazardous" /></option>
+            <option value="REFRIGERATED"><TranslatedText text="Refrigerated" /></option>
+            <option value="LIVESTOCK"><TranslatedText text="Livestock" /></option>
+            <option value="VEHICLES"><TranslatedText text="Vehicles" /></option>
           </select>
 
           <button className="px-3 py-2 text-sm border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
             <Download size={16} />
-            <span>Export</span>
+            <span><TranslatedText text="Export" /></span>
           </button>
         </div>
 
@@ -478,23 +479,23 @@ const AdminLoads: React.FC = () => {
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
-                    <span>Load</span>
+                    <span><TranslatedText text="Load" /></span>
                     <ChevronsUpDown size={14} />
                   </button>
                 </th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo Details</th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization</th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Value</th>
-                <th className="px-3 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Cargo Details" /></th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Route" /></th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Organization" /></th>
+                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Value" /></th>
+                <th className="px-3 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {pagedLoads.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-2 py-8 text-center text-xs text-gray-500">
-                    No loads found
+                    <TranslatedText text="No loads found" />
                   </td>
                 </tr>
               ) : (
@@ -520,7 +521,7 @@ const AdminLoads: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-gray-900 truncate">{load.title}</p>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{load.description || 'No description'}</p>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{load.description || <TranslatedText text="No description" />}</p>
                         </div>
                       </div>
                     </td>
@@ -547,7 +548,7 @@ const AdminLoads: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <MapPin className="text-green-500" size={10} />
                             <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]" title={load.pickupLocation.name || load.pickupLocation.address}>
-                              {load.pickupLocation.name || load.pickupLocation.address || 'Pickup'}
+                              {load.pickupLocation.name || load.pickupLocation.address || <TranslatedText text="Pickup" />}
                             </span>
                           </div>
                         )}
@@ -555,7 +556,7 @@ const AdminLoads: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <MapPin className="text-red-500" size={10} />
                             <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]" title={load.deliveryLocation.name || load.deliveryLocation.address}>
-                              {load.deliveryLocation.name || load.deliveryLocation.address || 'Delivery'}
+                              {load.deliveryLocation.name || load.deliveryLocation.address || <TranslatedText text="Delivery" />}
                             </span>
                           </div>
                         )}
@@ -606,7 +607,7 @@ const AdminLoads: React.FC = () => {
                         )}
                         {load.loadValue && (
                           <div className="text-[10px] text-gray-500 font-medium">
-                            Value: {(load.loadValue || 0).toLocaleString()}
+                            <TranslatedText text="Value" />: {(load.loadValue || 0).toLocaleString()}
                           </div>
                         )}
                       </div>
@@ -619,14 +620,14 @@ const AdminLoads: React.FC = () => {
                             setShowDetailsModal(true);
                           }}
                           className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="View Details"
+                          title={<TranslatedText text="View Details" />}
                         >
                           <Eye size={14} />
                         </button>
                         <button
                           onClick={() => handleDeleteLoad(load.id)}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
+                          title={<TranslatedText text="Delete" />}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -641,7 +642,7 @@ const AdminLoads: React.FC = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
           <div className="text-[10px] text-gray-600">
-            Showing {Math.min(endIdx, total)} of {total}
+            <TranslatedText text="Showing" /> {Math.min(endIdx, total)} <TranslatedText text="of" /> {total}
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -649,15 +650,15 @@ const AdminLoads: React.FC = () => {
               onClick={() => setPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
-              Previous
+              <TranslatedText text="Previous" />
             </button>
-            <span className="text-[10px] text-gray-700">Page {currentPage} / {totalPages}</span>
+            <span className="text-[10px] text-gray-700"><TranslatedText text="Page" /> {currentPage} / {totalPages}</span>
             <button
               className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
               onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              <TranslatedText text="Next" />
             </button>
           </div>
         </div>
@@ -675,7 +676,7 @@ const AdminLoads: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">{selectedLoad.title}</h2>
-                    <p className="text-xs text-gray-500">{selectedLoad.description || 'No description'}</p>
+                    <p className="text-xs text-gray-500">{selectedLoad.description || <TranslatedText text="No description" />}</p>
                   </div>
                 </div>
                 <button
@@ -700,7 +701,7 @@ const AdminLoads: React.FC = () => {
                   </span>
                   {selectedLoad.urgencyLevel && (
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-orange-100 text-orange-800">
-                      {selectedLoad.urgencyLevel} Priority
+                      {selectedLoad.urgencyLevel} <TranslatedText text="Priority" />
                     </span>
                   )}
                 </div>
@@ -713,7 +714,7 @@ const AdminLoads: React.FC = () => {
                     <Weight className="text-indigo-600" size={16} />
                     <div>
                       <div className="text-sm font-black text-indigo-900">{(selectedLoad.weight || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-indigo-700">Weight (kg)</div>
+                      <div className="text-[10px] text-indigo-700"><TranslatedText text="Weight (kg)" /></div>
                     </div>
                   </div>
                 </div>
@@ -724,7 +725,7 @@ const AdminLoads: React.FC = () => {
                       <Box className="text-gray-600" size={16} />
                       <div>
                         <div className="text-sm font-black text-gray-900">{(selectedLoad.volume || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-gray-500">Volume (m³)</div>
+                        <div className="text-[10px] text-gray-500"><TranslatedText text="Volume (m³)" /></div>
                       </div>
                     </div>
                   </div>
@@ -736,7 +737,7 @@ const AdminLoads: React.FC = () => {
                       <DollarSign className="text-green-600" size={16} />
                       <div>
                         <div className="text-sm font-black text-green-900">{(selectedLoad.offeredPrice || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-green-700">Offered Price</div>
+                        <div className="text-[10px] text-green-700"><TranslatedText text="Offered Price" /></div>
                       </div>
                     </div>
                   </div>
@@ -748,7 +749,7 @@ const AdminLoads: React.FC = () => {
                       <DollarSign className="text-yellow-600" size={16} />
                       <div>
                         <div className="text-sm font-black text-yellow-900">{(selectedLoad.loadValue || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-yellow-700">Load Value</div>
+                        <div className="text-[10px] text-yellow-700"><TranslatedText text="Load Value" /></div>
                       </div>
                     </div>
                   </div>
@@ -758,72 +759,72 @@ const AdminLoads: React.FC = () => {
               {/* Load Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Load Information</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><TranslatedText text="Load Information" /></h3>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Title:</span>
+                      <span className="text-gray-600"><TranslatedText text="Title" />:</span>
                       <span className="font-medium">{selectedLoad.title}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Cargo Type:</span>
+                      <span className="text-gray-600"><TranslatedText text="Cargo Type" />:</span>
                       <span className="font-medium">{selectedLoad.cargoType || 'GENERAL'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Weight:</span>
+                      <span className="text-gray-600"><TranslatedText text="Weight" />:</span>
                       <span className="font-medium">{(selectedLoad.weight || 0).toLocaleString()} kg</span>
                     </div>
                     {selectedLoad.volume && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Volume:</span>
+                        <span className="text-gray-600"><TranslatedText text="Volume" />:</span>
                         <span className="font-medium">{(selectedLoad.volume || 0).toLocaleString()} m³</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tenant:</span>
+                      <span className="text-gray-600"><TranslatedText text="Tenant" />:</span>
                       <span className="font-medium">{selectedLoad.tenantName || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Cargo Owner:</span>
+                      <span className="text-gray-600"><TranslatedText text="Cargo Owner" />:</span>
                       <span className="font-medium">{selectedLoad.cargoOwnerName || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Route & Dates</h3>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><TranslatedText text="Route & Dates" /></h3>
                   <div className="space-y-1.5 text-xs">
                     {selectedLoad.pickupLocation && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Pickup:</span>
+                        <span className="text-gray-600"><TranslatedText text="Pickup" />:</span>
                         <span className="font-medium">{selectedLoad.pickupLocation.name || selectedLoad.pickupLocation.address || 'N/A'}</span>
                       </div>
                     )}
                     {selectedLoad.deliveryLocation && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Delivery:</span>
+                        <span className="text-gray-600"><TranslatedText text="Delivery" />:</span>
                         <span className="font-medium">{selectedLoad.deliveryLocation.name || selectedLoad.deliveryLocation.address || 'N/A'}</span>
                       </div>
                     )}
                     {selectedLoad.pickupDate && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Pickup Date:</span>
+                        <span className="text-gray-600"><TranslatedText text="Pickup Date" />:</span>
                         <span className="font-medium">{new Date(selectedLoad.pickupDate).toLocaleString()}</span>
                       </div>
                     )}
                     {selectedLoad.deliveryDate && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Delivery Date:</span>
+                        <span className="text-gray-600"><TranslatedText text="Delivery Date" />:</span>
                         <span className="font-medium">{new Date(selectedLoad.deliveryDate).toLocaleString()}</span>
                       </div>
                     )}
                     {selectedLoad.offeredPrice && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Offered Price:</span>
+                        <span className="text-gray-600"><TranslatedText text="Offered Price" />:</span>
                         <span className="font-medium">{(selectedLoad.offeredPrice || 0).toLocaleString()} {selectedLoad.currencyCode || 'RWF'}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Created:</span>
+                      <span className="text-gray-600"><TranslatedText text="Created" />:</span>
                       <span className="font-medium">{new Date(selectedLoad.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
@@ -833,7 +834,7 @@ const AdminLoads: React.FC = () => {
               {/* Description */}
               {selectedLoad.description && (
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Description</h3>
+                  <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Description" /></h3>
                   <p className="text-xs text-gray-700 bg-gray-50 p-2 rounded-lg">{selectedLoad.description}</p>
                 </div>
               )}

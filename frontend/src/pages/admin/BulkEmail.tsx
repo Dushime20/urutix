@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import AIEmailAssistant from '../../components/Admin/AIEmailAssistant';
+import { TranslatedText } from '../../components/translated-text';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import {
@@ -269,8 +270,8 @@ const BulkEmail: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Communications Hub"
-      description="Send campaigns to all tenants via Email, SMS, WhatsApp & In-App"
+      title={<TranslatedText text="Communications Hub" />}
+      description={<TranslatedText text="Send campaigns to all tenants via Email, SMS, WhatsApp & In-App" />}
     >
       <div className="space-y-6">
 
@@ -281,10 +282,10 @@ const BulkEmail: React.FC = () => {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-1.5">
               <div className="p-2 bg-white/20 rounded-xl"><Megaphone className="w-5 h-5 text-white" /></div>
-              <span className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">Super Admin · Broadcast</span>
+              <span className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]"><TranslatedText text="Super Admin · Broadcast" /></span>
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight">Multi-Channel Outreach</h2>
-            <p className="text-white/50 text-xs mt-1 font-medium">Reach all Tenant Admins across every channel simultaneously</p>
+            <h2 className="text-2xl font-black text-white tracking-tight"><TranslatedText text="Multi-Channel Outreach" /></h2>
+            <p className="text-white/50 text-xs mt-1 font-medium"><TranslatedText text="Reach all Tenant Admins across every channel simultaneously" /></p>
           </div>
           <div className="relative z-10 flex gap-2">
             {CHANNELS.map(ch => {
@@ -310,7 +311,7 @@ const BulkEmail: React.FC = () => {
                   ? { background: '#1e293b', color: '#fff', boxShadow: '0 4px 14px rgba(30,41,59,0.3)' }
                   : { color: '#64748b' }}>
                 <Icon size={14} strokeWidth={active ? 2.5 : 2} />
-                {label}
+                <TranslatedText text={label} />
               </button>
             );
           })}
@@ -325,7 +326,7 @@ const BulkEmail: React.FC = () => {
 
               {/* Channel picker */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">1. Channels</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4"><TranslatedText text="1. Channels" /></p>
                 <div className="space-y-2">
                   {CHANNELS.map(ch => {
                     const Icon = ch.icon;
@@ -350,7 +351,7 @@ const BulkEmail: React.FC = () => {
                   })}
                 </div>
                 {selectedChannels.length === 0 && (
-                  <p className="text-xs text-red-400 font-medium text-center mt-3">Select at least one channel</p>
+                  <p className="text-xs text-red-400 font-medium text-center mt-3"><TranslatedText text="Select at least one channel" /></p>
                 )}
               </div>
 
@@ -359,7 +360,7 @@ const BulkEmail: React.FC = () => {
                 <button className="w-full flex items-center justify-between px-5 py-4" onClick={() => setShowFilters(v => !v)}>
                   <div className="flex items-center gap-2">
                     <Filter size={13} className="text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Recipient Filters</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="2. Recipient Filters" /></span>
                     {(filterStatus.length + selectedTenantIds.length) > 0 && (
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white bg-slate-800">
                         {filterStatus.length + selectedTenantIds.length}
@@ -374,7 +375,7 @@ const BulkEmail: React.FC = () => {
 
                     {/* Status checkboxes */}
                     <div className="pt-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tenant Status</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Tenant Status" /></p>
                       <div className="space-y-1.5">
                         {STATUS_OPTIONS.map(opt => (
                           <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
@@ -393,18 +394,18 @@ const BulkEmail: React.FC = () => {
                     {/* ── Multi-Select Tenant Picker ── */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specific Tenants</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Specific Tenants" /></p>
                         <div className="flex items-center gap-2">
                           {selectedTenantIds.length > 0 && (
                             <button onClick={() => setSelectedTenantIds([])}
                               className="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest">
-                              Clear ({selectedTenantIds.length})
+                              <TranslatedText text="Clear" /> ({selectedTenantIds.length})
                             </button>
                           )}
                           {allTenants.length > 0 && selectedTenantIds.length < allTenants.length && (
                             <button onClick={() => setSelectedTenantIds(allTenants.map(t => t.id))}
                               className="text-[9px] font-black text-slate-500 hover:text-slate-800 uppercase tracking-widest">
-                              All
+                              <TranslatedText text="All" />
                             </button>
                           )}
                         </div>
@@ -437,7 +438,7 @@ const BulkEmail: React.FC = () => {
                         <span className="flex items-center gap-2">
                           <Building2 size={13} className="text-slate-400" />
                           {selectedTenantIds.length === 0
-                            ? 'Select tenants…'
+                            ? <TranslatedText text="Select tenants…" />
                             : `${selectedTenantIds.length} of ${allTenants.length} selected`}
                         </span>
                         {tenantPickerOpen ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
@@ -507,18 +508,18 @@ const BulkEmail: React.FC = () => {
                               const q = tenantSearch.toLowerCase();
                               return !q || t.name?.toLowerCase().includes(q);
                             }).length === 0 && (
-                              <p className="text-center text-xs text-slate-400 py-6 font-medium">No tenants found</p>
+                              <p className="text-center text-xs text-slate-400 py-6 font-medium"><TranslatedText text="No tenants found" /></p>
                             )}
                           </div>
 
                           {/* Footer */}
                           <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
                             <p className="text-[10px] text-slate-400 font-medium">
-                              {selectedTenantIds.length} selected · {allTenants.length} total
+                              {selectedTenantIds.length} <TranslatedText text="selected" /> · {allTenants.length} <TranslatedText text="total" />
                             </p>
                             <button onClick={() => setTenantPickerOpen(false)}
                               className="text-[10px] font-black text-slate-800 uppercase tracking-widest hover:underline">
-                              Done
+                              <TranslatedText text="Done" />
                             </button>
                           </div>
                         </div>
@@ -528,11 +529,11 @@ const BulkEmail: React.FC = () => {
                     {(filterStatus.length > 0 || selectedTenantIds.length > 0) && (
                       <button onClick={() => { setFilterStatus([]); setSelectedTenantIds([]); }}
                         className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest">
-                        Clear All Filters
+                        <TranslatedText text="Clear All Filters" />
                       </button>
                     )}
                     {filterStatus.length === 0 && selectedTenantIds.length === 0 && (
-                      <p className="text-[10px] text-slate-400 font-medium">No filter → all Tenant Admins</p>
+                      <p className="text-[10px] text-slate-400 font-medium"><TranslatedText text="No filter → all Tenant Admins" /></p>
                     )}
                   </div>
                 )}
@@ -542,7 +543,7 @@ const BulkEmail: React.FC = () => {
             {/* Right: Composer */}
             <div className="xl:col-span-2 space-y-4">
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5">3. Compose Message</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5"><TranslatedText text="3. Compose Message" /></p>
 
                 {/* Template vs Custom toggle */}
                 <div className="flex gap-3 mb-5">
@@ -556,7 +557,7 @@ const BulkEmail: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all"
                         style={active ? { borderColor: '#1e293b', background: '#f8fafc', color: '#1e293b' } : { borderColor: '#e2e8f0', color: '#64748b' }}>
                         <Icon size={13} />
-                        {label}
+                        <TranslatedText text={label} />
                       </button>
                     );
                   })}
@@ -564,10 +565,10 @@ const BulkEmail: React.FC = () => {
 
                 {useTemplate ? (
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Select Template</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Select Template" /></label>
                     <select value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-slate-300">
-                      <option value="">Choose a template…</option>
+                      <option value=""><TranslatedText text="Choose a template…" /></option>
                       {templates.filter(t => t.isActive).map(t => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
@@ -577,7 +578,7 @@ const BulkEmail: React.FC = () => {
                   <div className="space-y-4">
                     {/* Subject */}
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Subject / Title</label>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Subject / Title" /></label>
                       <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
                         placeholder="E.g. Platform Maintenance — Friday 22:00 UTC"
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all" />
@@ -587,14 +588,14 @@ const BulkEmail: React.FC = () => {
                     {needsMessage && (
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                          Message
+                          <TranslatedText text="Message" />
                           <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 normal-case text-[9px] font-bold">SMS · WhatsApp · In-App</span>
                         </label>
                         <textarea rows={4} value={message} onChange={e => setMessage(e.target.value)}
                           placeholder="Keep under 160 characters for SMS. Plain text — no HTML."
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none resize-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all" />
                         <div className="flex justify-between mt-1">
-                          <p className="text-[10px] text-slate-400 font-medium">Recommended: ≤ 160 chars for SMS</p>
+                          <p className="text-[10px] text-slate-400 font-medium"><TranslatedText text="Recommended: ≤ 160 chars for SMS" /></p>
                           <p className={`text-[10px] font-bold tabular-nums ${message.length > 160 ? 'text-amber-500' : 'text-slate-400'}`}>{message.length} chars</p>
                         </div>
                       </div>
@@ -606,7 +607,7 @@ const BulkEmail: React.FC = () => {
                         <button onClick={() => setShowHtml(v => !v)}
                           className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 hover:text-slate-700 transition-colors">
                           <Mail size={11} />
-                          Email HTML Body (optional — uses message text if blank)
+                          <TranslatedText text="Email HTML Body (optional — uses message text if blank)" />
                           {showHtml ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                         </button>
                         {showHtml && (
@@ -636,10 +637,10 @@ const BulkEmail: React.FC = () => {
               {/* Send bar */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sending via</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Sending via" /></p>
                   <div className="flex flex-wrap gap-2">
                     {selectedChannels.length === 0
-                      ? <span className="text-xs text-red-400 font-medium">No channels selected</span>
+                      ? <span className="text-xs text-red-400 font-medium"><TranslatedText text="No channels selected" /></span>
                       : selectedChannels.map(ch => <ChannelPill key={ch} ch={ch} />)
                     }
                   </div>
@@ -648,14 +649,14 @@ const BulkEmail: React.FC = () => {
                   {needsHtml && !useTemplate && (
                     <button onClick={handlePreview} disabled={!canSend}
                       className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                      <Eye size={14} /> Preview
+                      <Eye size={14} /> <TranslatedText text="Preview" />
                     </button>
                   )}
                   <button onClick={handleSend} disabled={loading || !canSend}
                     className="flex items-center gap-2 px-7 py-2.5 text-white rounded-xl font-bold text-xs uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 transition-all"
                     style={{ background: '#1e293b', boxShadow: '0 6px 20px rgba(30,41,59,0.35)' }}>
                     {loading ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                    {loading ? 'Sending…' : 'Launch Campaign'}
+                    <TranslatedText text={loading ? 'Sending…' : 'Launch Campaign'} />
                   </button>
                 </div>
               </div>
@@ -668,14 +669,14 @@ const BulkEmail: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-black text-slate-800">Email Templates</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Reusable HTML templates for email campaigns</p>
+                <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Email Templates" /></h3>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Reusable HTML templates for email campaigns" /></p>
               </div>
               <button
                 onClick={() => { setEditingTemplate(null); setTemplateForm({ name: '', subject: '', htmlBody: '', textBody: '', description: '', category: 'general', isActive: true }); setIsTemplateModalOpen(true); }}
                 className="flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md transition-all hover:-translate-y-0.5"
                 style={{ background: '#1e293b' }}>
-                <Plus size={15} /> New Template
+                <Plus size={15} /> <TranslatedText text="New Template" />
               </button>
             </div>
 
@@ -684,19 +685,19 @@ const BulkEmail: React.FC = () => {
                 <div className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
                   <FileText className="text-slate-300" size={32} />
                 </div>
-                <p className="font-bold text-slate-500">No templates yet</p>
-                <p className="text-xs text-slate-400 mt-1">Create your first email template to reuse in campaigns.</p>
+                <p className="font-bold text-slate-500"><TranslatedText text="No templates yet" /></p>
+                <p className="text-xs text-slate-400 mt-1"><TranslatedText text="Create your first email template to reuse in campaigns." /></p>
               </div>
             ) : (
               <div className="overflow-hidden rounded-xl border border-slate-100">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Name" /></th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Subject" /></th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Category" /></th>
+                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -712,7 +713,7 @@ const BulkEmail: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${t.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                            {t.isActive ? 'Active' : 'Inactive'}
+                            <TranslatedText text={t.isActive ? 'Active' : 'Inactive'} />
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -741,13 +742,13 @@ const BulkEmail: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-black text-slate-800">Campaign History</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{logs.length} campaign{logs.length !== 1 ? 's' : ''}</p>
+                <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Campaign History" /></h3>
+                <p className="text-xs text-slate-400 mt-0.5">{logs.length} <TranslatedText text={logs.length !== 1 ? 'campaigns' : 'campaign'} /></p>
               </div>
               <button onClick={fetchLogs} disabled={logsLoading}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-all">
                 <RefreshCw size={13} className={logsLoading ? 'animate-spin' : ''} />
-                Refresh
+                <TranslatedText text="Refresh" />
               </button>
             </div>
 
@@ -756,19 +757,19 @@ const BulkEmail: React.FC = () => {
                 <div className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
                   <Clock className="text-slate-300" size={32} />
                 </div>
-                <p className="font-bold text-slate-500">No campaigns yet</p>
+                <p className="font-bold text-slate-500"><TranslatedText text="No campaigns yet" /></p>
               </div>
             ) : (
               <div className="overflow-hidden rounded-xl border border-slate-100">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Recipients</th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Sent</th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Failed</th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Subject" /></th>
+                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Recipients" /></th>
+                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Sent" /></th>
+                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Failed" /></th>
+                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Date" /></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -808,8 +809,8 @@ const BulkEmail: React.FC = () => {
           <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-white/90 backdrop-blur-md px-8 py-5 border-b border-slate-100 flex items-center justify-between z-10">
               <div>
-                <h2 className="text-xl font-black text-slate-800">{editingTemplate ? 'Edit Template' : 'New Template'}</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Configure email template</p>
+                <h2 className="text-xl font-black text-slate-800"><TranslatedText text={editingTemplate ? 'Edit Template' : 'New Template'} /></h2>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Configure email template" /></p>
               </div>
               <button onClick={() => setIsTemplateModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
                 <XCircle size={22} />
@@ -819,13 +820,13 @@ const BulkEmail: React.FC = () => {
             <div className="p-8 space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Template Name</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Template Name" /></label>
                   <input type="text" value={templateForm.name} onChange={e => setTemplateForm({ ...templateForm, name: e.target.value })}
                     placeholder="e.g. Welcome Email"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-slate-300" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Category</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Category" /></label>
                   <select value={templateForm.category} onChange={e => setTemplateForm({ ...templateForm, category: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-slate-300">
                     {CATEGORY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -833,36 +834,36 @@ const BulkEmail: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Subject Line</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Subject Line" /></label>
                 <input type="text" value={templateForm.subject} onChange={e => setTemplateForm({ ...templateForm, subject: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-slate-300" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Description</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Description" /></label>
                 <input type="text" value={templateForm.description} onChange={e => setTemplateForm({ ...templateForm, description: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-slate-300" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">HTML Content</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="HTML Content" /></label>
                 <textarea rows={7} value={templateForm.htmlBody} onChange={e => setTemplateForm({ ...templateForm, htmlBody: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-300" />
               </div>
               <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer">
                 <input type="checkbox" checked={templateForm.isActive} onChange={e => setTemplateForm({ ...templateForm, isActive: e.target.checked })}
                   className="w-4 h-4 accent-slate-800 rounded" />
-                <span className="text-sm font-bold text-slate-700">Set as Active Template</span>
+                <span className="text-sm font-bold text-slate-700"><TranslatedText text="Set as Active Template" /></span>
               </label>
             </div>
 
             <div className="sticky bottom-0 bg-white border-t border-slate-100 px-8 py-5 flex items-center justify-end gap-3 z-10">
               <button onClick={() => setIsTemplateModalOpen(false)}
                 className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-50">
-                Cancel
+                <TranslatedText text="Cancel" />
               </button>
               <button onClick={handleSaveTemplate} disabled={loading}
                 className="px-5 py-2.5 text-white rounded-xl font-bold text-xs uppercase tracking-wider disabled:opacity-50"
                 style={{ background: '#1e293b' }}>
-                {loading ? 'Saving…' : 'Save Template'}
+                <TranslatedText text={loading ? 'Saving…' : 'Save Template'} />
               </button>
             </div>
           </div>
@@ -875,7 +876,7 @@ const BulkEmail: React.FC = () => {
           <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl">
             <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div>
-                <h2 className="text-base font-black text-slate-800">Email Preview</h2>
+                <h2 className="text-base font-black text-slate-800"><TranslatedText text="Email Preview" /></h2>
                 <p className="text-[10px] text-slate-400 mt-0.5">{previewContent.subject}</p>
               </div>
               <button onClick={() => setPreviewOpen(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400">

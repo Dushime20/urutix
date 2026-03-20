@@ -45,6 +45,8 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { TrucksList } from './TrucksList';
 import { TruckMatches } from './TruckMatches';
 import { TruckOwnerRecentActivities } from './TruckOwnerRecentActivities';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
@@ -72,6 +74,7 @@ export const FleetDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading: authLoading, accessToken } = useAuth();
+  const { tSync } = useTranslation();
   const layoutContext = useCargoOwnerLayout();
   const { setHideHeader } = layoutContext || {};
   const { DialogComponent } = useConfirmDialog();
@@ -356,13 +359,15 @@ export const FleetDashboard: React.FC = () => {
                   <div className="h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-500 shadow-inner">
                     <Truck size={20} />
                   </div>
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-500">Fleet Dashboard</h2>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-500">
+                    <TranslatedText text="Fleet Dashboard" />
+                  </h2>
                 </div>
 
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-1">
                   {(() => {
                     const hour = new Date().getHours();
-                    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                    const greeting = hour < 12 ? tSync('Good morning') : hour < 18 ? tSync('Good afternoon') : tSync('Good evening');
                     const displayName = userProfileName || (user?.firstName
                       ? `${user.firstName} ${user.lastName || ''}`.trim()
                       : (user as any)?.profile?.firstName
@@ -373,7 +378,7 @@ export const FleetDashboard: React.FC = () => {
                   })()}
                 </h1>
                 <p className="text-lg text-slate-500 font-medium max-w-xl">
-                  Manage your trucks, drivers and fleet performance.
+                  <TranslatedText text="Manage your trucks, drivers and fleet performance." />
                 </p>
               </div>
 
@@ -383,21 +388,21 @@ export const FleetDashboard: React.FC = () => {
                   className="flex items-center gap-2.5 px-6 py-4 bg-primary-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary-500/20 hover:bg-primary-600 active:scale-95 transition-all group"
                 >
                   <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-                  Add New Truck
+                  <TranslatedText text="Add New Truck" />
                 </button>
                 <button
                   onClick={handleCreateDriver}
                   className="flex items-center gap-2.5 px-6 py-4 bg-white text-slate-700 border border-slate-100 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:border-primary-500 hover:text-primary-500 active:scale-95 transition-all"
                 >
                   <User size={18} />
-                  Add New Driver
+                  <TranslatedText text="Add New Driver" />
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/fleet/fuel')}
                   className="flex items-center gap-2.5 px-6 py-4 bg-primary-50 text-primary-500 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-primary-100 active:scale-95 transition-all"
                 >
                   <Fuel size={18} />
-                  Log Fuel
+                  <TranslatedText text="Log Fuel" />
                 </button>
               </div>
             </div>
@@ -433,7 +438,7 @@ export const FleetDashboard: React.FC = () => {
                     }`}
                 >
                   <tab.icon size={16} />
-                  {tab.label}
+                  <TranslatedText text={tab.label} />
                 </button>
               ))}
             </div>
@@ -446,36 +451,36 @@ export const FleetDashboard: React.FC = () => {
               {/* Metrics Matrix */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 <StatCard
-                  title="Total Trucks"
+                  title={<TranslatedText text="Total Trucks" />}
                   value={trucks.length}
                   icon={<Truck />}
-                  subtitle={`${inTransit} In Transit • ${availableTrucks} Available`}
+                  subtitle={`${inTransit} ${tSync('In Transit')} • ${availableTrucks} ${tSync('Available')}`}
                   color="primary"
                   loading={loading}
                 />
 
                 <StatCard
-                  title="Utilization"
+                  title={<TranslatedText text="Utilization" />}
                   value={`${analytics?.utilizationRate !== undefined ? Math.round(analytics.utilizationRate) : utilization}%`}
                   icon={<Zap />}
-                  trend="Good"
+                  trend={tSync("Good")}
                   trendDirection="up"
                   color="info"
-                  subtitle="Fleet usage"
+                  subtitle={<TranslatedText text="Fleet usage" />}
                   loading={loading}
                 />
 
                 <StatCard
-                  title="Average Rating"
+                  title={<TranslatedText text="Average Rating" />}
                   value={analytics?.averageRating?.toFixed(1) || '0.0'}
                   icon={<Star />}
-                  subtitle="Driver Rating"
+                  subtitle={<TranslatedText text="Driver Rating" />}
                   color="warning"
                   loading={loading}
                 />
 
                 <StatCard
-                  title="Total Revenue"
+                  title={<TranslatedText text="Total Revenue" />}
                   value={analytics?.totalRevenue ? formatCurrency(analytics.totalRevenue) : 'KES 0'}
                   icon={<CreditCard />}
                   trend="+12.4%"
@@ -485,10 +490,10 @@ export const FleetDashboard: React.FC = () => {
                 />
 
                 <StatCard
-                  title="Safety Alerts"
+                  title={<TranslatedText text="Safety Alerts" />}
                   value="0"
                   icon={<AlertTriangle />}
-                  subtitle="All Good"
+                  subtitle={<TranslatedText text="All Good" />}
                   color="accent"
                   loading={loading}
                 />
@@ -502,9 +507,13 @@ export const FleetDashboard: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <MapIcon size={16} className="text-primary-500" />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Live Tracking</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">
+                          <TranslatedText text="Live Tracking" />
+                        </h3>
                       </div>
-                      <h4 className="text-xl font-black text-slate-900 tracking-tight">Fleet Map</h4>
+                      <h4 className="text-xl font-black text-slate-900 tracking-tight">
+                        <TranslatedText text="Fleet Map" />
+                      </h4>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex -space-x-2">
@@ -515,7 +524,7 @@ export const FleetDashboard: React.FC = () => {
                         ))}
                       </div>
                       <button className="flex items-center gap-2 px-5 py-2.5 bg-primary-50 text-primary-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all">
-                        <Zap size={14} /> Refresh Map
+                        <Zap size={14} /> <TranslatedText text="Refresh Map" />
                       </button>
                     </div>
                   </div>
@@ -585,7 +594,9 @@ export const FleetDashboard: React.FC = () => {
                       <div className="h-8 w-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
                         <Star size={16} fill="currentColor" />
                       </div>
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500">Top Driver</h3>
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500">
+                        <TranslatedText text="Top Driver" />
+                      </h3>
                     </div>
 
                     <div className="flex items-center gap-6 mb-8">
@@ -685,14 +696,16 @@ export const FleetDashboard: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-                      {activeTab === 'trucks' ? 'Trucks' :
-                        activeTab === 'analytics' ? 'Analytics' :
-                          activeTab === 'safety' ? 'Safety' :
-                            activeTab === 'financial' ? 'Financials' :
-                              activeTab === 'routes' ? 'Routes' :
-                                activeTab === 'matches' ? 'Matches' : 'Drivers'}
+                      {activeTab === 'trucks' ? <TranslatedText text="Trucks" /> :
+                        activeTab === 'analytics' ? <TranslatedText text="Analytics" /> :
+                          activeTab === 'safety' ? <TranslatedText text="Safety" /> :
+                            activeTab === 'financial' ? <TranslatedText text="Financials" /> :
+                              activeTab === 'routes' ? <TranslatedText text="Routes" /> :
+                                activeTab === 'matches' ? <TranslatedText text="Matches" /> : <TranslatedText text="Drivers" />}
                     </h2>
-                    <p className="text-sm font-medium text-slate-500">Status: <span className="text-emerald-500 font-black">Active</span></p>
+                    <p className="text-sm font-medium text-slate-500">
+                      <TranslatedText text="Status" />: <span className="text-emerald-500 font-black"><TranslatedText text="Active" /></span>
+                    </p>
                   </div>
                 </div>
 

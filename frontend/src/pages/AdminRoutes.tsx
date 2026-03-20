@@ -20,7 +20,9 @@ import {
   ShieldCheck, AlertTriangle,
   Play, Pause, Building2, Trash2
 } from 'lucide-react';
+import { FaShieldAlt } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 interface Route {
   id: string;
@@ -375,28 +377,28 @@ const AdminRoutes: React.FC = () => {
   // Use real analytics data with proper null checks
   const stats = [
     {
-      label: 'Total Routes',
+      label: <TranslatedText text="Total Routes" />,
       value: analyticsData?.totalRoutes ?? routes.length,
       icon: LucideMap,
       color: 'from-gray-600 to-gray-700',
-      description: 'All registered routes'
+      description: <TranslatedText text="All registered routes" />
     },
     {
-      label: 'Active Routes',
+      label: <TranslatedText text="Active Routes" />,
       value: analyticsData?.activeRoutes ?? routes.filter((r: Route) => r.status === 'active').length,
       icon: Check,
       color: 'from-gray-600 to-gray-700',
-      description: 'Currently operational'
+      description: <TranslatedText text="Currently operational" />
     },
     {
-      label: 'Total Distance',
+      label: <TranslatedText text="Total Distance" />,
       value: `${(analyticsData?.totalDistance ?? routes.reduce((sum: number, r: Route) => sum + (r.distance || 0), 0)).toLocaleString()} km`,
       icon: Milestone,
       color: 'from-gray-600 to-gray-700',
-      description: 'Combined route distance'
+      description: <TranslatedText text="Combined route distance" />
     },
     {
-      label: 'Assigned Trucks',
+      label: <TranslatedText text="Assigned Trucks" />,
       value: routes.reduce((sum: number, r: Route) => {
         if (Array.isArray(r.assignedTrucks)) {
           return sum + r.assignedTrucks.length;
@@ -405,7 +407,7 @@ const AdminRoutes: React.FC = () => {
       }, 0),
       icon: Truck,
       color: 'from-gray-600 to-gray-700',
-      description: 'Trucks using routes'
+      description: <TranslatedText text="Trucks using routes" />
     },
   ];
 
@@ -415,7 +417,7 @@ const AdminRoutes: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading routes...</p>
+          <p className="mt-4 text-gray-600"><TranslatedText text="Loading routes..." /></p>
         </div>
       </div>
     );
@@ -429,13 +431,13 @@ const AdminRoutes: React.FC = () => {
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
             <AlertTriangle className="text-red-500 text-lg" />
           </div>
-          <h2 className="mt-3 text-base font-semibold text-gray-900">Error Loading Routes</h2>
-          <p className="mt-1.5 text-sm text-gray-600">Failed to load route data. Please try again later.</p>
+          <h2 className="mt-3 text-base font-semibold text-gray-900"><TranslatedText text="Error Loading Routes" /></h2>
+          <p className="mt-1.5 text-sm text-gray-600"><TranslatedText text="Failed to load route data. Please try again later." /></p>
           <button
             onClick={() => window.location.reload()}
             className="mt-3 px-2.5 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
           >
-            Retry
+            <TranslatedText text="Retry" />
           </button>
         </div>
       </div>
@@ -497,8 +499,8 @@ const AdminRoutes: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Route Management"
-      description="Manage logistics routes and transportation corridors"
+      title={<TranslatedText text="Route Management" />}
+      description={<TranslatedText text="Manage logistics routes and transportation corridors" />}
       actions={
         canCreateRoutes && (
           <button
@@ -506,7 +508,7 @@ const AdminRoutes: React.FC = () => {
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 text-sm font-bold"
           >
             <Plus size={16} />
-            <span>Add Route</span>
+            <span><TranslatedText text="Add Route" /></span>
           </button>
         )
       }
@@ -555,11 +557,11 @@ const AdminRoutes: React.FC = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="under_construction">Under Construction</option>
-            <option value="blocked">Blocked</option>
+            <option value="all"><TranslatedText text="All Status" /></option>
+            <option value="active"><TranslatedText text="Active" /></option>
+            <option value="inactive"><TranslatedText text="Inactive" /></option>
+            <option value="under_construction"><TranslatedText text="Under Construction" /></option>
+            <option value="blocked"><TranslatedText text="Blocked" /></option>
           </select>
 
           <select
@@ -567,7 +569,7 @@ const AdminRoutes: React.FC = () => {
             value={tenantFilter}
             onChange={(e) => setTenantFilter(e.target.value)}
           >
-            <option value="all">All Tenants</option>
+            <option value="all"><TranslatedText text="All Tenants" /></option>
             {tenants.map((tenant) => (
               <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
             ))}
@@ -578,15 +580,15 @@ const AdminRoutes: React.FC = () => {
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
-            <option value="all">All Priorities</option>
-            <option value="high">High Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="low">Low Priority</option>
+            <option value="all"><TranslatedText text="All Priorities" /></option>
+            <option value="high"><TranslatedText text="High Priority" /></option>
+            <option value="medium"><TranslatedText text="Medium Priority" /></option>
+            <option value="low"><TranslatedText text="Low Priority" /></option>
           </select>
 
           <button className="px-4 py-2 text-sm border border-gray-200 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
             <Download className="w-4 h-4" />
-            <span>Export</span>
+            <span><TranslatedText text="Export" /></span>
           </button>
         </div>
 
@@ -608,11 +610,11 @@ const AdminRoutes: React.FC = () => {
                   }}
                   disabled={isBulkUpdating}
                 >
-                  <option value="">Bulk Status Update</option>
-                  <option value="active">Set Active</option>
-                  <option value="inactive">Set Inactive</option>
-                  <option value="under_construction">Set Under Construction</option>
-                  <option value="blocked">Set Blocked</option>
+                  <option value=""><TranslatedText text="Bulk Status Update" /></option>
+                  <option value="active"><TranslatedText text="Set Active" /></option>
+                  <option value="inactive"><TranslatedText text="Set Inactive" /></option>
+                  <option value="under_construction"><TranslatedText text="Set Under Construction" /></option>
+                  <option value="blocked"><TranslatedText text="Set Blocked" /></option>
                 </select>
                 {canDeleteRoutes && (
                   <button
@@ -621,14 +623,14 @@ const AdminRoutes: React.FC = () => {
                     disabled={isBulkUpdating}
                   >
                     <Trash2 className="w-3 h-3 inline mr-1" />
-                    Delete Selected
+                    <TranslatedText text="Delete Selected" />
                   </button>
                 )}
                 <button
                   onClick={() => setSelectedRouteIds([])}
                   className="px-1.5 py-0.5 text-xs text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
                 >
-                  Clear
+                  <TranslatedText text="Clear" />
                 </button>
               </div>
             )}
@@ -675,18 +677,18 @@ const AdminRoutes: React.FC = () => {
                       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     }}
                   >
-                    <span>Route</span>
+                    <span><TranslatedText text="Route" /></span>
                     <ChevronsUpDown className="w-3.5 h-3.5" />
                   </button>
                 </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Tenant</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Distance & Time</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Status</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Priority</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Type</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Traffic</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Performance</th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">Actions</th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Tenant" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Distance & Time" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Status" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Priority" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Type" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Traffic" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Performance" /></th>
+                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Actions" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -751,10 +753,10 @@ const AdminRoutes: React.FC = () => {
                           onChange={(e) => handleStatusUpdate(route.id, e.target.value)}
                           disabled={isUpdatingStatus}
                         >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="under_construction">Under Construction</option>
-                          <option value="blocked">Blocked</option>
+                          <option value="active"><TranslatedText text="Active" /></option>
+                          <option value="inactive"><TranslatedText text="Inactive" /></option>
+                          <option value="under_construction"><TranslatedText text="Under Construction" /></option>
+                          <option value="blocked"><TranslatedText text="Blocked" /></option>
                         </select>
                       ) : (
                         <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(route.status)}`}>
@@ -816,7 +818,7 @@ const AdminRoutes: React.FC = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
           <div className="text-[10px] text-gray-600">
-            Showing {Math.min(endIdx, total)} of {total}
+            <TranslatedText text="Showing" /> {Math.min(endIdx, total)} <TranslatedText text="of" /> {total}
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -824,15 +826,15 @@ const AdminRoutes: React.FC = () => {
               onClick={() => setPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
-              Previous
+              <TranslatedText text="Previous" />
             </button>
-            <span className="text-[10px] text-gray-700">Page {currentPage} / {totalPages}</span>
+            <span className="text-[10px] text-gray-700"><TranslatedText text="Page" /> {currentPage} / {totalPages}</span>
             <button
               className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
               onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              <TranslatedText text="Next" />
             </button>
           </div>
         </div>
@@ -844,7 +846,7 @@ const AdminRoutes: React.FC = () => {
           <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900">Create New Route</h2>
+                <h2 className="text-base font-bold text-gray-900"><TranslatedText text="Create New Route" /></h2>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
@@ -860,11 +862,11 @@ const AdminRoutes: React.FC = () => {
             <div className="p-3 space-y-3">
               {/* Basic Information */}
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-gray-900">Basic Information</h3>
+                <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Basic Information" /></h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Route Name *
+                      <TranslatedText text="Route Name" /> *
                     </label>
                     <input
                       type="text"
@@ -877,14 +879,14 @@ const AdminRoutes: React.FC = () => {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Tenant *
+                      <TranslatedText text="Tenant" /> *
                     </label>
                     <select
                       className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={tenantId}
                       onChange={(e) => setTenantId(e.target.value)}
                     >
-                      <option value="">Select tenant</option>
+                      <option value=""><TranslatedText text="Select tenant" /></option>
                       {tenants.map((tenant) => (
                         <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                       ))}
@@ -895,11 +897,11 @@ const AdminRoutes: React.FC = () => {
 
               {/* Route Details */}
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-gray-900">Route Details</h3>
+                <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Route Details" /></h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Origin *
+                      <TranslatedText text="Origin" /> *
                     </label>
                     <input
                       type="text"
@@ -912,7 +914,7 @@ const AdminRoutes: React.FC = () => {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Destination *
+                      <TranslatedText text="Destination" /> *
                     </label>
                     <input
                       type="text"
@@ -927,7 +929,7 @@ const AdminRoutes: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Distance (km) *
+                      <TranslatedText text="Distance (km)" /> *
                     </label>
                     <input
                       type="number"
@@ -940,7 +942,7 @@ const AdminRoutes: React.FC = () => {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Estimated Time (hours) *
+                      <TranslatedText text="Estimated Time (hours)" /> *
                     </label>
                     <input
                       type="number"
@@ -955,36 +957,36 @@ const AdminRoutes: React.FC = () => {
 
               {/* Route Configuration */}
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-gray-900">Route Configuration</h3>
+                <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Route Configuration" /></h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Priority
+                      <TranslatedText text="Priority" />
                     </label>
                     <select
                       className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as 'high' | 'medium' | 'low')}
                     >
-                      <option value="low">Low Priority</option>
-                      <option value="medium">Medium Priority</option>
-                      <option value="high">High Priority</option>
+                      <option value="low"><TranslatedText text="Low Priority" /></option>
+                      <option value="medium"><TranslatedText text="Medium Priority" /></option>
+                      <option value="high"><TranslatedText text="High Priority" /></option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Route Type
+                      <TranslatedText text="Route Type" />
                     </label>
                     <select
                       className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       value={routeType}
                       onChange={(e) => setRouteType(e.target.value as 'highway' | 'city' | 'rural' | 'mixed')}
                     >
-                      <option value="highway">Highway</option>
-                      <option value="city">City</option>
-                      <option value="rural">Rural</option>
-                      <option value="mixed">Mixed</option>
+                      <option value="highway"><TranslatedText text="Highway" /></option>
+                      <option value="city"><TranslatedText text="City" /></option>
+                      <option value="rural"><TranslatedText text="Rural" /></option>
+                      <option value="mixed"><TranslatedText text="Mixed" /></option>
                     </select>
                   </div>
                 </div>
@@ -992,7 +994,7 @@ const AdminRoutes: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Toll Cost (RWF)
+                      <TranslatedText text="Toll Cost (RWF)" />
                     </label>
                     <input
                       type="number"
@@ -1005,7 +1007,7 @@ const AdminRoutes: React.FC = () => {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Estimated Fuel Cost (RWF)
+                      <TranslatedText text="Estimated Fuel Cost (RWF)" />
                     </label>
                     <input
                       type="number"
@@ -1022,9 +1024,9 @@ const AdminRoutes: React.FC = () => {
                 <div className="flex items-start gap-1.5">
                   <FaShieldAlt className="text-blue-600 mt-0.5 text-xs" />
                   <div>
-                    <h4 className="font-semibold text-blue-900 text-xs">Route Information</h4>
+                    <h4 className="font-semibold text-blue-900 text-xs"><TranslatedText text="Route Information" /></h4>
                     <p className="text-[10px] text-blue-700 mt-0.5">
-                      This route will be available for the selected tenant's fleet operations. Ensure all information is accurate for optimal logistics planning.
+                      <TranslatedText text="This route will be available for the selected tenant's fleet operations. Ensure all information is accurate for optimal logistics planning." />
                     </p>
                   </div>
                 </div>
@@ -1039,7 +1041,7 @@ const AdminRoutes: React.FC = () => {
                 }}
                 className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                <TranslatedText text="Cancel" />
               </button>
               <button
                 onClick={handleCreateRoute}
@@ -1047,7 +1049,7 @@ const AdminRoutes: React.FC = () => {
                 className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
               >
                 {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                <span>{isCreating ? 'Creating...' : 'Create Route'}</span>
+                <span>{isCreating ? <TranslatedText text="Creating..." /> : <TranslatedText text="Create Route" />}</span>
               </button>
             </div>
           </div>
@@ -1060,7 +1062,7 @@ const AdminRoutes: React.FC = () => {
           <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900">Edit Route</h2>
+                <h2 className="text-base font-bold text-gray-900"><TranslatedText text="Edit Route" /></h2>
                 <button
                   onClick={() => {
                     setShowEditModal(false);
@@ -1255,7 +1257,7 @@ const AdminRoutes: React.FC = () => {
                 }}
                 className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                <TranslatedText text="Cancel" />
               </button>
               <button
                 onClick={() => updateRoute()}
@@ -1263,7 +1265,7 @@ const AdminRoutes: React.FC = () => {
                 className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
               >
                 {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
+                <span>{isUpdating ? <TranslatedText text="Saving..." /> : <TranslatedText text="Save Changes" />}</span>
               </button>
             </div>
           </div>
@@ -1319,10 +1321,10 @@ const AdminRoutes: React.FC = () => {
                     }}
                     className="px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Edit Route
+                    <TranslatedText text="Edit Route" />
                   </button>
                   <button className="px-2.5 py-1.5 text-xs border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-                    View Map
+                    <TranslatedText text="View Map" />
                   </button>
                 </div>
               </div>
@@ -1334,7 +1336,7 @@ const AdminRoutes: React.FC = () => {
                     <Milestone className="text-indigo-600" size={14} />
                     <div>
                       <div className="text-base font-bold text-indigo-900">{(selectedRoute.distance || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-indigo-700">Kilometers</div>
+                      <div className="text-[10px] text-indigo-700"><TranslatedText text="Kilometers" /></div>
                     </div>
                   </div>
                 </div>
@@ -1344,7 +1346,7 @@ const AdminRoutes: React.FC = () => {
                     <Clock className="text-emerald-600" size={14} />
                     <div>
                       <div className="text-base font-bold text-emerald-900">{selectedRoute.estimatedTime}h</div>
-                      <div className="text-[10px] text-emerald-700">Estimated Time</div>
+                      <div className="text-[10px] text-emerald-700"><TranslatedText text="Estimated Time" /></div>
                     </div>
                   </div>
                 </div>
@@ -1356,7 +1358,7 @@ const AdminRoutes: React.FC = () => {
                       <div className="text-base font-bold text-indigo-900">
                         {Array.isArray(selectedRoute.assignedTrucks) ? selectedRoute.assignedTrucks.length : (typeof selectedRoute.assignedTrucks === 'number' ? selectedRoute.assignedTrucks : 0)}
                       </div>
-                      <div className="text-[10px] text-indigo-700">Assigned Trucks</div>
+                      <div className="text-[10px] text-indigo-700"><TranslatedText text="Assigned Trucks" /></div>
                     </div>
                   </div>
                 </div>
@@ -1366,7 +1368,7 @@ const AdminRoutes: React.FC = () => {
                     <Check className="text-amber-600" size={14} />
                     <div>
                       <div className="text-base font-bold text-amber-900">{selectedRoute.completedTrips || 0}</div>
-                      <div className="text-[10px] text-amber-700">Completed Trips</div>
+                      <div className="text-[10px] text-amber-700"><TranslatedText text="Completed Trips" /></div>
                     </div>
                   </div>
                 </div>
@@ -1375,22 +1377,22 @@ const AdminRoutes: React.FC = () => {
               {/* Route Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Route Information</h3>
+                  <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Route Information" /></h3>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Created:</span>
+                      <span className="text-gray-600"><TranslatedText text="Created:" /></span>
                       <span className="font-medium">{new Date(selectedRoute.createdAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Last Used:</span>
+                      <span className="text-gray-600"><TranslatedText text="Last Used:" /></span>
                       <span className="font-medium">{selectedRoute.lastUsed ? new Date(selectedRoute.lastUsed).toLocaleDateString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tenant:</span>
+                      <span className="text-gray-600"><TranslatedText text="Tenant:" /></span>
                       <span className="font-medium">{selectedRoute.tenantName || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Traffic Level:</span>
+                      <span className="text-gray-600"><TranslatedText text="Traffic Level:" /></span>
                       <div className="flex items-center space-x-1.5">
                         {getTrafficIcon(selectedRoute.trafficLevel)}
                         <span className="font-medium capitalize text-[10px]">{selectedRoute.trafficLevel || 'moderate'}</span>
@@ -1400,18 +1402,18 @@ const AdminRoutes: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900">Cost Information</h3>
+                  <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Cost Information" /></h3>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Toll Cost:</span>
+                      <span className="text-gray-600"><TranslatedText text="Toll Cost:" /></span>
                       <span className="font-medium">RWF {(selectedRoute.tollCost || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Fuel Cost:</span>
+                      <span className="text-gray-600"><TranslatedText text="Fuel Cost:" /></span>
                       <span className="font-medium">RWF {(selectedRoute.fuelCost || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Total Cost:</span>
+                      <span className="text-gray-600"><TranslatedText text="Total Cost:" /></span>
                       <span className="font-medium">RWF {((selectedRoute.tollCost || 0) + (selectedRoute.fuelCost || 0)).toLocaleString()}</span>
                     </div>
                   </div>
@@ -1420,7 +1422,7 @@ const AdminRoutes: React.FC = () => {
 
               {/* Quick Actions */}
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-gray-900">Quick Actions</h3>
+                <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Quick Actions" /></h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {canAssignRoutes && selectedRoute.tenantId === user?.tenantId && (
                     <button
@@ -1431,20 +1433,20 @@ const AdminRoutes: React.FC = () => {
                       }}
                     >
                       <Truck className="text-gray-400 group-hover:text-indigo-600" size={18} />
-                      <span className="font-medium text-gray-700 group-hover:text-indigo-600">Assign Trucks</span>
+                      <span className="font-medium text-gray-700 group-hover:text-indigo-600"><TranslatedText text="Assign Trucks" /></span>
                     </button>
                   )}
                   <button className="w-full flex items-center space-x-2 p-3 text-left border border-gray-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm group">
                     <MapPin className="text-gray-400 group-hover:text-indigo-600" size={18} />
-                    <span className="font-medium text-gray-700 group-hover:text-indigo-600">View on Map</span>
+                    <span className="font-medium text-gray-700 group-hover:text-indigo-600"><TranslatedText text="View on Map" /></span>
                   </button>
                   <button className="w-full flex items-center space-x-2 p-3 text-left border border-gray-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm group">
                     <Settings className="text-gray-400 group-hover:text-indigo-600" size={18} />
-                    <span className="font-medium text-gray-700 group-hover:text-indigo-600">Route Settings</span>
+                    <span className="font-medium text-gray-700 group-hover:text-indigo-600"><TranslatedText text="Route Settings" /></span>
                   </button>
                   <button className="w-full flex items-center space-x-2 p-3 text-left border border-red-200 rounded-xl hover:bg-red-50 transition-all text-red-600 text-sm group">
                     <Ban className="text-red-400 group-hover:text-red-600" size={18} />
-                    <span className="font-medium group-hover:text-red-600">Deactivate Route</span>
+                    <span className="font-medium group-hover:text-red-600"><TranslatedText text="Deactivate Route" /></span>
                   </button>
                 </div>
               </div>
@@ -1457,7 +1459,7 @@ const AdminRoutes: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Assign Trucks to {routeForAssignment.name}</h2>
+              <h2 className="text-xl font-bold text-gray-900"><TranslatedText text="Assign Trucks to" /> {routeForAssignment.name}</h2>
               <button
                 onClick={() => {
                   setShowAssignTrucksModal(false);
@@ -1483,23 +1485,23 @@ const AdminRoutes: React.FC = () => {
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
                     onClick={() => setTruckSearchTerm((s) => s.trim())}
                   >
-                    Search
+                    <TranslatedText text="Search" />
                   </button>
                 </div>
               </div>
 
               <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
                 {trucksLoading ? (
-                  <div className="p-4 text-sm text-gray-500">Loading trucks...</div>
+                  <div className="p-4 text-sm text-gray-500"><TranslatedText text="Loading trucks..." /></div>
                 ) : !trucksData || trucksData.length === 0 ? (
-                  <div className="p-4 text-sm text-gray-500">No trucks found.</div>
+                  <div className="p-4 text-sm text-gray-500"><TranslatedText text="No trucks found." /></div>
                 ) : (
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Truck</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Capacity</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700"><TranslatedText text="Truck" /></th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700"><TranslatedText text="Capacity" /></th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700"><TranslatedText text="Status" /></th>
                         <th className="px-4 py-2"></th>
                       </tr>
                     </thead>
@@ -1522,7 +1524,7 @@ const AdminRoutes: React.FC = () => {
                               disabled={isAssigningRoute}
                               onClick={() => doAssignRouteToTruck({ truckId: truck.id, routeId: routeForAssignment.id })}
                             >
-                              {isAssigningRoute ? 'Assigning...' : 'Assign to route'}
+                              {isAssigningRoute ? <TranslatedText text="Assigning..." /> : <TranslatedText text="Assign to route" />}
                             </button>
                           </td>
                         </tr>
@@ -1540,7 +1542,7 @@ const AdminRoutes: React.FC = () => {
                     setRouteForAssignment(null);
                   }}
                 >
-                  Close
+                  <TranslatedText text="Close" />
                 </button>
               </div>
             </div>

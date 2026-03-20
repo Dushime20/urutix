@@ -38,7 +38,9 @@ export function I18nProvider({
     
     // Listen for language changes from other sources
     const handleLanguageChange = (e: CustomEvent) => {
-      setLanguageState(e.detail.language);
+      if (e.detail?.language && e.detail.language !== language) {
+        setLanguageState(e.detail.language);
+      }
     };
 
     window.addEventListener('languageChanged', handleLanguageChange as EventListener);
@@ -46,7 +48,7 @@ export function I18nProvider({
     return () => {
       window.removeEventListener('languageChanged', handleLanguageChange as EventListener);
     };
-  }, [googleTranslateApiKey]);
+  }, [language, googleTranslateApiKey]);
 
   const setLanguage = useCallback((lang: LanguageCode) => {
     translationService.setLanguage(lang);

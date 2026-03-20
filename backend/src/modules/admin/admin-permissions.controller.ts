@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Logger, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../types/permission.types';
-import { PermissionService } from '../../services/permissionService';
+import { PermissionService } from '../../services/raw-permission.service';
 import { GrantPermissionDto, RevokePermissionDto, DenyPermissionDto, GrantRolePermissionDto, RevokeRolePermissionDto } from './dto/permission.dto';
 import { Request } from 'express';
 

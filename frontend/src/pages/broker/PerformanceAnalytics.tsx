@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { brokerAPI, type TransporterPerformance } from '../../services/brokerApi';
-import { BarChart3, TrendingUp, TrendingDown, CheckCircle2, XCircle, Loader2, Search, Award } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, CheckCircle2, Search, Award, Activity, Zap, ArrowRight, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PerformanceAnalytics: React.FC = () => {
@@ -12,7 +12,7 @@ const PerformanceAnalytics: React.FC = () => {
 
   const handleGetPerformance = async () => {
     if (!selectedTransporter) {
-      toast.error('Please enter a Transporter ID');
+      toast.error('Ref ID required');
       return;
     }
 
@@ -22,7 +22,7 @@ const PerformanceAnalytics: React.FC = () => {
       setPerformance(response.data);
     } catch (err: any) {
       if (err.response?.status === 404) {
-        toast.info('No performance data found. Calculate performance?');
+        toast('No data found. Calculate performance?');
       } else {
         toast.error(err.response?.data?.message || 'Failed to fetch performance');
       }
@@ -33,7 +33,7 @@ const PerformanceAnalytics: React.FC = () => {
 
   const handleCalculatePerformance = async () => {
     if (!selectedTransporter) {
-      toast.error('Please enter a Transporter ID');
+      toast.error('Ref ID required');
       return;
     }
 
@@ -41,7 +41,7 @@ const PerformanceAnalytics: React.FC = () => {
     try {
       const response = await brokerAPI.calculatePerformance(selectedTransporter);
       setPerformance(response.data);
-      toast.success('Performance calculated successfully');
+      toast.success('Performance calculated');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to calculate performance');
     } finally {
@@ -62,316 +62,218 @@ const PerformanceAnalytics: React.FC = () => {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Computing Metrics...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
-          <p className="text-gray-600 mt-1">Transporter reliability metrics and performance tracking</p>
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Analytics Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <BarChart3 size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Analytics</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">System Audit</p>
+          </div>
         </div>
-        <button
-          onClick={handleGetAllPerformances}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-        >
-          View All
-        </button>
+
+        <div className="relative z-10 flex items-center gap-12 mr-4">
+           <div className="text-center hidden md:block">
+             <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">Operational</p>
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Status</p>
+           </div>
+           <button onClick={handleGetAllPerformances} className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center gap-3">
+             <Activity size={14} /> Global View
+           </button>
+        </div>
       </div>
 
-      {/* Transporter Selection */}
+      {/* Control Terminal */}
       {viewMode === 'single' && (
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Transporter ID</label>
-          <div className="flex space-x-4">
-            <input
-              type="text"
-              placeholder="Enter Transporter ID"
-              value={selectedTransporter}
-              onChange={(e) => setSelectedTransporter(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-            <button
-              onClick={handleGetPerformance}
-              disabled={loading}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center space-x-2"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              <span>Get Performance</span>
-            </button>
-            <button
-              onClick={handleCalculatePerformance}
-              disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <BarChart3 className="w-5 h-5" />}
-              <span>Calculate</span>
-            </button>
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm relative group overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-8 items-end">
+            <div className="flex-1 space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Authorized Ref ID</label>
+              <div className="relative">
+                <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
+                <input
+                  type="text"
+                  placeholder="Carrier Reference..."
+                  value={selectedTransporter}
+                  onChange={(e) => setSelectedTransporter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-black uppercase tracking-widest text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={handleGetPerformance} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
+                <Search size={16} /> Sync
+              </button>
+              <button onClick={handleCalculatePerformance} className="px-10 py-5 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
+                <Zap size={16} /> Compute
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Single Performance View */}
+      {/* Detail System */}
       {viewMode === 'single' && performance && (
-        <div className="space-y-6">
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="text-sm text-gray-600">Reliability Score</div>
-              <div className={`text-2xl font-bold ${getScoreColor(performance.reliabilityScore).split(' ')[0]}`}>
-                {performance.reliabilityScore.toFixed(1)}%
+        <div className="space-y-12 animate-slide-up">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { label: 'Reliability', value: `${performance.reliabilityScore.toFixed(1)}%`, score: performance.reliabilityScore },
+              { label: 'On-Time', value: `${performance.onTimeDeliveryRate.toFixed(1)}%`, score: performance.onTimeDeliveryRate },
+              { label: 'Damages', value: `${performance.damageRate.toFixed(1)}%`, score: 100 - performance.damageRate },
+              { label: 'Success Prob.', value: `${performance.predictiveMatchSuccess.toFixed(1)}%`, score: performance.predictiveMatchSuccess },
+            ].map((stat, i) => (
+              <div key={i} className="group relative bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden">
+                <div className="relative z-10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{stat.label}</p>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tighter mb-4">{stat.value}</h3>
+                  <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${stat.score >= 80 ? 'bg-emerald-500' : stat.score >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                      style={{ width: `${stat.score}%` }}
+                    ></div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="text-sm text-gray-600">On-Time Delivery</div>
-              <div className={`text-2xl font-bold ${getScoreColor(performance.onTimeDeliveryRate).split(' ')[0]}`}>
-                {performance.onTimeDeliveryRate.toFixed(1)}%
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="text-sm text-gray-600">Damage Rate</div>
-              <div className={`text-2xl font-bold ${performance.damageRate < 5 ? 'text-green-600' : 'text-red-600'}`}>
-                {performance.damageRate.toFixed(1)}%
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="text-sm text-gray-600">Match Success</div>
-              <div className={`text-2xl font-bold ${getScoreColor(performance.predictiveMatchSuccess).split(' ')[0]}`}>
-                {performance.predictiveMatchSuccess.toFixed(1)}%
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Reliability Metrics */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">Reliability Metrics</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <div className="text-sm text-gray-600">Total Loads</div>
-                <div className="text-xl font-bold">{performance.reliabilityMetrics.totalLoads}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Completed</div>
-                <div className="text-xl font-bold text-green-600">
-                  {performance.reliabilityMetrics.completedLoads}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+                <div className="w-2 h-2 bg-slate-900 rounded-full"></div> Reliability Core
+              </h3>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Loads</p>
+                  <p className="text-3xl font-black text-slate-900 tracking-tighter">{performance.reliabilityMetrics.totalLoads}</p>
                 </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Completion Rate</div>
-                <div className="text-xl font-bold">
-                  {performance.reliabilityMetrics.completionRate.toFixed(1)}%
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Communication</div>
-                <div className="text-xl font-bold">
-                  {performance.reliabilityMetrics.communicationScore}%
+                <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Contract Score</p>
+                  <p className="text-3xl font-black text-slate-900 tracking-tighter">{performance.reliabilityMetrics.communicationScore}/100</p>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* On-Time Tracking */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">On-Time Delivery Tracking</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <div className="text-sm text-gray-600">Total Deliveries</div>
-                <div className="text-xl font-bold">{performance.onTimeTracking.totalDeliveries}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">On-Time</div>
-                <div className="text-xl font-bold text-green-600">
-                  {performance.onTimeTracking.onTimeDeliveries}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">On-Time Rate</div>
-                <div className="text-xl font-bold">
-                  {performance.onTimeTracking.onTimePercentage.toFixed(1)}%
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Trend</div>
-                <div className="flex items-center space-x-1">
-                  {performance.onTimeTracking.trend === 'IMPROVING' ? (
-                    <TrendingUp className="w-5 h-5 text-green-600" />
-                  ) : performance.onTimeTracking.trend === 'DECLINING' ? (
-                    <TrendingDown className="w-5 h-5 text-red-600" />
-                  ) : (
-                    <div className="w-5 h-5" />
-                  )}
-                  <span className="text-xl font-bold">{performance.onTimeTracking.trend}</span>
-                </div>
-              </div>
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10">
+               <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Timing Data
+                  </h3>
+                  <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${performance.onTimeTracking.trend === 'IMPROVING' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                    {performance.onTimeTracking.trend} Efficiency
+                  </div>
+               </div>
+               <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Precision Percentage</p>
+                    <p className="text-4xl font-black text-slate-900 tracking-tighter">{performance.onTimeTracking.onTimePercentage.toFixed(1)}%</p>
+                  </div>
+                  <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-white">
+                    <CheckCircle2 size={32} />
+                  </div>
+               </div>
             </div>
           </div>
-
-          {/* Historical Trends */}
+          
           {performance.historicalTrends && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Historical Trends</h3>
-              <div className="space-y-4">
-                <TrendChart
-                  data={performance.historicalTrends.reliabilityTrend}
-                  label="Reliability Trend"
-                  color="blue"
-                />
-                <TrendChart
-                  data={performance.historicalTrends.onTimeTrend}
-                  label="On-Time Trend"
-                  color="green"
-                />
-                <TrendChart
-                  data={performance.historicalTrends.damageTrend}
-                  label="Damage Trend"
-                  color="red"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Comparative Analysis */}
-          {performance.comparativeAnalysis && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Comparative Analysis</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Industry Average</div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Reliability</span>
-                      <span className="font-semibold">{performance.comparativeAnalysis.industryAverage.reliability}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">On-Time</span>
-                      <span className="font-semibold">{performance.comparativeAnalysis.industryAverage.onTime}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Damage</span>
-                      <span className="font-semibold">{performance.comparativeAnalysis.industryAverage.damage}%</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Percentile Rank</div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Reliability</span>
-                      <span className="font-semibold">{performance.comparativeAnalysis.percentileRank.reliability}th</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">On-Time</span>
-                      <span className="font-semibold">{performance.comparativeAnalysis.percentileRank.onTime}th</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Damage</span>
-                      <span className="font-semibold">{performance.comparativeAnalysis.percentileRank.damage}th</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12">
+               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+                 <div className="w-2 h-2 bg-primary-600 rounded-full animate-pulse"></div> Historical Flow
+               </h3>
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                 <TrendChart data={performance.historicalTrends.reliabilityTrend} label="RELIABILITY_STREAM" accent="primary" />
+                 <TrendChart data={performance.historicalTrends.onTimeTrend} label="PRECISION_STREAM" accent="emerald" />
+                 <TrendChart data={performance.historicalTrends.damageTrend} label="COMPROMISE_STREAM" accent="rose" />
+               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* All Performances View */}
+      {/* Global View (Table View) */}
       {viewMode === 'all' && (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transporter</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reliability</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">On-Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Damage Rate</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Match Success</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {allPerformances.map((perf) => (
-                <tr key={perf.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {perf.transporterId.slice(0, 8)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreColor(perf.reliabilityScore)}`}>
-                      {perf.reliabilityScore.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreColor(perf.onTimeDeliveryRate)}`}>
-                      {perf.onTimeDeliveryRate.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {perf.damageRate.toFixed(1)}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getScoreColor(perf.predictiveMatchSuccess)}`}>
-                      {perf.predictiveMatchSuccess.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => {
-                        setSelectedTransporter(perf.transporterId);
-                        setPerformance(perf);
-                        setViewMode('single');
-                      }}
-                      className="text-primary-600 hover:text-primary-900 text-sm"
-                    >
-                      View Details
-                    </button>
-                  </td>
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
+          <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Global Repository</h3>
+            <div className="px-4 py-2 bg-white rounded-full text-[9px] font-black text-slate-400 uppercase tracking-widest border border-slate-100 shadow-sm">
+              Units: {allPerformances.length}
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-white">
+                  {['Reference', 'Reliability', 'On-Time', 'Damages', 'Success Probability', 'Details'].map((header) => (
+                    <th key={header} className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {allPerformances.map((perf) => (
+                  <tr key={perf.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => { setSelectedTransporter(perf.transporterId); setPerformance(perf); setViewMode('single'); }}>
+                    <td className="px-10 py-10">
+                      <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">#{perf.transporterId.slice(0, 8)}</p>
+                    </td>
+                    <td className="px-10 py-10">
+                      <p className="text-lg font-black text-slate-900">{perf.reliabilityScore.toFixed(1)}%</p>
+                    </td>
+                    <td className="px-10 py-10 text-sm font-black text-slate-900">{perf.onTimeDeliveryRate.toFixed(1)}%</td>
+                    <td className="px-10 py-10 text-sm font-black text-rose-500">{perf.damageRate.toFixed(1)}%</td>
+                    <td className="px-10 py-10">
+                      <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest">
+                        {perf.predictiveMatchSuccess.toFixed(1)}% PROB
+                      </span>
+                    </td>
+                    <td className="px-10 py-10">
+                      <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"><ArrowRight size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-const TrendChart: React.FC<{ data: number[]; label: string; color: string }> = ({ data, label, color }) => {
+const TrendChart: React.FC<{ data: number[]; label: string; accent: 'primary' | 'emerald' | 'rose' }> = ({ data, label, accent }) => {
   if (!data || data.length === 0) return null;
-
   const max = Math.max(...data);
-  const min = Math.min(...data);
-  const colorClass = color === 'blue' ? 'bg-blue-600' : color === 'green' ? 'bg-green-600' : 'bg-red-600';
+  const colorMap = { primary: 'bg-primary-500', emerald: 'bg-emerald-500', rose: 'bg-rose-500' };
 
   return (
-    <div>
-      <div className="text-sm font-medium text-gray-700 mb-2">{label}</div>
-      <div className="flex items-end space-x-1 h-24">
-        {data.map((value, idx) => {
-          const height = max > 0 ? (value / max) * 100 : 0;
-          return (
-            <div key={idx} className="flex-1 flex flex-col items-center">
-              <div
-                className={`w-full ${colorClass} rounded-t`}
-                style={{ height: `${height}%`, minHeight: '4px' }}
-                title={`${value.toFixed(1)}`}
-              />
-              <div className="text-xs text-gray-500 mt-1">{idx + 1}</div>
+    <div className="space-y-6">
+      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+      <div className="h-24 flex items-end gap-1.5">
+        {data.slice(-10).map((value, idx) => (
+          <div key={idx} className="flex-1 relative group/bar">
+            <div className={`w-full ${colorMap[accent]} rounded-t-lg transition-all cursor-pointer opacity-40 group-hover/bar:opacity-100`} style={{ height: `${max > 0 ? (value / max) * 100 : 0}%`, minHeight: '4px' }}>
+               <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-slate-900 text-white text-[8px] font-black px-2 py-1 rounded uppercase z-10">{value.toFixed(1)}%</div>
             </div>
-          );
-        })}
-      </div>
-      <div className="flex justify-between text-xs text-gray-500 mt-2">
-        <span>Min: {min.toFixed(1)}</span>
-        <span>Max: {max.toFixed(1)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
 export default PerformanceAnalytics;
-

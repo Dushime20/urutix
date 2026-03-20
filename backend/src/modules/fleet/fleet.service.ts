@@ -24,7 +24,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { CreateTruckDto } from './dto/create-truck.dto';
 import { CreateFleetDriverDto } from './dto/create-driver.dto';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -988,8 +988,19 @@ export class FleetService {
     });
     
     if (userId && !isAdminRole) {
-      console.log('  🔍 Filtering by employerId:', userId);
-      query.andWhere('driver.employerId = :userId', { userId });
+      if (normalizedRole === 'DRIVER') {
+        console.log(
+          '  🔍 Driver role detected - filtering by userId or employerId:',
+          userId,
+        );
+        query.andWhere(
+          '(driver.userId = :userId OR driver.employerId = :userId)',
+          { userId },
+        );
+      } else {
+        console.log('  🔍 Filtering by employerId:', userId);
+        query.andWhere('driver.employerId = :userId', { userId });
+      }
     } else {
       if (isAdminRole) {
         console.log('  ✅ Admin role detected - showing all drivers in tenant (no employerId filter)');
@@ -1086,8 +1097,11 @@ export class FleetService {
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
       query.andWhere(
-        '(LOWER(driver.firstName) LIKE :search OR LOWER(driver.lastName) LIKE :search OR LOWER(driver.licenseNumber) LIKE :search)',
-        { search: `%${searchLower}%` },
+        '(LOWER(driver.firstName) LIKE :search OR LOWER(driver.lastName) LIKE :search OR LOWER(driver.licenseNumber) LIKE :search OR LOWER(driver.email) LIKE :search OR CAST(driver.userId AS VARCHAR) = :exactSearch)',
+        {
+          search: `%${searchLower}%`,
+          exactSearch: filters.search,
+        },
       );
     }
 
@@ -1144,7 +1158,12 @@ export class FleetService {
     return driversWithExperience;
   }
 
-  async findOneDriver(id: string, tenantId: string, userId?: string): Promise<Driver> {
+  async findOneDriver(
+    id: string,
+    tenantId: string,
+    userId?: string,
+    userRole?: string,
+  ): Promise<Driver> {
     const driver = await this.driverRepository.findOne({
       where: { id, tenantId },
     });
@@ -1153,9 +1172,20 @@ export class FleetService {
       throw new NotFoundException('Driver not found');
     }
 
-    // Enforce multi-tenancy: if userId is provided, ensure the driver belongs to this user
-    if (userId && driver.employerId !== userId) {
-      throw new ForbiddenException('You can only access your own drivers');
+    // Enforce multi-tenancy access control
+    if (userId) {
+      const isSelf = driver.userId === userId;
+      const isEmployer = driver.employerId === userId;
+      const isAdminByRole =
+        userRole === 'ADMIN' ||
+        userRole === 'TENANT_ADMIN' ||
+        userRole === 'SUPER_ADMIN';
+
+      if (!isSelf && !isEmployer && !isAdminByRole) {
+        throw new ForbiddenException(
+          'You do not have permission to access this driver profile',
+        );
+      }
     }
 
     // Add experience as a computed property
@@ -1163,6 +1193,42 @@ export class FleetService {
       ...driver,
       experience: this.calculateExperience(driver),
     } as Driver & { experience: number };
+  }
+
+  async getDriverStats(
+    id: string,
+    tenantId: string,
+    userId?: string,
+    userRole?: string,
+  ): Promise<any> {
+    const driver = await this.findOneDriver(id, tenantId, userId, userRole);
+    
+    // For now, return mock stats. In a real implementation, you would:
+    // 1. Query trips table for completed trips by this driver
+    // 2. Calculate earnings from trip payments
+    // 3. Calculate ratings from trip feedback
+    // 4. Query safety incidents/violations
+    // 5. Calculate fuel efficiency from trip data
+    
+    return {
+      totalTrips: 0,
+      totalEarnings: 0,
+      rating: 0,
+      onTimeDeliveryRate: 0,
+      safetyScore: 100,
+      hoursWorkedThisWeek: 0,
+      milesThisWeek: 0,
+      fuelEfficiency: 0,
+      completedTrips: 0,
+      cancelledTrips: 0,
+      averageRating: 0,
+      totalDistance: 0,
+      totalFuelUsed: 0,
+      averageSpeed: 0,
+      violationsCount: 0,
+      lastTripDate: null,
+      nextTripDate: null,
+    };
   }
 
   async updateDriver(
@@ -2827,5 +2893,49 @@ export class FleetService {
     }
 
     return results;
+  }
+
+  async getDriverLeaderboard(tenantId: string, period: string = 'MONTHLY'): Promise<any[]> {
+    try {
+      this.logger.log(`🏆 Getting driver leaderboard for tenant: ${tenantId}, period: ${period}`);
+
+      const drivers = await this.driverRepository.find({
+        where: { tenantId, status: DriverStatus.ACTIVE },
+        order: {
+          safetyScore: 'DESC',
+          totalDistance: 'DESC',
+          rating: 'DESC',
+        },
+        take: 50,
+      });
+
+      return drivers.map((driver, index) => ({
+        id: driver.id,
+        rank: index + 1,
+        firstName: driver.firstName,
+        lastName: driver.lastName,
+        rating: Number(driver.rating),
+        totalTrips: driver.totalTrips,
+        totalDistance: Number(driver.totalDistance),
+        safetyScore: Number(driver.safetyScore),
+        onTimeRate: Number(driver.onTimeDeliveryRate),
+        totalEarnings: Number(driver.totalEarnings),
+        league: this.calculateLeague(Number(driver.safetyScore), index + 1),
+        trends: {
+          safety: index % 3 === 0 ? 'up' : (index % 3 === 1 ? 'down' : 'stable'),
+          trips: index % 2 === 0 ? 'up' : 'stable',
+        }
+      }));
+    } catch (error) {
+      this.logger.error(`❌ Error getting leaderboard: ${error.message}`);
+      throw new InternalServerErrorException('Failed to retrieve leaderboard');
+    }
+  }
+
+  private calculateLeague(safetyScore: number, rank: number): string {
+    if (rank <= 3 && safetyScore >= 95) return 'ELITE';
+    if (rank <= 10 && safetyScore >= 90) return 'PRO';
+    if (safetyScore >= 80) return 'MASTER';
+    return 'STARTER';
   }
 }

@@ -1,6 +1,6 @@
-import { TripLocation } from '../modules/tracking/entities/trip-location.entity';
-import { DriverAlert } from '../modules/tracking/entities/driver-alert.entity';
-import { TripEvent } from '../modules/tracking/entities/trip-event.entity';
+import { TripLocation } from './../modules/tracking/entities/trip-location.entity';
+import { DriverAlert } from './../modules/tracking/entities/driver-alert.entity';
+import { TripEvent } from './../modules/tracking/entities/trip-event.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

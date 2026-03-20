@@ -1,482 +1,572 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CargoOwnerAnalytics } from '../../../entities/cargo-owner-analytics.entity';
-import { AnalyticsInsights, InsightType, InsightStatus } from '../../../entities/analytics-insights.entity';
-import { 
-  BaseAnalyticsFiltersDto, 
-  InsightsFiltersDto, 
-  PaginatedResponseDto,
-  AnalyticsMetricsDto 
-} from '../dto/analytics-filters.dto';
-
-// Define SortOrder enum locally to avoid conflicts
-enum SortOrder {
-  ASC = 'ASC',
-  DESC = 'DESC',
-}
+import { Repository, Between } from 'typeorm';
+import { Trip, TripStatus } from '../../../entities/trip.entity';
+import { Load, LoadStatus } from '../../../entities/load.entity';
+import { Payment, PaymentStatus } from '../../../entities/payment.entity';
+import { User, UserStatus } from '../../../entities/user.entity';
+import { Truck, VehicleStatus } from '../../../entities/truck.entity';
+import { Driver, DriverStatus } from '../../../entities/driver.entity';
+import {
+  Notification,
+  NotificationType,
+} from '../../../entities/notification.entity';
+import {
+  AnalyticsFilterDto,
+  AnalyticsPeriod,
+  AnalyticsMetric,
+} from '../dto/analytics-filter.dto';
+import { DashboardRequestDto } from '../dto/dashboard-request.dto';
 
 @Injectable()
 export class AnalyticsService {
   constructor(
-    @InjectRepository(CargoOwnerAnalytics)
-    private analyticsRepository: Repository<CargoOwnerAnalytics>,
-    @InjectRepository(AnalyticsInsights)
-    private insightsRepository: Repository<AnalyticsInsights>,
+    @InjectRepository(Trip)
+    private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(Load)
+    private readonly loadRepository: Repository<Load>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
   ) {}
 
-  /**
-   * Get analytics overview metrics for dashboard
-   */
-  async getAnalyticsOverview(
+  async getDashboardData(
+    dashboardRequest: DashboardRequestDto,
     tenantId: string,
-    cargoOwnerId: string,
-  ): Promise<AnalyticsMetricsDto> {
-    // Ensure tenant isolation (existing pattern)
-    const analytics = await this.analyticsRepository
-      .createQueryBuilder('analytics')
-      .select([
-        'COUNT(*) as totalShipments',
-        'MIN(analytics.bookingDate) as earliestDate',
-        'MAX(analytics.bookingDate) as latestDate',
-        'MAX(analytics.updatedAt) as lastUpdated',
-      ])
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .andWhere('analytics.cargoOwnerId = :cargoOwnerId', { cargoOwnerId })
-      .getRawOne();
+  ): Promise<any> {
+    const {
+      period = AnalyticsPeriod.MONTH,
+      metrics = [],
+      userId,
+    } = dashboardRequest;
 
-    // Calculate data quality score
-    const qualityMetrics = await this.calculateDataQuality(tenantId, cargoOwnerId);
+    const startDate = this.getStartDate(period);
+    const endDate = new Date();
 
-    return {
-      totalShipments: Number(analytics.totalShipments) || 0,
-      dateRange: {
-        start: analytics.earliestDate || new Date().toISOString(),
-        end: analytics.latestDate || new Date().toISOString(),
-      },
-      lastUpdated: analytics.lastUpdated || new Date().toISOString(),
-      completeness: qualityMetrics.completeness,
-      dataQuality: qualityMetrics.quality,
-    };
-  }
+    const dashboardData: any = {};
 
-  /**
-   * Get analytics insights with filtering and pagination
-   */
-  async getInsights(
-    tenantId: string,
-    cargoOwnerId: string,
-    filters: InsightsFiltersDto,
-  ): Promise<PaginatedResponseDto<AnalyticsInsights>> {
-    const queryBuilder = this.insightsRepository
-      .createQueryBuilder('insights')
-      .where('insights.tenantId = :tenantId', { tenantId })
-      .andWhere('insights.cargoOwnerId = :cargoOwnerId', { cargoOwnerId });
-
-    // Apply filters
-    if (filters.insightType && filters.insightType !== 'all') {
-      queryBuilder.andWhere('insights.insightType = :insightType', { 
-        insightType: filters.insightType 
-      });
-    }
-
-    if (filters.status && filters.status !== 'all') {
-      queryBuilder.andWhere('insights.status = :status', { status: filters.status });
-    }
-
-    if (filters.minConfidence !== undefined) {
-      queryBuilder.andWhere('insights.confidenceScore >= :minConfidence', { 
-        minConfidence: filters.minConfidence 
-      });
-    }
-
-    if (filters.withCostSavings) {
-      queryBuilder.andWhere("insights.potentialImpact->>'costSavings' IS NOT NULL");
-      queryBuilder.andWhere("CAST(insights.potentialImpact->>'costSavings' AS DECIMAL) > 0");
-    }
-
-    if (filters.expiringSoon) {
-      const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      queryBuilder.andWhere('insights.expiresAt <= :sevenDaysFromNow', { sevenDaysFromNow });
-      queryBuilder.andWhere('insights.expiresAt > NOW()');
-    }
-
-    // Apply sorting
-    const sortField = filters.sortBy || 'createdAt';
-    const sortOrder = (filters.sortOrder || 'DESC') as 'ASC' | 'DESC';
-    queryBuilder.orderBy(`insights.${sortField}`, sortOrder);
-
-    // Apply pagination
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const offset = (page - 1) * limit;
-
-    const [data, total] = await queryBuilder
-      .skip(offset)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
-      filters: {
-        insightType: filters.insightType,
-        status: filters.status,
-        minConfidence: filters.minConfidence,
-        withCostSavings: filters.withCostSavings,
-        expiringSoon: filters.expiringSoon,
-      },
-      sort: {
-        field: sortField,
-        order: sortOrder as any,
-      },
-    };
-  }
-  /**
-   * Generate AI insights (placeholder - will integrate with credit system later)
-   */
-  async generateInsights(
-    tenantId: string,
-    cargoOwnerId: string,
-    userId: string,
-  ): Promise<AnalyticsInsights[]> {
-    // TODO: Integrate with credit service for consumption
-    // await this.creditService.consumeCredits({...});
-
-    // TODO: Log the activity
-    // await this.activityLogService.logActivity({...});
-
-    // Generate insights based on analytics data
-    const insights = await this.generateAIInsights(tenantId, cargoOwnerId);
-
-    // Save insights to database
-    const savedInsights = [];
-    for (const insightData of insights) {
-      const insight = this.insightsRepository.create(insightData);
-      savedInsights.push(await this.insightsRepository.save(insight));
-    }
-
-    return savedInsights;
-  }
-
-  /**
-   * Dismiss an insight
-   */
-  async dismissInsight(
-    tenantId: string,
-    cargoOwnerId: string,
-    insightId: string,
-    userId: string,
-  ): Promise<AnalyticsInsights> {
-    const insight = await this.insightsRepository.findOne({
-      where: { 
-        id: insightId, 
-        tenantId, 
-        cargoOwnerId 
-      },
-    });
-
-    if (!insight) {
-      throw new NotFoundException('Insight not found');
-    }
-
-    insight.dismiss();
-    const updatedInsight = await this.insightsRepository.save(insight);
-
-    // TODO: Log the activity
-    // await this.activityLogService.logActivity({...});
-
-    return updatedInsight;
-  }
-
-  /**
-   * Mark insight as implemented
-   */
-  async implementInsight(
-    tenantId: string,
-    cargoOwnerId: string,
-    insightId: string,
-    userId: string,
-  ): Promise<AnalyticsInsights> {
-    const insight = await this.insightsRepository.findOne({
-      where: { 
-        id: insightId, 
-        tenantId, 
-        cargoOwnerId 
-      },
-    });
-
-    if (!insight) {
-      throw new NotFoundException('Insight not found');
-    }
-
-    insight.implement();
-    const updatedInsight = await this.insightsRepository.save(insight);
-
-    // TODO: Log the activity
-    // await this.activityLogService.logActivity({...});
-
-    return updatedInsight;
-  }
-
-  /**
-   * Get analytics data with filters and pagination
-   */
-  async getAnalyticsData(
-    tenantId: string,
-    cargoOwnerId: string,
-    filters: BaseAnalyticsFiltersDto,
-  ): Promise<PaginatedResponseDto<CargoOwnerAnalytics>> {
-    const queryBuilder = this.analyticsRepository
-      .createQueryBuilder('analytics')
-      .leftJoinAndSelect('analytics.load', 'load')
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .andWhere('analytics.cargoOwnerId = :cargoOwnerId', { cargoOwnerId });
-
-    // Apply date filters
-    if (filters.startDate) {
-      queryBuilder.andWhere('analytics.bookingDate >= :startDate', { 
-        startDate: new Date(filters.startDate) 
-      });
-    }
-    if (filters.endDate) {
-      queryBuilder.andWhere('analytics.bookingDate <= :endDate', { 
-        endDate: new Date(filters.endDate) 
-      });
-    }
-
-    // Apply other filters
-    if (filters.search) {
-      queryBuilder.andWhere(
-        '(analytics.originCity ILIKE :search OR analytics.destinationCity ILIKE :search OR analytics.cargoType ILIKE :search)',
-        { search: `%${filters.search}%` }
+    // Revenue Analytics
+    if (metrics.includes('revenue') || metrics.length === 0) {
+      dashboardData.revenue = await this.getRevenueAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+        userId,
       );
     }
 
-    if (filters.cargoType) {
-      queryBuilder.andWhere('analytics.cargoType = :cargoType', { cargoType: filters.cargoType });
-    }
-
-    if (filters.originCity) {
-      queryBuilder.andWhere('analytics.originCity = :originCity', { originCity: filters.originCity });
-    }
-
-    if (filters.destinationCity) {
-      queryBuilder.andWhere('analytics.destinationCity = :destinationCity', { 
-        destinationCity: filters.destinationCity 
-      });
-    }
-
-    if (filters.carrierId) {
-      queryBuilder.andWhere('analytics.carrierId = :carrierId', { carrierId: filters.carrierId });
-    }
-
-    if (filters.season) {
-      queryBuilder.andWhere('analytics.season = :season', { season: filters.season });
-    }
-
-    // Apply sorting
-    const sortField = filters.sortBy || 'bookingDate';
-    const sortOrder = (filters.sortOrder || 'DESC') as 'ASC' | 'DESC';
-    queryBuilder.orderBy(`analytics.${sortField}`, sortOrder);
-
-    // Apply pagination
-    const page = filters.page || 1;
-    const limit = filters.limit || 20;
-    const offset = (page - 1) * limit;
-
-    const [data, total] = await queryBuilder
-      .skip(offset)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
-      filters: {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        search: filters.search,
-        cargoType: filters.cargoType,
-        originCity: filters.originCity,
-        destinationCity: filters.destinationCity,
-        carrierId: filters.carrierId,
-        season: filters.season,
-      },
-      sort: {
-        field: sortField,
-        order: sortOrder as any,
-      },
-    };
-  }
-
-  // Private helper methods
-
-  /**
-   * Calculate data quality metrics
-   */
-  private async calculateDataQuality(tenantId: string, cargoOwnerId: string) {
-    const analytics = await this.analyticsRepository
-      .createQueryBuilder('analytics')
-      .select([
-        'COUNT(*) as total',
-        'COUNT(analytics.totalCost) as withCost',
-        'COUNT(analytics.distanceKm) as withDistance',
-        'COUNT(analytics.carrierId) as withCarrier',
-        'COUNT(analytics.actualTransitHours) as withTransitTime',
-      ])
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .andWhere('analytics.cargoOwnerId = :cargoOwnerId', { cargoOwnerId })
-      .getRawOne();
-
-    const total = Number(analytics.total) || 1;
-    const completeness = (
-      (Number(analytics.withCost) + 
-       Number(analytics.withDistance) + 
-       Number(analytics.withCarrier) + 
-       Number(analytics.withTransitTime)) / (total * 4)
-    ) * 100;
-
-    // Quality score based on data completeness and recency
-    const quality = Math.min(100, completeness + 10); // Simplified quality calculation
-
-    return {
-      completeness: Math.round(completeness),
-      quality: Math.round(quality),
-    };
-  }
-
-  /**
-   * Generate AI insights based on analytics data (placeholder for Phase 3)
-   */
-  private async generateAIInsights(
-    tenantId: string,
-    cargoOwnerId: string,
-  ): Promise<Partial<AnalyticsInsights>[]> {
-    // This is a placeholder implementation
-    // In Phase 3, this will integrate with AI service for real insights
-    
-    const insights: Partial<AnalyticsInsights>[] = [];
-
-    // Get recent analytics data for analysis
-    const recentAnalytics = await this.analyticsRepository
-      .createQueryBuilder('analytics')
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .andWhere('analytics.cargoOwnerId = :cargoOwnerId', { cargoOwnerId })
-      .andWhere('analytics.bookingDate >= :thirtyDaysAgo', { 
-        thirtyDaysAgo: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
-      })
-      .getMany();
-
-    if (recentAnalytics.length === 0) {
-      return insights;
-    }
-
-    // Generate cost optimization insight
-    const avgCost = recentAnalytics.reduce((sum, a) => sum + (a.totalCost || 0), 0) / recentAnalytics.length;
-    const highCostShipments = recentAnalytics.filter(a => (a.totalCost || 0) > avgCost * 1.2);
-    
-    if (highCostShipments.length > 0) {
-      insights.push(AnalyticsInsights.createCostOptimizationInsight(
+    // Trip Analytics
+    if (metrics.includes('trips') || metrics.length === 0) {
+      dashboardData.trips = await this.getTripAnalytics(
+        startDate,
+        endDate,
         tenantId,
-        cargoOwnerId,
-        {
-          title: 'High-Cost Shipments Identified',
-          description: `${highCostShipments.length} shipments are 20% above average cost. Consider route optimization.`,
-          potentialSavings: avgCost * 0.2 * highCostShipments.length,
-          confidence: 0.7,
-          recommendations: [
-            {
-              action: 'Review high-cost routes for optimization opportunities',
-              priority: 'medium',
-              effort: 'low',
-              timeline: '1-2 weeks',
-              steps: [
-                'Analyze route patterns',
-                'Compare with alternative carriers',
-                'Negotiate better rates',
-              ],
-            },
-          ],
-        }
-      ));
+        userId,
+      );
     }
 
-    // Generate carrier recommendation insight
-    const carrierPerformance = this.analyzeCarrierPerformance(recentAnalytics);
-    if (carrierPerformance.length > 1) {
-      const bestCarrier = carrierPerformance[0];
-      const worstCarrier = carrierPerformance[carrierPerformance.length - 1];
-      
-      if (bestCarrier.avgCost < worstCarrier.avgCost * 0.9) {
-        insights.push(AnalyticsInsights.createCarrierRecommendationInsight(
-          tenantId,
-          cargoOwnerId,
-          {
-            title: 'Carrier Optimization Opportunity',
-            description: `Switching to ${bestCarrier.carrierId} could reduce costs by ${((worstCarrier.avgCost - bestCarrier.avgCost) / worstCarrier.avgCost * 100).toFixed(1)}%`,
-            carrierId: bestCarrier.carrierId,
-            confidence: 0.8,
-            recommendations: [
-              {
-                action: 'Increase usage of top-performing carrier',
-                priority: 'high',
-                effort: 'low',
-                timeline: 'Immediate',
-                steps: [
-                  'Contact preferred carrier for capacity',
-                  'Negotiate volume discounts',
-                  'Monitor performance metrics',
-                ],
-              },
-            ],
-          }
-        ));
-      }
+    // Load Analytics
+    if (metrics.includes('loads') || metrics.length === 0) {
+      dashboardData.loads = await this.getLoadAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+        userId,
+      );
     }
 
-    return insights;
+    // Payment Analytics
+    if (metrics.includes('payments') || metrics.length === 0) {
+      dashboardData.payments = await this.getPaymentAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+        userId,
+      );
+    }
+
+    // User Analytics
+    if (metrics.includes('users') || metrics.length === 0) {
+      dashboardData.users = await this.getUserAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+      );
+    }
+
+    // Fleet Analytics
+    if (metrics.includes('fleet') || metrics.length === 0) {
+      dashboardData.fleet = await this.getFleetAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+      );
+    }
+
+    // Matching Analytics
+    if (metrics.includes('matching') || metrics.length === 0) {
+      dashboardData.matching = await this.getMatchingAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+      );
+    }
+
+    // Notification Analytics
+    if (metrics.includes('notifications') || metrics.length === 0) {
+      dashboardData.notifications = await this.getNotificationAnalytics(
+        startDate,
+        endDate,
+        tenantId,
+        userId,
+      );
+    }
+
+    return dashboardData;
   }
 
-  /**
-   * Analyze carrier performance from analytics data
-   */
-  private analyzeCarrierPerformance(analytics: CargoOwnerAnalytics[]) {
-    const carrierMap = new Map();
-    
-    analytics.forEach(a => {
-      if (a.carrierId && a.totalCost) {
-        if (!carrierMap.has(a.carrierId)) {
-          carrierMap.set(a.carrierId, { totalCost: 0, count: 0, onTimeCount: 0 });
-        }
-        const carrier = carrierMap.get(a.carrierId);
-        carrier.totalCost += a.totalCost;
-        carrier.count += 1;
-        if (a.onTimeDelivery) carrier.onTimeCount += 1;
-      }
+  async getRevenueAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+    userId?: string,
+  ): Promise<any> {
+    const query = this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .andWhere('payment.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('payment.status = :status', {
+        status: PaymentStatus.COMPLETED,
+      });
+
+    if (userId) {
+      query.andWhere('payment.payerId = :userId', { userId });
+    }
+
+    const payments = await query.getMany();
+
+    const totalRevenue = payments.reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
+    );
+    const totalProcessingFees = payments.reduce(
+      (sum, payment) => sum + Number(payment.processingFee || 0),
+      0,
+    );
+    const netRevenue = totalRevenue - totalProcessingFees;
+
+    const revenueByCurrency = payments.reduce(
+      (acc, payment) => {
+        acc[payment.currency] =
+          (acc[payment.currency] || 0) + Number(payment.amount);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const revenueByType = payments.reduce(
+      (acc, payment) => {
+        acc[payment.paymentType] =
+          (acc[payment.paymentType] || 0) + Number(payment.amount);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      totalRevenue,
+      netRevenue,
+      totalProcessingFees,
+      averagePayment: payments.length > 0 ? totalRevenue / payments.length : 0,
+      paymentCount: payments.length,
+      revenueByCurrency,
+      revenueByType,
+      period: { startDate, endDate },
+    };
+  }
+
+  async getTripAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+    userId?: string,
+  ): Promise<any> {
+    const query = this.tripRepository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.load', 'load')
+      .where('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('trip.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+
+    if (userId) {
+      query.andWhere('load.cargoOwnerId = :userId', { userId });
+    }
+
+    const trips = await query.getMany();
+
+    const totalTrips = trips.length;
+    const completedTrips = trips.filter(
+      (t) => t.status === TripStatus.COMPLETED,
+    ).length;
+    const inProgressTrips = trips.filter(
+      (t) => t.status === TripStatus.IN_PROGRESS,
+    ).length;
+    const plannedTrips = trips.filter(
+      (t) => t.status === TripStatus.PLANNED,
+    ).length;
+    const cancelledTrips = trips.filter(
+      (t) => t.status === TripStatus.CANCELLED,
+    ).length;
+
+    const averageTripDuration =
+      completedTrips > 0
+        ? trips
+            .filter(
+              (t) =>
+                t.status === TripStatus.COMPLETED &&
+                t.actualStartTime &&
+                t.actualEndTime,
+            )
+            .reduce((sum, t) => {
+              const duration =
+                new Date(t.actualEndTime).getTime() -
+                new Date(t.actualStartTime).getTime();
+              return sum + duration;
+            }, 0) / completedTrips
+        : 0;
+
+    const tripsByStatus = {
+      completed: completedTrips,
+      inProgress: inProgressTrips,
+      planned: plannedTrips,
+      cancelled: cancelledTrips,
+    };
+
+    return {
+      totalTrips,
+      completedTrips,
+      inProgressTrips,
+      plannedTrips,
+      cancelledTrips,
+      completionRate: totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0,
+      averageTripDuration: averageTripDuration / (1000 * 60 * 60), // Convert to hours
+      tripsByStatus,
+      period: { startDate, endDate },
+    };
+  }
+
+  async getLoadAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+    userId?: string,
+  ): Promise<any> {
+    const query = this.loadRepository
+      .createQueryBuilder('load')
+      .where('load.tenantId = :tenantId', { tenantId })
+      .andWhere('load.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+
+    if (userId) {
+      query.andWhere('load.cargoOwnerId = :userId', { userId });
+    }
+
+    const loads = await query.getMany();
+
+    const totalLoads = loads.length;
+    const publishedLoads = loads.filter((l) =>
+      [LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(l.status),
+    ).length;
+    const assignedLoads = loads.filter(
+      (l) => l.status === LoadStatus.ASSIGNED,
+    ).length;
+    const deliveredLoads = loads.filter(
+      (l) => l.status === LoadStatus.DELIVERED,
+    ).length;
+
+    const loadsByStatus = {
+      published: publishedLoads,
+      assigned: assignedLoads,
+      delivered: deliveredLoads,
+    };
+
+    const loadsByCargoType = loads.reduce(
+      (acc, load) => {
+        acc[load.cargoType] = (acc[load.cargoType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      totalLoads,
+      publishedLoads,
+      assignedLoads,
+      deliveredLoads,
+      assignmentRate: totalLoads > 0 ? (assignedLoads / totalLoads) * 100 : 0,
+      deliveryRate: totalLoads > 0 ? (deliveredLoads / totalLoads) * 100 : 0,
+      loadsByStatus,
+      loadsByCargoType,
+      period: { startDate, endDate },
+    };
+  }
+
+  async getPaymentAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+    userId?: string,
+  ): Promise<any> {
+    const query = this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .andWhere('payment.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+
+    if (userId) {
+      query.andWhere('payment.payerId = :userId', { userId });
+    }
+
+    const payments = await query.getMany();
+
+    const totalPayments = payments.length;
+    const completedPayments = payments.filter(
+      (p) => p.status === PaymentStatus.COMPLETED,
+    ).length;
+    const pendingPayments = payments.filter(
+      (p) => p.status === PaymentStatus.PENDING,
+    ).length;
+    const failedPayments = payments.filter(
+      (p) => p.status === PaymentStatus.FAILED,
+    ).length;
+
+    const paymentsByStatus = {
+      completed: completedPayments,
+      pending: pendingPayments,
+      failed: failedPayments,
+    };
+
+    const paymentsByMethod = payments.reduce(
+      (acc, payment) => {
+        acc[payment.paymentMethod] = (acc[payment.paymentMethod] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const successRate =
+      totalPayments > 0 ? (completedPayments / totalPayments) * 100 : 0;
+
+    return {
+      totalPayments,
+      completedPayments,
+      pendingPayments,
+      failedPayments,
+      successRate,
+      paymentsByStatus,
+      paymentsByMethod,
+      period: { startDate, endDate },
+    };
+  }
+
+  async getUserAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+  ): Promise<any> {
+    const users = await this.userRepository.find({
+      where: { tenantId },
     });
 
-    return Array.from(carrierMap.entries())
-      .map(([carrierId, data]) => ({
-        carrierId,
-        avgCost: data.totalCost / data.count,
-        onTimeRate: data.onTimeCount / data.count,
-        shipmentCount: data.count,
-      }))
-      .sort((a, b) => a.avgCost - b.avgCost); // Sort by cost (ascending)
+    const newUsers = users.filter(
+      (u) => u.createdAt >= startDate && u.createdAt <= endDate,
+    ).length;
+    const totalUsers = users.length;
+    const activeUsers = users.filter(
+      (u) => u.status === UserStatus.ACTIVE,
+    ).length;
+
+    return {
+      totalUsers,
+      newUsers,
+      activeUsers,
+      inactiveUsers: totalUsers - activeUsers,
+      userGrowthRate: totalUsers > 0 ? (newUsers / totalUsers) * 100 : 0,
+      period: { startDate, endDate },
+    };
+  }
+
+  async getFleetAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+  ): Promise<any> {
+    const trucks = await this.truckRepository.find({
+      where: { tenantId },
+    });
+
+    const drivers = await this.driverRepository.find({
+      where: { tenantId },
+    });
+
+    const totalTrucks = trucks.length;
+    const availableTrucks = trucks.filter(
+      (t) => t.status === VehicleStatus.AVAILABLE,
+    ).length;
+    const inTransitTrucks = trucks.filter(
+      (t) => t.status === VehicleStatus.IN_TRANSIT,
+    ).length;
+    const maintenanceTrucks = trucks.filter(
+      (t) => t.status === VehicleStatus.MAINTENANCE,
+    ).length;
+
+    const totalDrivers = drivers.length;
+    const activeDrivers = drivers.filter(
+      (d) => d.status === DriverStatus.ACTIVE,
+    ).length;
+    const availableDrivers = drivers.filter((d) => !d.currentTripId).length;
+
+    return {
+      trucks: {
+        total: totalTrucks,
+        available: availableTrucks,
+        inTransit: inTransitTrucks,
+        maintenance: maintenanceTrucks,
+        utilizationRate:
+          totalTrucks > 0
+            ? ((totalTrucks - availableTrucks) / totalTrucks) * 100
+            : 0,
+      },
+      drivers: {
+        total: totalDrivers,
+        active: activeDrivers,
+        available: availableDrivers,
+        utilizationRate:
+          totalDrivers > 0
+            ? ((totalDrivers - availableDrivers) / totalDrivers) * 100
+            : 0,
+      },
+      period: { startDate, endDate },
+    };
+  }
+
+  async getMatchingAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+  ): Promise<any> {
+    // This would integrate with the matching service
+    // For now, return placeholder data
+    return {
+      totalMatches: 0,
+      successfulMatches: 0,
+      matchSuccessRate: 0,
+      averageMatchTime: 0,
+      period: { startDate, endDate },
+    };
+  }
+
+  async getNotificationAnalytics(
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+    userId?: string,
+  ): Promise<any> {
+    const query = this.notificationRepository
+      .createQueryBuilder('notification')
+      .where('notification.tenantId = :tenantId', { tenantId })
+      .andWhere('notification.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+
+    if (userId) {
+      query.andWhere('notification.recipientId = :userId', { userId });
+    }
+
+    const notifications = await query.getMany();
+
+    const totalNotifications = notifications.length;
+    const readNotifications = notifications.filter((n) => n.isRead).length;
+    const unreadNotifications = notifications.filter((n) => !n.isRead).length;
+    const deliveredNotifications = notifications.filter(
+      (n) => n.deliveryStatus === 'delivered',
+    ).length;
+
+    const notificationsByType = notifications.reduce(
+      (acc, notification) => {
+        acc[notification.notificationType] =
+          (acc[notification.notificationType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const notificationsByPriority = notifications.reduce(
+      (acc, notification) => {
+        acc[notification.priority] = (acc[notification.priority] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      totalNotifications,
+      readNotifications,
+      unreadNotifications,
+      deliveredNotifications,
+      readRate:
+        totalNotifications > 0
+          ? (readNotifications / totalNotifications) * 100
+          : 0,
+      deliveryRate:
+        totalNotifications > 0
+          ? (deliveredNotifications / totalNotifications) * 100
+          : 0,
+      notificationsByType,
+      notificationsByPriority,
+      period: { startDate, endDate },
+    };
+  }
+
+  private getStartDate(period: AnalyticsPeriod): Date {
+    const now = new Date();
+    switch (period) {
+      case AnalyticsPeriod.DAY:
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      case AnalyticsPeriod.WEEK:
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        return new Date(
+          weekStart.getFullYear(),
+          weekStart.getMonth(),
+          weekStart.getDate(),
+        );
+      case AnalyticsPeriod.MONTH:
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+      case AnalyticsPeriod.QUARTER:
+        const quarter = Math.floor(now.getMonth() / 3);
+        return new Date(now.getFullYear(), quarter * 3, 1);
+      case AnalyticsPeriod.YEAR:
+        return new Date(now.getFullYear(), 0, 1);
+      default:
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
   }
 }

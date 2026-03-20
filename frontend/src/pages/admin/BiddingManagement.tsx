@@ -8,6 +8,7 @@ import {
 import toast from 'react-hot-toast';
 import { biddingAPI } from '../../services/biddingApi';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../../components/translated-text';
 
 interface Bid {
   id: string;
@@ -192,8 +193,8 @@ const BiddingManagement: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Bidding Management"
-      description="Monitor and manage cargo bidding processes"
+      title={<TranslatedText text="Bidding Management" />}
+      description={<TranslatedText text="Monitor and manage cargo bidding processes" />}
     >
 
       {/* Bidding Stats */}
@@ -201,7 +202,7 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Bids</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Bids" /></p>
               <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.total}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -212,7 +213,7 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Pending</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Pending" /></p>
               <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.pending}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -223,7 +224,7 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Accepted</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Accepted" /></p>
               <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.accepted}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -234,7 +235,7 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Rejected</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Rejected" /></p>
               <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.rejected}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -245,7 +246,7 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Value</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Value" /></p>
               <p className="text-lg font-black text-gray-900 leading-none tracking-tight">${stats.totalValue.toLocaleString()}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -256,7 +257,7 @@ const BiddingManagement: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Avg Rating</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Avg Rating" /></p>
               <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.avgRating}</p>
             </div>
             <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
@@ -284,29 +285,29 @@ const BiddingManagement: React.FC = () => {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="withdrawn">Withdrawn</option>
+            <option value=""><TranslatedText text="All Status" /></option>
+            <option value="pending"><TranslatedText text="Pending" /></option>
+            <option value="accepted"><TranslatedText text="Accepted" /></option>
+            <option value="rejected"><TranslatedText text="Rejected" /></option>
+            <option value="withdrawn"><TranslatedText text="Withdrawn" /></option>
           </select>
           <select
             value={filterCargoId}
             onChange={(e) => setFilterCargoId(e.target.value)}
             className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
           >
-            <option value="">All Cargos</option>
+            <option value=""><TranslatedText text="All Cargos" /></option>
             {Array.from(new Set(bids.map(b => b.cargoId))).map(cargoId => (
               <option key={cargoId} value={cargoId}>{cargoId}</option>
             ))}
           </select>
           <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs">
             <FaFilter className="w-3 h-3" />
-            <span>More Filters</span>
+            <span><TranslatedText text="More Filters" /></span>
           </button>
           <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs">
             <FaDownload className="w-3 h-3" />
-            <span>Export</span>
+            <span><TranslatedText text="Export" /></span>
           </button>
         </div>
       </div>
@@ -326,19 +327,19 @@ const BiddingManagement: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Bid Details</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Bidder</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Bid Details" /></th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Bidder" /></th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Amount" /></th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Timeline" /></th>
+                  <th className="px-3 py-2 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredBids.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-8 text-center text-xs text-gray-500">
-                      No bids found
+                      <TranslatedText text="No bids found" />
                     </td>
                   </tr>
                 ) : (
@@ -432,7 +433,7 @@ const BiddingManagement: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">Bid Details</h3>
+              <h3 className="text-sm font-bold text-gray-900"><TranslatedText text="Bid Details" /></h3>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -444,19 +445,19 @@ const BiddingManagement: React.FC = () => {
               {/* Bid Information */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Bid ID</div>
+                  <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Bid ID" /></div>
                   <div className="text-xs font-medium text-gray-900">{selectedBid.id}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Cargo ID</div>
+                  <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Cargo ID" /></div>
                   <div className="text-xs font-medium text-gray-900">{selectedBid.cargoId}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Cargo Title</div>
+                  <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Cargo Title" /></div>
                   <div className="text-xs font-medium text-gray-900">{selectedBid.cargoTitle}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
+                  <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Status" /></div>
                   <div className="flex items-center gap-1.5">
                     {getStatusIcon(selectedBid.status)}
                     <span className={`text-xs font-medium ${getStatusColor(selectedBid.status)}`}>
@@ -468,18 +469,18 @@ const BiddingManagement: React.FC = () => {
 
               {/* Bidder Information */}
               <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Bidder Information</div>
+                <div className="text-xs font-medium text-gray-900 mb-2"><TranslatedText text="Bidder Information" /></div>
                 <div className="space-y-1.5">
                   <div>
-                    <div className="text-[10px] text-gray-600">Name</div>
+                    <div className="text-[10px] text-gray-600"><TranslatedText text="Name" /></div>
                     <div className="text-xs text-gray-900">{selectedBid.bidderName}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-600">Company</div>
+                    <div className="text-[10px] text-gray-600"><TranslatedText text="Company" /></div>
                     <div className="text-xs text-gray-900">{selectedBid.bidderCompany}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-600">Rating</div>
+                    <div className="text-[10px] text-gray-600"><TranslatedText text="Rating" /></div>
                     <div className="flex items-center gap-1">
                       <div className="flex text-xs">{getRatingStars(selectedBid.rating)}</div>
                       <span className="text-xs text-gray-600">({selectedBid.rating})</span>
@@ -491,29 +492,29 @@ const BiddingManagement: React.FC = () => {
               {/* Bid Amount & Capacity */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Bid Amount</div>
+                  <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Bid Amount" /></div>
                   <div className="text-sm font-bold text-gray-900">${selectedBid.bidAmount.toLocaleString()}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-[10px] text-gray-600 mb-0.5">Truck Capacity</div>
+                  <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Truck Capacity" /></div>
                   <div className="text-sm font-medium text-gray-900">{selectedBid.truckCapacity.toLocaleString()} kg</div>
                 </div>
               </div>
 
               {/* Timeline */}
               <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-2">Timeline</div>
+                <div className="text-xs font-medium text-gray-900 mb-2"><TranslatedText text="Timeline" /></div>
                 <div className="space-y-1.5">
                   <div>
-                    <div className="text-[10px] text-gray-600">Submitted</div>
+                    <div className="text-[10px] text-gray-600"><TranslatedText text="Submitted" /></div>
                     <div className="text-xs text-gray-900">{formatDateTime(selectedBid.submittedAt)}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-600">Valid Until</div>
+                    <div className="text-[10px] text-gray-600"><TranslatedText text="Valid Until" /></div>
                     <div className="text-xs text-gray-900">{formatDate(selectedBid.validUntil)}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-600">Estimated Delivery</div>
+                    <div className="text-[10px] text-gray-600"><TranslatedText text="Estimated Delivery" /></div>
                     <div className="text-xs text-gray-900">{formatDate(selectedBid.estimatedDelivery)}</div>
                   </div>
                 </div>
@@ -521,7 +522,7 @@ const BiddingManagement: React.FC = () => {
 
               {/* Notes */}
               <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                <div className="text-xs font-medium text-gray-900 mb-1">Notes</div>
+                <div className="text-xs font-medium text-gray-900 mb-1"><TranslatedText text="Notes" /></div>
                 <div className="text-xs text-gray-700">{selectedBid.notes}</div>
               </div>
 
@@ -535,7 +536,7 @@ const BiddingManagement: React.FC = () => {
                     }}
                     className="flex-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-xs font-medium"
                   >
-                    Accept Bid
+                    <TranslatedText text="Accept Bid" />
                   </button>
                   <button
                     onClick={() => {
@@ -544,7 +545,7 @@ const BiddingManagement: React.FC = () => {
                     }}
                     className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-xs font-medium"
                   >
-                    Reject Bid
+                    <TranslatedText text="Reject Bid" />
                   </button>
                 </div>
               )}

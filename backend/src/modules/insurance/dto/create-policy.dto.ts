@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { PolicyType, PolicyStatus } from '../entities/insurance-policy.entity';
+import { PolicyType, PolicyStatus } from '../../../entities/insurance-policy.entity';
 
 export class CreatePolicyDto {
   @ApiProperty({ description: 'Policy number (unique identifier)' })

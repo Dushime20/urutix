@@ -9,7 +9,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SubscriptionNotificationService } from '../../services/subscription-notification.service';
 import { CreditService } from '../../services/credit.service';
 

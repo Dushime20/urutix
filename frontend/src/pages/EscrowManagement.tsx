@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 interface EscrowAccount {
   id: string;
@@ -167,12 +168,12 @@ const EscrowManagement: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Escrow Management"
-      description="Monitor and manage secure payment escrow accounts"
+      title={<TranslatedText text="Escrow Management" />}
+      description={<TranslatedText text="Monitor and manage secure payment escrow accounts" />}
       actions={
         <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 transition-all duration-200 text-sm font-bold">
           <Download className="w-4 h-4" />
-          Export Report
+          <TranslatedText text="Export Report" />
         </button>
       }
     >
@@ -190,7 +191,7 @@ const EscrowManagement: React.FC = () => {
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
               {formatCurrency(stats.totalEscrow, 'USD')}
             </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total in Escrow</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Total in Escrow" /></div>
           </div>
         </div>
 
@@ -202,13 +203,13 @@ const EscrowManagement: React.FC = () => {
                 <Lock className="w-5 h-5" />
               </div>
               <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                Active
+                <TranslatedText text="Active" />
               </span>
             </div>
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
               {stats.activeAccounts}
             </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Accounts</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Accounts" /></div>
           </div>
         </div>
 
@@ -220,13 +221,13 @@ const EscrowManagement: React.FC = () => {
                 <Clock className="w-5 h-5" />
               </div>
               <span className="text-[9px] font-black text-yellow-600 bg-yellow-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                Pending
+                <TranslatedText text="Pending" />
               </span>
             </div>
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
               {stats.pendingRelease}
             </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Release</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Pending Release" /></div>
           </div>
         </div>
 
@@ -238,13 +239,13 @@ const EscrowManagement: React.FC = () => {
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <span className="text-[9px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                Alert
+                <TranslatedText text="Alert" />
               </span>
             </div>
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
               {stats.disputes}
             </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disputed Accounts</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Disputed Accounts" /></div>
           </div>
         </div>
       </div>
@@ -271,12 +272,12 @@ const EscrowManagement: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium appearance-none cursor-pointer"
               >
-                <option value="ALL">All Status</option>
-                <option value="PENDING">Pending</option>
-                <option value="ACTIVE">Active</option>
-                <option value="RELEASED">Released</option>
-                <option value="DISPUTED">Disputed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="ALL"><TranslatedText text="All Status" /></option>
+                <option value="PENDING"><TranslatedText text="Pending" /></option>
+                <option value="ACTIVE"><TranslatedText text="Active" /></option>
+                <option value="RELEASED"><TranslatedText text="Released" /></option>
+                <option value="DISPUTED"><TranslatedText text="Disputed" /></option>
+                <option value="CANCELLED"><TranslatedText text="Cancelled" /></option>
               </select>
             </div>
           </div>
@@ -290,25 +291,25 @@ const EscrowManagement: React.FC = () => {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Escrow ID
+                  <TranslatedText text="Escrow ID" />
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Trip ID
+                  <TranslatedText text="Trip ID" />
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Parties
+                  <TranslatedText text="Parties" />
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Amount
+                  <TranslatedText text="Amount" />
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Status
+                  <TranslatedText text="Status" />
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Created
+                  <TranslatedText text="Created" />
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Actions
+                  <TranslatedText text="Actions" />
                 </th>
               </tr>
             </thead>
@@ -319,7 +320,7 @@ const EscrowManagement: React.FC = () => {
                     <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
                       <Shield className="w-8 h-8 text-gray-300" />
                     </div>
-                    <p className="text-gray-500 text-sm font-medium">No escrow accounts found</p>
+                    <p className="text-gray-500 text-sm font-medium"><TranslatedText text="No escrow accounts found" /></p>
                   </td>
                 </tr>
               ) : (
@@ -391,7 +392,7 @@ const EscrowManagement: React.FC = () => {
                   <Shield className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Escrow Details</h2>
+                  <h2 className="text-xl font-bold text-gray-900"><TranslatedText text="Escrow Details" /></h2>
                   <p className="text-xs text-gray-500 font-medium mt-0.5">{selectedEscrow.id}</p>
                 </div>
               </div>
@@ -411,20 +412,20 @@ const EscrowManagement: React.FC = () => {
                     {getStatusIcon(selectedEscrow.status)}
                   </div>
                   <div>
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-0.5">Status</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-0.5"><TranslatedText text="Status" /></span>
                     <span className="text-sm font-bold text-gray-900">{selectedEscrow.status}</span>
                   </div>
                 </div>
                 {selectedEscrow.disputeReason && (
                   <div className="mt-3 pt-3 border-t border-red-100 text-sm text-red-700">
-                    <span className="font-bold">Reason:</span> {selectedEscrow.disputeReason}
+                    <span className="font-bold"><TranslatedText text="Reason" />:</span> {selectedEscrow.disputeReason}
                   </div>
                 )}
               </div>
 
               {/* Amount */}
               <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Escrow Amount</div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Escrow Amount" /></div>
                 <div className="text-4xl font-black text-gray-900">
                   {formatCurrency(selectedEscrow.amount, selectedEscrow.currency)}
                 </div>
@@ -435,7 +436,7 @@ const EscrowManagement: React.FC = () => {
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                     <Truck className="w-3 h-3" />
-                    Trip ID
+                    <TranslatedText text="Trip ID" />
                   </div>
                   <div className="font-bold text-gray-900 font-mono text-sm bg-gray-50 px-3 py-2 rounded-lg inline-block border border-gray-100">
                     {selectedEscrow.tripId}
@@ -444,7 +445,7 @@ const EscrowManagement: React.FC = () => {
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                     <Calendar className="w-3 h-3" />
-                    Created On
+                    <TranslatedText text="Created On" />
                   </div>
                   <div className="font-bold text-gray-900 text-sm">
                     {formatDate(selectedEscrow.createdAt)}
@@ -453,7 +454,7 @@ const EscrowManagement: React.FC = () => {
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                     <Package className="w-3 h-3" />
-                    Cargo Owner
+                    <TranslatedText text="Cargo Owner" />
                   </div>
                   <div className="font-bold text-gray-900 text-sm">
                     {selectedEscrow.cargoOwner}
@@ -462,21 +463,21 @@ const EscrowManagement: React.FC = () => {
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                     <Truck className="w-3 h-3" />
-                    Truck Owner
+                    <TranslatedText text="Truck Owner" />
                   </div>
                   <div className="font-bold text-gray-900 text-sm">
                     {selectedEscrow.truckOwner}
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Release Condition</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Release Condition" /></div>
                   <div className="font-medium text-gray-700 text-sm bg-gray-50 p-3 rounded-xl border border-gray-100">
                     {selectedEscrow.releaseCondition}
                   </div>
                 </div>
                 {selectedEscrow.releaseDate && (
                   <div className="col-span-2">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Released On</div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Released On" /></div>
                     <div className="font-bold text-green-600 text-sm flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" />
                       {formatDate(selectedEscrow.releaseDate)}
@@ -490,12 +491,12 @@ const EscrowManagement: React.FC = () => {
                 <div className="flex gap-3 pt-6 border-t border-gray-100">
                   <button className="flex-1 bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 transition-all font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
                     <Unlock className="w-4 h-4" />
-                    Release Funds
+                    <TranslatedText text="Release Funds" />
                   </button>
                   <button className="flex-1 bg-white
                    text-red-600 border border-red-100 py-3 rounded-xl hover:bg-red-50 transition-all font-bold text-sm flex items-center justify-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
-                    Raise Dispute
+                    <TranslatedText text="Raise Dispute" />
                   </button>
                 </div>
               )}

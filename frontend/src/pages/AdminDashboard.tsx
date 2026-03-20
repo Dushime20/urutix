@@ -8,6 +8,8 @@ import SystemHealthWidget from '../components/Admin/Widgets/SystemHealthWidget';
 import AdminQuickActions from '../components/Admin/AdminQuickActions';
 import AdminActivityFeed from '../components/Admin/AdminActivityFeed';
 import AdminGeographicMap from '../components/Admin/Widgets/AdminGeographicMap';
+import LowCreditTenantsWidget from '../components/Admin/Widgets/LowCreditTenantsWidget';
+import { TranslatedText } from '../components/translated-text';
 import {
   Activity, Layers,
   Users, Truck, Map as MapIcon,
@@ -27,7 +29,6 @@ import {
   Filler
 } from 'chart.js';
 
-import { useAuth } from '../contexts/AuthContext';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -39,6 +40,7 @@ ChartJS.register(
   ArcElement,
   Filler
 );
+
 
 const AdminDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
@@ -66,7 +68,7 @@ const AdminDashboard: React.FC = () => {
         ticks: { color: '#64748b', font: { size: 10 } }
       },
       y: {
-        grid: { color: '#f1f5f9' },
+        grid: { color: 'rgba(226, 232, 240, 0.1)' },
         ticks: { color: '#64748b', font: { size: 10 } }
       }
     }
@@ -79,8 +81,8 @@ const AdminDashboard: React.FC = () => {
         fill: true,
         label: 'Revenue',
         data: [12500, 19200, 15800, 25300, 22700, 30100, 28500],
-        borderColor: '#4f46e5',
-        backgroundColor: 'rgba(79, 70, 229, 0.05)',
+        borderColor: '#345E85',
+        backgroundColor: 'rgba(52, 94, 133, 0.05)',
         tension: 0.4,
         borderWidth: 2,
         pointRadius: 0,
@@ -95,8 +97,8 @@ const AdminDashboard: React.FC = () => {
       {
         label: 'New Users',
         data: [120, 150, 180, 210, 250, 290],
-        borderColor: '#4f46e5',
-        backgroundColor: 'rgba(79, 70, 229, 0.05)',
+        borderColor: '#345E85',
+        backgroundColor: 'rgba(52, 94, 133, 0.05)',
         tension: 0.4,
         fill: true,
         pointRadius: 3,
@@ -111,7 +113,7 @@ const AdminDashboard: React.FC = () => {
         label: 'Fleet Distribution',
         data: [280, 45, 68, 35],
         backgroundColor: [
-          '#4f46e5',
+          '#345E85', // Primary for Active
           '#94a3b8',
           '#cbd5e1',
           '#f1f5f9'
@@ -137,7 +139,7 @@ const AdminDashboard: React.FC = () => {
           '#10b981', // Emerald for success
           '#94a3b8', // Slate for neutral
           '#ef4444', // Red for issues
-          '#4f46e5', // Indigo for active/completed
+          '#345E85', // Primary for active/completed (previous indigo)
         ],
         borderWidth: 0,
       },
@@ -146,16 +148,16 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <AdminPageLayout
-      title="Admin Dashboard"
-      description="Welcome back. Here's a summary of what's happening across your platform today."
+      title={<TranslatedText text="Admin Dashboard" />}
+      description={<TranslatedText text="Welcome back. Here's a summary of what's happening across your platform today." />}
       actions={
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-600 dark:bg-primary-700 text-slate-100 text-xs font-bold border border-primary-700 dark:border-primary-800">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            System Status: 99.9% Uptime
+            <TranslatedText text="System Status: 99.9% Uptime" />
           </div>
           <AdminQuickActions />
         </div>
@@ -164,26 +166,26 @@ const AdminDashboard: React.FC = () => {
       {/* Top Banner & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <TrendingUp size={20} className="text-indigo-600" />
-            Performance
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <TrendingUp size={20} className="text-primary-600 dark:text-primary-400" />
+            <TranslatedText text="Performance" />
           </h2>
-          <p className="text-sm text-slate-500 font-medium">Insights based on latest data</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium"><TranslatedText text="Insights based on latest data" /></p>
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
           {[
-            { id: '24h', label: 'Last 24h' },
-            { id: '7d', label: '7 Days' },
-            { id: '30d', label: '30 Days' },
-            { id: '1y', label: '1 Year' }
+            { id: '24h', label: <TranslatedText text="Last 24h" /> },
+            { id: '7d', label: <TranslatedText text="7 Days" /> },
+            { id: '30d', label: <TranslatedText text="30 Days" /> },
+            { id: '1y', label: <TranslatedText text="1 Year" /> }
           ].map((range) => (
             <button
               key={range.id}
               onClick={() => setTimeRange(range.id)}
               className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${timeRange === range.id
-                ? 'bg-white text-indigo-600 border border-slate-200'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 border border-slate-200 dark:border-slate-600 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
               {range.label}
@@ -195,46 +197,50 @@ const AdminDashboard: React.FC = () => {
       {/* Primary Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          title="Total Users"
+          variant="premium"
+          title={<TranslatedText text="Total Users" />}
           value="1,284"
           icon={<Users size={20} />}
           trend="+12%"
           trendDirection="up"
           color="primary"
-          subtitle="Recent registrations"
+          subtitle={<TranslatedText text="Recent registrations" />}
           onClick={() => navigate('/admin/users')}
         />
 
         <StatCard
-          title="Fleet Pulse"
+          variant="premium"
+          title={<TranslatedText text="Fleet Pulse" />}
           value="84%"
           icon={<Truck size={20} />}
           trend="+3%"
           trendDirection="up"
           color="primary"
-          subtitle="Vehicles in operation"
+          subtitle={<TranslatedText text="Vehicles in operation" />}
           onClick={() => navigate('/admin/trucks')}
         />
 
         <StatCard
-          title="Active Orders"
+          variant="premium"
+          title={<TranslatedText text="Active Orders" />}
           value="876"
           icon={<Layers size={20} />}
           trend="+15%"
           trendDirection="up"
           color="primary"
-          subtitle="Currently in transit"
+          subtitle={<TranslatedText text="Currently in transit" />}
           onClick={() => navigate('/admin/loads')}
         />
 
         <StatCard
-          title="Revenue"
+          variant="premium"
+          title={<TranslatedText text="Revenue" />}
           value="$45,280"
           icon={<Activity size={20} />}
           trend="+23%"
           trendDirection="up"
-          color="primary"
-          subtitle="Month to date"
+          color="emerald"
+          subtitle={<TranslatedText text="Month to date" />}
           onClick={() => navigate('/admin/financial')}
         />
       </div>
@@ -244,8 +250,10 @@ const AdminDashboard: React.FC = () => {
         <div className="xl:col-span-2 space-y-8">
           {/* Revenue Performance */}
           <DataCard
-            title="Revenue"
-            subtitle="Historical performance"
+            title={<TranslatedText text="Revenue" />}
+            subtitle={<TranslatedText text="Historical performance" />}
+            headerColor="secondary"
+            icon={<TrendingUp size={20} />}
           >
             <div className="h-[320px]">
               <Line data={revenueData} options={chartOptions} />
@@ -254,11 +262,13 @@ const AdminDashboard: React.FC = () => {
 
           {/* Regional Activity Map */}
           <DataCard
-            title="Activity Map"
-            subtitle="Platform census"
+            title={<TranslatedText text="Activity Map" />}
+            subtitle={<TranslatedText text="Platform census" />}
+            headerColor="secondary"
+            icon={<MapIcon size={20} />}
             actions={
-              <button className="flex items-center gap-1.5 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-all">
-                <MapIcon size={14} /> View Map
+              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-all backdrop-blur-sm border border-white/10">
+                <MapIcon size={14} /> <TranslatedText text="Explore Node Network" />
               </button>
             }
           >
@@ -267,12 +277,22 @@ const AdminDashboard: React.FC = () => {
 
           {/* Secondary Analytics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <DataCard title="User Growth" subtitle="New platform members" >
+            <DataCard 
+              title={<TranslatedText text="User Growth" />} 
+              subtitle={<TranslatedText text="New platform members" />}
+              headerColor="secondary"
+              icon={<Users size={18} />}
+            >
               <div className="h-[200px]">
                 <Line data={userGrowthData} options={chartOptions} />
               </div>
             </DataCard>
-            <DataCard title="Fleet Status" subtitle="Resource allocation" >
+            <DataCard 
+              title={<TranslatedText text="Fleet Status" />} 
+              subtitle={<TranslatedText text="Resource allocation" />}
+              headerColor="secondary"
+              icon={<Truck size={18} />}
+            >
               <div className="h-[200px]">
                 <Bar
                   data={fleetUtilizationData}
@@ -296,14 +316,16 @@ const AdminDashboard: React.FC = () => {
 
           {/* Platform Event Log */}
           <DataCard
-            title="Recent Activity"
-            subtitle="Latest system and user events"
+            title={<TranslatedText text="Recent Activity" />}
+            subtitle={<TranslatedText text="Latest system and user events" />}
+            headerColor="secondary"
+            icon={<Activity size={18} />}
             actions={
               <button
                 onClick={() => navigate('/admin/activity-logs')}
-                className="text-xs font-bold text-indigo-600 hover:underline transition-all"
+                className="text-xs font-black text-white hover:text-primary-200 transition-all uppercase tracking-widest"
               >
-                Full Log
+                <TranslatedText text="Full Log" />
               </button>
             }
           >
@@ -312,30 +334,32 @@ const AdminDashboard: React.FC = () => {
 
           {/* Quick Stats/Donut */}
           <DataCard
-            title="Shipment Pipeline"
-            subtitle="Current status distribution"
+            title={<TranslatedText text="Shipment Pipeline" />}
+            subtitle={<TranslatedText text="Current status distribution" />}
+            headerColor="secondary"
+            icon={<Layers size={18} />}
           >
             <div className="relative w-[180px] h-[180px] mx-auto">
               <Doughnut data={statusData} options={donutOptions} />
               <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                <span className="text-3xl font-black text-slate-800">876</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Orders</span>
+                <span className="text-3xl font-black text-slate-800 dark:text-white">876</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Orders" /></span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-6">
               {[
-                { label: 'Active', val: '45%', color: 'bg-indigo-600' },
-                { label: 'Pending', val: '15%', color: 'bg-slate-400' },
-                { label: 'Issues', val: '5%', color: 'bg-red-500' },
-                { label: 'Success', val: '35%', color: 'bg-emerald-500' }
+                { label: <TranslatedText text="Active" />, val: '45%', color: 'bg-primary-600' },
+                { label: <TranslatedText text="Pending" />, val: '15%', color: 'bg-slate-400' },
+                { label: <TranslatedText text="Issues" />, val: '5%', color: 'bg-red-500' },
+                { label: <TranslatedText text="Success" />, val: '35%', color: 'bg-emerald-500' }
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
+                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
-                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{item.label}</span>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">{item.label}</span>
                   </div>
-                  <span className="text-xs font-black text-slate-900">{item.val}</span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white">{item.val}</span>
                 </div>
               ))}
             </div>
@@ -344,9 +368,10 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Management Widgets Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-12">
         <UserManagementWidget />
         <TenantManagementWidget />
+        <LowCreditTenantsWidget />
       </div>
     </AdminPageLayout>
   );

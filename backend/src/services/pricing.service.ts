@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
-import { CreditPricingRule, PricingRuleType } from '../entities/credit-pricing-rule.entity';
-import { Tenant } from '../entities/tenant.entity';
-import { TenantSubscription, SubscriptionStatus } from '../entities/tenant-subscription.entity';
+import { CreditPricingRule, PricingRuleType } from './../entities/credit-pricing-rule.entity';
+import { Tenant } from './../entities/tenant.entity';
+import { TenantSubscription, SubscriptionStatus } from './../entities/tenant-subscription.entity';
 
 export interface PricingCalculation {
   totalCost: number;

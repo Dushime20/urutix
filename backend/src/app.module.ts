@@ -34,11 +34,12 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { UserKycModule } from './modules/user-kyc/user-kyc.module';
 import { KycModule } from './modules/kyc/kyc.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { MultiModalModule } from './modules/multi-modal/multi-modal.module';
+import { EventsModule } from './modules/events/events.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
 import { Tenant } from './entities/tenant.entity';
-
 
 @Module({
   imports: [
@@ -77,7 +78,8 @@ import { Tenant } from './entities/tenant.entity';
     KycModule,
     UserKycModule,
     AnalyticsModule,
-
+    MultiModalModule,
+    EventsModule, // Add EventsModule for Socket.IO support
   ],
   controllers: [AppController],
   providers: [AppService],

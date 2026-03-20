@@ -1,12 +1,12 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual, Like, ILike } from 'typeorm';
-import { Tenant, TenantStatus } from '../entities/tenant.entity';
-import { User, UserStatus } from '../entities/user.entity';
-import { TenantSubscription, SubscriptionStatus } from '../entities/tenant-subscription.entity';
-import { CreditAccount } from '../entities/credit-account.entity';
-import { ActivityLog } from '../entities/activity-log.entity';
-import { CreditTransaction } from '../entities/credit-transaction.entity';
+import { Tenant, TenantStatus } from './../entities/tenant.entity';
+import { User, UserStatus } from './../entities/user.entity';
+import { TenantSubscription, SubscriptionStatus } from './../entities/tenant-subscription.entity';
+import { CreditAccount } from './../entities/credit-account.entity';
+import { ActivityLog } from './../entities/activity-log.entity';
+import { CreditTransaction } from './../entities/credit-transaction.entity';
 
 // Interfaces matching design.md specification
 

@@ -14,7 +14,7 @@ import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { BrokerCommission, CommissionStatus } from '../../entities/broker-commission.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';

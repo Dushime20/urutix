@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Driver } from '../../entities/driver.entity';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
+import { SafetyIncident } from '../../entities/safety-incident.entity';
 import { DriverController } from './driver.controller';
 import { DriverService } from './driver.service';
 import { OcrModule } from '../ocr/ocr.module';
@@ -10,7 +11,7 @@ import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Driver, Load, Truck]),
+    TypeOrmModule.forFeature([Driver, Load, Truck, SafetyIncident]),
     OcrModule,
     NotificationModule,
   ],

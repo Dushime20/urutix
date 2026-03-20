@@ -23,6 +23,7 @@ import { AuctionView } from '../../entities/auction-view.entity';
 import { LoadContract, ContractStatus } from '../../entities/load-contract.entity';
 import { NotificationService } from '../notifications/notification.service';
 import { NotificationType, EntityType, NotificationCategory, NotificationChannel } from '../../entities/notification.entity';
+import { BiddingIntelligenceService } from './bidding-intelligence.service';
 
 export interface CreateBidDto {
   loadId: string;
@@ -120,6 +121,7 @@ export class BiddingService {
     @InjectRepository(LoadContract)
     private readonly contractRepository: Repository<LoadContract>,
     private readonly notificationService: NotificationService,
+    private readonly biddingIntelligence: BiddingIntelligenceService,
   ) { }
 
   async createBid(
@@ -283,6 +285,13 @@ export class BiddingService {
       });
     } catch (error) {
       console.error('Failed to send bid notification', error);
+    }
+
+    // Trigger AI Negotiation Evaluation
+    if (!savedBid.isCounterOffer) {
+       this.biddingIntelligence.evaluateAndNegotiate(savedBid.id, tenantId).catch(err => {
+          console.error('[AI-NEGOTIATOR] Evaluation failed:', err);
+       });
     }
 
     return savedBid;

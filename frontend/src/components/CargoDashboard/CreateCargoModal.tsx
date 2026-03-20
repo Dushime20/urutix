@@ -192,7 +192,7 @@ const CreateCargoModal: React.FC<CreateCargoModalProps> = ({ isOpen, onClose, on
                 <div className="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-shrink-0">
                     <div>
                         <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                            <div className="p-2 bg-teal-100 text-teal-600 rounded-lg">
+                            <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
                                 <Package size={20} />
                             </div>
                             Post New Load
@@ -229,8 +229,8 @@ const CreateCargoModal: React.FC<CreateCargoModalProps> = ({ isOpen, onClose, on
                 {uploadProgress && (
                     <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-50 rounded-3xl">
                         <div className="text-center space-y-4 p-8">
-                            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
-                                <Upload className="text-[#345E85] animate-bounce" size={32} />
+                            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto">
+                                <Upload className="text-primary-500 animate-bounce" size={32} />
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-slate-900 mb-2">
@@ -242,7 +242,7 @@ const CreateCargoModal: React.FC<CreateCargoModalProps> = ({ isOpen, onClose, on
                             </div>
                             <div className="w-64 h-2 bg-slate-200 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-[#345E85] transition-all duration-300"
+                                    className="h-full bg-primary-500 transition-all duration-300"
                                     style={{
                                         width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
                                     }}

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 
 interface Permission {
@@ -153,15 +154,15 @@ const EnhancedPermissions: React.FC = () => {
 
     return (
         <AdminPageLayout
-            title="Permissions & Roles"
-            description="Manage roles, permissions, and access control across the platform"
+            title={<TranslatedText text="Permissions & Roles" />}
+            description={<TranslatedText text="Manage roles, permissions, and access control across the platform" />}
             actions={
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setShowCreateRole(true)}
                         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 text-xs uppercase tracking-wider"
                     >
-                        <Plus size={16} /> Create Role
+                        <Plus size={16} /> <TranslatedText text="Create Role" />
                     </button>
                 </div>
             }
@@ -177,7 +178,7 @@ const EnhancedPermissions: React.FC = () => {
                                 : 'border-transparent text-slate-400 hover:text-slate-600'
                                 }`}
                         >
-                            Permission Matrix
+                            <TranslatedText text="Permission Matrix" />
                         </button>
                         <button
                             onClick={() => setActiveTab('roles')}
@@ -186,7 +187,7 @@ const EnhancedPermissions: React.FC = () => {
                                 : 'border-transparent text-slate-400 hover:text-slate-600'
                                 }`}
                         >
-                            Roles ({rolesData?.length || 0})
+                            <TranslatedText text="Roles" /> ({rolesData?.length || 0})
                         </button>
                     </nav>
                 </div>

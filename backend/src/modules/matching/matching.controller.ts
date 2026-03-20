@@ -22,7 +22,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MatchingService, MatchingAlgorithm } from './matching.service';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
@@ -262,7 +262,7 @@ export class MatchingController {
 
       return {
         message: 'Enhanced matches found successfully',
-        data: matches, // Changed from 'matches' to 'data' to match frontend expectation
+        data: matches, // Changed from matches' to 'data' to match frontend expectation
         matches, // Keep both for backward compatibility
       };
     } catch (error) {
@@ -329,7 +329,7 @@ export class MatchingController {
       throw new BadRequestException('loadId and truckId are required');
     }
 
-    // Get tenantId from request user or headers (same pattern as findMatches)
+    // Get tenantId from 'request user or headers (same pattern as findMatches)
     let tenantId: string;
     if (req.user?.tenantId) {
       tenantId = req.user.tenantId;

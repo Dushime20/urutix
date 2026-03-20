@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, UserPlus } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
 import receiverService from '../../services/receiverService';
 import type { Receiver, CreateReceiverDto } from '../../types/receiver';
 import toast from 'react-hot-toast';
@@ -168,11 +169,11 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                 <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">
-                            {currentReceiverId ? 'Manage Receiver' : 'Assign Receiver'}
+                            {currentReceiverId ? <TranslatedText text="Manage Receiver" /> : <TranslatedText text="Assign Receiver" />}
                         </h2>
                         {loadTitle && (
                             <p className="text-sm text-gray-600 mt-1">
-                                Cargo: {loadTitle}
+                                <TranslatedText text="Cargo" />: {loadTitle}
                             </p>
                         )}
                     </div>
@@ -191,7 +192,7 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-blue-900">Current Receiver</p>
+                                    <p className="text-sm font-medium text-blue-900"><TranslatedText text="Current Receiver" /></p>
                                     <p className="text-sm text-blue-700 mt-1">
                                         {receivers.find(r => r.id === currentReceiverId)?.email || 'Unknown'}
                                     </p>
@@ -201,7 +202,7 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                     disabled={assigning}
                                     className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                                 >
-                                    {assigning ? 'Unassigning...' : 'Unassign'}
+                                    {assigning ? <TranslatedText text="Unassigning..." /> : <TranslatedText text="Unassign" />}
                                 </button>
                             </div>
                         </div>
@@ -216,18 +217,18 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                     className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
                                 >
                                     <UserPlus className="w-4 h-4" />
-                                    {showCreateForm ? 'Cancel' : 'Create New Receiver'}
+                                    {showCreateForm ? <TranslatedText text="Cancel" /> : <TranslatedText text="Create New Receiver" />}
                                 </button>
                             </div>
 
                             {/* Create Receiver Form */}
                             {showCreateForm && (
                                 <form onSubmit={handleCreateReceiver} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <h3 className="text-sm font-semibold text-gray-900 mb-3">New Receiver Details</h3>
+                                    <h3 className="text-sm font-semibold text-gray-900 mb-3"><TranslatedText text="New Receiver Details" /></h3>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                First Name *
+                                                <TranslatedText text="First Name" /> *
                                             </label>
                                             <input
                                                 type="text"
@@ -239,7 +240,7 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                Last Name *
+                                                <TranslatedText text="Last Name" /> *
                                             </label>
                                             <input
                                                 type="text"
@@ -251,7 +252,7 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                Email *
+                                                <TranslatedText text="Email" /> *
                                             </label>
                                             <input
                                                 type="email"
@@ -263,7 +264,7 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                Phone
+                                                <TranslatedText text="Phone" />
                                             </label>
                                             <input
                                                 type="tel"
@@ -277,7 +278,7 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                         type="submit"
                                         className="mt-3 w-full px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                                     >
-                                        Create & Select Receiver
+                                        <TranslatedText text="Create & Select Receiver" />
                                     </button>
                                 </form>
                             )}
@@ -296,12 +297,12 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                             {/* Receivers List */}
                             <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
                                 {loading ? (
-                                    <div className="text-center py-8 text-gray-500">Loading receivers...</div>
+                                    <div className="text-center py-8 text-gray-500"><TranslatedText text="Loading receivers..." /></div>
                                 ) : filteredReceivers.length === 0 ? (
                                     <div className="text-center py-8 text-gray-500">
                                         <UserPlus className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                                        <p>No receivers found</p>
-                                        <p className="text-sm mt-1">Create a new receiver to get started</p>
+                                        <p><TranslatedText text="No receivers found" /></p>
+                                        <p className="text-sm mt-1"><TranslatedText text="Create a new receiver to get started" /></p>
                                     </div>
                                 ) : (
                                     filteredReceivers.map((receiver) => (
@@ -356,14 +357,14 @@ export const AssignReceiverModal: React.FC<AssignReceiverModalProps> = ({
                                     onClick={onClose}
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                 >
-                                    Cancel
+                                    <TranslatedText text="Cancel" />
                                 </button>
                                 <button
                                     onClick={handleAssign}
                                     disabled={!selectedReceiverId || assigning}
                                     className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
-                                    {assigning ? 'Assigning...' : 'Assign Receiver'}
+                                    {assigning ? <TranslatedText text="Assigning..." /> : <TranslatedText text="Assign Receiver" />}
                                 </button>
                             </div>
                         </>

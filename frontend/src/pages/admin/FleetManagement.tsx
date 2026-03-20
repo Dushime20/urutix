@@ -5,6 +5,7 @@ import {
 } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '../../services/tenantApi';
+import { TranslatedText } from '../../components/translated-text';
 import { FaCoins } from 'react-icons/fa';
 
 interface Truck {
@@ -116,15 +117,15 @@ const FleetManagement: React.FC = () => {
       <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fleet Management</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Fleet Management" /></h1>
             <p className="text-slate-500 font-medium mt-1">
-              Monitor and manage your truck fleet operations
+              <TranslatedText text="Monitor and manage your truck fleet operations" />
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2">
               <FaPlus className="text-xs" />
-              Add Truck
+              <TranslatedText text="Add Truck" />
             </button>
           </div>
         </div>
@@ -148,18 +149,18 @@ const FleetManagement: React.FC = () => {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
           >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="inactive">Inactive</option>
+            <option value=""><TranslatedText text="All Status" /></option>
+            <option value="active"><TranslatedText text="Active" /></option>
+            <option value="maintenance"><TranslatedText text="Maintenance" /></option>
+            <option value="inactive"><TranslatedText text="Inactive" /></option>
           </select>
           <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
             <FaFilter />
-            <span>More Filters</span>
+            <span><TranslatedText text="More Filters" /></span>
           </button>
           <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
             <FaDownload />
-            <span>Export</span>
+            <span><TranslatedText text="Export" /></span>
           </button>
         </div>
       </div>
@@ -169,7 +170,7 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Total Trucks</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Trucks" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.length}</p>
             </div>
             <FaTruck className="text-blue-500 text-3xl" />
@@ -178,7 +179,7 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Active</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Active" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'active').length}</p>
             </div>
             <FaCheckCircle className="text-green-500 text-3xl" />
@@ -187,7 +188,7 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Maintenance</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Maintenance" /></p>
               <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'maintenance').length}</p>
             </div>
             <FaTools className="text-yellow-500 text-3xl" />
@@ -196,7 +197,7 @@ const FleetManagement: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg p-6 border-b-4 border-indigo-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Credit Balance</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Credit Balance" /></p>
               <p className="text-2xl font-black text-indigo-600 leading-none tracking-tight">{currentBalance.toLocaleString()} <span className="text-xs">TRX</span></p>
             </div>
             <FaCoins className="text-indigo-500 text-3xl" />

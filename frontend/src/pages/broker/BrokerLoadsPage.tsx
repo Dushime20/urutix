@@ -6,24 +6,19 @@ import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceM
 import FilterSelect from '../../components/common/FilterSelect';
 import {
   Package,
-  MapPin,
-  DollarSign,
-  Eye,
-  Loader2,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  Download,
+  Search,
   Grid,
   Table,
-  Search
+  ArrowRight,
+  Activity,
+  AlertCircle,
+  Download,
+  Clock,
+  Eye
 } from 'lucide-react';
-import { FaLayerGroup as FaLayerGroupIcon, FaBox as FaBoxIcon } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import { generateBrokerContract, type BrokerContractData } from '../../templates/brokerContract';
-import { cn } from '../../utils/cn';
-import { getStatusColor, getStatusDisplayName } from '../../pages/dashboard/cargos/list/utils';
+import { generateBrokerContract, type BrokerContractData } from '@/templates/brokerContract';
 
 const BrokerLoadsPage: React.FC = () => {
   const { user } = useAuth();
@@ -37,7 +32,7 @@ const BrokerLoadsPage: React.FC = () => {
   // Filters and view mode
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [cargoTypeFilter, setCargoTypeFilter] = useState('');
+  const [cargoTypeFilter] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
   useEffect(() => {
@@ -49,17 +44,11 @@ const BrokerLoadsPage: React.FC = () => {
   const loadBrokerLoads = async () => {
     try {
       setLoading(true);
-      console.log('Loading broker loads for user:', user!.id, 'email:', user!.email);
-
       const [loadsResponse, contractsResponse] = await Promise.all([
         brokerAPI.getBrokerLoads(user!.id),
         brokerAPI.getContracts()
       ]);
 
-      console.log('Loads response:', loadsResponse);
-      console.log('Loads data:', loadsResponse.data);
-
-      // Handle different response formats
       let loadsData: BrokerLoad[] = [];
       if (Array.isArray(loadsResponse.data)) {
         loadsData = loadsResponse.data;
@@ -68,11 +57,8 @@ const BrokerLoadsPage: React.FC = () => {
       } else if (loadsResponse.data && Array.isArray(loadsResponse.data)) {
         loadsData = loadsResponse.data;
       }
-
-      console.log('Processed loads:', loadsData.length, loadsData);
       setLoads(loadsData);
 
-      // Fetch contracts and map them by loadId
       const contractsData = contractsResponse.data || contractsResponse || [];
       const contractsMap = new Map<string, LoadContract>();
       if (Array.isArray(contractsData)) {
@@ -83,31 +69,22 @@ const BrokerLoadsPage: React.FC = () => {
         });
       }
       setContracts(contractsMap);
-
-      if (loadsData.length === 0) {
-        console.warn('No loads found for broker. This might be expected if no loads have been assigned yet.');
-      }
     } catch (err: any) {
       console.error('Failed to load broker loads:', err);
-      console.error('Error response:', err.response);
       toast.error(err.response?.data?.message || 'Failed to load loads');
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter loads
   const filteredLoads = useMemo(() => {
     return loads.filter(load => {
       const matchesSearch =
         load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         load.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         load.id.toLowerCase().includes(searchTerm.toLowerCase());
-
       const matchesStatus = !statusFilter || load.status === statusFilter;
-
       const matchesCargoType = !cargoTypeFilter || load.cargoType === cargoTypeFilter;
-
       return matchesSearch && matchesStatus && matchesCargoType;
     });
   }, [loads, searchTerm, statusFilter, cargoTypeFilter]);
@@ -118,7 +95,7 @@ const BrokerLoadsPage: React.FC = () => {
       toast.success('Contract accepted successfully!');
       setShowContractModal(false);
       setSelectedContract(null);
-      loadBrokerLoads(); // Reload to refresh contract status
+      loadBrokerLoads();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to accept contract');
     }
@@ -136,687 +113,284 @@ const BrokerLoadsPage: React.FC = () => {
 
   const handleDownloadContract = async (loadId: string) => {
     const contract = contracts.get(loadId);
-    if (!contract) {
-      toast.error('Contract not found for this load');
-      return;
-    }
-
-    // Find load from already loaded data
+    if (!contract) return;
     const loadData = loads.find(l => l.id === loadId);
-    if (!loadData) {
-      toast.error('Load data not found. Please refresh the page.');
-      return;
-    }
+    if (!loadData) return;
 
     try {
-      console.log('Starting PDF download for contract:', contract.id);
-      console.log('Using load data:', loadData);
-
-      // Fetch full contract details with relations
-      let fullContract;
-      try {
-        const contractResponse = await brokerAPI.getContract(contract.id);
-        fullContract = contractResponse.data || contractResponse;
-        console.log('Contract fetched:', fullContract);
-      } catch (err: any) {
-        console.error('Failed to fetch contract:', err);
-        toast.error(`Failed to fetch contract: ${err.response?.data?.message || err.message}`);
-        return;
-      }
-
-      // Use contract data if available, otherwise use load data
+      const contractResponse = await brokerAPI.getContract(contract.id);
+      const fullContract = contractResponse.data || contractResponse;
       const loadInfo = fullContract.load || loadData;
 
-      // Prepare contract data for PDF
       const cargoOwnerName = fullContract.cargoOwner?.profile?.firstName && fullContract.cargoOwner?.profile?.lastName
         ? `${fullContract.cargoOwner.profile.firstName} ${fullContract.cargoOwner.profile.lastName}`
         : fullContract.cargoOwner?.email || 'Cargo Owner';
 
-      const cargoOwnerCompany = fullContract.cargoOwner?.profile?.companyName || 'N/A';
-      const cargoOwnerEmail = fullContract.cargoOwner?.email || 'N/A';
-      const cargoOwnerPhone = fullContract.cargoOwner?.phone || fullContract.cargoOwner?.profile?.phone || 'N/A';
-
       const brokerName = (user as any)?.profile?.firstName && (user as any)?.profile?.lastName
         ? `${(user as any).profile.firstName} ${(user as any).profile.lastName}`
         : user?.email || 'Broker';
-      const brokerCompany = (user as any)?.profile?.companyName || 'N/A';
-      const brokerEmail = user?.email || 'N/A';
-      const brokerPhone = (user as any)?.phone || (user as any)?.profile?.phone || 'N/A';
-
-      // Get locations from load data or contract
-      const pickupLocation = loadInfo.locations?.find((loc: any) => loc.type === 'PICKUP')?.locationData?.address
-        || loadInfo.pickupLocation
-        || loadData.pickupLocation
-        || 'N/A';
-      const deliveryLocation = loadInfo.locations?.find((loc: any) => loc.type === 'DELIVERY')?.locationData?.address
-        || loadInfo.deliveryLocation
-        || loadData.deliveryLocation
-        || 'N/A';
-
-      // Validate required fields
-      if (!fullContract.agreedRate && !loadData.loadValue) {
-        toast.error('Missing rate information for contract');
-        return;
-      }
-
-      if (!fullContract.commissionRate) {
-        toast.error('Missing commission rate information');
-        return;
-      }
 
       const contractData: BrokerContractData = {
         cargoOwner: {
           name: cargoOwnerName,
-          company: cargoOwnerCompany,
+          company: fullContract.cargoOwner?.profile?.companyName || 'N/A',
           address: 'N/A',
-          phone: cargoOwnerPhone,
-          email: cargoOwnerEmail
+          phone: fullContract.cargoOwner?.phone || 'N/A',
+          email: fullContract.cargoOwner?.email || 'N/A'
         },
         broker: {
           name: brokerName,
-          company: brokerCompany,
+          company: (user as any)?.profile?.companyName || 'N/A',
           address: 'N/A',
-          phone: brokerPhone,
-          email: brokerEmail
+          phone: (user as any)?.phone || 'N/A',
+          email: user?.email || 'N/A'
         },
         load: {
-          id: loadData.id || contract.loadId || contract.id,
+          id: loadData.id,
           title: loadData.title || loadInfo.title || 'Load',
           description: loadData.description || loadInfo.description || 'Transportation service',
-          transportationFee: fullContract.agreedRate || loadData.loadValue || loadInfo.loadValue || 0,
-          currency: fullContract.currencyCode || loadData.currencyCode || loadInfo.currencyCode || 'KES',
+          transportationFee: fullContract.agreedRate || loadData.loadValue || 0,
+          currency: fullContract.currencyCode || loadData.currencyCode || 'KES',
           weight: loadData.weight || loadInfo.weight,
           cargoType: loadData.cargoType || loadInfo.cargoType || 'GENERAL',
-          pickupLocation,
-          deliveryLocation,
-          pickupDate: fullContract.pickupDate
-            ? new Date(fullContract.pickupDate).toISOString().split('T')[0]
-            : loadData.pickupDate
-              ? new Date(loadData.pickupDate).toISOString().split('T')[0]
-              : loadInfo.pickupDate
-                ? new Date(loadInfo.pickupDate).toISOString().split('T')[0]
-                : new Date().toISOString().split('T')[0],
-          deliveryDate: fullContract.deliveryDate
-            ? new Date(fullContract.deliveryDate).toISOString().split('T')[0]
-            : loadData.deliveryDate
-              ? new Date(loadData.deliveryDate).toISOString().split('T')[0]
-              : loadInfo.deliveryDate
-                ? new Date(loadInfo.deliveryDate).toISOString().split('T')[0]
-                : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          pickupLocation: loadData.pickupLocation || 'N/A',
+          deliveryLocation: loadData.deliveryLocation || 'N/A',
+          pickupDate: new Date(fullContract.pickupDate || loadData.pickupDate || Date.now()).toISOString().split('T')[0],
+          deliveryDate: new Date(fullContract.deliveryDate || loadData.deliveryDate || Date.now()).toISOString().split('T')[0],
         },
         commission: {
           rate: fullContract.commissionRate || 0,
-          amount: fullContract.commissionAmount || ((fullContract.agreedRate || loadData.loadValue || 0) * (fullContract.commissionRate || 0) / 100),
+          amount: fullContract.commissionAmount || 0,
           paymentTerms: fullContract.paymentTerms || 'Net 30 days',
           paymentMethod: 'Bank Transfer'
         },
         contract: {
-          id: fullContract.id || contract.id,
-          date: fullContract.createdAt
-            ? new Date(fullContract.createdAt).toISOString().split('T')[0]
-            : new Date().toISOString().split('T')[0],
-          effectiveDate: fullContract.pickupDate
-            ? new Date(fullContract.pickupDate).toISOString().split('T')[0]
-            : new Date().toISOString().split('T')[0],
+          id: fullContract.id,
+          date: new Date(fullContract.createdAt || Date.now()).toISOString().split('T')[0],
+          effectiveDate: new Date(fullContract.pickupDate || Date.now()).toISOString().split('T')[0],
           jurisdiction: 'Kenya'
         }
       };
 
-      // Generate contract text
-      let contractText;
-      try {
-        contractText = generateBrokerContract(contractData);
-        console.log('Contract text generated successfully');
-      } catch (err: any) {
-        console.error('Failed to generate contract text:', err);
-        toast.error(`Failed to generate contract text: ${err.message}`);
-        return;
-      }
-
-      // Create PDF
-      let pdf;
-      try {
-        pdf = new jsPDF();
-        console.log('PDF instance created');
-      } catch (err: any) {
-        console.error('Failed to create PDF instance:', err);
-        toast.error(`Failed to create PDF: ${err.message}`);
-        return;
-      }
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20;
-      const maxWidth = pageWidth - (margin * 2);
-      let yPosition = 30;
-
-      // Helper function to add text with word wrap
-      const addText = (text: string, fontSize: number, isBold: boolean = false, align: 'left' | 'center' | 'right' = 'left') => {
-        try {
-          if (!text || typeof text !== 'string') {
-            console.warn('Invalid text provided to addText:', text);
-            return;
-          }
-          pdf.setFontSize(fontSize);
-          pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-
-          const lines = pdf.splitTextToSize(text, maxWidth);
-          lines.forEach((line: string) => {
-            if (yPosition > pageHeight - 30) {
-              pdf.addPage();
-              yPosition = 20;
-            }
-            pdf.text(line, align === 'center' ? pageWidth / 2 : align === 'right' ? pageWidth - margin : margin, yPosition, { align });
-            yPosition += fontSize * 0.4;
-          });
-        } catch (err: any) {
-          console.error('Error in addText:', err, 'text:', text);
-          throw err;
-        }
-      };
-
-      try {
-        // Header
-        addText('BROKER SERVICE AGREEMENT', 20, true, 'center');
-        yPosition += 10;
-
-        // Contract ID and Date
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`Contract ID: ${contractData.contract.id}`, margin, yPosition);
-        pdf.text(`Date: ${contractData.contract.date}`, pageWidth - margin, yPosition, { align: 'right' });
-        yPosition += 15;
-
-        // Parties Section
-        addText('PARTIES:', 14, true);
-        yPosition += 5;
-
-        addText('1. CARGO OWNER ("Principal"):', 11, true);
-        yPosition += 3;
-        addText(`Name: ${contractData.cargoOwner.name}`, 10);
-        addText(`Company: ${contractData.cargoOwner.company}`, 10);
-        addText(`Phone: ${contractData.cargoOwner.phone}`, 10);
-        addText(`Email: ${contractData.cargoOwner.email}`, 10);
-        yPosition += 5;
-
-        addText('2. BROKER ("Agent"):', 11, true);
-        yPosition += 3;
-        addText(`Name: ${contractData.broker.name}`, 10);
-        addText(`Company: ${contractData.broker.company}`, 10);
-        addText(`Phone: ${contractData.broker.phone}`, 10);
-        addText(`Email: ${contractData.broker.email}`, 10);
-        yPosition += 10;
-
-        // Load Details
-        addText('LOAD DETAILS:', 14, true);
-        yPosition += 5;
-        addText(`Load ID: ${contractData.load.id}`, 10);
-        addText(`Description: ${contractData.load.title}`, 10);
-        addText(`Cargo Type: ${contractData.load.cargoType}`, 10);
-        if (contractData.load.weight) {
-          addText(`Weight: ${contractData.load.weight} kg`, 10);
-        }
-        addText(`Transportation Fee: ${contractData.load.currency} ${contractData.load.transportationFee.toLocaleString()}`, 10);
-        addText(`Route: ${contractData.load.pickupLocation} → ${contractData.load.deliveryLocation}`, 10);
-        addText(`Pickup Date: ${contractData.load.pickupDate}`, 10);
-        addText(`Delivery Date: ${contractData.load.deliveryDate}`, 10);
-        yPosition += 10;
-
-        // Commission Agreement
-        addText('COMMISSION AGREEMENT:', 14, true);
-        yPosition += 5;
-        addText(`Commission Rate: ${contractData.commission.rate}%`, 10);
-        addText(`Commission Amount: ${contractData.load.currency} ${contractData.commission.amount.toLocaleString()}`, 10);
-        addText(`Payment Terms: ${contractData.commission.paymentTerms}`, 10);
-        addText(`Payment Method: ${contractData.commission.paymentMethod}`, 10);
-        yPosition += 10;
-
-        // Terms and Conditions
-        addText('TERMS AND CONDITIONS:', 14, true);
-        yPosition += 5;
-
-        const terms = contractText.split('\n').filter(line => line.trim());
-        terms.forEach((line: string) => {
-          if (line.trim().startsWith('TERMS AND CONDITIONS')) return;
-          if (line.trim().startsWith('SIGNATURES')) return;
-          if (line.trim().startsWith('This contract')) return;
-
-          if (line.trim().match(/^\d+\./)) {
-            addText(line.trim(), 11, true);
-          } else if (line.trim().match(/^\d+\.\d+/)) {
-            addText(line.trim(), 10, true);
-          } else {
-            addText(line.trim(), 10);
-          }
-        });
-
-        // Save PDF
-        try {
-          const fileName = `Broker_Contract_${contractData.contract.id}.pdf`;
-          pdf.save(fileName);
-          console.log('PDF saved successfully:', fileName);
-          toast.success('Contract PDF downloaded successfully');
-        } catch (pdfErr: any) {
-          console.error('Failed to save PDF:', pdfErr);
-          toast.error(`Failed to save PDF: ${pdfErr.message}`);
-        }
-      } catch (pdfGenErr: any) {
-        console.error('Error during PDF generation:', pdfGenErr);
-        toast.error(`Error generating PDF: ${pdfGenErr.message}`);
-        return;
-      }
+      const pdf = new jsPDF();
+      const contractText = generateBrokerContract(contractData);
+      pdf.setFontSize(10);
+      const lines = pdf.splitTextToSize(contractText, 170);
+      pdf.text(lines, 20, 30);
+      pdf.save(`Contract_${fullContract.id}.pdf`);
+      toast.success('Contract downloaded');
     } catch (err: any) {
-      console.error('Failed to download contract:', err);
-      console.error('Error details:', {
-        message: err.message,
-        stack: err.stack,
-        response: err.response?.data
-      });
-      toast.error(`Failed to download contract PDF: ${err.message || 'Unknown error'}`);
+      console.error(err);
+      toast.error('Failed to generate PDF');
+    }
+  };
+
+  const getStatusPrimeStyle = (status: string) => {
+    switch (status) {
+      case 'IN_TRANSIT': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
+      case 'DELIVERED':
+      case 'COMPLETED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'CANCELLED': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'ASSIGNED': return 'bg-primary-50 text-primary-600 border-primary-100';
+      default: return 'bg-slate-50 text-slate-500 border-slate-100';
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Pipeline...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Loads</h1>
-            <p className="text-gray-600 mt-1">
-              View and manage loads assigned to you
-            </p>
+    <div className="max-w-7xl mx-auto px-6 sm:px-9 md:px-10 lg:px-12 xl:px-14 space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Loads Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <Package size={24} className="text-white" />
           </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Loads</h1>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">{filteredLoads.length} AVAILABLE</p>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-12 mr-4">
+           <div className="h-10 w-px bg-white/10 mx-2 hidden md:block"></div>
+           <div className="text-center hidden md:block">
+             <p className="text-xl font-black tracking-tighter leading-none text-primary-400">{filteredLoads.filter(l => l.status === 'ASSIGNED').length}</p>
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Assigned</p>
+           </div>
+           <div className="text-center hidden md:block">
+             <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{filteredLoads.filter(l => l.status === 'COMPLETED').length}</p>
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Closed</p>
+           </div>
+           <button 
+             onClick={() => setViewMode(viewMode === 'card' ? 'table' : 'card')}
+             className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all backdrop-blur-xl"
+           >
+             {viewMode === 'card' ? <Table size={18} /> : <Grid size={18} />}
+           </button>
         </div>
       </div>
 
-      {/* Filters and View Toggle */}
-      <div className="rounded-2xl bg-gradient-to-r from-gray-50 via-white to-gray-50 p-6 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.35)]">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_repeat(3,1fr)] xl:grid-cols-[2fr_repeat(4,1fr)]">
-          <div className="relative flex items-center">
-            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search loads by title, description or ID…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-transparent bg-white/80 py-3 pl-11 pr-4 text-sm text-gray-700 shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
+      {/* Pipeline Master Control */}
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 relative group overflow-hidden">
+        <div className="flex-1 relative group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-600 transition-colors" size={20} />
+          <input
+            type="text"
+            placeholder="Search Load ID or Location..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-16 pr-8 py-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:shadow-xl transition-all outline-none placeholder:text-slate-300"
+          />
+        </div>
+        <div className="flex gap-4">
           <FilterSelect
-            label="Status"
-            icon={<FaLayerGroupIcon className="text-gray-500" />}
+            label="Stage"
+            icon={<Clock className="text-primary-600" size={16} />}
             value={statusFilter}
-            placeholder="All Status"
+            placeholder="All Stages"
             options={[
-              { value: '', label: 'All Status' },
-              { value: 'CREATED', label: 'Created' },
-              { value: 'PUBLISHED', label: 'Published' },
+              { value: '', label: 'All Loads' },
               { value: 'ASSIGNED', label: 'Assigned' },
               { value: 'IN_TRANSIT', label: 'In Transit' },
-              { value: 'DELIVERED', label: 'Delivered' },
-              { value: 'COMPLETED', label: 'Completed' },
-              { value: 'CANCELLED', label: 'Cancelled' },
+              { value: 'COMPLETED', label: 'Delivered' },
             ]}
             onChange={setStatusFilter}
           />
-
-          <FilterSelect
-            label="Cargo Type"
-            icon={<FaBoxIcon className="text-gray-500" />}
-            value={cargoTypeFilter}
-            placeholder="All Types"
-            options={[
-              { value: '', label: 'All Types' },
-              { value: 'GENERAL', label: 'General' },
-              { value: 'FRAGILE', label: 'Fragile' },
-              { value: 'HAZARDOUS', label: 'Hazardous' },
-              { value: 'REFRIGERATED', label: 'Refrigerated' },
-              { value: 'LIQUID', label: 'Liquid' },
-              { value: 'OVERSIZED', label: 'Oversized' },
-              { value: 'VALUABLE', label: 'Valuable' },
-            ]}
-            onChange={setCargoTypeFilter}
-          />
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('card')}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                viewMode === 'card'
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              )}
-            >
-              <Grid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cards</span>
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                viewMode === 'table'
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              )}
-            >
-              <Table className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Table</span>
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Loads Display */}
+      {/* Load Stream */}
       {filteredLoads.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">No loads found</p>
-          <p className="text-sm text-gray-500 mb-6">
-            {loads.length === 0
-              ? 'Wait for cargo owners to assign loads to you to start earning commissions'
-              : 'Try adjusting your filters to see more results'}
-          </p>
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 p-48 text-center space-y-8 shadow-sm opacity-50">
+          <Package className="w-24 h-24 text-slate-100 mx-auto" />
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-relaxed">System scan complete. No loads in pipeline matching criteria.</p>
         </div>
-      ) : (
-        <>
-          {viewMode === 'card' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredLoads.map((load) => (
-                <div
-                  key={load.id}
-                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-gray-200 cursor-pointer"
-                  onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{load.title}</h3>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
-                        <DollarSign className="w-4 h-4" />
-                        <span className="font-medium text-gray-900">
-                          {load.currencyCode} {load.loadValue.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                    <span className={cn(
-                      "px-2 py-1 text-xs rounded-full",
-                      getStatusColor(load.status)
-                    )}>
-                      {getStatusDisplayName(load.status)}
+      ) : viewMode === 'card' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {filteredLoads.map((load) => {
+            const contract = contracts.get(load.id);
+            return (
+              <div key={load.id} className="group bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-8">
+                    <span className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl border shadow-sm ${getStatusPrimeStyle(load.status)}`}>
+                      {load.status.replace('_', ' ')}
                     </span>
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm">
+                      <Activity size={18} />
+                    </div>
                   </div>
 
-                  {load.brokerCommissionRate && (
-                    <div className="flex items-center justify-between p-3 bg-primary-50 rounded-lg mb-4">
-                      <div>
-                        <p className="text-xs text-gray-600">Commission Rate</p>
-                        <p className="text-sm font-semibold text-primary-700">
-                          {load.brokerCommissionRate}%
-                        </p>
-                      </div>
-                      {load.brokerCommissionAmount && (
-                        <div className="text-right">
-                          <p className="text-xs text-gray-600">Potential Commission</p>
-                          <p className="text-sm font-semibold text-primary-700">
-                            {load.currencyCode} {load.brokerCommissionAmount.toLocaleString()}
-                          </p>
-                        </div>
-                      )}
+                  <h3 className="text-xl font-black text-slate-900 tracking-tighter mb-4 line-clamp-2 min-h-[3rem]">{load.title}</h3>
+                  
+                  <div className="space-y-4 mb-10 pt-6 border-t border-slate-50">
+                    <div className="flex items-center justify-between">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rate</p>
+                       <p className="text-lg font-black text-slate-900">{load.loadValue?.toLocaleString()} <span className="text-[10px] font-bold text-slate-300">KES</span></p>
                     </div>
-                  )}
+                    {load.brokerCommissionRate && (
+                       <div className="flex items-center justify-between">
+                          <p className="text-[10px] font-black text-primary-400 uppercase tracking-widest">Yield</p>
+                          <p className="text-lg font-black text-primary-600">+{load.brokerCommissionRate}%</p>
+                       </div>
+                    )}
+                  </div>
 
-                  {/* Contract Status */}
-                  {(() => {
-                    const contract = contracts.get(load.id);
-                    if (contract) {
-                      return (
-                        <div className={cn(
-                          "p-3 rounded-lg mb-4 border",
-                          contract.status === 'PENDING_BROKER_ACCEPTANCE'
-                            ? 'bg-yellow-50 border-yellow-200'
-                            : contract.status === 'ACTIVE'
-                              ? 'bg-green-50 border-green-200'
-                              : 'bg-gray-50 border-gray-200'
-                        )}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              {contract.status === 'PENDING_BROKER_ACCEPTANCE' ? (
-                                <AlertCircle className="w-4 h-4 text-yellow-600" />
-                              ) : contract.status === 'ACTIVE' ? (
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <FileText className="w-4 h-4 text-gray-600" />
-                              )}
-                              <div>
-                                <p className="text-xs font-medium text-gray-700">Contract Status</p>
-                                <p className={cn(
-                                  "text-sm font-semibold",
-                                  contract.status === 'PENDING_BROKER_ACCEPTANCE'
-                                    ? 'text-yellow-700'
-                                    : contract.status === 'ACTIVE'
-                                      ? 'text-green-700'
-                                      : 'text-gray-700'
-                                )}>
-                                  {contract.status.replace('_', ' ')}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {contract.status === 'PENDING_BROKER_ACCEPTANCE' && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewContract(load.id);
-                                  }}
-                                  className="px-3 py-1.5 text-xs font-medium bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                                >
-                                  Review & Accept
-                                </button>
-                              )}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewContract(load.id);
-                                }}
-                                className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-                                title="View Contract"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownloadContract(load.id);
-                                }}
-                                className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-                                title="Download PDF"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <span className="text-xs text-gray-500">
-                      Created {new Date(load.createdAt).toLocaleDateString()}
-                    </span>
-                    <button className="text-primary-600 hover:text-primary-700 flex items-center space-x-1 text-sm">
-                      <Eye className="w-4 h-4" />
-                      <span>View Details</span>
-                    </button>
+                  <div className="bg-slate-50 rounded-[2rem] p-6 space-y-4 mb-10 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-2 h-2 rounded-full bg-slate-300"></div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest truncate">{load.pickupLocation}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-2 h-2 rounded-full bg-primary-600"></div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest truncate">{load.deliveryLocation}</p>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Load</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredLoads.map((load) => {
-                      const contract = contracts.get(load.id);
-                      return (
-                        <tr key={load.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: '#345E85' }}>
-                                <Package className="h-5 w-5 text-white" />
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{load.title || 'Untitled'}</div>
-                                <div className="text-xs text-gray-500">{load.cargoType || 'GENERAL'}</div>
-                                <div className="text-xs text-gray-400">ID: {load.id.slice(0, 8)}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              <div className="flex items-center mb-1">
-                                <MapPin className="text-green-500 mr-2 w-4 h-4" />
-                                <span className="text-xs">{load.pickupLocation || 'N/A'}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MapPin className="text-red-500 mr-2 w-4 h-4" />
-                                <span className="text-xs">{load.deliveryLocation || 'N/A'}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {load.brokerCommissionRate ? (
-                              <div className="text-sm text-gray-900">
-                                <div className="font-medium">{load.brokerCommissionRate}%</div>
-                                {load.brokerCommissionAmount && (
-                                  <div className="text-xs text-gray-500">
-                                    {load.currencyCode} {load.brokerCommissionAmount.toLocaleString()}
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-400">N/A</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {contract ? (
-                              <div className="flex items-center space-x-2">
-                                {contract.status === 'PENDING_BROKER_ACCEPTANCE' ? (
-                                  <AlertCircle className="w-4 h-4 text-yellow-600" />
-                                ) : contract.status === 'ACTIVE' ? (
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
-                                ) : (
-                                  <FileText className="w-4 h-4 text-gray-600" />
-                                )}
-                                <span className={cn(
-                                  "text-xs font-medium",
-                                  contract.status === 'PENDING_BROKER_ACCEPTANCE'
-                                    ? 'text-yellow-700'
-                                    : contract.status === 'ACTIVE'
-                                      ? 'text-green-700'
-                                      : 'text-gray-700'
-                                )}>
-                                  {contract.status.replace('_', ' ')}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-400">No contract</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={cn(
-                              "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
-                              getStatusColor(load.status)
-                            )}>
-                              {getStatusDisplayName(load.status)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div className="flex items-center">
-                              <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
-                              {load.currencyCode} {load.loadValue.toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
-                              {contract && contract.status === 'PENDING_BROKER_ACCEPTANCE' && (
-                                <button
-                                  onClick={() => handleViewContract(load.id)}
-                                  className="text-yellow-600 hover:text-yellow-900 transition-colors px-2 py-1 text-xs font-medium bg-yellow-50 rounded"
-                                  title="Review & Accept"
-                                >
-                                  Accept
-                                </button>
-                              )}
-                              <button
-                                onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-                                className="text-blue-600 hover:text-blue-900 transition-colors"
-                                title="View Details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              {contract && (
-                                <button
-                                  onClick={() => handleViewContract(load.id)}
-                                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                                  title="View Contract"
-                                >
-                                  <FileText className="w-4 h-4" />
-                                </button>
-                              )}
-                              {contract && (
-                                <button
-                                  onClick={() => handleDownloadContract(load.id)}
-                                  className="text-green-600 hover:text-green-900 transition-colors"
-                                  title="Download PDF"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+                {contract && contract.status === 'PENDING_BROKER_ACCEPTANCE' && (
+                  <div className="mb-8 p-6 bg-amber-50 rounded-[2rem] border border-amber-100 flex items-center justify-between gap-4">
+                     <div className="flex items-center gap-3">
+                        <AlertCircle className="text-amber-500" size={18} />
+                        <p className="text-[10px] font-black uppercase text-amber-900 tracking-tight">Contract Pending</p>
+                     </div>
+                     <button onClick={() => handleViewContract(load.id)} className="px-6 py-2 bg-amber-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl">Review</button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-50">
+                  <button onClick={() => handleDownloadContract(load.id)} className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-900 hover:text-white transition-all"><Download size={18} /></button>
+                  <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-900/10 hover:-translate-y-1 transition-all flex items-center gap-2">
+                    <Eye size={14} /> Full View
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-sm">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Carrier Payload</th>
+                <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Route Details</th>
+                <th className="px-10 py-8 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Yield Index</th>
+                <th className="px-10 py-8 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredLoads.map((load) => (
+                <tr key={load.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}>
+                  <td className="px-10 py-10">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                        <Package size={20} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">{load.title}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">#{load.id.slice(0, 8)}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-10 py-10">
+                    <div className="flex items-center gap-4 text-[10px] font-black text-slate-600 uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-all">
+                       <span>{load.pickupLocation}</span>
+                       <ArrowRight size={10} />
+                       <span>{load.deliveryLocation}</span>
+                    </div>
+                  </td>
+                  <td className="px-10 py-10 text-right">
+                    <p className="text-lg font-black text-slate-900 tracking-tighter">${load.loadValue?.toLocaleString()}</p>
+                    {load.brokerCommissionRate && <p className="text-[9px] font-black text-primary-500 uppercase tracking-widest">Comm: {load.brokerCommissionRate}%</p>}
+                  </td>
+                  <td className="px-10 py-10 text-right">
+                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                       <button onClick={(e) => { e.stopPropagation(); handleDownloadContract(load.id); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all"><Download size={16} /></button>
+                       <button className="p-4 bg-slate-900 text-white rounded-xl shadow-xl transition-all"><Eye size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {/* Contract Acceptance Modal */}
       {showContractModal && selectedContract && (
         <ContractAcceptanceModal
           isOpen={showContractModal}
-          onClose={() => {
-            setShowContractModal(false);
-            setSelectedContract(null);
-          }}
+          onClose={() => { setShowContractModal(false); setSelectedContract(null); }}
           contractId={selectedContract.id}
           onContractAccepted={handleAcceptContract}
         />

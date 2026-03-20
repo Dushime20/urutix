@@ -20,7 +20,12 @@ import {
   ArrowRight,
   Mail,
   FileCheck,
+  Menu,
+  X,
 } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
+import LanguageSwitcher from '../LanguageSwitcher';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -50,8 +55,10 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { tSync } = useTranslation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -59,19 +66,12 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
 
   const groupedTabs = [
     {
-      id: 'market',
-      label: 'Marketplace',
-      icon: Navigation,
-      items: [
-        { id: 'trips', label: 'Monitor Trips', icon: Navigation, description: 'Real-time shipment tracking' },
-        { id: 'bidding', label: 'Negotiations', icon: DollarSign, description: 'Active bidding & load acquisition' },
-      ]
-    },
-    {
       id: 'logistics',
       label: 'Asset Hub',
       icon: Truck,
       items: [
+        { id: 'trips', label: 'Monitor Trips', icon: Navigation, description: 'Real-time shipment tracking' },
+        { id: 'bidding', label: 'Negotiations', icon: DollarSign, description: 'Active bidding & load acquisition' },
         { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
         { id: 'cargo', label: 'Inventory Control', icon: Box, description: 'Cargo & specialized storage' },
         { id: 'operations', label: 'Operational Health', icon: Route, description: 'Efficiency & performance monitoring' },
@@ -143,16 +143,24 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white border-b border-gray-100 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0">
+    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0">
       <div className="max-w-[1920px] mx-auto flex items-center justify-between">
         {/* Left side - Logo and Navigation */}
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-4 lg:gap-10">
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            className="lg:hidden p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+
           {/* Logo */}
           <div className="flex items-center flex-shrink-0 cursor-pointer" onClick={() => setSelectedView('overview')}>
             <img
               src={logoUrutiX}
               alt="urutiX Logistics Logo"
-              className="h-10 sm:h-14 md:h-18 lg:h-20 w-auto object-contain"
+              className="h-10 sm:h-12 md:h-16 lg:h-20 w-auto object-contain max-w-none"
             />
           </div>
 
@@ -163,14 +171,14 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               onClick={() => { navigate('/tenant-admin'); setSelectedView('overview'); setActiveGroup(null); }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all duration-300 ${selectedView === 'overview'
                 ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
                 }`}
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>DASHBOARD</span>
+              <span><TranslatedText text="DASHBOARD" /></span>
             </button>
 
-            <div className="w-[1px] h-6 bg-slate-100 mx-2" />
+            <div className="w-[1px] h-6 bg-slate-100 dark:bg-slate-800 mx-2" />
 
             {/* Grouped Dropdowns */}
             {groupedTabs.map((group) => {
@@ -182,12 +190,12 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                   <button
                     onClick={() => setActiveGroup(isOpen ? null : group.id)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black tracking-wider transition-all duration-300 ${isGroupActive
-                      ? 'bg-slate-900 text-white shadow-lg'
-                      : isOpen ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:text-slate-900'
+                      ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-lg'
+                      : isOpen ? 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                   >
                     <group.icon className="w-4 h-4" />
-                    <span>{group.label.toUpperCase()}</span>
+                    <span><TranslatedText text={group.label} /></span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
 
@@ -197,11 +205,11 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute left-0 mt-3 w-72 bg-white rounded-3xl shadow-2xl border border-slate-100 p-3 z-[100] origin-top-left"
+                        className="absolute left-0 mt-3 w-72 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 p-3 z-[100] origin-top-left"
                       >
                         <div className="mb-2 px-3 pt-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
-                            System Category: {group.label}
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
+                            <TranslatedText text="System Category:" /> <TranslatedText text={group.label} />
                           </span>
                         </div>
                         <div className="grid gap-1">
@@ -240,19 +248,19 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                                   setActiveGroup(null);
                                 }}
                                 className={`w-full text-left p-3 rounded-2xl transition-all duration-300 flex items-start gap-3 group/item ${isTabActive
-                                  ? 'bg-primary-50/50'
-                                  : 'hover:bg-slate-50'
+                                  ? 'bg-primary-50/50 dark:bg-primary-900/20'
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                                   }`}
                               >
-                                <div className={`p-2 rounded-xl shrink-0 transition-colors ${isTabActive ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-400 group-hover/item:bg-primary-600 group-hover/item:text-white'}`}>
+                                <div className={`p-2 rounded-xl shrink-0 transition-colors ${isTabActive ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover/item:bg-primary-600 group-hover/item:text-white'}`}>
                                   <TabIcon className="w-4 h-4" />
                                 </div>
-                                <div>
-                                  <p className={`text-xs font-black ${isTabActive ? 'text-primary-600' : 'text-slate-800'}`}>
-                                    {tab.label}
+                                <div className="flex-1">
+                                  <p className={`text-xs font-black ${isTabActive ? 'text-primary-600' : 'text-slate-800 dark:text-slate-100'}`}>
+                                    <TranslatedText text={tab.label} />
                                   </p>
-                                  <p className="text-[10px] font-medium text-slate-400 mt-0.5 line-clamp-1">
-                                    {tab.description}
+                                  <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                                    <TranslatedText text={tab.description} />
                                   </p>
                                 </div>
                                 <ArrowRight className={`ml-auto w-3.5 h-3.5 text-slate-300 group-hover/item:text-primary-600 transition-all ${isTabActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`} />
@@ -272,24 +280,28 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {/* Sync Button */}
-            <button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className={`p-2.5 rounded-full border border-gray-100 transition-all ${isRefreshing ? 'text-primary-500 bg-primary-50' : 'text-slate-400 hover:bg-gray-50 hover:text-slate-600'
-                }`}
-            >
-              <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
+            <div className="hidden sm:block">
+              <button
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 transition-all ${isRefreshing ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-600'
+                  }`}
+              >
+                <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
 
-            {/* Notification Bell */}
-            <div className="relative" ref={notificationRef}>
+            <LanguageSwitcher />
+
+            {/* Notification Bell - Hidden on mobile as it's in the mobile bottom nav */}
+            <div className="hidden lg:block relative" ref={notificationRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className={`p-2.5 rounded-full border border-gray-100 hover:bg-gray-50 transition-all relative ${showNotifications ? 'bg-gray-50' : ''}`}
+                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all relative ${showNotifications ? 'bg-gray-50 dark:bg-slate-800' : ''}`}
               >
                 <FaBell className="w-5 h-5 text-slate-400" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white"></span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                 )}
               </button>
 
@@ -299,23 +311,23 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 origin-top-right overflow-hidden text-slate-900"
+                    className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 py-2 z-50 origin-top-right overflow-hidden text-slate-900 dark:text-white"
                   >
-                    <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
-                      <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider text-left">Notifications</h3>
-                      <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{notifications.length} New</span>
+                    <div className="px-4 py-3 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between">
+                      <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider text-left"><TranslatedText text="Notifications" /></h3>
+                      <span className="text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded-full">{notifications.length} <TranslatedText text="New" /></span>
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.map((notification: any) => (
-                        <div key={notification.id} className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer group text-left">
+                        <div key={notification.id} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group text-left">
                           <div className="flex items-start space-x-3">
-                            <div className={`p-1.5 rounded-full mt-0.5 shrink-0 ${notification.status === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-primary-50 text-primary-500'}`}>
+                            <div className={`p-1.5 rounded-full mt-0.5 shrink-0 ${notification.status === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500' : 'bg-primary-50 dark:bg-primary-900/30 text-primary-500'}`}>
                               <FaClock className="w-3 h-3" />
                             </div>
                             <div>
-                              <p className="text-[11px] font-bold text-slate-800 group-hover:text-primary-600 transition-colors">{notification.action}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 font-medium">{notification.description}</p>
-                              <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1.5">{notification.timestamp}</p>
+                              <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 transition-colors"><TranslatedText text={notification.action} /></p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 font-medium"><TranslatedText text={notification.description} /></p>
+                              <p className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-1.5"><TranslatedText text={notification.timestamp} /></p>
                             </div>
                           </div>
                         </div>
@@ -327,26 +339,26 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
             </div>
 
             {/* HELP Button */}
-            <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all font-bold text-slate-600 text-[11px] tracking-wider uppercase">
-              <div className="w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center">
+            <button className="hidden sm:flex items-center lg:gap-2 px-3 lg:px-4 py-2 rounded-full border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-bold text-slate-600 dark:text-slate-400 text-[11px] tracking-wider uppercase">
+              <div className="w-6 h-6 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                 <HelpCircle className="w-4 h-4 text-slate-400" />
               </div>
-              HELP
+              <span className="hidden lg:inline"><TranslatedText text="HELP" /></span>
             </button>
 
             {/* Credit Balance Badge */}
             <div
               onClick={() => setSelectedView('financial')}
-              className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 cursor-pointer hover:bg-indigo-100 transition-all group"
+              className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all group"
             >
-              <div className="p-1 bgColor-white rounded-lg shadow-sm">
-                <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+              <div className="p-1 bgColor-white dark:bg-slate-800 rounded-lg shadow-sm">
+                <DollarSign className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-0.5">Available Credits</span>
-                <span className="text-sm font-black text-indigo-900 leading-none tabular-nums">
+                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-0.5"><TranslatedText text="Available Credits" /></span>
+                <span className="text-sm font-black text-indigo-900 dark:text-indigo-100 leading-none tabular-nums">
                   {currentBalance.toLocaleString()}
-                  <span className="text-[10px] ml-1 text-indigo-400">TRX</span>
+                  <span className="text-[10px] ml-1 text-indigo-400 lowercase italic">TRX</span>
                 </span>
               </div>
             </div>
@@ -361,36 +373,36 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 z-[9999] overflow-hidden text-slate-900">
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 z-[9999] overflow-hidden text-slate-900 dark:text-white">
                   <div className="p-2">
-                    <div className="px-3 py-2 border-b border-gray-50 text-left">
-                      <p className="text-sm font-bold text-slate-800 truncate">{user?.firstName || user?.email || 'Administrator'}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">Tenant Admin</p>
+                    <div className="px-3 py-2 border-b border-gray-50 dark:border-slate-800 text-left">
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{user?.firstName || user?.email || tSync('Administrator')}</p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 truncate"><TranslatedText text="Tenant Admin" /></p>
                     </div>
                     <button
                       onClick={() => { setShowUserMenu(false); setSelectedView('profile'); }}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-widest hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2 mt-1"
+                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 mt-1"
                     >
-                      <FaUser size={14} className="text-slate-400" /> My Profile
+                      <FaUser size={14} className="text-slate-400" /> <TranslatedText text="My Profile" />
                     </button>
                     <button
                       onClick={() => { setShowUserMenu(false); setSelectedView('kyc'); }}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-widest hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2"
+                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2"
                     >
-                      <FileCheck size={14} className="text-slate-400" /> KYC Center
+                      <FileCheck size={14} className="text-slate-400" /> <TranslatedText text="KYC Center" />
                     </button>
                     <button
                       onClick={() => { setShowUserMenu(false); setSelectedView('settings'); }}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-widest hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2"
+                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2"
                     >
-                      <FaCog size={14} className="text-slate-400" /> Settings
+                      <FaCog size={14} className="text-slate-400" /> <TranslatedText text="Settings" />
                     </button>
-                    <div className="border-t border-gray-50 my-1"></div>
+                    <div className="border-t border-gray-50 dark:border-slate-800 my-1"></div>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2"
+                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors flex items-center gap-2"
                     >
-                      <LogOut size={14} /> Logout
+                      <LogOut size={14} /> <TranslatedText text="Logout" />
                     </button>
                   </div>
                 </div>
@@ -399,6 +411,110 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMobileMenu(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden"
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-slate-900 z-[101] lg:hidden overflow-y-auto shadow-2xl"
+            >
+              <div className="p-6 space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img src={logoUrutiX} alt="Logo" className="h-8 w-auto" />
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Portal</span>
+                  </div>
+                  <button
+                    onClick={() => setShowMobileMenu(false)}
+                    className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Direct Link: Dashboard */}
+                  <button
+                    onClick={() => { navigate('/tenant-admin'); setSelectedView('overview'); setShowMobileMenu(false); }}
+                    className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all ${selectedView === 'overview'
+                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
+                      : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400'
+                      }`}
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                    <span className="text-xs font-black uppercase tracking-widest"><TranslatedText text="DASHBOARD" /></span>
+                  </button>
+
+                  {/* Grouped Menus */}
+                  {groupedTabs.map((group) => (
+                    <div key={group.id} className="space-y-3">
+                      <div className="px-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                          <TranslatedText text={group.label} />
+                        </span>
+                      </div>
+                      <div className="grid gap-2">
+                        {group.items.map((tab) => {
+                          const Icon = tab.icon;
+                          const active = selectedView === tab.id;
+                          return (
+                            <button
+                              key={tab.id}
+                              onClick={() => {
+                                // Map tab IDs to their respective routes
+                                const routeMap: Record<string, string> = {
+                                  'overview': '/tenant-admin',
+                                  'financial': '/tenant-admin/financial',
+                                  'purchase-credits': '/tenant-admin/purchase-credits',
+                                  'billing': '/tenant-admin/billing',
+                                  'communicate': '/tenant-admin/communication',
+                                  'fleet': '/tenant-admin/fleet',
+                                  'cargo': '/tenant-admin/cargo',
+                                  'drivers': '/tenant-admin/drivers',
+                                  'trips': '/tenant-admin/trips',
+                                  'users': '/tenant-admin/users',
+                                  'truck-owners': '/tenant-admin/truck-owners',
+                                  'lenders': '/tenant-admin/lenders',
+                                  'settings': '/tenant-admin/settings'
+                                };
+                                const targetRoute = routeMap[tab.id];
+                                if (targetRoute) navigate(targetRoute);
+                                else setSelectedView(tab.id as any);
+                                setShowMobileMenu(false);
+                              }}
+                              className={`flex items-center gap-3 p-3.5 rounded-2xl transition-all ${active
+                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500'
+                                }`}
+                            >
+                              <div className={`p-2 rounded-xl ${active ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <span className="text-xs font-bold uppercase tracking-wide"><TranslatedText text={tab.label} /></span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,17 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-    Search,
-    Bell,
-    LogOut,
-    User,
-    Settings,
-    Shield,
-    ChevronDown,
-    Globe,
-    Moon
-} from 'lucide-react';
+import { Search, User, ChevronDown, LogOut, Settings, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import AdminNotificationDropdown from './AdminNotificationDropdown';
+import ThemeToggle from '../Theme/ThemeToggle';
+import LanguageSwitcher from '../LanguageSwitcher';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
+import { TranslatedText } from '../translated-text';
 
 interface AdminHeaderProps {
     searchPlaceholder?: string;
@@ -25,8 +21,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     customRightContent
 }) => {
     const { user, logout } = useAuth();
+    const { tSync } = useTranslation();
     const navigate = useNavigate();
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
     const [searchValue, setSearchValue] = useState('');
 
@@ -59,45 +57,55 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
     };
 
     return (
-        <header className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 h-20 flex items-center justify-between">
+        <>
+            <header className="sticky top-0 z-10 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 h-20 flex items-center justify-between">
             {/* Left: Branding/Search */}
-            <div className="flex items-center gap-8 flex-1">
+            <div className="flex items-center gap-4 lg:gap-8 flex-1">
+                {/* Mobile Menu Toggle */}
+                <button
+                    onClick={() => setShowMobileMenu(true)}
+                    className="lg:hidden p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+
+                {/* Desktop Branding */}
                 <div className="hidden lg:flex items-center gap-2">
-                    <div className="w-10 h-10 bg-indigo-50 flex items-center justify-center rounded-xl">
-                        <Shield className="text-indigo-600 w-5 h-5" />
+                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center rounded-xl">
+                        <Shield className="text-indigo-600 dark:text-indigo-400 w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="text-base font-black text-slate-800 tracking-tight leading-none uppercase">
-                            Admin<span className="text-indigo-600">Core</span>
+                        <h2 className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none uppercase">
+                            Admin<span className="text-indigo-600 dark:text-indigo-400">Core</span>
                         </h2>
                     </div>
                 </div>
 
+                {/* Mobile Branding */}
+                <div className="lg:hidden flex items-center min-w-max">
+                    <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center rounded-lg">
+                        <Shield className="text-indigo-600 dark:text-indigo-400 w-4 h-4" />
+                    </div>
+                </div>
+
                 <div className="flex-1 max-w-md relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors w-4 h-4" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors w-4 h-4" />
                     <input
                         type="text"
-                        placeholder={searchPlaceholder}
+                        placeholder={tSync(searchPlaceholder)}
                         value={searchValue}
                         onChange={handleSearchChange}
-                        className="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-100 rounded-xl py-2.5 pl-11 pr-4 text-xs text-slate-700 transition-all placeholder-slate-400"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-indigo-100 dark:focus:border-indigo-900/50 rounded-xl py-2.5 pl-11 pr-4 text-xs text-slate-700 dark:text-slate-200 transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                 </div>
             </div>
 
             {/* Right: Actions & Profile */}
             <div className="flex items-center gap-2">
-                <div className="hidden md:flex items-center gap-1 border-r border-slate-100 pr-4 mr-2">
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                        <Globe size={18} />
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                        <Moon size={18} />
-                    </button>
-                    <button className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                        <Bell size={18} />
-                        <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
-                    </button>
+                <div className="hidden md:flex items-center gap-3 border-r border-slate-100 dark:border-slate-800 pr-4 mr-2">
+                    <LanguageSwitcher />
+                    <ThemeToggle />
+                    <AdminNotificationDropdown />
                 </div>
 
                 {customRightContent}
@@ -105,13 +113,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 <div className="relative" ref={userMenuRef}>
                     <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100"
+                        className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
                     >
                         <div className="text-right hidden sm:block">
-                            <p className="text-xs font-black text-slate-800 leading-none">
+                            <p className="text-xs font-black text-slate-800 dark:text-slate-100 leading-none">
                                 {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Super Admin'}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
                                 {user?.role?.replace('_', ' ') || 'Platform Owner'}
                             </p>
                         </div>
@@ -122,45 +130,147 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                     </button>
 
                     {showUserMenu && (
-                        <div className="absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="px-4 py-3 mb-1">
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Identity</p>
-                                <p className="text-sm font-bold text-slate-800 truncate">{user?.email || 'admin@urutix.com'}</p>
+                                <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Identity" /></p>
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{user?.email || 'admin@urutix.com'}</p>
                             </div>
 
-                            <div className="h-px bg-slate-50 mx-4 mb-2"></div>
+                            <div className="h-px bg-slate-50 dark:bg-slate-800 mx-4 mb-2"></div>
 
                             <Link
                                 to="/admin/profile"
-                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-3 transition-colors"
+                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors"
                                 onClick={() => setShowUserMenu(false)}
                             >
                                 <User size={16} />
-                                <span>Administrative Profile</span>
+                                <span><TranslatedText text="Administrative Profile" /></span>
                             </Link>
                             <Link
                                 to="/admin/settings"
-                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-3 transition-colors"
+                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors"
                                 onClick={() => setShowUserMenu(false)}
                             >
                                 <Settings size={16} />
-                                <span>Platform Settings</span>
+                                <span><TranslatedText text="Platform Settings" /></span>
                             </Link>
 
-                            <div className="h-px bg-slate-50 mx-4 my-2"></div>
+                            <div className="h-px bg-slate-50 dark:bg-slate-800 mx-4 my-2"></div>
 
                             <button
                                 onClick={handleLogout}
-                                className="w-full px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                                className="w-full px-4 py-2.5 text-xs font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-colors"
                             >
                                 <LogOut size={16} />
-                                <span>Terminate Session</span>
+                                <span><TranslatedText text="Terminate Session" /></span>
                             </button>
                         </div>
                     )}
                 </div>
             </div>
         </header>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+            {showMobileMenu && (
+                <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowMobileMenu(false)}
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden"
+                    />
+                    <motion.div
+                        initial={{ x: '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '-100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed top-0 left-0 bottom-0 w-[300px] bg-white dark:bg-slate-900 z-[101] lg:hidden overflow-y-auto shadow-2xl"
+                    >
+                        <div className="p-6 space-y-8">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center rounded-lg">
+                                        <Shield className="text-indigo-600 dark:text-indigo-400 w-4 h-4" />
+                                    </div>
+                                    <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase">
+                                        Admin<span className="text-indigo-600 dark:text-indigo-400">Core</span>
+                                    </h2>
+                                </div>
+                                <button
+                                    onClick={() => setShowMobileMenu(false)}
+                                    className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <nav className="space-y-8">
+                                {[
+                                    {
+                                        title: 'Overview',
+                                        items: [
+                                            { label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
+                                            { label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
+                                        ]
+                                    },
+                                    {
+                                        title: 'Management',
+                                        items: [
+                                            { label: 'Users', icon: Users, path: '/admin/users' },
+                                            { label: 'Tenants', icon: Building2, path: '/admin/tenants' },
+                                            { label: 'Routes', icon: Route, path: '/admin/routes' },
+                                        ]
+                                    },
+                                    {
+                                        title: 'Operations',
+                                        items: [
+                                            { label: 'Trucks', icon: Truck, path: '/admin/trucks' },
+                                            { label: 'Loads', icon: Package, path: '/admin/loads' },
+                                            { label: 'Trips', icon: Activity, path: '/admin/trips' },
+                                        ]
+                                    },
+                                    {
+                                        title: 'System',
+                                        items: [
+                                            { label: 'Monitoring', icon: Server, path: '/admin/monitoring' },
+                                            { label: 'Advanced Settings', icon: Settings, path: '/admin/advanced-settings' },
+                                        ]
+                                    }
+                                ].map((category, idx) => (
+                                    <div key={idx} className="space-y-3">
+                                        <h3 className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            <TranslatedText text={category.title} />
+                                        </h3>
+                                        <div className="space-y-1">
+                                            {category.items.map((item, itemIdx) => {
+                                                const Icon = item.icon;
+                                                const active = window.location.pathname === item.path;
+                                                return (
+                                                    <button
+                                                        key={itemIdx}
+                                                        onClick={() => { navigate(item.path); setShowMobileMenu(false); }}
+                                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${active
+                                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                                            : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                            }`}
+                                                    >
+                                                        <Icon size={18} />
+                                                        <span className="text-xs font-bold capitalize"><TranslatedText text={item.label} /></span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </nav>
+                        </div>
+                    </motion.div>
+            </>
+        )}
+    </AnimatePresence>
+        </>
     );
 };
 

@@ -34,8 +34,8 @@ import { AssignDriverDto } from './dto/assign-driver.dto';
 import { AssignRouteDto } from './dto/assign-route.dto';
 import { BulkAssignDto } from './dto/bulk-assign.dto';
 import { CreateRouteDto } from './dto/create-route.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 
@@ -2307,6 +2307,27 @@ export class FleetController {
     };
   }
 
+  @Get('drivers/leaderboard')
+  @ApiOperation({
+    summary: 'Get driver leaderboard',
+    description: 'Retrieves a ranked list of drivers based on performance metrics (safety score, distance, reliability)',
+  })
+  @ApiQuery({ name: 'period', enum: ['WEEKLY', 'MONTHLY', 'YEARLY', 'ALL_TIME'], required: false })
+  @ApiResponse({ status: 200, description: 'Leaderboard retrieved successfully' })
+  async getDriverLeaderboard(
+    @Request() req,
+    @Query('period') period: string = 'MONTHLY',
+  ) {
+    const leaderboard = await this.fleetService.getDriverLeaderboard(
+      req.user.tenantId,
+      period,
+    );
+    return {
+      message: 'Leaderboard retrieved successfully',
+      leaderboard,
+    };
+  }
+
   @Get('drivers/:id')
   @ApiOperation({
     summary: 'Get driver by ID',
@@ -2378,10 +2399,76 @@ export class FleetController {
   })
   @ApiResponse({ status: 404, description: 'Driver not found' })
   async findOneDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    const driver = await this.fleetService.findOneDriver(id, req.user.tenantId, req.user.userId);
+    const driver = await this.fleetService.findOneDriver(
+      id,
+      req.user.tenantId,
+      req.user.userId,
+      req.user.role,
+    );
     return {
       message: 'Driver retrieved successfully',
       driver,
+    };
+  }
+
+  @Get('drivers/:id/stats')
+  @ApiOperation({
+    summary: 'Get driver statistics',
+    description: 'Retrieves performance statistics for a specific driver',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Driver ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Driver statistics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        stats: {
+          type: 'object',
+          properties: {
+            totalTrips: { type: 'number' },
+            totalEarnings: { type: 'number' },
+            rating: { type: 'number' },
+            onTimeDeliveryRate: { type: 'number' },
+            safetyScore: { type: 'number' },
+            hoursWorkedThisWeek: { type: 'number' },
+            milesThisWeek: { type: 'number' },
+            fuelEfficiency: { type: 'number' },
+            completedTrips: { type: 'number' },
+            cancelledTrips: { type: 'number' },
+            averageRating: { type: 'number' },
+            totalDistance: { type: 'number' },
+            totalFuelUsed: { type: 'number' },
+            averageSpeed: { type: 'number' },
+            violationsCount: { type: 'number' },
+            lastTripDate: { type: 'string', nullable: true },
+            nextTripDate: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  @ApiResponse({ status: 404, description: 'Driver not found' })
+  async getDriverStats(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const stats = await this.fleetService.getDriverStats(
+      id,
+      req.user.tenantId,
+      req.user.userId,
+      req.user.role,
+    );
+    return {
+      message: 'Driver statistics retrieved successfully',
+      stats,
     };
   }
 

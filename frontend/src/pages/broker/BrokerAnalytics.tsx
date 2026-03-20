@@ -7,9 +7,10 @@ import {
   Package, 
   BarChart3,
   Calendar,
-  Loader2,
-  ArrowUp,
-  ArrowDown
+  Activity,
+  Zap,
+  Shield,
+  ArrowRight
 } from 'lucide-react';
 import {
   LineChart,
@@ -20,7 +21,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -51,7 +51,6 @@ const BrokerAnalytics: React.FC = () => {
     }
   };
 
-  // Mock data for charts - replace with real API data
   const commissionData = [
     { month: 'Jan', amount: 4500, count: 12 },
     { month: 'Feb', amount: 5200, count: 15 },
@@ -79,207 +78,146 @@ const BrokerAnalytics: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Insights...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Insights Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <BarChart3 size={24} className="text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Track your performance, commissions, and business metrics
-            </p>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Insights</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Global Metrics</p>
           </div>
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="1y">Last year</option>
-          </select>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-6 mr-4">
+           <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-6 py-3">
+             <Calendar size={14} className="text-primary-400" />
+             <select value={timeRange} onChange={(e) => setTimeRange(e.target.value as any)} className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none cursor-pointer pr-4 appearance-none">
+                <option value="7d" className="bg-slate-900 text-white">7 Days</option>
+                <option value="30d" className="bg-slate-900 text-white" selected>30 Days</option>
+                <option value="90d" className="bg-slate-900 text-white">90 Days</option>
+                <option value="1y" className="bg-slate-900 text-white">1 Year</option>
+             </select>
+           </div>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-primary-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Commissions</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                ${(statistics?.totalCommissions ?? 0).toLocaleString()}
-              </p>
-              <div className="flex items-center mt-2 text-sm text-green-600">
-                <ArrowUp className="w-4 h-4 mr-1" />
-                <span>12% vs last period</span>
+      {/* Primary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {[
+          { label: 'Revenue', value: `$${(statistics?.totalCommissions ?? 0).toLocaleString()}`, icon: DollarSign },
+          { label: 'Settled', value: `$${(statistics?.totalEarned ?? 0).toLocaleString()}`, icon: TrendingUp },
+          { label: 'Loads', value: statistics?.totalLoads || 0, icon: Package },
+          { label: 'Yield', value: `${(statistics?.averageCommissionRate ?? 0).toFixed(1)}%`, icon: Activity },
+        ].map((stat, i) => (
+          <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative">
+            <div className="relative z-10">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all mb-8 shadow-sm">
+                <stat.icon size={20} />
               </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{stat.label}</p>
+              <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
             </div>
-            <DollarSign className="w-8 h-8 text-primary-600" />
+          </div>
+        ))}
+      </div>
+
+      {/* Analysis Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Revenue Flow
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={commissionData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 900}} dy={15} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 900}} dx={-10} />
+                <Tooltip contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '20px'}} />
+                <Line type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={4} dot={{ r: 6, fill: '#3b82f6', strokeWidth: 3, stroke: '#fff' }} activeDot={{ r: 8, strokeWidth: 0 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Earned</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                ${(statistics?.totalEarned ?? 0).toLocaleString()}
-              </p>
-              <div className="flex items-center mt-2 text-sm text-green-600">
-                <ArrowUp className="w-4 h-4 mr-1" />
-                <span>8% vs last period</span>
-              </div>
-            </div>
-            <TrendingUp className="w-8 h-8 text-green-600" />
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-slate-900 rounded-full"></div> Distribution
+          </h3>
+          <div className="h-[300px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value">
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Loads</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {statistics?.totalLoads || 0}
-              </p>
-              <div className="flex items-center mt-2 text-sm text-gray-600">
-                <span>Currently active</span>
-              </div>
-            </div>
-            <Package className="w-8 h-8 text-blue-600" />
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Volume
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={commissionData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 900}} dy={15} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 900}} dx={-10} />
+                <Bar dataKey="count" fill="#10b981" radius={[8, 8, 0, 0]} barSize={32} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Avg Commission Rate</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {(statistics?.averageCommissionRate ?? 0).toFixed(1)}%
-              </p>
-              <div className="flex items-center mt-2 text-sm text-gray-600">
-                <span>Industry avg: 5.0%</span>
-              </div>
-            </div>
-            <BarChart3 className="w-8 h-8 text-yellow-600" />
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> Success
+          </h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 900}} dy={15} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 900}} dx={-10} />
+                <Line type="stepAfter" dataKey="success" stroke="#6366f1" strokeWidth={4} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Commission Trend */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Commission Trend</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={commissionData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="amount" 
-                stroke="#3b82f6" 
-                name="Commission ($)"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Commission Status Distribution */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Commission Status</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Load Volume */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Load Volume</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={commissionData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#10b981" name="Number of Loads" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Success Rate */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Deal Success Rate</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={performanceData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="success" 
-                stroke="#10b981" 
-                name="Success Rate (%)"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Performance Summary */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Performance Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Average Commission per Load</p>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              ${((statistics?.totalCommissions || 0) / (statistics?.totalLoads || 1)).toFixed(2)}
-            </p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Pending Commission</p>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              ${statistics?.totalPending.toLocaleString() || '0.00'}
-            </p>
-          </div>
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Approved Commission</p>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              ${statistics?.totalApproved.toLocaleString() || '0.00'}
-            </p>
-          </div>
+      {/* Summary */}
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Strategic Summary</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          {[
+            { label: 'Yield per Load', value: `$${((statistics?.totalCommissions || 0) / (statistics?.totalLoads || 1)).toFixed(2)}` },
+            { label: 'Pipeline Reserve', value: `$${statistics?.totalPending.toLocaleString() || '0.00'}` },
+            { label: 'Authorized Earnings', value: `$${statistics?.totalApproved.toLocaleString() || '0.00'}` },
+          ].map((item, index) => (
+            <div key={index} className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:bg-white transition-all shadow-sm">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{item.label}</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tighter italic">{item.value}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -287,4 +225,3 @@ const BrokerAnalytics: React.FC = () => {
 };
 
 export default BrokerAnalytics;
-

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoanRequest } from '../../../entities/LoanRequest';
+import { LoanRequest } from '../../../entities/loan-request.entity';
 
 export interface PortfolioMetrics {
   total_loans_issued: number;

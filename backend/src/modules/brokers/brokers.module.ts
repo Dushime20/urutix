@@ -35,7 +35,7 @@ import {
 import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({

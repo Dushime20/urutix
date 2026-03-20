@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreditService } from './credit.service';
 import { PricingService } from './pricing.service';
-import { PricingRuleType } from '../entities/credit-pricing-rule.entity';
-import { Trip, TripStatus } from '../entities/trip.entity';
-import { Load } from '../entities/load.entity';
+import { PricingRuleType } from './../entities/credit-pricing-rule.entity';
+import { Trip, TripStatus } from './../entities/trip.entity';
+import { Load } from './../entities/load.entity';
 
 export interface TripCompletedEvent {
   tripId: string;

@@ -703,9 +703,10 @@ export class LoadsService {
     searchCriteria: LoadSearchDto,
     tenantId: string,
     userId?: string,
+    role?: string,
   ): Promise<Load[]> {
     this.logger.log(
-      `Searching loads with criteria: ${JSON.stringify(searchCriteria)}`,
+      `Searching loads with criteria: ${JSON.stringify(searchCriteria)} for role ${role}`,
     );
 
     try {
@@ -714,8 +715,34 @@ export class LoadsService {
       // Base filters
       queryBuilder.where('load.tenantId = :tenantId', { tenantId });
 
+      // Apply role-based visibility rules
       if (userId) {
-        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+        // Privileged roles see all loads in the tenant
+        const isPrivileged = [
+          UserRole.ADMIN,
+          UserRole.SUPER_ADMIN,
+          UserRole.TENANT_ADMIN,
+          UserRole.AGENT,
+        ].includes(role as any);
+
+        if (!isPrivileged) {
+          if (role === 'BROKER' || role === UserRole.BROKER) {
+            // Brokers see ONLY loads specifically assigned to them
+            queryBuilder.andWhere('load.brokerId = :userId', { userId });
+          } else if (role === 'TRUCK_OWNER' || role === UserRole.TRUCK_OWNER || role === 'DRIVER' || role === UserRole.DRIVER) {
+            // Carriers see PUBLISHED loads OR loads specifically assigned to them
+            queryBuilder.andWhere(
+              '(load.status = :publishedStatus OR load.assignedCarrierId = :userId)',
+              { publishedStatus: LoadStatus.PUBLISHED, userId }
+            );
+          } else if (role === 'CARGO_OWNER' || role === UserRole.CARGO_OWNER) {
+            // Cargo Owners see ONLY loads they created
+            queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+          } else {
+            // Fallback for other roles: see only what they "own" if applicable
+            queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+          }
+        }
       }
 
       // Text search
@@ -993,12 +1020,15 @@ export class LoadsService {
 
         // Allow viewing if:
         // 1. User is the cargo owner
-        // 2. User is ADMIN, SUPER_ADMIN, or AGENT
-        // 3. User is a TRUCK_OWNER or DRIVER (within the same tenant)
+        // 2. User is the assigned broker
+        // 3. User is ADMIN, SUPER_ADMIN, TENANT_ADMIN, or AGENT
+        // 4. User is a TRUCK_OWNER or DRIVER (within the same tenant)
         const isOwner = load.cargoOwnerId === userId;
+        const isAssignedBroker = load.brokerId === userId;
         const isPrivileged = [
           UserRole.ADMIN,
           UserRole.SUPER_ADMIN,
+          UserRole.TENANT_ADMIN,
           UserRole.AGENT,
         ].includes(role);
         const isCarrierRelated = [
@@ -1006,7 +1036,7 @@ export class LoadsService {
           UserRole.DRIVER,
         ].includes(role);
 
-        if (!isOwner && !isPrivileged && !isCarrierRelated) {
+        if (!isOwner && !isAssignedBroker && !isPrivileged && !isCarrierRelated) {
           this.logger.warn(`Access denied for user ${userId} with role ${role} to load ${id}`);
           throw new ForbiddenException('You do not have permission to view this load');
         }
@@ -2134,16 +2164,42 @@ export class LoadsService {
   /**
    * Get load statistics for dashboard
    */
-  async getLoadStatistics(tenantId: string, userId?: string): Promise<any> {
-    this.logger.log(`Getting load statistics for tenant ${tenantId}`);
+  async getLoadStatistics(tenantId: string, userId?: string, role?: string): Promise<any> {
+    this.logger.log(`Getting load statistics for tenant ${tenantId} and role ${role}`);
 
     try {
       const queryBuilder = this.loadRepository
         .createQueryBuilder('load')
         .where('load.tenantId = :tenantId', { tenantId });
 
+      // Apply role-based visibility rules for statistics
       if (userId) {
-        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+        // Privileged roles see all statistics in the tenant
+        const isPrivileged = [
+          UserRole.ADMIN,
+          UserRole.SUPER_ADMIN,
+          UserRole.TENANT_ADMIN,
+          UserRole.AGENT,
+        ].includes(role as any);
+
+        if (!isPrivileged) {
+          if (role === 'BROKER' || role === UserRole.BROKER) {
+            // Brokers see stats for ONLY loads specifically assigned to them
+            queryBuilder.andWhere('load.brokerId = :userId', { userId });
+          } else if (role === 'TRUCK_OWNER' || role === UserRole.TRUCK_OWNER || role === 'DRIVER' || role === UserRole.DRIVER) {
+            // Carriers see stats for PUBLISHED loads OR loads specifically assigned to them
+            queryBuilder.andWhere(
+              '(load.status = :publishedStatus OR load.assignedCarrierId = :userId)',
+              { publishedStatus: LoadStatus.PUBLISHED, userId }
+            );
+          } else if (role === 'CARGO_OWNER' || role === UserRole.CARGO_OWNER) {
+            // Cargo Owners see stats for ONLY loads they created
+            queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+          } else {
+            // Fallback for other roles: see only what they "own" if applicable
+            queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+          }
+        }
       }
 
       const [
@@ -2357,12 +2413,33 @@ export class LoadsService {
       .leftJoinAndSelect('load.broker', 'broker')
       .where('load.tenantId = :tenantId', { tenantId });
 
-    // Apply user filter
+    // Apply role-based visibility rules
     if (userId) {
-      if (role === 'BROKER' || role === UserRole.BROKER) {
-        queryBuilder.andWhere('load.brokerId = :userId', { userId });
-      } else {
-        queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      // 1. Privileged roles see all loads in the tenant
+      const isPrivileged = [
+        UserRole.ADMIN,
+        UserRole.SUPER_ADMIN,
+        UserRole.TENANT_ADMIN,
+        UserRole.AGENT,
+      ].includes(role as any);
+
+      if (!isPrivileged) {
+        if (role === 'BROKER' || role === UserRole.BROKER) {
+          // Brokers see ONLY loads specifically assigned to them
+          queryBuilder.andWhere('load.brokerId = :userId', { userId });
+        } else if (role === 'TRUCK_OWNER' || role === UserRole.TRUCK_OWNER || role === 'DRIVER' || role === UserRole.DRIVER) {
+          // Carriers see PUBLISHED loads OR loads specifically assigned to them
+          queryBuilder.andWhere(
+            '(load.status = :publishedStatus OR load.assignedCarrierId = :userId)',
+            { publishedStatus: LoadStatus.PUBLISHED, userId }
+          );
+        } else if (role === 'CARGO_OWNER' || role === UserRole.CARGO_OWNER) {
+          // Cargo Owners see ONLY loads they created
+          queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+        } else {
+          // Fallback for other roles: see only what they "own" if applicable
+          queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+        }
       }
     }
 

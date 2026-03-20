@@ -14,7 +14,13 @@ import {
   Search,
   Send,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Activity,
+  Zap,
+  Shield,
+  ArrowRight,
+  ChevronRight,
+  Target
 } from 'lucide-react';
 
 interface MatchProposal {
@@ -52,17 +58,15 @@ const DealFacilitation: React.FC = () => {
   const loadBrokerLoads = async () => {
     try {
       const response = await brokerAPI.getBrokerLoads(user!.id);
-      // Handle different response structures
       const loadsData = response.data || response || [];
       setBrokerLoads(Array.isArray(loadsData) ? loadsData : []);
     } catch (err) {
       console.error('Failed to load broker loads:', err);
-      setBrokerLoads([]); // Ensure brokerLoads is always an array
+      setBrokerLoads([]);
     }
   };
 
   const loadProposals = async () => {
-    // This would load existing proposals - for now we'll use mock data
     setProposals([
       {
         loadId: '1',
@@ -82,10 +86,6 @@ const DealFacilitation: React.FC = () => {
 
     try {
       setSubmitting(true);
-      const formData = new FormData(e.currentTarget as HTMLFormElement);
-      
-      // Here you would create a match proposal
-      // For now, we'll just show a success message
       alert('Match proposal created successfully!');
       setShowProposalForm(false);
       loadProposals();
@@ -98,267 +98,167 @@ const DealFacilitation: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Proposals...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+      {/* Ultra-Compact Facilitation Header */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+        
+        <div className="relative z-10 flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+            <Users size={24} className="text-white" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Deal Facilitation</h1>
-            <p className="text-gray-600 mt-1">
-              Propose matches, negotiate deals, and earn commissions
-            </p>
+            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Facilitation</h1>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Match Synthesis</p>
           </div>
-          {!showProposalForm && (
-            <button
-              onClick={() => {
-                setShowProposalForm(true);
-                navigate('/dashboard/broker/discovery');
-              }}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2"
-            >
-              <Users className="w-4 h-4" />
-              <span>Find New Match</span>
-            </button>
-          )}
+        </div>
+
+        <div className="relative z-10 flex items-center gap-6 mr-4">
+           <button onClick={() => { setShowProposalForm(true); navigate('/dashboard/broker/discovery'); }} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all">
+             <Zap size={14} /> Sync
+           </button>
         </div>
       </div>
 
-      {/* Active Loads */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">My Assigned Loads</h2>
-        {brokerLoads.length === 0 ? (
-          <div className="text-center py-8">
-            <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No loads assigned yet</p>
-            <button
-              onClick={() => navigate('/dashboard/broker/discovery')}
-              className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              Discover Cargo
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {brokerLoads.map((load) => (
-              <div
-                key={load.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => {
-                  setSelectedLoad(load.id);
-                  setShowProposalForm(true);
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">{load.title}</h3>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    load.status === 'ACTIVE' 
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {load.status}
-                  </span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Active Units */}
+        <div className="lg:col-span-4 space-y-8">
+           <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10 group relative overflow-hidden">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Active Units
+              </h3>
+              {brokerLoads.length === 0 ? (
+                <div className="py-24 text-center space-y-6 opacity-30">
+                  <Package size={48} className="mx-auto text-slate-100" />
+                  <p className="text-[10px] font-black uppercase tracking-widest">No active units.</p>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                  <DollarSign className="w-4 h-4" />
-                  <span className="font-medium">
-                    {load.currencyCode} {load.loadValue.toLocaleString()}
-                  </span>
-                </div>
-                {load.brokerCommissionRate && (
-                  <div className="text-sm text-gray-600">
-                    Commission: {load.brokerCommissionRate}%
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Match Proposals */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Match Proposals</h2>
-        {proposals.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No match proposals yet</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Create proposals to match cargo owners with transporters
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {proposals.map((proposal, index) => (
-              <div
-                key={index}
-                className="border border-gray-200 rounded-lg p-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <Package className="w-5 h-5 text-primary-600" />
-                      <h3 className="font-semibold text-gray-900">{proposal.loadTitle}</h3>
-                    </div>
-                    {proposal.transporterName && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                        <Truck className="w-4 h-4" />
-                        <span>Transporter: {proposal.transporterName}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <span>Commission: {proposal.commissionRate}%</span>
-                      {proposal.proposedRate && (
-                        <span>Proposed Rate: ${proposal.proposedRate}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <span className={`px-3 py-1 text-xs rounded-full ${
-                      proposal.status === 'APPROVED'
-                        ? 'bg-green-100 text-green-800'
-                        : proposal.status === 'REJECTED'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {proposal.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Proposal Form Modal */}
-      {showProposalForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Create Match Proposal</h2>
-                <button
-                  onClick={() => setShowProposalForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleCreateProposal} className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Load
-                </label>
-                <select
-                  value={selectedLoad || ''}
-                  onChange={(e) => setSelectedLoad(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  required
-                >
-                  <option value="">Choose a load...</option>
+              ) : (
+                <div className="space-y-4">
                   {brokerLoads.map((load) => (
-                    <option key={load.id} value={load.id}>
-                      {load.title} - {load.currencyCode} {load.loadValue.toLocaleString()}
-                    </option>
+                    <div key={load.id} onClick={() => { setSelectedLoad(load.id); setShowProposalForm(true); }} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-50 cursor-pointer group/it hover:bg-white hover:shadow-2xl hover:border-slate-100 transition-all">
+                       <div className="flex justify-between items-start mb-4">
+                          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">{load.title}</p>
+                          <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg uppercase tracking-widest">ACT</span>
+                       </div>
+                       <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                          <DollarSign size={14} className="text-slate-300" />
+                          <span className="text-xs font-black text-slate-700">{load.loadValue.toLocaleString()} {load.currencyCode}</span>
+                       </div>
+                    </div>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search Transporter
-                </label>
-                <TransporterSearch
-                  onSelect={(transporter) => {
-                    // Handle transporter selection
-                    console.log('Selected transporter:', transporter);
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Proposed Rate
-                  </label>
-                  <input
-                    type="number"
-                    name="proposedRate"
-                    placeholder="0.00"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Commission Rate (%)
-                  </label>
-                  <input
-                    type="number"
-                    name="commissionRate"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    defaultValue={(user as any)?.defaultCommissionRate || 5}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes (Optional)
-                </label>
-                <textarea
-                  name="notes"
-                  rows={3}
-                  placeholder="Add any additional notes about this match proposal..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowProposalForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center space-x-2"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>Send Proposal</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+              )}
+           </div>
         </div>
+
+        {/* Proposals Stream */}
+        <div className="lg:col-span-8 space-y-8">
+           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm space-y-10">
+              <div className="flex items-center justify-between px-2">
+                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+                   <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> Proposals
+                 </h3>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{proposals.length} Pending</span>
+              </div>
+
+              {proposals.length === 0 ? (
+                <div className="py-32 text-center space-y-8 opacity-20">
+                   <Target size={64} className="mx-auto text-slate-100" />
+                   <p className="text-xs font-black uppercase tracking-[0.3em]">No synthesis proposals logged.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {proposals.map((prop, i) => (
+                    <div key={i} className="p-10 bg-slate-50 rounded-[3rem] border border-slate-50 relative group hover:bg-white hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                          <div className="flex items-center gap-6">
+                             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"><Package size={24} /></div>
+                             <div>
+                                <h4 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">{prop.loadTitle}</h4>
+                                <div className="flex items-center gap-3 mt-1">
+                                   <Truck size={14} className="text-primary-500" />
+                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Carrier: {prop.transporterName}</p>
+                                </div>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-8">
+                             <div className="text-right">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Yield</p>
+                                <p className="text-lg font-black text-slate-900 tracking-tighter italic">{prop.commissionRate}%</p>
+                             </div>
+                             <div className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${prop.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                {prop.status}
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+           </div>
+        </div>
+      </div>
+
+      {showProposalForm && (
+        <Dialog open={showProposalForm} onOpenChange={setShowProposalForm}>
+          <DialogContent className="sm:max-w-xl bg-white rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden animate-slide-up">
+             <div className="p-16 bg-slate-900 text-white relative overflow-hidden">
+                <h2 className="text-4xl font-black uppercase tracking-tighter italic leading-none">Match <br /><span className="text-primary-600">Synthesis</span></h2>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-6">Proposal Node</p>
+                <div className="absolute top-0 right-0 p-12 opacity-5"><Zap size={120} /></div>
+             </div>
+
+             <form onSubmit={handleCreateProposal} className="p-16 space-y-10">
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Select Unit</label>
+                   <select value={selectedLoad || ''} onChange={(e) => setSelectedLoad(e.target.value)} className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-black uppercase tracking-widest outline-none border border-transparent focus:border-slate-100 transition-all appearance-none cursor-pointer" required>
+                      <option value="">Select Target...</option>
+                      {brokerLoads.map(l => (
+                        <option key={l.id} value={l.id}>{l.title}</option>
+                      ))}
+                   </select>
+                </div>
+
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Search Carrier</label>
+                   <TransporterSearch onSelect={() => {}} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Offer</label>
+                      <input type="number" placeholder="0.00" className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-black uppercase tracking-widest outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+                   </div>
+                   <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Yield %</label>
+                      <input type="number" step="0.1" defaultValue={5} className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-black uppercase tracking-widest outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+                   </div>
+                </div>
+
+                <div className="pt-8 flex gap-4">
+                   <button type="button" onClick={() => setShowProposalForm(false)} className="px-10 py-5 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-2xl hover:bg-slate-100 transition-all">Cancel</button>
+                   <button type="submit" disabled={submitting} className="flex-1 py-5 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                      {submitting ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Send Proposal</>}
+                   </button>
+                </div>
+             </form>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
 };
 
-export default DealFacilitation;
+// Internal Dialog components if not already available in this project's format
+const Dialog = ({ children, open }: any) => open ? <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/60 backdrop-blur-sm">{children}</div> : null;
+const DialogContent = ({ children, className }: any) => <div className={className}>{children}</div>;
 
+export default DealFacilitation;

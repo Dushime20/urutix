@@ -3,8 +3,8 @@ import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
 
 interface AdminPageLayoutProps {
-    title: string;
-    description: string;
+    title: string | ReactNode;
+    description: string | ReactNode;
     children: ReactNode;
     actions?: ReactNode;
     showSidebar?: boolean;
@@ -18,7 +18,7 @@ const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
     showSidebar = true,
 }) => {
     return (
-        <div className="flex h-screen bg-slate-50 overflow-hidden font-sans uppercase-none">
+        <div className="flex min-h-screen lg:h-screen bg-slate-50 dark:bg-slate-950 lg:overflow-hidden font-sans uppercase-none">
             {/* Sidebar */}
             {showSidebar && <AdminSidebar />}
 
@@ -30,12 +30,12 @@ const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
                 />
 
                 {/* Content Area */}
-                <main className="flex-1 overflow-y-auto bg-[#fafafa]">
+                <main className="flex-1 lg:overflow-y-auto bg-[#fafafa] dark:bg-slate-900">
                     {/* Page Header / Title Area */}
-                    <div className="bg-white border-b border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
                         <div className="max-w-[1536px] mx-auto px-6 md:px-10 lg:px-14 xl:px-20 py-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                                <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+                                <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
                                     {title}
                                 </h1>
                                 <p className="text-sm text-slate-400 font-medium mt-1">

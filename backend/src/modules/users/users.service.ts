@@ -9,7 +9,7 @@ import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Tenant, TenantStatus } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
-import { EmailService } from '../auth/email.service';
+import { EmailService } from '../auth/services/email.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 

@@ -14,6 +14,11 @@ import {
   BarChart3,
   MapPin,
   Gavel,
+  Activity,
+  Zap,
+  ChevronRight,
+  Target,
+  Sparkles
 } from 'lucide-react';
 
 const SimpleBrokerDashboard: React.FC = () => {
@@ -21,276 +26,125 @@ const SimpleBrokerDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Dashboard Header */}
+    <div className="min-h-screen bg-[#FDFDFF] pb-24 font-manrope">
       <DashboardHeader />
 
-      {/* Welcome Section - Same as Cargo Owner */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <main className="max-w-[1400px] mx-auto px-6 lg:px-12 pt-12 space-y-12 animate-fade-in">
+        {/* Ultra-Compact Dashboard Header */}
+        <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+          
+          <div className="relative z-10 flex items-center gap-6">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
+              <Activity size={24} className="text-white" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-xl font-black tracking-tight leading-none mb-1">Dashboard</h1>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                 {(() => {
                   const hour = new Date().getHours();
-                  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                  // Get firstName from user object, fallback to profile.firstName, then to 'Broker'
-                  const firstName = (user?.firstName && user.firstName.trim()) || 
-                                    ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
-                                    'Broker';
+                  const greeting = hour < 12 ? 'Morning' : hour < 18 ? 'Afternoon' : 'Evening';
+                  const firstName = (user?.firstName && user.firstName.trim()) || 'BROKER';
                   return `${greeting}, ${firstName}`;
                 })()}
-              </h1>
-              <p className="mt-1 text-gray-600">
-                Professional logistics facilitation at your fingertips
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => navigate('/dashboard/broker/loads')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-sm"
-              >
-                <Package className="w-5 h-5" />
-                My Loads
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/broker/bidding')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
-              >
-                <Gavel className="w-5 h-5" />
-                Bidding
-              </button>
-              <button
-                onClick={() => navigate('/dashboard/broker/tracking')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
-              >
-                <MapPin className="w-5 h-5" />
-                Tracking
-              </button>
-            </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="mt-8 flex gap-1 overflow-x-auto scrollbar-hide">
-            {[
-              { id: 'Overview', label: 'Overview', icon: BarChart3 },
-              { id: 'Loads', label: 'My Loads', icon: Package },
-              { id: 'Bidding', label: 'Bidding', icon: Gavel },
-              { id: 'Tracking', label: 'Tracking', icon: MapPin },
-              { id: 'Contracts', label: 'Contracts', icon: FileText },
-              { id: 'Insurance', label: 'Insurance', icon: Shield }
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => navigate(`/dashboard/broker/${tab.id.toLowerCase()}`)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6">
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-gray-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Commissions</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">$12,450</p>
-                <p className="text-xs text-gray-600 font-medium mt-1">↗ +15% this month</p>
-              </div>
-              <div className="bg-gray-100 rounded-xl p-4">
-                <DollarSign className="w-7 h-7 text-violet-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-gray-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Loads</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">8</p>
-                <p className="text-xs text-gray-500 mt-1">Currently managing</p>
-              </div>
-              <div className="bg-gray-100 rounded-xl p-4">
-                <Package className="w-7 h-7 text-emerald-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-gray-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">$3,200</p>
-                <p className="text-xs text-gray-500 mt-1">Awaiting payment</p>
-              </div>
-              <div className="bg-gray-100 rounded-xl p-4">
-                <Clock className="w-7 h-7 text-amber-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-gray-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">94%</p>
-                <p className="text-xs text-gray-500 mt-1">Deal completion</p>
-              </div>
-              <div className="bg-gray-100 rounded-xl p-4">
-                <TrendingUp className="w-7 h-7 text-rose-600" />
-              </div>
-            </div>
+          <div className="relative z-10 flex items-center gap-12 mr-4 text-right">
+             <div className="text-center hidden md:block">
+               <p className="text-xl font-black tracking-tighter leading-none text-primary-400">94%</p>
+               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Win Rate</p>
+             </div>
+             <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-900/10 hover:scale-110 transition-all">
+                <Zap size={18} className="text-white" />
+             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div
-              className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md hover:scale-105 transition-all"
-              onClick={() => navigate('/dashboard/broker/loads')}
-            >
-              <div className="bg-gray-100 rounded-lg p-3 w-fit mb-3">
-                <Package className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-gray-900">My Loads</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Manage assigned loads & tracking
-              </p>
-              <div className="flex items-center text-sm font-semibold text-gray-700">
-                View All <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
-            </div>
-
-            <div
-              className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md hover:scale-105 transition-all"
-              onClick={() => navigate('/dashboard/broker/bidding')}
-            >
-              <div className="bg-gray-100 rounded-lg p-3 w-fit mb-3">
-                <Gavel className="w-6 h-6 text-violet-600" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-gray-900">Bidding</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Manage bids and proposals
-              </p>
-              <div className="flex items-center text-sm font-semibold text-gray-700">
-                View Bids <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
-            </div>
-
-            <div
-              className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md hover:scale-105 transition-all"
-              onClick={() => navigate('/dashboard/broker/tracking')}
-            >
-              <div className="bg-gray-100 rounded-lg p-3 w-fit mb-3">
-                <MapPin className="w-6 h-6 text-emerald-600" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-gray-900">Tracking</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Track shipments and deliveries
-              </p>
-              <div className="flex items-center text-sm font-semibold text-gray-700">
-                Track Now <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
-            </div>
-
-            <div
-              className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md hover:scale-105 transition-all"
-              onClick={() => navigate('/dashboard/broker/commissions')}
-            >
-              <div className="bg-gray-100 rounded-lg p-3 w-fit mb-3">
-                <DollarSign className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-gray-900">Commissions</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Track earnings & manage payouts
-              </p>
-              <div className="flex items-center text-sm font-semibold text-gray-700">
-                View Earnings <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
-            </div>
-          </div>
+        {/* Primary Command Center */}
+        <div className="flex flex-wrap gap-4">
+           {[
+             { label: 'Asset Pipeline', icon: Package, path: '/dashboard/broker/loads', color: 'bg-slate-900' },
+             { label: 'Bidding', icon: Gavel, path: '/dashboard/broker/bidding', color: 'bg-primary-600' },
+             { label: 'Vector Analysis', icon: MapPin, path: '/dashboard/broker/tracking', color: 'bg-indigo-600' },
+           ].map((btn, i) => (
+             <button key={i} onClick={() => navigate(btn.path)} className={`px-10 py-5 ${btn.color} text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all`}>
+               <btn.icon size={16} /> {btn.label}
+             </button>
+           ))}
         </div>
 
-        {/* Professional Services */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Professional Services</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div
-              onClick={() => navigate('/dashboard/broker/contracts')}
-              className="p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-gray-100 rounded-lg p-2">
-                  <FileText className="w-5 h-5 text-blue-600" />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+           {[
+             { label: 'Net Revenue', value: '$12,450', trend: '↑ 15%', icon: DollarSign },
+             { label: 'Transit', value: '8', trend: 'ACTIVE', icon: Package },
+             { label: 'Pipeline', value: '$3,200', trend: 'RESERVE', icon: Clock },
+             { label: 'Win Rate', value: '94%', trend: '94.2%', icon: TrendingUp }
+           ].map((stat, i) => (
+             <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative">
+                <div className="relative z-10">
+                   <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all mb-8 shadow-sm"><stat.icon size={20} /></div>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{stat.label}</p>
+                   <h3 className="text-3xl font-black text-slate-900 tracking-tighter italic">{stat.value}</h3>
+                   <span className="text-[9px] font-black text-primary-500 uppercase tracking-widest mt-2 block">{stat.trend}</span>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Contracts</h3>
-                  <p className="text-xs text-gray-500">Manage load agreements</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              onClick={() => navigate('/dashboard/broker/insurance')}
-              className="p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-gray-100 rounded-lg p-2">
-                  <Shield className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Insurance</h3>
-                  <p className="text-xs text-gray-500">Verify compliance</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              onClick={() => navigate('/dashboard/broker/market-intelligence')}
-              className="p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-gray-100 rounded-lg p-2">
-                  <BarChart3 className="w-5 h-5 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Market Intel</h3>
-                  <p className="text-xs text-gray-500">Real-time insights</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              onClick={() => navigate('/dashboard/broker/analytics')}
-              className="p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-gray-100 rounded-lg p-2">
-                  <BarChart3 className="w-5 h-5 text-violet-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">Analytics</h3>
-                  <p className="text-xs text-gray-500">Performance data</p>
-                </div>
-              </div>
-            </div>
-          </div>
+             </div>
+           ))}
         </div>
-      </div>
 
-      {/* Dashboard Footer */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+           {/* Rapid Command */}
+           <div className="space-y-8">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic flex items-center gap-3">
+                 <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Rapid Command
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {[
+                   { label: 'Asset Pipeline', icon: Package, desc: 'Manage assigned units', path: '/dashboard/broker/loads' },
+                   { label: 'Bidding System', icon: Gavel, desc: 'Manage proposals', path: '/dashboard/broker/bidding' },
+                   { label: 'Vector Analysis', icon: MapPin, desc: 'Track field assets', path: '/dashboard/broker/tracking' },
+                   { label: 'Yield Records', icon: DollarSign, desc: 'Commission analytics', path: '/dashboard/broker/commissions' }
+                 ].map((act, i) => (
+                   <div key={i} onClick={() => navigate(act.path)} className="p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm cursor-pointer group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+                      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all mb-8 shadow-sm transition-all"><act.icon size={24} /></div>
+                      <h4 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tighter italic">{act.label}</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-8">{act.desc}</p>
+                      <div className="flex items-center gap-2 text-primary-600 text-[9px] font-black uppercase tracking-widest">Execute <ChevronRight size={14} className="group-hover:translate-x-2 transition-transform" /></div>
+                   </div>
+                 ))}
+              </div>
+           </div>
+
+           {/* System Tools */}
+           <div className="space-y-8">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic flex items-center gap-3">
+                 <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> System Tools
+              </h3>
+              <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm space-y-6">
+                 {[
+                   { label: 'Agreements', icon: FileText, desc: 'Manage load records', path: '/dashboard/broker/contracts' },
+                   { label: 'Compliance', icon: Shield, desc: 'Verify safety specs', path: '/dashboard/broker/insurance' },
+                   { label: 'Intelligence', icon: Sparkles, desc: 'Real-time market insights', path: '/dashboard/broker/market-intelligence' },
+                   { label: 'Analysis', icon: BarChart3, desc: 'Performance mapping', path: '/dashboard/broker/analytics' }
+                 ].map((tool, i) => (
+                   <div key={i} onClick={() => navigate(tool.path)} className="flex items-center justify-between p-6 bg-slate-50/50 rounded-2xl border border-transparent hover:bg-white hover:border-slate-100 hover:shadow-xl transition-all cursor-pointer group/t">
+                      <div className="flex items-center gap-6">
+                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-300 group-hover/t:bg-slate-900 group-hover/t:text-white transition-all shadow-sm"><tool.icon size={20} /></div>
+                         <div>
+                            <p className="text-sm font-black text-slate-900 uppercase tracking-tighter italic">{tool.label}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{tool.desc}</p>
+                         </div>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl shadow-sm text-slate-200 group-hover/t:text-primary-600 transition-colors"><ChevronRight size={18} /></div>
+                   </div>
+                 ))}
+              </div>
+           </div>
+        </div>
+      </main>
+
       <DashboardFooter />
     </div>
   );

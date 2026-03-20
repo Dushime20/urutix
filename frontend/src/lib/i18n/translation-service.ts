@@ -119,36 +119,44 @@ class TranslationService {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
     
     try {
+      console.log(`[i18n] MyMemory Request: ${targetLang} -> "${text.substring(0, 30)}..."`);
       const response = await fetch(url);
       
       if (response.status === 429) {
-        // Rate limited
-        this.setRateLimit(60); // 1 hour
+        console.warn('[i18n] MyMemory Rate Limited (429). Setting 60-min cooldown.');
+        this.setRateLimit(60);
         return text;
       }
 
       if (!response.ok) {
+        console.error(`[i18n] MyMemory HTTP Error: ${response.status} ${response.statusText}`);
         return text;
       }
 
       const data = await response.json();
       if (data.responseStatus === 200 && data.responseData?.translatedText) {
-        return data.responseData.translatedText;
+        const result = data.responseData.translatedText;
+        if (result === text) {
+            console.log('[i18n] MyMemory returned identical text (possibly untranslatable or source=target)');
+        }
+        return result;
       }
       
+      console.warn('[i18n] MyMemory Unexpected Response:', data);
       return text;
     } catch (error) {
-      console.warn('Translation API error:', error);
+      console.error('[i18n] MyMemory Fetch Error:', error);
       return text;
     }
   }
 
   private async translateWithGoogle(text: string, targetLang: LanguageCode): Promise<string> {
-    if (!this.googleTranslateApiKey) {
+    if (!this.googleTranslateApiKey || this.googleTranslateApiKey === 'undefined' || this.googleTranslateApiKey.length < 5) {
       return this.translateWithMyMemory(text, targetLang);
     }
 
     try {
+      console.log(`[i18n] Google Translate Request: ${targetLang} -> "${text.substring(0, 30)}..."`);
       const url = `https://translation.googleapis.com/language/translate/v2?key=${this.googleTranslateApiKey}`;
       const response = await fetch(url, {
         method: 'POST',
@@ -164,11 +172,14 @@ class TranslationService {
       });
 
       if (response.status === 429) {
+        console.warn('[i18n] Google Translate Rate Limited.');
         this.setRateLimit(60);
         return text;
       }
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[i18n] Google Translate API Error:', response.status, errorData);
         return this.translateWithMyMemory(text, targetLang);
       }
 
@@ -177,9 +188,10 @@ class TranslationService {
         return data.data.translations[0].translatedText;
       }
 
-      return text;
+      console.warn('[i18n] Google Translate Unexpected Response Structure:', data);
+      return this.translateWithMyMemory(text, targetLang);
     } catch (error) {
-      console.warn('Google Translate error:', error);
+      console.error('[i18n] Google Translate Fetch Error:', error);
       return this.translateWithMyMemory(text, targetLang);
     }
   }
@@ -229,26 +241,36 @@ class TranslationService {
       return text;
     }
 
-    // Check rate limit
-    const rateLimitStatus = this.getRateLimitStatus();
-    if (rateLimitStatus.isLimited) {
-      return text;
-    }
-
     // Check cache
     const cached = this.getCachedTranslation(text, lang);
     if (cached) {
       return cached;
     }
 
-    // Translate
-    const translation = this.googleTranslateApiKey
-      ? await this.translateWithGoogle(text, lang)
-      : await this.translateWithMyMemory(text, lang);
+    // Check rate limit
+    const rateLimitStatus = this.getRateLimitStatus();
+    if (rateLimitStatus.isLimited) {
+      console.warn(`Translation rate limited. Minutes remaining: ${rateLimitStatus.minutesRemaining}`);
+      return text;
+    }
 
-    // Cache if translation succeeded
-    if (translation !== text) {
+    console.log(`[i18n] Translating: "${text.substring(0, 20)}${text.length > 20 ? '...' : ''}" to ${lang}`);
+
+    // Translate
+    let translation = text;
+    try {
+      translation = this.googleTranslateApiKey
+        ? await this.translateWithGoogle(text, lang)
+        : await this.translateWithMyMemory(text, lang);
+    } catch (error) {
+      console.error('[i18n] Translation failed:', error);
+      return text;
+    }
+
+    // Cache if translation succeeded and is actually a translation
+    if (translation && translation !== text) {
       this.setCachedTranslation(text, lang, translation);
+      console.log(`[i18n] Success: "${text.substring(0, 15)}..." -> "${translation.substring(0, 15)}..."`);
     }
 
     return translation;

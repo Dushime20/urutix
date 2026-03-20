@@ -30,6 +30,7 @@ import {
     ArrowRight,
     Mail
 } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 
 interface NavItem {
@@ -125,10 +126,10 @@ const AdminSidebar: React.FC = () => {
 
     return (
         <aside
-            className={`${collapsed ? 'w-20' : 'w-64'} bg-white h-full transition-all duration-300 flex flex-col border-r border-slate-200 flex-shrink-0 z-20`}
+            className={`${collapsed ? 'w-20' : 'w-64'} hidden lg:flex bg-white dark:bg-slate-900 h-full transition-all duration-300 flex-col border-r border-slate-200 dark:border-slate-800 flex-shrink-0 z-20`}
         >
             {/* Logo Section */}
-            <div className="p-6 h-20 flex items-center justify-between border-b border-slate-50">
+            <div className="p-6 h-20 flex items-center justify-between border-b border-slate-50 dark:border-slate-800">
                 {!collapsed ? (
                     <Link to="/admin" className="flex items-center">
                         <div className="flex items-center justify-center w-full py-2">
@@ -155,8 +156,8 @@ const AdminSidebar: React.FC = () => {
                 {navCategories.map((category, idx) => (
                     <div key={idx} className="space-y-2">
                         {!collapsed && (
-                            <h3 className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
-                                {category.title}
+                            <h3 className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">
+                                <TranslatedText text={category.title} />
                             </h3>
                         )}
                         <div className="space-y-1">
@@ -168,8 +169,8 @@ const AdminSidebar: React.FC = () => {
                                         key={itemIdx}
                                         to={item.path}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${active
-                                            ? 'bg-indigo-50 text-indigo-600'
-                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
                                             }`}
                                         title={collapsed ? item.label : undefined}
                                     >
@@ -182,7 +183,7 @@ const AdminSidebar: React.FC = () => {
                                         />
                                         {!collapsed && (
                                             <>
-                                                <span className="text-sm font-bold flex-1">{item.label}</span>
+                                                <span className="text-sm font-bold flex-1"><TranslatedText text={item.label} /></span>
                                                 {item.badge && (
                                                     <span className="px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-md">
                                                         {item.badge}
@@ -200,15 +201,15 @@ const AdminSidebar: React.FC = () => {
             </nav>
 
             {/* Footer / Toggle */}
-            <div className="p-4 border-t border-slate-50">
+            <div className="p-4 border-t border-slate-50 dark:border-slate-800">
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="w-full flex items-center justify-center p-2.5 hover:bg-slate-50 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-100"
+                    className="w-full flex items-center justify-center p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
                 >
                     {collapsed ? <ChevronRight size={18} /> : (
                         <div className="flex items-center gap-2">
                             <ChevronLeft size={18} />
-                            <span className="text-xs font-bold">Minimize Sidebar</span>
+                            <span className="text-xs font-bold"><TranslatedText text="Minimize Sidebar" /></span>
                         </div>
                     )}
                 </button>
