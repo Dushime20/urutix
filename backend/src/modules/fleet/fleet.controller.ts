@@ -2617,31 +2617,56 @@ export class FleetController {
         name: { type: 'string', description: 'Route name' },
         origin: { type: 'string', description: 'Route origin' },
         destination: { type: 'string', description: 'Route destination' },
-        distance: { type: 'number', description: 'Route distance in miles' },
-        estimatedDuration: {
+        distance: { type: 'number', description: 'Route distance in kilometers' },
+        estimatedTime: {
           type: 'number',
-          description: 'Estimated duration in hours',
+          description: 'Estimated time in hours',
         },
-        status: { type: 'string', description: 'Route status' },
+        routeType: { 
+          type: 'string', 
+          enum: ['highway', 'city', 'rural', 'mixed'],
+          description: 'Route type' 
+        },
+        status: { 
+          type: 'string', 
+          enum: ['active', 'inactive', 'maintenance'],
+          description: 'Route status' 
+        },
+        description: { type: 'string', description: 'Route description' },
       },
-      required: ['name', 'origin', 'destination'],
+      required: ['name', 'origin', 'destination', 'distance', 'estimatedTime'],
     },
     description: 'Route creation data',
   })
   @ApiResponse({ status: 201, description: 'Route created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async createRoute(@Body() createRouteDto: any, @Request() req) {
-    const route = await this.fleetService.createRoute(
-      createRouteDto,
-      req.user.userId,
-      req.user.tenantId,
-    );
+  async createRoute(@Body() createRouteDto: CreateRouteDto, @Request() req) {
+    console.log('🎯 FleetController: createRoute endpoint called');
+    console.log('📝 FleetController: Request body:', createRouteDto);
+    console.log('👤 FleetController: User info:', {
+      userId: req.user?.userId,
+      tenantId: req.user?.tenantId,
+      role: req.user?.role
+    });
 
-    return {
-      message: 'Route created successfully',
-      route,
-    };
+    try {
+      const route = await this.fleetService.createRoute(
+        createRouteDto,
+        req.user.userId,
+        req.user.tenantId,
+      );
+
+      console.log('✅ FleetController: Route created successfully:', route);
+
+      return {
+        message: 'Route created successfully',
+        route,
+      };
+    } catch (error) {
+      console.error('❌ FleetController: Error creating route:', error);
+      throw error;
+    }
   }
 
   @Get('routes')

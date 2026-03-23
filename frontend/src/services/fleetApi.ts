@@ -69,7 +69,7 @@ export interface Driver {
   currentTruckId?: string;
   tenantId: string;
   experienceYears?: number;
-  experience?: number; // Computed field from backend
+  experience?: number; // Years of driving experience
   rating?: number;
   totalTrips?: number;
   totalDistance?: number;
@@ -81,6 +81,14 @@ export interface Driver {
   drugTestDate?: string;
   backgroundCheckDate?: string;
   trainingCompletionDate?: string;
+  hourlyRate?: number;
+  mileageRate?: number;
+  driverNotes?: string; // Additional notes about the driver
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -98,14 +106,17 @@ export interface TruckOwner {
 
 export interface Route {
   id: string;
+  tenantId?: string;
   name: string;
-  origin?: string;
-  destination?: string;
-  distance?: number;
-  estimatedTime?: number;
-  status?: string;
-  assignedDrivers?: string[];
+  origin: string;
+  destination: string;
+  distance: number; // in kilometers
+  estimatedTime: number; // in hours
+  routeType?: 'highway' | 'city' | 'rural' | 'mixed';
+  status: 'active' | 'inactive' | 'maintenance';
   assignedTrucks?: string[];
+  assignedDrivers?: string[];
+  description?: string;
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -182,6 +193,20 @@ export interface CreateDriverDto {
   licenseCountry?: string;
   hireDate: string;
   employmentType?: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'OWNER_OPERATOR' | 'FREELANCE';
+  routeIds?: string[]; // Array of route IDs to assign to the driver
+  experience?: number; // Years of experience
+  medicalCertExpiry?: string;
+  drugTestDate?: string;
+  backgroundCheckDate?: string;
+  trainingCompletionDate?: string;
+  hourlyRate?: number;
+  mileageRate?: number;
+  driverNotes?: string; // Additional notes
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
 }
 
 export interface FleetFilters {
@@ -321,21 +346,88 @@ export const fleetApi = {
 
   // Route operations
   fetchRoutes: async (): Promise<Route[]> => {
+    console.log('🌐 FleetAPI: Fetching routes from /fleet/routes');
     try {
       const response = await api.get('/fleet/routes');
-      return response.data.routes || response.data.data || [];
-    } catch (error) {
-      console.warn('Routes endpoint not available, returning empty array');
+      console.log('✅ FleetAPI: Raw response received:', response);
+      console.log('✅ FleetAPI: Response status:', response.status);
+      console.log('✅ FleetAPI: Response headers:', response.headers);
+      console.log('✅ FleetAPI: Response data:', response.data);
+      console.log('✅ FleetAPI: Response data type:', typeof response.data);
+      console.log('✅ FleetAPI: Response data keys:', Object.keys(response.data || {}));
+      
+      const routes = response.data.routes || response.data.data || [];
+      console.log('📋 FleetAPI: Processed routes:', routes);
+      console.log('📋 FleetAPI: Routes type:', typeof routes);
+      console.log('📋 FleetAPI: Routes is array:', Array.isArray(routes));
+      console.log('📋 FleetAPI: Routes length:', routes.length);
+      
+      if (routes.length > 0) {
+        console.log('📋 FleetAPI: First route sample:', routes[0]);
+      }
+      
+      return routes;
+    } catch (error: any) {
+      console.error('❌ FleetAPI: Routes fetch error:', error);
+      console.error('❌ FleetAPI: Error response:', error.response?.data);
+      console.error('❌ FleetAPI: Error status:', error.response?.status);
+      console.error('❌ FleetAPI: Error message:', error.message);
+      console.warn('⚠️ FleetAPI: Routes endpoint not available, returning empty array');
       return [];
     }
   },
 
+  createRoute: async (routeData: Partial<Route>): Promise<Route> => {
+    console.log('🌐 FleetAPI: Creating route with data:', routeData);
+    console.log('🌐 FleetAPI: Sending POST request to /fleet/routes');
+    
+    try {
+      const response = await api.post<FleetApiResponse<Route>>('/fleet/routes', routeData);
+      console.log('✅ FleetAPI: Route creation response:', response);
+      console.log('✅ FleetAPI: Response data:', response.data);
+      
+      const route = response.data.route || response.data.data;
+      if (!route) {
+        console.error('❌ FleetAPI: No route in response data');
+        throw new Error('Failed to create route - no route returned');
+      }
+      
+      console.log('🎉 FleetAPI: Route created successfully:', route);
+      return route as Route;
+    } catch (error: any) {
+      console.error('❌ FleetAPI: Route creation failed:', error);
+      console.error('❌ FleetAPI: Error response:', error.response?.data);
+      console.error('❌ FleetAPI: Error status:', error.response?.status);
+      throw error;
+    }
+  },
+
+  updateRoute: async (id: string, routeData: Partial<Route>): Promise<Route> => {
+    const response = await api.patch<FleetApiResponse<Route>>(`/fleet/routes/${id}`, routeData);
+    const route = response.data.route || response.data.data;
+    if (!route) {
+      throw new Error('Failed to update route');
+    }
+    return route as Route;
+  },
+
+  deleteRoute: async (id: string): Promise<void> => {
+    await api.delete(`/fleet/routes/${id}`);
+  },
+
   getTruckRoutes: async (truckId: string): Promise<Route[]> => {
+    console.log(`🚛 FleetAPI: Getting routes for truck ${truckId}`);
     try {
       const response = await api.get(`/fleet/trucks/${truckId}/routes`);
-      return response.data.routes || response.data.data || [];
-    } catch (error) {
-      console.warn(`Truck routes endpoint not available for truck ${truckId}, returning empty array`);
+      console.log(`✅ FleetAPI: Truck ${truckId} routes response:`, response.data);
+      const routes = response.data.routes || response.data.data || [];
+      console.log(`📋 FleetAPI: Processed truck ${truckId} routes:`, routes);
+      return routes;
+    } catch (error: any) {
+      console.error(`❌ FleetAPI: Failed to get routes for truck ${truckId}:`, error);
+      console.error(`❌ FleetAPI: Error response:`, error.response?.data);
+      console.error(`❌ FleetAPI: Error status:`, error.response?.status);
+      console.warn(`⚠️ FleetAPI: Truck routes endpoint not available for truck ${truckId}, returning empty array`);
       return [];
     }
   },

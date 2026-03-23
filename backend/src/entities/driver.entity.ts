@@ -186,6 +186,12 @@ export class Driver {
   @Column('decimal', { precision: 15, scale: 2, default: 0 })
   totalEarnings: number;
 
+  @Column({ nullable: true })
+  experience?: number;
+
+  @Column('text', { nullable: true })
+  driverNotes?: string;
+
   @Column('jsonb', { default: {} })
   preferences: Record<string, any>;
 

@@ -32,36 +32,6 @@ async function bootstrap() {
   // Enhanced CORS with wildcard subdomain support
   app.enableCors({
     origin: (origin, callback) => {
-<<<<<<< Updated upstream
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
-
-      // Check static allowed origins first
-      if (allowedOrigins.includes(origin)) {
-        console.log(`✅ CORS: Allowed request from ${origin} (static origin)`);
-        return callback(null, true);
-      }
-
-      // Wildcard pattern matching for subdomains
-      const allowedPatterns = [
-        /^http:\/\/localhost:\d+$/,                    // localhost:port
-        /^http:\/\/127\.0\.0\.1:\d+$/,                // 127.0.0.1:port
-        /^http:\/\/[^.]+\.localhost:\d+$/,            // *.localhost:port
-        /^https:\/\/[^.]+\.urutix\.com$/,             // *.urutix.com
-        /^https:\/\/urutix\.com$/,                    // main domain
-        /^http:\/\/[^.]+\.urutix\.com:\d+$/,          // *.urutix.com:port (dev)
-      ];
-
-      const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
-      
-      if (isAllowed) {
-        console.log(`✅ CORS: Allowed request from ${origin} (pattern match)`);
-        callback(null, true);
-      } else {
-        console.log(`❌ CORS: Blocked request from ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-=======
       // Allow requests with no origin (like mobile apps, curl, Postman)
       if (!origin) {
         return callback(null, true);
@@ -79,7 +49,6 @@ async function bootstrap() {
       
       console.warn(`⚠️  CORS: Blocked request from ${origin}`);
       return callback(new Error('Not allowed by CORS'), false);
->>>>>>> Stashed changes
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

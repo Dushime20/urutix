@@ -835,12 +835,47 @@ export class FleetService {
         restrictions: [],
         certifications: [],
         preferences: {},
+        // Handle new fields
+        experience: createDriverDto.experience || 0,
+        driverNotes: createDriverDto.driverNotes || null,
       });
 
       console.log('💾 Saving driver to database...');
       const savedDriver = await this.driverRepository.save(driver);
       console.log('✅ Driver saved successfully:', savedDriver.id);
       console.log('✅ Driver user account ID:', driverUserId);
+
+      // Handle route assignments if provided
+      if (createDriverDto.routeIds && createDriverDto.routeIds.length > 0) {
+        console.log('🛣️ Assigning routes to driver:', createDriverDto.routeIds);
+        try {
+          for (const routeId of createDriverDto.routeIds) {
+            // Validate route exists and belongs to the same tenant
+            const route = await this.routeRepository.findOne({
+              where: { id: routeId, tenantId },
+            });
+
+            if (!route) {
+              this.logger.warn(`⚠️ Route ${routeId} not found or doesn't belong to tenant ${tenantId}, skipping assignment`);
+              continue;
+            }
+
+            // Add driver to route's assigned drivers
+            if (!route.assignedDrivers.includes(savedDriver.id)) {
+              route.assignedDrivers.push(savedDriver.id);
+              await this.routeRepository.save(route);
+              this.logger.log(`✅ Driver ${savedDriver.id} assigned to route ${routeId}`);
+            } else {
+              this.logger.log(`ℹ️ Driver ${savedDriver.id} already assigned to route ${routeId}`);
+            }
+          }
+          console.log('✅ Route assignments completed successfully');
+        } catch (routeError: any) {
+          this.logger.error(`❌ Error assigning routes to driver: ${routeError.message}`);
+          // Don't fail the entire driver creation, just log the error
+          this.logger.warn('⚠️ Driver was created successfully, but route assignments failed');
+        }
+      }
 
       return savedDriver;
     } catch (error) {
@@ -2513,11 +2548,17 @@ export class FleetService {
     userId: string,
     tenantId: string,
   ): Promise<any> {
+    console.log('🏗️ FleetService: createRoute called');
+    console.log('📝 FleetService: Route data:', routeData);
+    console.log('👤 FleetService: User ID:', userId);
+    console.log('🏢 FleetService: Tenant ID:', tenantId);
+
     // Normalize payload to match entity expectations
     const normalizedStatus = (routeData?.status || 'active')
       .toString()
       .toLowerCase();
-    const route = this.routeRepository.create({
+    
+    const routePayload = {
       ...routeData,
       status:
         normalizedStatus === 'active' ||
@@ -2532,7 +2573,11 @@ export class FleetService {
       estimatedTime:
         typeof routeData?.estimatedTime === 'string'
           ? parseInt(routeData.estimatedTime)
-          : Number(routeData?.estimatedTime ?? 0),
+          : typeof routeData?.estimatedDuration === 'string'
+          ? parseInt(routeData.estimatedDuration)
+          : Number(routeData?.estimatedTime ?? routeData?.estimatedDuration ?? 0),
+      routeType: routeData?.routeType || 'highway',
+      description: routeData?.description || null,
       isActive:
         typeof routeData?.isActive === 'boolean' ? routeData.isActive : true,
       assignedTrucks: Array.isArray(routeData?.assignedTrucks)
@@ -2542,12 +2587,20 @@ export class FleetService {
         ? routeData.assignedDrivers
         : [],
       tenantId,
-    });
+    };
+
+    console.log('🔧 FleetService: Normalized route payload:', routePayload);
+
+    const route = this.routeRepository.create(routePayload);
+    console.log('🏗️ FleetService: Route entity created:', route);
 
     try {
-      return await this.routeRepository.save(route);
+      const savedRoute = await this.routeRepository.save(route);
+      console.log('✅ FleetService: Route saved successfully:', savedRoute);
+      return savedRoute;
     } catch (error) {
-      console.error('❌ createRoute error:', {
+      console.error('❌ FleetService: Error saving route:', error);
+      console.error('❌ FleetService: Error details:', {
         message: error?.message,
         code: error?.code,
         detail: error?.detail,
@@ -2562,6 +2615,9 @@ export class FleetService {
       if (error?.code === '23502') {
         throw new BadRequestException('Missing required route fields');
       }
+      throw error;
+    }
+  }
 
       // Invalid enum or invalid numeric input
       if (

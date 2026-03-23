@@ -35,7 +35,7 @@ import DashboardHeader from '../Layout/DashboardHeader';
 import DashboardFooter from '../Layout/DashboardFooter';
 import 'leaflet/dist/leaflet.css';
 import { fleetApi } from '../../services/fleetApi';
-import type { FleetItem as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
+import type { Truck as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
 import { authAPI } from '../../services/api';
 import type { FleetItem as LocalFleetItem } from '../../types/fleet';
 import { FleetStatus } from '../../types/fleet';
@@ -529,7 +529,7 @@ export const FleetDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex-1 relative bg-slate-50">
+                  <div className="flex-1 relative bg-slate-50 z-0">  
                     <MapContainer
                       center={[-1.2921, 36.8219]}
                       zoom={13}

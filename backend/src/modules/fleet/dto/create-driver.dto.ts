@@ -99,4 +99,18 @@ export class CreateFleetDriverDto {
   @IsOptional()
   @IsDateString({}, { message: 'trainingCompletionDate must be a valid ISO 8601 date string' })
   trainingCompletionDate?: string;
+
+  @IsOptional()
+  @IsString({ each: true })
+  routeIds?: string[]; // Array of route IDs to assign to the driver
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(50)
+  experience?: number;
+
+  @IsOptional()
+  @IsString()
+  driverNotes?: string;
 }

@@ -115,7 +115,7 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center">
-              Weight Capacity (kg)
+              Weight Capacity (kg) *
               <span className="ml-2 text-xs text-primary-500 font-normal">(Used in matching)</span>
             </label>
             <input
@@ -124,12 +124,14 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               onChange={(e) => handleInputChange('capacityWeight', e.target.value)}
               placeholder="e.g., 20000"
               className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
+              required
+              min="1"
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center">
-              Volume Capacity (m³)
+              Volume Capacity (m³) *
               <span className="ml-2 text-xs text-primary-500 font-normal">(Used in matching)</span>
             </label>
             <input
@@ -138,6 +140,8 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
               onChange={(e) => handleInputChange('capacityVolume', e.target.value)}
               placeholder="e.g., 100"
               className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 min-w-0"
+              required
+              min="1"
             />
           </div>
         </div>

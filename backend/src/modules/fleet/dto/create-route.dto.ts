@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn, IsEnum } from 'class-validator';
+import { RouteType } from '../../../entities/route.entity';
 
 export class CreateRouteDto {
   @ApiProperty({
@@ -24,18 +25,27 @@ export class CreateRouteDto {
   destination: string;
 
   @ApiProperty({
-    description: 'Route distance in miles',
+    description: 'Route distance in kilometers',
     example: 800,
   })
   @IsNumber()
   distance: number;
 
   @ApiProperty({
-    description: 'Estimated duration in hours',
+    description: 'Estimated time in hours',
     example: 12,
   })
   @IsNumber()
-  estimatedDuration: number;
+  estimatedTime: number;
+
+  @ApiProperty({
+    description: 'Route type',
+    enum: RouteType,
+    example: RouteType.HIGHWAY,
+  })
+  @IsOptional()
+  @IsEnum(RouteType)
+  routeType?: RouteType;
 
   @ApiProperty({
     description: 'Route status',
@@ -45,4 +55,13 @@ export class CreateRouteDto {
   @IsString()
   @IsIn(['active', 'inactive', 'maintenance'])
   status: 'active' | 'inactive' | 'maintenance';
+
+  @ApiProperty({
+    description: 'Route description',
+    example: 'Main highway route with toll roads',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

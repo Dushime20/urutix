@@ -111,12 +111,6 @@ import { Receipt } from './../entities/receipt.entity';
 import { NotificationPreference } from './../entities/notification-preference.entity';
 import { NotificationLog } from './../entities/notification-log.entity';
 
-// KYC system entities
-import { KycRoleRequirements } from './../entities/kyc-role-requirements.entity';
-import { UserKycDocument } from './../entities/user-kyc-document.entity';
-import { UserKycAuditLog } from './../entities/user-kyc-audit-log.entity';
-import { TenantKycDocument } from './../entities/tenant-kyc-document.entity';
-
 // Analytics entities
 import { CargoOwnerAnalytics } from './../entities/cargo-owner-analytics.entity';
 import { AnalyticsInsights } from './../entities/analytics-insights.entity';
@@ -248,11 +242,6 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Notification system entities
     NotificationPreference,
     NotificationLog,
-    // KYC system entities
-    KycRoleRequirements,
-    UserKycDocument,
-    UserKycAuditLog,
-    TenantKycDocument,
     // Analytics entities
     CargoOwnerAnalytics,
     AnalyticsInsights,
@@ -344,8 +333,6 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
-<<<<<<< Updated upstream
-=======
     // Admin entities
     ActivityLog,
     UserSession,
@@ -360,13 +347,10 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     CreditAccount,
     CreditTransaction,
     CreditPackage,
-    FeatureCreditCost,
     CreditPricingRule,
->>>>>>> Stashed changes
     // Fuel entities
     FuelLog,
     // Core/Security entities
-    SystemSettings,
     SecurityEvent,
     UserSession,
     ActivityLog,
@@ -402,11 +386,6 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     // Notification system entities
     NotificationPreference,
     NotificationLog,
-    // KYC system entities
-    KycRoleRequirements,
-    UserKycDocument,
-    UserKycAuditLog,
-    TenantKycDocument,
     // Analytics entities
     CargoOwnerAnalytics,
     AnalyticsInsights,
@@ -415,3 +394,4 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
   autoLoadEntities: false,
   logging: false,
 };
+

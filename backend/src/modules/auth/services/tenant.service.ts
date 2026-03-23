@@ -35,7 +35,7 @@ export class TenantService {
   ) { }
 
   async createTenant(createTenantDto: any): Promise<Tenant> {
-    this.logger.log('ğŸ¢ Creating tenant...');
+    this.logger.log('=ƒÅó Creating tenant...');
     this.logger.log(`Tenant data: ${JSON.stringify(createTenantDto)}`);
 
     // Check if subdomain already exists
@@ -65,8 +65,8 @@ export class TenantService {
       );
     }
 
-    this.logger.log(`ğŸ“§ Contact email from form: ${createTenantDto.contactEmail}`);
-    this.logger.log(`ğŸ“§ Normalized email (will be used for user account and email): ${normalizedEmail}`);
+    this.logger.log(`=ƒôº Contact email from form: ${createTenantDto.contactEmail}`);
+    this.logger.log(`=ƒôº Normalized email (will be used for user account and email): ${normalizedEmail}`);
 
     // Create tenant
     const tenant = this.tenantRepository.create({
@@ -77,8 +77,8 @@ export class TenantService {
     const savedTenant = await this.tenantRepository.save(tenant);
     const finalTenant = Array.isArray(savedTenant) ? savedTenant[0] : savedTenant;
 
-    this.logger.log(`âœ… Tenant created with ID: ${finalTenant.id}`);
-    this.logger.log(`ğŸ“§ Email will be sent to: ${normalizedEmail} (from contactEmail field)`);
+    this.logger.log(`G£à Tenant created with ID: ${finalTenant.id}`);
+    this.logger.log(`=ƒôº Email will be sent to: ${normalizedEmail} (from contactEmail field)`);
 
     // Create tenant admin user account
     try {
@@ -88,7 +88,7 @@ export class TenantService {
       });
 
       if (tenantAdminUser) {
-        this.logger.log(`ğŸ‘¤ User ${normalizedEmail} already exists, updating...`);
+        this.logger.log(`=ƒæñ User ${normalizedEmail} already exists, updating...`);
 
         // Update user role to TENANT_ADMIN if not already
         if (tenantAdminUser.role !== UserRole.TENANT_ADMIN) {
@@ -132,7 +132,7 @@ export class TenantService {
 
         // Send password setup email ONLY if user does not have a password
         if (!tenantAdminUser.passwordHash) {
-          this.logger.log(`ğŸ“§ Sending password setup email for tenant admin (existing user, no password)...`);
+          this.logger.log(`=ƒôº Sending password setup email for tenant admin (existing user, no password)...`);
           await this.sendTenantPasswordSetupEmail(
             normalizedEmail,
             userProfile.firstName,
@@ -145,7 +145,7 @@ export class TenantService {
         }
       } else {
         // Create new user for tenant admin
-        this.logger.log(`ğŸ‘¤ Creating new tenant admin user account...`);
+        this.logger.log(`=ƒæñ Creating new tenant admin user account...`);
 
         // Generate temporary password (will be replaced when tenant admin sets password)
         const tempPassword = crypto.randomBytes(32).toString('hex');
@@ -160,7 +160,7 @@ export class TenantService {
         });
 
         tenantAdminUser = await this.userRepository.save(tenantAdminUser);
-        this.logger.log(`âœ… Tenant admin user created with ID: ${tenantAdminUser.id}`);
+        this.logger.log(`G£à Tenant admin user created with ID: ${tenantAdminUser.id}`);
 
         // Create user profile
         const nameParts = (finalTenant.name || 'Tenant Admin').split(' ');
@@ -173,7 +173,7 @@ export class TenantService {
         await this.userProfileRepository.save(userProfile);
 
         // Send password setup email (always send for new users)
-        this.logger.log(`ğŸ“§ Sending password setup email for new tenant admin user...`);
+        this.logger.log(`=ƒôº Sending password setup email for new tenant admin user...`);
         await this.sendTenantPasswordSetupEmail(
           normalizedEmail,
           userProfile.firstName,
@@ -183,10 +183,10 @@ export class TenantService {
         );
       }
     } catch (error: any) {
-      this.logger.error(`âŒ Error creating tenant admin user: ${error.message}`);
-      this.logger.error(`âŒ Error stack: ${error.stack}`);
+      this.logger.error(`G¥î Error creating tenant admin user: ${error.message}`);
+      this.logger.error(`G¥î Error stack: ${error.stack}`);
       if (error.code) {
-        this.logger.error(`âŒ Error code: ${error.code}`);
+        this.logger.error(`G¥î Error code: ${error.code}`);
       }
       // Don't fail tenant creation if user creation fails, but log it
       this.logger.warn('Tenant created but user account creation failed. User can be created manually later.');
@@ -207,16 +207,16 @@ export class TenantService {
     tenantId: string,
   ): Promise<void> {
     try {
-      this.logger.log('ğŸ“§ ========== TENANT EMAIL SENDING PROCESS START ==========');
-      this.logger.log(`ğŸ“§ Preparing to send tenant password setup email to: ${email}`);
-      this.logger.log(`ğŸ“§ Email address (from contactEmail field): ${email}`);
-      this.logger.log(`ğŸ“§ Tenant name: ${tenantName}`);
-      this.logger.log(`ğŸ“§ First name: ${firstName}, Last name: ${lastName}`);
-      this.logger.log(`ğŸ“§ EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
+      this.logger.log('=ƒôº ========== TENANT EMAIL SENDING PROCESS START ==========');
+      this.logger.log(`=ƒôº Preparing to send tenant password setup email to: ${email}`);
+      this.logger.log(`=ƒôº Email address (from contactEmail field): ${email}`);
+      this.logger.log(`=ƒôº Tenant name: ${tenantName}`);
+      this.logger.log(`=ƒôº First name: ${firstName}, Last name: ${lastName}`);
+      this.logger.log(`=ƒôº EmailService instance: ${this.emailService ? 'EXISTS' : 'MISSING'}`);
 
       // Validate email is not empty
       if (!email || email.trim() === '') {
-        this.logger.error('âŒ Email address is empty! Cannot send email.');
+        this.logger.error('G¥î Email address is empty! Cannot send email.');
         return;
       }
 
@@ -233,19 +233,19 @@ export class TenantService {
       });
       await this.passwordResetTokenRepository.save(passwordSetupToken);
 
-      this.logger.log(`ğŸ“§ Token generated for tenant admin: ${email}`);
-      this.logger.log(`ğŸ“§ Token (first 10 chars): ${token.substring(0, 10)}...`);
+      this.logger.log(`=ƒôº Token generated for tenant admin: ${email}`);
+      this.logger.log(`=ƒôº Token (first 10 chars): ${token.substring(0, 10)}...`);
 
       // Send password setup email (non-blocking)
       try {
         if (!this.emailService) {
-          this.logger.error('âŒ EmailService is not injected properly!');
-          this.logger.warn('âš ï¸ EmailService is not available, skipping email send');
+          this.logger.error('G¥î EmailService is not injected properly!');
+          this.logger.warn('GÜán+Å EmailService is not available, skipping email send');
           return;
         }
 
-        this.logger.log('ğŸ“§ Calling emailService.sendTenantPasswordSetupEmail...');
-        this.logger.log(`ğŸ“§ Email address being sent to: ${email}`);
+        this.logger.log('=ƒôº Calling emailService.sendTenantPasswordSetupEmail...');
+        this.logger.log(`=ƒôº Email address being sent to: ${email}`);
 
         await this.emailService.sendTenantPasswordSetupEmail(
           email,
@@ -255,31 +255,31 @@ export class TenantService {
           token,
         );
 
-        this.logger.log(`âœ… Password setup email sent successfully to: ${email}`);
-        this.logger.log(`âœ… Check the inbox (and spam folder) for: ${email}`);
+        this.logger.log(`G£à Password setup email sent successfully to: ${email}`);
+        this.logger.log(`G£à Check the inbox (and spam folder) for: ${email}`);
       } catch (emailError: any) {
-        this.logger.error(`âŒ Failed to send password setup email: ${emailError.message}`);
-        this.logger.error(`âŒ Error stack: ${emailError.stack}`);
+        this.logger.error(`G¥î Failed to send password setup email: ${emailError.message}`);
+        this.logger.error(`G¥î Error stack: ${emailError.stack}`);
         if (emailError.code) {
-          this.logger.error(`âŒ Error code: ${emailError.code}`);
+          this.logger.error(`G¥î Error code: ${emailError.code}`);
         }
         if (emailError.response) {
-          this.logger.error(`âŒ Error response: ${emailError.response}`);
+          this.logger.error(`G¥î Error response: ${emailError.response}`);
         }
         if (emailError.responseCode) {
-          this.logger.error(`âŒ Error response code: ${emailError.responseCode}`);
+          this.logger.error(`G¥î Error response code: ${emailError.responseCode}`);
         }
         if (emailError.command) {
-          this.logger.error(`âŒ Failed command: ${emailError.command}`);
+          this.logger.error(`G¥î Failed command: ${emailError.command}`);
         }
-        this.logger.error(`âŒ Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
+        this.logger.error(`G¥î Full email error:`, JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
         // Don't throw - tenant creation should succeed even if email fails
       }
 
-      this.logger.log('ğŸ“§ ========== TENANT EMAIL SENDING PROCESS END ==========');
+      this.logger.log('=ƒôº ========== TENANT EMAIL SENDING PROCESS END ==========');
     } catch (error: any) {
-      this.logger.error(`âŒ Error in sendTenantPasswordSetupEmail: ${error.message}`);
-      this.logger.error(`âŒ Error stack: ${error.stack}`);
+      this.logger.error(`G¥î Error in sendTenantPasswordSetupEmail: ${error.message}`);
+      this.logger.error(`G¥î Error stack: ${error.stack}`);
       // Don't throw - tenant creation should succeed even if email fails
     }
   }
@@ -423,7 +423,7 @@ export class TenantService {
   }
 
   async getSearchedTenants(query: FindTenantsDto) {
-    console.log('ğŸ” [SERVICE] getSearchedTenants called with query:', query);
+    console.log('=ƒöì [SERVICE] getSearchedTenants called with query:', query);
     const { q } = query;
     const { skip, limit, sorts } = Paginators(query);
 
@@ -439,13 +439,13 @@ export class TenantService {
       };
     }
 
-    console.log('ğŸ” [SERVICE] Where clause (ACTIVE tenants only):', JSON.stringify(where));
-    console.log('ğŸ” [SERVICE] Query string:', q || 'empty (showing all active tenants)');
+    console.log('=ƒöì [SERVICE] Where clause (ACTIVE tenants only):', JSON.stringify(where));
+    console.log('=ƒöì [SERVICE] Query string:', q || 'empty (showing all active tenants)');
 
     // For public signup, return ALL active tenants (up to 1000 to ensure we get all)
     // This ensures all active companies appear in the signup dropdown
     const maxLimit = limit && limit > 0 ? Math.min(limit, 1000) : 1000;
-    console.log('ğŸ” [SERVICE] Max limit:', maxLimit, '(ensuring all active tenants are included)');
+    console.log('=ƒöì [SERVICE] Max limit:', maxLimit, '(ensuring all active tenants are included)');
 
     // Convert sorts from Record<string, number> to TypeORM format { field: 'ASC' | 'DESC' }
     // Paginators returns { name: 1 } or { name: -1 }, but TypeORM needs { name: 'ASC' } or { name: 'DESC' }
@@ -466,17 +466,17 @@ export class TenantService {
       take: maxLimit,
     });
 
-    console.log('âœ… [SERVICE] Found tenants:', tenants.length, 'out of', total);
-    console.log('âœ… [SERVICE] All tenants from DB (no filters):', JSON.stringify(tenants, null, 2));
-    console.log('âœ… [SERVICE] Tenant names:', tenants.map(t => t.name));
-    console.log('âœ… [SERVICE] Tenant statuses:', tenants.map(t => ({
+    console.log('G£à [SERVICE] Found tenants:', tenants.length, 'out of', total);
+    console.log('G£à [SERVICE] All tenants from DB (no filters):', JSON.stringify(tenants, null, 2));
+    console.log('G£à [SERVICE] Tenant names:', tenants.map(t => t.name));
+    console.log('G£à [SERVICE] Tenant statuses:', tenants.map(t => ({
       name: t.name,
       status: (t as any).status,
       isActive: (t as any).isActive
     })));
 
     const response = PaginatorResponse(tenants, total, maxLimit, skip || 0);
-    console.log('âœ… [SERVICE] Paginated response:', JSON.stringify(response, null, 2));
+    console.log('G£à [SERVICE] Paginated response:', JSON.stringify(response, null, 2));
     return response;
   }
 
@@ -496,12 +496,7 @@ export class TenantService {
       tenantId: tenant.id,
       name: tenant.name,
       status: tenant.status,
-<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
-      kycStatus: tenant.kycStatus,
-      onboardingStep: tenant.onboardingStep,
-=======
-      // kycStatus: tenant.kycStatus, // TODO: Add KYC fields to Tenant entity
->>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
+// kycStatus: tenant.kycStatus, // TODO: Add KYC fields to Tenant entity
       // Add more stats as needed
     };
   }
@@ -509,44 +504,25 @@ export class TenantService {
   async submitKYC(id: string, kycData: any): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
 
-<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
-    // Update tenant KYC data and status
-    tenant.kycData = { ...tenant.kycData, ...kycData };
-    tenant.kycStatus = KycStatus.SUBMITTED;
-    tenant.kycSubmittedAt = new Date();
-=======
-    // TODO: Add KYC fields to Tenant entity
+// TODO: Add KYC fields to Tenant entity
     // tenant.kycData = { ...tenant.kycData, ...kycData };
     // tenant.kycStatus = 'SUBMITTED';
     // tenant.kycSubmittedAt = new Date();
->>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
 
     // Auto-update standard fields if provided in KYC
     if (kycData.registrationNumber) tenant.businessLicense = kycData.registrationNumber;
     if (kycData.taxId) tenant.taxId = kycData.taxId;
 
-    this.logger.log(`ğŸ“ KYC submitted for tenant ${id}`);
+    this.logger.log(`=ƒô¥ KYC submitted for tenant ${id}`);
     return this.tenantRepository.save(tenant);
   }
 
   async updateKYCStatus(id: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
 
-<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
-    // Map string status to enum
-    const kycStatusMap = {
-      'APPROVED': KycStatus.APPROVED,
-      'REJECTED': KycStatus.REJECTED,
-      'INCOMPLETE': KycStatus.INCOMPLETE,
-    };
-
-    tenant.kycStatus = kycStatusMap[status];
-    tenant.kycNotes = notes;
-=======
-    // TODO: Add KYC fields to Tenant entity
+// TODO: Add KYC fields to Tenant entity
     // tenant.kycStatus = status;
     // tenant.kycNotes = notes;
->>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
 
     if (status === 'APPROVED') {
       // tenant.kycVerifiedAt = new Date();
@@ -558,48 +534,22 @@ export class TenantService {
       }
     }
 
-    this.logger.log(`ğŸ“ KYC status updated for tenant ${id} to ${status}`);
+    this.logger.log(`=ƒô¥ KYC status updated for tenant ${id} to ${status}`);
     return this.tenantRepository.save(tenant);
   }
 
   async getTenantsByKYCStatus(status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE'): Promise<Tenant[]> {
-<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
-    // Map string status to enum
-    const kycStatusMap = {
-      'PENDING': KycStatus.PENDING,
-      'SUBMITTED': KycStatus.SUBMITTED,
-      'APPROVED': KycStatus.APPROVED,
-      'REJECTED': KycStatus.REJECTED,
-      'INCOMPLETE': KycStatus.INCOMPLETE,
-    };
-
-    return this.tenantRepository.find({
-      where: { kycStatus: kycStatusMap[status] },
-      order: { kycSubmittedAt: 'DESC' }
-=======
-    // TODO: Add KYC fields to Tenant entity
+// TODO: Add KYC fields to Tenant entity
     return this.tenantRepository.find({
       // where: { kycStatus: status },
       // order: { kycSubmittedAt: 'DESC' }
->>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
     });
   }
 
   async updateOnboardingStep(id: string, step: number): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
-<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
-    
-    // Since onboardingStep is now an integer in the database, just set it directly
-    tenant.onboardingStep = step;
-    
-    // if (step === 5) {
-    //   tenant.onboardingCompletedAt = new Date(); // Column doesn't exist in database
-    // }
-
-=======
-    // TODO: Add onboardingStep field to Tenant entity
+// TODO: Add onboardingStep field to Tenant entity
     // tenant.onboardingStep = step;
->>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
     return this.tenantRepository.save(tenant);
   }
 
@@ -639,3 +589,4 @@ export class TenantService {
     return this.tenantRepository.save(tenant);
   }
 }
+

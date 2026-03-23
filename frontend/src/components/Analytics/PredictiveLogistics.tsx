@@ -479,7 +479,7 @@ const PredictiveLogistics: React.FC = () => {
                         <button className="bg-slate-50 text-slate-400 p-2 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
                            <ChevronRight className="w-3 h-3" />
                         </button>
-                      </motion.div> Consolidating load opportunities
+                      </motion.div>
                     )) : null}
                 </div>
              </div>

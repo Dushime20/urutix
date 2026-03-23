@@ -670,14 +670,20 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_3cf85c3f2499a0a4ddf6101e82" ON "load_templates" ("tenantId", "createdBy") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."insurance_claims_claimtype_enum" AS ENUM('collision', 'cargo_damage', 'theft', 'weather', 'liability', 'medical', 'roadside', 'other')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'insurance_claims_claimtype_enum',
+      `'collision', 'cargo_damage', 'theft', 'weather', 'liability', 'medical', 'roadside', 'other'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."insurance_claims_status_enum" AS ENUM('pending', 'investigating', 'approved', 'denied', 'closed', 'under_review')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'insurance_claims_status_enum',
+      `'pending', 'investigating', 'approved', 'denied', 'closed', 'under_review'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."insurance_claims_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'insurance_claims_priority_enum',
+      `'low', 'medium', 'high', 'urgent'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "insurance_claims" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "claimNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "truckId" uuid NOT NULL, "claimType" "public"."insurance_claims_claimtype_enum" NOT NULL, "description" text NOT NULL, "incidentDate" date NOT NULL, "reportedDate" date NOT NULL, "estimatedAmount" numeric(15,2) NOT NULL, "approvedAmount" numeric(15,2), "paidAmount" numeric(15,2) NOT NULL DEFAULT '0', "status" "public"."insurance_claims_status_enum" NOT NULL DEFAULT 'pending', "priority" "public"."insurance_claims_priority_enum" NOT NULL DEFAULT 'medium', "adjuster" json, "notes" json, "documents" json, "location" json, "witnesses" json, "policeReport" json, "repairEstimates" json, "timeline" json, "settlement" json, "appeal" json, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_7c69728b0eee8df90aa28cb3aaf" UNIQUE ("claimNumber"), CONSTRAINT "PK_c6f7929fdcec8c17a24034a48d3" PRIMARY KEY ("id"))`,
@@ -700,11 +706,15 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_6a368689710b119486785bf8cc" ON "insurance_claims" ("status") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."insurance_policies_policytype_enum" AS ENUM('liability', 'collision', 'comprehensive', 'cargo', 'uninsured_motorist', 'roadside', 'medical')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'insurance_policies_policytype_enum',
+      `'liability', 'collision', 'comprehensive', 'cargo', 'uninsured_motorist', 'roadside', 'medical'`,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."insurance_policies_status_enum" AS ENUM('active', 'pending', 'expired', 'cancelled', 'suspended')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'insurance_policies_status_enum',
+      `'active', 'pending', 'expired', 'cancelled', 'suspended'`,
     );
     await queryRunner.query(`DO $$ BEGIN
     IF NOT EXISTS (
@@ -736,8 +746,10 @@ END$$;`);
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_1592f9cf82406fbce791f0f19a" ON "insurance_policies" ("status") `,
     );
-    await queryRunner.query(
-      `CREATE TYPE "public"."insurance_renewals_status_enum" AS ENUM('pending', 'urgent', 'completed', 'expired', 'cancelled')`,
+    await this.createTypeIfNotExists(
+      queryRunner,
+      'insurance_renewals_status_enum',
+      `'pending', 'urgent', 'completed', 'expired', 'cancelled'`,
     );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "insurance_renewals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "renewalNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "truckId" uuid NOT NULL, "currentPolicyEndDate" date NOT NULL, "renewalDate" date NOT NULL, "status" "public"."insurance_renewals_status_enum" NOT NULL DEFAULT 'pending', "currentPremium" numeric(15,2) NOT NULL, "estimatedPremium" numeric(15,2), "finalPremium" numeric(15,2), "autoRenew" boolean NOT NULL DEFAULT false, "coverageChanges" json, "renewalTerms" json NOT NULL, "agent" json, "customerResponse" json, "documents" json, "reminders" json, "timeline" json, "notes" json, "riskAssessment" json, "competitorQuotes" json, "finalDecision" json, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_6e2b6bf8bb5605165c05fc9a719" UNIQUE ("renewalNumber"), CONSTRAINT "PK_f10727c57b6bff9ab8d6eefb0ac" PRIMARY KEY ("id"))`,

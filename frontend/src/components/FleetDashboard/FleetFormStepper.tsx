@@ -583,6 +583,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   };
 
   const convertFormDataForSubmission = (data: Partial<FleetFormData>): any => {
+    console.log('🔄 convertFormDataForSubmission called with:', data);
+    
     // Normalize driver payload to backend CreateDriverDto if submitting a driver
     if (activeTab === 'drivers') {
       const d: any = data || {};
@@ -651,14 +653,17 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         drugTestDate: toISOString(d.drugTestDate),
         backgroundCheckDate: toISOString(d.backgroundCheckDate),
         trainingCompletionDate: toISOString(d.trainingCompletionDate),
+        routeIds: d.routeIds || [], // Include route assignments
       };
 
-      console.log('📦 Final payload with dates:', payload);
+      console.log('📦 Final driver payload:', payload);
       return payload;
     }
 
     // Normalize truck payload to backend CreateTruckDto
     const d: any = data || {};
+    console.log('🚛 Processing truck data:', d);
+    
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
@@ -691,6 +696,35 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       return Boolean(value);
     };
 
+    // Validate required fields
+    console.log('🔍 Validating required truck fields...');
+    const requiredFields = {
+      plateNumber: d.plateNumber,
+      vin: d.vin,
+      make: d.make,
+      model: d.model,
+      year: d.year,
+      fuelType: d.fuelType,
+      capacityWeight: d.capacityWeight,
+      capacityVolume: d.capacityVolume,
+      registrationNumber: d.registrationNumber,
+      registrationExpiry: d.registrationExpiry,
+      insurancePolicy: d.insurancePolicy,
+      insuranceExpiry: d.insuranceExpiry
+    };
+
+    console.log('📋 Required fields check:', requiredFields);
+
+    // Check for missing required fields
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value || value === '')
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      console.error('❌ Missing required fields:', missingFields);
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+
     const converted: any = {
       // Required fields
       plateNumber: d.plateNumber || '',
@@ -710,6 +744,17 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       hasGps: toBoolean(d.hasGps),
       hasHazmatPermit: toBoolean(d.hasHazmatPermit),
     };
+
+    console.log('✅ Basic required fields processed:', {
+      plateNumber: converted.plateNumber,
+      vin: converted.vin,
+      make: converted.make,
+      model: converted.model,
+      year: converted.year,
+      fuelType: converted.fuelType,
+      capacityWeight: converted.capacityWeight,
+      capacityVolume: converted.capacityVolume
+    });
 
     // Optional fields
     if (d.color) converted.color = d.color;
@@ -739,6 +784,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       }
     });
 
+    console.log('📦 Final truck payload:', converted);
     return converted;
   };
 
@@ -786,15 +832,16 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             formData.make &&
             formData.model &&
             formData.year &&
-            formData.capacityWeight &&
-            formData.capacityVolume &&
-            formData.fuelType &&
             formData.insurancePolicy &&
             formData.insuranceExpiry &&
             formData.registrationExpiry
           );
-        case 2: // Specifications (optional fields, always complete)
-          return true;
+        case 2: // Specifications (now includes required capacity and fuel type)
+          return !!(
+            formData.capacityWeight &&
+            formData.capacityVolume &&
+            formData.fuelType
+          );
         case 3: // Cargo Capabilities (optional checkboxes, always complete)
           return true;
         case 4: // Loading Equipment (optional checkboxes, always complete)
@@ -1162,70 +1209,6 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
           )}
         </DialogHeader>
 
-        {/* Driver Selection Option */}
-        {activeTab === 'drivers' && mode === 'create' && (
-          <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-50">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-1">Select Option</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <label
-                className={`p-6 rounded-[24px] border-2 cursor-pointer transition-all flex flex-col gap-2 ${driverCreationMode === 'new'
-                  ? 'bg-white border-primary-500 shadow-xl shadow-primary-50'
-                  : 'bg-transparent border-slate-100 hover:border-primary-100 text-slate-400'
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="driverMode"
-                  value="new"
-                  checked={driverCreationMode === 'new'}
-                  onChange={(e) => {
-                    setDriverCreationMode(e.target.value as 'new' | 'existing');
-                    setSelectedExistingDriver(null);
-                    setExistingDriverSearch('');
-                    setCurrentStep(1);
-                  }}
-                  className="sr-only"
-                />
-                <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-xl transition-colors ${driverCreationMode === 'new' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                    <User size={18} />
-                  </div>
-                  {driverCreationMode === 'new' && <CheckCircle2 size={18} className="text-primary-500" />}
-                </div>
-                <span className={`text-sm font-black tracking-tight ${driverCreationMode === 'new' ? 'text-primary-500' : 'text-slate-400'}`}>Create New Driver</span>
-                <p className="text-[10px] font-medium leading-relaxed">Enter detailed information for a new driver.</p>
-              </label>
-
-              <label
-                className={`p-6 rounded-[24px] border-2 cursor-pointer transition-all flex flex-col gap-2 ${driverCreationMode === 'existing'
-                  ? 'bg-white border-primary-500 shadow-xl shadow-primary-50'
-                  : 'bg-transparent border-slate-100 hover:border-primary-100 text-slate-400'
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="driverMode"
-                  value="existing"
-                  checked={driverCreationMode === 'existing'}
-                  onChange={(e) => {
-                    setDriverCreationMode(e.target.value as 'new' | 'existing');
-                    setCurrentStep(1);
-                  }}
-                  className="sr-only"
-                />
-                <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-xl transition-colors ${driverCreationMode === 'existing' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                    <Users size={18} />
-                  </div>
-                  {driverCreationMode === 'existing' && <CheckCircle2 size={18} className="text-primary-500" />}
-                </div>
-                <span className={`text-sm font-black tracking-tight ${driverCreationMode === 'existing' ? 'text-primary-500' : 'text-slate-400'}`}>Add Existing Driver</span>
-                <p className="text-[10px] font-medium leading-relaxed">Search for a driver already in your system.</p>
-              </label>
-            </div>
-          </div>
-        )}
-
         {/* Main Content Area with Sidebar */}
         <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
           {/* Overlay - only on mobile */}
@@ -1288,7 +1271,71 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                 onSubmit={handleSubmit}
                 id="fleet-form-stepper"
               >
-                <div ref={stepContentRef} className="max-w-3xl mx-auto w-full min-w-0">
+                <div ref={stepContentRef} className="max-w-3xl mx-auto w-full min-w-0 pb-12">
+                  {/* Driver Selection Option - Moved inside scrollable area */}
+                  {activeTab === 'drivers' && mode === 'create' && currentStep === 1 && (
+                    <div className="mb-8 p-4 bg-slate-50/50 rounded-[32px] border border-slate-100">
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-4">Select Option</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <label
+                          className={`p-6 rounded-[24px] border-2 cursor-pointer transition-all flex flex-col gap-2 ${driverCreationMode === 'new'
+                            ? 'bg-white border-primary-500 shadow-xl shadow-primary-50'
+                            : 'bg-white/50 border-slate-100 hover:border-primary-100 text-slate-400'
+                            }`}
+                        >
+                          <input
+                            type="radio"
+                            name="driverMode"
+                            value="new"
+                            checked={driverCreationMode === 'new'}
+                            onChange={(e) => {
+                              setDriverCreationMode(e.target.value as 'new' | 'existing');
+                              setSelectedExistingDriver(null);
+                              setExistingDriverSearch('');
+                              setCurrentStep(1);
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="flex items-center justify-between">
+                            <div className={`p-2 rounded-xl transition-colors ${driverCreationMode === 'new' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                              <User size={18} />
+                            </div>
+                            {driverCreationMode === 'new' && <CheckCircle2 size={18} className="text-primary-500" />}
+                          </div>
+                          <span className={`text-sm font-black tracking-tight ${driverCreationMode === 'new' ? 'text-primary-500' : 'text-slate-400'}`}>Create New Driver</span>
+                          <p className="text-[10px] font-medium leading-relaxed">Enter detailed information for a new driver.</p>
+                        </label>
+
+                        <label
+                          className={`p-6 rounded-[24px] border-2 cursor-pointer transition-all flex flex-col gap-2 ${driverCreationMode === 'existing'
+                            ? 'bg-white border-primary-500 shadow-xl shadow-primary-50'
+                            : 'bg-white/50 border-slate-100 hover:border-primary-100 text-slate-400'
+                            }`}
+                        >
+                          <input
+                            type="radio"
+                            name="driverMode"
+                            value="existing"
+                            checked={driverCreationMode === 'existing'}
+                            onChange={(e) => {
+                              setDriverCreationMode(e.target.value as 'new' | 'existing');
+                              setCurrentStep(1);
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="flex items-center justify-between">
+                            <div className={`p-2 rounded-xl transition-colors ${driverCreationMode === 'existing' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                              <Users size={18} />
+                            </div>
+                            {driverCreationMode === 'existing' && <CheckCircle2 size={18} className="text-primary-500" />}
+                          </div>
+                          <span className={`text-sm font-black tracking-tight ${driverCreationMode === 'existing' ? 'text-primary-500' : 'text-slate-400'}`}>Add Existing Driver</span>
+                          <p className="text-[10px] font-medium leading-relaxed">Search for a driver already in your system.</p>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Existing Driver Selection UI */}
                   {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
                     <div className="space-y-4">
