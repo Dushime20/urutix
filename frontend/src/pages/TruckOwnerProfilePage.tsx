@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { authAPI, fleetAPI } from '../services/api';
+import { documentApi } from '../services/documents/documentApi';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   User, 
   Building, 
@@ -20,7 +22,8 @@ import {
   Globe,
   Briefcase,
   Star,
-  Target
+  Target,
+  UploadCloud
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -28,7 +31,8 @@ import {
   Typography, 
   TextField, 
   IconButton,
-  InputAdornment
+  InputAdornment,
+  MenuItem
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { toast } from 'react-hot-toast';
@@ -79,12 +83,44 @@ interface TruckOwnerProfile {
     level: string;
     verifiedAt?: string;
   };
+  preferences: {
+    currency: string;
+  };
 }
 
+const AFRICAN_COUNTRIES = [
+  { code: 'KE', name: 'Kenya' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'SS', name: 'South Sudan' },
+  { code: 'CD', name: 'DR Congo' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'NG', name: 'Nigeria' },
+];
+
+const CURRENCIES = [
+  { code: 'USD', name: 'US Dollar (USD)' },
+  { code: 'KES', name: 'Kenyan Shilling (KES)' },
+  { code: 'TZS', name: 'Tanzanian Shilling (TZS)' },
+  { code: 'UGX', name: 'Ugandan Shilling (UGX)' },
+  { code: 'RWF', name: 'Rwandan Franc (RWF)' },
+  { code: 'ZAR', name: 'South African Rand (ZAR)' },
+  { code: 'EUR', name: 'Euro (EUR)' },
+  { code: 'GBP', name: 'British Pound (GBP)' },
+];
+
 const TruckOwnerProfilePage: React.FC = () => {
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const kycInputRef = useRef<HTMLInputElement>(null);
+  
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingKyc, setUploadingKyc] = useState(false);
   const [profile, setProfile] = useState<TruckOwnerProfile | null>(null);
 
   useEffect(() => {
@@ -143,6 +179,9 @@ const TruckOwnerProfilePage: React.FC = () => {
           status: data.kycStatus || 'PENDING',
           level: data.kycRequirementLevel || 'PREMIUM',
           verifiedAt: data.kycVerifiedAt
+        },
+        preferences: {
+          currency: data.profile?.preferences?.currency || 'USD'
         }
       });
     } catch (error) {
@@ -150,6 +189,68 @@ const TruckOwnerProfilePage: React.FC = () => {
       toast.error('Failed to load profile details');
     } finally {
       setTimeout(() => setLoading(false), 500); 
+    }
+  };
+
+  const handleAvatarSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      toast.loading('Uploading avatar...', { id: 'avatar_upload' });
+
+      const doc = await documentApi.createDocument({
+        entityType: 'USER_PROFILE',
+        entityId: user?.id || 'temp', // fallback if undefined
+        documentType: 'AVATAR',
+        category: 'PROFILE',
+        title: 'Profile Picture'
+      }, file);
+
+      if (doc && doc.fileUrl) {
+        setProfile(prev => prev ? {
+          ...prev,
+          personal: {
+            ...prev.personal,
+            avatarUrl: doc.fileUrl
+          }
+        } : null);
+        
+        toast.success('Avatar uploaded successfully! Click Save Changes to apply.', { id: 'avatar_upload' });
+      }
+    } catch (error: any) {
+      console.error('Failed to upload avatar', error);
+      toast.error(error.response?.data?.message || 'Failed to upload avatar', { id: 'avatar_upload' });
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleKycUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingKyc(true);
+      toast.loading('Uploading compliance document...', { id: 'kyc_upload' });
+
+      await documentApi.createDocument({
+        entityType: 'USER_PROFILE',
+        entityId: user?.id || 'temp', 
+        documentType: 'KYC_DOCUMENT',
+        category: 'COMPLIANCE',
+        title: file.name
+      }, file);
+
+      toast.success('Document uploaded successfully. It is now aligned with our Compliance team for review.', { id: 'kyc_upload' });
+    } catch (error: any) {
+      console.error('Failed to upload', error);
+      toast.error(error.response?.data?.message || 'Failed to upload document', { id: 'kyc_upload' });
+    } finally {
+      setUploadingKyc(false);
+      if (kycInputRef.current) kycInputRef.current.value = '';
     }
   };
 
@@ -171,7 +272,9 @@ const TruckOwnerProfilePage: React.FC = () => {
           countryCode: profile.business.countryCode,
           websiteUrl: profile.business.websiteUrl,
           insuranceInfo: profile.insurance,
-          bankAccountInfo: profile.banking
+          bankAccountInfo: profile.banking,
+          preferences: profile.preferences,
+          avatarUrl: profile.personal.avatarUrl
         }
       };
       
@@ -255,28 +358,46 @@ const TruckOwnerProfilePage: React.FC = () => {
       {/* Profile Header Block */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 md:p-8 rounded-[3rem] border border-slate-100 shadow-sm">
         <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
-          {/* Avatar */}
-          <div className="relative">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-24 h-24 md:w-32 md:h-32 bg-slate-50 rounded-[28px] flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden"
-            >
-              {profile.personal.avatarUrl ? (
-                <img src={profile.personal.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <Typography className="text-4xl md:text-5xl font-black text-slate-300">
-                  {profile.personal.firstName[0]}{profile.personal.lastName[0]}
-                </Typography>
-              )}
-              
-              <div className="absolute bottom-2 right-2">
-                <IconButton size="small" className="bg-white hover:bg-slate-50 text-slate-600 rounded-lg p-1.5 shadow-md border border-slate-200">
-                  <Camera size={14} />
-                </IconButton>
+              {/* Avatar */}
+              <div className="relative">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleAvatarSelect} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-24 h-24 md:w-32 md:h-32 bg-slate-50 rounded-[28px] flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden relative group"
+                >
+                  {profile.personal.avatarUrl ? (
+                    <img src={profile.personal.avatarUrl} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
+                  ) : (
+                    <Typography className="text-4xl md:text-5xl font-black text-slate-300">
+                      {profile.personal.firstName[0]}{profile.personal.lastName[0]}
+                    </Typography>
+                  )}
+                  
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
+                      <div className="w-8 h-8 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  
+                  <div className="absolute bottom-2 right-2 z-20">
+                    <IconButton 
+                      size="small" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="bg-white hover:bg-slate-50 text-slate-600 rounded-lg p-1.5 shadow-md border border-slate-200 opacity-80 hover:opacity-100 transition-opacity"
+                    >
+                      <Camera size={14} />
+                    </IconButton>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
           
           <div>
             <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
@@ -300,7 +421,7 @@ const TruckOwnerProfilePage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full">
                 <Activity size={14} className="text-primary-600" />
-                <Typography className="text-[10px] font-black text-slate-700 tracking-widest uppercase">{profile.fleet.totalOps || profile.fleet.totalTrucks} Total Ops</Typography>
+                <Typography className="text-[10px] font-black text-slate-700 tracking-widest uppercase">{profile.fleet.totalTrucks} Total Ops</Typography>
               </div>
             </div>
           </div>
@@ -519,6 +640,25 @@ const TruckOwnerProfilePage: React.FC = () => {
                       }}
                     />
                   </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-4">COUNTRY OF REGISTRATION</Typography>
+                    <TextField 
+                      select
+                      fullWidth 
+                      value={profile.business.countryCode || 'KE'}
+                      onChange={(e) => handleInputChange('business', 'countryCode', e.target.value)}
+                      sx={inputStyles}
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start"><MapPin size={16} className="text-slate-400" /></InputAdornment>,
+                      }}
+                    >
+                      {AFRICAN_COUNTRIES.map((country) => (
+                        <MenuItem key={country.code} value={country.code} className="font-bold text-slate-700">
+                          {country.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-4">PHYSICAL ADDRESS</Typography>
                     <TextField 
@@ -598,6 +738,34 @@ const TruckOwnerProfilePage: React.FC = () => {
                       sx={inputStyles} 
                     />
                   </Grid>
+
+                  {/* Document Uploader */}
+                  <Grid size={{ xs: 12 }}>
+                    <div className="mt-8 p-10 border-2 border-dashed border-slate-200 rounded-[32px] bg-slate-50 flex flex-col items-center justify-center text-center transition-all hover:bg-white hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/10 group relative">
+                      <input 
+                        type="file" 
+                        ref={kycInputRef} 
+                        onChange={handleKycUpload} 
+                        accept="image/*,application/pdf" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        title="Click to upload KYC document"
+                        disabled={uploadingKyc}
+                      />
+                      <div className="w-16 h-16 rounded-[24px] bg-white flex items-center justify-center text-emerald-500 shadow-sm mb-5 group-hover:scale-110 transition-transform duration-300 border border-slate-100 group-hover:bg-emerald-50">
+                        {uploadingKyc ? (
+                          <div className="w-8 h-8 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin"></div>
+                        ) : (
+                          <UploadCloud size={28} />
+                        )}
+                      </div>
+                      <Typography className="text-lg font-black text-slate-800 tracking-tight mb-2">Upload KYC Document</Typography>
+                      <Typography className="text-sm font-medium text-slate-500 max-w-md mx-auto leading-relaxed">
+                        Submit your Business License, Tax Registration, or National Identity documents to upgrade your verification tier. 
+                        Support for PDF, JPG, and PNG formats.
+                      </Typography>
+                      {uploadingKyc && <Typography className="mt-4 text-emerald-600 font-bold text-xs tracking-widest uppercase">Transmitting encrypted file...</Typography>}
+                    </div>
+                  </Grid>
                 </Grid>
               </div>
             )}
@@ -662,6 +830,25 @@ const TruckOwnerProfilePage: React.FC = () => {
                         startAdornment: <InputAdornment position="start"><Globe size={16} className="text-slate-400" /></InputAdornment>,
                       }}
                     />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-4">PREFERRED SETTLEMENT CURRENCY</Typography>
+                    <TextField 
+                      select
+                      fullWidth 
+                      value={profile.preferences?.currency || 'USD'}
+                      onChange={(e) => handleInputChange('preferences', 'currency', e.target.value)}
+                      sx={inputStyles}
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start"><CreditCard size={16} className="text-slate-400" /></InputAdornment>,
+                      }}
+                    >
+                      {CURRENCIES.map((currency) => (
+                        <MenuItem key={currency.code} value={currency.code} className="font-bold text-slate-700">
+                          {currency.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   </Grid>
                 </Grid>
               </div>
