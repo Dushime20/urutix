@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   HttpStatus,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { UsersService, CreateTenantUserDto } from './users.service';
 import { UserRole } from '../../entities/user.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -93,6 +96,8 @@ export class UsersController {
   }
 
   @Post('tenant/:tenantId/user')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a user for a specific tenant' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -109,7 +114,38 @@ export class UsersController {
   async createTenantUser(
     @Param('tenantId') tenantId: string,
     @Body() createUserDto: Omit<CreateTenantUserDto, 'tenantId'>,
+    @Request() req: any,
   ) {
+    const caller = req.user;
+
+    // Restriction Logic: TRUCK_OWNER can only create fleet management roles and drivers
+    if (caller.role === UserRole.TRUCK_OWNER) {
+      const allowedRoles = [
+        UserRole.FLEET_MANAGER,
+        UserRole.FLEET_DISPATCHER,
+        UserRole.FLEET_ACCOUNTANT,
+        UserRole.FLEET_SAFETY_OFFICER,
+        UserRole.DRIVER,
+      ];
+      
+      if (!allowedRoles.includes(createUserDto.role as UserRole)) {
+        throw new ForbiddenException(
+          'Truck Owners can only create team members with fleet management or driver roles.',
+        );
+      }
+    }
+
+    // Prevent anyone but TENANT_ADMIN from creating TENANT_ADIMN or CARGO_RECEIVER
+    // unless they are PLATFORM ADMIN/SUPER_ADMIN
+    const isPlatformAdmin = caller.role === UserRole.ADMIN || caller.role === UserRole.SUPER_ADMIN;
+    
+    if (caller.role !== UserRole.TENANT_ADMIN && !isPlatformAdmin) {
+      const restrictedRoles = [UserRole.TENANT_ADMIN, UserRole.CARGO_RECEIVER, UserRole.CARGO_OWNER, UserRole.BROKER, UserRole.LENDER];
+      if (restrictedRoles.includes(createUserDto.role as UserRole)) {
+        throw new ForbiddenException(`Your role (${caller.role}) is not authorized to create ${createUserDto.role} accounts.`);
+      }
+    }
+
     const user = await this.usersService.createTenantUser({
       ...createUserDto,
       tenantId,

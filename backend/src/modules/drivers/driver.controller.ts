@@ -39,11 +39,22 @@ import {
   DriverFilterDto,
 } from './dto/driver.dto';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
+import { UserRole } from '../../entities/user.entity';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { OcrService } from '../ocr/ocr.service';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_DISPATCHER,
+  UserRole.FLEET_SAFETY_OFFICER,
+)
 @Controller('drivers')
 export class DriverController {
   constructor(
@@ -541,6 +552,15 @@ export class DriverController {
   }
 
   @Put(':id/location')
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Update driver location',
     description:
@@ -605,6 +625,16 @@ export class DriverController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/announcements')
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_SAFETY_OFFICER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Get announcements for driver',
     description: 'Retrieve system-wide or driver-specific announcements and notifications',
@@ -650,6 +680,15 @@ export class DriverController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/report-incident')
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_SAFETY_OFFICER,
+    UserRole.DRIVER,
+  )
   @ApiOperation({
     summary: 'Report safety incident',
     description: 'Report an accident, violation, or hazard',

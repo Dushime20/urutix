@@ -20,7 +20,7 @@ interface PartnerProfile {
 interface Partner {
     id: string;
     email: string;
-    role: 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER';
+    role: 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER' | 'FLEET_MANAGER';
     status: 'ACTIVE' | 'SUSPENDED' | 'PENDING' | 'PENDING_VERIFICATION' | 'DEACTIVATED';
     profile?: PartnerProfile;
     phone?: string;

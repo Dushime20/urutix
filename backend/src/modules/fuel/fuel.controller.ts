@@ -18,13 +18,24 @@ import {
     ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../../entities/user.entity';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { FuelService } from './fuel.service';
 import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-log.dto';
 
 @ApiTags('Fuel Management')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_ACCOUNTANT,
+  UserRole.FLEET_DISPATCHER,
+)
 @Controller('fuel')
 export class FuelController {
     constructor(private readonly fuelService: FuelService) { }

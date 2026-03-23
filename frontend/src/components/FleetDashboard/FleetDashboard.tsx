@@ -36,7 +36,7 @@ import DashboardHeader from '../Layout/DashboardHeader';
 import DashboardFooter from '../Layout/DashboardFooter';
 import 'leaflet/dist/leaflet.css';
 import { fleetApi } from '../../services/fleetApi';
-import type { FleetItem as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
+import type { Truck as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
 import { authAPI } from '../../services/api';
 import type { FleetItem as LocalFleetItem } from '../../types/fleet';
 import { FleetStatus } from '../../types/fleet';
@@ -98,6 +98,21 @@ export const FleetDashboard: React.FC = () => {
   const [userProfileName, setUserProfileName] = useState<string | null>(null);
 
   const [analytics, setAnalytics] = useState<any>(null);
+
+  // ── Role Based Access Control ──────────────────────────────────────────────
+  const rolePermissions: Record<string, string[]> = {
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'matches', 'analytics', 'communicate'],
+    'FLEET_ACCOUNTANT': ['overview', 'financial', 'credits', 'fuel', 'analytics'],
+    'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
+  };
+
+  const allowedTabs = rolePermissions[user?.role || ''] || ['overview', 'trucks', 'drivers'];
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Sync activeTab with URL
   useEffect(() => {
@@ -258,7 +273,7 @@ export const FleetDashboard: React.FC = () => {
     try {
       let newFleetItem: LocalFleetItem;
       if (formType === 'trucks') {
-        const created = await fleetApi.createTruck(fleetData as Partial<ServiceTruck>);
+        const created = await fleetApi.createTruck(fleetData as any);
         newFleetItem = normalizeTruck(created);
       } else if (formType === 'drivers') {
         const created = await fleetApi.createDriver(fleetData);
@@ -284,7 +299,7 @@ export const FleetDashboard: React.FC = () => {
     try {
       let updatedFleetItem: LocalFleetItem;
       if (formType === 'trucks') {
-        const updated = await fleetApi.updateTruck(editingFleetItem.id, fleetData as Partial<ServiceTruck>);
+        const updated = await fleetApi.updateTruck(editingFleetItem.id, fleetData as any);
         updatedFleetItem = normalizeTruck(updated);
       } else if (formType === 'drivers') {
         const updated = await fleetApi.updateDriver(editingFleetItem.id, fleetData);
@@ -426,7 +441,7 @@ export const FleetDashboard: React.FC = () => {
                 { id: 'credits', icon: CreditCard, label: 'Credits' },
                 { id: 'analytics', icon: Activity, label: 'Analytics' },
                 { id: 'communicate', icon: MessageSquare, label: 'Comms' }
-              ].map((tab) => (
+              ].filter(t => allowedTabs.includes(t.id)).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => {

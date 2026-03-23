@@ -193,13 +193,14 @@ const Settings: React.FC = () => {
   const handleAddReceiver = () => {
     setShowAddReceiver(true);
     setEditingReceiver(null);
+    const isTruckOwner = user?.role === 'TRUCK_OWNER';
     setReceiverForm({
       firstName: '',
       lastName: '',
       email: '',
       password: '',
-      role: 'CARGO_RECEIVER',
-      permissions: ['view_cargo'],
+      role: isTruckOwner ? 'FLEET_MANAGER' : 'CARGO_RECEIVER',
+      permissions: isTruckOwner ? ['manage_fleet'] : ['view_cargo'],
       paymentPermissions: {
         canInitiatePayments: false,
         canApprovePayments: false,
@@ -324,6 +325,10 @@ const Settings: React.FC = () => {
           email: receiverForm.email,
           password: receiverForm.password,
           role: receiverForm.role,
+          permissions: receiverForm.permissions,
+          paymentPermissions: receiverForm.paymentPermissions,
+          documentPermissions: receiverForm.documentPermissions,
+          workflowPermissions: receiverForm.workflowPermissions,
         });
         toast.success('Team member added');
       }
@@ -345,6 +350,39 @@ const Settings: React.FC = () => {
         : prev.permissions.filter(p => p !== permission)
     }));
   };
+
+  const handleNestedPermissionChange = (category: string, field: string, checked: boolean) => {
+    setReceiverForm(prev => ({
+      ...prev,
+      [category]: {
+        ...(prev as any)[category],
+        [field]: checked
+      }
+    }));
+  };
+
+  const renderPermissionGroup = (title: string, data: any, category: string) => (
+    <div className="mt-8 pt-8 border-t border-gray-100">
+      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 italic">
+        {title}
+      </label>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {Object.entries(data).map(([field, value]) => (
+          <label key={field} className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
+            <input
+              type="checkbox"
+              checked={value as boolean}
+              onChange={(e) => handleNestedPermissionChange(category, field, e.target.checked)}
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-700 uppercase tracking-widest leading-tight italic">
+              {field.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
 
   const tabs = [
     { id: 'general', label: 'General', icon: SettingsIcon },
@@ -918,10 +956,28 @@ const Settings: React.FC = () => {
                     onChange={(e) => setReceiverForm(prev => ({ ...prev, role: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                   >
-                    <option value="CARGO_RECEIVER">Cargo Receiver</option>
-                    <option value="TENANT_ADMIN">Tenant Admin</option>
-                    <option value="FLEET_MANAGER">Fleet Manager</option>
-                    <option value="VIEWER">Viewer</option>
+                    {user?.role === 'TRUCK_OWNER' ? (
+                      <>
+                        <option value="FLEET_MANAGER">Fleet Manager</option>
+                        <option value="FLEET_DISPATCHER">Fleet Dispatcher</option>
+                        <option value="FLEET_ACCOUNTANT">Fleet Accountant</option>
+                        <option value="FLEET_SAFETY_OFFICER">Fleet Safety Officer</option>
+                        <option value="DRIVER">Driver</option>
+                        <option value="VIEWER">Viewer</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="CARGO_RECEIVER">Cargo Receiver</option>
+                        <option value="TENANT_ADMIN">Tenant Admin</option>
+                        <option value="TRUCK_OWNER">Truck Owner (Manager)</option>
+                        <option value="FLEET_MANAGER">Fleet Manager</option>
+                        <option value="FLEET_DISPATCHER">Fleet Dispatcher</option>
+                        <option value="FLEET_ACCOUNTANT">Fleet Accountant</option>
+                        <option value="FLEET_SAFETY_OFFICER">Fleet Safety Officer</option>
+                        <option value="DRIVER">Driver</option>
+                        <option value="VIEWER">Viewer</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -935,22 +991,52 @@ const Settings: React.FC = () => {
                       'create_cargo',
                       'edit_cargo',
                       'delete_cargo',
-                      'publish_cargo'
-                    ].map((permission) => (
-                      <label key={permission} className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={receiverForm.permissions.includes(permission)}
-                          onChange={(e) => handlePermissionChange(permission, e.target.checked)}
-                          className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                        />
-                        <span className="text-xs font-medium text-gray-700 capitalize">
-                          {permission.replace('_', ' ')}
-                        </span>
-                      </label>
-                    ))}
+                      'manage_fleet',
+                      'manage_drivers',
+                      'manage_trucks',
+                      'manage_fuel',
+                      'manage_maintenance',
+                      'manage_bids',
+                      'manage_loads',
+                      'manage_trips',
+                      'approve_trips',
+                      'manage_expenses',
+                      'manage_financials',
+                      'view_financials',
+                      'manage_safety',
+                      'manage_inspections',
+                      'manage_incident_reports',
+                      'manage_compliance',
+                      'manage_routes',
+                      'manage_communications',
+                      'view_reports',
+                      'manage_onboarding'
+                    ]
+                      .filter((permission) => {
+                        if (user?.role === 'TRUCK_OWNER') {
+                          return !permission.includes('cargo');
+                        }
+                        return true;
+                      })
+                      .map((permission) => (
+                        <label key={permission} className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={receiverForm.permissions.includes(permission)}
+                            onChange={(e) => handlePermissionChange(permission, e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          />
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">
+                            {permission.replace('_', ' ')}
+                          </span>
+                        </label>
+                      ))}
                   </div>
                 </div>
+
+                {renderPermissionGroup('Payment & Financial Capabilities', receiverForm.paymentPermissions, 'paymentPermissions')}
+                {renderPermissionGroup('Document Management Access', receiverForm.documentPermissions, 'documentPermissions')}
+                {renderPermissionGroup('Workflow & Approval Permissions', receiverForm.workflowPermissions, 'workflowPermissions')}
               </div>
             </div>
 

@@ -49,11 +49,16 @@ export class UsersService {
     const validTenantRoles = [
       UserRole.TENANT_ADMIN,
       UserRole.CARGO_OWNER,
+      UserRole.CARGO_RECEIVER,
       UserRole.TRUCK_OWNER,
       UserRole.DRIVER,
       UserRole.AGENT,
       UserRole.LENDER,
       UserRole.BROKER,
+      UserRole.FLEET_MANAGER,
+      UserRole.FLEET_DISPATCHER,
+      UserRole.FLEET_ACCOUNTANT,
+      UserRole.FLEET_SAFETY_OFFICER,
     ];
 
     return validTenantRoles.includes(role);

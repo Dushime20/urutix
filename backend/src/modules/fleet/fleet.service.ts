@@ -986,7 +986,12 @@ export class FleetService {
     const normalizedRole = userRole ? String(userRole).toUpperCase().trim() : '';
     const isAdminRole = normalizedRole === 'TENANT_ADMIN' || 
                         normalizedRole === 'ADMIN' || 
-                        normalizedRole === 'SUPER_ADMIN';
+                        normalizedRole === 'SUPER_ADMIN' ||
+                        normalizedRole === 'TRUCK_OWNER' ||
+                        normalizedRole === 'FLEET_MANAGER' ||
+                        normalizedRole === 'FLEET_DISPATCHER' ||
+                        normalizedRole === 'FLEET_ACCOUNTANT' ||
+                        normalizedRole === 'FLEET_SAFETY_OFFICER';
     
     console.log('  🔍 Role check:', { 
       userRole, 
@@ -1188,7 +1193,12 @@ export class FleetService {
       const isAdminByRole =
         userRole === 'ADMIN' ||
         userRole === 'TENANT_ADMIN' ||
-        userRole === 'SUPER_ADMIN';
+        userRole === 'SUPER_ADMIN' ||
+        userRole === 'TRUCK_OWNER' ||
+        userRole === 'FLEET_MANAGER' ||
+        userRole === 'FLEET_DISPATCHER' ||
+        userRole === 'FLEET_ACCOUNTANT' ||
+        userRole === 'FLEET_SAFETY_OFFICER';
 
       if (!isSelf && !isEmployer && !isAdminByRole) {
         throw new ForbiddenException(

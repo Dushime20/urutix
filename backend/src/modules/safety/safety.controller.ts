@@ -36,12 +36,21 @@ import {
   TrainingType,
 } from './dto/create-safety-training.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../../entities/user.entity';
 
 @ApiTags('Safety Management')
 @ApiBearerAuth()
 @Controller('safety')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_SAFETY_OFFICER,
+)
 export class SafetyController {
   constructor(private readonly safetyService: SafetyService) {}
 

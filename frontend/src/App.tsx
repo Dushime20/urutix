@@ -345,6 +345,7 @@ function App() {
                       <Route path="ratings" element={<UnifiedReputationManagement />} />
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
+                      <Route path="settings" element={<Settings />} />
                       <Route path="support" element={<FleetHelpSupport />} />
                     </Route>
 
