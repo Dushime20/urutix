@@ -736,8 +736,17 @@ export class FleetService {
         }
         this.logger.log(`📧 ========== DRIVER EMAIL SENDING PROCESS END ==========`);
       } else {
-        this.logger.log(`ℹ️ Existing user found with password. Skipped password setup email.`);
-        // Could send a "Role Added" notification email here if desired
+        this.logger.log(`ℹ️ Existing user found with password. Sending welcome notification instead.`);
+        try {
+          await this.emailService.sendDriverWelcomeEmail(
+            createDriverDto.email.trim().toLowerCase(),
+            createDriverDto.firstName,
+            createDriverDto.lastName,
+          );
+        } catch (emailError: any) {
+          this.logger.error(`❌ Failed to send welcome email to existing user: ${emailError.message}`);
+          // Don't fail the transaction, just log it
+        }
       }
 
       // Create driver entity

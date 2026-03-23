@@ -321,6 +321,61 @@ This link will expire in 7 days.
     this.logger.log('========== EMAIL SERVICE CALL END ==========');
   }
 
+  async sendDriverWelcomeEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+  ): Promise<void> {
+    this.logger.log('========== EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send driver welcome email to: ${email}`);
+    
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const loginUrl = `${frontendUrl.replace(/\/$/, '')}/auth`;
+    
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    if (this.transporter) {
+      try {
+        const htmlContent = this.getDriverWelcomeEmailTemplate(
+          firstName,
+          lastName,
+          loginUrl,
+        );
+        
+        const plainTextContent = `
+Welcome to the fleet, ${firstName}!
+
+A truck owner has added you as a driver on UrutiX. Since you already have an account, you can log in directly using your existing credentials to access your new driver dashboard:
+
+${loginUrl}
+
+If you have any questions, please contact your truck owner or our support team.
+
+Best regards,
+The UrutiX Team
+        `.trim();
+
+        await this.transporter.sendMail({
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: 'You have been added as a Driver on UrutiX',
+          text: plainTextContent,
+          html: htmlContent,
+        });
+        this.logger.log(`✅ Driver welcome email sent successfully to ${email}`);
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send driver welcome email: ${error.message}`);
+        throw error;
+      }
+    } else {
+      this.logger.warn(`❌ SMTP NOT CONFIGURED! Welcome email to ${email} skipped.`);
+    }
+  }
+
   async sendLenderPasswordSetupEmail(
     email: string,
     lenderName: string,
@@ -1610,4 +1665,26 @@ This link will expire in 7 days.
       this.logger.warn(`SMTP not configured. Email would be sent to ${recipientEmail}`);
     }
   }
+
+  private getDriverWelcomeEmailTemplate(
+    firstName: string,
+    lastName: string,
+    loginUrl: string,
+  ): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Welcome back to UrutiX, ${firstName}!</h2>
+        <p>A truck owner has added you as a driver to their fleet on UrutiX.</p>
+        <p>Since you already have an account, you can log in directly using your existing credentials to access your new driver dashboard:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${loginUrl}" style="display: inline-block; padding: 14px 28px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+            Go to My Dashboard
+          </a>
+        </div>
+        <p>If you have any questions, please contact your truck owner or our support team.</p>
+        <p>Best regards,<br>The UrutiX Team</p>
+      </div>
+    `;
+  }
 }
+
