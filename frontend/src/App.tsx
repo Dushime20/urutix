@@ -82,6 +82,10 @@ const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules')
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
+
+// Subscription Management Pages
+const BillingDashboard = lazy(() => import('./pages/subscription/BillingDashboard'));
+const PurchaseCredits = lazy(() => import('./pages/subscription/PurchaseCredits'));
 const TenantDashboardPage = lazy(() => import('./pages/TenantDashboard'));
 const PartnerBillingManager = lazy(() => import('./pages/tenant-admin/PartnerBillingManager'));
 const TenantAdminRoutes = lazy(() => import('./components/TenantAdmin/TenantAdminRoutes'));
@@ -407,6 +411,10 @@ function App() {
                       <Route path="help" element={<Settings />} />
                       <Route path="profile" element={<Profile />} />
                       <Route path="settings" element={<Settings />} />
+
+                      {/* Subscription Management Routes */}
+                      <Route path="billing" element={<BillingDashboard />} />
+                      <Route path="credits" element={<PurchaseCredits />} />
                     </Route>
 
                     {/* Tenant Admin Routes */}

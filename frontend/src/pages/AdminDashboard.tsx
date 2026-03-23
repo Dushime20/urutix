@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
@@ -40,9 +41,22 @@ ChartJS.register(
   ArcElement,
   Filler
 );
+=======
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FaUsers, FaTruck, FaBox, FaRoute, FaBuilding, FaChartLine,
+  FaCreditCard, FaHistory, FaShieldAlt, FaGavel, FaMoneyBillWave,
+  FaHandshake, FaFileInvoiceDollar
+} from 'react-icons/fa';
+import { TranslatedText } from '../components/translated-text';
+import { useAuth } from '../contexts/AuthContext';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
+>>>>>>> Stashed changes
 
 
 const AdminDashboard: React.FC = () => {
+<<<<<<< Updated upstream
   const [timeRange, setTimeRange] = useState('7d');
   const navigate = useNavigate();
 
@@ -306,9 +320,155 @@ const AdminDashboard: React.FC = () => {
                 />
               </div>
             </DataCard>
+=======
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const navigate = useNavigate();
+
+  const adminCards = [
+    {
+      title: 'Users',
+      description: 'Manage platform users and permissions',
+      icon: FaUsers,
+      color: 'from-blue-500 to-blue-600',
+      path: '/admin/users',
+      stats: '1,284 users',
+    },
+    {
+      title: 'Trucks',
+      description: 'View and manage all trucks',
+      icon: FaTruck,
+      color: 'from-green-500 to-green-600',
+      path: '/admin/trucks',
+      stats: '428 trucks',
+    },
+    {
+      title: 'Loads',
+      description: 'Monitor cargo loads and shipments',
+      icon: FaBox,
+      color: 'from-orange-500 to-orange-600',
+      path: '/admin/loads',
+      stats: '876 loads',
+    },
+    {
+      title: 'Routes',
+      description: 'Manage delivery routes',
+      icon: FaRoute,
+      color: 'from-indigo-500 to-indigo-600',
+      path: '/admin/routes',
+      stats: '342 routes',
+    },
+    {
+      title: 'Tenants',
+      description: 'Manage tenant organizations',
+      icon: FaBuilding,
+      color: 'from-teal-500 to-teal-600',
+      path: '/admin/tenants',
+      stats: '12 tenants',
+    },
+    {
+      title: 'Analytics',
+      description: 'View platform analytics and reports',
+      icon: FaChartLine,
+      color: 'from-pink-500 to-pink-600',
+      path: '/admin/analytics',
+      stats: 'Real-time',
+    },
+    {
+      title: 'Subscriptions',
+      description: 'Manage tenant subscriptions and billing',
+      icon: FaCreditCard,
+      color: 'from-purple-500 to-purple-600',
+      path: '/admin/billing',
+      stats: 'Billing & Credits',
+    },
+    {
+      title: 'Activity Logs',
+      description: 'Monitor user activities and sessions',
+      icon: FaHistory,
+      color: 'from-cyan-500 to-cyan-600',
+      path: '/admin/activity-logs',
+      stats: 'Live tracking',
+    },
+    {
+      title: 'Disputes',
+      description: 'Handle disputes and resolutions',
+      icon: FaGavel,
+      color: 'from-red-500 to-red-600',
+      path: '/admin/disputes',
+      stats: 'Resolution center',
+    },
+    {
+      title: 'Financial',
+      description: 'Financial overview and transactions',
+      icon: FaMoneyBillWave,
+      color: 'from-yellow-500 to-yellow-600',
+      path: '/admin/financial',
+      stats: '$45.2K revenue',
+    },
+    {
+      title: 'Lenders',
+      description: 'Manage lending partners',
+      icon: FaHandshake,
+      color: 'from-emerald-500 to-emerald-600',
+      path: '/admin/lenders/register',
+      stats: 'Partnerships',
+    },
+    {
+      title: 'Borrowers',
+      description: 'View borrower information',
+      icon: FaFileInvoiceDollar,
+      color: 'from-violet-500 to-violet-600',
+      path: '/admin/borrowers',
+      stats: 'Loan tracking',
+    },
+  ];
+
+  return (
+    <AdminPageLayout
+      title="Super Admin Dashboard"
+      description="Manage all aspects of the Urutix platform"
+    >
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">
+                {(() => {
+                  const hour = new Date().getHours();
+                  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                  const firstName = (user?.firstName && user.firstName.trim()) || 
+                                    ((user as any)?.profile?.firstName && (user as any).profile.firstName.trim()) || 
+                                    'Admin';
+                  return `${greeting}, ${firstName}!`;
+                })()}
+              </h1>
+              <p className="text-indigo-100 text-lg">
+                Welcome to the Super Admin Dashboard
+              </p>
+            </div>
+            <div className="hidden md:block">
+              <FaShieldAlt className="text-8xl opacity-20" />
+            </div>
           </div>
         </div>
 
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">1,284</p>
+                <p className="text-xs text-green-600 mt-1">↑ 12% this month</p>
+              </div>
+              <FaUsers className="text-4xl text-blue-500 opacity-50" />
+            </div>
+>>>>>>> Stashed changes
+          </div>
+
+<<<<<<< Updated upstream
         {/* Side Panel: Management & Activity */}
         <div className="space-y-8">
           {/* Real-time Health */}
@@ -358,6 +518,77 @@ const AdminDashboard: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">{item.label}</span>
+=======
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Active Trucks</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">428</p>
+                <p className="text-xs text-green-600 mt-1">↑ 8% this month</p>
+              </div>
+              <FaTruck className="text-4xl text-green-500 opacity-50" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Subscriptions</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">12</p>
+                <p className="text-xs text-green-600 mt-1">All active</p>
+              </div>
+              <FaCreditCard className="text-4xl text-purple-500 opacity-50" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Revenue</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">$45.2K</p>
+                <p className="text-xs text-green-600 mt-1">↑ 23% this month</p>
+              </div>
+              <FaMoneyBillWave className="text-4xl text-yellow-500 opacity-50" />
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Cards */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <TranslatedText text="Management Sections" />
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {adminCards.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={index}
+                  onClick={() => navigate(card.path)}
+                  className="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer group overflow-hidden border-2 border-transparent hover:border-indigo-500"
+                >
+                  <div className={`h-2 bg-gradient-to-r ${card.color}`}></div>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`p-4 bg-gradient-to-r ${card.color} rounded-xl group-hover:scale-110 transition-transform`}>
+                        <Icon className="text-3xl text-white" />
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                      <TranslatedText text={card.title} />
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      <TranslatedText text={card.description} />
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        {card.stats}
+                      </span>
+                      <span className="text-indigo-600 group-hover:translate-x-2 transition-transform">
+                        →
+                      </span>
+                    </div>
+>>>>>>> Stashed changes
                   </div>
                   <span className="text-xs font-black text-slate-900 dark:text-white">{item.val}</span>
                 </div>
@@ -365,7 +596,40 @@ const AdminDashboard: React.FC = () => {
             </div>
           </DataCard>
         </div>
+
+        {/* Recent Activity Preview */}
+        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">
+              <TranslatedText text="Recent Activity" />
+            </h3>
+            <button
+              onClick={() => navigate('/admin/activity-logs')}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-2"
+            >
+              View All <FaHistory />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm text-gray-700">New tenant registered: Acme Logistics</span>
+              <span className="text-xs text-gray-500 ml-auto">2 min ago</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm text-gray-700">Subscription renewed: Beta Transport</span>
+              <span className="text-xs text-gray-500 ml-auto">15 min ago</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-sm text-gray-700">Credits purchased: 5000 credits</span>
+              <span className="text-xs text-gray-500 ml-auto">1 hour ago</span>
+            </div>
+          </div>
+        </div>
       </div>
+<<<<<<< Updated upstream
 
       {/* Management Widgets Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-12">
@@ -373,6 +637,8 @@ const AdminDashboard: React.FC = () => {
         <TenantManagementWidget />
         <LowCreditTenantsWidget />
       </div>
+=======
+>>>>>>> Stashed changes
     </AdminPageLayout>
   );
 };
