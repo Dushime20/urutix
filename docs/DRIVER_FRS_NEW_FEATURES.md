@@ -103,7 +103,7 @@ The Driver Module is a mission-critical component of the Uruti platform, providi
 | Tactical Overlay | `DriverDashboard.tsx` | `driverApi.getDashboardStats` |
 | Bottom Navigation | `MobileBottomNav.tsx` | N/A (UI Layout) |
 | Post-Trip Checklist | `PostTripChecklistModal.tsx` | `driverApi.completeTripChecklist` |
-| AI Assistant | `TacticalAiAssistant.tsx` | `openaiApi` / `geminiApi` |
+| AI Assistant | `TacticalAiAssistant.tsx` (in `DriverLayout`) | `openaiApi` / `geminiApi` |
 | Incident Reporting | `IncidentReportModal.tsx` | `driverApi.reportIncident` |
 | Fuel Management | `FuelManagement.tsx` | `fuelApi.logFuel` |
 | Wallet & Advances | `WalletAdvances.tsx` | `walletApi` |
@@ -111,6 +111,6 @@ The Driver Module is a mission-critical component of the Uruti platform, providi
 
 ---
 
-**Document Version**: 2.1.0  
-**Last Updated**: 2026-03-20  
+**Document Version**: 2.2.0  
+**Last Updated**: 2026-03-23  
 **Status**: ACTIVE / IMPLEMENTED

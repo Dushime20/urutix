@@ -175,7 +175,9 @@ export interface FleetFilters {
 export interface FleetApiResponse<T> {
   message: string;
   trucks?: T;
+  truck?: T;
   drivers?: T;
+  driver?: T;
   data?: T;
 }
 
@@ -191,7 +193,7 @@ export const fleetApi = {
 
   getTruck: async (id: string): Promise<Truck> => {
     const response = await api.get<FleetApiResponse<Truck>>(`/fleet/trucks/${id}`);
-    const truck = response.data.data || response.data.trucks;
+    const truck = response.data.truck || response.data.data || response.data.trucks;
     if (!truck) {
       throw new Error('Truck not found');
     }
@@ -200,7 +202,7 @@ export const fleetApi = {
 
   createTruck: async (data: CreateTruckDto): Promise<Truck> => {
     const response = await api.post<FleetApiResponse<Truck>>('/fleet/trucks', data);
-    const truck = response.data.data || response.data.trucks;
+    const truck = response.data.truck || response.data.data || response.data.trucks;
     if (!truck) {
       throw new Error('Failed to create truck');
     }
@@ -209,7 +211,7 @@ export const fleetApi = {
 
   updateTruck: async (id: string, data: UpdateTruckDto): Promise<Truck> => {
     const response = await api.patch<FleetApiResponse<Truck>>(`/fleet/trucks/${id}`, data);
-    const truck = response.data.data || response.data.trucks;
+    const truck = response.data.truck || response.data.data || response.data.trucks;
     if (!truck) {
       throw new Error('Failed to update truck');
     }
@@ -222,7 +224,7 @@ export const fleetApi = {
 
   updateTruckLocation: async (id: string, locationData: { latitude: number; longitude: number; address?: string }): Promise<Truck> => {
     const response = await api.patch<FleetApiResponse<Truck>>(`/fleet/trucks/${id}/location`, locationData);
-    const truck = response.data.data || response.data.trucks;
+    const truck = response.data.truck || response.data.data || response.data.trucks;
     if (!truck) {
       throw new Error('Failed to update truck location');
     }
@@ -239,7 +241,7 @@ export const fleetApi = {
 
   getDriver: async (id: string): Promise<FleetDriver> => {
     const response = await api.get<FleetApiResponse<FleetDriver>>(`/fleet/drivers/${id}`);
-    const driver = response.data.data || response.data.drivers;
+    const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Driver not found');
     }
@@ -248,7 +250,7 @@ export const fleetApi = {
 
   createDriver: async (data: CreateDriverDto): Promise<FleetDriver> => {
     const response = await api.post<FleetApiResponse<FleetDriver>>('/fleet/drivers', data);
-    const driver = response.data.data || response.data.drivers;
+    const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Failed to create driver');
     }
@@ -257,7 +259,7 @@ export const fleetApi = {
 
   updateDriver: async (id: string, data: Partial<CreateDriverDto>): Promise<FleetDriver> => {
     const response = await api.patch<FleetApiResponse<FleetDriver>>(`/fleet/drivers/${id}`, data);
-    const driver = response.data.data || response.data.drivers;
+    const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Failed to update driver');
     }

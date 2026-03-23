@@ -59,7 +59,6 @@ import { DriverMessenger } from '../../components/DriverDashboard/DriverMessenge
 import { CommunicationRelay } from '../../components/DriverDashboard/CommunicationRelay';
 import { messengerApi } from '../../services/messengerApi';
 import { MessageSquare as MessageIcon } from 'lucide-react';
-import { TacticalAiAssistant } from '@/components/DriverDashboard/TacticalAiAssistant';
 
 
 const DriverDashboard: React.FC = () => {
@@ -591,11 +590,6 @@ const DriverDashboard: React.FC = () => {
         isOpen={showPostTripModal}
         onClose={() => setShowPostTripModal(false)}
         onComplete={confirmTripCompletion}
-      />
-
-      <TacticalAiAssistant 
-        currentTrip={currentTrip} 
-        driverName={driver?.firstName} 
       />
     </div>
   );
