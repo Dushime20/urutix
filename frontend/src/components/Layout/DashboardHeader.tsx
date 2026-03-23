@@ -180,13 +180,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Active Trips', path: '/dashboard/trips' },
             { label: 'Freight Bidding', path: '/dashboard/fleet/bids' },
             { label: 'Route Planning', path: '/dashboard/fleet/routes' },
-          ]
-        },
-        {
-          label: 'Capital & Finance',
-          path: '/dashboard/fleet/financial',
-          icon: DollarSign,
-          subItems: [
             { label: 'Settlement Desk', path: '/dashboard/fleet/financial' },
             { label: 'Line of Credit', path: '/dashboard/fleet/credits' },
             { label: 'Performance Analytics', path: '/dashboard/fleet/analytics' },
