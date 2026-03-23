@@ -3,19 +3,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   User,
   Settings,
-  HelpCircle,
 } from "lucide-react";
 import Profile from "@/pages/Profile";
 import SettingsPage from "@/pages/Settings";
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
+import { useAuth } from "@/contexts/AuthContext";
+import TruckOwnerProfilePage from "@/pages/TruckOwnerProfilePage";
+import TruckOwnerSettingsPage from "@/pages/TruckOwnerSettingsPage";
 
 type TabType = "profile" | "settings";
 
 const UnifiedAccountManagement = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
@@ -106,10 +109,18 @@ const UnifiedAccountManagement = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-4">
-            {activeTab === "profile" && <Profile />}
-            {activeTab === "settings" && <SettingsPage />}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div className="">
+            {activeTab === "profile" && (user?.role === "TRUCK_OWNER" ? (
+              <TruckOwnerProfilePage />
+            ) : (
+              <div className="p-4"><Profile /></div>
+            ))}
+            {activeTab === "settings" && (user?.role === "TRUCK_OWNER" ? (
+              <TruckOwnerSettingsPage />
+            ) : (
+              <div className="p-4"><SettingsPage /></div>
+            ))}
           </div>
         </div>
       </div>

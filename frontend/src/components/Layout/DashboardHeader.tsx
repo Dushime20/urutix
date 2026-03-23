@@ -407,7 +407,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                       {hasSubItems && openDropdown === item.label && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
                           <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                             <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase"><TranslatedText text="Neural Suite" /></div>
+                             <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase"><TranslatedText text="Quick Actions" /></div>
                           </div>
                           <div className="py-1">
                             {item.subItems?.map(subItem => (
@@ -469,7 +469,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? '/admin/profile' :
                           user?.role === 'TENANT_ADMIN' ? '/tenant-admin/profile' :
                             user?.role === 'BROKER' ? '/dashboard/broker/profile' :
-                              '/dashboard/settings';
+                              user?.role === 'TRUCK_OWNER' ? '/dashboard/profile/fleet' :
+                                '/dashboard/settings';
                       navigate(profilePath);
                     }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"

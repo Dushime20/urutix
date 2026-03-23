@@ -98,6 +98,7 @@ const AdminBorrowersPage = lazy(() => import('./pages/AdminBorrowersPage'));
 
 // Enhanced Transaction Flow Components - lazy load
 const BookingConfirmation = lazy(() => import('./pages/BookingConfirmation'));
+const TruckOwnerProfilePage = lazy(() => import('./pages/TruckOwnerProfilePage'));
 const TripManagement = lazy(() => import('./pages/TripManagement'));
 const PaymentProcessing = lazy(() => import('./pages/PaymentProcessing'));
 const TransactionFlow = lazy(() => import('./pages/TransactionFlow'));
@@ -350,6 +351,11 @@ function App() {
                     {/* Payments Route for Truck Owner */}
                     <Route path="/dashboard/payments" element={<FleetOwnerLayout />}>
                       <Route index element={<FleetPaymentManagement />} />
+                    </Route>
+
+                    {/* Profile Route for Truck Owner */}
+                    <Route path="/dashboard/profile/fleet" element={<FleetOwnerLayout />}>
+                      <Route index element={<TruckOwnerProfilePage />} />
                     </Route>
 
                     {/* Trips Route */}

@@ -1493,7 +1493,8 @@ export class EnhancedAuthService {
       if (updateProfileDto.profile) {
         const fields = [
           'firstName', 'lastName', 'companyName', 'phone', 
-          'address', 'bio', 'websiteUrl', 'postalCode', 'countryCode'
+          'address', 'bio', 'websiteUrl', 'postalCode', 'countryCode',
+          'insuranceInfo', 'bankAccountInfo'
         ];
         
         fields.forEach(field => {
