@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  FaPlus, FaEdit, FaTrash, FaEye, FaDownload, FaFilter, FaSearch,
-  FaGasPump, FaTools, FaRoad, FaUserTie, FaShieldAlt, FaUniversity, FaReceipt,
-  FaCalendar, FaTruck, FaMapMarkerAlt, FaDollarSign, FaCheckCircle, FaTimesCircle, FaClock
-} from 'react-icons/fa';
+  Plus, Search, Receipt, 
+  Trash2, Edit3, Eye, CheckCircle, XCircle, 
+  Clock, Fuel, Wrench, MapPin, Truck, 
+  User as UserIcon, ArrowRight,
+  TrendingUp, Wallet, ShieldCheck, Landmark
+} from 'lucide-react';
+import { financialAPI, fleetAPI } from '@/services/api';
+import toast from 'react-hot-toast';
+import { cn } from '@/utils/cn';
 
 interface Expense {
   id: string;
@@ -26,467 +32,392 @@ interface Expense {
   updatedAt: string;
 }
 
-interface Truck {
-  id: string;
-  plateNumber: string;
-  make: string;
-  model: string;
-}
-
-interface Driver {
-  id: string;
-  name: string;
-  licenseNumber: string;
-}
-
-interface Trip {
-  id: string;
-  tripNumber: string;
-  origin: string;
-  destination: string;
-}
-
 const ExpenseManagement: React.FC = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [trucks, setTrucks] = useState<Truck[]>([]);
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     type: '',
     status: '',
     truckId: '',
-    dateRange: '',
-    minAmount: '',
-    maxAmount: ''
   });
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data - replace with API calls
-  useEffect(() => {
-    setExpenses([
-      {
-        id: '1',
-        type: 'fuel',
-        category: 'Diesel',
-        amount: 450.00,
-        date: '2024-08-10',
-        description: 'Fuel refill at Shell Station',
-        truckId: 'TRK-001',
-        status: 'paid',
-        taxDeductible: true,
-        allocationPercentage: 100,
-        location: 'Shell Station, I-95 Exit 45',
-        vendor: 'Shell Oil Company',
-        notes: 'Regular fuel stop during trip',
-        createdAt: '2024-08-10T10:00:00Z',
-        updatedAt: '2024-08-10T10:00:00Z'
-      },
-      {
-        id: '2',
-        type: 'maintenance',
-        category: 'Oil Change',
-        amount: 120.00,
-        date: '2024-08-08',
-        description: 'Regular oil change and filter replacement',
-        truckId: 'TRK-001',
-        status: 'paid',
-        taxDeductible: true,
-        allocationPercentage: 100,
-        location: 'Quick Lube Express',
-        vendor: 'Quick Lube Express',
-        notes: 'Scheduled maintenance',
-        createdAt: '2024-08-08T14:30:00Z',
-        updatedAt: '2024-08-08T14:30:00Z'
-      },
-      {
-        id: '3',
-        type: 'toll',
-        category: 'Highway Tolls',
-        amount: 85.50,
-        date: '2024-08-09',
-        description: 'I-95 and I-80 toll charges',
-        tripId: 'TRP-001',
-        status: 'paid',
-        taxDeductible: true,
-        allocationPercentage: 100,
-        location: 'I-95 & I-80 Interchange',
-        vendor: 'State Highway Authority',
-        notes: 'Toll charges for trip TRP-001',
-        createdAt: '2024-08-09T16:15:00Z',
-        updatedAt: '2024-08-09T16:15:00Z'
-      }
-    ]);
+  // Queries
+  const { data: expensesData, isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', filters],
+    queryFn: async () => {
+      const response = await financialAPI.getExpenses(filters);
+      return response.data?.data?.expenses || response.data?.expenses || [];
+    }
+  });
 
-    setTrucks([
-      { id: 'TRK-001', plateNumber: 'ABC-123', make: 'Freightliner', model: 'Cascadia' },
-      { id: 'TRK-002', plateNumber: 'XYZ-789', make: 'Peterbilt', model: '579' }
-    ]);
+  const { data: trucksData } = useQuery({
+    queryKey: ['trucks'],
+    queryFn: async () => {
+      const response = await fleetAPI.getTrucks();
+      // Handle various response structures: { trucks: [] }, { data: [] }, or direct array
+      const data = response.data;
+      if (Array.isArray(data?.trucks)) return data.trucks;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data)) return data;
+      return [];
+    }
+  });
 
-    setDrivers([
-      { id: 'DRV-001', name: 'John Smith', licenseNumber: 'DL123456789' },
-      { id: 'DRV-002', name: 'Mike Johnson', licenseNumber: 'DL987654321' }
-    ]);
+  // Mutations
+  const createExpenseMutation = useMutation({
+    mutationFn: (data: any) => financialAPI.createExpense(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Expense recorded successfully');
+      setShowAddModal(false);
+    },
+    onError: () => toast.error('Failed to record expense')
+  });
 
-    setTrips([
-      { id: 'TRP-001', tripNumber: 'TRIP-2024-001', origin: 'Los Angeles, CA', destination: 'New York, NY' },
-      { id: 'TRP-002', tripNumber: 'TRIP-2024-002', origin: 'Chicago, IL', destination: 'Miami, FL' }
-    ]);
-  }, []);
+  const deleteExpenseMutation = useMutation({
+    mutationFn: (id: string) => financialAPI.deleteExpense(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Expense deleted');
+    }
+  });
+
+  // Computed Values
+  const filteredExpenses = useMemo(() => {
+    if (!expensesData) return [];
+    return expensesData.filter((e: Expense) => 
+      e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [expensesData, searchTerm]);
+
+  const stats = useMemo(() => {
+    if (!filteredExpenses) return { total: 0, pending: 0, taxSaved: 0 };
+    return {
+      total: filteredExpenses.reduce((acc: number, e: Expense) => acc + Number(e.amount), 0),
+      pending: filteredExpenses.filter((e: Expense) => e.status === 'pending').reduce((acc: number, e: Expense) => acc + Number(e.amount), 0),
+      taxSaved: filteredExpenses.filter((e: Expense) => e.taxDeductible).reduce((acc: number, e: Expense) => acc + Number(e.amount), 0) * 0.15 // 15% estim
+    };
+  }, [filteredExpenses]);
 
   const expenseTypes = [
-    { value: 'fuel', label: 'Fuel', icon: FaGasPump, color: 'text-blue-600' },
-    { value: 'maintenance', label: 'Maintenance', icon: FaTools, color: 'text-orange-600' },
-    { value: 'toll', label: 'Tolls', icon: FaRoad, color: 'text-green-600' },
-    { value: 'driver', label: 'Driver', icon: FaUserTie, color: 'text-purple-600' },
-    { value: 'insurance', label: 'Insurance', icon: FaShieldAlt, color: 'text-red-600' },
-    { value: 'tax', label: 'Tax', icon: FaUniversity, color: 'text-indigo-600' },
-    { value: 'other', label: 'Other', icon: FaReceipt, color: 'text-gray-600' }
+    { value: 'fuel', label: 'Fuel', icon: Fuel, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { value: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { value: 'toll', label: 'Tolls', icon: ArrowRight, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { value: 'driver', label: 'Labor', icon: UserIcon, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { value: 'insurance', label: 'Insurance', icon: ShieldCheck, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { value: 'tax', label: 'Gov & Tax', icon: Landmark, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { value: 'other', label: 'Other', icon: Receipt, color: 'text-slate-600', bg: 'bg-slate-50' }
   ];
 
-  const getExpenseIcon = (type: string) => {
-    const expenseType = expenseTypes.find(t => t.value === type);
-    return expenseType ? expenseType.icon : FaReceipt;
-  };
-
-  const getExpenseColor = (type: string) => {
-    const expenseType = expenseTypes.find(t => t.value === type);
-    return expenseType ? expenseType.color : 'text-gray-600';
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      pending: 'text-yellow-600 bg-yellow-100',
-      approved: 'text-blue-600 bg-blue-100',
-      rejected: 'text-red-600 bg-red-100',
-      paid: 'text-green-600 bg-green-100'
-    };
-    return colors[status] || 'text-gray-600 bg-gray-100';
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.vendor?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = !filters.type || expense.type === filters.type;
-    const matchesStatus = !filters.status || expense.status === filters.status;
-    const matchesTruck = !filters.truckId || expense.truckId === filters.truckId;
-    
-    let matchesAmount = true;
-    if (filters.minAmount && expense.amount < parseFloat(filters.minAmount)) matchesAmount = false;
-    if (filters.maxAmount && expense.amount > parseFloat(filters.maxAmount)) matchesAmount = false;
-
-    return matchesSearch && matchesType && matchesStatus && matchesTruck && matchesAmount;
-  });
-
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const taxDeductibleAmount = filteredExpenses
-    .filter(expense => expense.taxDeductible)
-    .reduce((sum, expense) => sum + expense.amount, 0);
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Expense Management</h1>
-          <p className="text-gray-600 mt-2">Track and manage all your trucking business expenses</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Quick Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+            <TrendingUp className="w-24 h-24 text-rose-500" />
+          </div>
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
+              <Wallet className="w-6 h-6" />
+            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Burn</p>
+            <h3 className="text-3xl font-black text-[#0f172a]">${stats.total.toLocaleString()}</h3>
+            <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase">Operational Expenses</p>
+          </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
-              </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <FaReceipt className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">{filteredExpenses.length} expenses</p>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+            <Clock className="w-24 h-24 text-amber-500" />
           </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tax Deductible</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(taxDeductibleAmount)}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <FaUniversity className="w-6 h-6 text-green-600" />
-              </div>
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+              <Clock className="w-6 h-6" />
             </div>
-            <p className="text-sm text-gray-500 mt-2">
-              {taxDeductibleAmount > 0 ? `${((taxDeductibleAmount / totalExpenses) * 100).toFixed(1)}%` : '0%'} of total
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {formatCurrency(expenses.filter(e => e.status === 'pending').reduce((sum, e) => sum + e.amount, 0))}
-                </p>
-              </div>
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <FaClock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              {expenses.filter(e => e.status === 'pending').length} expenses pending
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending Approval</p>
+            <h3 className="text-3xl font-black text-[#0f172a]">${stats.pending.toLocaleString()}</h3>
+            <p className="text-[10px] font-bold text-amber-500 mt-1 uppercase flex items-center gap-1">
+              Awaiting Review
             </p>
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Types</option>
-                {expenseTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="paid">Paid</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Truck</label>
-              <select
-                value={filters.truckId}
-                onChange={(e) => setFilters({ ...filters, truckId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Trucks</option>
-                {trucks.map(truck => (
-                  <option key={truck.id} value={truck.id}>{truck.plateNumber}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Min Amount</label>
-              <input
-                type="number"
-                value={filters.minAmount}
-                onChange={(e) => setFilters({ ...filters, minAmount: e.target.value })}
-                placeholder="0.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Max Amount</label>
-              <input
-                type="number"
-                value={filters.maxAmount}
-                onChange={(e) => setFilters({ ...filters, maxAmount: e.target.value })}
-                placeholder="1000.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div className="flex items-end">
-              <button
-                onClick={() => setFilters({
-                  type: '', status: '', truckId: '', dateRange: '', minAmount: '', maxAmount: ''
-                })}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                Clear Filters
-              </button>
-            </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+            <ShieldCheck className="w-24 h-24 text-emerald-500" />
           </div>
-
-          <div className="mt-4">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search expenses by description, category, or vendor..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+              <Landmark className="w-6 h-6" />
             </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tax Deductible</p>
+            <h3 className="text-3xl font-black text-[#0f172a]">${stats.taxSaved.toLocaleString()}</h3>
+            <p className="text-[10px] font-bold text-emerald-500 mt-1 uppercase">Estimated Savings</p>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Expenses</h2>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-          >
-            <FaPlus className="w-4 h-4" />
-            <span>Add Expense</span>
-          </button>
-        </div>
-
-        {/* Expenses Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Deductible</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredExpenses.map((expense) => {
-                  const IconComponent = getExpenseIcon(expense.type);
-                  const iconColor = getExpenseColor(expense.type);
-                  
-                  return (
-                    <tr key={expense.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                              <IconComponent className={`w-5 h-5 ${iconColor}`} />
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{expense.description}</div>
-                            <div className="text-sm text-gray-500">
-                              {expense.category} • {expense.vendor}
-                            </div>
-                            {expense.truckId && (
-                              <div className="text-xs text-gray-400">
-                                Truck: {trucks.find(t => t.id === expense.truckId)?.plateNumber}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">{formatCurrency(expense.amount)}</div>
-                        <div className="text-sm text-gray-500">{expense.allocationPercentage}% allocated</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(expense.date)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(expense.status)}`}>
-                          {expense.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {expense.taxDeductible ? (
-                          <FaCheckCircle className="w-5 h-5 text-green-500" />
-                        ) : (
-                          <FaTimesCircle className="w-5 h-5 text-red-500" />
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              setSelectedExpense(expense);
-                              setShowViewModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <FaEye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedExpense(expense);
-                              setShowEditModal(true);
-                            }}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            <FaTrash className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Empty State */}
-        {filteredExpenses.length === 0 && (
-          <div className="text-center py-12">
-            <FaReceipt className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No expenses found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || Object.values(filters).some(f => f) 
-                ? 'Try adjusting your search or filters.'
-                : 'Get started by adding your first expense.'
-              }
-            </p>
-            {!searchTerm && !Object.values(filters).some(f => f) && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  <FaPlus className="-ml-1 mr-2 h-4 w-4" />
-                  Add Expense
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Add/Edit/View Modals would go here */}
-      {/* For now, we'll just show the basic structure */}
+      {/* Control Bar */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:w-96 group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-[#345E85] transition-colors" />
+          <input 
+            type="text"
+            placeholder="Search expenses, vendors or categories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white transition-all placeholder:text-slate-300"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <select 
+            value={filters.type}
+            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+            className="px-6 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 transition-all cursor-pointer"
+          >
+            <option value="">All Categories</option>
+            {expenseTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex-1 md:flex-none px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 transition-all shadow-lg shadow-blue-900/10 active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Record Expense</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Table */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expense Detials</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Entity</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Amount</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Timing</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {expensesLoading ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                  </td>
+                </tr>
+              ) : filteredExpenses.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center">
+                        <Receipt className="w-10 h-10 text-slate-200" />
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">No expenses found matching criteria</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredExpenses.map((expense: Expense) => {
+                const typeInfo = expenseTypes.find(t => t.value === expense.type) || expenseTypes[6];
+                const Icon = typeInfo.icon;
+                
+                return (
+                  <tr key={expense.id} className="group hover:bg-slate-50/80 transition-all duration-300">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", typeInfo.bg)}>
+                          <Icon className={cn("w-5 h-5", typeInfo.color)} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{expense.description}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{expense.category}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-200" />
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
+                              {expense.vendor || 'Unknown Vendor'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col gap-1">
+                        {expense.truckId ? (
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                             <Truck className="w-3 h-3 text-slate-300" />
+                             <span>TRK-{expense.truckId.substring(0,6)}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">General Business</span>
+                        )}
+                        {expense.location && (
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <MapPin className="w-3 h-3" />
+                            <span>{expense.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col">
+                        <span className="text-lg font-black text-[#0f172a] tracking-tight">
+                          ${Number(expense.amount).toLocaleString()}
+                        </span>
+                        {expense.taxDeductible && (
+                          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1 mt-1">
+                            <CheckCircle className="w-2.5 h-2.5" /> Tax Deductible
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-600">
+                          {new Date(expense.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                          Added {new Date(expense.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className={cn(
+                        "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest",
+                        expense.status === 'paid' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                        expense.status === 'pending' ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                        "bg-slate-50 text-slate-500 border border-slate-100"
+                      )}>
+                        {expense.status === 'paid' && <CheckCircle className="w-3 h-3" />}
+                        {expense.status === 'pending' && <Clock className="w-3 h-3" />}
+                        {expense.status}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#345E85] hover:border-[#345E85] transition-all shadow-sm">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all shadow-sm">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if(confirm("Confirm deletion?")) deleteExpenseMutation.mutate(expense.id);
+                          }}
+                          className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-rose-600 hover:border-rose-600 transition-all shadow-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modern Add Modal Placeholder */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+            <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#345E85] text-white flex items-center justify-center">
+                  <Plus className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-[#0f172a] tracking-tight">Record Expense</h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Entry Lifecycle Management</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="w-12 h-12 rounded-2xl hover:bg-white border border-transparent hover:border-slate-200 transition-all flex items-center justify-center text-slate-400"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <form className="p-10" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const data = Object.fromEntries(formData.entries());
+              createExpenseMutation.mutate({
+                ...data,
+                amount: Number(data.amount),
+                taxDeductible: data.taxDeductible === 'on',
+                status: 'pending',
+                category: (data as any).type // using type as category for now
+              });
+            }}>
+              <div className="grid grid-cols-2 gap-8 mb-8">
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Description</label>
+                  <input name="description" required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white transition-all" placeholder="e.g. Weekly Fuel Refill" />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Amount ($)</label>
+                  <input name="amount" type="number" step="0.01" required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white transition-all" placeholder="0.00" />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Expense Category</label>
+                  <select name="type" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white transition-all">
+                    {expenseTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Date</label>
+                  <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white transition-all" />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Related Truck</label>
+                  <select name="truckId" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white transition-all">
+                    <option value="">General Expense</option>
+                    {trucksData?.map((t: any) => <option key={t.id} value={t.id}>{t.plateNumber}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mb-10 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <input type="checkbox" name="taxDeductible" id="taxDeductible" className="w-5 h-5 rounded-lg border-slate-200 text-[#345E85] focus:ring-[#345E85]" />
+                <label htmlFor="taxDeductible" className="text-sm font-bold text-slate-600 cursor-pointer">Mark as Tax Deductible (Optimizes business tax profile)</label>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-8 py-5 bg-slate-100 text-slate-400 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={createExpenseMutation.isPending}
+                  className="flex-[2] px-8 py-5 bg-[#345E85] text-white rounded-3xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 transition-all shadow-xl shadow-blue-900/10 active:scale-95 disabled:opacity-50"
+                >
+                  {createExpenseMutation.isPending ? "Processing..." : "Finalize Record"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

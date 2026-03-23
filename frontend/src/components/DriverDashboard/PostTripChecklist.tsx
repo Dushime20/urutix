@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { toast } from 'react-hot-toast';
+import { safetyApi, InspectionTypes, InspectionStatuses, type InspectionType, type InspectionStatus } from '../../services/safetyApi';
 
 interface ChecklistItem {
   id: string;
@@ -35,12 +36,24 @@ interface ChecklistCategory {
 }
 
 interface PostTripChecklistProps {
+  truckId?: string;
+  truckPlate?: string;
+  driverId?: string;
+  driverName?: string;
   onComplete?: (data: { odometer: string; location: string }) => void;
 }
 
-export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete }) => {
+export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ 
+  truckId,
+  truckPlate,
+  driverId,
+  driverName,
+  onComplete 
+}) => {
   const [odometer, setOdometer] = useState<string>('');
   const [location, setLocation] = useState<string>('');
+  const [signature, setSignature] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<ChecklistCategory[]>([
     {
       id: 'cargo',
@@ -50,7 +63,6 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
         { id: 'cargo-1', label: 'All items unloaded & accounted for', status: 'pending' },
         { id: 'cargo-2', label: 'Proof of Delivery (POD) signed', status: 'pending' },
         { id: 'cargo-3', label: 'Customer confirmation received', status: 'pending' },
-        { id: 'cargo-4', label: 'Delivery area inspected for debris', status: 'pending' },
       ]
     },
     {
@@ -61,7 +73,6 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
         { id: 'veh-1', label: 'Post-trip walkaround inspection', status: 'pending' },
         { id: 'veh-2', label: 'Exterior lights (all functional)', status: 'pending' },
         { id: 'veh-3', label: 'Tire condition (no new damage)', status: 'pending' },
-        { id: 'veh-4', label: 'Clean cabin/interior', status: 'pending' },
       ]
     },
     {
@@ -71,7 +82,6 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
       items: [
         { id: 'eng-1', label: 'Fuel level recorded', status: 'pending' },
         { id: 'eng-2', label: 'No visual fluid leaks', status: 'pending' },
-        { id: 'eng-3', label: 'DEF level (Africa/EU standards)', status: 'pending' },
       ]
     },
     {
@@ -79,10 +89,8 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
       title: 'Digital & Admin',
       icon: ClipboardCheck,
       items: [
-        { id: 'adm-1', label: 'Final odometer reading captured', status: 'pending' },
         { id: 'adm-2', label: 'All trip expenses reported', status: 'pending' },
         { id: 'adm-3', label: 'Logbook (ELD) certified & closed', status: 'pending' },
-        { id: 'adm-4', label: 'Keys & fuel cards secured', status: 'pending' },
       ]
     },
     {
@@ -92,7 +100,6 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
       items: [
         { id: 'sec-1', label: 'Vehicle properly parked & locked', status: 'pending' },
         { id: 'sec-2', label: 'Cargo bay secured / empty', status: 'pending' },
-        { id: 'sec-3', label: 'Hazard lights turned off', status: 'pending' },
       ]
     }
   ]);
@@ -122,20 +129,48 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
   };
 
   const isFullyCompleted = () => {
-    return categories.flatMap(c => c.items).every(i => i.status !== 'pending');
+    return categories.flatMap(c => c.items).every(i => i.status !== 'pending') && 
+           signature.trim().length > 0 && 
+           odometer.trim().length > 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isFullyCompleted()) {
-      toast.error("Please complete all check items before closing the mission.");
+      toast.error("Please complete all check items, sign and enter odometer before closing the mission.");
       return;
     }
-    const hasFailures = categories.flatMap(c => c.items).some(i => i.status === 'fail');
-    if (hasFailures) {
-      toast.error("Discrepancies detected. Please notify fleet management.");
-    } else {
-      toast.success("Post-trip inspection completed successfully!");
+
+    setIsSubmitting(true);
+    const allItems = categories.flatMap(cat => cat.items.map(item => ({
+      id: item.id,
+      category: cat.title,
+      item: item.label,
+      status: item.status === 'ok' ? 'passed' : 'failed'
+    })));
+
+    const hasFailures = allItems.some(i => i.status === 'failed');
+
+    try {
+      await safetyApi.createInspection({
+        type: InspectionTypes.POST_TRIP,
+        inspector: signature,
+        inspectionDate: new Date().toISOString(),
+        truckId,
+        truckPlate,
+        driverId,
+        driverName,
+        status: hasFailures ? InspectionStatuses.FAILED : InspectionStatuses.PASSED,
+        items: allItems,
+        notes: `Post-trip inspection signed by ${signature}. Odometer: ${odometer}, Location: ${location}`
+      });
+
+      toast.success("Post-trip inspection submitted successfully!");
       if (onComplete) onComplete({ odometer, location });
+    } catch (error) {
+      console.error('Failed to submit post-trip inspection:', error);
+      toast.error("Failed to submit post-trip report.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -284,6 +319,8 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
             <div className="relative">
                 <input 
                     type="text" 
+                    value={signature}
+                    onChange={(e) => setSignature(e.target.value)}
                     placeholder="Sign to certify all unload & vehicle checks"
                     className="w-full h-14 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 font-medium italic text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 transition-all shadow-inner"
                 />
@@ -292,14 +329,19 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({ onComplete
 
         <button
           onClick={handleSubmit}
+          disabled={!isFullyCompleted() || isSubmitting}
           className={`w-full py-5 rounded-[2.5rem] flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg ${
-            isFullyCompleted() 
+            isFullyCompleted() && !isSubmitting
               ? 'bg-[#345E85] text-white shadow-[#345E85]/20 hover:bg-[#0f172a] active:scale-[0.98]' 
               : 'bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed opacity-50'
           }`}
         >
-          <ShieldCheck size={18} />
-          <TranslatedText text="Finalize Mission & debrief" />
+          {isSubmitting ? <TranslatedText text="Submitting..." /> : (
+            <>
+              <ShieldCheck size={18} />
+              <TranslatedText text="Finalize Mission & debrief" />
+            </>
+          )}
         </button>
       </div>
     </div>

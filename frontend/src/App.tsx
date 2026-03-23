@@ -333,13 +333,22 @@ function App() {
                       <Route path="analytics" element={<FleetAnalytics />} />
                       <Route path="reports" element={<FleetAnalytics />} />
                       <Route path="safety" element={<FleetSafety />} />
-                      <Route path="financial" element={<FleetPaymentManagement />} />
+                      <Route path="financial" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial/expenses" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial/overview" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial/reports" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial/cost-analysis" element={<UnifiedFinancialManagement />} />
+                      <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
+                      <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
+                      <Route path="overview" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="credits" element={<TruckOwnerCredits />} />
                       <Route path="bids" element={<UnifiedBiddingManagement />} />
                       <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="bidding-analytics" element={<UnifiedBiddingManagement />} />
                       <Route path="smart-bookings" element={<SmartBookingRequests />} />
                       <Route path="fuel" element={<FuelManagement />} />
+                      <Route path="expenses" element={<UnifiedFinancialManagement />} />
                       <Route path="routes" element={<RoutesPage />} />
                       <Route path="assignments" element={<UnifiedDriverManagement />} />
                       <Route path="ratings" element={<UnifiedReputationManagement />} />

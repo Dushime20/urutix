@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { FleetInspections } from './FleetInspections';
+import { safetyApi } from '../../services/safetyApi';
+import { useQuery } from '@tanstack/react-query';
 
 interface SafetyManagementProps {
   fleetId?: string;
@@ -21,11 +24,23 @@ interface SafetyManagementProps {
 export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock data for demonstration
-  const mockSafetyStats = {
-    safetyScore: 92,
-    incidents: 2,
-    inspections: 14
+  const { data: inspectionsData } = useQuery({
+    queryKey: ['safety-stats'],
+    queryFn: () => safetyApi.getInspections()
+  });
+
+  const inspectionsList = (inspectionsData as any)?.data?.inspections || [];
+  const passedCount = inspectionsList.filter((i: any) => i.status === 'passed').length;
+  const failedCount = inspectionsList.filter((i: any) => i.status === 'failed').length;
+
+  const safetyScore = inspectionsList.length > 0 
+    ? Math.round((passedCount / inspectionsList.length) * 100) 
+    : 100;
+
+  const safetyStats = {
+    safetyScore: safetyScore,
+    incidents: failedCount,
+    inspections: inspectionsList.length
   };
 
   const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
@@ -98,21 +113,21 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
         <CircularStatsCard
           title="Safety Score"
-          value={`${mockSafetyStats.safetyScore}%`}
+          value={`${safetyStats.safetyScore}%`}
           icon={Shield}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
         <CircularStatsCard
           title="Safety Incidents"
-          value={mockSafetyStats.incidents}
+          value={safetyStats.incidents}
           icon={AlertTriangle}
           colorClass="bg-rose-50 text-rose-600"
           secondaryColor="text-rose-600"
         />
         <CircularStatsCard
           title="Inspections Done"
-          value={mockSafetyStats.inspections}
+          value={safetyStats.inspections}
           icon={ClipboardCheck}
           colorClass="bg-primary-50 text-primary-500"
           secondaryColor="text-primary-500"
@@ -260,7 +275,13 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
             </div>
           )}
 
-          {activeTab !== 'overview' && (
+          {activeTab === 'inspections' && (
+            <div className="p-8">
+               <FleetInspections />
+            </div>
+          )}
+
+          {(activeTab !== 'overview' && activeTab !== 'inspections') && (
             <div className="p-20 text-center flex flex-col items-center">
               <div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6">
                 <Shield size={32} className="opacity-20" />

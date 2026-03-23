@@ -1,0 +1,29 @@
+﻿ M backend/src/entities/load.entity.ts
+ M backend/src/modules/loads/loads-v2.service.ts
+ M frontend/src/App.tsx
+ M frontend/src/components/DriverDashboard/PostTripChecklist.tsx
+ M frontend/src/components/DriverDashboard/PreTripChecklist.tsx
+ M frontend/src/components/FinancialManagement/ExpenseManagement.tsx
+ M frontend/src/components/FleetDashboard/SafetyManagement.tsx
+ M frontend/src/components/Layout/DashboardHeader.tsx
+ M frontend/src/pages/dashboard/financial/FinancialDashboard.tsx
+ M frontend/src/pages/dashboard/financial/UnifiedFinancialManagement.tsx
+ M frontend/src/pages/driver/DriverDashboard.tsx
+?? backend/check_columns.js
+?? backend/check_safety_columns.js
+?? backend/check_truck_cols.js
+?? backend/cols.txt
+?? backend/final_seed.js
+?? backend/run_seed.js
+?? backend/seed_driver_reports.sql
+?? backend/seed_err.txt
+?? backend/seed_output.txt
+?? backend/src/migrations/1775000000001-SeedDriverReports.ts
+?? backend/src/scripts/
+?? backend/test_db.js
+?? backend/truck_cols.txt
+?? backend/verify_seed.js
+?? frontend/src/components/FleetDashboard/CargoInspectionReportModal.tsx
+?? frontend/src/components/FleetDashboard/FleetInspections.tsx
+?? frontend/src/services/safetyApi.ts
+?? git_status_out.txt

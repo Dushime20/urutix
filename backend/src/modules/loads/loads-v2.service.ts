@@ -282,6 +282,9 @@ export class LoadsV2Service {
       // Load relations
       queryBuilder.leftJoinAndSelect('load.cargoOwner', 'cargoOwner');
       queryBuilder.leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile');
+      queryBuilder.leftJoinAndSelect('load.assignedTruck', 'assignedTruck');
+      queryBuilder.leftJoinAndSelect('load.assignedDriver', 'assignedDriver');
+      queryBuilder.leftJoinAndSelect('assignedDriver.profile', 'assignedDriverProfile');
 
       const [loads, total] = await queryBuilder.getManyAndCount();
 
@@ -1400,6 +1403,29 @@ export class LoadsV2Service {
           profile: null,
         };
       }
+    }
+
+    // Include assignedTruck if it's loaded
+    if ((load as any).assignedTruck) {
+      response.assignedTruck = {
+        id: (load as any).assignedTruck.id,
+        licensePlate: (load as any).assignedTruck.licensePlate,
+        make: (load as any).assignedTruck.make,
+        model: (load as any).assignedTruck.model,
+      };
+    }
+
+    // Include assignedDriver if it's loaded
+    if ((load as any).assignedDriver) {
+      response.assignedDriver = {
+        id: (load as any).assignedDriver.id,
+        email: (load as any).assignedDriver.email,
+        phone: (load as any).assignedDriver.phone,
+        profile: (load as any).assignedDriver.profile ? {
+          firstName: (load as any).assignedDriver.profile.firstName,
+          lastName: (load as any).assignedDriver.profile.lastName,
+        } : null,
+      };
     }
 
     return response as LoadResponseV2Dto;

@@ -22,9 +22,10 @@ import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
 
-type TabType = "overview" | "payments" | "payment" | "loans" | "reports" | "cost-analysis" | "financial-info";
+type TabType = "overview" | "payments" | "payment" | "expenses" | "loans" | "reports" | "cost-analysis" | "financial-info";
 
 const FinancialDashboard = lazy(() => import("@/pages/dashboard/financial/FinancialDashboard"));
+const ExpenseManagement = lazy(() => import("@/components/FinancialManagement/ExpenseManagement"));
 
 const UnifiedFinancialManagement = () => {
   const location = useLocation();
@@ -38,6 +39,7 @@ const UnifiedFinancialManagement = () => {
     if (location.pathname.includes("/reports")) return "reports";
     if (location.pathname.includes("/cost-analysis")) return "cost-analysis";
     if (location.pathname.includes("/financial-info")) return "financial-info";
+    if (location.pathname.includes("/expenses")) return "expenses";
     return "payments";
   };
 
@@ -73,6 +75,8 @@ const UnifiedFinancialManagement = () => {
       navigate(`${basePath}/reports`, { replace: true });
     } else if (tab === "cost-analysis") {
       navigate(`${basePath}/cost-analysis`, { replace: true });
+    } else if (tab === "expenses") {
+      navigate(`${basePath}/expenses`, { replace: true });
     } else if (tab === "financial-info") {
       navigate(`${basePath}/financial-info`, { replace: true });
     } else {
@@ -97,6 +101,12 @@ const UnifiedFinancialManagement = () => {
       label: "Payments",
       icon: CreditCard,
       description: "Manage payments and transactions",
+    },
+    {
+      id: "expenses" as TabType,
+      label: "Expenses",
+      icon: Calculator,
+      description: "Track and manage all business expenses",
     },
     // Add Payment tab for cargo owners (under Loan Requests section)
     ...(location.pathname.includes("/cargo-owner") ? [{
@@ -214,6 +224,11 @@ const UnifiedFinancialManagement = () => {
             {activeTab === "payment" && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
                 <CargoOwnerPayment />
+              </Suspense>
+            )}
+            {activeTab === "expenses" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+                <ExpenseManagement />
               </Suspense>
             )}
             {activeTab === "cost-analysis" && (
