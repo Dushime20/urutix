@@ -43,12 +43,29 @@ import { UserRole } from '../../entities/user.entity';
 @ApiBearerAuth()
 @Controller('fleet')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_DISPATCHER,
+  UserRole.FLEET_ACCOUNTANT,
+  UserRole.FLEET_SAFETY_OFFICER,
+)
 export class FleetController {
   constructor(private readonly fleetService: FleetService) { }
 
   // Truck endpoints
   @Post('trucks')
-  @Roles(UserRole.TRUCK_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.TRUCK_OWNER,
+    UserRole.TENANT_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+  )
   @ApiOperation({
     summary: 'Create a new truck',
     description: 'Creates a new truck in the fleet',
@@ -234,18 +251,22 @@ export class FleetController {
 
       // Determine if we should filter by user ID (ownership)
       // Admins should see ALL trucks in the tenant
-      const isAdmin = [
+      const isStaffOrAdmin = [
         UserRole.SUPER_ADMIN,
         UserRole.ADMIN,
-        UserRole.TENANT_ADMIN
+        UserRole.TENANT_ADMIN,
+        UserRole.TRUCK_OWNER,
+        UserRole.FLEET_MANAGER,
+        UserRole.FLEET_DISPATCHER,
+        UserRole.FLEET_ACCOUNTANT,
+        UserRole.FLEET_SAFETY_OFFICER,
       ].includes(req.user.role);
 
-      // If admin, pass undefined for userId to show ALL trucks
-      // If not admin, pass userId to show ONLY owned trucks
-      const filterUserId = isAdmin ? undefined : req.user.userId;
+      // If staff-level or admin, pass undefined for userId to show ALL trucks in the tenant
+      const filterUserId = isStaffOrAdmin ? undefined : req.user.userId;
 
-      if (isAdmin) {
-        console.log('✅ User is Admin - showing all trucks in tenant');
+      if (isStaffOrAdmin) {
+        console.log('✅ User is Staff/Admin - showing all trucks in tenant');
       } else {
         console.log(`🔒 User is ${req.user.role} - showing only owned trucks`);
       }
@@ -296,7 +317,14 @@ export class FleetController {
   }
 
   @Patch('trucks/:id')
-  @Roles(UserRole.TRUCK_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.TRUCK_OWNER,
+    UserRole.TENANT_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+  )
   @ApiOperation({
     summary: 'Update truck',
     description: 'Updates an existing truck',
@@ -337,7 +365,14 @@ export class FleetController {
   }
 
   @Delete('trucks/:id')
-  @Roles(UserRole.TRUCK_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.TRUCK_OWNER,
+    UserRole.TENANT_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+  )
   @ApiOperation({
     summary: 'Delete truck',
     description: 'Deletes a truck from the fleet',

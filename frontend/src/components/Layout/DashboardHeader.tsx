@@ -170,6 +170,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Truck Inventory', path: '/dashboard/fleet/trucks' },
             { label: 'Fuel & Maintenance', path: '/dashboard/fleet/fuel' },
             { label: 'Safety Records', path: '/dashboard/fleet/safety' },
+            { label: 'Team Management', path: '/dashboard/fleet/settings' },
           ]
         },
         {
@@ -407,7 +408,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                       {hasSubItems && openDropdown === item.label && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
                           <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                             <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase"><TranslatedText text="Neural Suite" /></div>
+                             <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase"><TranslatedText text="Quick Actions" /></div>
                           </div>
                           <div className="py-1">
                             {item.subItems?.map(subItem => (
@@ -462,23 +463,64 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                     <p className="text-sm font-semibold truncate">{user?.firstName || user?.email || 'User'}</p>
                     <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      const profilePath = user?.role === 'LENDER' ? '/lender/profile' :
-                        user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? '/admin/profile' :
-                          user?.role === 'TENANT_ADMIN' ? '/tenant-admin/profile' :
-                            user?.role === 'BROKER' ? '/dashboard/broker/profile' :
-                              '/dashboard/settings';
-                      navigate(profilePath);
-                    }}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
-                  >
-                    Profile Settings
-                  </button>
-                  <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2">
-                    <LogOut size={14} /> Sign Out
-                  </button>
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        const profilePath = user?.role === 'LENDER' ? '/lender/profile' :
+                          user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? '/admin/profile' :
+                            user?.role === 'TENANT_ADMIN' ? '/tenant-admin/settings' :
+                              user?.role === 'BROKER' ? '/dashboard/broker/profile' :
+                                user?.role === 'TRUCK_OWNER' ? '/dashboard/fleet/settings' :
+                                  '/dashboard/settings';
+                        navigate(profilePath);
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                    >
+                      <User size={14} className="text-slate-400" />
+                      <TranslatedText text="Profile Settings" />
+                    </button>
+
+                    {user?.role === 'TRUCK_OWNER' && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            navigate('/dashboard/fleet/settings');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                        >
+                          <Settings size={14} className="text-slate-400" />
+                          <TranslatedText text="Fleet Settings" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            navigate('/dashboard/fleet/settings');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                        >
+                          <Users size={14} className="text-slate-400" />
+                          <TranslatedText text="Team Management" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            navigate('/dashboard/fleet/support');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg mb-1"
+                        >
+                          <HelpCircle size={14} className="text-slate-400" />
+                          <TranslatedText text="Support & Help" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <div className="border-t border-slate-100 my-1 pt-1">
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-3">
+                      <LogOut size={14} /> <TranslatedText text="Sign Out" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

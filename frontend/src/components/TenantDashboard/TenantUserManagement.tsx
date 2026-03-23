@@ -23,7 +23,7 @@ interface PartnerProfile {
 interface Partner {
     id: string;
     email: string;
-    role: 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER';
+    role: 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER' | 'FLEET_MANAGER';
     status: 'ACTIVE' | 'SUSPENDED' | 'PENDING' | 'PENDING_VERIFICATION' | 'DEACTIVATED';
     profile?: PartnerProfile;
     phone?: string;
@@ -37,7 +37,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
     const { tSync } = useTranslation();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState<'ALL' | 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER'>('ALL');
+    const [roleFilter, setRoleFilter] = useState<'ALL' | 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER' | 'FLEET_MANAGER'>('ALL');
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
     
@@ -50,7 +50,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
         email: '',
         firstName: '',
         lastName: '',
-        role: 'TRUCK_OWNER',
+        role: 'TRUCK_OWNER' as string,
         phone: ''
     });
 
@@ -192,7 +192,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                     </div>
                     <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
                         <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm min-w-max">
-                            {(['ALL', 'TRUCK_OWNER', 'CARGO_OWNER', 'BROKER', 'DRIVER', 'LENDER'] as const).map((role) => (
+                            {(['ALL', 'TRUCK_OWNER', 'FLEET_MANAGER', 'CARGO_OWNER', 'BROKER', 'DRIVER', 'LENDER'] as const).map((role) => (
                                 <button
                                     key={role}
                                     onClick={() => setRoleFilter(role)}
@@ -411,7 +411,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                         >
                             {selectedPartner && (
                                 <PartnerDetailView
-                                    partner={selectedPartner}
+                                    partner={selectedPartner as any}
                                     tenantId={tenantId}
                                     onClose={() => setSelectedPartner(null)}
                                 />
@@ -501,6 +501,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
                                             {[
                                                 { id: 'TRUCK_OWNER', label: 'Truck Owner', icon: Truck },
+                                                { id: 'FLEET_MANAGER', label: 'Fleet Manager', icon: Users },
                                                 { id: 'CARGO_OWNER', label: 'Cargo Owner', icon: Box },
                                                 { id: 'BROKER', label: 'Broker', icon: Gavel },
                                                 { id: 'DRIVER', label: 'Driver', icon: Navigation },

@@ -150,6 +150,36 @@ export class Tenant {
   @Column({ nullable: true })
   suspendedReason?: string;
 
+  // KYC Fields
+  @Column({
+    type: 'enum',
+    enum: KycStatus,
+    default: KycStatus.PENDING,
+  })
+  kycStatus: KycStatus;
+
+  @Column('jsonb', { default: {} })
+  kycData: Record<string, any>;
+
+  @Column({ nullable: true })
+  kycSubmittedAt?: Date;
+
+  @Column({ nullable: true })
+  kycVerifiedAt?: Date;
+
+  @Column({ nullable: true })
+  kycNotes?: string;
+
+  // @Column({ nullable: true })
+  // kycReviewedBy?: string; // Column doesn't exist in database
+
+  // Onboarding Fields - using integer to match database
+  @Column({ type: 'integer', default: 1 }) // Database uses integer, not enum
+  onboardingStep: number;
+
+  // @Column({ nullable: true })
+  // onboardingCompletedAt?: Date; // Column doesn't exist in database
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -24,11 +24,21 @@ import {
 import { FinancialService } from './financial.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../../entities/user.entity';
 import { ApiResponseDto } from '../../common/dto/api-response.dto';
 
 @ApiTags('Financial Management')
 @Controller('financial')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_ACCOUNTANT,
+)
 @ApiBearerAuth('JWT-auth')
 export class FinancialController {
   constructor(private readonly financialService: FinancialService) {}

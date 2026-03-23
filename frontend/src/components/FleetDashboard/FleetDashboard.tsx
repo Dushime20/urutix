@@ -19,7 +19,8 @@ import {
   Search,
   Star,
   AlertTriangle,
-  Fuel
+  Fuel,
+  MessageSquare
 } from 'lucide-react';
 import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -53,6 +54,9 @@ import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 // Lazy load Credits component
 const TruckOwnerCredits = lazy(() => import('../../pages/truck-owner/TruckOwnerCredits'));
 
+// Import TenantCommunication for Truck Owners
+import TenantCommunication from '../../pages/tenant/TenantCommunication';
+
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
@@ -85,7 +89,7 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'fuel' | 'credits'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'fuel' | 'credits' | 'communicate'>('overview');
 
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'trucks' | 'drivers'>('trucks');
@@ -94,6 +98,21 @@ export const FleetDashboard: React.FC = () => {
   const [userProfileName, setUserProfileName] = useState<string | null>(null);
 
   const [analytics, setAnalytics] = useState<any>(null);
+
+  // ── Role Based Access Control ──────────────────────────────────────────────
+  const rolePermissions: Record<string, string[]> = {
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'matches', 'analytics', 'communicate'],
+    'FLEET_ACCOUNTANT': ['overview', 'financial', 'credits', 'fuel', 'analytics'],
+    'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
+  };
+
+  const allowedTabs = rolePermissions[user?.role || ''] || ['overview', 'trucks', 'drivers'];
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Sync activeTab with URL
   useEffect(() => {
@@ -114,6 +133,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
     else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
     else if (path.includes('/fleet/credits')) setActiveTab('credits');
+    else if (path.includes('/fleet/communicate') || path.includes('/fleet/communication')) setActiveTab('communicate');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
   }, [location.pathname, location.search]);
 
@@ -253,7 +273,7 @@ export const FleetDashboard: React.FC = () => {
     try {
       let newFleetItem: LocalFleetItem;
       if (formType === 'trucks') {
-        const created = await fleetApi.createTruck(fleetData as Partial<ServiceTruck>);
+        const created = await fleetApi.createTruck(fleetData as any);
         newFleetItem = normalizeTruck(created);
       } else if (formType === 'drivers') {
         const created = await fleetApi.createDriver(fleetData);
@@ -279,7 +299,7 @@ export const FleetDashboard: React.FC = () => {
     try {
       let updatedFleetItem: LocalFleetItem;
       if (formType === 'trucks') {
-        const updated = await fleetApi.updateTruck(editingFleetItem.id, fleetData as Partial<ServiceTruck>);
+        const updated = await fleetApi.updateTruck(editingFleetItem.id, fleetData as any);
         updatedFleetItem = normalizeTruck(updated);
       } else if (formType === 'drivers') {
         const updated = await fleetApi.updateDriver(editingFleetItem.id, fleetData);
@@ -419,8 +439,9 @@ export const FleetDashboard: React.FC = () => {
                 { id: 'matches', icon: Zap, label: 'Matches' },
                 { id: 'financial', icon: CreditCard, label: 'Financials' },
                 { id: 'credits', icon: CreditCard, label: 'Credits' },
-                { id: 'analytics', icon: Activity, label: 'Analytics' }
-              ].map((tab) => (
+                { id: 'analytics', icon: Activity, label: 'Analytics' },
+                { id: 'communicate', icon: MessageSquare, label: 'Comms' }
+              ].filter(t => allowedTabs.includes(t.id)).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => {
@@ -692,7 +713,8 @@ export const FleetDashboard: React.FC = () => {
                         activeTab === 'safety' ? <Shield size={28} /> :
                           activeTab === 'financial' ? <CreditCard size={28} /> :
                             activeTab === 'routes' ? <Navigation size={28} /> :
-                              activeTab === 'matches' ? <Zap size={28} /> : <User size={28} />}
+                              activeTab === 'matches' ? <Zap size={28} /> :
+                                activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
                   </div>
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
@@ -701,7 +723,8 @@ export const FleetDashboard: React.FC = () => {
                           activeTab === 'safety' ? <TranslatedText text="Safety" /> :
                             activeTab === 'financial' ? <TranslatedText text="Financials" /> :
                               activeTab === 'routes' ? <TranslatedText text="Routes" /> :
-                                activeTab === 'matches' ? <TranslatedText text="Matches" /> : <TranslatedText text="Drivers" />}
+                                activeTab === 'matches' ? <TranslatedText text="Matches" /> :
+                                  activeTab === 'communicate' ? <TranslatedText text="Communication" /> : <TranslatedText text="Drivers" />}
                     </h2>
                     <p className="text-sm font-medium text-slate-500">
                       <TranslatedText text="Status" />: <span className="text-emerald-500 font-black"><TranslatedText text="Active" /></span>
@@ -748,6 +771,8 @@ export const FleetDashboard: React.FC = () => {
                   <Suspense fallback={<FleetSkeleton />}>
                     <TruckOwnerCredits />
                   </Suspense>
+                ) : activeTab === 'communicate' ? (
+                  <TenantCommunication />
                 ) : loading && fleetItems.length === 0 ? (
                   <FleetSkeleton />
                 ) : (

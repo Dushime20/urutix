@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HelpCircle,
@@ -30,7 +31,8 @@ interface ContextualHelpProps {
   context?: string; // e.g., 'dashboard', 'cargo-create', 'tracking'
 }
 
-const ContextualHelp: React.FC<ContextualHelpProps> = ({ context = 'general' }) => {
+const ContextualHelp: React.FC<ContextualHelpProps> = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<HelpTopic | null>(null);
@@ -282,12 +284,13 @@ You'll be notified about:
                   {/* Core Action Vectors */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
                     {[
-                      { icon: Book, label: 'Archives', detail: 'Documentation', color: 'blue' },
-                      { icon: Video, label: 'Visuals', detail: 'Video Tutorials', color: 'emerald' },
-                      { icon: MessageCircle, label: 'Liaison', detail: 'Live Chat', color: 'purple' }
+                      { icon: Book, label: 'Archives', detail: 'User Guides', color: 'blue', path: '/dashboard/fleet/docs' },
+                      { icon: MessageCircle, label: 'Liaison', detail: 'Support Desk', color: 'emerald', path: '/dashboard/fleet/support' },
+                      { icon: Video, label: 'Visuals', detail: 'Video Tutorials', color: 'purple', path: '#' }
                     ].map((vector, idx) => (
                       <button
                         key={idx}
+                        onClick={() => vector.path !== '#' && navigate(vector.path)}
                         className="flex items-center gap-4 p-6 bg-white border border-slate-100 rounded-[32px] hover:shadow-lg hover:shadow-blue-50 transition-all text-left group"
                       >
                         <div className={`w-12 h-12 bg-${vector.color}-50 rounded-2xl flex items-center justify-center text-${vector.color}-600 group-hover:scale-110 transition-transform shadow-inner`}>

@@ -27,7 +27,7 @@ import {
 
 @Controller('tenant-dashboard/communicate')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('TENANT_ADMIN', 'ADMIN')
+@Roles('TENANT_ADMIN', 'ADMIN', 'TRUCK_OWNER')
 export class TenantBulkEmailController {
   private readonly logger = new Logger(TenantBulkEmailController.name);
 

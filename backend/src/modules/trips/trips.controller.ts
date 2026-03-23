@@ -29,6 +29,8 @@ import { TripsService } from './trips.service';
 import { CreateTripDto, CreateTripResponseDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../../entities/user.entity';
 import {
   ApiResponseDto,
   PaginatedResponseDto,
@@ -36,7 +38,16 @@ import {
 
 @ApiTags('Trips')
 @Controller('trips')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_DISPATCHER,
+  UserRole.DRIVER,
+)
 @ApiBearerAuth('JWT-auth')
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}

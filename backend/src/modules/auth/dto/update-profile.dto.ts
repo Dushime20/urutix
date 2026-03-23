@@ -69,6 +69,16 @@ export class ProfileDataDto {
   @ValidateNested()
   @Type(() => PreferencesDto)
   preferences?: PreferencesDto;
+
+  @ApiProperty({ required: false, description: 'Insurance information' })
+  @IsOptional()
+  @IsObject()
+  insuranceInfo?: Record<string, any>;
+
+  @ApiProperty({ required: false, description: 'Bank account information' })
+  @IsOptional()
+  @IsObject()
+  bankAccountInfo?: Record<string, any>;
 }
 
 export class UpdateProfileDto {

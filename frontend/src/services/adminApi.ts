@@ -30,8 +30,10 @@ export const createTenantUser = async (tenantId: string, userData: {
   firstName: string;
   lastName: string;
   role: string;
-  phoneNumber?: string;
-  companyName?: string;
+  permissions?: string[];
+  paymentPermissions?: any;
+  documentPermissions?: any;
+  workflowPermissions?: any;
 }) => {
   const res = await api.post(`/users/tenant/${tenantId}/user`, userData);
   return res.data;
