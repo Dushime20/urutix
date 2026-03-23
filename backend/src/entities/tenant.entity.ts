@@ -150,7 +150,6 @@ export class Tenant {
   @Column({ nullable: true })
   suspendedReason?: string;
 
-<<<<<<< Updated upstream
   // KYC Fields
   @Column({
     type: 'enum',
@@ -181,8 +180,6 @@ export class Tenant {
   // @Column({ nullable: true })
   // onboardingCompletedAt?: Date; // Column doesn't exist in database
 
-=======
->>>>>>> Stashed changes
   @CreateDateColumn()
   createdAt: Date;
 

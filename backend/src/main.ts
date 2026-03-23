@@ -32,7 +32,7 @@ async function bootstrap() {
   // Enhanced CORS with wildcard subdomain support
   app.enableCors({
     origin: (origin, callback) => {
-<<<<<<< Updated upstream
+
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
 
@@ -61,25 +61,7 @@ async function bootstrap() {
         console.log(`❌ CORS: Blocked request from ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
-=======
-      // Allow requests with no origin (like mobile apps, curl, Postman)
-      if (!origin) {
-        return callback(null, true);
-      }
-      
-      if (allowedOrigins.length === 0) {
-        console.warn(`⚠️  CORS: Blocked request from ${origin} - No ALLOWED_ORIGINS configured`);
-        return callback(new Error('CORS not configured'), false);
-      }
-      
-      if (allowedOrigins.includes(origin)) {
-        console.log(`✅ CORS: Allowed request from ${origin}`);
-        return callback(null, true);
-      }
-      
-      console.warn(`⚠️  CORS: Blocked request from ${origin}`);
-      return callback(new Error('Not allowed by CORS'), false);
->>>>>>> Stashed changes
+
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

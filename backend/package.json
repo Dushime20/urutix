@@ -22,9 +22,6 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-<<<<<<< Updated upstream
-    "test:e2e": "jest --config ./test/jest-e2e.json"
-=======
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/config/database-postgres.config.ts src/migrations/AutoMigration",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
@@ -64,12 +61,6 @@
     "seed:matching": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-data.ts",
     "seed:matching-demo": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-demo.ts",
     "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts"
-  },
-  "devDependencies": {
-    "@nestjs/cli": "^11.0.14",
-    "ts-loader": "^9.5.4",
-    "typescript": "^5.9.3"
->>>>>>> Stashed changes
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
