@@ -33,9 +33,9 @@ export class OnboardingController {
         }
         const tenant = await this.tenantService.findTenantById(user.tenantId);
         return {
-            step: tenant.onboardingStep,
+            step: 0, // tenant.onboardingStep, // TODO: Add onboardingStep to Tenant entity
             status: tenant.status,
-            kycStatus: tenant.kycStatus,
+            // kycStatus: tenant.kycStatus, // TODO: Add kycStatus to Tenant entity
             tenant,
         };
     }
@@ -91,10 +91,18 @@ export class OnboardingController {
         const user = req.user as any;
         const tenant = await this.tenantService.findTenantById(user.tenantId);
 
+<<<<<<< Updated upstream:_cleanup_archive/backend_src_cleanup/modules/onboarding/onboarding.controller.ts
         // Basic validation - check if all onboarding steps are completed
         if (tenant.onboardingStep < 4 && process.env.NODE_ENV !== 'development') {
             throw new BadRequestException('Please complete all onboarding steps first');
         }
+=======
+        // Basic validation
+        // TODO: Add onboardingStep to Tenant entity
+        // if (tenant.onboardingStep < 4 && process.env.NODE_ENV !== 'development') {
+        //     throw new BadRequestException('Please complete all steps first');
+        // }
+>>>>>>> Stashed changes:backend/src/modules/onboarding/onboarding.controller.ts
 
         // Auto-activate if KYC is not strictly required for basic access, 
         // or set to ACTIVE but restrict features depending on KYC.

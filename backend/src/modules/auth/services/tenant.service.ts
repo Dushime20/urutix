@@ -496,8 +496,12 @@ export class TenantService {
       tenantId: tenant.id,
       name: tenant.name,
       status: tenant.status,
+<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
       kycStatus: tenant.kycStatus,
       onboardingStep: tenant.onboardingStep,
+=======
+      // kycStatus: tenant.kycStatus, // TODO: Add KYC fields to Tenant entity
+>>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
       // Add more stats as needed
     };
   }
@@ -505,10 +509,17 @@ export class TenantService {
   async submitKYC(id: string, kycData: any): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
 
+<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
     // Update tenant KYC data and status
     tenant.kycData = { ...tenant.kycData, ...kycData };
     tenant.kycStatus = KycStatus.SUBMITTED;
     tenant.kycSubmittedAt = new Date();
+=======
+    // TODO: Add KYC fields to Tenant entity
+    // tenant.kycData = { ...tenant.kycData, ...kycData };
+    // tenant.kycStatus = 'SUBMITTED';
+    // tenant.kycSubmittedAt = new Date();
+>>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
 
     // Auto-update standard fields if provided in KYC
     if (kycData.registrationNumber) tenant.businessLicense = kycData.registrationNumber;
@@ -521,6 +532,7 @@ export class TenantService {
   async updateKYCStatus(id: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
 
+<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
     // Map string status to enum
     const kycStatusMap = {
       'APPROVED': KycStatus.APPROVED,
@@ -530,9 +542,14 @@ export class TenantService {
 
     tenant.kycStatus = kycStatusMap[status];
     tenant.kycNotes = notes;
+=======
+    // TODO: Add KYC fields to Tenant entity
+    // tenant.kycStatus = status;
+    // tenant.kycNotes = notes;
+>>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
 
     if (status === 'APPROVED') {
-      tenant.kycVerifiedAt = new Date();
+      // tenant.kycVerifiedAt = new Date();
       // Optionally activate tenant if they were pending activation
       if (tenant.status === TenantStatus.PENDING_ACTIVATION) {
         tenant.status = TenantStatus.ACTIVE;
@@ -546,6 +563,7 @@ export class TenantService {
   }
 
   async getTenantsByKYCStatus(status: 'PENDING' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE'): Promise<Tenant[]> {
+<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
     // Map string status to enum
     const kycStatusMap = {
       'PENDING': KycStatus.PENDING,
@@ -558,11 +576,18 @@ export class TenantService {
     return this.tenantRepository.find({
       where: { kycStatus: kycStatusMap[status] },
       order: { kycSubmittedAt: 'DESC' }
+=======
+    // TODO: Add KYC fields to Tenant entity
+    return this.tenantRepository.find({
+      // where: { kycStatus: status },
+      // order: { kycSubmittedAt: 'DESC' }
+>>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
     });
   }
 
   async updateOnboardingStep(id: string, step: number): Promise<Tenant> {
     const tenant = await this.findTenantById(id);
+<<<<<<< Updated upstream:backend/src/modules/auth/services/tenant.service.ts
     
     // Since onboardingStep is now an integer in the database, just set it directly
     tenant.onboardingStep = step;
@@ -571,6 +596,10 @@ export class TenantService {
     //   tenant.onboardingCompletedAt = new Date(); // Column doesn't exist in database
     // }
 
+=======
+    // TODO: Add onboardingStep field to Tenant entity
+    // tenant.onboardingStep = step;
+>>>>>>> Stashed changes:backend/src/modules/auth/tenant.service.ts
     return this.tenantRepository.save(tenant);
   }
 

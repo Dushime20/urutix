@@ -344,6 +344,25 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BrokerTransporterCredit,
     BrokerMultiStopLoad,
     BrokerTransporterPerformance,
+<<<<<<< Updated upstream
+=======
+    // Admin entities
+    ActivityLog,
+    UserSession,
+    Permission,
+    Role,
+    UserPermissionOverride,
+    SystemSettings,
+    // Subscription entities
+    SubscriptionPlan,
+    TenantSubscription,
+    SubscriptionPayment,
+    CreditAccount,
+    CreditTransaction,
+    CreditPackage,
+    FeatureCreditCost,
+    CreditPricingRule,
+>>>>>>> Stashed changes
     // Fuel entities
     FuelLog,
     // Core/Security entities
