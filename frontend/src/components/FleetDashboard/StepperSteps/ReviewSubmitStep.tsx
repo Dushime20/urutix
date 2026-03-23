@@ -85,7 +85,12 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
 
   const driverFields = [
     'firstName', 'lastName', 'licenseNumber', 'licenseType', 'experience',
-    'contactInfo.phone', 'contactInfo.email'
+    'contactInfo.phone', 'contactInfo.email', 'employmentType', 'hireDate', 'status'
+  ];
+
+  const driverComplianceFields = [
+    'medicalCertExpiry', 'drugTestDate', 'backgroundCheckDate', 'trainingCompletionDate',
+    'hourlyRate', 'mileageRate'
   ];
 
   const renderDriverCertifications = () => {
@@ -141,6 +146,12 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
             <FaUser className="w-5 h-5 text-gray-600" />,
             formData,
             driverFields
+          )}
+          {renderSection(
+            'Compliance & Financials',
+            <FaShieldAlt className="w-5 h-5 text-gray-600" />,
+            formData,
+            driverComplianceFields
           )}
           {renderDriverCertifications()}
         </>

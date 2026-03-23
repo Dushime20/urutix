@@ -490,6 +490,84 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
         </div>
       </div>
 
+      {/* Compliance & Safety */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-medium text-gray-800 flex items-center">
+          <FaIdCard className="w-5 h-5 mr-2 text-gray-600" />
+          Compliance & Safety
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Medical Certificate Expiry</label>
+            <input
+              type="date"
+              value={formData.medicalCertExpiry || ''}
+              onChange={(e) => handleInputChange('medicalCertExpiry', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Last Drug Test Date</label>
+            <input
+              type="date"
+              value={formData.drugTestDate || ''}
+              onChange={(e) => handleInputChange('drugTestDate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Background Check Date</label>
+            <input
+              type="date"
+              value={formData.backgroundCheckDate || ''}
+              onChange={(e) => handleInputChange('backgroundCheckDate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Training Completion Date</label>
+            <input
+              type="date"
+              value={formData.trainingCompletionDate || ''}
+              onChange={(e) => handleInputChange('trainingCompletionDate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Financial Details */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-medium text-gray-800 flex items-center">
+          <FaPlus className="w-5 h-5 mr-2 text-gray-600" />
+          Financial Details (Optional)
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Hourly Rate ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.hourlyRate || ''}
+              onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Mileage Rate ($/km)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.mileageRate || ''}
+              onChange={(e) => handleInputChange('mileageRate', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Additional Information */}
       <div className="space-y-4">
         <h4 className="text-lg font-medium text-gray-800">Additional Information</h4>
