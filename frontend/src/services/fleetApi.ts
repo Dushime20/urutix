@@ -21,7 +21,7 @@ export interface Truck {
   };
   currentAddress?: string;
   currentDriverId?: string;
-  currentDriver?: FleetDriver;
+  currentDriver?: Driver;
   ownerId: string;
   owner?: {
     id: string;
@@ -46,21 +46,41 @@ export interface Truck {
   }>;
 }
 
-export interface FleetDriver {
+export interface Driver {
   id: string;
   userId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
+  address?: string;
+  dateOfBirth?: string;
   licenseNumber: string;
   licenseClasses?: string[];
-  licenseExpiryDate?: string;
+  licenseIssueDate?: string;
+  licenseExpiry?: string;
+  licenseState?: string;
+  licenseCountry?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ON_LEAVE' | 'TERMINATED' | 'IN_TRANSIT';
-  experienceYears?: number;
-  rating?: number;
+  availabilityStatus: string;
+  employmentType?: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'OWNER_OPERATOR' | 'FREELANCE';
+  hireDate?: string;
+  terminationDate?: string;
   currentTruckId?: string;
   tenantId: string;
+  experienceYears?: number;
+  experience?: number; // Computed field from backend
+  rating?: number;
+  totalTrips?: number;
+  totalDistance?: number;
+  safetyScore?: number;
+  onTimeDeliveryRate?: number;
+  hoursWorkedThisWeek?: number;
+  hoursWorkedThisMonth?: number;
+  medicalCertExpiry?: string;
+  drugTestDate?: string;
+  backgroundCheckDate?: string;
+  trainingCompletionDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -167,6 +187,7 @@ export interface CreateDriverDto {
 export interface FleetFilters {
   search?: string;
   status?: string;
+  availabilityStatus?: string;
   location?: string;
   page?: number;
   limit?: number;
@@ -232,38 +253,38 @@ export const fleetApi = {
   },
 
   // Driver operations
-  getDrivers: async (filters?: FleetFilters): Promise<FleetDriver[]> => {
-    const response = await api.get<FleetApiResponse<FleetDriver[]>>('/fleet/drivers', {
+  getDrivers: async (filters?: FleetFilters): Promise<Driver[]> => {
+    const response = await api.get<FleetApiResponse<Driver[]>>('/fleet/drivers', {
       params: filters,
     });
     return response.data.drivers || response.data.data || [];
   },
 
-  getDriver: async (id: string): Promise<FleetDriver> => {
-    const response = await api.get<FleetApiResponse<FleetDriver>>(`/fleet/drivers/${id}`);
+  getDriver: async (id: string): Promise<Driver> => {
+    const response = await api.get<FleetApiResponse<Driver>>(`/fleet/drivers/${id}`);
     const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Driver not found');
     }
-    return driver as FleetDriver;
+    return driver as Driver;
   },
 
-  createDriver: async (data: CreateDriverDto): Promise<FleetDriver> => {
-    const response = await api.post<FleetApiResponse<FleetDriver>>('/fleet/drivers', data);
+  createDriver: async (data: CreateDriverDto): Promise<Driver> => {
+    const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', data);
     const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Failed to create driver');
     }
-    return driver as FleetDriver;
+    return driver as Driver;
   },
 
-  updateDriver: async (id: string, data: Partial<CreateDriverDto>): Promise<FleetDriver> => {
-    const response = await api.patch<FleetApiResponse<FleetDriver>>(`/fleet/drivers/${id}`, data);
+  updateDriver: async (id: string, data: Partial<CreateDriverDto>): Promise<Driver> => {
+    const response = await api.patch<FleetApiResponse<Driver>>(`/fleet/drivers/${id}`, data);
     const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Failed to update driver');
     }
-    return driver as FleetDriver;
+    return driver as Driver;
   },
 
   deleteDriver: async (id: string): Promise<void> => {
