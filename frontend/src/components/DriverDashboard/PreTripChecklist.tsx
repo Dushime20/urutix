@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { toast } from 'react-hot-toast';
+import { safetyApi, InspectionTypes, InspectionStatuses, type InspectionType, type InspectionStatus } from '../../services/safetyApi';
 
 interface ChecklistItem {
   id: string;
@@ -31,7 +32,21 @@ interface ChecklistCategory {
   items: ChecklistItem[];
 }
 
-export const PreTripChecklist: React.FC = () => {
+interface PreTripChecklistProps {
+  truckId?: string;
+  truckPlate?: string;
+  driverId?: string;
+  driverName?: string;
+  onComplete?: () => void;
+}
+
+export const PreTripChecklist: React.FC<PreTripChecklistProps> = ({
+  truckId,
+  truckPlate,
+  driverId,
+  driverName,
+  onComplete
+}) => {
   const [categories, setCategories] = useState<ChecklistCategory[]>([
     {
       id: 'ext',
@@ -51,8 +66,6 @@ export const PreTripChecklist: React.FC = () => {
       icon: Droplet,
       items: [
         { id: 'eng-1', label: 'Engine Oil Level', status: 'pending' },
-        { id: 'eng-2', label: 'Coolant Level', status: 'pending' },
-        { id: 'eng-3', label: 'Windshield Washer Fluid', status: 'pending' },
         { id: 'eng-4', label: 'Fuel Level & DEF', status: 'pending' },
         { id: 'eng-5', label: 'Belts & Hoses Condition', status: 'pending' },
       ]
@@ -65,7 +78,6 @@ export const PreTripChecklist: React.FC = () => {
         { id: 'saf-1', label: 'Fire Extinguisher Charge', status: 'pending' },
         { id: 'saf-2', label: 'Reflective Triangles', status: 'pending' },
         { id: 'saf-3', label: 'First Aid Kit', status: 'pending' },
-        { id: 'saf-4', label: 'Seat Belts Functionality', status: 'pending' },
       ]
     },
     {
@@ -76,7 +88,6 @@ export const PreTripChecklist: React.FC = () => {
         { id: 'sys-1', label: 'Air Brake Test', status: 'pending' },
         { id: 'sys-2', label: 'Horn Functionality', status: 'pending' },
         { id: 'sys-3', label: 'Wipers & Washer', status: 'pending' },
-        { id: 'sys-4', label: 'Dashboard Indicators', status: 'pending' },
       ]
     },
     {
@@ -86,14 +97,14 @@ export const PreTripChecklist: React.FC = () => {
       items: [
         { id: 'doc-1', label: 'Vehicle Registration', status: 'pending' },
         { id: 'doc-2', label: 'Insurance Certificate', status: 'pending' },
-        { id: 'doc-3', label: 'Transit Permits', status: 'pending' },
-        { id: 'doc-4', label: 'Cargo Manifest / Waybill', status: 'pending' },
         { id: 'doc-5', label: 'Driver License', status: 'pending' },
       ]
     }
   ]);
 
   const [expandedCategory, setExpandedCategory] = useState<string | null>('ext');
+  const [signature, setSignature] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleStatus = (catId: string, itemId: string) => {
     setCategories(prev => prev.map(cat => {
@@ -118,19 +129,49 @@ export const PreTripChecklist: React.FC = () => {
   };
 
   const isFullyCompleted = () => {
-    return categories.flatMap(c => c.items).every(i => i.status !== 'pending');
+    return categories.flatMap(c => c.items).every(i => i.status !== 'pending') && signature.trim().length > 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isFullyCompleted()) {
-      toast.error("Please complete all check items before submitting.");
+      toast.error("Please complete all check items and sign before submitting.");
       return;
     }
-    const hasFailures = categories.flatMap(c => c.items).some(i => i.status === 'fail');
-    if (hasFailures) {
-      toast.error("Critical failures detected. Please report maintenance issues.");
-    } else {
-      toast.success("Pre-trip inspection completed successfully!");
+
+    setIsSubmitting(true);
+    const allItems = categories.flatMap(cat => cat.items.map(item => ({
+      id: item.id,
+      category: cat.title,
+      item: item.label,
+      status: item.status === 'ok' ? 'passed' : 'failed'
+    })));
+
+    const hasFailures = allItems.some(i => i.status === 'failed');
+    
+    try {
+      await safetyApi.createInspection({
+        type: InspectionTypes.PRE_TRIP,
+        inspector: signature,
+        inspectionDate: new Date().toISOString(),
+        truckId,
+        truckPlate,
+        driverId,
+        driverName,
+        status: hasFailures ? InspectionStatuses.FAILED : InspectionStatuses.PASSED,
+        items: allItems,
+        notes: `Pre-trip inspection signed by ${signature}`
+      });
+
+      toast.success("Pre-trip inspection submitted successfully!");
+      if (hasFailures) {
+        toast.error("Warning: Critical failures detected. Maintenance informed.");
+      }
+      onComplete?.();
+    } catch (error) {
+      console.error('Failed to submit inspection:', error);
+      toast.error("Failed to submit inspection report.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -250,6 +291,8 @@ export const PreTripChecklist: React.FC = () => {
             <div className="relative">
                 <input 
                     type="text" 
+                    value={signature}
+                    onChange={(e) => setSignature(e.target.value)}
                     placeholder="Enter your full name to sign"
                     className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-6 font-medium italic text-slate-600 focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 transition-all shadow-inner"
                 />
@@ -259,14 +302,19 @@ export const PreTripChecklist: React.FC = () => {
 
         <button
           onClick={handleSubmit}
+          disabled={!isFullyCompleted() || isSubmitting}
           className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg ${
-            isFullyCompleted() 
+            isFullyCompleted() && !isSubmitting
               ? 'bg-primary-600 text-white shadow-primary-200 hover:bg-primary-700 active:scale-[0.98]' 
               : 'bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed opacity-50'
           }`}
         >
-          <ShieldAlert size={18} />
-          <TranslatedText text="Certify & Start Mission" />
+          {isSubmitting ? <TranslatedText text="Submitting..." /> : (
+            <>
+              <ShieldAlert size={18} />
+              <TranslatedText text="Certify & Start Mission" />
+            </>
+          )}
         </button>
         <p className="mt-6 text-center text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] leading-relaxed">
           <TranslatedText text="Legal Certification: Mission Ready • Vehicle Operations Safe" />

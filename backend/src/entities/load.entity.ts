@@ -16,6 +16,7 @@ import { Location } from './location.entity';
 import { Trip } from './trip.entity';
 import { Bid } from './bid.entity';
 import { Auction } from './auction.entity';
+import { Truck } from './truck.entity';
 
 // LoadLocation interface for JSON structure
 export interface LoadLocation {
@@ -522,6 +523,14 @@ export class Load {
   @ManyToOne(() => User, (user) => user.brokerLoads, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'brokerId' })
   broker?: User;
+
+  @ManyToOne(() => Truck, { nullable: true })
+  @JoinColumn({ name: 'assignedTruckId' })
+  assignedTruck?: Truck;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'assignedCarrierId' }) // Re-using carrier id for driver in some contexts, or add assignedDriverId
+  assignedDriver?: User;
 
   @OneToMany('Trip', 'load')
   trips: Trip[];

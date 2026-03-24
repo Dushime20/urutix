@@ -181,7 +181,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Active Trips', path: '/dashboard/trips' },
             { label: 'Freight Bidding', path: '/dashboard/fleet/bids' },
             { label: 'Route Planning', path: '/dashboard/fleet/routes' },
-            { label: 'Settlement Desk', path: '/dashboard/fleet/financial' },
+            { label: 'Financial Hub', path: '/dashboard/fleet/financial' },
+            { label: 'Expense Registry', path: '/dashboard/fleet/expenses' },
             { label: 'Line of Credit', path: '/dashboard/fleet/credits' },
             { label: 'Performance Analytics', path: '/dashboard/fleet/analytics' },
           ]

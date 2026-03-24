@@ -530,8 +530,30 @@ const DriverDashboard: React.FC = () => {
         )}
 
         {activeTab === 'cargo' && <CargoManagement driverId={driverId} />}
-        {activeTab === 'checklist' && <div className="max-w-4xl mx-auto"><PreTripChecklist /></div>}
-        {activeTab === 'post_trip' && <div className="max-w-4xl mx-auto"><PostTripChecklist /></div>}
+        {activeTab === 'checklist' && (
+          <div className="max-w-4xl mx-auto">
+            <PreTripChecklist 
+              truckId={currentTrip?.truck?.id}
+              truckPlate={currentTrip?.truck?.plateNumber}
+              driverId={driverId}
+              driverName={driver ? `${driver.firstName} ${driver.lastName}` : user?.email}
+              onComplete={() => setActiveTab('overview')}
+            />
+          </div>
+        )}
+        {activeTab === 'post_trip' && (
+          <div className="max-w-4xl mx-auto">
+            <PostTripChecklist 
+              truckId={currentTrip?.truck?.id}
+              truckPlate={currentTrip?.truck?.plateNumber}
+              driverId={driverId}
+              driverName={driver ? `${driver.firstName} ${driver.lastName}` : user?.email}
+              onComplete={(data) => {
+                confirmTripCompletion(data);
+              }}
+            />
+          </div>
+        )}
         {activeTab === 'trips' && <TripsManagement driverId={driverId} />}
         {activeTab === 'earnings' && <EarningsOverview driverId={driverId} />}
         {activeTab === 'wallet' && <WalletAdvances driverId={driverId} />}
