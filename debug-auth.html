@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Authentication</title>
+</head>
+<body>
+    <h1>Authentication Debug</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        function debugAuth() {
+            const debugInfo = document.getElementById('debug-info');
+            
+            // Check localStorage
+            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            const user = localStorage.getItem('user');
+            const tenantId = localStorage.getItem('tenantId');
+            
+            let userObj = null;
+            try {
+                userObj = user ? JSON.parse(user) : null;
+            } catch (e) {
+                console.error('Error parsing user:', e);
+            }
+            
+            const info = `
+                <h2>LocalStorage Contents:</h2>
+                <p><strong>Access Token:</strong> ${accessToken ? 'Present (' + accessToken.substring(0, 20) + '...)' : 'Missing'}</p>
+                <p><strong>Refresh Token:</strong> ${refreshToken ? 'Present (' + refreshToken.substring(0, 20) + '...)' : 'Missing'}</p>
+                <p><strong>Tenant ID:</strong> ${tenantId || 'Missing'}</p>
+                <p><strong>User:</strong> ${user ? 'Present' : 'Missing'}</p>
+                
+                ${userObj ? `
+                <h3>User Details:</h3>
+                <p><strong>ID:</strong> ${userObj.id || 'Missing'}</p>
+                <p><strong>Email:</strong> ${userObj.email || 'Missing'}</p>
+                <p><strong>Role:</strong> ${userObj.role || 'Missing'}</p>
+                <p><strong>Tenant ID:</strong> ${userObj.tenantId || 'Missing'}</p>
+                <p><strong>Status:</strong> ${userObj.status || 'Missing'}</p>
+                ` : ''}
+                
+                <h2>Test API Call:</h2>
+                <button onclick="testAPI()">Test Fleet API</button>
+                <div id="api-result"></div>
+            `;
+            
+            debugInfo.innerHTML = info;
+        }
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            const accessToken = localStorage.getItem('accessToken');
+            const tenantId = localStorage.getItem('tenantId');
+            
+            if (!accessToken) {
+                resultDiv.innerHTML = '<p style="color: red;">No access token found!</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3005/api/fleet/trucks?limit=5', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'X-Tenant-ID': tenantId || '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                
+                resultDiv.innerHTML = `
+                    <h3>API Response:</h3>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Response:</strong></p>
+                    <pre style="background: #f5f5f5; padding: 10px; overflow: auto;">${data}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run debug on page load
+        debugAuth();
+    </script>
+</body>
+</html>

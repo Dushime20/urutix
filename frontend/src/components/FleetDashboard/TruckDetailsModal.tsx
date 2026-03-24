@@ -42,7 +42,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
     // Fetch truck data
     const { data: truckData, isLoading, error } = useQuery({
         queryKey: ['truck-details', truckId],
-        queryFn: () => fleetApi.getTruckById(truckId!),
+        queryFn: () => fleetApi.getTruck(truckId!),
         enabled: !!truckId && isOpen,
         retry: 1,
     });

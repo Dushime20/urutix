@@ -27,7 +27,7 @@ import {
 import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { errorMessage } from 'src/utils/error';
+import { errorMessage } from '../../utils/error';
 import { UserRole } from '../../entities/user.entity';
 
 @ApiTags('Bidding & Auctions')

@@ -20,7 +20,8 @@ import {
   Star,
   AlertTriangle,
   Fuel,
-  MessageSquare
+  MessageSquare,
+  Link
 } from 'lucide-react';
 import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -31,6 +32,7 @@ import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
 import { FinancialManagement } from './FinancialManagement';
 import { RouteAssignmentManager } from './RouteAssignmentManager';
+import FleetAssignmentManager from './FleetAssignmentManager';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardHeader from '../Layout/DashboardHeader';
 import DashboardFooter from '../Layout/DashboardFooter';
@@ -89,7 +91,7 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'matches' | 'fuel' | 'credits' | 'communicate'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate'>('overview');
 
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'trucks' | 'drivers'>('trucks');
@@ -101,12 +103,12 @@ export const FleetDashboard: React.FC = () => {
 
   // ── Role Based Access Control ──────────────────────────────────────────────
   const rolePermissions: Record<string, string[]> = {
-    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'matches', 'analytics', 'communicate'],
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'assignments', 'matches', 'analytics', 'communicate'],
     'FLEET_ACCOUNTANT': ['overview', 'financial', 'credits', 'fuel', 'analytics'],
     'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
   };
@@ -131,6 +133,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/safety')) setActiveTab('safety');
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
+    else if (path.includes('/fleet/assignments')) setActiveTab('assignments');
     else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
     else if (path.includes('/fleet/credits')) setActiveTab('credits');
     else if (path.includes('/fleet/communicate') || path.includes('/fleet/communication')) setActiveTab('communicate');
@@ -713,8 +716,9 @@ export const FleetDashboard: React.FC = () => {
                         activeTab === 'safety' ? <Shield size={28} /> :
                           activeTab === 'financial' ? <CreditCard size={28} /> :
                             activeTab === 'routes' ? <Navigation size={28} /> :
-                              activeTab === 'matches' ? <Zap size={28} /> :
-                                activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
+                              activeTab === 'assignments' ? <Link size={28} /> :
+                                activeTab === 'matches' ? <Zap size={28} /> :
+                                  activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
                   </div>
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
@@ -723,8 +727,9 @@ export const FleetDashboard: React.FC = () => {
                           activeTab === 'safety' ? <TranslatedText text="Safety" /> :
                             activeTab === 'financial' ? <TranslatedText text="Financials" /> :
                               activeTab === 'routes' ? <TranslatedText text="Routes" /> :
-                                activeTab === 'matches' ? <TranslatedText text="Matches" /> :
-                                  activeTab === 'communicate' ? <TranslatedText text="Communication" /> : <TranslatedText text="Drivers" />}
+                                activeTab === 'assignments' ? <TranslatedText text="Assignments" /> :
+                                  activeTab === 'matches' ? <TranslatedText text="Matches" /> :
+                                    activeTab === 'communicate' ? <TranslatedText text="Communication" /> : <TranslatedText text="Drivers" />}
                     </h2>
                     <p className="text-sm font-medium text-slate-500">
                       <TranslatedText text="Status" />: <span className="text-emerald-500 font-black"><TranslatedText text="Active" /></span>
@@ -761,6 +766,8 @@ export const FleetDashboard: React.FC = () => {
                   <FinancialManagement />
                 ) : activeTab === 'routes' ? (
                   <RouteAssignmentManager />
+                ) : activeTab === 'assignments' ? (
+                  <FleetAssignmentManager />
                 ) : activeTab === 'drivers' ? (
                   <DriversList onAddDriver={handleCreateDriver} />
                 ) : activeTab === 'trucks' ? (

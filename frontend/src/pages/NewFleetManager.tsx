@@ -344,7 +344,7 @@ const NewFleetManager: React.FC = () => {
 
     const handleEditTruck = async (truckId: string) => {
         try {
-            const truck = await fleetApi.getTruckById(truckId);
+            const truck = await fleetApi.getTruck(truckId);
             if (truck) {
                 setEditingTruck(truck);
                 setFormMode('edit');

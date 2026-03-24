@@ -178,6 +178,12 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 
 	return (
 		<div className="space-y-8 pb-12">
+			{/* Debug Info */}
+			{selectedDriver && (
+				<div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-[10000]">
+					Selected: {selectedDriver.firstName} {selectedDriver.lastName}
+				</div>
+			)}
 			{/* Stats Matrix */}
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
 				<CircularStatsCard
@@ -283,7 +289,12 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 							</div>
 							<div className="flex items-center gap-2">
 								<button
-									onClick={() => setSelectedDriver(driver)}
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										console.log('View button clicked for driver:', driver.id, driver.firstName, driver.lastName);
+										setSelectedDriver(driver);
+									}}
 									className="flex-1 h-10 bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-100 transition-all"
 								>
 									View
@@ -322,201 +333,24 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 				</div>
 			)}
 
-			{/* Details Portal */}
-			<AnimatePresence>
-				{selectedDriver && createPortal(
-					<div className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setSelectedDriver(null)}>
-						<motion.div
-							initial={{ opacity: 0, scale: 0.9, y: 20 }}
-							animate={{ opacity: 1, scale: 1, y: 0 }}
-							exit={{ opacity: 0, scale: 0.9, y: 20 }}
-							className="bg-white rounded-[40px] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-							onClick={(e) => e.stopPropagation()}
+			{/* Details Portal - Simplified for testing */}
+			{selectedDriver && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001] p-4">
+					<div className="bg-white rounded-lg p-6 max-w-md w-full">
+						<h2 className="text-xl font-bold mb-4">
+							{selectedDriver.firstName} {selectedDriver.lastName}
+						</h2>
+						<p className="mb-4">Email: {selectedDriver.email}</p>
+						<p className="mb-4">Status: {selectedDriver.status}</p>
+						<button
+							onClick={() => setSelectedDriver(null)}
+							className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
 						>
-							{/* Header Section */}
-							<div className="p-8 bg-primary-500 text-white relative overflow-hidden shrink-0">
-								<div className="absolute top-0 right-0 p-8 opacity-10"><Zap size={140} /></div>
-								<div className="flex items-center gap-6 relative z-10">
-									<div className="size-20 bg-white/20 rounded-[32px] flex items-center justify-center backdrop-blur-md border border-white/20">
-										<Users size={40} />
-									</div>
-									<div className="flex-1">
-										<div className="flex items-center gap-3 mb-1">
-											<h2 className="text-3xl font-black tracking-tight">{selectedDriver.firstName} {selectedDriver.lastName}</h2>
-											<div className={`px-3 py-1 rounded-full border border-white/20 bg-white/10 text-[9px] font-black uppercase tracking-widest`}>
-												{selectedDriver.status}
-											</div>
-										</div>
-										<p className="text-primary-100/80 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-											<Mail size={12} /> {selectedDriver.email}
-											{selectedDriver.phone && (
-												<>
-													<span className="opacity-30">|</span>
-													<Phone size={12} /> {selectedDriver.phone}
-												</>
-											)}
-										</p>
-									</div>
-									<button onClick={() => setSelectedDriver(null)} className="size-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all shrink-0">
-										<X size={20} />
-									</button>
-								</div>
-							</div>
-
-							{/* Scrollable Body */}
-							<div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-									<div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 flex flex-col items-center justify-center text-center">
-										<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Driver Rating</p>
-										<div className="flex items-center gap-1 text-2xl font-black text-slate-900">
-											<Star size={20} className="fill-amber-400 text-amber-400" />
-											{selectedDriver.rating ? Number(selectedDriver.rating).toFixed(1) : '4.8'}
-										</div>
-									</div>
-									<div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 flex flex-col items-center justify-center text-center">
-										<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Trips</p>
-										<div className="text-2xl font-black text-slate-900">
-											{selectedDriver.totalTrips || '154'}
-										</div>
-									</div>
-									<div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 flex flex-col items-center justify-center text-center">
-										<p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Safety Score</p>
-										<div className="text-2xl font-black text-emerald-600">
-											{selectedDriver.safetyScore ? `${selectedDriver.safetyScore}%` : '98%'}
-										</div>
-									</div>
-								</div>
-
-								{/* Info Sections */}
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-									{/* Credentials & Identity */}
-									<div className="space-y-6">
-										<div>
-											<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
-												<CreditCard size={14} /> License & Credentials
-											</h4>
-											<div className="space-y-4 bg-slate-50/50 p-6 rounded-[28px] border border-slate-100">
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">License Number</span>
-													<span className="text-[11px] font-black text-slate-900">{selectedDriver.licenseNumber}</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">State / Country</span>
-													<span className="text-[11px] font-black text-slate-900">{selectedDriver.licenseState || 'N/A'}, {selectedDriver.licenseCountry || 'N/A'}</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expiry Date</span>
-													<span className={cn(
-														"text-[11px] font-black",
-														selectedDriver.licenseExpiry && new Date(selectedDriver.licenseExpiry) < new Date() ? 'text-rose-500' : 'text-slate-900'
-													)}>
-														{selectedDriver.licenseExpiry ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}
-													</span>
-												</div>
-												<div className="flex flex-wrap gap-1 mt-2">
-													{(selectedDriver.licenseClasses || ['CDL A', 'HAZMAT']).map((cls: string) => (
-														<span key={cls} className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[8px] font-black text-slate-600">
-															{cls}
-														</span>
-													))}
-												</div>
-											</div>
-										</div>
-
-										<div>
-											<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
-												<CheckCircle2 size={14} /> Compliance Status
-											</h4>
-											<div className="grid grid-cols-2 gap-3">
-												{[
-													{ label: 'Medical Cert', date: selectedDriver.medicalCertExpiry, icon: Calendar },
-													{ label: 'Drug Test', date: selectedDriver.drugTestDate, icon: CheckCircle2 },
-													{ label: 'Background', date: selectedDriver.backgroundCheckDate, icon: ShieldCheck },
-													{ label: 'Training', date: selectedDriver.trainingCompletionDate, icon: Award },
-												].map((item, idx) => (
-													<div key={idx} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-														<div className="flex items-center gap-2 mb-1">
-															{item.icon && <item.icon size={10} className="text-slate-400" />}
-															<p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.label}</p>
-														</div>
-														<p className="text-[10px] font-black text-slate-900">
-															{item.date ? new Date(item.date).toLocaleDateString() : 'Pending'}
-														</p>
-													</div>
-												))}
-											</div>
-										</div>
-									</div>
-
-									{/* Employment & Stats */}
-									<div className="space-y-6">
-										<div>
-											<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
-												<Briefcase size={14} /> Employment & Records
-											</h4>
-											<div className="space-y-4 bg-slate-50/50 p-6 rounded-[28px] border border-slate-100">
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</span>
-													<span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{selectedDriver.employmentType?.replace('_', ' ') || 'FULL TIME'}</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hire Date</span>
-													<span className="text-[11px] font-black text-slate-900">{selectedDriver.hireDate ? new Date(selectedDriver.hireDate).toLocaleDateString() : 'N/A'}</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Experience</span>
-													<span className="text-[11px] font-black text-slate-900">{selectedDriver.experienceYears || selectedDriver.experience || 0} Years</span>
-												</div>
-												<div className="flex justify-between">
-													<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Distance</span>
-													<span className="text-[11px] font-black text-slate-900">{selectedDriver.totalDistance ? `${Number(selectedDriver.totalDistance).toLocaleString()} KM` : '0 KM'}</span>
-												</div>
-											</div>
-										</div>
-
-										<div>
-											<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
-												<Target size={14} /> Recent Performance
-											</h4>
-											<div className="bg-slate-900 rounded-[28px] p-6 text-white">
-												<div className="mb-4">
-													<div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">
-														<span>On-Time Delivery Rate</span>
-														<span className="text-emerald-400">{selectedDriver.onTimeDeliveryRate || '100'}%</span>
-													</div>
-													<div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-														<motion.div initial={{ width: 0 }} animate={{ width: `${selectedDriver.onTimeDeliveryRate || 100}%` }} className="h-full bg-emerald-400" />
-													</div>
-												</div>
-												<div className="flex justify-between items-end border-t border-white/5 pt-4">
-													<div>
-														<p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Hours This Month</p>
-														<p className="text-xl font-black">{selectedDriver.hoursWorkedThisMonth || '168'}h</p>
-													</div>
-													<div className="text-right">
-														<p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Weekly Avg</p>
-														<p className="text-xl font-black">{selectedDriver.hoursWorkedThisWeek || '42'}h</p>
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<div className="p-8 border-t border-slate-50 shrink-0">
-								<button
-									onClick={() => setSelectedDriver(null)}
-									className="w-full py-4 bg-primary-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
-								>
-									Done viewing profile
-								</button>
-							</div>
-						</motion.div>
-					</div>,
-					document.body
-				)}
-			</AnimatePresence>
+							Close
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* Documents Portal */}
 			{viewingDocsFor && createPortal(

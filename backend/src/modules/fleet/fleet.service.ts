@@ -311,7 +311,21 @@ export class FleetService {
         .createQueryBuilder('truck')
         .leftJoinAndSelect('truck.owner', 'owner')
         .leftJoinAndSelect('owner.profile', 'ownerProfile')
-        .leftJoinAndSelect('truck.currentDriver', 'currentDriver')
+        .leftJoin('truck.currentDriver', 'currentDriver')
+        .addSelect([
+          'currentDriver.id',
+          'currentDriver.firstName', 
+          'currentDriver.lastName',
+          'currentDriver.status',
+          'currentDriver.rating',
+          'currentDriver.totalTrips',
+          'currentDriver.totalDistance',
+          'currentDriver.safetyScore',
+          'currentDriver.onTimeDeliveryRate',
+          'currentDriver.totalEarnings',
+          'currentDriver.hireDate',
+          'currentDriver.licenseIssueDate'
+        ])
         .where('truck.tenantId = :tenantId', { tenantId: tenantId })
         .andWhere('truck.isActive = :isActive', { isActive: true })
         .andWhere('truck.deletedAt IS NULL')
@@ -399,7 +413,15 @@ export class FleetService {
         console.warn(`   - All trucks have isActive = false`);
       }
       
-      return trucks;
+      // Calculate experience for currentDriver if it exists
+      const trucksWithDriverExperience = trucks.map(truck => {
+        if (truck.currentDriver) {
+          truck.currentDriver.experience = this.calculateExperience(truck.currentDriver);
+        }
+        return truck;
+      });
+      
+      return trucksWithDriverExperience;
     } catch (error) {
       console.error('❌ Fleet Service - Error finding trucks:', error);
       console.error('❌ Error message:', error.message);
@@ -1009,7 +1031,59 @@ export class FleetService {
     // Explicitly use the drivers table to ensure we're querying the correct table
     const query = this.driverRepository
       .createQueryBuilder('driver')
-      .select('driver') // Explicitly select from driver entity
+      .select([
+        'driver.id',
+        'driver.tenantId',
+        'driver.userId',
+        'driver.employerId',
+        'driver.employeeId',
+        'driver.firstName',
+        'driver.lastName',
+        'driver.email',
+        'driver.phone',
+        'driver.dateOfBirth',
+        'driver.address',
+        'driver.emergencyContact',
+        'driver.licenseNumber',
+        'driver.licenseClasses',
+        'driver.licenseIssueDate',
+        'driver.licenseExpiry',
+        'driver.licenseState',
+        'driver.licenseCountry',
+        'driver.endorsements',
+        'driver.restrictions',
+        'driver.employmentType',
+        'driver.hireDate',
+        'driver.terminationDate',
+        'driver.status',
+        'driver.availabilityStatus',
+        'driver.currentTruckId',
+        'driver.currentTripId',
+        'driver.currentLocation',
+        'driver.locationUpdatedAt',
+        'driver.hoursWorkedThisWeek',
+        'driver.hoursWorkedThisMonth',
+        'driver.lastBreakTime',
+        'driver.consecutiveDrivingHours',
+        'driver.medicalCertExpiry',
+        'driver.drugTestDate',
+        'driver.backgroundCheckDate',
+        'driver.trainingCompletionDate',
+        'driver.certifications',
+        'driver.rating',
+        'driver.totalTrips',
+        'driver.totalDistance',
+        'driver.safetyScore',
+        'driver.onTimeDeliveryRate',
+        'driver.hourlyRate',
+        'driver.mileageRate',
+        'driver.totalEarnings',
+        'driver.driverNotes',
+        'driver.preferences',
+        'driver.createdAt',
+        'driver.updatedAt',
+        'driver.deletedAt'
+      ])
       .where('driver.tenantId = :tenantId', { tenantId })
       .andWhere('driver.deletedAt IS NULL'); // Exclude soft-deleted drivers
     
@@ -2625,10 +2699,6 @@ export class FleetService {
       if (error?.code === '23502') {
         throw new BadRequestException('Missing required route fields');
       }
-      throw error;
-    }
-  }
-
       // Invalid enum or invalid numeric input
       if (
         error?.code === '22P02' ||
@@ -2974,15 +3044,28 @@ export class FleetService {
     try {
       this.logger.log(`🏆 Getting driver leaderboard for tenant: ${tenantId}, period: ${period}`);
 
-      const drivers = await this.driverRepository.find({
-        where: { tenantId, status: DriverStatus.ACTIVE },
-        order: {
-          safetyScore: 'DESC',
-          totalDistance: 'DESC',
-          rating: 'DESC',
-        },
-        take: 50,
-      });
+      const drivers = await this.driverRepository
+        .createQueryBuilder('driver')
+        .select([
+          'driver.id',
+          'driver.firstName',
+          'driver.lastName',
+          'driver.rating',
+          'driver.totalTrips',
+          'driver.totalDistance',
+          'driver.safetyScore',
+          'driver.onTimeDeliveryRate',
+          'driver.totalEarnings',
+          'driver.hireDate',
+          'driver.licenseIssueDate'
+        ])
+        .where('driver.tenantId = :tenantId', { tenantId })
+        .andWhere('driver.status = :status', { status: DriverStatus.ACTIVE })
+        .orderBy('driver.safetyScore', 'DESC')
+        .addOrderBy('driver.totalDistance', 'DESC')
+        .addOrderBy('driver.rating', 'DESC')
+        .limit(50)
+        .getMany();
 
       return drivers.map((driver, index) => ({
         id: driver.id,
@@ -2996,6 +3079,7 @@ export class FleetService {
         onTimeRate: Number(driver.onTimeDeliveryRate),
         totalEarnings: Number(driver.totalEarnings),
         league: this.calculateLeague(Number(driver.safetyScore), index + 1),
+        experience: this.calculateExperience(driver),
         trends: {
           safety: index % 3 === 0 ? 'up' : (index % 3 === 1 ? 'down' : 'stable'),
           trips: index % 2 === 0 ? 'up' : 'stable',

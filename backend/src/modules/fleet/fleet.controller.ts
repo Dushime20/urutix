@@ -3061,3 +3061,114 @@ export class FleetController {
     };
   }
 }
+  // Route assignment endpoints
+  @Post('trucks/:id/assign-route')
+  @ApiOperation({
+    summary: 'Assign route to truck',
+    description: 'Assigns a route to a specific truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        routeId: { type: 'string', description: 'Route ID (UUID)' },
+        startDate: { type: 'string', description: 'Assignment start date (optional)' },
+        notes: { type: 'string', description: 'Assignment notes (optional)' },
+      },
+      required: ['routeId'],
+    },
+    description: 'Route assignment data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Route assigned to truck successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or route not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async assignRouteToTruck(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() assignRouteDto: { routeId: string; startDate?: string; notes?: string },
+    @Request() req,
+  ) {
+    try {
+      console.log('🛣️ Assign Route to Truck Request:', {
+        truckId,
+        routeId: assignRouteDto.routeId,
+        userId: req.user?.userId,
+        tenantId: req.user?.tenantId,
+      });
+
+      const assignment = await this.fleetService.assignRouteToTruck(
+        assignRouteDto.routeId,
+        truckId,
+        req.user.userId,
+        req.user.tenantId,
+      );
+
+      return {
+        message: 'Route assigned to truck successfully',
+        assignment,
+      };
+    } catch (error) {
+      console.error('❌ Error in assignRouteToTruck controller:', error);
+      throw error;
+    }
+  }
+
+  @Delete('trucks/:id/assign-route/:routeId')
+  @ApiOperation({
+    summary: 'Unassign route from truck',
+    description: 'Removes a route assignment from a truck',
+  })
+  @ApiParam({ name: 'id', description: 'Truck ID (UUID)' })
+  @ApiParam({ name: 'routeId', description: 'Route ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Route unassigned from truck successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck, route, or assignment not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async unassignRouteFromTruck(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Param('routeId', ParseUUIDPipe) routeId: string,
+    @Request() req,
+  ) {
+    try {
+      await this.fleetService.unassignRouteFromTruck(
+        routeId,
+        truckId,
+        req.user.userId,
+        req.user.tenantId,
+      );
+
+      return {
+        message: 'Route unassigned from truck successfully',
+      };
+    } catch (error) {
+      console.error('❌ Error in unassignRouteFromTruck controller:', error);
+      throw error;
+    }
+  }
+
+  // Get assignments endpoint
+  @Get('assignments')
+  @ApiOperation({
+    summary: 'Get all fleet assignments',
+    description: 'Retrieves all driver-truck-route assignments',
+  })
+  @ApiResponse({ status: 200, description: 'Assignments retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getAssignments(@Request() req) {
+    try {
+      // This would be implemented to return combined assignments
+      // For now, return empty array as placeholder
+      return {
+        message: 'Assignments retrieved successfully',
+        assignments: [],
+      };
+    } catch (error) {
+      console.error('❌ Error in getAssignments controller:', error);
+      throw error;
+    }
+  }

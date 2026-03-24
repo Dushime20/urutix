@@ -105,7 +105,7 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             {/* Backdrop */}
             <div className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 

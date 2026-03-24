@@ -439,6 +439,34 @@ export const fleetApi = {
   unassignRouteFromTruck: async (truckId: string, routeId: string): Promise<void> => {
     await api.delete(`/fleet/trucks/${truckId}/routes/${routeId}`);
   },
+
+  // Assignment operations for fleet management
+  getAssignments: async (filters?: FleetFilters): Promise<any[]> => {
+    const response = await api.get<FleetApiResponse<any[]>>('/fleet/assignments', {
+      params: filters,
+    });
+    return response.data.data || [];
+  },
+
+  createAssignment: async (data: { driverId: string; truckId: string; routeId: string; startDate?: string; notes?: string }): Promise<any> => {
+    const response = await api.post<FleetApiResponse<any>>('/fleet/assignments', data);
+    return response.data.data || response.data;
+  },
+
+  updateAssignment: async (id: string, data: any): Promise<any> => {
+    const response = await api.patch<FleetApiResponse<any>>(`/fleet/assignments/${id}`, data);
+    return response.data.data || response.data;
+  },
+
+  deleteAssignment: async (id: string): Promise<void> => {
+    await api.delete(`/fleet/assignments/${id}`);
+  },
+
+  // Analytics
+  getFleetAnalytics: async (): Promise<any> => {
+    const response = await api.get<FleetApiResponse<any>>('/fleet/analytics');
+    return response.data.data || response.data.analytics || {};
+  },
 };
 
 export default fleetApi;

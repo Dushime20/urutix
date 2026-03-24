@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { PaginatorDto } from 'src/utils/paginator';
+import { PaginatorDto } from '../../../utils/paginator';
 import {
   IsString,
   IsEmail,

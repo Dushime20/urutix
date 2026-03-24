@@ -389,7 +389,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       console.log('Loading truck data for ID:', truckId);
       setLoading(true);
       try {
-        const truckData = await fleetApi.getTruckById(truckId);
+        const truckData = await fleetApi.getTruck(truckId);
         console.log('Setting truck data:', truckData);
         setTruck(truckData);
       } catch (error) {
