@@ -4,7 +4,12 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  HttpStatus,
+  HttpCode,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
@@ -22,6 +27,7 @@ import {
 import { SafetyIncident } from '../../entities/safety-incident.entity';
 import { Load, LoadStatus } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
+import { Trip, TripStatus } from '../../entities/trip.entity';
 import {
   CreateDriverDto,
   UpdateDriverDto,
@@ -38,6 +44,9 @@ import {
   EntityType,
   NotificationChannel,
 } from '../../entities/notification.entity';
+import { LoadsService } from '../loads/loads.service';
+import { TripsService } from '../trips/trips.service';
+import { CompleteDeliveryDto } from './dto/driver.dto';
 
 @Injectable()
 export class DriverService {
@@ -52,8 +61,12 @@ export class DriverService {
     private truckRepository: Repository<Truck>,
     @InjectRepository(SafetyIncident)
     private readonly safetyIncidentRepository: Repository<SafetyIncident>,
+    @InjectRepository(Trip)
+    private readonly tripRepository: Repository<Trip>,
     private readonly ocrService: OcrService,
     private readonly notificationService: NotificationService,
+    private readonly loadsService: LoadsService,
+    private readonly tripsService: TripsService,
   ) {}
 
   async createDriver(createDto: CreateDriverDto): Promise<Driver> {
@@ -120,6 +133,19 @@ export class DriverService {
       this.logger.error(`Failed to create driver: ${error.message}`);
       throw error;
     }
+  }
+
+  async getDriverByUserId(userId: string): Promise<Driver> {
+    const driver = await this.driverRepository.findOne({
+      where: { userId },
+      relations: ['truck', 'tenant'],
+    });
+
+    if (!driver) {
+      throw new NotFoundException(`Driver for user ${userId} not found`);
+    }
+
+    return driver;
   }
 
   async getAllDrivers(
@@ -1065,5 +1091,71 @@ export class DriverService {
       this.logger.error(`❌ Failed to report incident: ${error.message}`);
       throw error;
     }
+  }
+
+  async completeDelivery(
+    driverId: string,
+    completeDto: CompleteDeliveryDto,
+    tenantId: string,
+    photoFile?: Express.Multer.File,
+  ): Promise<any> {
+    this.logger.log(`Completing delivery for driver ${driverId} and load ${completeDto.loadId}`);
+    
+    // Find the driver to get the userId for audit
+    const driver = await this.driverRepository.findOne({
+      where: { id: driverId, tenantId },
+      relations: ['user']
+    });
+    
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+
+    // Call LoadsService to handle the core delivery logic
+    await this.loadsService.deliverLoad(
+      completeDto.loadId,
+      driver.userId,
+      tenantId,
+      photoFile,
+      completeDto.notes
+    );
+
+    // Also update any related trips to COMPLETED
+    const trips = await this.tripRepository.find({ where: { loadId: completeDto.loadId, tenantId } });
+    for (const trip of trips) {
+      if (trip.status !== TripStatus.COMPLETED) {
+        await this.tripsService.updateTripStatus(
+          trip.id, 
+          { 
+            status: TripStatus.COMPLETED,
+            actualEndTime: new Date()
+          }, 
+          tenantId
+        );
+      }
+    }
+
+    // Save additional POD information in metadata
+    // Use repository.update or findOne then save
+    const load = await this.loadRepository.findOne({ where: { id: completeDto.loadId } });
+    if (load) {
+      load.metadata = {
+        ...(load.metadata || {}),
+        pod: {
+          recipientName: completeDto.recipientName,
+          signatureBase64: completeDto.signatureBase64,
+          completedAt: new Date().toISOString(),
+          completedBy: driverId
+        }
+      };
+      await this.loadRepository.save(load);
+    }
+
+    return {
+      message: 'Delivery completed successfully',
+      loadId: completeDto.loadId,
+      status: 'DELIVERED',
+      pod: load?.metadata?.pod
+    };
   }
 }

@@ -543,6 +543,19 @@ export class FleetService {
   }
 
   // Driver operations
+  async findDriverByUserId(userId: string): Promise<Driver> {
+    const driver = await this.driverRepository.findOne({
+      where: { userId },
+      relations: ['truck', 'tenant', 'user'],
+    });
+
+    if (!driver) {
+      throw new NotFoundException(`Driver for user ${userId} not found`);
+    }
+
+    return driver;
+  }
+
   async createDriver(
     createDriverDto: CreateFleetDriverDto,
     userId: string,

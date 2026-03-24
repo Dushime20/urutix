@@ -56,6 +56,20 @@ export const safetyApi = {
   getCargoInspections: async () => {
     // We get cargo inspections from the assigned-loads endpoint which includes metadata
     return api.get('/loads-v2/assigned-loads');
+  },
+
+  // Incident operations
+  getIncidents: async (params?: any) => {
+    return api.get('/safety/incidents', { params });
+  },
+  getIncident: async (id: string) => {
+    return api.get(`/safety/incidents/${id}`);
+  },
+  updateIncident: async (id: string, data: any) => {
+    return api.put(`/safety/incidents/${id}`, data);
+  },
+  deleteIncident: async (id: string) => {
+    return api.delete(`/safety/incidents/${id}`);
   }
 };
 

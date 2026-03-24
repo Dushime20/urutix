@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
-import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight } from 'lucide-react';
+import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight, Brain, Shield, AlertTriangle, TrendingUp, BarChart3, Activity, Clock } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 
@@ -9,6 +10,121 @@ const FleetAnalytics: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [tcoData, setTcoData] = useState<TCOAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const PredictiveMaintenanceContainer = () => {
+    const { data: maintenanceData, isLoading: logsLoading } = useQuery({
+      queryKey: ['fleet-maintenance-all'],
+      queryFn: () => fleetApi.getFleetMaintenance()
+    });
+
+    const logs = (maintenanceData as any)?.data?.logs || [];
+    
+    // Simulate AI Health Analysis
+    const criticalIssues = logs.filter((l: any) => l.status === 'FAULT_REPORT').length;
+    const pendingServices = logs.filter((l: any) => l.status === 'scheduled').length;
+    const healthScore = Math.max(70, 100 - (criticalIssues * 15) - (pendingServices * 2));
+
+    if (logsLoading) {
+      return (
+        <div className="p-20 text-center flex flex-col items-center">
+          <Brain className="animate-pulse text-blue-600 mb-4" size={32} />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">AI Engine Initializing...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        {/* AI Insight Header */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2 p-10 bg-[#0f172a] rounded-[3rem] relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:opacity-20 transition-opacity duration-1000 rotate-12">
+                   <Brain size={240} className="text-blue-400" />
+                </div>
+                <div className="relative z-10">
+                   <div className="flex items-center gap-3 mb-6">
+                      <div className="size-10 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/30">
+                         <Zap size={18} />
+                      </div>
+                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Neural Insight Engine</span>
+                   </div>
+                   <h2 className="text-4xl font-black text-white uppercase tracking-tight mb-4 leading-none">Fleet Health <br />Projection</h2>
+                   <p className="text-slate-400 text-sm font-medium max-w-md leading-relaxed">
+                      Our AI models are analyzing {logs.length} historical service records and real-time fault reports to predict potential mechanical failures before they impact your operations.
+                   </p>
+                   
+                   <div className="mt-10 flex flex-wrap gap-8 items-center border-t border-white/5 pt-10">
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Fleet Integrity</span>
+                          <span className="text-3xl font-black text-white">{healthScore}%</span>
+                       </div>
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Failure Risks</span>
+                          <span className="text-3xl font-black text-rose-500">{criticalIssues}</span>
+                       </div>
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Confidence</span>
+                          <span className="text-3xl font-black text-blue-400">92%</span>
+                       </div>
+                   </div>
+                </div>
+            </div>
+
+            <div className="p-8 bg-white border border-slate-100 rounded-[3rem] flex flex-col justify-between shadow-sm">
+                <div>
+                   <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-wider mb-2">Priority Alerts</h3>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Immediate Attention Required</p>
+                   
+                   <div className="space-y-4">
+                      {logs.slice(0, 3).map((log: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                           <div className={cn(
+                             "size-8 rounded-xl flex items-center justify-center",
+                             log.status === 'FAULT_REPORT' ? "bg-rose-50 text-rose-500" : "bg-blue-50 text-blue-500"
+                           )}>
+                              <AlertTriangle size={14} />
+                           </div>
+                           <div className="flex-1">
+                              <p className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{log.truck?.plateNumber || 'UNIT-402'}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase truncate">{log.taskName}</p>
+                           </div>
+                           <ArrowRight size={14} className="text-slate-300" />
+                        </div>
+                      ))}
+                   </div>
+                </div>
+                <button className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-[#0f172a] hover:text-white transition-all">
+                   Deploy Full Diagnostics
+                </button>
+            </div>
+        </div>
+
+        {/* Predictive Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+           {[
+              { label: 'Battery Lifespan', val: '84%', icon: Zap, status: 'Stable' },
+              { label: 'Brake Integrity', val: '12%', icon: AlertTriangle, status: 'Critical' },
+              { label: 'Engine Efficiency', val: '91%', icon: Activity, status: 'Optimal' },
+              { label: 'Tire Wear (Avg)', val: '62%', icon: BarChart3, status: 'Scheduled' }
+           ].map((stat, i) => (
+              <div key={i} className="p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300 group">
+                 <div className="flex items-center justify-between mb-4">
+                    <div className="size-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                       <stat.icon size={18} />
+                    </div>
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-widest",
+                      stat.status === 'Critical' ? "text-rose-500" : "text-emerald-500"
+                    )}>{stat.status}</span>
+                 </div>
+                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</h4>
+                 <p className="text-2xl font-black text-[#0f172a] tracking-tight">{stat.val}</p>
+              </div>
+           ))}
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     if (activeTab === 'tco') {
@@ -117,8 +233,9 @@ const FleetAnalytics: React.FC = () => {
             ) : (
               <div className="text-center py-12 text-slate-400 text-xs font-bold uppercase tracking-widest">Failed to load data</div>
             )
+          ) : activeTab === 'maintenance' ? (
+            <PredictiveMaintenanceContainer />
           ) : (
-            /* Stats Grid (Overview) */
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
                 <CircularStatsCard

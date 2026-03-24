@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '../../utils/cn';
 
 interface TimeRangeSelectorProps {
   value: string;
@@ -22,22 +23,26 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   ];
 
   return (
-    <div className={`flex items-center space-x-3 ${className}`}>
-      <div className="flex items-center space-x-2 text-slate-500">
-        <Calendar className="w-4 h-4 text-[#345E85]" />
-        <span className="text-xs font-black uppercase tracking-widest">Time Range:</span>
+    <div className={cn("flex items-center gap-3 overflow-hidden", className)}>
+      <div className="flex items-center gap-2 text-slate-500 shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100">
+          <Calendar className="w-4 h-4" />
+        </div>
+        <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Time Range:</span>
       </div>
-      <div className="flex items-center space-x-1 bg-white rounded-xl border border-slate-100 p-1 shadow-sm">
+      <div className="flex items-center gap-1 bg-white/50 backdrop-blur-md rounded-2xl border border-slate-100 p-1 shadow-sm overflow-x-auto no-scrollbar scroll-smooth">
         {ranges.map((range) => (
           <motion.button
             key={range.value}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onChange(range.value)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${value === range.value
-                ? 'bg-[#345E85] text-white shadow-md'
-                : 'text-slate-500 hover:text-[#345E85] hover:bg-slate-50'
-              }`}
+            className={cn(
+               "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
+               value === range.value
+                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-500/20'
+                : 'text-slate-400 hover:text-[#345E85] hover:bg-white'
+            )}
           >
             {range.label}
           </motion.button>

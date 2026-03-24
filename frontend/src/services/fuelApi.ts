@@ -155,6 +155,19 @@ export const fuelApi = {
         }
     },
 
+    /**
+     * Get fuel statistics for a specific driver
+     */
+    getDriverFuelStatistics: async (driverId: string): Promise<any> => {
+        try {
+            const response = await api.get(`/fuel/statistics/${driverId}`);
+            return response.data.data;
+        } catch (error) {
+            console.error('Error fetching driver fuel statistics:', error);
+            throw error;
+        }
+    },
+
     // ===== WALLET =====
 
     getWallet: async (id: string) => {

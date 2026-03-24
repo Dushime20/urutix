@@ -27,6 +27,7 @@ import { OcrModule } from './modules/ocr/ocr.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { DriverModule } from './modules/drivers/driver.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
 import { FuelModule } from './modules/fuel/fuel.module';
@@ -79,7 +80,8 @@ import { Tenant } from './entities/tenant.entity';
     UserKycModule,
     AnalyticsModule,
     MultiModalModule,
-    EventsModule, // Add EventsModule for Socket.IO support
+    EventsModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

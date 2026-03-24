@@ -76,14 +76,12 @@ const DriverDashboard: React.FC = () => {
   const [initialMessengerRecipient, setInitialMessengerRecipient] = useState<string | undefined>(undefined);
   const location = useLocation();
 
-  const { data: driverByUserId } = useQuery({
-    queryKey: ['driver-by-user-id', user?.id],
+  const { data: currentDriverProfile } = useQuery({
+    queryKey: ['driver-me', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       try {
-        const drivers = await driverApi.getDrivers({ search: user.email || '' });
-        const driver = drivers.find((d: any) => d.userId === user.id || d.email === user.email);
-        return driver || null; // Return null instead of undefined
+        return await driverApi.getCurrentDriver();
       } catch (error) {
         console.error('Error finding driver:', error);
         return null;
@@ -93,21 +91,24 @@ const DriverDashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    if (driverByUserId?.id) {
-      setDriverId(driverByUserId.id);
+    if (currentDriverProfile?.id) {
+      setDriverId(currentDriverProfile.id);
     }
-  }, [driverByUserId]);
+  }, [currentDriverProfile]);
 
   useEffect(() => {
     const path = location.pathname;
-    if (path.endsWith('/trips')) setActiveTab('trips');
+    if (path.endsWith('/missions') || path.endsWith('/trips')) setActiveTab('missions');
     else if (path.endsWith('/cargo')) setActiveTab('cargo');
-    else if (path.endsWith('/earnings')) setActiveTab('earnings');
+    else if (path.endsWith('/finance') || path.endsWith('/earnings')) setActiveTab('finance');
     else if (path.endsWith('/safety')) setActiveTab('safety');
     else if (path.endsWith('/documents')) setActiveTab('documents');
     else if (path.endsWith('/settings')) setActiveTab('settings');
     else if (path.endsWith('/profile')) setActiveTab('profile');
     else if (path.endsWith('/leaderboard')) setActiveTab('leaderboard');
+    else if (path.endsWith('/messages')) setActiveTab('messages');
+    else if (path.endsWith('/fuel')) setActiveTab('fuel');
+    else if (path.endsWith('/wallet')) setActiveTab('wallet');
   }, [location.pathname]);
 
   useEffect(() => {
@@ -370,7 +371,7 @@ const DriverDashboard: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 py-6 pb-28 lg:pb-6">
 
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6 flex justify-start sm:justify-end overflow-hidden px-2">
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
         </div>
 
@@ -463,7 +464,7 @@ const DriverDashboard: React.FC = () => {
                   <h3 className="text-xl font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Awaiting Mission Deployment</h3>
                   <p className="text-sm font-medium text-slate-500 italic px-8 max-w-md">No mission is currently executing. Once assigned, your tactical route tracking and cargo telemetry will appear here.</p>
                   <button 
-                    onClick={() => setActiveTab('trips')}
+                    onClick={() => setActiveTab('missions')}
                     className="mt-10 px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
                   >
                     View Available Assignments
@@ -554,14 +555,14 @@ const DriverDashboard: React.FC = () => {
             />
           </div>
         )}
-        {activeTab === 'trips' && <TripsManagement driverId={driverId} />}
-        {activeTab === 'earnings' && <EarningsOverview driverId={driverId} />}
+        {(activeTab === 'missions' || activeTab === 'trips') && <TripsManagement driverId={driverId} />}
+        {(activeTab === 'finance' || activeTab === 'earnings') && <EarningsOverview driverId={driverId} />}
         {activeTab === 'wallet' && <WalletAdvances driverId={driverId} />}
         {activeTab === 'fuel' && <FuelManagement driverId={driverId} />}
         {activeTab === 'safety' && <SafetyMetrics driverId={driverId} onReportIncident={() => setShowIncidentModal(true)} />}
         {activeTab === 'documents' && <DriverDocuments driverId={driverId} />}
         {activeTab === 'truck_details' && <MyTruck driverId={driverId} />}
-        {activeTab === 'profile' && <DriverProfile driver={driver || driverByUserId} loading={driverLoading} />}
+        {activeTab === 'profile' && <DriverProfile driver={driver || currentDriverProfile} loading={driverLoading} />}
         {activeTab === 'leaderboard' && (
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
             <div className="xl:col-span-1">

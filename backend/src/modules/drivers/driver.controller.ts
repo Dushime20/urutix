@@ -13,7 +13,10 @@ import {
   ValidationPipe,
   HttpStatus,
   HttpCode,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -37,6 +40,7 @@ import {
   TelematicsEventDto,
   EmergencyReportDto,
   DriverFilterDto,
+  CompleteDeliveryDto,
 } from './dto/driver.dto';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { UserRole } from '../../entities/user.entity';
@@ -54,6 +58,7 @@ import { OcrService } from '../ocr/ocr.service';
   UserRole.FLEET_MANAGER,
   UserRole.FLEET_DISPATCHER,
   UserRole.FLEET_SAFETY_OFFICER,
+  UserRole.DRIVER,
 )
 @Controller('drivers')
 export class DriverController {
@@ -78,6 +83,15 @@ export class DriverController {
     description: 'Driver with same license number or user already exists',
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_SAFETY_OFFICER,
+  )
   async createDriver(
     @Body(ValidationPipe) createDto: CreateDriverDto,
     @Request() req,
@@ -137,6 +151,16 @@ export class DriverController {
     },
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_SAFETY_OFFICER,
+    UserRole.DRIVER,
+  )
   async getAllDrivers(
     @Query(ValidationPipe) filterDto: DriverFilterDto,
     @Request() req,
@@ -147,6 +171,27 @@ export class DriverController {
     limit: number;
   }> {
     return this.driverService.getAllDrivers(filterDto, req.user.tenantId);
+  }
+
+  @Get('me')
+  @Roles(
+    UserRole.DRIVER,
+    UserRole.FLEET_MANAGER,
+    UserRole.TENANT_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  @ApiOperation({
+    summary: 'Get current driver profile',
+    description: 'Retrieve detailed information about the currently logged-in driver',
+  })
+  @ApiOkResponse({
+    description: 'Driver profile retrieved successfully',
+    type: Driver,
+  })
+  async getMe(@Request() req): Promise<{ driver: Driver }> {
+    const driver = await this.driverService.getDriverByUserId(req.user.id);
+    return { driver };
   }
 
   @Get(':id')
@@ -219,6 +264,15 @@ export class DriverController {
   })
   @ApiNotFoundResponse({ description: 'Driver not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_SAFETY_OFFICER,
+  )
   @HttpCode(HttpStatus.OK)
   async deleteDriver(
     @Param('id', ParseUUIDPipe) id: string,
@@ -551,6 +605,28 @@ export class DriverController {
     return { message: 'Journey started successfully' };
   }
 
+  @Post(':id/complete-delivery')
+  @UseInterceptors(FileInterceptor('photo'))
+  @ApiOperation({
+    summary: 'Complete delivery and submit POD',
+    description: 'Driver marks the load as delivered and provides proof of delivery (recipient name, signature)',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiBody({ type: CompleteDeliveryDto })
+  @ApiOkResponse({
+    description: 'Delivery completed and POD recorded successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input or load cannot be delivered' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async completeDelivery(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() completeDto: CompleteDeliveryDto,
+    @Request() req,
+    @UploadedFile() photoFile?: Express.Multer.File,
+  ) {
+    return this.driverService.completeDelivery(id, completeDto, req.user.tenantId, photoFile);
+  }
+
   @Put(':id/location')
   @Roles(
     UserRole.SUPER_ADMIN,
@@ -614,6 +690,15 @@ export class DriverController {
   @ApiBadRequestResponse({ description: 'Driver already assigned to a truck' })
   @ApiNotFoundResponse({ description: 'Driver not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_SAFETY_OFFICER,
+  )
   async assignTruck(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { truckId: string },
@@ -661,6 +746,15 @@ export class DriverController {
   @ApiOkResponse({ description: 'Truck unassigned successfully' })
   @ApiNotFoundResponse({ description: 'Driver not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_SAFETY_OFFICER,
+  )
   async unassignTruck(
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req,

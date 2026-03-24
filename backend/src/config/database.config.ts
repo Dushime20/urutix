@@ -53,6 +53,7 @@ import {
   BrokerTransporterPerformance,
 } from './../entities/broker-intelligence.entity';
 import { FuelLog } from './../entities/fuel-log.entity';
+import { MaintenanceLog } from './../entities/maintenance-log.entity';
 
 
 // Financial entities
@@ -256,7 +257,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Analytics entities
     CargoOwnerAnalytics,
     AnalyticsInsights,
-
+    MaintenanceLog,
   ],
   synchronize: false,
   autoLoadEntities: false,
@@ -392,6 +393,7 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     // Analytics entities
     CargoOwnerAnalytics,
     AnalyticsInsights,
+    MaintenanceLog,
   ],
   synchronize: true,
   autoLoadEntities: false,

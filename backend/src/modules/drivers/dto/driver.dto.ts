@@ -837,3 +837,37 @@ export class DriverFilterDto {
   @Max(100)
   limit?: number = 20;
 }
+
+export class CompleteDeliveryDto {
+  @ApiProperty({
+    description: 'Load ID to complete',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  loadId: string;
+
+  @ApiProperty({
+    description: 'Recipient name',
+    example: 'Jane Doe',
+  })
+  @IsString()
+  recipientName: string;
+
+  @ApiProperty({
+    description: 'Signature in base64 format',
+    required: false,
+    example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...',
+  })
+  @IsOptional()
+  @IsString()
+  signatureBase64?: string;
+
+  @ApiProperty({
+    description: 'Additional delivery notes',
+    required: false,
+    example: 'Left at the back entrance as requested.',
+  })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}

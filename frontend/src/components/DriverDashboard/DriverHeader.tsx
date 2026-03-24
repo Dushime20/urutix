@@ -16,7 +16,6 @@ import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { TranslatedText } from '../translated-text';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Route, Truck, MessageSquare } from 'lucide-react';
 
 
 interface Tab {
@@ -374,38 +373,6 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* 📱 Mobile Bottom Tactical Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[200] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 px-6 py-3 pb-8 flex items-center justify-between shadow-[0_-10px_40px_rgba(15,23,42,0.1)]">
-         {[
-            { id: 'overview', label: 'Home', icon: Home },
-            { id: 'trips', label: 'Mission', icon: Route },
-            { id: 'wallet', label: 'Finance', icon: Truck },
-            { id: 'messages', label: 'Chat', icon: MessageSquare },
-         ].map((nav) => {
-            const isActive = activeTab === nav.id || (nav.id === 'trips' && ['cargo', 'checklist', 'leaderboard', 'announcements'].includes(activeTab)) || (nav.id === 'wallet' && ['fuel', 'earnings', 'safety', 'documents'].includes(activeTab));
-            return (
-               <button 
-                  key={nav.id}
-                  onClick={() => setActiveTab(nav.id)}
-                  className="flex flex-col items-center gap-1.5 relative group"
-               >
-                  <div className={`p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-primary-600 text-white shadow-xl shadow-primary-200 animate-in zoom-in-95' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                     <nav.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                  </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${isActive ? 'text-primary-600' : 'text-slate-400'}`}>
-                     <TranslatedText text={nav.label} />
-                  </span>
-                  {isActive && (
-                     <motion.div 
-                        layoutId="activeNavTab"
-                        className="absolute -top-3 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary-600 rounded-full blur-[2px]"
-                     />
-                  )}
-               </button>
-            );
-         })}
-      </div>
     </div>
   );
 };

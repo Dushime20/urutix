@@ -26,10 +26,11 @@ const MaintenanceHistoryTable: React.FC<MaintenanceHistoryTableProps> = ({ recor
 
     const getStatusBadge = (status: string) => {
         const s = status?.toUpperCase();
-        if (s === 'COMPLETED' || s === 'DONE') return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 flex items-center w-fit"><FaCheck className="mr-1" /> Completed</span>;
-        if (s === 'SCHEDULED' || s === 'PENDING') return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 flex items-center w-fit"><FaClock className="mr-1" /> Scheduled</span>;
-        if (s === 'IN_PROGRESS' || s === 'REPAIRING') return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 flex items-center w-fit"><FaTools className="mr-1" /> In Progress</span>;
-        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">{status}</span>;
+        if (s === 'COMPLETED' || s === 'DONE') return <span className="px-2 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center w-fit uppercase tracking-widest"><FaCheck className="mr-1.5" /> Completed</span>;
+        if (s === 'SCHEDULED' || s === 'PENDING') return <span className="px-2 py-1 rounded-full text-[10px] font-black bg-blue-50 text-blue-600 border border-blue-100 flex items-center w-fit uppercase tracking-widest"><FaClock className="mr-1.5" /> Scheduled</span>;
+        if (s === 'IN_PROGRESS' || s === 'REPAIRING') return <span className="px-2 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 flex items-center w-fit uppercase tracking-widest"><FaTools className="mr-1.5" /> In Progress</span>;
+        if (s === 'FAULT_REPORT' || s === 'FAULT') return <span className="px-2 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-100 flex items-center w-fit uppercase tracking-widest"><FaTools className="mr-1.5" /> Fault Report</span>;
+        return <span className="px-2 py-1 rounded-full text-[10px] font-black bg-slate-50 text-slate-600 border border-slate-100 uppercase tracking-widest">{status}</span>;
     };
 
     if (loading) {

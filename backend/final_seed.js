@@ -103,6 +103,38 @@ async function runSeed() {
     `);
     console.log('Seed successful for expenses!');
 
+    // 7. Insert a Completed Trip with POD
+    if (loadId) {
+        await client.query(`
+            INSERT INTO trips (
+                id, "tenantId", "tripNumber", "loadId", "truckId", "driverId", status, 
+                "plannedStartTime", "plannedEndTime", "actualStartTime", "actualEndTime", 
+                "agreedPrice", "createdAt", "updatedAt"
+            ) VALUES (
+                uuid_generate_v4(), '${tenantId}', 'TRIP-POD-DEMO', '${loadId}', '${truck.id}', '${driver.driverId}', 'COMPLETED',
+                NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '4.1 days',
+                2850.00, NOW(), NOW()
+            )
+        `);
+
+        // 8. Update Load status and POD metadata
+        await client.query(`
+            UPDATE loads SET 
+                status = 'DELIVERED',
+                metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+                    'pod', jsonb_build_object(
+                        'recipientName', 'James Anderson',
+                        'signatureBase64', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOAAAABkCAYAAACH8q9xAAAAAXNSR0IArs4c6QAAArNJREFUeF7t11EKSFEURdH9XzMMBvMgFpAYRNoBo6C597p777VOn9dfPlEBAvkCPq98M0YBAvkCXsAnICBAIBTwAoc0RAIBr4DPQECAQCjgBQ5piAQCPgGfgYAAgVDACxzSEAkEvAI+AwEBAqGAFzikIRII+AR8BgICBEIBL3BIQyQQ8An4DAQECIQCXuCQhkgisFvA/f/+An7hX+Dk+YhEAl7gkIZIIOAV8BkICBAIBbzAIQ2RQOAnX9q6Xf3uAb8AAAAASUVORK5CYII=', 
+                        'completedAt', (NOW() - INTERVAL '4.1 days')::text,
+                        'completedBy', '${driver.driverId}',
+                        'photoUrl', 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?auto=format&fit=crop&q=80&w=800'
+                    )
+                )
+            WHERE id = '${loadId}'
+        `);
+        console.log('Seed successful for POD demo!');
+    }
+
   } catch (err) {
     console.error('Error during seeding:', err.message);
   } finally {

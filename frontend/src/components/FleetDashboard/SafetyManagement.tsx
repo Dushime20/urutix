@@ -83,6 +83,83 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
     );
   };
 
+  const IncidentsContainer = () => {
+    const { data: incidentsData, isLoading } = useQuery({
+      queryKey: ['safety-incidents'],
+      queryFn: () => safetyApi.getIncidents()
+    });
+
+    const incidents = (incidentsData as any)?.data?.incidents || [];
+
+    if (isLoading) {
+      return (
+        <div className="p-20 text-center flex flex-col items-center">
+          <Activity className="animate-pulse text-primary-500 mb-4" size={32} />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Incidents...</p>
+        </div>
+      );
+    }
+
+    if (incidents.length === 0) {
+      return (
+        <div className="p-20 text-center flex flex-col items-center">
+          <Shield className="text-slate-200 mb-6" size={48} />
+          <h3 className="text-lg font-black text-slate-900 tracking-tight">No Incidents Reported</h3>
+          <p className="text-xs text-slate-400 mt-2">The fleet is currently operating within safe parameters.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Reported Incidents</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Audit Trail & Resolution Tracking</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {incidents.map((incident: any) => (
+            <div key={incident.id} className="p-6 bg-slate-50/50 hover:bg-white rounded-[32px] border border-slate-100 hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300 group">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-start gap-5">
+                  <div className={cn(
+                    "size-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform duration-500 group-hover:scale-110",
+                    incident.severity === 'critical' || incident.severity === 'major' ? "bg-rose-50 text-rose-500" : "bg-primary-50 text-primary-500"
+                  )}>
+                    <AlertTriangle size={22} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                      <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{incident.type.replace('_', ' ')}</span>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest",
+                        incident.severity === 'critical' ? "bg-rose-100 text-rose-600" :
+                        incident.severity === 'major' ? "bg-orange-100 text-orange-600" :
+                        "bg-blue-100 text-blue-600"
+                      )}>{incident.severity}</span>
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[9px] font-black uppercase tracking-widest">{incident.status}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mb-3 line-clamp-2 max-w-2xl">{incident.description}</p>
+                    <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest tracking-loose">
+                      <span className="flex items-center gap-1.5"><Clock size={12} /> {new Date(incident.date).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1.5"><Activity size={12} /> {incident.location}</span>
+                      <span className="flex items-center gap-1.5"><User size={12} /> {incident.driverName || 'Unknown Driver'}</span>
+                    </div>
+                  </div>
+                </div>
+                <button className="h-10 px-5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] hover:bg-[#0f172a] hover:text-white hover:border-[#0f172a] transition-all shadow-sm">
+                  Review Incident
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header Matrix */}
@@ -279,6 +356,10 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
             <div className="p-8">
                <FleetInspections />
             </div>
+          )}
+
+          {activeTab === 'incidents' && (
+            <IncidentsContainer />
           )}
 
           {(activeTab !== 'overview' && activeTab !== 'inspections') && (

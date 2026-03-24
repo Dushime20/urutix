@@ -376,9 +376,16 @@ function App() {
                     {/* Driver Routes */}
                     <Route path="/dashboard/driver" element={<DriverLayout />}>
                       <Route index element={<DriverDashboard />} />
+                      <Route path="missions" element={<DriverDashboard />} />
                       <Route path="trips" element={<DriverDashboard />} />
-                      <Route path="truck" element={<DriverDashboard />} />
+                      <Route path="finance" element={<DriverDashboard />} />
+                      <Route path="messages" element={<DriverDashboard />} />
                       <Route path="cargo" element={<DriverDashboard />} />
+                      <Route path="checklist" element={<DriverDashboard />} />
+                      <Route path="post_trip" element={<DriverDashboard />} />
+                      <Route path="leaderboard" element={<DriverDashboard />} />
+                      <Route path="announcements" element={<DriverDashboard />} />
+                      <Route path="truck" element={<DriverDashboard />} />
                       <Route path="earnings" element={<DriverDashboard />} />
                       <Route path="safety" element={<DriverDashboard />} />
                       <Route path="documents" element={<DriverDashboard />} />

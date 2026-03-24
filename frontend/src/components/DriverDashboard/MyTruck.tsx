@@ -18,6 +18,9 @@ import {
 import { motion } from 'framer-motion';
 import { MaintenanceHealth } from './MaintenanceHealth';
 import { TranslatedText } from '../translated-text';
+import { useQuery } from '@tanstack/react-query';
+import { driverApi } from '../../services/driverApi';
+import { MaintenanceTicketModal } from './MaintenanceTicketModal';
 
 interface MyTruckProps {
   driverId: string;
@@ -25,6 +28,7 @@ interface MyTruckProps {
 }
 
 export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = React.useState(false);
   // Mock truck data if none provided
   const truck = truckData || {
     id: 'T-9821',
@@ -40,10 +44,16 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
     tireStatus: 'Good'
   };
 
-  const serviceHistory = [
-    { id: 1, type: 'Oil Change & Filter', date: '2026-02-15', shop: 'UrutiX Central Workshops', status: 'COMPLETED' },
-    { id: 2, type: 'Brake Pad Replacement', date: '2026-01-10', shop: 'Kampala Heavy Duty Service', status: 'COMPLETED' },
-    { id: 3, type: 'Full Safety Inspection', date: '2025-12-20', shop: 'UrutiX Central Workshops', status: 'COMPLETED' },
+  const { data: maintenanceData } = useQuery({
+    queryKey: ['truck-maintenance', truck.id],
+    queryFn: () => driverApi.getMaintenanceHistory(truck.id),
+    enabled: !!truck.id && truck.id !== 'T-9821', // Don't fetch for mock truck
+  });
+
+  const serviceHistory = maintenanceData?.logs || [
+    { id: 1, taskName: 'Oil Change & Filter', serviceDate: '2026-02-15', providerName: 'UrutiX Central Workshops', status: 'COMPLETED' },
+    { id: 2, taskName: 'Brake Pad Replacement', serviceDate: '2026-01-10', providerName: 'Kampala Heavy Duty Service', status: 'COMPLETED' },
+    { id: 3, taskName: 'Full Safety Inspection', serviceDate: '2025-12-20', providerName: 'UrutiX Central Workshops', status: 'COMPLETED' },
   ];
 
   const truckHistory = [
@@ -173,7 +183,10 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                 "Hear a weird noise? Lights flickering? Report immediately to maintenance for a priority evaluation."
             </p>
             
-            <button className="w-full py-5 bg-[#345E85] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 shadow-xl shadow-blue-900/10 active:scale-95 transition-all flex items-center justify-center gap-3">
+            <button 
+              onClick={() => setIsMaintenanceModalOpen(true)}
+              className="w-full py-5 bg-[#345E85] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 shadow-xl shadow-blue-900/10 active:scale-95 transition-all flex items-center justify-center gap-3"
+            >
                 <Wrench size={18} />
                 <TranslatedText text="Open Maintenance Ticket" />
             </button>
@@ -244,7 +257,7 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                 <div className="space-y-6 relative ml-6">
                     <div className="absolute left-[20px] top-6 bottom-6 w-[2px] bg-slate-100" />
                     
-                    {serviceHistory.map((service) => (
+                    {serviceHistory.map((service: any) => (
                         <div key={service.id} className="relative flex items-start gap-10 group">
                             <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center z-10 group-hover:bg-[#345E85] group-hover:border-[#345E85] transition-all duration-300 shadow-sm">
                                 <div className="w-2 h-2 rounded-full bg-slate-400 group-hover:bg-white transition-all duration-300" />
@@ -254,11 +267,11 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{service.date}</p>
+                                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{service.serviceDate?.split('T')[0] || service.date}</p>
                                             <span className="text-slate-300">•</span>
-                                            <h4 className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{service.type}</h4>
+                                            <h4 className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{service.taskName || service.type}</h4>
                                         </div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Completed at {service.shop}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Completed at {service.providerName || service.shop}</p>
                                     </div>
                                     <ChevronRight size={18} className="text-slate-300 group-hover:translate-x-1 transition-all" />
                                 </div>
@@ -374,6 +387,13 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
             ))}
         </div>
       </div>
+
+      <MaintenanceTicketModal 
+        isOpen={isMaintenanceModalOpen}
+        onClose={() => setIsMaintenanceModalOpen(false)}
+        truckId={truck.id}
+        truckPlate={truck.plateNumber}
+      />
     </div>
   );
 };
