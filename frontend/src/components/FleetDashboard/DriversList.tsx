@@ -23,7 +23,12 @@ import {
 	Loader2,
 	Zap,
 	ShieldCheck,
-	Award
+	Award,
+	User,
+	Activity,
+	MapPin,
+	Heart,
+	StickyNote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fleetApi } from '../../services/fleetApi';
@@ -333,21 +338,241 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 				</div>
 			)}
 
-			{/* Details Portal - Simplified for testing */}
+			{/* Details Portal - Comprehensive Driver Information */}
 			{selectedDriver && (
 				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001] p-4">
-					<div className="bg-white rounded-lg p-6 max-w-md w-full">
-						<h2 className="text-xl font-bold mb-4">
-							{selectedDriver.firstName} {selectedDriver.lastName}
-						</h2>
-						<p className="mb-4">Email: {selectedDriver.email}</p>
-						<p className="mb-4">Status: {selectedDriver.status}</p>
-						<button
-							onClick={() => setSelectedDriver(null)}
-							className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-						>
-							Close
-						</button>
+					<div className="bg-white rounded-[40px] shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+						{/* Header Section */}
+						<div className="p-8 bg-white border-b border-slate-100 relative overflow-hidden shrink-0">
+							<div className="absolute top-0 right-0 p-8 opacity-5">
+								<Users size={140} className="text-slate-400" />
+							</div>
+							<div className="flex items-center gap-6 relative z-10">
+								<div className="size-20 bg-primary-50 rounded-[32px] flex items-center justify-center border border-primary-100">
+									<Users size={40} className="text-primary-500" />
+								</div>
+								<div className="flex-1">
+									<div className="flex items-center gap-3 mb-2">
+										<h2 className="text-3xl font-black tracking-tight text-slate-900">{selectedDriver.firstName} {selectedDriver.lastName}</h2>
+										<div className={`px-3 py-1 rounded-full border border-primary-200 bg-primary-50 text-[9px] font-black uppercase tracking-widest text-primary-600`}>
+											{selectedDriver.status}
+										</div>
+										<div className={`px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[9px] font-black uppercase tracking-widest text-emerald-600`}>
+											{selectedDriver.availabilityStatus}
+										</div>
+									</div>
+									<p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-4">
+										<span className="flex items-center gap-1">
+											<Mail size={12} /> {selectedDriver.email}
+										</span>
+										{selectedDriver.phone && (
+											<span className="flex items-center gap-1">
+												<Phone size={12} /> {selectedDriver.phone}
+											</span>
+										)}
+										<span className="flex items-center gap-1">
+											<CreditCard size={12} /> {selectedDriver.licenseNumber}
+										</span>
+									</p>
+								</div>
+								<button 
+									onClick={() => setSelectedDriver(null)} 
+									className="size-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shrink-0"
+								>
+									<X size={20} />
+								</button>
+							</div>
+						</div>
+
+						{/* Scrollable Body */}
+						<div className="flex-1 overflow-y-auto p-8">
+							{/* Key Performance Metrics */}
+							<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+								<div className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-[24px] border border-emerald-200">
+									<div className="flex items-center gap-3 mb-2">
+										<Star size={16} className="text-emerald-600" />
+										<span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Rating</span>
+									</div>
+									<p className="text-2xl font-black text-emerald-800">{selectedDriver.rating ? Number(selectedDriver.rating).toFixed(1) : '0.0'}</p>
+								</div>
+								<div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-[24px] border border-blue-200">
+									<div className="flex items-center gap-3 mb-2">
+										<Truck size={16} className="text-blue-600" />
+										<span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Total Trips</span>
+									</div>
+									<p className="text-2xl font-black text-blue-800">{selectedDriver.totalTrips || 0}</p>
+								</div>
+								<div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-[24px] border border-purple-200">
+									<div className="flex items-center gap-3 mb-2">
+										<Target size={16} className="text-purple-600" />
+										<span className="text-[9px] font-black text-purple-600 uppercase tracking-widest">Safety Score</span>
+									</div>
+									<p className="text-2xl font-black text-purple-800">{selectedDriver.safetyScore ? `${Number(selectedDriver.safetyScore).toFixed(0)}%` : '100%'}</p>
+								</div>
+								<div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-[24px] border border-amber-200">
+									<div className="flex items-center gap-3 mb-2">
+										<Clock size={16} className="text-amber-600" />
+										<span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">On-Time Rate</span>
+									</div>
+									<p className="text-2xl font-black text-amber-800">{selectedDriver.onTimeDeliveryRate ? `${Number(selectedDriver.onTimeDeliveryRate).toFixed(0)}%` : '0%'}</p>
+								</div>
+							</div>
+
+							{/* Main Information Grid */}
+							<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+								{/* Personal Information */}
+								<div className="space-y-6">
+									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
+											<User size={14} /> Personal Information
+										</h4>
+										<div className="space-y-4">
+											<InfoRow label="Full Name" value={`${selectedDriver.firstName} ${selectedDriver.lastName}`} />
+											<InfoRow label="Date of Birth" value={selectedDriver.dateOfBirth ? new Date(selectedDriver.dateOfBirth).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="Address" value={selectedDriver.address || 'N/A'} />
+											<InfoRow label="Phone" value={selectedDriver.phone || 'N/A'} />
+											<InfoRow label="Email" value={selectedDriver.email} />
+										</div>
+									</div>
+
+									{/* Emergency Contact */}
+									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-rose-500 mb-4">
+											<Heart size={14} /> Emergency Contact
+										</h4>
+										<div className="space-y-4">
+											{selectedDriver.emergencyContact && Object.keys(selectedDriver.emergencyContact).length > 0 ? (
+												<>
+													<InfoRow label="Name" value={selectedDriver.emergencyContact.name || 'N/A'} />
+													<InfoRow label="Phone" value={selectedDriver.emergencyContact.phone || 'N/A'} />
+													<InfoRow label="Relationship" value={selectedDriver.emergencyContact.relationship || 'N/A'} />
+												</>
+											) : (
+												<p className="text-sm text-slate-400 italic">No emergency contact information</p>
+											)}
+										</div>
+									</div>
+								</div>
+
+								{/* License & Employment */}
+								<div className="space-y-6">
+									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
+											<CreditCard size={14} /> License Information
+										</h4>
+										<div className="space-y-4">
+											<InfoRow label="License Number" value={selectedDriver.licenseNumber} />
+											<InfoRow label="Issue Date" value={selectedDriver.licenseIssueDate ? new Date(selectedDriver.licenseIssueDate).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="Expiry Date" value={selectedDriver.licenseExpiry ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="State" value={selectedDriver.licenseState || 'N/A'} />
+											<InfoRow label="Country" value={selectedDriver.licenseCountry || 'N/A'} />
+											<div>
+												<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Classes</span>
+												<div className="flex flex-wrap gap-1 mt-1">
+													{selectedDriver.licenseClasses && selectedDriver.licenseClasses.length > 0 ? 
+														selectedDriver.licenseClasses.map((cls, idx) => (
+															<span key={idx} className="px-2 py-0.5 bg-primary-50 text-primary-600 rounded-md text-[8px] font-black uppercase">
+																{cls}
+															</span>
+														)) : 
+														<span className="text-[11px] text-slate-400">No classes specified</span>
+													}
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
+											<Briefcase size={14} /> Employment Details
+										</h4>
+										<div className="space-y-4">
+											<InfoRow label="Employment Type" value={selectedDriver.employmentType?.replace('_', ' ') || 'N/A'} />
+											<InfoRow label="Hire Date" value={selectedDriver.hireDate ? new Date(selectedDriver.hireDate).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="Experience" value={`${selectedDriver.experience || 0} years`} />
+											<InfoRow label="Hourly Rate" value={selectedDriver.hourlyRate ? `$${Number(selectedDriver.hourlyRate).toFixed(2)}` : 'N/A'} />
+											<InfoRow label="Mileage Rate" value={selectedDriver.mileageRate ? `$${Number(selectedDriver.mileageRate).toFixed(2)}/mile` : 'N/A'} />
+											<InfoRow label="Total Earnings" value={selectedDriver.totalEarnings ? `$${Number(selectedDriver.totalEarnings).toLocaleString()}` : '$0'} />
+										</div>
+									</div>
+								</div>
+
+								{/* Performance & Compliance */}
+								<div className="space-y-6">
+									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-500 mb-4">
+											<Activity size={14} /> Performance Metrics
+										</h4>
+										<div className="space-y-4">
+											<InfoRow label="Total Distance" value={selectedDriver.totalDistance ? `${Number(selectedDriver.totalDistance).toLocaleString()} km` : '0 km'} />
+											<InfoRow label="Hours This Week" value={`${selectedDriver.hoursWorkedThisWeek || 0} hours`} />
+											<InfoRow label="Hours This Month" value={`${selectedDriver.hoursWorkedThisMonth || 0} hours`} />
+											<InfoRow label="Consecutive Driving" value={`${selectedDriver.consecutiveDrivingHours || 0} hours`} />
+											<InfoRow label="Last Break" value={selectedDriver.lastBreakTime ? new Date(selectedDriver.lastBreakTime).toLocaleString() : 'N/A'} />
+										</div>
+									</div>
+
+									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-500 mb-4">
+											<ShieldCheck size={14} /> Compliance Status
+										</h4>
+										<div className="space-y-4">
+											<InfoRow label="Medical Cert Expiry" value={selectedDriver.medicalCertExpiry ? new Date(selectedDriver.medicalCertExpiry).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="Drug Test Date" value={selectedDriver.drugTestDate ? new Date(selectedDriver.drugTestDate).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="Background Check" value={selectedDriver.backgroundCheckDate ? new Date(selectedDriver.backgroundCheckDate).toLocaleDateString() : 'N/A'} />
+											<InfoRow label="Training Completion" value={selectedDriver.trainingCompletionDate ? new Date(selectedDriver.trainingCompletionDate).toLocaleDateString() : 'N/A'} />
+										</div>
+									</div>
+
+									{/* Current Status */}
+									<div className="bg-slate-900 rounded-[28px] p-6 text-white">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-300 mb-4">
+											<MapPin size={14} /> Current Status
+										</h4>
+										<div className="space-y-3">
+											<div className="flex justify-between items-center">
+												<span className="text-[10px] font-bold text-slate-400 uppercase">Current Truck</span>
+												<span className="text-sm font-bold text-white">{selectedDriver.currentTruckId ? `Truck ${selectedDriver.currentTruckId.slice(0, 8)}...` : 'Unassigned'}</span>
+											</div>
+											<div className="flex justify-between items-center">
+												<span className="text-[10px] font-bold text-slate-400 uppercase">Current Trip</span>
+												<span className="text-sm font-bold text-white">{selectedDriver.currentTripId ? `Trip ${selectedDriver.currentTripId.slice(0, 8)}...` : 'No active trip'}</span>
+											</div>
+											<div className="flex justify-between items-center">
+												<span className="text-[10px] font-bold text-slate-400 uppercase">Location Updated</span>
+												<span className="text-sm font-bold text-white">{selectedDriver.locationUpdatedAt ? new Date(selectedDriver.locationUpdatedAt).toLocaleString() : 'Never'}</span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Driver Notes */}
+							{selectedDriver.driverNotes && (
+								<div className="mt-8 bg-amber-50 rounded-[28px] border border-amber-200 p-6">
+									<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-600 mb-4">
+										<StickyNote size={14} /> Driver Notes
+									</h4>
+									<p className="text-sm text-amber-800 leading-relaxed">{selectedDriver.driverNotes}</p>
+								</div>
+							)}
+						</div>
+
+						{/* Footer */}
+						<div className="p-8 border-t border-slate-50 shrink-0 flex gap-4">
+							<button
+								onClick={() => setViewingDocsFor(selectedDriver)}
+								className="flex-1 py-4 bg-slate-100 text-slate-700 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
+							>
+								View Documents
+							</button>
+							<button
+								onClick={() => setSelectedDriver(null)}
+								className="flex-1 py-4 bg-primary-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
+							>
+								Close Profile
+							</button>
+						</div>
 					</div>
 				</div>
 			)}
@@ -439,5 +664,13 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 		</div>
 	);
 };
+
+// Helper component for displaying information rows
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+	<div className="flex justify-between items-start">
+		<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-shrink-0 w-24">{label}</span>
+		<span className="text-[11px] font-black text-slate-900 text-right flex-1">{value}</span>
+	</div>
+);
 
 export default DriversList;

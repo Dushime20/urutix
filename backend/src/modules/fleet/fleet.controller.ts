@@ -2938,7 +2938,7 @@ export class FleetController {
     status: 201,
     description: 'Route assigned to truck successfully',
   })
-  async assignRouteToTruck(
+  async assignTruckToRoute(
     @Param('routeId', ParseUUIDPipe) routeId: string,
     @Param('truckId', ParseUUIDPipe) truckId: string,
     @Request() req,
@@ -2964,7 +2964,7 @@ export class FleetController {
     status: 200,
     description: 'Route unassigned from truck successfully',
   })
-  async unassignRouteFromTruck(
+  async unassignTruckFromRoute(
     @Param('routeId', ParseUUIDPipe) routeId: string,
     @Param('truckId', ParseUUIDPipe) truckId: string,
     @Request() req,
@@ -3060,7 +3060,7 @@ export class FleetController {
       total: body.assignments.length,
     };
   }
-}
+
   // Route assignment endpoints
   @Post('trucks/:id/assign-route')
   @ApiOperation({
@@ -3172,3 +3172,4 @@ export class FleetController {
       throw error;
     }
   }
+}

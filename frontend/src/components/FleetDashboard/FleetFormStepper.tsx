@@ -653,7 +653,6 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         drugTestDate: toISOString(d.drugTestDate),
         backgroundCheckDate: toISOString(d.backgroundCheckDate),
         trainingCompletionDate: toISOString(d.trainingCompletionDate),
-        routeIds: d.routeIds || [], // Include route assignments
       };
 
       console.log('📦 Final driver payload:', payload);

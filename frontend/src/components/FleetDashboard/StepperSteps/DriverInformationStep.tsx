@@ -16,11 +16,9 @@ import {
   ShieldCheck, 
   DollarSign, 
   StickyNote, 
-  Heart,
-  Map as MapIcon
+  Heart
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { RouteSelectionComponent } from '../RouteSelectionComponent';
 
 interface DriverInformationStepProps {
   formData: any;
@@ -102,10 +100,16 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    console.log('📝 AddDriverDocumentModal: Form submitted');
+    e.stopPropagation(); // Prevent event bubbling
+    console.log('📝 AddDriverDocumentModal: Save button clicked');
     console.log('📝 AddDriverDocumentModal: Form data:', { file, docData });
+    console.log('📝 AddDriverDocumentModal: Event details:', {
+      type: e.type,
+      target: e.target,
+      currentTarget: e.currentTarget
+    });
     
     if (!file || !docData.title || !docData.documentType) {
       console.error('❌ AddDriverDocumentModal: Validation failed:', {
@@ -129,16 +133,34 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
         expiryDate: docData.expiryDate,
       };
       
-      console.log('📄 AddDriverDocumentModal: New document:', newDoc);
+      console.log('📄 AddDriverDocumentModal: New document object created:', newDoc);
+      console.log('📄 AddDriverDocumentModal: File details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
       
-      await onSave(newDoc);
-      console.log('✅ AddDriverDocumentModal: Document saved successfully');
+      console.log('🔄 AddDriverDocumentModal: Calling onSave function...');
+      onSave(newDoc);
+      console.log('✅ AddDriverDocumentModal: onSave function completed successfully');
       toast.success('Document added successfully!');
-      onClose();
+      
+      // Don't close modal here - let parent handle it
+      // The parent will close the modal after updating its state
     } catch (error) {
-      console.error('❌ AddDriverDocumentModal: Error saving document:', error);
+      console.error('❌ AddDriverDocumentModal: Error in handleSubmit try block:', error);
+      console.error('❌ AddDriverDocumentModal: Error type:', typeof error);
+      console.error('❌ AddDriverDocumentModal: Error message:', error?.message);
+      console.error('❌ AddDriverDocumentModal: Error stack:', error?.stack);
+      console.error('❌ AddDriverDocumentModal: Full error object:', JSON.stringify(error, null, 2));
+      
+      // Check if error is causing modal closure
+      console.error('🚨 AddDriverDocumentModal: ERROR DETECTED - This might cause both modals to close!');
+      
       toast.error('Failed to add document. Please try again.');
     } finally {
+      console.log('🔄 AddDriverDocumentModal: Finally block executing, setting loading to false');
       setLoading(false);
     }
   };
@@ -147,12 +169,28 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       onClick={(e) => {
+        console.log('🔘 AddDriverDocumentModal: Backdrop clicked');
+        console.log('🔘 AddDriverDocumentModal: Click target:', e.target);
+        console.log('🔘 AddDriverDocumentModal: Current target:', e.currentTarget);
+        console.log('🔘 AddDriverDocumentModal: Loading state:', loading);
+        
         if (e.target === e.currentTarget && !loading) {
+          console.log('✅ AddDriverDocumentModal: Valid backdrop click - closing modal');
+          console.trace('📍 AddDriverDocumentModal: Backdrop click stack trace');
           onClose();
+        } else {
+          console.log('❌ AddDriverDocumentModal: Invalid backdrop click - not closing');
+          console.log('❌ AddDriverDocumentModal: Reason:', {
+            isBackdrop: e.target === e.currentTarget,
+            isNotLoading: !loading
+          });
         }
       }}
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div 
+        className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling to backdrop
+      >
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-500 flex items-center justify-center">
@@ -161,7 +199,11 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Add Document</h2>
           </div>
           <button 
-            onClick={onClose} 
+            onClick={() => {
+              console.log('🔘 AddDriverDocumentModal: X button clicked');
+              console.trace('📍 AddDriverDocumentModal: X button click stack trace');
+              onClose();
+            }} 
             disabled={loading}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -169,7 +211,7 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
           </button>
         </div>
         <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Document Type *</label>
               <select
@@ -275,24 +317,25 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
                 Cancel
               </button>
               <button 
-                type="submit" 
+                type="button"
+                onClick={handleSubmit}
                 disabled={loading || !file || !docData.title || !docData.documentType}
                 className="px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Adding...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4" />
-                    Add Document
+                    {file ? 'Save Document' : 'Add Document'}
                   </>
                 )}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -306,19 +349,69 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
   const [documents, setDocuments] = useState<DriverDocument[]>(formData.documents || []);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const handleAddDocument = (doc: DriverDocument) => {
+  // Add logging for modal state changes
+  const setShowAddModalWithLogging = (value: boolean) => {
+    console.log(`🔄 DriverInformationStep: Modal state changing from ${showAddModal} to ${value}`);
+    console.trace('📍 DriverInformationStep: Modal state change stack trace');
+    setShowAddModal(value);
+  };
+
+  const handleAddDocument = async (doc: DriverDocument) => {
     console.log('📝 DriverInformationStep: handleAddDocument called');
     console.log('📄 DriverInformationStep: Document to add:', doc);
-    console.log('📋 DriverInformationStep: Current documents:', documents);
+    console.log('📋 DriverInformationStep: Current documents before adding:', documents);
+    console.log('📋 DriverInformationStep: Current documents length:', documents.length);
     
-    const updatedDocs = [...documents, doc];
-    console.log('📋 DriverInformationStep: Updated documents:', updatedDocs);
-    
-    setDocuments(updatedDocs);
-    handleInputChange('documents', updatedDocs);
-    
-    console.log('✅ DriverInformationStep: Document added to state');
-    toast.success(`Document "${doc.title}" added successfully!`);
+    try {
+      console.log('🔄 DriverInformationStep: Creating updated documents array...');
+      const updatedDocs = [...documents, doc];
+      console.log('📋 DriverInformationStep: Updated documents array created:', updatedDocs);
+      console.log('📋 DriverInformationStep: New documents length:', updatedDocs.length);
+      
+      console.log('🔄 DriverInformationStep: Updating local state...');
+      setDocuments(updatedDocs);
+      
+      console.log('🔄 DriverInformationStep: Calling handleInputChange...');
+      try {
+        handleInputChange('documents', updatedDocs);
+        console.log('✅ DriverInformationStep: handleInputChange completed successfully');
+      } catch (inputChangeError) {
+        console.error('❌ DriverInformationStep: Error in handleInputChange:', inputChangeError);
+        console.error('❌ DriverInformationStep: handleInputChange error type:', typeof inputChangeError);
+        console.error('❌ DriverInformationStep: handleInputChange error message:', inputChangeError?.message);
+        console.error('🚨 DriverInformationStep: handleInputChange ERROR - This might cause modal closure!');
+        throw inputChangeError; // Re-throw to be caught by outer try-catch
+      }
+      
+      console.log('✅ DriverInformationStep: Document added to state successfully');
+      toast.success(`Document "${doc.title}" added! You can add more documents or continue to the next step.`);
+      
+      console.log('🔄 DriverInformationStep: Setting timeout to close modal...');
+      // Close the document modal automatically after a small delay
+      setTimeout(() => {
+        console.log('⏰ DriverInformationStep: Timeout executing - closing document modal');
+        setShowAddModalWithLogging(false);
+        console.log('✅ DriverInformationStep: Document modal closed successfully');
+      }, 100);
+      
+    } catch (error) {
+      console.error('❌ DriverInformationStep: Error in handleAddDocument:', error);
+      console.error('❌ DriverInformationStep: Error type:', typeof error);
+      console.error('❌ DriverInformationStep: Error message:', error?.message);
+      console.error('❌ DriverInformationStep: Error stack:', error?.stack);
+      console.error('❌ DriverInformationStep: Full error object:', JSON.stringify(error, null, 2));
+      console.error('❌ DriverInformationStep: Document that caused error:', doc);
+      console.error('❌ DriverInformationStep: Current documents when error occurred:', documents);
+      
+      // Check if this error might be causing modal closure issues
+      console.error('🚨 DriverInformationStep: ERROR IN PARENT COMPONENT - This might cause both modals to close!');
+      console.error('🚨 DriverInformationStep: Checking if handleInputChange is the culprit...');
+      
+      toast.error('Failed to add document. Please try again.');
+      
+      // Don't close the modal on error
+      console.log('⚠️ DriverInformationStep: Not closing modal due to error');
+    }
   };
 
   const handleRemoveDocument = (index: number) => {
@@ -630,23 +723,6 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
         </div>
       </div>
 
-      {/* Route Assignment */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <MapIcon className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Route Assignment (Optional)
-          </h4>
-        </div>
-
-        <RouteSelectionComponent 
-          selectedRoutes={formData.routeIds || []}
-          onRouteChange={(routeIds) => handleInputChange('routeIds', routeIds)}
-        />
-      </div>
-
       {/* Compliance & Safety */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 mb-2 px-1">
@@ -844,7 +920,10 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              console.log('🔘 DriverInformationStep: Add Document button clicked');
+              setShowAddModalWithLogging(true);
+            }}
             className="px-5 py-3 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2 text-xs uppercase tracking-widest"
           >
             <Plus className="w-4 h-4" />
@@ -904,7 +983,11 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 
       {showAddModal && (
         <AddDriverDocumentModal
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            console.log('🔘 DriverInformationStep: Document modal onClose called');
+            console.trace('📍 DriverInformationStep: onClose stack trace');
+            setShowAddModalWithLogging(false);
+          }}
           onSave={handleAddDocument}
         />
       )}

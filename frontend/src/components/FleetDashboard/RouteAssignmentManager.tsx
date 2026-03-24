@@ -295,52 +295,6 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
             <RefreshCw size={18} />
           </button>
           <button
-            onClick={() => {
-              console.log('🧪 TEST: Manual route creation test');
-              const testRoute = {
-                name: 'Test Route ' + Date.now(),
-                origin: 'Test Origin',
-                destination: 'Test Destination',
-                distance: 100,
-                estimatedTime: 2,
-                routeType: 'highway' as const,
-                status: 'active' as const,
-                description: 'Test route created from console'
-              };
-              console.log('🧪 TEST: Creating test route:', testRoute);
-              fleetApi.createRoute(testRoute)
-                .then(result => {
-                  console.log('🧪 TEST: Success!', result);
-                  toast.success('Test route created!');
-                  loadData();
-                })
-                .catch(error => {
-                  console.error('🧪 TEST: Failed!', error);
-                  toast.error('Test route failed!');
-                });
-            }}
-            className="h-12 px-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-[18px] text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            CREATE
-          </button>
-          <button
-            onClick={() => {
-              console.log('🧪 TEST: Manual route fetch test');
-              fleetApi.fetchRoutes()
-                .then(result => {
-                  console.log('🧪 TEST: Fetch routes success!', result);
-                  toast.success(`Fetched ${result.length} routes!`);
-                })
-                .catch(error => {
-                  console.error('🧪 TEST: Fetch routes failed!', error);
-                  toast.error('Fetch routes failed!');
-                });
-            }}
-            className="h-12 px-4 bg-green-500 hover:bg-green-600 text-white rounded-[18px] text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            FETCH
-          </button>
-          <button
             onClick={handleCreateRoute}
             className="h-12 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg"
           >
@@ -357,17 +311,6 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
             {assignMode ? <X size={14} /> : <Settings size={14} />}
             {assignMode ? 'Exit Assignment' : 'Assign Mode'}
           </button>
-        </div>
-      </div>
-
-      {/* Debug Info */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-xs">
-        <h4 className="font-bold text-yellow-800 mb-2">Debug Info:</h4>
-        <div className="space-y-1 text-yellow-700">
-          <div>Routes State Length: {routes.length}</div>
-          <div>Routes State: {JSON.stringify(routes, null, 2)}</div>
-          <div>Loading: {loading.toString()}</div>
-          <div>Error: {error || 'none'}</div>
         </div>
       </div>
 
