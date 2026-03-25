@@ -25,6 +25,15 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUrgency, setSelectedUrgency] = useState<string>("ALL");
+
+  // Calculate counts for each category
+  const categoriesWithCounts = categories.map(cat => ({
+    ...cat,
+    count: cat.id === 'all' 
+      ? cargoTemplates.length 
+      : cargoTemplates.filter(t => t.category === cat.id).length
+  }));
 
   const filteredTemplates = cargoTemplates.filter((template) => {
     const matchesCategory =
@@ -32,7 +41,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     const matchesSearch =
       template?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       template?.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesUrgency = 
+      selectedUrgency === "ALL" || template.urgencyLevel === selectedUrgency;
+    
+    return matchesCategory && matchesSearch && matchesUrgency;
   });
 
   const handleTemplateSelect = (template: Partial<CargoFormSchemaType>) => {
@@ -47,15 +59,17 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         {/* Header */}
         <ModalHeader onClose={onClose} />
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10 bg-white">
+        {/* Content Container - Optimized Height & Spacing */}
+        <div className="flex-1 overflow-y-auto p-4 lg:p-10 bg-white/50">
           {/* Search and Filter */}
           <SearchAndFilter
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
-            categories={categories}
+            categories={categoriesWithCounts}
+            selectedUrgency={selectedUrgency}
+            onUrgencyChange={setSelectedUrgency}
           />
 
           {/* Templates Grid */}

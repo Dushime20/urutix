@@ -43,8 +43,12 @@ const CargoOwnerLayout: React.FC = () => {
 
   if (isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <div className="w-16 h-16 relative">
+          <div className="absolute inset-0 border-4 border-slate-100 rounded-2xl"></div>
+          <div className="absolute inset-0 border-4 border-[#345E85] rounded-2xl border-t-transparent animate-spin"></div>
+        </div>
+        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading_Protocol</p>
       </div>
     );
   }
@@ -54,8 +58,8 @@ const CargoOwnerLayout: React.FC = () => {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col relative">
         {!hideHeader && <DashboardHeader />}
         
-        <main className="flex-1 pb-20 lg:pb-0">
-          <div className="max-w-7xl mx-auto px-4 py-6 lg:px-6">
+        <main className="flex-1 pb-32 lg:pb-12">
+          <div className="max-w-7xl mx-auto px-1.5 sm:px-4 py-4 md:py-8 lg:px-6">
             <Outlet />
           </div>
         </main>

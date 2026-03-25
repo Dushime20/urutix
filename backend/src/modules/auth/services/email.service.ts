@@ -1170,6 +1170,75 @@ This link will expire in 7 days.
     this.logger.log('========== AGENT EMAIL SERVICE CALL END ==========');
   }
 
+  /**
+   * Generic email sending method for any service to use.
+   * Sends via the configured SMTP transporter with proper from/replyTo headers.
+   */
+  async sendGenericEmail(options: {
+    to: string;
+    subject: string;
+    textBody?: string;
+    htmlBody?: string;
+    replyTo?: string;
+    fromName?: string;
+  }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const { to, subject, textBody, htmlBody, replyTo, fromName } = options;
+
+    const smtpFrom =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    // Build the from address with optional display name
+    const from = fromName ? `"${fromName}" <${smtpFrom}>` : smtpFrom;
+
+    if (!this.transporter) {
+      this.logger.warn(`⚠️ SMTP not configured — email to ${to} with subject "${subject}" was NOT sent.`);
+      return { success: false, error: 'SMTP transporter is not configured' };
+    }
+
+    try {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(to)) {
+        throw new Error(`Invalid email format: ${to}`);
+      }
+
+      const mailOptions: any = {
+        from,
+        to: to.trim().toLowerCase(),
+        subject,
+      };
+
+      if (replyTo) {
+        mailOptions.replyTo = replyTo;
+      }
+      if (htmlBody) {
+        mailOptions.html = htmlBody;
+      }
+      if (textBody) {
+        mailOptions.text = textBody;
+      }
+
+      this.logger.log(`📧 Sending generic email → to: ${to}, subject: "${subject}", replyTo: ${replyTo || 'none'}`);
+      const result = await this.transporter.sendMail(mailOptions);
+
+      if (result.accepted && result.accepted.length > 0) {
+        this.logger.log(`✅ Email sent to ${to} | messageId: ${result.messageId}`);
+        return { success: true, messageId: result.messageId };
+      } else if (result.rejected && result.rejected.length > 0) {
+        this.logger.error(`❌ Email rejected for ${to}: ${result.rejected.join(', ')}`);
+        return { success: false, error: `Rejected: ${result.rejected.join(', ')}` };
+      }
+
+      this.logger.warn(`⚠️ Email to ${to} — no accept/reject info`);
+      return { success: true, messageId: result.messageId };
+    } catch (error: any) {
+      this.logger.error(`❌ Failed to send email to ${to}: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  }
+
   private getDriverPasswordSetupEmailTemplate(
     firstName: string,
     lastName: string,

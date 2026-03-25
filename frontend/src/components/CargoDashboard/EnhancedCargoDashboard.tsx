@@ -20,6 +20,7 @@ import {
   FaChartPie,
   FaUsers,
 } from "react-icons/fa";
+import { cn } from "@/utils/cn";
 import MatchingInterface from "../MatchingInterface/MatchingInterface";
 import FilterSelect from "@/components/common/FilterSelect";
 import { enhancedMatchingApi } from "../../services/enhancedMatchingApi";
@@ -237,141 +238,135 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Cargo Analytics</h2>
-          <p className="text-gray-600 mt-1">Detailed insights into your cargo shipments</p>
+      {/* Header - Enlite Prime Style */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#345E85] flex items-center justify-center shadow-lg shadow-blue-900/20">
+            <FaChartLine className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">Cargo Analytics</h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Neural_Insights & Protocol_Data</p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
           <FilterSelect
-            label="Time Range"
+            label={<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Time_Scope</span>}
             value={selectedTimeRange}
             placeholder="Select range"
             options={[
-              { value: "7d", label: "Last 7 days" },
-              { value: "30d", label: "Last 30 days" },
-              { value: "90d", label: "Last 90 days" },
-              { value: "1y", label: "Last year" },
+              { value: "7d", label: "7 DAYS" },
+              { value: "30d", label: "30 DAYS" },
+              { value: "90d", label: "90 DAYS" },
+              { value: "1y", label: "1 YEAR" },
             ]}
             onChange={(value) => setSelectedTimeRange(value || "7d")}
-            icon={<FaCalendar className="text-primary-500" />}
-            className="min-w-[180px]"
+            icon={<FaCalendar className="text-slate-400" />}
+            className="w-full sm:min-w-[140px]"
+            selectClassName="rounded-xl border-slate-100 bg-slate-50/50 py-2.5 font-bold text-[11px]"
           />
           <FilterSelect
-            label="Cargo Type"
+            label={<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Payload_Category</span>}
             value={selectedCargoType}
-            placeholder="All cargo types"
+            placeholder="ALL TYPES"
             options={[
-              { value: "GENERAL", label: "General" },
-              { value: "HAZARDOUS", label: "Hazardous" },
-              { value: "REFRIGERATED", label: "Refrigerated" },
-              { value: "FRAGILE", label: "Fragile" },
+              { value: "GENERAL", label: "GENERAL" },
+              { value: "HAZARDOUS", label: "HAZARDOUS" },
+              { value: "REFRIGERATED", label: "REFRIGERATED" },
+              { value: "FRAGILE", label: "FRAGILE" },
             ]}
             onChange={setSelectedCargoType}
-            icon={<FaBox className="text-purple-500" />}
-            className="min-w-[180px]"
+            icon={<FaBox className="text-slate-400" />}
+            className="w-full sm:min-w-[140px]"
+            selectClassName="rounded-xl border-slate-100 bg-slate-50/50 py-2.5 font-bold text-[11px]"
           />
         </div>
       </div>
 
-      {/* Analytics View Selector */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setAnalyticsView('overview')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'overview'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setAnalyticsView('performance')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'performance'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            Performance
-          </button>
-          <button
-            onClick={() => setAnalyticsView('profitability')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'profitability'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            Profitability
-          </button>
-          <button
-            onClick={() => setAnalyticsView('predictive')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${analyticsView === 'predictive'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-          >
-            Predictive AI
-          </button>
+      {/* Analytics View Selector - Prime Hub */}
+      <div className="relative group">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide no-scrollbar py-2 px-1 -mx-1">
+          {[
+            { id: 'overview', label: 'Overview', icon: FaChartPie },
+            { id: 'performance', label: 'Performance', icon: FaChartBar },
+            { id: 'profitability', label: 'Profitability', icon: FaDollarSign },
+            { id: 'predictive', label: 'Predictive', icon: FaGlobe },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setAnalyticsView(tab.id as any)}
+              className={cn(
+                "flex items-center gap-3 px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border-2 whitespace-nowrap active:scale-95",
+                analyticsView === tab.id
+                  ? 'bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-900/10'
+                  : 'bg-white border-slate-50 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
+              )}
+            >
+              {analyticsView === tab.id && <tab.icon className="w-3.5 h-3.5" />}
+              {tab.label}
+            </button>
+          ))}
         </div>
+        <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none" />
       </div>
 
       {/* Dynamic Analytics Views */}
       {analyticsView === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaBox className="w-8 h-8 text-primary-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/20 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+            <div className="relative z-10 flex items-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
+                <FaBox className="w-5 h-5" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Cargo</p>
-                <p className="text-2xl font-bold text-gray-900">{totalCargos}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total_Payload</p>
+                <p className="text-2xl font-black text-slate-900 tracking-tight">{totalCargos}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaExclamationTriangle className="w-8 h-8 text-red-500" />
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50/20 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+            <div className="relative z-10 flex items-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300">
+                <FaExclamationTriangle className="w-5 h-5" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Hazardous Cargo</p>
-                <p className="text-2xl font-bold text-gray-900">{hazardousCargos}</p>
-                <p className="text-xs text-gray-500">
-                  {totalCargos > 0 ? ((hazardousCargos / totalCargos) * 100).toFixed(1) : 0}% of total
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hazardous_Scan</p>
+                <p className="text-2xl font-black text-slate-900 tracking-tight">{hazardousCargos}</p>
+                <p className="text-[8px] font-bold text-rose-400 uppercase tracking-widest mt-0.5">
+                  {totalCargos > 0 ? ((hazardousCargos / totalCargos) * 100).toFixed(1) : 0}% Protocol_Share
                 </p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaThermometerHalf className="w-8 h-8 text-primary-500" />
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/20 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+            <div className="relative z-10 flex items-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
+                <FaThermometerHalf className="w-5 h-5" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Refrigerated</p>
-                <p className="text-2xl font-bold text-gray-900">{refrigeratedCargos}</p>
-                <p className="text-xs text-gray-500">
-                  {totalCargos > 0 ? ((refrigeratedCargos / totalCargos) * 100).toFixed(1) : 0}% of total
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thermal_Critical</p>
+                <p className="text-2xl font-black text-slate-900 tracking-tight">{refrigeratedCargos}</p>
+                <p className="text-[8px] font-bold text-blue-400 uppercase tracking-widest mt-0.5">
+                  {totalCargos > 0 ? ((refrigeratedCargos / totalCargos) * 100).toFixed(1) : 0}% Volume_Ratio
                 </p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaClock className="w-8 h-8 text-orange-500" />
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50/20 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+            <div className="relative z-10 flex items-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300">
+                <FaClock className="w-5 h-5" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Time Critical</p>
-                <p className="text-2xl font-bold text-gray-900">{timeCriticalCargos}</p>
-                <p className="text-xs text-gray-500">
-                  {totalCargos > 0 ? ((timeCriticalCargos / totalCargos) * 100).toFixed(1) : 0}% of total
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time_Critical</p>
+                <p className="text-2xl font-black text-slate-900 tracking-tight">{timeCriticalCargos}</p>
+                <p className="text-[8px] font-bold text-orange-400 uppercase tracking-widest mt-0.5">
+                  {totalCargos > 0 ? ((timeCriticalCargos / totalCargos) * 100).toFixed(1) : 0}% Active_Demand
                 </p>
               </div>
             </div>
@@ -380,57 +375,49 @@ const EnhancedCargoDashboard: React.FC<EnhancedCargoDashboardProps> = ({
       )}
 
       {analyticsView === 'profitability' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaDollarSign className="w-8 h-8 text-green-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50/20 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+            <div className="relative z-10 flex items-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
+                <FaDollarSign className="w-5 h-5" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${profitMetrics.totalRevenue.toLocaleString()}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capital_Flow</p>
+                <p className="text-2xl font-black text-slate-900 tracking-tight">${profitMetrics.totalRevenue.toLocaleString()}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaDollarSign className="w-8 h-8 text-red-500" />
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#345E85]/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700" />
+            <div className="relative z-10 flex items-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
+                <FaChartLine className="w-5 h-5" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Cost</p>
-                <p className="text-2xl font-bold text-gray-900">${profitMetrics.totalCost.toLocaleString()}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol_Margin</p>
+                <p className="text-2xl font-black text-slate-900 tracking-tight">{profitMetrics.profitMargin.toFixed(1)}%</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaChartLine className="w-8 h-8 text-primary-500" />
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative sm:col-span-2">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[#345E85]/5 to-transparent pointer-events-none" />
+            <div className="relative z-10 flex items-center justify-between h-full">
+              <div className="flex items-center">
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-purple-500">
+                  <FaChartBar className="w-5 h-5" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency_Score</p>
+                  <p className="text-2xl font-black text-slate-900 tracking-tight">8.4<span className="text-xs text-slate-400">/10</span></p>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Profit Margin</p>
-                <p className="text-2xl font-bold text-gray-900">{profitMetrics.profitMargin.toFixed(1)}%</p>
-                <p className="text-xs text-gray-500">
-                  {profitMetrics.profitMargin > 20 ? 'Excellent' : profitMetrics.profitMargin > 10 ? 'Good' : 'Needs Improvement'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FaBox className="w-8 h-8 text-purple-500" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Cargo Value</p>
-                <p className="text-2xl font-bold text-gray-900">${avgValue.toFixed(0)}</p>
-                <p className="text-xs text-gray-500">
-                  Per shipment
-                </p>
+              <div className="hidden sm:block h-full w-40 bg-slate-50/50 rounded-2xl border border-slate-100 p-3">
+                 <div className="h-full w-full rounded-xl bg-[#345E85]/10 flex items-end gap-1 px-2">
+                    <div className="h-3/4 w-full bg-[#345E85] rounded-t-lg" />
+                    <div className="h-1/2 w-full bg-slate-300 rounded-t-lg" />
+                    <div className="h-[90%] w-full bg-[#345E85]/40 rounded-t-lg" />
+                 </div>
               </div>
             </div>
           </div>

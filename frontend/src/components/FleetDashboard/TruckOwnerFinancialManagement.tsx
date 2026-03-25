@@ -13,18 +13,22 @@ import {
   FaBuilding,
   FaFilter,
   FaSearch,
-  FaDownload,
-  FaEye,
   FaArrowDown,
   FaArrowUp,
-  FaInfoCircle,
-  FaClock,
-  FaBox
+  FaInfoCircle
 } from 'react-icons/fa';
 import { paymentsAPI } from '../../services/api';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+import { cn } from '@/utils/cn';
+import { 
+  CheckCircle2, 
+  Clock, 
+  Box, 
+  DollarSign 
+} from 'lucide-react';
 
 interface PaymentInfo {
   phoneNumber?: string;
@@ -73,7 +77,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Fetch user profile to get payment information
-  const { data: profileData, isLoading: profileLoading } = useQuery({
+  const { data: profileData } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       try {
@@ -343,69 +347,78 @@ const TruckOwnerFinancialManagement: React.FC = () => {
   const totalPaid = paymentGroups.reduce((sum, group) => sum + group.totalPaid, 0);
   const totalRemaining = paymentGroups.reduce((sum, group) => sum + group.totalRemaining, 0);
   const totalCargos = paymentGroups.reduce((sum, group) => sum + group.cargos.length, 0);
-  const completedPayments = cargoPayments.reduce((sum, cargo) =>
-    sum + cargo.payments.filter(p => p.status === 'completed' || p.status === 'COMPLETED').length, 0
-    , 0);
+  const completedPayments = cargoPayments.reduce((sum, cargo) => {
+    const cargoCompleted = cargo.payments.filter(p => p.status === 'completed' || p.status === 'COMPLETED').length;
+    return sum + cargoCompleted;
+  }, 0);
+
+  const SummaryCard = ({ title, value, icon: Icon, colorClass, gradient }: { title: string; value: string; icon: any; colorClass: string; gradient: string }) => (
+    <motion.div
+      whileHover={{ y: -5 }}
+      className="flex flex-col items-center group cursor-pointer"
+    >
+      <div className="relative size-36 lg:size-40 bg-white border-[6px] border-slate-50 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+          <circle
+            cx="50%"
+            cy="50%"
+            r="46%"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="414"
+            strokeDashoffset="300"
+            className={cn("opacity-10 transition-all duration-1000 group-hover:opacity-30", colorClass)}
+          />
+        </svg>
+
+        <div className={cn("p-2 rounded-xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", gradient)}>
+          <Icon size={14} />
+        </div>
+        <p className="text-xl lg:text-2xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
+          {value}
+        </p>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-blue-600 transition-colors">
+          {title}
+        </p>
+      </div>
+    </motion.div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
-          <div className="relative flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Received</p>
-              <p className="text-2xl font-bold text-gray-900 truncate">{formatCurrency(totalPaid)}</p>
-              <p className="text-xs text-gray-400 mt-1">All time payments</p>
-            </div>
-            <div className="ml-3 p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl group-hover:from-green-100 group-hover:to-green-200 transition-all duration-300">
-              <FaCheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
-          <div className="relative flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Pending Amount</p>
-              <p className="text-2xl font-bold text-orange-600 truncate">{formatCurrency(totalRemaining)}</p>
-              <p className="text-xs text-gray-400 mt-1">Awaiting payment</p>
-            </div>
-            <div className="ml-3 p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl group-hover:from-orange-100 group-hover:to-orange-200 transition-all duration-300">
-              <FaClock className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
-          <div className="relative flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Active Cargos</p>
-              <p className="text-2xl font-bold text-gray-900 truncate">{totalCargos}</p>
-              <p className="text-xs text-gray-400 mt-1">In payment process</p>
-            </div>
-            <div className="ml-3 p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl group-hover:from-blue-100 group-hover:to-blue-200 transition-all duration-300">
-              <FaBox className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200/60 p-6 hover:shadow-md hover:border-primary-500 transition-all duration-300 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50/0 to-primary-50/0 group-hover:from-primary-50/50 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
-          <div className="relative flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Completed Payments</p>
-              <p className="text-2xl font-bold text-gray-900 truncate">{completedPayments}</p>
-              <p className="text-xs text-gray-400 mt-1">Successful transactions</p>
-            </div>
-            <div className="ml-3 p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl group-hover:from-purple-100 group-hover:to-purple-200 transition-all duration-300">
-              <FaDollarSign className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
+    <div className="space-y-12">
+      {/* Financial Summary Matrix - SUBTLE CIRCULAR DESIGN */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-8 bg-slate-50/30 rounded-[3rem] border border-slate-100/50 place-items-center">
+        <SummaryCard 
+          title="Total Received" 
+          value={formatCurrency(totalPaid)} 
+          icon={CheckCircle2} 
+          colorClass="text-emerald-500" 
+          gradient="bg-emerald-50 text-emerald-600"
+        />
+        <SummaryCard 
+          title="Pending Amount" 
+          value={formatCurrency(totalRemaining)} 
+          icon={Clock} 
+          colorClass="text-orange-400" 
+          gradient="bg-orange-50 text-orange-600"
+        />
+        <SummaryCard 
+          title="Active Cargos" 
+          value={totalCargos.toString()} 
+          icon={Box} 
+          colorClass="text-blue-400" 
+          gradient="bg-blue-50 text-blue-600"
+        />
+        <SummaryCard 
+          title="Completed Payments" 
+          value={completedPayments.toString()} 
+          icon={DollarSign} 
+          colorClass="text-purple-400" 
+          gradient="bg-purple-50 text-purple-600"
+        />
       </div>
 
       {/* Tabs */}

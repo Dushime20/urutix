@@ -5,8 +5,9 @@ import {
   Trash2, Edit3, Eye, CheckCircle, XCircle, 
   Clock, Fuel, Wrench, MapPin, Truck, 
   User as UserIcon, ArrowRight,
-  TrendingUp, Wallet, ShieldCheck, Landmark
+  TrendingUp, ShieldCheck, Landmark
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { financialAPI, fleetAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
@@ -55,7 +56,6 @@ const ExpenseManagement: React.FC = () => {
     queryKey: ['trucks'],
     queryFn: async () => {
       const response = await fleetAPI.getTrucks();
-      // Handle various response structures: { trucks: [] }, { data: [] }, or direct array
       const data = response.data;
       if (Array.isArray(data?.trucks)) return data.trucks;
       if (Array.isArray(data?.data)) return data.data;
@@ -98,7 +98,7 @@ const ExpenseManagement: React.FC = () => {
     return {
       total: filteredExpenses.reduce((acc: number, e: Expense) => acc + Number(e.amount), 0),
       pending: filteredExpenses.filter((e: Expense) => e.status === 'pending').reduce((acc: number, e: Expense) => acc + Number(e.amount), 0),
-      taxSaved: filteredExpenses.filter((e: Expense) => e.taxDeductible).reduce((acc: number, e: Expense) => acc + Number(e.amount), 0) * 0.15 // 15% estim
+      taxSaved: filteredExpenses.filter((e: Expense) => e.taxDeductible).reduce((acc: number, e: Expense) => acc + Number(e.amount), 0) * 0.15 
     };
   }, [filteredExpenses]);
 
@@ -112,53 +112,68 @@ const ExpenseManagement: React.FC = () => {
     { value: 'other', label: 'Other', icon: Receipt, color: 'text-slate-600', bg: 'bg-slate-50' }
   ];
 
+  const SummaryCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string; icon: any; subtitle?: string }) => (
+    <motion.div
+      whileHover={{ y: -5 }}
+      className="flex flex-col items-center group cursor-pointer"
+    >
+      <div className="relative size-36 lg:size-40 bg-white border-[6px] border-slate-50 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+          <circle
+            cx="50%"
+            cy="50%"
+            r="46%"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="414"
+            strokeDashoffset="300"
+            className="text-blue-400 opacity-10 transition-all duration-1000 group-hover:opacity-30"
+          />
+        </svg>
+
+        <div className="p-2 rounded-xl mb-1 bg-slate-50 text-blue-600 group-hover:bg-white group-hover:text-blue-600 transition-all duration-500 shadow-sm">
+          <Icon size={14} />
+        </div>
+        <p className="text-xl lg:text-2xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
+          {value}
+        </p>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-600 group-hover:text-[#345E85] transition-colors">
+          {title}
+        </p>
+        {subtitle && (
+          <p className="text-[6px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </motion.div>
+  );
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Quick Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-            <TrendingUp className="w-24 h-24 text-rose-500" />
-          </div>
-          <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
-              <Wallet className="w-6 h-6" />
-            </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Burn</p>
-            <h3 className="text-3xl font-black text-[#0f172a]">${stats.total.toLocaleString()}</h3>
-            <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase">Operational Expenses</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-            <Clock className="w-24 h-24 text-amber-500" />
-          </div>
-          <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-              <Clock className="w-6 h-6" />
-            </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending Approval</p>
-            <h3 className="text-3xl font-black text-[#0f172a]">${stats.pending.toLocaleString()}</h3>
-            <p className="text-[10px] font-bold text-amber-500 mt-1 uppercase flex items-center gap-1">
-              Awaiting Review
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-            <ShieldCheck className="w-24 h-24 text-emerald-500" />
-          </div>
-          <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-              <Landmark className="w-6 h-6" />
-            </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tax Deductible</p>
-            <h3 className="text-3xl font-black text-[#0f172a]">${stats.taxSaved.toLocaleString()}</h3>
-            <p className="text-[10px] font-bold text-emerald-500 mt-1 uppercase">Estimated Savings</p>
-          </div>
-        </div>
+    <div className="space-y-12 animate-in fade-in duration-500">
+      {/* Quick Dashboard - SUBTLE CIRCULAR DESIGN */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 py-8 bg-slate-50/30 rounded-[3rem] border border-slate-100/50 place-items-center">
+        <SummaryCard 
+          title="Total Burn" 
+          value={`$${stats.total.toLocaleString()}`} 
+          icon={TrendingUp} 
+          subtitle="Operational Expenses"
+        />
+        <SummaryCard 
+          title="Pending Approval" 
+          value={`$${stats.pending.toLocaleString()}`} 
+          icon={Clock} 
+          subtitle="Awaiting Review"
+        />
+        <SummaryCard 
+          title="Tax Deductible" 
+          value={`$${stats.taxSaved.toLocaleString()}`} 
+          icon={ShieldCheck} 
+          subtitle="Estimated Savings"
+        />
       </div>
 
       {/* Control Bar */}
@@ -200,7 +215,7 @@ const ExpenseManagement: React.FC = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expense Detials</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Expense Details</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Entity</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Amount</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Timing</th>
@@ -358,7 +373,7 @@ const ExpenseManagement: React.FC = () => {
                 amount: Number(data.amount),
                 taxDeductible: data.taxDeductible === 'on',
                 status: 'pending',
-                category: (data as any).type // using type as category for now
+                category: (data as any).type 
               });
             }}>
               <div className="grid grid-cols-2 gap-8 mb-8">

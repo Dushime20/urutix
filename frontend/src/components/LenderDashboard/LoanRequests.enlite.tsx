@@ -12,9 +12,10 @@ import {
     ArrowUpRight,
     Shield,
     CreditCard,
-    FileText
+    FileText,
+    Activity
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
+import { motion } from 'framer-motion';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 
@@ -42,6 +43,45 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onExport
 }) => {
 
+    const SummaryCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string; icon: any; subtitle?: string }) => (
+        <motion.div
+            whileHover={{ y: -5 }}
+            className="flex flex-col items-center group cursor-pointer"
+        >
+            <div className="relative size-36 lg:size-40 bg-white border-[6px] border-slate-50 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+                <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+                    <circle
+                        cx="50%"
+                        cy="50%"
+                        r="46%"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeDasharray="414"
+                        strokeDashoffset="300"
+                        className="text-blue-400 opacity-10 transition-all duration-1000 group-hover:opacity-30"
+                    />
+                </svg>
+
+                <div className="p-2 rounded-xl mb-1 bg-slate-50 text-blue-600 group-hover:bg-white group-hover:text-blue-600 transition-all duration-500 shadow-sm">
+                    <Icon size={14} />
+                </div>
+                <p className="text-xl lg:text-2xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
+                    {value}
+                </p>
+            </div>
+            <div className="mt-4 text-center">
+                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-600 group-hover:text-[#345E85] transition-colors">
+                    {title}
+                </p>
+                {subtitle && (
+                    <p className="text-[6px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">
+                        {subtitle}
+                    </p>
+                )}
+            </div>
+        </motion.div>
+    );
 
     const columns = [
         {
@@ -51,7 +91,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             render: (name: string, row: any) => (
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs ring-2 ring-white shadow-sm border border-slate-200">
-                        {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        {name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                         <p className="font-semibold text-slate-900 text-sm truncate">{name}</p>
@@ -211,42 +251,32 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     ];
 
     return (
-        <div className="space-y-6">
-            {/* Analytics Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
+        <div className="space-y-12">
+            {/* Analytics Summary - CIRCULAR DESIGN */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-8 bg-slate-50/30 rounded-[3rem] border border-slate-100/50 place-items-center">
+                <SummaryCard
                     title="Total Applications"
-                    value={analytics?.totalRequests || 0}
-                    icon={<FileText />}
-                    trend={`${analytics?.monthlyGrowth || 0}%`}
-                    trendDirection="up"
-                    color="primary"
+                    value={analytics?.totalRequests?.toString() || "0"}
+                    icon={FileText}
                     subtitle="Lifetime requests"
-                    loading={loading}
                 />
-                <StatCard
+                <SummaryCard
                     title="Pending Approval"
-                    value={analytics?.pendingRequests || 0}
-                    icon={<Clock />}
-                    color="secondary"
+                    value={analytics?.pendingRequests?.toString() || "0"}
+                    icon={Clock}
                     subtitle="Requires attention"
-                    loading={loading}
                 />
-                <StatCard
+                <SummaryCard
                     title="Capital Requested"
                     value={`RWF ${(analytics?.totalAmountRequested / 1000000 || 0).toFixed(1)}M`}
-                    icon={<DollarSign />}
-                    color="info"
+                    icon={DollarSign}
                     subtitle="Pipeline volume"
-                    loading={loading}
                 />
-                <StatCard
+                <SummaryCard
                     title="Approval Strategy"
                     value={`${analytics?.approvalRate?.toFixed(1) || 0}%`}
-                    icon={<Shield />}
-                    color="accent"
+                    icon={Shield}
                     subtitle={`Avg risk: ${analytics?.averageRiskScore?.toFixed(0) || 0}%`}
-                    loading={loading}
                 />
             </div>
 
@@ -277,23 +307,5 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
         </div>
     );
 };
-
-// Internal Activity Icon since lucide was missing it in the prompt imports check, although usually available
-const Activity = (props: any) => (
-    <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-    </svg>
-);
 
 export default LoanRequestsEnlite;

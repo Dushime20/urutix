@@ -49,19 +49,15 @@ const FleetAnalytics = lazy(() => import('./pages/FleetAnalytics'));
 const FleetSafety = lazy(() => import('./pages/FleetSafety'));
 const DriverDashboard = lazy(() => import('./pages/driver/DriverDashboard'));
 
-// Subscription pages
 const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPlans'));
 
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
-const UnifiedFleetManagement = lazy(() => import('./pages/UnifiedFleetManagement'));
-const UnifiedDriverManagement = lazy(() => import('./pages/UnifiedDriverManagement'));
 const FleetPaymentManagement = lazy(() => import('./pages/FleetPaymentManagement'));
 const TruckOwnerCredits = lazy(() => import('./pages/truck-owner/TruckOwnerCredits'));
 
 const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
 const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
 const DriverHelpSupport = lazy(() => import('./pages/DriverHelpSupport'));
-const RoutesPage = lazy(() => import('./pages/Routes'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AnalyticsManagement'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminTrucks = lazy(() => import('./pages/AdminTrucks'));
@@ -121,7 +117,6 @@ const ReceiptViewer = lazy(() => import('./components/Lender/ReceiptViewer'));
 
 const UnifiedNotificationManagement = lazy(() => import('./pages/dashboard/notifications'));
 const SmartBookingRequests = lazy(() => import('./pages/SmartBookingsPage'));
-const FuelManagement = lazy(() => import('./pages/FuelPage'));
 const UnifiedReputationManagement = lazy(() => import('./pages/dashboard/reputation'));
 const UnifiedAccountManagement = lazy(() => import('./pages/dashboard/account'));
 const UnifiedTrackingManagement = lazy(() => import('./pages/dashboard/tracking'));
@@ -241,6 +236,8 @@ function App() {
                       <Route path="settings" element={<UnifiedAccountManagement />} />
                       <Route path="payments" element={<UnifiedFinancialManagement />} />
                       <Route path="financial" element={<UnifiedFinancialManagement />} />
+                      <Route path="expenses" element={<UnifiedFinancialManagement />} />
+                      <Route path="overview" element={<UnifiedFinancialManagement />} />
                       <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
                       <Route path="invoices" element={<InvoiceViewer />} />
                       <Route path="documents" element={<UnifiedDocumentManagement />} />
@@ -291,6 +288,8 @@ function App() {
                       <Route path="settings" element={<UnifiedAccountManagement />} />
                       <Route path="payments" element={<UnifiedFinancialManagement />} />
                       <Route path="payment" element={<UnifiedFinancialManagement />} />
+                      <Route path="expenses" element={<UnifiedFinancialManagement />} />
+                      <Route path="overview" element={<UnifiedFinancialManagement />} />
                       <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
                       <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="invoices" element={<InvoiceViewer />} />
@@ -327,30 +326,31 @@ function App() {
                     {/* Fleet Dashboard Routes */}
                     <Route path="/dashboard/fleet" element={<FleetOwnerLayout />}>
                       <Route index element={<FleetDashboard />} />
-                      <Route path="trucks" element={<UnifiedFleetManagement />} />
+                      <Route path="trucks" element={<FleetDashboard />} />
                       <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
-                      <Route path="drivers" element={<UnifiedDriverManagement />} />
+                      <Route path="drivers" element={<FleetDashboard />} />
                       <Route path="analytics" element={<FleetAnalytics />} />
                       <Route path="reports" element={<FleetAnalytics />} />
                       <Route path="safety" element={<FleetSafety />} />
-                      <Route path="financial" element={<UnifiedFinancialManagement />} />
-                      <Route path="financial/expenses" element={<UnifiedFinancialManagement />} />
-                      <Route path="financial/overview" element={<UnifiedFinancialManagement />} />
-                      <Route path="financial/reports" element={<UnifiedFinancialManagement />} />
-                      <Route path="financial/cost-analysis" element={<UnifiedFinancialManagement />} />
-                      <Route path="cost-analysis" element={<UnifiedFinancialManagement />} />
-                      <Route path="loan-requests" element={<UnifiedFinancialManagement />} />
-                      <Route path="overview" element={<UnifiedFinancialManagement />} />
+                      <Route path="financial" element={<FleetDashboard />} />
+                      <Route path="financial/expenses" element={<FleetDashboard />} />
+                      <Route path="financial/overview" element={<FleetDashboard />} />
+                      <Route path="financial/reports" element={<FleetDashboard />} />
+                      <Route path="financial/cost-analysis" element={<FleetDashboard />} />
+                      <Route path="cost-analysis" element={<FleetDashboard />} />
+                      <Route path="loan-requests" element={<FleetDashboard />} />
+                      <Route path="overview" element={<FleetDashboard />} />
                       <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="credits" element={<TruckOwnerCredits />} />
                       <Route path="bids" element={<UnifiedBiddingManagement />} />
                       <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="bidding-analytics" element={<UnifiedBiddingManagement />} />
                       <Route path="smart-bookings" element={<SmartBookingRequests />} />
-                      <Route path="fuel" element={<FuelManagement />} />
-                      <Route path="expenses" element={<UnifiedFinancialManagement />} />
-                      <Route path="routes" element={<RoutesPage />} />
-                      <Route path="assignments" element={<UnifiedDriverManagement />} />
+                      <Route path="fuel" element={<FleetDashboard />} />
+                      <Route path="expenses" element={<FleetDashboard />} />
+
+                      <Route path="routes" element={<FleetDashboard />} />
+                      <Route path="assignments" element={<FleetDashboard />} />
                       <Route path="ratings" element={<UnifiedReputationManagement />} />
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />

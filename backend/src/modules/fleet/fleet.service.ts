@@ -1031,17 +1031,12 @@ export class FleetService {
 
   async findAllDrivers(
     tenantId: string,
-    userId?: string,
+    userId: string,
     filters?: any,
     userRole?: string,
-  ): Promise<Driver[]> {
-    console.log('📊 Fleet Service - findAllDrivers called with:');
-    console.log('  tenantId:', tenantId);
-    console.log('  userId:', userId);
-    console.log('  userRole:', userRole);
-    console.log('  filters:', filters);
+  ): Promise<any[]> {
+    console.log('📊 Fleet Service - findAllDrivers called with:', { tenantId, userId, userRole, filters: JSON.stringify(filters) });
 
-    // Explicitly use the drivers table to ensure we're querying the correct table
     const query = this.driverRepository
       .createQueryBuilder('driver')
       .select([
@@ -1097,9 +1092,7 @@ export class FleetService {
         'driver.updatedAt',
         'driver.deletedAt'
       ])
-      .where('driver.tenantId = :tenantId', { tenantId })
-      .andWhere('driver.deletedAt IS NULL'); // Exclude soft-deleted drivers
-    
+      .where('driver.tenantId = :tenantId', { tenantId });
     console.log('  🔍 Query builder initialized with driverRepository');
     console.log('  🔍 Repository target:', this.driverRepository.target);
 
@@ -2857,28 +2850,54 @@ export class FleetService {
   }
 
   // Fleet analytics
-  async getFleetAnalytics(tenantId: string, userId: string) {
-    const trucks = await this.findAllTrucks(tenantId, userId);
-    const drivers = await this.findAllDrivers(tenantId, userId);
+  async getFleetAnalytics(tenantId: string, userId: string, userRole?: string) {
+    try {
+      console.log('📊 FleetService: Fetching analytics...', { tenantId, userId, userRole });
+      
+      const trucks = await this.findAllTrucks(tenantId, userId);
+      const drivers = await this.findAllDrivers(tenantId, userId, {}, userRole);
 
-    return {
-      totalTrucks: trucks.length,
-      availableTrucks: trucks.filter(
+      const totalTrucks = trucks?.length || 0;
+      const totalDrivers = drivers?.length || 0;
+
+      const availableTrucks = trucks ? trucks.filter(
         (t) => t.status === VehicleStatus.AVAILABLE,
-      ).length,
-      totalDrivers: drivers.length,
-      activeDrivers: drivers.filter((d) => d.status === DriverStatus.ACTIVE)
-        .length,
-      totalCapacity: trucks.reduce((sum, t) => sum + t.capacityWeight, 0),
-      averageTruckRating:
-        trucks.length > 0
-          ? trucks.reduce((sum, t) => sum + t.averageRating, 0) / trucks.length
-          : 0,
-      averageDriverRating:
-        drivers.length > 0
-          ? drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length
-          : 0,
-    };
+      ).length : 0;
+
+      const activeDrivers = drivers ? drivers.filter((d) => d.status === DriverStatus.ACTIVE)
+        .length : 0;
+
+      const totalCapacityWeight = trucks ? trucks.reduce((sum, t) => sum + Number(t.capacityWeight || 0), 0) : 0;
+
+      const totalAverageTruckRating = trucks ? trucks.reduce((sum, t) => sum + Number(t.averageRating || 0), 0) : 0;
+      const averageTruckRating = totalTrucks > 0 ? totalAverageTruckRating / totalTrucks : 0;
+
+      const totalAverageDriverRating = drivers ? drivers.reduce((sum, d) => sum + Number(d.rating || 0), 0) : 0;
+      const averageDriverRating = totalDrivers > 0 ? totalAverageDriverRating / totalDrivers : 0;
+
+      return {
+        totalTrucks,
+        availableTrucks,
+        totalDrivers,
+        activeDrivers,
+        totalCapacity: totalCapacityWeight,
+        averageTruckRating,
+        averageDriverRating,
+      };
+    } catch (error) {
+      console.error('❌ Error calculating getFleetAnalytics:', error);
+      // Return safe defaults instead of crashing if possible
+      return {
+        totalTrucks: 0,
+        availableTrucks: 0,
+        totalDrivers: 0,
+        activeDrivers: 0,
+        totalCapacity: 0,
+        averageTruckRating: 0,
+        averageDriverRating: 0,
+        isPartial: true
+      };
+    }
   }
 
   // Route-Truck Assignment Methods

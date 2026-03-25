@@ -2866,6 +2866,7 @@ export class FleetController {
     const analytics = await this.fleetService.getFleetAnalytics(
       req.user.tenantId,
       req.user.userId,
+      req.user.role,
     );
     return {
       message: 'Fleet analytics retrieved successfully',

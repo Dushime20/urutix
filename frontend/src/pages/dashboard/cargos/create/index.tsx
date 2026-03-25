@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaTruck, FaCheck, FaRocket, FaBookmark } from "react-icons/fa";
+import { FaRocket, FaBookmark } from "react-icons/fa";
 import JourneySelectionModal from "@/components/CargoOwnerJourney/JourneySelectionModal";
 import BrokerAssignmentStep from "@/components/CargoOwnerJourney/BrokerAssignmentStep";
 import PhotoUploadModal from "@/components/CargoDashboard/PhotoUploadModal";
@@ -202,7 +202,7 @@ const CargoCreatePage: React.FC = () => {
           console.error("Failed to publish draft, falling back to create:", publishError);
           // Fallback: create new and delete draft
           response = await loadsAPI.create(submissionData);
-          createdLoadId = response?.id || response?.data?.id || response?.load?.id;
+          createdLoadId = (response as any)?.id || (response as any)?.data?.id || (response as any)?.load?.id;
           try {
             await loadsAPI.deleteDraft(currentDraftId);
           } catch (e) {
@@ -214,7 +214,7 @@ const CargoCreatePage: React.FC = () => {
       } else {
         // No draft: create a brand new cargo
         response = await loadsAPI.create(submissionData);
-        createdLoadId = response?.id || response?.data?.id || response?.load?.id;
+        createdLoadId = (response as any)?.id || (response as any)?.data?.id || (response as any)?.load?.id;
       }
 
       setCargoData({
@@ -226,7 +226,7 @@ const CargoCreatePage: React.FC = () => {
       // Show broker assignment step before journey selection
       setShowBrokerAssignment(true);
 
-      return response;
+      return response as any;
     } catch (error) {
       const message = errorMessage(error);
       console.error("Cargo creation error:", message);
@@ -238,7 +238,7 @@ const CargoCreatePage: React.FC = () => {
     }
   };
 
-  const handleBrokerAssigned = (brokerId: string, contractId?: string) => {
+  const handleBrokerAssigned = (brokerId: string) => {
     setAssignedBrokerId(brokerId);
     setShowBrokerAssignment(false);
     // If broker is assigned, skip journey selection and go directly to cargo list
@@ -257,8 +257,13 @@ const CargoCreatePage: React.FC = () => {
   };
 
   const handleJourneySelection = async (
-    journey: "smart-matching" | "publish-bid"
+    journey: "smart-matching" | "publish-bid" | "assign-broker"
   ) => {
+    if (journey === "assign-broker") {
+      setShowJourneySelection(false);
+      setShowBrokerAssignment(true);
+      return;
+    }
     setShowJourneySelection(false);
 
     // Navigate to the journey page with cargo data
@@ -289,27 +294,55 @@ const CargoCreatePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <FaTruck className="text-blue-500 mr-3" size={24} />
-            <h1 className="text-3xl font-bold text-gray-900">
-              Create New Cargo
-            </h1>
+    <div className="min-h-screen bg-slate-50/50">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Draft Success Notification */}
+        {draftSaved && (
+          <div className="fixed top-24 right-4 z-50 animate-bounce">
+            <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                <FaRocket size={12} />
+              </div>
+              <span className="text-xs font-black uppercase tracking-widest">Draft Saved</span>
+            </div>
           </div>
-          <p className="text-gray-600">
-            Choose your preferred way to create cargo and start your journey
-          </p>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 mb-8 flex items-center gap-4">
+             <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+               <X className="text-rose-600 w-5 h-5" />
+             </div>
+             <p className="text-sm font-bold text-rose-700">{error}</p>
+          </div>
+        )}
+
+        {/* Header - Enlite Prime Style */}
+        <div className="mb-10 rounded-[2.5rem] p-8 sm:p-10 bg-white border border-slate-100 shadow-sm relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                <FaRocket className="text-[#345E85]" size={24} />
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] tracking-tight">
+                Create Cargo
+              </h1>
+            </div>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-lg">
+              Choose your preferred way to create cargo and start your journey with our smart logistics engine.
+            </p>
+          </div>
+          {/* Decorative background element */}
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl"></div>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <ActionCard
             icon={FaRocket}
             title="Quick Create"
-            description="Start from scratch"
+            description="START FROM SCRATCH"
             buttonText="Start Creating"
             color="blue"
             onClick={handleQuickCreate}
@@ -318,64 +351,71 @@ const CargoCreatePage: React.FC = () => {
           <ActionCard
             icon={FaBookmark}
             title="Use Template"
-            description="Frequently shipped cargo"
+            description="FREQUENTLY SHIPPED"
             buttonText="Choose Template"
             color="green"
             onClick={handleTemplateCreate}
           />
         </div>
 
-        {/* Draft Status */}
-        {draftSaved && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <FaCheck className="text-green-500 mr-2" />
-              <span className="text-green-800">Draft saved successfully!</span>
-            </div>
-          </div>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">{error}</p>
-          </div>
-        )}
-
         {/* Recent Drafts */}
         {drafts.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Recent Drafts ({drafts.length})
-            </h3>
-            <div className="space-y-3">
-              {drafts.slice(0, 3).map((draft: any) => (
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 sm:p-10 mb-10">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-xl font-black text-[#0f172a] tracking-tight">
+                  Recent Drafts
+                </h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  Pick up where you left off
+                </p>
+              </div>
+              <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-black">
+                {drafts.length} TOTAL
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {drafts.slice(0, 4).map((draft: any) => (
                 <div
                   key={draft.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                  className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-slate-50/50 transition-all duration-300"
                 >
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{draft.title || "Untitled Draft"}</h4>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Last updated: {new Date(draft.updatedAt).toLocaleDateString()}
-                    </p>
+                  <div className="flex-1 min-w-0 mr-4 mb-4 sm:mb-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                      <h4 className="font-black text-slate-800 truncate">{draft.title || "Untitled Draft"}</h4>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <span>{new Date(draft.updatedAt).toLocaleDateString()}</span>
+                      {draft.weight && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                          <span>{draft.weight} kg</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleContinueDraft(draft)}
-                    className="px-4 py-2 bg-[#345E85] text-white rounded-xl hover:bg-slate-800 transition-all font-black text-xs"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-slate-800 text-white rounded-2xl hover:bg-[#345E85] transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10"
                   >
                     CONTINUE
                   </button>
                 </div>
               ))}
             </div>
-            {drafts.length > 3 && (
-              <button
-                onClick={() => navigate("/cargo-owner/cargos/list?tab=drafts")}
-                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                View all {drafts.length} drafts →
-              </button>
+            
+            {drafts.length > 4 && (
+              <div className="mt-8 pt-6 border-t border-slate-50 flex justify-center">
+                <button
+                  onClick={() => navigate("/cargo-owner/cargos/list?tab=drafts")}
+                  className="text-[#345E85] hover:text-slate-800 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors"
+                >
+                  VIEW ALL {drafts.length} DRAFTS 
+                  <span className="text-lg">→</span>
+                </button>
+              </div>
             )}
           </div>
         )}

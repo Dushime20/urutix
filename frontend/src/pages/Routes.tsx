@@ -55,7 +55,7 @@ const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any
   </div>
 );
 
-const RoutesPage: React.FC = () => {
+const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const { confirm, DialogComponent } = useConfirmDialog();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -68,7 +68,7 @@ const RoutesPage: React.FC = () => {
     destination: '',
     distance: 0,
     estimatedTime: 0,
-    status: 'ACTIVE',
+    status: 'active',
     isActive: true,
     description: '',
   });
@@ -99,7 +99,7 @@ const RoutesPage: React.FC = () => {
       destination: '',
       distance: 0,
       estimatedTime: 0,
-      status: 'ACTIVE',
+      status: 'active',
       isActive: true,
       description: '',
     });
@@ -181,7 +181,7 @@ const RoutesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4 animate-in fade-in duration-500">
+      <div className={cn("flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500", isEmbedded ? "py-10" : "h-64")}>
         <Loader2 className="animate-spin text-[#345E85]" size={32} />
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Optimizing Strategic Pathways...</p>
       </div>
@@ -195,14 +195,16 @@ const RoutesPage: React.FC = () => {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="mb-2">Routes</h1>
-              <p className="text-sm text-gray-600">Manage and monitor your routes</p>
+        {!isEmbedded && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="mb-2">Routes</h1>
+                <p className="text-sm text-gray-600">Manage and monitor your routes</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <strong className="font-bold">Error:</strong>
           <span className="block sm:inline"> {error}</span>
@@ -212,7 +214,7 @@ const RoutesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-700">
+    <div className={cn("space-y-12 animate-in fade-in duration-700", isEmbedded ? "p-0" : "p-0")}>
       {/* Search & Stats Hub */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100 shadow-inner">
         <StatsCard
@@ -403,11 +405,11 @@ const RoutesPage: React.FC = () => {
                   <select
                     className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-[#345E85] transition-all appearance-none cursor-pointer"
                     value={(formData.status as string) || 'ACTIVE'}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                   >
-                    <option value="ACTIVE">ACTIVE PROTOCOL</option>
-                    <option value="INACTIVE">HIBERNATED</option>
-                    <option value="MAINTENANCE">UNDER CALIBRATION</option>
+                    <option value="active">ACTIVE PROTOCOL</option>
+                    <option value="inactive">HIBERNATED</option>
+                    <option value="maintenance">UNDER CALIBRATION</option>
                   </select>
                 </div>
                 <div className="space-y-2">

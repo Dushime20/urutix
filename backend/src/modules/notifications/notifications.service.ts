@@ -16,12 +16,14 @@ import {
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { NotificationFilterDto } from './dto/notification-filter.dto';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async createNotification(
@@ -55,6 +57,10 @@ export class NotificationsService {
     });
     const saved = await this.notificationRepository.save(notification);
     await this.deliverNotification(saved);
+    
+    // Emit real-time update to the recipient
+    this.eventsGateway.emitNotification(saved.recipientId, saved);
+    
     return saved;
   }
 
@@ -62,42 +68,58 @@ export class NotificationsService {
     notifications: CreateNotificationDto[],
     tenantId: string,
   ): Promise<Notification[]> {
-    const createdNotifications: Notification[] = notifications.map(
-      (notification) =>
-        this.notificationRepository.create({
-          notificationType: notification.type,
-          priority: notification.priority || NotificationPriority.NORMAL,
-          title: notification.subject ?? '',
-          message: notification.content ?? '',
-          recipientId: notification.userId,
-          tenantId: tenantId,
-          channels: notification.channel
-            ? [notification.channel]
-            : [NotificationChannel.IN_APP],
-          metadata: {
-            ...(notification.metadata ?? {}),
-            recipientEmail: notification.recipientEmail,
-            recipientPhone: notification.recipientPhone,
-            recipientName: notification.recipientName,
-            deviceToken: notification.deviceToken,
-            language: notification.language || 'en',
-            templateId: notification.templateId,
-          },
-          category: notification.category,
-          entityId: notification.relatedEntityId,
-          entityType: notification.relatedEntityType as any,
-          actionUrl: notification.actionUrl,
-          actionText: notification.actionText,
+    const fs = require('fs');
+    const logPath = 'C:\\Users\\HP\\Desktop\\urutix\\debug.log';
+    
+    try {
+      const createdNotifications: Notification[] = notifications.map(
+        (notification) =>
+          this.notificationRepository.create({
+            notificationType: notification.type,
+            priority: notification.priority || NotificationPriority.NORMAL,
+            title: notification.subject ?? '',
+            message: notification.content ?? '',
+            recipientId: notification.userId,
+            tenantId: tenantId,
+            status: NotificationStatus.SENT,
+            isRead: false,
+            channels: notification.channel
+              ? [notification.channel]
+              : [NotificationChannel.IN_APP],
+            metadata: {
+              ...(notification.metadata ?? {}),
+              recipientEmail: notification.recipientEmail,
+              recipientPhone: notification.recipientPhone,
+              recipientName: notification.recipientName,
+              deviceToken: notification.deviceToken,
+              language: notification.language || 'en',
+              templateId: notification.templateId,
+            },
+            category: notification.category,
+            entityId: notification.relatedEntityId,
+            entityType: notification.relatedEntityType as any,
+            actionUrl: notification.actionUrl,
+            actionText: notification.actionText,
+          }),
+      );
+      
+      const savedNotifications =
+        await this.notificationRepository.save(createdNotifications);
+      
+      fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] Saved ${savedNotifications.length} notifications for tenant ${tenantId}`);
+      
+      await Promise.all(
+        savedNotifications.map((notification) => {
+          // Emit real-time update to the recipient
+          this.eventsGateway.emitNotification(notification.recipientId, notification);
+          return this.deliverNotification(notification);
         }),
-    );
-    const savedNotifications =
-      await this.notificationRepository.save(createdNotifications);
-    await Promise.all(
-      savedNotifications.map((notification) =>
-        this.deliverNotification(notification),
-      ),
-    );
-    return savedNotifications;
+      );
+      return savedNotifications;
+    } catch (e) {
+      fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] ERROR: ${e.stack}`);
+      throw e;
+    }
   }
 
   async findAllNotifications(

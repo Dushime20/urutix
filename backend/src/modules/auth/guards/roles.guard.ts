@@ -8,8 +8,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../../entities/user.entity';
 
-export const ROLES_KEY = 'roles';
-export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);
+import { Roles, ROLES_KEY } from '../roles.decorator';
+export { Roles, ROLES_KEY };
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -38,14 +38,18 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User not found in request');
     }
 
-    // Temporary development bypass for drivers to debug 403 issue
-    if (process.env.NODE_ENV === 'development' && user.email?.toLowerCase().includes('driver')) {
-      console.log('🏁 Development bypass for driver user:', user.email);
+    // Temporary development bypass for drivers and truck owners to debug 403 issues
+    if (process.env.NODE_ENV === 'development' && 
+       (user.email?.toLowerCase().includes('driver') || 
+        user.email?.toLowerCase().includes('truck') || 
+        user.email?.toLowerCase().includes('owner'))) {
+      console.log('🏁 Development bypass for user:', user.email, 'Role:', user.role);
       return true;
     }
 
     console.log('User role:', user.role);
-    console.log('User ID:', user.userId);
+    console.log('User ID (userId):', user.userId);
+    console.log('User ID (id):', user.id);
     console.log('User tenant ID:', user.tenantId);
 
     // Normalize user roles to an array of uppercase strings
@@ -62,14 +66,14 @@ export class RolesGuard implements CanActivate {
 
     if (!hasRole) {
       console.log(
-        `❌ Access denied. Required: ${requiredRoles.join(', ')}. User has: ${user.role}`,
+        `❌ Access denied. Required: ${requiredRoles.join(', ')}. User has: ${userRoles.join(', ')} (Original: ${user.role})`,
       );
       throw new ForbiddenException(
-        `Insufficient permissions. Required roles: ${requiredRoles.join(', ')}. User role: ${user.role}`,
+        `Insufficient permissions. Required roles: ${requiredRoles.join(', ')}. User role: ${userRoles.join(', ')}`,
       );
     }
 
-    console.log('✅ Role check passed');
+    console.log(`✅ Role check passed for user ${user.email}. Role(s): ${userRoles.join(', ')} matched one of: ${requiredRoles.join(', ')}`);
     return true;
   }
 }

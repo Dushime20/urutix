@@ -177,40 +177,40 @@ export default function LoadItem({
       <div className="sm:hidden">
         {!showMobileDetails ? (
           <>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center space-x-3 min-w-0 flex-1">
-                <div className="flex-shrink-0">
-                  {getCargoTypeIcon(load.cargoType)}
-                </div>
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <h3 className="text-base font-black text-slate-800 break-words overflow-wrap-anywhere leading-tight">
-                    {load.title ||
-                      `${getCargoTypeDisplayName(load.cargoType)} Shipment`}
-                  </h3>
-                  <div className="mt-1 flex flex-col gap-0.5">
-                    <div className="text-[10px] sm:text-xs font-bold text-slate-500 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{getLocationDisplay(load)}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] sm:text-xs font-bold text-slate-400">
-                       <span className="flex items-center gap-1">
-                          <Weight className="w-3 h-3" />
-                          {formatWeight(load.weight)}
-                       </span>
-                       {load.offeredPrice && (
-                         <span className="text-primary-600 font-black">
-                            {formatCurrency(load.offeredPrice, load.currencyCode)}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <div className="flex-shrink-0">
+                    {getCargoTypeIcon(load.cargoType)}
+                  </div>
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <h3 className="text-base font-black text-slate-800 break-words overflow-wrap-anywhere leading-tight">
+                      {load.title ||
+                        `${getCargoTypeDisplayName(load.cargoType)} Shipment`}
+                    </h3>
+                    <div className="mt-1 flex flex-col gap-0.5">
+                      <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 flex-shrink-0 text-slate-400" />
+                        <span className="truncate">{getLocationDisplay(load)}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
+                         <span className="flex items-center gap-1">
+                            <Weight className="w-3 h-3 flex-shrink-0" />
+                            {formatWeight(load.weight)}
                          </span>
-                       )}
+                         {load.offeredPrice && (
+                           <span className="text-primary-600 font-black">
+                              {formatCurrency(load.offeredPrice, load.currencyCode)}
+                           </span>
+                         )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                   <span
                     className={cn(
-                      `px-3 py-1.5 rounded-full text-xs font-medium shadow-sm whitespace-nowrap`,
+                      `px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-all`,
                       getStatusColor(load.status)
                     )}
                   >
@@ -219,7 +219,7 @@ export default function LoadItem({
                   {load.urgencyLevel && (
                     <span
                       className={cn(
-                        `px-3 py-1.5 rounded-full text-xs font-medium shadow-sm whitespace-nowrap`,
+                        `px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-all`,
                         getUrgencyColor(load.urgencyLevel)
                       )}
                     >
@@ -227,13 +227,71 @@ export default function LoadItem({
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={() => setShowMobileDetails(true)}
-                  className="p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  title="View Details"
-                >
-                  <Eye className="w-5 h-5" />
-                </button>
+              </div>
+
+              {/* Action Bar - Mobile Visible */}
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-50">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleViewClick(load)}
+                    className="p-2.5 bg-slate-50 text-slate-500 hover:text-[#345E85] rounded-xl transition-all active:scale-95"
+                    title="View Details"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  {!load.broker && (
+                    <button
+                      onClick={handleEditClick}
+                      className="p-2.5 bg-slate-50 text-slate-500 hover:text-primary-600 rounded-xl transition-all active:scale-95"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  )}
+                  {handleAssignBroker && !load.broker && (
+                    <button
+                      onClick={() => handleAssignBroker(load)}
+                      className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all active:scale-95"
+                      title="Assign Broker"
+                    >
+                      <User className="w-4 h-4" />
+                    </button>
+                  )}
+                  {handleAssignReceiver && (
+                    <button
+                      onClick={() => !load.receiverId && handleAssignReceiver(load)}
+                      disabled={!!load.receiverId}
+                      className={cn(
+                        "p-2.5 rounded-xl transition-all active:scale-95",
+                        load.receiverId ? "bg-slate-50 text-slate-300" : "bg-teal-50 text-teal-600"
+                      )}
+                      title="Assign Receiver"
+                    >
+                      <Users className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  {isLoadingConfirmable(load.status) && (
+                    <button
+                      onClick={() => handleConfirmLoading(load)}
+                      className="p-2.5 bg-orange-50 text-orange-600 rounded-xl transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-[10px] font-black uppercase">CONFIRM</span>
+                    </button>
+                  )}
+                  {!load.broker && (
+                    <button
+                      onClick={() => handleDeleteCargo(load)}
+                      className="p-2.5 bg-red-50 text-red-500 rounded-xl transition-all active:scale-95"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </>

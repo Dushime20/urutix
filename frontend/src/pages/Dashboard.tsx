@@ -580,39 +580,39 @@ const CargoOwnerDashboard = () => {
     return list;
   }, [stats.incompleteCargos, matchingData.matchRecommendations]);
   const renderOverview = () => (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 md:space-y-8 pb-10">
       {/* 1. Hero / Performance Overview */}
-      <section className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm p-8 md:p-12 mb-8">
+      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white border border-slate-200 shadow-sm p-6 md:p-12 mb-4 md:mb-8">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 to-transparent pointer-events-none"></div>
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="max-w-2xl">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
-                  <Activity className="w-5 h-5" />
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-[#345E85]/10 text-[#345E85] p-1.5 rounded-lg border border-[#345E85]/10">
+                  <Activity className="w-4 h-4" />
                 </div>
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-blue-600">Dashboard Summary</h2>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85]">System_Summary</h2>
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.1] mb-6">
-                Operations <span className="text-[#345E85]">Overview</span>
+              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.1] mb-5">
+                Neural <span className="text-[#345E85]">Insights</span>
               </h1>
-              <p className="text-lg text-slate-500 font-medium mb-8 leading-relaxed">
-                Real-time visibility across your logistics network. Optimizing {stats.activeCargos} active shipments with AI-powered matching and automated documentation.
+              <p className="text-xs md:text-lg text-slate-500 font-medium mb-6 md:mb-8 leading-relaxed">
+                Aggregated logistics intelligence for {stats.activeCargos} active missions. Optimized with AI matching protocols and real-time capital management.
               </p>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:gap-4">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="px-8 py-4 bg-[#345E85] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-md hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-3"
+                  className="px-4 md:px-8 py-3 md:py-4 bg-[#345E85] text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-md hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3 md:w-4 md:w-4" />
                   Add Cargo
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/analytics')}
-                  className="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-2xl font-black uppercase tracking-widest text-xs hover:border-[#345E85] hover:text-[#345E85] transition-all flex items-center gap-3 shadow-sm"
+                  className="px-4 md:px-8 py-3 md:py-4 bg-white text-slate-700 border border-slate-200 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs hover:border-[#345E85] hover:text-[#345E85] transition-all flex items-center justify-center gap-2 md:gap-3 shadow-sm"
                 >
-                  <BarChart3 className="w-4 h-4" />
+                  <BarChart3 className="w-3 h-3 md:w-4 md:w-4" />
                   Visual Analytics
                 </button>
               </div>
@@ -655,42 +655,41 @@ const CargoOwnerDashboard = () => {
       </section>
 
       {/* 2. Key Performance Indicators - Circular Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-10 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 place-items-center bg-white p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-100 shadow-sm">
         {[
-          { icon: Package, label: 'Total Shipments', value: stats.totalCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos/list') },
-          { icon: Truck, label: 'Active Shipments', value: stats.activeCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/tracking') },
-          { icon: CheckCircle, label: 'Delivery Rate', value: `${formatNumber(stats.onTimeDeliveryRate)}%`, colorClass: 'bg-primary-50 text-primary-500', secondaryColor: 'text-primary-500', onClick: undefined },
-          { icon: Clock, label: 'Drafts', value: stats.incompleteCargos, colorClass: 'bg-rose-50 text-rose-600', secondaryColor: 'text-rose-600', onClick: () => navigate('/dashboard/cargos/list?status=DRAFT') },
+          { icon: Package, label: 'TOTAL_PAYLOAD', value: stats.totalCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos/list') },
+          { icon: Truck, label: 'ACTIVE_MISSIONS', value: stats.activeCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/tracking') },
+          { icon: CheckCircle, label: 'PROTOCOL_RATE', value: `${formatNumber(stats.onTimeDeliveryRate)}%`, colorClass: 'bg-primary-50 text-primary-500', secondaryColor: 'text-primary-500', onClick: undefined },
+          { icon: Clock, label: 'DRAFT_SCOOPES', value: stats.incompleteCargos, colorClass: 'bg-rose-50 text-rose-600', secondaryColor: 'text-rose-600', onClick: () => navigate('/dashboard/cargos/list?status=DRAFT') },
         ].map(({ icon: Icon, label, value, colorClass, secondaryColor, onClick }) => (
           <div
             key={label}
             onClick={onClick}
-            className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''}`}
+            className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''} w-full`}
           >
-            <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
-              <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+            <div className="relative w-full aspect-square max-w-[140px] md:max-w-[160px] rounded-full bg-white border-[6px] md:border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+              <svg className="absolute inset-0 w-full h-full -rotate-90">
                 <circle
-                  cx="80" cy="80" r="72"
+                  cx="50%" cy="50%" r="44%"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="3"
-                  strokeDasharray="452"
-                  strokeDashoffset="350"
                   className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
+                  strokeDasharray="100 100"
+                  strokeDashoffset="25"
                 />
               </svg>
-              <div className={`p-2 rounded-2xl mb-2 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
-                <Icon size={18} />
+              <div className={`p-1.5 rounded-xl mb-1.5 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+                <Icon size={14} />
               </div>
-              <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-                <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+              <div className="flex flex-col items-center px-2 w-full overflow-hidden">
+                <span className="text-lg font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-none">
                   {value}
                 </span>
               </div>
-              <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
             </div>
-            <div className="mt-4 text-center px-2">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+            <div className="mt-3 text-center px-1">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
                 {label}
               </p>
             </div>
@@ -717,7 +716,7 @@ const CargoOwnerDashboard = () => {
             View All
           </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -774,6 +773,47 @@ const CargoOwnerDashboard = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile-only List View for Recent Activity */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {recentCargoActivity.length === 0 ? (
+            <div className="px-7 py-12 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center">
+                  <Package className="w-5 h-5 text-slate-300" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No activity yet</p>
+              </div>
+            </div>
+          ) : (
+            recentCargoActivity.map(tx => (
+              <div 
+                key={tx.id} 
+                className="p-5 active:bg-slate-50 transition-colors"
+                onClick={() => handleCargoRowClick(tx.fullCargo)}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+                      <span className="text-xs font-black">{tx.logo}</span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 leading-tight">{tx.name}</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{tx.type}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${tx.statusColor}`}>
+                    {tx.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                  <span className="text-[10px] font-medium text-slate-400">{tx.date}</span>
+                  <span className="text-sm font-black text-[#345E85]">{formatCurrency(tx.amount)}</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
 

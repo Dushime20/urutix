@@ -48,41 +48,44 @@ const MobileBottomNav: React.FC = () => {
     const finalItems = navItems.slice(0, 5);
 
     return (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-xl border-t border-slate-100 shadow-[0_-1px_10px_rgba(0,0,0,0.05)] pb-safe">
-            <div className="flex justify-around items-center px-2 py-3">
-                {finalItems.map((item) => {
-                    const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
-                    
-                    return (
-                        <button
-                            key={item.label}
-                            onClick={() => navigate(item.path)}
-                            className={cn(
-                                "flex flex-col items-center gap-1 p-1 min-w-[64px] transition-all duration-300",
-                                isActive ? "text-primary-500" : "text-slate-400 hover:text-slate-600"
+        <div className="lg:hidden fixed bottom-6 left-4 right-4 z-[100] h-16 bg-white/95 backdrop-blur-2xl border border-slate-100 rounded-[2rem] shadow-[0_15px_40px_-5px_rgba(0,0,0,0.15)] flex items-center justify-around px-2">
+            {finalItems.map((item) => {
+                const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                
+                return (
+                    <button
+                        key={item.label}
+                        onClick={() => navigate(item.path)}
+                        className={cn(
+                            "relative flex flex-col items-center justify-center p-1.5 min-w-[56px] transition-all duration-300",
+                            isActive ? "text-[#345E85] -translate-y-1" : "text-slate-400"
+                        )}
+                    >
+                        {/* Active Indicator Bar */}
+                        {isActive && (
+                            <div className="absolute -top-1 w-6 h-1 bg-[#345E85] rounded-full shadow-[0_0_10px_rgba(52,94,133,0.3)]" />
+                        )}
+
+                        <div className={cn(
+                            "relative p-1.5 rounded-xl transition-all duration-500",
+                            isActive ? "scale-110" : ""
+                        )}>
+                            <item.icon className={cn("w-5 h-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
+                            {item.count && (
+                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-white">
+                                    {item.count}
+                                </span>
                             )}
-                        >
-                            <div className={cn(
-                                "relative p-2 rounded-xl transition-all",
-                                isActive ? "bg-primary-50 scale-110" : ""
-                            )}>
-                                <item.icon className={cn("w-5 h-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                                {item.count && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                                        {item.count}
-                                    </span>
-                                )}
-                            </div>
-                            <span className={cn(
-                                "text-[10px] font-bold uppercase tracking-wider transition-all",
-                                isActive ? "opacity-100 translate-y-0" : "opacity-70"
-                            )}>
-                                {item.label}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
+                        </div>
+                        <span className={cn(
+                            "text-[8px] font-black uppercase tracking-[0.1em] transition-all duration-300 mt-0.5",
+                            isActive ? "opacity-100" : "opacity-0 scale-75"
+                        )}>
+                            {item.label}
+                        </span>
+                    </button>
+                );
+            })}
         </div>
     );
 };

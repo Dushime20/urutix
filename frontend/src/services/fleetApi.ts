@@ -164,6 +164,36 @@ export interface CreateTruckDto {
   equipmentList?: string[];
 }
 
+export interface OptimizedRoute {
+  id: string;
+  name: string;
+  origin: { latitude: number; longitude: number; name: string };
+  destination: { latitude: number; longitude: number; name: string };
+  stops: Array<{ latitude: number; longitude: number; name: string }>;
+  totalDistance: number;
+  totalDuration: number;
+  status: 'active' | 'completed' | 'draft';
+  createdAt: string;
+}
+
+export interface FuelEntry {
+  id: string;
+  truckId: string;
+  driverId: string;
+  date: string;
+  gallons: number;
+  costPerGallon: number;
+  totalCost: number;
+  odometer: number;
+  location: string;
+  fuelType: string;
+  isFullTank: boolean;
+  jurisdiction: string;
+  status: 'verified' | 'pending' | 'flagged' | 'rejected';
+  notes?: string;
+  receiptUrl?: string;
+}
+
 export interface UpdateTruckDto {
   plateNumber?: string;
   status?: string;
@@ -224,6 +254,8 @@ export interface FleetApiResponse<T> {
   truck?: T;
   drivers?: T;
   driver?: T;
+  routes?: T;
+  route?: T;
   data?: T;
 }
 
@@ -422,6 +454,20 @@ export const fleetApi = {
 
   deleteRoute: async (id: string): Promise<void> => {
     await api.delete(`/fleet/routes/${id}`);
+  },
+
+  getRoutes: async (): Promise<OptimizedRoute[]> => {
+    const response = await api.get('/fleet/routes');
+    return response.data.routes || response.data.data || [];
+  },
+
+  saveRoute: async (route: OptimizedRoute): Promise<void> => {
+    await api.post('/fleet/routes', route);
+  },
+
+  calculateRoute: async (origin: any, destination: any, stops: any[]): Promise<OptimizedRoute> => {
+    const response = await api.post('/fleet/routes/calculate', { origin, destination, stops });
+    return response.data.route || response.data.data;
   },
 
   getTruckRoutes: async (truckId: string): Promise<Route[]> => {

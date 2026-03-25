@@ -96,9 +96,9 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
         <header className="flex-1 flex items-center justify-between gap-4">
 
           {/* Logo Section */}
-          <div className="flex items-center gap-10">
-            <div className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-80" onClick={() => navigate('/dashboard')}>
-              <img src={logoUrutiX} alt="UrutiX" className="h-8 sm:h-12 md:h-16 lg:h-20 w-auto object-contain max-w-none" />
+          <div className="flex items-center gap-6">
+            <div className={`flex items-center gap-2 cursor-pointer transition-all duration-300 hover:opacity-80 active:scale-95`} onClick={() => navigate('/dashboard')}>
+              <img src={logoUrutiX} alt="UrutiX" className="h-6 sm:h-10 md:h-12 w-auto object-contain" />
             </div>
 
 
