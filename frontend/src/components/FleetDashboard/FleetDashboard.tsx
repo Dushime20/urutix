@@ -13,6 +13,7 @@ import {
   Layers,
   Plus,
   Layout,
+  Calculator,
   Activity,
   Shield,
   CreditCard,
@@ -21,7 +22,8 @@ import {
   AlertTriangle,
   Fuel,
   MessageSquare,
-  Link
+  Link,
+  DollarSign
 } from 'lucide-react';
 import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
 import { FleetSkeleton } from './FleetSkeleton';
@@ -30,8 +32,6 @@ import { DriversList } from './DriversList';
 import StatCard from '../EnliteUI/Cards/StatCard';
 import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
-import { FinancialManagement } from './FinancialManagement';
-import { RouteAssignmentManager } from './RouteAssignmentManager';
 import FleetAssignmentManager from './FleetAssignmentManager';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardHeader from '../Layout/DashboardHeader';
@@ -55,6 +55,11 @@ import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
 // Lazy load Credits component
 const TruckOwnerCredits = lazy(() => import('../../pages/truck-owner/TruckOwnerCredits'));
+const FuelManagement = lazy(() => import('../../pages/FuelPage'));
+const RoutesPage = lazy(() => import('../../pages/Routes'));
+
+// Lazy load the full financial hub
+const UnifiedFinancialManagement = lazy(() => import('../../pages/dashboard/financial/UnifiedFinancialManagement'));
 
 // Import TenantCommunication for Truck Owners
 import TenantCommunication from '../../pages/tenant/TenantCommunication';
@@ -91,7 +96,8 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans'>('overview');
+
 
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<'trucks' | 'drivers'>('trucks');
@@ -103,13 +109,13 @@ export const FleetDashboard: React.FC = () => {
 
   // ── Role Based Access Control ──────────────────────────────────────────────
   const rolePermissions: Record<string, string[]> = {
-    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
-    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'credits', 'analytics', 'communicate'],
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
+    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
     'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'assignments', 'matches', 'analytics', 'communicate'],
-    'FLEET_ACCOUNTANT': ['overview', 'financial', 'credits', 'fuel', 'analytics'],
+    'FLEET_ACCOUNTANT': ['overview', 'financial', 'expenses', 'credits', 'fuel', 'analytics'],
     'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
   };
 
@@ -131,12 +137,15 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/drivers')) setActiveTab('drivers');
     else if (path.includes('/fleet/analytics')) setActiveTab('analytics');
     else if (path.includes('/fleet/safety')) setActiveTab('safety');
+    else if (path.includes('/fleet/loan-requests')) setActiveTab('loans');
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
+    else if (path.includes('/fleet/expenses')) setActiveTab('expenses');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
     else if (path.includes('/fleet/assignments')) setActiveTab('assignments');
     else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
     else if (path.includes('/fleet/credits')) setActiveTab('credits');
     else if (path.includes('/fleet/communicate') || path.includes('/fleet/communication')) setActiveTab('communicate');
+    else if (path.includes('/dashboard/fleet/overview')) setActiveTab('financial');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
   }, [location.pathname, location.search]);
 
@@ -177,7 +186,8 @@ export const FleetDashboard: React.FC = () => {
   }, [location.pathname]);
 
   const normalizeTruck = (t: ServiceTruck): LocalFleetItem => {
-    const name = [t.make, t.model].filter(Boolean).join(' ').trim() || t.plateNumber || t.id;
+    if (!t) return {} as LocalFleetItem;
+    const name = [t.make, t.model].filter(Boolean).join(' ').trim() || t.plateNumber || t.id || 'Unknown Truck';
     const status = (t.status as unknown as FleetStatus) || FleetStatus.AVAILABLE;
     return {
       id: t.id,
@@ -190,8 +200,8 @@ export const FleetDashboard: React.FC = () => {
           ? t.currentLocation
           : (t.currentLocation as any)?.address || 'Unknown'
       } : undefined,
-      createdAt: new Date(t.createdAt),
-      updatedAt: new Date(t.updatedAt),
+      createdAt: t.createdAt ? new Date(t.createdAt) : new Date(),
+      updatedAt: t.updatedAt ? new Date(t.updatedAt) : new Date(),
       licensePlate: t.plateNumber,
       plateNumber: t.plateNumber,
       make: t.make,
@@ -204,15 +214,16 @@ export const FleetDashboard: React.FC = () => {
   };
 
   const normalizeDriver = (d: ServiceDriver): LocalFleetItem => {
-    const name = `${d.firstName} ${d.lastName}`.trim() || d.id;
+    if (!d) return {} as LocalFleetItem;
+    const name = [d.firstName, d.lastName].filter(Boolean).join(' ').trim() || d.id || 'Unknown Driver';
     const status: FleetStatus = FleetStatus.AVAILABLE;
     return {
       id: d.id,
       type: 'driver',
       name,
       status,
-      createdAt: new Date(d.createdAt),
-      updatedAt: new Date(d.updatedAt),
+      createdAt: d.createdAt ? new Date(d.createdAt) : new Date(),
+      updatedAt: d.updatedAt ? new Date(d.updatedAt) : new Date(),
       licenseNumber: d.licenseNumber,
       experience: d.experience,
       contactInfo: { phone: d.phone, email: d.email },
@@ -224,16 +235,33 @@ export const FleetDashboard: React.FC = () => {
     setError(null);
     try {
       const [truckData, driverData, analyticsData] = await Promise.all([
-        fleetApi.getTrucks({ limit: 100 }),
-        fleetApi.getDrivers({ limit: 100 }),
-        fleetApi.fetchAnalytics()
+        fleetApi.getTrucks({ limit: 100 }).catch(err => {
+          console.warn('Failed to load trucks matrix:', err);
+          return [];
+        }),
+        fleetApi.getDrivers({ limit: 100 }).catch(err => {
+          console.warn('Failed to load drivers matrix:', err);
+          return [];
+        }),
+        fleetApi.fetchAnalytics().catch(err => {
+          console.warn('Failed to load fleet analytics:', err);
+          return null;
+        })
       ]);
 
-      const allData = [...truckData.map(normalizeTruck), ...driverData.map(normalizeDriver)];
+      const validTrucks = Array.isArray(truckData) ? truckData : [];
+      const validDrivers = Array.isArray(driverData) ? driverData : [];
+
+      const allData = [
+        ...validTrucks.filter(Boolean).map(normalizeTruck),
+        ...validDrivers.filter(Boolean).map(normalizeDriver)
+      ];
+      
       setFleetItems(allData);
       setAnalytics(analyticsData);
     } catch (e) {
-      setError('Failed to load fleet items.');
+      console.error('Critical failure in core fleet data pipeline:', e);
+      setError('Core data systems encountered an unexpected interruption. Partial data degraded.');
     } finally {
       setLoading(false);
     }
@@ -433,29 +461,45 @@ export const FleetDashboard: React.FC = () => {
             {/* Sub-Navigation / Quick Vectors */}
             <div className="flex flex-wrap items-center gap-4 mt-12 pb-2">
               {[
-                { id: 'overview', icon: Layout, label: 'Overview' },
-                { id: 'trucks', icon: Truck, label: 'Trucks' },
-                { id: 'drivers', icon: User, label: 'Drivers' },
-                { id: 'fuel', icon: Fuel, label: 'Fuel' },
-                { id: 'routes', icon: Navigation, label: 'Routes' },
-                { id: 'safety', icon: Shield, label: 'Safety' },
-                { id: 'matches', icon: Zap, label: 'Matches' },
-                { id: 'financial', icon: CreditCard, label: 'Financials' },
-                { id: 'credits', icon: CreditCard, label: 'Credits' },
-                { id: 'analytics', icon: Activity, label: 'Analytics' },
-                { id: 'communicate', icon: MessageSquare, label: 'Comms' }
-              ].filter(t => allowedTabs.includes(t.id)).map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    if (tab.id === 'fuel') {
-                      navigate('/dashboard/fleet/fuel');
-                    } else if (tab.id === 'credits') {
-                      navigate('/dashboard/fleet/credits');
-                    } else {
-                      setActiveTab(tab.id as any);
-                    }
-                  }}
+                 { id: 'overview', icon: Layout, label: 'Overview' },
+                 { id: 'trucks', icon: Truck, label: 'Trucks' },
+                 { id: 'drivers', icon: User, label: 'Drivers' },
+                 { id: 'fuel', icon: Fuel, label: 'Fuel' },
+                 { id: 'routes', icon: Navigation, label: 'Routes' },
+                 { id: 'safety', icon: Shield, label: 'Safety' },
+                 { id: 'matches', icon: Zap, label: 'Matches' },
+                 { id: 'financial', icon: CreditCard, label: 'Financials' },
+                 { id: 'loans', icon: DollarSign, label: 'Loans' },
+                 { id: 'expenses', icon: Calculator, label: 'Expenses' },
+                 { id: 'credits', icon: CreditCard, label: 'Credits' },
+                 { id: 'analytics', icon: Activity, label: 'Analytics' },
+                 { id: 'communicate', icon: MessageSquare, label: 'Comms' }
+               ].filter(t => allowedTabs.includes(t.id)).map((tab) => (
+                 <button
+                   key={tab.id}
+                   onClick={() => {
+                     if (tab.id === 'overview') {
+                       navigate('/dashboard/fleet');
+                     } else if (tab.id === 'fuel') {
+                       navigate('/dashboard/fleet/fuel');
+                     } else if (tab.id === 'credits') {
+                       navigate('/dashboard/fleet/credits');
+                     } else if (tab.id === 'financial') {
+                       navigate('/dashboard/fleet/overview');
+                     } else if (tab.id === 'loans') {
+                       navigate('/dashboard/fleet/loan-requests');
+                     } else if (tab.id === 'expenses') {
+                       navigate('/dashboard/fleet/expenses');
+                     } else if (tab.id === 'trucks') {
+                       navigate('/dashboard/fleet/trucks');
+                     } else if (tab.id === 'drivers') {
+                       navigate('/dashboard/fleet/drivers');
+                     } else if (tab.id === 'assignments') {
+                       navigate('/dashboard/fleet/assignments');
+                     } else {
+                       setActiveTab(tab.id as any);
+                     }
+                   }}
                   className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
                     ? 'bg-primary-50 text-primary-500 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'
@@ -553,7 +597,7 @@ export const FleetDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex-1 relative bg-slate-50 z-0">  
+                  <div className="flex-1 relative bg-slate-50 z-0">
                     <MapContainer
                       center={[-1.2921, 36.8219]}
                       zoom={13}
@@ -707,51 +751,58 @@ export const FleetDashboard: React.FC = () => {
               transition={{ duration: 0.4 }}
               className="space-y-8"
             >
-              {/* Specialized View Header */}
-              <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-6">
-                  <div className="h-16 w-16 bg-primary-50 rounded-[24px] flex items-center justify-center text-primary-500 shadow-inner">
-                    {activeTab === 'trucks' ? <Truck size={28} /> :
-                      activeTab === 'analytics' ? <Activity size={28} /> :
-                        activeTab === 'safety' ? <Shield size={28} /> :
-                          activeTab === 'financial' ? <CreditCard size={28} /> :
-                            activeTab === 'routes' ? <Navigation size={28} /> :
-                              activeTab === 'assignments' ? <Link size={28} /> :
-                                activeTab === 'matches' ? <Zap size={28} /> :
-                                  activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
+              {/* Specialized View Header (Hidden for tabs that implement their own complete control surfaces) */}
+              {!['trucks', 'drivers', 'assignments'].includes(activeTab) && (
+                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 bg-primary-50 rounded-[24px] flex items-center justify-center text-primary-500 shadow-inner">
+                      {activeTab === 'trucks' ? <Truck size={28} /> :
+                        activeTab === 'analytics' ? <Activity size={28} /> :
+                          activeTab === 'safety' ? <Shield size={28} /> :
+                            activeTab === 'financial' ? <CreditCard size={28} /> :
+                              activeTab === 'routes' ? <Navigation size={28} /> :
+                                activeTab === 'assignments' ? <Link size={28} /> :
+                                  activeTab === 'matches' ? <Zap size={28} /> :
+                                    activeTab === 'fuel' ? <Fuel size={28} /> :
+                                      activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                        {activeTab === 'trucks' ? <TranslatedText text="Trucks" /> :
+                          activeTab === 'analytics' ? <TranslatedText text="Analytics" /> :
+                            activeTab === 'safety' ? <TranslatedText text="Safety" /> :
+                              activeTab === 'financial' ? <TranslatedText text="Financials" /> :
+                                activeTab === 'routes' ? <TranslatedText text="Route Management" /> : 
+                                  activeTab === 'assignments' ? <TranslatedText text="Assignments" /> :
+                                    activeTab === 'matches' ? <TranslatedText text="Matches" /> :
+                                      activeTab === 'communicate' ? <TranslatedText text="Communication" /> : 
+                                        activeTab === 'fuel' ? <TranslatedText text="Fuel Management" /> : 
+                                          <TranslatedText text="Drivers" />}
+                      </h2>
+                      {activeTab !== 'fuel' && activeTab !== 'routes' && (
+                        <p className="text-sm font-medium text-slate-500">
+                          <TranslatedText text="Status" />: <span className="text-emerald-500 font-black"><TranslatedText text="Active" /></span>
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-                      {activeTab === 'trucks' ? <TranslatedText text="Trucks" /> :
-                        activeTab === 'analytics' ? <TranslatedText text="Analytics" /> :
-                          activeTab === 'safety' ? <TranslatedText text="Safety" /> :
-                            activeTab === 'financial' ? <TranslatedText text="Financials" /> :
-                              activeTab === 'routes' ? <TranslatedText text="Routes" /> :
-                                activeTab === 'assignments' ? <TranslatedText text="Assignments" /> :
-                                  activeTab === 'matches' ? <TranslatedText text="Matches" /> :
-                                    activeTab === 'communicate' ? <TranslatedText text="Communication" /> : <TranslatedText text="Drivers" />}
-                    </h2>
-                    <p className="text-sm font-medium text-slate-500">
-                      <TranslatedText text="Status" />: <span className="text-emerald-500 font-black"><TranslatedText text="Active" /></span>
-                    </p>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative group hidden sm:block">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search fleet entities..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all w-64"
+                      />
+                    </div>
                   </div>
                 </div>
+              )}
 
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all w-64"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-2 rounded-[40px] border border-slate-100 shadow-xl overflow-hidden min-h-[500px]">
+              <div className="bg-white p-2 sm:p-4 rounded-[40px] border border-slate-100 shadow-xl overflow-hidden min-h-[500px]">
                 {error && (
                   <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-[32px] flex items-center gap-3 m-4" role="alert">
                     <AlertTriangle size={20} />
@@ -762,10 +813,14 @@ export const FleetDashboard: React.FC = () => {
                   <TruckAnalytics trucks={trucks} />
                 ) : activeTab === 'safety' ? (
                   <SafetyManagement />
-                ) : activeTab === 'financial' ? (
-                  <FinancialManagement />
+                ) : (activeTab === 'financial' || activeTab === 'expenses' || activeTab === 'loans') ? (
+                  <Suspense fallback={<div className="p-20 text-center animate-pulse"><p className="text-[10px] font-black uppercase tracking-widest text-primary-500">Synchronizing Financial Hub...</p></div>}>
+                    <UnifiedFinancialManagement />
+                  </Suspense>
                 ) : activeTab === 'routes' ? (
-                  <RouteAssignmentManager />
+                  <Suspense fallback={<FleetSkeleton />}>
+                    <RoutesPage isEmbedded={true} />
+                  </Suspense>
                 ) : activeTab === 'assignments' ? (
                   <FleetAssignmentManager />
                 ) : activeTab === 'drivers' ? (
@@ -777,6 +832,10 @@ export const FleetDashboard: React.FC = () => {
                 ) : activeTab === 'credits' ? (
                   <Suspense fallback={<FleetSkeleton />}>
                     <TruckOwnerCredits />
+                  </Suspense>
+                ) : activeTab === 'fuel' ? (
+                  <Suspense fallback={<FleetSkeleton />}>
+                    <FuelManagement isEmbedded={true} />
                   </Suspense>
                 ) : activeTab === 'communicate' ? (
                   <TenantCommunication />

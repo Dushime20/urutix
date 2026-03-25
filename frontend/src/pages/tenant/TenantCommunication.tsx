@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import {
   Send, Users, RefreshCw, Mail, MessageSquare, 
   Smartphone, Bell, ChevronDown, ChevronUp, CheckCircle, 
-  XCircle, Search, X, User, Clock, BarChart2,
-  Zap, Eye
+  Search, X, User, Clock, BarChart2,
+  Zap
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -102,8 +102,6 @@ const TenantCommunication: React.FC = () => {
   const [selectedChannels, setSelectedChannels] = useState<Channel[]>(['email']);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [htmlBody, setHtmlBody] = useState('');
-  const [showHtml, setShowHtml] = useState(false);
 
   // Partner selection
   const [selectedPartnerIds, setSelectedPartnerIds] = useState<string[]>([]);
@@ -111,10 +109,6 @@ const TenantCommunication: React.FC = () => {
   const [partnerSearch, setPartnerSearch] = useState('');
   const [showPartnerFilters, setShowPartnerFilters] = useState(true);
   const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
-
-  // Preview
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewContent, setPreviewContent] = useState({ subject: '', html: '' });
 
   useEffect(() => { 
     fetchPartners(); 
@@ -172,14 +166,12 @@ const TenantCommunication: React.FC = () => {
     setSelectedPartnerIds(prev => prev.filter(id => !rolePartnerIds.includes(id)));
   };
 
-  const needsHtml = selectedChannels.includes('email');
-  const needsMessage = selectedChannels.some(c => ['sms', 'whatsapp', 'in_app'].includes(c));
+  const needsMessage = selectedChannels.length > 0; // All channels need at least a plain message
 
   const canSend = (() => {
     if (!selectedChannels.length) return false;
     if (!subject) return false;
-    if (needsHtml && !htmlBody && !message) return false;
-    if (needsMessage && !message) return false;
+    if (!message) return false;
     if (selectedPartnerIds.length === 0 && selectedRoles.length === 0) return false;
     return true;
   })();
@@ -195,7 +187,7 @@ const TenantCommunication: React.FC = () => {
         channels: selectedChannels,
         subject,
         message,
-        htmlBody: htmlBody || `<p>${message}</p>`,
+        htmlBody: `<p>${message}</p>`,
         filters: Object.keys(filters).length ? filters : undefined,
       });
 
@@ -209,7 +201,7 @@ const TenantCommunication: React.FC = () => {
         });
         toast.success(lines.join(' · ') || 'Campaign sent!');
 
-        setSubject(''); setMessage(''); setHtmlBody('');
+        setSubject(''); setMessage('');
         setSelectedPartnerIds([]); setSelectedRoles([]);
         setActiveTab('logs');
         fetchLogs();
@@ -219,12 +211,6 @@ const TenantCommunication: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePreview = () => {
-    if (!subject) return;
-    setPreviewContent({ subject, html: htmlBody || `<p>${message}</p>` });
-    setPreviewOpen(true);
   };
 
   const getSelectedPartnersCount = () => {
@@ -599,8 +585,10 @@ const TenantCommunication: React.FC = () => {
                   {needsMessage && (
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                        Message
-                        <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 normal-case text-[9px] font-bold">SMS · WhatsApp · In-App</span>
+                        Message Content
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 normal-case text-[9px] font-bold">
+                          {selectedChannels.includes('email') ? 'Email Plain-Text & Fallback' : 'SMS · WhatsApp · In-App'}
+                        </span>
                       </label>
                       <textarea rows={4} value={message} onChange={e => setMessage(e.target.value)}
                         placeholder="Keep under 160 characters for SMS. Plain text — no HTML."
@@ -612,24 +600,6 @@ const TenantCommunication: React.FC = () => {
                     </div>
                   )}
 
-                  {/* HTML Body (email) */}
-                  {needsHtml && (
-                    <div>
-                      <button onClick={() => setShowHtml(v => !v)}
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 hover:text-slate-700 transition-colors">
-                        <Mail size={11} />
-                        Email HTML Body (optional — uses message text if blank)
-                        {showHtml ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                      </button>
-                      {showHtml && (
-                        <>
-                          <textarea rows={9} value={htmlBody} onChange={e => setHtmlBody(e.target.value)}
-                            placeholder="<p>Dear Partner,</p><p>Write your rich HTML message here…</p>"
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-700 outline-none resize-y focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all" />
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -648,12 +618,7 @@ const TenantCommunication: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {needsHtml && (
-                    <button onClick={handlePreview} disabled={!canSend}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                      <Eye size={14} /> Preview
-                    </button>
-                  )}
+
                   <button 
                     onClick={handleSend} 
                     disabled={loading || !canSend}
@@ -735,25 +700,7 @@ const TenantCommunication: React.FC = () => {
         </div>
       )}
 
-      {/* ── Preview Modal ── */}
-      {previewOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div>
-                <h2 className="text-base font-black text-slate-800">Email Preview</h2>
-                <p className="text-[10px] text-slate-400 mt-0.5">{previewContent.subject}</p>
-              </div>
-              <button onClick={() => setPreviewOpen(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400">
-                <XCircle size={22} />
-              </button>
-            </div>
-            <div className="h-[500px]">
-              <iframe srcDoc={previewContent.html} className="w-full h-full border-0 block" title="Email Preview" />
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

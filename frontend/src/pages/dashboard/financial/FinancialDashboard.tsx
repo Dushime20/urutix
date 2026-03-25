@@ -23,6 +23,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { financialAPI } from '@/services/api';
 
@@ -51,7 +52,10 @@ const FinancialDashboard: React.FC = () => {
   // Fetch recent transactions (Invoices + Payments + Expenses)
   const { data: recentInvoices } = useQuery({
     queryKey: ['recent-invoices'],
-    queryFn: () => financialAPI.getInvoices({ limit: 5 })
+    queryFn: async () => {
+      const response = await financialAPI.getInvoices({ limit: 5 });
+      return response.data?.data || response.data || [];
+    }
   });
 
   const stats = useMemo(() => {
@@ -75,7 +79,8 @@ const FinancialDashboard: React.FC = () => {
   }, [reportData]);
 
   const recentTransactions = useMemo(() => {
-    const invoices = (recentInvoices as any)?.data || [];
+    const invoices = Array.isArray(recentInvoices) ? recentInvoices : [];
+    
     return invoices.slice(0, 5).map((inv: any) => ({
       id: inv.id,
       description: `Invoice ${inv.invoiceNumber}`,
@@ -93,6 +98,46 @@ const FinancialDashboard: React.FC = () => {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  const SummaryCard = ({ title, value, icon: Icon, colorClass, gradient, change, changePositive }: { title: string; value: string; icon: any; colorClass: string; gradient: string; change?: string; changePositive?: boolean }) => (
+    <motion.div
+      whileHover={{ y: -5 }}
+      className="flex flex-col items-center group cursor-pointer"
+    >
+      <div className="relative size-40 lg:size-44 bg-white border-[6px] border-slate-50 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        {/* Subtle Decorative Ring */}
+        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+          <circle
+            cx="50%"
+            cy="50%"
+            r="46%"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="414"
+            strokeDashoffset="300"
+            className={cn("opacity-10 transition-all duration-1000 group-hover:opacity-30", colorClass)}
+          />
+        </svg>
+
+        {/* Central Content */}
+        <div className={cn("p-2 rounded-xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", gradient)}>
+          <Icon size={16} />
+        </div>
+        <p className="text-xl lg:text-2xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
+          {value}
+        </p>
+        {change && (
+          <span className={cn("text-[8px] font-black mt-1", changePositive ? "text-emerald-500" : "text-rose-500")}>
+            {change}
+          </span>
+        )}
+      </div>
+      <p className="mt-4 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-[#345E85] transition-colors text-center px-2">
+        {title}
+      </p>
+    </motion.div>
+  );
 
   if (isLoading) {
     return (
@@ -135,63 +180,44 @@ const FinancialDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <TrendingUp size={24} />
-          </div>
-          <div className="space-y-1">
-            <div className="text-3xl font-black text-slate-900 leading-none">{formatCurrency(stats.revenue)}</div>
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-              <span>Total Revenue</span>
-              <span className="text-emerald-500">+12%</span>
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-widest mt-2 text-slate-300">Net Gross Income</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <Wallet size={24} />
-          </div>
-          <div className="space-y-1">
-            <div className="text-3xl font-black text-slate-900 leading-none">{formatCurrency(stats.expenses)}</div>
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-              <span>Total Expenses</span>
-              <span className="text-rose-500">+5%</span>
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-widest mt-2 text-slate-300">Operational Burn</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <ArrowUpRight size={24} />
-          </div>
-          <div className="space-y-1">
-            <div className="text-3xl font-black text-slate-900 leading-none">{formatCurrency(stats.profit)}</div>
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-              <span>Net Profit</span>
-              <span className="text-blue-500">Peak Performance</span>
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-widest mt-2 text-slate-300">Liquid Capital</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <PieChartIcon size={24} />
-          </div>
-          <div className="space-y-1">
-            <div className="text-3xl font-black text-slate-900 leading-none">{stats.margin.toFixed(1)}%</div>
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-              <span>Profit Margin</span>
-              <span className="text-amber-500">Audit Ready</span>
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-widest mt-2 text-slate-300">Efficiency Index</div>
-          </div>
-        </div>
+      {/* Primary Metrics Vector Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-10 bg-white/40 rounded-[3rem] border border-slate-100/50">
+        <SummaryCard 
+          title="Total Revenue" 
+          value={formatCurrency(stats.revenue)} 
+          change="+12%"
+          changePositive={true}
+          icon={TrendingUp} 
+          colorClass="text-emerald-500" 
+          gradient="bg-emerald-50 text-emerald-600" 
+        />
+        <SummaryCard 
+          title="Total Expenses" 
+          value={formatCurrency(stats.expenses)} 
+          change="+5%"
+          changePositive={false}
+          icon={Wallet} 
+          colorClass="text-rose-400" 
+          gradient="bg-rose-50 text-rose-600" 
+        />
+        <SummaryCard 
+          title="Net Profit" 
+          value={formatCurrency(stats.profit)} 
+          change="Peak"
+          changePositive={true}
+          icon={ArrowUpRight} 
+          colorClass="text-blue-500" 
+          gradient="bg-blue-50 text-[#345E85]" 
+        />
+        <SummaryCard 
+          title="Profit Margin" 
+          value={`${stats.margin.toFixed(1)}%`} 
+          change="Audit Ready"
+          changePositive={true}
+          icon={PieChartIcon} 
+          colorClass="text-amber-500" 
+          gradient="bg-amber-50 text-amber-600" 
+        />
       </div>
 
       {/* Analytics Architecture */}

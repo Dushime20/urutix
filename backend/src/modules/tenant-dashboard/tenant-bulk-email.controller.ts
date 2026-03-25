@@ -27,7 +27,7 @@ import {
 
 @Controller('tenant-dashboard/communicate')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('TENANT_ADMIN', 'ADMIN', 'TRUCK_OWNER')
+@Roles('TENANT_ADMIN', 'ADMIN', 'TRUCK_OWNER', 'CARGO_OWNER')
 export class TenantBulkEmailController {
   private readonly logger = new Logger(TenantBulkEmailController.name);
 
@@ -272,7 +272,9 @@ export class TenantBulkEmailController {
           content: message,
           userId: u.id,
           channel: NotificationChannel.IN_APP,
-          category: NotificationCategory.MARKETING,
+          category: NotificationCategory.SYSTEM,
+          relatedEntityType: 'USER',
+          relatedEntityId: u.id,
           metadata: { 
             sentBy: req.user.email, 
             broadcast: true,
@@ -293,6 +295,7 @@ export class TenantBulkEmailController {
         );
         results.in_app = { success: true, sent: users.length };
       } catch (e) {
+        require('fs').appendFileSync('C:\\Users\\HP\\Desktop\\urutix\\in-app-error.log', '\n' + e.stack);
         results.in_app = { success: false, error: e.message };
       }
     }

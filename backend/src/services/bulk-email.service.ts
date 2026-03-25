@@ -213,6 +213,7 @@ export class BulkEmailService {
     logId: string,
     template: EmailTemplate,
     recipients: Array<{ email: string; tenantName: string; tenantId: string }>,
+    senderEmail?: string,
   ): Promise<void> {
     let sentCount = 0;
     let failedCount = 0;
@@ -233,16 +234,24 @@ export class BulkEmailService {
           recipient,
         );
 
-        // Send email using existing email service
-        await this.sendEmail(
-          recipient.email,
-          personalizedSubject,
-          personalizedText,
-          personalizedHtml,
-        );
+        // Send email using EmailService
+        const result = await this.emailService.sendGenericEmail({
+          to: recipient.email,
+          subject: personalizedSubject,
+          textBody: personalizedText,
+          htmlBody: personalizedHtml,
+          replyTo: senderEmail,
+          fromName: senderEmail ? `UrutiX (via ${senderEmail})` : 'UrutiX',
+        });
 
-        sentCount++;
-        this.logger.log(`Email sent successfully to ${recipient.email}`);
+        if (result.success) {
+          sentCount++;
+          this.logger.log(`Email sent successfully to ${recipient.email}`);
+        } else {
+          failedCount++;
+          failedRecipients.push(recipient.email);
+          this.logger.error(`Failed to send email to ${recipient.email}: ${result.error}`);
+        }
       } catch (error) {
         failedCount++;
         failedRecipients.push(recipient.email);
@@ -278,24 +287,61 @@ export class BulkEmailService {
       .replace(/\{\{tenantId\}\}/g, data.tenantId);
   }
 
-  private async sendEmail(
-    to: string,
-    subject: string,
-    textBody: string,
-    htmlBody: string,
-  ): Promise<void> {
-    // Use the existing email service's transporter
-    // Since EmailService is injected, we can access its methods
-    // For now, we'll need to add a generic send method to EmailService
-    // or use nodemailer directly here
-    
-    // This is a placeholder - you'll need to either:
-    // 1. Add a generic sendEmail method to EmailService
-    // 2. Or inject nodemailer transporter here
-    
-    this.logger.log(`Sending email to ${to} with subject: ${subject}`);
-    // TODO: Implement actual email sending
-    // await this.emailService.sendGenericEmail(to, subject, textBody, htmlBody);
+  /**
+   * Wraps raw HTML content in a professional, branded email template.
+   */
+  private wrapInEmailTemplate(subject: string, bodyHtml: string, senderEmail: string): string {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0f172a; padding: 24px 32px; text-align: center;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 2px; text-transform: uppercase;">UrutiX</h1>
+            </td>
+          </tr>
+          <!-- Subject -->
+          <tr>
+            <td style="padding: 32px 32px 8px 32px;">
+              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.4;">${subject}</h2>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 16px 32px 32px 32px; font-size: 15px; line-height: 1.7; color: #334155;">
+              ${bodyHtml}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #94a3b8;">
+                Sent by <strong style="color: #475569;">${senderEmail}</strong> via UrutiX
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #cbd5e1;">
+                You can reply directly to this email to contact the sender.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin-top: 16px; font-size: 11px; color: #94a3b8; text-align: center;">
+          &copy; ${new Date().getFullYear()} UrutiX. All rights reserved.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
   }
 
   // ---- Tenant Admin: send to own partners ----
@@ -347,11 +393,14 @@ export class BulkEmailService {
     });
     await this.bulkEmailLogRepository.save(log);
 
+    // Wrap the plain message in a professional HTML email template
+    const wrappedHtml = this.wrapInEmailTemplate(subject, htmlBody, tenantAdminEmail);
+
     const template: EmailTemplate = {
       id: null,
       name: 'Partner Email',
       subject,
-      htmlBody,
+      htmlBody: wrappedHtml,
       textBody,
       description: null,
       category: 'partner',
@@ -363,10 +412,12 @@ export class BulkEmailService {
       updatedAt: new Date(),
     };
 
-    this.sendEmailsAsync(log.id, template, recipients);
+    // Pass tenantAdminEmail as sender for replyTo header
+    this.sendEmailsAsync(log.id, template, recipients, tenantAdminEmail);
 
     return log;
   }
+
 
   async getPartnerEmailLogs(tenantId: string): Promise<BulkEmailLog[]> {
     try {

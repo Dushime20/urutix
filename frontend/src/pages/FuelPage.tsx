@@ -51,7 +51,7 @@ const MOCK_BAR_DATA = [
     { plate: 'URT-102', mpg: 6.1 },
 ];
 
-const FuelPage: React.FC = () => {
+const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     const [stats, setStats] = useState<any>(null);
     const [logs, setLogs] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -67,11 +67,31 @@ const FuelPage: React.FC = () => {
 
     const loadFuelData = async () => {
         setLoading(true);
+        console.log('🔄 loadFuelData: Starting fetch...');
         try {
             const [statsData, logsData] = await Promise.all([
-                fuelApi.getFuelStatistics(),
-                fuelApi.getFuelLogs()
+                fuelApi.getFuelStatistics().catch(err => {
+                    console.error('❌ Error fetching statistics:', err);
+                    return null;
+                }),
+                fuelApi.getFuelLogs().catch(err => {
+                    console.error('❌ Error fetching logs:', err);
+                    return [];
+                })
             ]);
+
+            console.log('✅ loadFuelData: Received data', { statsData, logsCount: logsData?.length });
+
+            // Stats data can be null if it failed but we caught it
+            if (statsData) {
+                setStats({
+                    totalCost: statsData.totalSpend,
+                    totalGallons: statsData.totalVolume,
+                    avgCostPerGallon: statsData.avgPricePerGallon,
+                    avgMpg: statsData.fleetEfficiency,
+                    flaggedTransactions: statsData.fraudAlerts
+                });
+            }
 
             // Map FuelLog from backend to FuelEntry expected by FuelLogTable
             const mappedLogs: FuelEntry[] = (logsData || []).map(log => ({
@@ -91,19 +111,13 @@ const FuelPage: React.FC = () => {
                 notes: log.notes
             }));
 
-            setStats({
-                totalCost: statsData.totalSpend,
-                totalGallons: statsData.totalVolume,
-                avgCostPerGallon: statsData.avgPricePerGallon,
-                avgMpg: statsData.fleetEfficiency,
-                flaggedTransactions: statsData.fraudAlerts
-            });
             setLogs(mappedLogs);
         } catch (error) {
-            console.error('Failed to load fuel data', error);
+            console.error('❌ Failed to load fuel data (Unexpected Error):', error);
             toast.error('Failed to update fuel dashboard');
         } finally {
             setLoading(false);
+            console.log('🏁 loadFuelData: Finished');
         }
     };
 
@@ -154,11 +168,12 @@ const FuelPage: React.FC = () => {
 
     return (
         <DetailedErrorBoundary>
-            <div className="min-h-screen bg-[#F8FAFC]">
-                <DashboardHeader />
+            <div className={isEmbedded ? "w-full" : "min-h-screen bg-[#F8FAFC]"}>
+                {!isEmbedded && <DashboardHeader />}
 
                 {/* Main Header Section */}
-                <div className="bg-white border-b border-slate-100 relative overflow-hidden">
+                {!isEmbedded && (
+                    <div className="bg-white border-b border-slate-100 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-20 opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
                         <Fuel size={140} className="text-primary-500" />
                     </div>
@@ -191,8 +206,9 @@ const FuelPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+                )}
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+                <div className={isEmbedded ? "space-y-12" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12"}>
                     {/* Fuel Stats Overview */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -385,7 +401,7 @@ const FuelPage: React.FC = () => {
                     {activeTab === 'advances' && <FuelAdvancesTab />}
                 </div>
 
-                <DashboardFooter />
+                {!isEmbedded && <DashboardFooter />}
 
                 <FuelEntryModal
                     isOpen={isModalOpen}

@@ -55,7 +55,7 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -100, opacity: 0 }}
-      className="fixed top-0 left-0 right-0 z-[60] p-4 lg:p-6"
+      className="fixed top-0 left-0 right-0 z-[60] p-3 lg:p-6"
     >
       <div className="max-w-7xl mx-auto">
         <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/40 overflow-hidden">
@@ -63,11 +63,11 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
             
             {/* Mission Identifier */}
             <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="relative">
-                <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                  <Rocket size={24} className="animate-pulse" />
+              <div className="relative shrink-0">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                  <Rocket size={20} className="animate-pulse" />
                 </div>
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 border-2 border-slate-900 rounded-full animate-ping" />
+                <div className="absolute -top-0.5 -right-0.5 h-3 w-3 sm:h-4 sm:w-4 bg-emerald-500 border-2 border-slate-900 rounded-full animate-ping" />
               </div>
               <div>
                 <div className="flex items-center gap-2">

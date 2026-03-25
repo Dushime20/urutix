@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTruck, FaGavel, FaCheck, FaRocket, FaHandshake, FaMapMarkerAlt, FaWeightHanging, FaCalendarAlt } from 'react-icons/fa';
+import { FaTruck, FaCheck, FaStar, FaRocket, FaGavel } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 import EnhancedCargoForm from '../../pages/dashboard/cargos/create/components/form';
 import TruckSelectionModal from '../../pages/dashboard/cargos/create/components/form/TruckSelectionModal';
@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { CargoFormData as BaseCargoFormData } from '@/types/cargo';
 
 type CargoFormData = BaseCargoFormData & {
+  id?: string;
   locations?: Array<{
     type: 'PICKUP' | 'DELIVERY';
     locationData: {
@@ -113,7 +114,7 @@ const EnhancedJourneyFlow: React.FC = () => {
     }
   ];
 
-  const handleCargoFormSubmit = async (data: CargoFormData) => {
+  const handleCargoFormSubmit = async (data: any) => {
     setLoading(true);
     setError(null);
     
@@ -130,15 +131,17 @@ const EnhancedJourneyFlow: React.FC = () => {
 
       if (response.ok) {
         const savedCargo = await response.json();
-        setCargoData({ ...data, id: savedCargo.id });
+        setCargoData({ ...data, id: savedCargo.id } as any);
         setShowCargoForm(false);
         setCurrentStep('journey-selection');
+        return savedCargo;
       } else {
         throw new Error('Failed to save cargo details');
       }
     } catch (error) {
       setError('Failed to save cargo details. Please try again.');
       console.error('Cargo form error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -201,34 +204,34 @@ const EnhancedJourneyFlow: React.FC = () => {
   };
 
   const renderStepIndicator = () => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between">
+    <div className="mb-6 md:mb-8 overflow-x-auto pb-4 no-scrollbar">
+      <div className="flex items-center min-w-[600px] md:min-w-full justify-between">
         {journeySteps.map((step, index) => (
-          <div key={step.id} className="flex items-center">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+          <div key={step.id} className="flex items-center flex-shrink-0">
+            <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full border-2 ${
               step.completed 
                 ? 'bg-green-500 border-green-500 text-white' 
                 : step.current 
-                  ? 'bg-blue-500 border-blue-500 text-white'
-                  : 'bg-gray-200 border-gray-300 text-gray-500'
+                  ? 'bg-[#345E85] border-[#345E85] text-white'
+                  : 'bg-gray-100 border-gray-200 text-gray-400'
             }`}>
               {step.completed ? (
-                <FaCheck className="w-5 h-5" />
+                <FaCheck className="w-4 h-4 md:w-5 md:h-5" />
               ) : (
-                <span className="text-sm font-medium">{index + 1}</span>
+                <span className="text-xs md:text-sm font-bold">{index + 1}</span>
               )}
             </div>
-            <div className="ml-3">
-              <h3 className={`text-sm font-medium ${
-                step.current ? 'text-blue-600' : step.completed ? 'text-green-600' : 'text-gray-500'
+            <div className="ml-2 md:ml-3">
+              <h3 className={`text-[10px] md:text-sm font-black uppercase tracking-wider ${
+                step.current ? 'text-[#345E85]' : step.completed ? 'text-green-600' : 'text-slate-400'
               }`}>
                 {step.title}
               </h3>
-              <p className="text-xs text-gray-500">{step.description}</p>
+              <p className="hidden md:block text-xs text-slate-500">{step.description}</p>
             </div>
             {index < journeySteps.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-4 ${
-                step.completed ? 'bg-green-500' : 'bg-gray-300'
+              <div className={`w-8 md:flex-1 h-0.5 mx-2 md:mx-4 ${
+                step.completed ? 'bg-green-500' : 'bg-slate-200'
               }`} />
             )}
           </div>
@@ -695,8 +698,8 @@ const EnhancedJourneyFlow: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-slate-50/50">
+      <div className="container mx-auto px-4 py-4 md:py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
@@ -711,8 +714,7 @@ const EnhancedJourneyFlow: React.FC = () => {
         {/* Step Indicator */}
         {renderStepIndicator()}
 
-                 {/* Current Step Content */}
-         <div className="bg-white rounded-lg shadow-lg p-6">
+                 {/* Current Step Content */}          <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 p-4 md:p-8">
            {currentStep === 'cargo-form' && (
             <EnhancedCargoForm
               isOpen={showCargoForm}
@@ -741,20 +743,20 @@ const EnhancedJourneyFlow: React.FC = () => {
 
           {currentStep === 'booking' && renderBookingConfirmation()}
         </div>
+      </div>
 
         {/* Truck Selection Modal */}
-        {showTruckSelection && matchedTrucks.length > 0 && (
+        {showTruckSelection && cargoData?.id && (
           <TruckSelectionModal
             isOpen={showTruckSelection}
             onClose={() => setShowTruckSelection(false)}
-            matchedTrucks={matchedTrucks}
+            loadId={cargoData.id}
             onTruckSelected={handleTruckSelected}
-            cargoData={cargoData}
+            cargoData={cargoData as any}
           />
         )}
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default EnhancedJourneyFlow; 

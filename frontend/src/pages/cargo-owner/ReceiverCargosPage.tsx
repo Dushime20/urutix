@@ -2,12 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import receiverService from '../../services/receiverService';
-import { FaBox, FaSpinner, FaCalendarAlt, FaTruck, FaClipboardCheck, FaCheckCircle, FaEye } from 'react-icons/fa';
+import { FaBox, FaCalendarAlt, FaClipboardCheck, FaCheckCircle } from 'react-icons/fa';
 import { Search, Grid, Table, Package, User, Eye } from 'lucide-react';
 import CargoDetailsModal from '../../components/CargoDetailsModal';
 import FilterSelect from '../../components/common/FilterSelect';
 import { cn } from '../../utils/cn';
-import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface Cargo {
@@ -40,7 +39,7 @@ interface Cargo {
 }
 
 const ReceiverCargosPage: React.FC = () => {
-  const { tSync } = useTranslation();
+  const {  } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cargos, setCargos] = useState<Cargo[]>([]);
@@ -53,11 +52,19 @@ const ReceiverCargosPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [cargoTypeFilter, setCargoTypeFilter] = useState("");
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>(window.innerWidth < 768 ? 'card' : 'table');
 
   useEffect(() => {
     loadMyCargos();
-  }, []);
+    
+    const handleResize = () => {
+      if (window.innerWidth < 768 && viewMode === 'table') {
+        setViewMode('card');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   // Handle deep linking to specific cargo
   useEffect(() => {
@@ -149,326 +156,321 @@ const ReceiverCargosPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <FaSpinner className="animate-spin text-primary-600 text-2xl" />
+      <div className="flex flex-col items-center justify-center min-h-[40vh] p-4">
+        <div className="w-12 h-12 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+          Synchronizing Assigned Logistics...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Assigned Cargos</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            View all cargos that have been assigned to you
+    <div className="max-w-[1600px] mx-auto p-4 sm:p-8 space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary-50 flex items-center justify-center">
+                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
+             </div>
+             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0f172a] tracking-tight">Assigned <span className="text-primary-600">Assets</span></h1>
+          </div>
+          <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest sm:max-w-xl">
+             Inventory of cargo payloads authorized for your protocol reception
           </p>
         </div>
       </div>
 
       {/* Filters and View Toggle */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+      <div className="bg-white rounded-[2rem] border border-slate-100 p-2 sm:p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400 w-4 h-4" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform text-slate-300 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search cargo..."
+              placeholder="SEARCH LOGISTICS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pl-10 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="w-full rounded-xl sm:rounded-2xl border-none bg-slate-50 px-3 py-3.5 pl-12 text-[10px] font-black uppercase tracking-widest focus:ring-4 focus:ring-primary-50 transition-all placeholder:text-slate-300 shadow-inner"
             />
           </div>
           
-          <div className="w-full lg:w-48">
-            <FilterSelect
-              label="Status"
-              value={statusFilter}
-              placeholder="All Status"
-              options={[
-                { value: "ASSIGNED", label: "Assigned" },
-                { value: "IN_TRANSIT", label: "In Transit" },
-                { value: "DELIVERED", label: "Delivered" },
-                { value: "COMPLETED", label: "Completed" },
-              ]}
-              onChange={setStatusFilter}
-            />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="w-full sm:w-44">
+              <FilterSelect
+                label="Status"
+                value={statusFilter}
+                placeholder="ALL STATES"
+                options={[
+                  { value: "ASSIGNED", label: "Assigned" },
+                  { value: "IN_TRANSIT", label: "In Transit" },
+                  { value: "DELIVERED", label: "Delivered" },
+                  { value: "COMPLETED", label: "Completed" },
+                ]}
+                onChange={setStatusFilter}
+              />
+            </div>
+
+            <div className="w-full sm:w-44">
+               <FilterSelect
+                label="Cargo Type"
+                value={cargoTypeFilter}
+                placeholder="ALL TYPES"
+                options={[
+                   { value: "GENERAL", label: "General" },
+                   { value: "FRAGILE", label: "Fragile" },
+                   { value: "HAZARDOUS", label: "Hazardous" },
+                   { value: "REFRIGERATED", label: "Refrigerated" },
+                   { value: "LIQUID", label: "Liquid" },
+                ]}
+                onChange={setCargoTypeFilter}
+              />
+            </div>
           </div>
 
-          <div className="w-full lg:w-48">
-             <FilterSelect
-              label="Cargo Type"
-              value={cargoTypeFilter}
-              placeholder="All Types"
-              options={[
-                 { value: "GENERAL", label: "General" },
-                 { value: "FRAGILE", label: "Fragile" },
-                 { value: "HAZARDOUS", label: "Hazardous" },
-                 { value: "REFRIGERATED", label: "Refrigerated" },
-                 { value: "LIQUID", label: "Liquid" },
-              ]}
-              onChange={setCargoTypeFilter}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 border border-gray-200">
+          <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl p-1 border border-slate-100 self-end lg:self-center">
             <button
               onClick={() => setViewMode('card')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                 viewMode === 'card'
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600"
               )}
             >
               <Grid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cards</span>
+              <span>Cards</span>
             </button>
             <button
               onClick={() => setViewMode('table')}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                "hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                 viewMode === 'table'
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600"
               )}
             >
               <Table className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Table</span>
+              <span>Table</span>
             </button>
           </div>
         </div>
       </div>
 
       {filteredCargos.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <FaBox className="mx-auto text-gray-400 text-4xl mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Cargos Found</h3>
-          <p className="text-sm text-gray-600">
+        <div className="bg-white rounded-[3rem] border border-slate-100 border-dashed p-16 sm:p-24 text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+             <Package className="text-slate-200 w-8 h-8 sm:w-10 sm:h-10" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">Inventory Empty</h3>
+          <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-sm mx-auto leading-relaxed">
             {searchTerm || statusFilter || cargoTypeFilter 
-              ? "No cargos match your filters." 
-              : "You don't have any cargos assigned to you yet."}
+              ? "Zero payloads match your authorization query parameters." 
+              : "No cargos have been assigned to your endpoint yet."}
           </p>
         </div>
       ) : (
         <>
         {viewMode === 'card' ? (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredCargos.map((cargo) => (
               <div
                 key={cargo.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                className="group relative bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-primary-900/5 hover:border-primary-100 transition-all duration-500"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="bg-primary-100 rounded-lg p-2">
-                        <FaBox className="text-primary-600" />
+                <div className="flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-500 shadow-sm group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                        <FaBox className="text-lg" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {cargo.title || cargo.cargoType || 'Cargo'}
+                        <h3 className="text-lg font-black text-[#0f172a] tracking-tight group-hover:text-primary-600 transition-colors leading-tight">
+                          {cargo.title || cargo.cargoType || 'UNTITLED_PAYLOAD'}
                         </h3>
                         {cargo.cargoOwner?.profile && (
-                          <p className="text-sm text-gray-600">
-                            From: {cargo.cargoOwner.profile.firstName} {cargo.cargoOwner.profile.lastName}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                             <User className="w-3 h-3 text-slate-300" />
+                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                               From: {cargo.cargoOwner.profile.firstName} {cargo.cargoOwner.profile.lastName}
+                             </p>
+                          </div>
                         )}
                       </div>
                     </div>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm ${getStatusColor(
+                        cargo.status,
+                      )}`}
+                    >
+                      {cargo.status?.replace('_', ' ') || 'UNKNOWN'}
+                    </span>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      {/* Dates only - Locations removed as requested */}
-                      <div className="flex items-start gap-3">
-                        <FaCalendarAlt className="text-gray-400 mt-1" />
-                        <div>
-                          <p className="text-xs text-gray-500">Pickup Date</p>
-                          <p className="text-sm font-medium text-gray-900">
+                  <div className="grid grid-cols-2 gap-4 py-6 border-y border-slate-50">
+                    <div className="space-y-1">
+                      <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Protocol Date</p>
+                      <div className="flex items-center gap-2">
+                         <FaCalendarAlt className="text-primary-300 text-[10px]" />
+                         <p className="text-[10px] font-bold text-slate-700">
                             {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
+                         </p>
                       </div>
-
-                      {cargo.deliveryDate && (
-                        <div className="flex items-start gap-3">
-                          <FaCalendarAlt className="text-gray-400 mt-1" />
-                          <div>
-                            <p className="text-xs text-gray-500">Delivery Date</p>
-                            <p className="text-sm font-medium text-gray-900">
-                              {new Date(cargo.deliveryDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      )}
                     </div>
-
-                    {(cargo.weight || cargo.volume) && (
-                      <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200">
-                        {cargo.weight && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Weight:</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {cargo.weight} kg
-                            </span>
-                          </div>
-                        )}
-                        {cargo.volume && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Volume:</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {cargo.volume} m³
-                            </span>
-                          </div>
-                        )}
+                    {cargo.deliveryDate && (
+                      <div className="space-y-1 pl-4 border-l border-slate-50">
+                        <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">ETA Window</p>
+                        <div className="flex items-center gap-2">
+                           <FaCalendarAlt className="text-emerald-300 text-[10px]" />
+                           <p className="text-[10px] font-bold text-slate-700">
+                              {new Date(cargo.deliveryDate).toLocaleDateString()}
+                           </p>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="ml-4 flex flex-col items-end gap-3">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        cargo.status,
-                      )}`}
-                    >
-                      {cargo.status?.replace('_', ' ') || 'Unknown'}
-                    </span>
-                    
-                    <div className="flex flex-col items-end gap-2">
-                        <button
-                          onClick={() => handleViewDetails(cargo)}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium border border-gray-300"
-                        >
-                          <FaEye />
-                          View Details
-                        </button>
-
-                        {inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified ? (
-                          <div className="flex flex-col items-end gap-2">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                              <FaCheckCircle />
-                              Inspection Completed
-                            </span>
-                            <button
-                              onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
-                              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
-                            >
-                              <FaClipboardCheck />
-                              View Inspection
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-                          >
-                            <FaClipboardCheck />
-                            Inspect Cargo
-                          </button>
-                        )}
+                  {(cargo.weight || cargo.volume) && (
+                    <div className="flex items-center gap-6 py-4">
+                      {cargo.weight && (
+                        <div className="flex flex-col">
+                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Mass</span>
+                          <span className="text-xs font-black text-slate-900 mt-0.5">
+                            {cargo.weight} <span className="text-slate-400 font-bold">KG</span>
+                          </span>
+                        </div>
+                      )}
+                      {cargo.volume && (
+                        <div className="flex flex-col">
+                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Vol</span>
+                          <span className="text-xs font-black text-slate-900 mt-0.5">
+                            {cargo.volume} <span className="text-slate-400 font-bold">M³</span>
+                          </span>
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  <div className="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => handleViewDetails(cargo)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-all text-[9px] font-black uppercase tracking-widest border border-slate-100 shadow-sm active:scale-95"
+                      >
+                         <Eye className="w-3.5 h-3.5" />
+                         Full Logic
+                      </button>
+
+                      {inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified ? (
+                        <button
+                          onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm active:scale-95"
+                        >
+                          <FaClipboardCheck />
+                          Verif History
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl hover:bg-slate-900 transition-all text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary-900/10 active:scale-95 border-b-4 border-primary-700 active:border-b-0"
+                        >
+                          <FaClipboardCheck />
+                          Inspect Node
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-100">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inspection</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Payload</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Routing</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Timeline</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">State</th>
+                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol</th>
+                    <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Operations</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-slate-50">
                   {filteredCargos.map((cargo) => (
-                    <tr key={cargo.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap">
+                    <tr key={cargo.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <Package className="h-5 w-5 text-gray-600" />
+                          <div className="flex-shrink-0 h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center">
+                            <Package className="h-5 w-5 text-primary-500" />
                           </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">{cargo.title || 'Untitled'}</div>
-                            <div className="text-xs text-gray-500">{cargo.cargoType}</div>
+                          <div className="ml-4">
+                            <div className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{cargo.title || 'NULL'}</div>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{cargo.cargoType}</div>
                             {cargo.cargoOwner?.profile && (
-                                <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                                    <User className="w-3 h-3" />
+                                <div className="text-[8px] text-slate-300 mt-1 flex items-center gap-1 font-bold">
+                                    <User className="w-2.5 h-2.5" />
                                     {cargo.cargoOwner.profile.firstName} {cargo.cargoOwner.profile.lastName}
                                 </div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-xs text-gray-900 break-words max-w-[200px]">{cargo.pickupLocation}</div>
-                        <div className="text-xs text-gray-400 my-0.5">↓</div>
-                        <div className="text-xs text-gray-900 break-words max-w-[200px]">{cargo.deliveryLocation}</div>
+                      <td className="px-6 py-5">
+                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{cargo.pickupLocation}</div>
+                        <div className="text-[10px] text-slate-200 my-0.5">↓</div>
+                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{cargo.deliveryLocation}</div>
                       </td>
-                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-xs text-gray-900">
-                             <span className="text-gray-500">Pickup:</span> {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
+                       <td className="px-6 py-5 whitespace-nowrap">
+                        <div className="text-[10px] text-slate-600 font-bold">
+                             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">START:</span> {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
                         </div>
-                        <div className="text-xs text-gray-900 mt-0.5">
-                             <span className="text-gray-500">Delivery:</span> {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString() : 'N/A'}
+                        <div className="text-[10px] text-slate-600 mt-1.5 font-bold">
+                             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">DEST:</span> {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString() : 'N/A'}
                         </div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-6 py-5 whitespace-nowrap">
                         <span className={cn(
-                          "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
+                          "px-3 py-1 inline-flex text-[8px] font-black uppercase tracking-widest rounded-lg border shadow-sm",
                           getStatusColor(cargo.status)
                         )}>
                           {cargo.status?.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-6 py-5 whitespace-nowrap">
                          {inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified ? (
-                             <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                                 <FaCheckCircle className="w-3.5 h-3.5" />
-                                 Completed
+                             <span className="inline-flex items-center gap-2 text-[9px] text-emerald-600 font-black uppercase tracking-widest">
+                                 <FaCheckCircle className="w-3 h-3" />
+                                 Verified
                              </span>
                          ) : (
-                             <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium">
-                                 <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                                 Pending
+                             <span className="inline-flex items-center gap-2 text-[9px] text-amber-500 font-black uppercase tracking-widest">
+                                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
+                                 Incubating
                              </span>
                          )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                           {/* Inspect Action - Only show if NOT completed */}
-                           {!(inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified) && (
-                                <button
-                                    onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
-                                    className="text-gray-600 hover:text-primary-600 transition-colors p-1"
-                                    title="Inspect Cargo"
-                                >
-                                    <FaClipboardCheck className="w-4 h-4" />
-                                </button>
-                           )}
-                           {/* View Inspection Action - Only show if completed */}
-                           {(inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified) && (
-                                <button
-                                    onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
-                                    className="text-green-600 hover:text-green-800 transition-colors p-1"
-                                    title="View Inspection"
-                                >
-                                    <FaClipboardCheck className="w-4 h-4" />
-                                </button>
-                           )}
-                           {/* View Details Action */}
-                          <button
-                            onClick={() => handleViewDetails(cargo)}
-                             className="text-blue-600 hover:text-blue-900 transition-colors p-1"
-                            title="View Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                      <td className="px-6 py-5 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
+                                className={cn(
+                                    "p-2.5 rounded-xl transition-all active:scale-90 shadow-sm border",
+                                    (inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified)
+                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
+                                        : "bg-primary-50 text-primary-600 border-primary-100 hover:bg-primary-100"
+                                )}
+                                title={inspectionStatuses[cargo.id]?.status === 'COMPLETED' ? "View Logic" : "Inspect Node"}
+                            >
+                                <FaClipboardCheck className="w-4 h-4" />
+                            </button>
+                           <button
+                             onClick={() => handleViewDetails(cargo)}
+                             className="p-2.5 bg-slate-50 text-slate-400 hover:text-primary-600 hover:bg-primary-50 border border-slate-100 hover:border-primary-100 rounded-xl transition-all active:scale-90 shadow-sm"
+                             title="Full Protocol Details"
+                           >
+                             <Eye className="w-4 h-4" />
+                           </button>
                         </div>
                       </td>
                     </tr>

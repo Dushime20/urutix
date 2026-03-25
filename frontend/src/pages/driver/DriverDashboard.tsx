@@ -13,11 +13,10 @@ import {
   Activity,
   Cloud,
   TrendingUp,
-  Navigation,
   ShieldCheck,
   Trophy
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -300,73 +299,8 @@ const DriverDashboard: React.FC = () => {
         tabs={tabs}
       />
 
-      {/* 🚀 Sticky Mission Command Bar - Prioritize Active Journey */}
       <AnimatePresence>
-        {currentTrip && (
-          <motion.div 
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            className="sticky top-0 z-[100] bg-[#0F172A] border-b border-blue-500/20 px-6 sm:px-10 py-3 flex items-center justify-between shadow-2xl backdrop-blur-md bg-opacity-95"
-          >
-            <div className="flex items-center gap-6">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 border border-blue-500/30 shadow-inner">
-                <Navigation size={20} className="animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">Live Mission Executing</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                </div>
-                <p className="text-sm sm:text-base font-black text-white uppercase tracking-tight flex items-center gap-3">
-                  {currentTrip.origin.city} 
-                  <TrendingUp size={14} className="text-blue-500 rotate-90" /> 
-                  {currentTrip.destination.city}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 sm:gap-8">
-               <div className="text-right hidden md:block border-l border-white/10 pl-8">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Arrival Target</p>
-                  <p className="text-base font-black text-emerald-400 tracking-tighter italic">
-                    {new Date(currentTrip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-               </div>
-               <div className="hidden sm:flex flex-col gap-1 w-24">
-                  <div className="flex justify-between text-[8px] font-black text-blue-400 uppercase tracking-widest">
-                    <span>Progress</span>
-                    <span>{currentTrip.progress}%</span>
-                  </div>
-                  <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${currentTrip.progress}%` }}
-                      className="h-full bg-blue-500"
-                    />
-                  </div>
-               </div>
-               <button 
-                 onClick={() => {
-                   setActiveTab('overview');
-                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                 }}
-                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-2 group"
-               >
-                 <Home size={14} className="group-hover:rotate-12 transition-transform" />
-                 Focus Mission
-               </button>
-               <button 
-                 onClick={() => setActiveTab('fuel')}
-                 className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 text-blue-400 rounded-xl border border-white/10 transition-all active:scale-95 group"
-                 title="Quick Refuel"
-               >
-                 <FuelIcon size={18} className="group-hover:scale-110 transition-transform" />
-               </button>
-
-            </div>
-          </motion.div>
-        )}
+        {/* Sticky bar removed to avoid redundancy with layout-level TacticalMissionOverlay */}
       </AnimatePresence>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 py-6 pb-28 lg:pb-6">

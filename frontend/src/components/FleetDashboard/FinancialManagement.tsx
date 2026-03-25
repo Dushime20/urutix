@@ -1,287 +1,140 @@
-import React, { useState, useEffect } from 'react';
-import {
-  DollarSign,
-  FileText,
-  TrendingUp,
-  BarChart3,
-  PieChart,
-  Activity,
-  Calculator,
-  Receipt,
-  CreditCard,
-  Truck,
-  User,
-  Calendar,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  Plus,
-  Edit3,
-  Download,
-  Eye,
-  Trash2,
-  Search,
-  Filter,
-  ChevronUp,
-  ChevronDown,
-  Minus,
-  Percent,
-  ShieldCheck,
-  Navigation,
-  Fuel,
-  Wrench,
-  Bell,
-  Settings,
-  ArrowUpRight,
-  Target,
-  Zap
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Search, Plus, FileText, 
+  BarChart3, Activity, CreditCard,
+  CheckCircle2, Clock, Box, DollarSign
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type {
-  Invoice, Expense, Payment, FinancialReport, Budget, TaxRecord,
-  CustomerAnalytics, DriverAnalytics, PerformanceMetric, PredictiveAnalytics
-} from '../../types/fleet';
+import { cn } from '@/utils/cn';
+import { Suspense, lazy } from 'react';
 
-interface FinancialManagementProps {
-  fleetId?: string;
-}
+// Lazy load the inner management component
+const TruckOwnerFinancialManagement = lazy(() => import('./TruckOwnerFinancialManagement'));
 
-export const FinancialManagement: React.FC<FinancialManagementProps> = ({ fleetId }) => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [loading, setLoading] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+type TabType = 'payments' | 'expenses' | 'loans';
 
-  // Mock data for demonstration
-  const mockFinancialData = {
-    invoices: [
-      {
-        id: 'inv-1',
-        invoiceNumber: 'INV-2024-001',
-        customerId: 'cust-001',
-        customerName: 'ABC Logistics',
-        tripId: 'trip-001',
-        truckId: 'truck-001',
-        driverId: 'drv-001',
-        issueDate: new Date('2024-01-15'),
-        dueDate: new Date('2024-02-15'),
-        status: 'paid',
-        totalAmount: 2750,
-        currency: 'USD',
-        notes: 'On-time delivery',
-        paymentTerms: 'Net 30',
-        paymentMethod: 'ach',
-        items: [{ id: '1', description: 'Freight charges', quantity: 1, unitPrice: 2000, totalPrice: 2000, type: 'freight', tripId: 'trip-001' }]
-      }
-    ],
-    expenses: [
-      {
-        id: 'exp-1',
-        type: 'fuel',
-        category: 'Fuel',
-        amount: 450,
-        date: new Date('2024-01-25'),
-        description: 'Diesel fuel purchase',
-        status: 'approved',
-        allocation: { percentage: 100 }
-      }
-    ],
-    performanceMetrics: [
-      { id: '1', name: 'Revenue Velocity', value: 125000, target: 120000, unit: 'USD', trend: 'up', changePercentage: 4.2 },
-      { id: '2', name: 'Operational Margin', value: 18.5, target: 20, unit: '%', trend: 'down', changePercentage: -7.5 },
-      { id: '3', name: 'Collection Period', value: 28, target: 30, unit: 'days', trend: 'up', changePercentage: -6.7 }
-    ]
-  };
+export const FinancialManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('payments');
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0
-    }).format(amount * 120); // Simulating KES conversion
-  };
-
-  const StatCard = ({ title, value, icon: Icon, trend, color }: { title: string; value: string; icon: any; trend?: number; color: string }) => (
+  const SummaryCard = ({ title, value, icon: Icon }: { title: string; value: string; icon: any }) => (
     <motion.div
       whileHover={{ y: -5 }}
-      className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
+      className="flex flex-col items-center group cursor-pointer"
     >
-      <div className="absolute top-0 right-0 p-10 opacity-[0.03] -mr-4 -mt-4 group-hover:scale-110 transition-transform">
-        <Icon size={80} />
-      </div>
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`size-10 rounded-xl flex items-center justify-center ${color} shadow-inner`}>
-            <Icon size={20} />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{title}</span>
+      <div className="relative size-36 lg:size-40 bg-white border-[6px] border-slate-50 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+          <circle
+            cx="50%"
+            cy="50%"
+            r="46%"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="414"
+            strokeDashoffset="300"
+            className="text-blue-400 opacity-10 transition-all duration-1000 group-hover:opacity-30"
+          />
+        </svg>
+
+        <div className="p-2 rounded-xl mb-1 bg-slate-50 text-blue-600 group-hover:bg-white group-hover:text-blue-600 transition-all duration-500 shadow-sm">
+          <Icon size={14} />
         </div>
-        <div className="flex items-end gap-3">
-          <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
-          {trend !== undefined && (
-            <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-wider mb-1.5 ${trend >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {trend >= 0 ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              {Math.abs(trend)}%
-            </div>
-          )}
-        </div>
+        <p className="text-xl lg:text-2xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
+          {value}
+        </p>
       </div>
+      <p className="mt-4 text-[8px] font-black uppercase tracking-[0.2em] text-blue-600 group-hover:text-[#345E85] transition-colors text-center px-2">
+        {title}
+      </p>
     </motion.div>
   );
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Header Matrix */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-5">
-          <div className="size-10 bg-primary-50 rounded-[14px] flex items-center justify-center text-primary-500 shadow-inner">
-            <DollarSign size={28} />
-          </div>
-          <div>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary-500 mb-1">Intelligence Layer</h2>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Treasury Management</h1>
-          </div>
+    <div className="space-y-12 pb-12">
+      {/* Search and Navigation Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
+        <div className="flex flex-col">
+          <h2 className="text-3xl font-black text-[#0f172a] tracking-tight uppercase">Unified Financial <span className="text-[#345E85]">Hub</span></h2>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time across-fleet liquidity management</p>
         </div>
+
         <div className="flex items-center gap-3">
-          <button className="h-12 px-6 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
-            <Plus size={14} />
-            Generate Invoice
-          </button>
-          <button className="h-12 px-6 bg-[#1A1C1E] text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all flex items-center gap-2">
-            <Download size={14} />
-            Fiscal Report
+          <div className="relative group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-[#345E85] transition-colors" />
+            <input 
+              type="text"
+              placeholder="GLOBAL SEARCH..."
+              className="bg-white border border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-200 transition-all w-64 lg:w-80"
+            />
+          </div>
+          <button className="bg-slate-900 text-white p-4 rounded-2xl hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200">
+            <Plus size={18} />
           </button>
         </div>
       </div>
 
-      {/* Fiscal Stat Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Revenue (MTD)" value={formatCurrency(125000)} icon={TrendingUp} trend={12.4} color="bg-emerald-50 text-emerald-600" />
-        <StatCard title="Operational Margin" value="18.5%" icon={Target} trend={-2.1} color="bg-blue-50 text-blue-600" />
-        <StatCard title="Treasury Inflow" value="KES 2.4M" icon={Activity} trend={5.8} color="bg-primary-50 text-primary-500" />
-        <StatCard title="Pending Receivables" value="KES 840K" icon={Clock} color="bg-amber-50 text-amber-600" />
+      {/* Summary Matrix - NEW CIRCULAR DESIGN */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-8 bg-slate-50/30 rounded-[3rem] border border-slate-100/50 place-items-center">
+        <SummaryCard 
+          title="Revenue Pipeline" 
+          value="$125,000" 
+          icon={FileText} 
+        />
+        <SummaryCard 
+          title="Burn Analytics" 
+          value="$42,500" 
+          icon={BarChart3} 
+        />
+        <SummaryCard 
+          title="Health Index" 
+          value="98.2%" 
+          icon={Activity} 
+        />
+        <SummaryCard 
+          title="Capital Reserve" 
+          value="$82,500" 
+          icon={CreditCard} 
+        />
       </div>
 
-      {/* Navigation Vectors */}
-      <div className="flex items-center gap-2 p-1.5 bg-white rounded-[24px] border border-slate-100 shadow-sm w-fit max-w-full overflow-x-auto">
-        {[
-          { id: 'overview', label: 'Overview', icon: BarChart3 },
-          { id: 'invoicing', label: 'Inbound Revenue', icon: FileText },
-          { id: 'expenses', label: 'Operational Costs', icon: Receipt },
-          { id: 'payments', label: 'Treasury Logs', icon: CreditCard },
-          { id: 'analytics', label: 'Fiscal Insights', icon: PieChart }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`h-11 px-6 rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
-              ? 'bg-[#1A1C1E] text-white shadow-lg shadow-slate-900/20'
-              : 'text-slate-400 hover:text-primary-500 hover:bg-white/50'
-              }`}>
-            <tab.icon size={14} />
-            {tab.label}
-          </button>
-        ))}
+      {/* Management Tabs */}
+      <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm p-2 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-2">
+          {(['payments', 'expenses', 'loans'] as TabType[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                activeTab === tab 
+                  ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10" 
+                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-8 p-6 lg:p-10 border-t border-slate-50">
+          <Suspense fallback={<div className="flex items-center justify-center py-20 animate-pulse text-slate-300">Synchronizing...</div>}>
+            {activeTab === 'payments' && <TruckOwnerFinancialManagement />}
+            {activeTab !== 'payments' && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mb-6">
+                  <Activity className="w-10 h-10 text-slate-200 animate-pulse" />
+                </div>
+                <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight mb-2">Interface Syncing</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-xs mx-auto">
+                  We are currently optimizing the {activeTab} module for the new fleet architecture.
+                </p>
+              </div>
+            )}
+          </Suspense>
+        </div>
       </div>
-
-      {/* Render Content Vector */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden"
-        >
-          {activeTab === 'overview' && (
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Fiscal Overview</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time Performance Metrics</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live Sync</span>
-                </div>
-              </div>
-
-              {/* KPI Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-                <div className="lg:col-span-2 space-y-4">
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Critical Performance Indicators</h4>
-                  {mockFinancialData.performanceMetrics.map(metric => (
-                    <div key={metric.id} className="p-5 bg-slate-50/50 rounded-[28px] border border-slate-50 hover:border-primary-100 hover:bg-primary-50/20 transition-all flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
-                        <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
-                          <Zap size={18} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-slate-900">{metric.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{metric.unit} Platform Metric</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-black text-slate-900">{metric.value}{metric.unit === '%' ? '%' : ''}</p>
-                        <p className={`text-[10px] font-black uppercase tracking-widest ${metric.changePercentage > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {metric.changePercentage > 0 ? '+' : ''}{metric.changePercentage}% Variable
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-[#1A1C1E] rounded-[32px] p-8 text-white relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-12 opacity-[0.05] grayscale -mr-6 -mt-6">
-                    <Activity size={120} />
-                  </div>
-                  <div className="relative z-10">
-                    <h4 className="text-[11px] font-black uppercase tracking-widest text-white/40 mb-6">Recent Fiscal Pulses</h4>
-                    <div className="space-y-6">
-                      <div className="flex items-start gap-4">
-                        <div className="size-2 rounded-full bg-emerald-500 mt-2" />
-                        <div>
-                          <p className="text-sm font-black">Treasury Inbound Confirm</p>
-                          <p className="text-xs text-white/40">KES 330,000 received from ABC Logistics</p>
-                          <p className="text-[10px] font-bold text-emerald-500 uppercase mt-1">2h ago</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-4">
-                        <div className="size-2 rounded-full bg-blue-500 mt-2" />
-                        <div>
-                          <p className="text-sm font-black">Invoice Vector Sync</p>
-                          <p className="text-xs text-white/40">Fiscal request sent to XYZ Transport</p>
-                          <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">1d ago</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-4">
-                        <div className="size-2 rounded-full bg-amber-500 mt-2" />
-                        <div>
-                          <p className="text-sm font-black">Operational Cost Alert</p>
-                          <p className="text-xs text-white/40">Maintenance expenditure approved: Tire unit</p>
-                          <p className="text-[10px] font-bold text-amber-500 uppercase mt-1">3d ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Implement other tabs similarly as needed... */}
-          {activeTab !== 'overview' && (
-            <div className="p-20 text-center flex flex-col items-center">
-              <div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6">
-                <Settings size={32} className="animate-spin-slow" />
-              </div>
-              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">{activeTab} Interface Synchronizing</p>
-              <p className="text-sm font-medium text-slate-400 mt-2">Vector protocols under optimization for the Enlite Prime aesthetic.</p>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
     </div>
   );
 };
+
+export default FinancialManagement;

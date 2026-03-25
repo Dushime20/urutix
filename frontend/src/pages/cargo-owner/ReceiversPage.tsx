@@ -22,14 +22,14 @@ import { cn } from '@/utils/cn';
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
 const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
-  <div className="flex flex-col items-center group">
-    <div className="relative w-48 h-48 rounded-full bg-white border-[12px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+  <div className="flex flex-col items-center group w-full max-w-[200px] mb-8 lg:mb-0">
+    <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-white border-[8px] sm:border-[12px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
       {/* Decorative outer ring */}
       <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
         <circle
-          cx="96"
-          cy="96"
-          r="88"
+          cx="50%"
+          cy="50%"
+          r="46%"
           fill="none"
           stroke="currentColor"
           strokeWidth="3"
@@ -39,22 +39,22 @@ const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any
         />
       </svg>
 
-      <div className={cn("p-3 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-        <Icon className="w-6 h-6" />
+      <div className={cn("p-2 sm:p-3 rounded-xl sm:rounded-2xl mb-1 sm:mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+        <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
       </div>
 
       <div className="flex flex-col items-center">
-        <span className="text-4xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500">
+        <span className="text-2xl sm:text-4xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500">
           {value}
         </span>
       </div>
 
       {/* Aesthetic inner ring */}
-      <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+      <div className="absolute inset-3 sm:inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
     </div>
 
-    <div className="mt-6 text-center">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300">
+    <div className="mt-4 sm:mt-6 text-center">
+      <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300">
         {title}
       </p>
     </div>
@@ -184,70 +184,72 @@ const ReceiversPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="relative w-20 h-20">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20">
           <div className="absolute inset-0 rounded-full border-4 border-slate-50 border-t-[#345E85] animate-spin"></div>
           <div className="absolute inset-4 rounded-full border-4 border-slate-50 border-b-[#345E85] animate-spin-slow"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <Users className="w-6 h-6 text-[#345E85]" />
+            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#345E85]" />
           </div>
         </div>
-        <p className="mt-6 text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">
-          Loading Receivers...
+        <p className="mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+          Synchronizing Endpoints...
         </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto p-8 space-y-12">
+    <div className="max-w-[1600px] mx-auto p-4 sm:p-8 md:p-12 space-y-8 sm:space-y-12">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-[#345E85]" />
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 flex items-center justify-center shadow-sm">
+              <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-[#345E85]" />
             </div>
-            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Receivers</h1>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+              Receiver <span className="text-[#345E85]">Protocol</span>
+            </h1>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
-            Manage the people and businesses receiving your cargo shipments
+          <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest sm:tracking-[0.2em] max-w-xl">
+            Authorize and manage cargo reception endpoints across your logistics web
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all transform hover:-translate-y-1"
+          className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 bg-[#345E85] text-white rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all active:scale-95"
         >
-          <Plus className="w-4 h-4" />
-          Add New Receiver
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          Register Endpoint
         </button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 place-items-center">
+      <div className="flex flex-wrap lg:grid lg:grid-cols-4 gap-4 sm:gap-8 lg:gap-12 justify-center items-start">
         <StatsCard
-          title="Total Receivers"
+          title="Total Endpoints"
           value={receivers.length}
           icon={Users}
           colorClass="bg-blue-50 text-[#345E85]"
           secondaryColor="text-[#345E85]"
         />
         <StatsCard
-          title="Active Receivers"
+          title="Active Links"
           value={receivers.filter(r => r.status === 'ACTIVE').length}
           icon={CheckCircle}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
         <StatsCard
-          title="Pending Invites"
+          title="Pending Sync"
           value={receivers.filter(r => r.status !== 'ACTIVE').length}
           icon={Clock}
           colorClass="bg-amber-50 text-amber-600"
           secondaryColor="text-amber-600"
         />
         <StatsCard
-          title="Cargos Assigned"
+          title="Cargo Inflow"
           value="0"
           icon={Package}
           colorClass="bg-purple-50 text-purple-600"
@@ -256,127 +258,127 @@ const ReceiversPage: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Toolbar */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm">
-          <div className="relative flex-1 max-w-md w-full">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="relative flex-1 w-full max-w-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="SEARCH BY NAME OR EMAIL..."
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-300"
+              placeholder="QUERY ENDPOINT..."
+              className="w-full pl-12 pr-4 py-3 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-blue-50 transition-all placeholder:text-slate-300 shadow-inner"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto px-2 pb-2 sm:p-0">
             <button className="p-3 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-xl transition-all">
               <Filter className="w-5 h-5" />
             </button>
-            <div className="h-6 w-[1px] bg-slate-100 mx-2" />
+            <div className="h-6 w-[1px] bg-slate-100 mx-2 hidden sm:block" />
             <button
-              className="px-6 py-2 bg-slate-50 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+              className="flex-1 sm:flex-none px-6 py-3 sm:py-3.5 bg-slate-50 text-slate-500 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-sm border border-slate-100"
               onClick={loadReceivers}
             >
-              Refresh List
+              Refresh Matrix
             </button>
           </div>
         </div>
 
         {/* Receivers Grid */}
         {filteredReceivers.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-sm border-dashed">
-            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <UserPlus className="w-10 h-10 text-slate-200" />
+          <div className="text-center py-16 sm:py-24 bg-white rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm border-dashed animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <UserPlus className="w-8 h-8 sm:w-10 sm:h-10 text-slate-200" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight">No Receivers Found</h3>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
-              Expand your logistics network by registering your first receiver endpoint
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Zero Network Nodes</h3>
+            <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-xs mx-auto leading-relaxed">
+              Expand your logistics influence by registering your first cargo reception endpoint
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredReceivers.map((receiver) => (
               <div
                 key={receiver.id}
-                className="group relative bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all"
+                className="group relative bg-white rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 hover:border-[#345E85]/20 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4"
               >
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 border border-slate-100 flex items-center justify-center text-xl font-black text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white transition-all">
+                <div className="flex justify-between items-start mb-6 sm:mb-8">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-[1.5rem] bg-slate-50 border border-slate-100 flex items-center justify-center text-lg sm:text-xl font-black text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white transition-all shadow-sm">
                     {receiver.profile?.firstName?.[0] || receiver.email[0].toUpperCase()}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5 sm:gap-2">
                     <button
                       onClick={() => handleOpenAssignModal(receiver)}
-                      className="p-2 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-xl transition-all"
-                      title="Assign Assets"
+                      className="p-2 sm:p-2.5 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-xl transition-all active:scale-90"
+                      title="Route Payload"
                     >
-                      <Package className="w-5 h-5" />
+                      <Package className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                     <button
                       onClick={() => handleDeleteReceiver(receiver.id)}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                      title="Terminate Access"
+                      className="p-2 sm:p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                      title="Decommission Endpoint"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 sm:space-y-5">
                   <div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight group-hover:text-[#345E85] transition-colors">
+                    <h3 className="text-lg sm:text-xl font-black text-[#0f172a] tracking-tight group-hover:text-[#345E85] transition-colors leading-tight">
                       {receiver.profile ? `${receiver.profile.firstName} ${receiver.profile.lastName}` : 'System Endpoint'}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-3">
                       <span className={cn(
-                        "text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest border",
+                        "text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest border shadow-sm",
                         receiver.status === 'ACTIVE'
                           ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                           : "bg-amber-50 text-amber-600 border-amber-100"
                       )}>
                         {receiver.status}
                       </span>
-                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">•</span>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                      <span className="text-slate-200">•</span>
+                      <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                         <Clock className="w-3 h-3" />
-                        Added {new Date(receiver.createdAt).toLocaleDateString()}
+                        Init {new Date(receiver.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-4 border-t border-slate-50">
-                    <div className="flex items-center gap-3 text-slate-500">
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
+                  <div className="space-y-2 sm:space-y-3 pt-5 border-t border-slate-50">
+                    <div className="flex items-center gap-3 text-slate-500 hover:text-[#345E85] transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shadow-sm">
                         <Mail className="w-3.5 h-3.5" />
                       </div>
-                      <span className="text-[10px] font-bold truncate uppercase tracking-widest">{receiver.email}</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold truncate uppercase tracking-widest">{receiver.email}</span>
                     </div>
                     {receiver.phone && (
-                      <div className="flex items-center gap-3 text-slate-500">
-                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
+                      <div className="flex items-center gap-3 text-slate-500 hover:text-[#345E85] transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shadow-sm">
                           <Phone className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{receiver.phone}</span>
+                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">{receiver.phone}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
-                  <div className="flex -space-x-2">
+                <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-slate-100/50 flex items-center justify-between">
+                  <div className="flex -space-x-2.5">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-400">
+                      <div key={i} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-4 border-white bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-300 shadow-sm">
                         LG
                       </div>
                     ))}
-                    <div className="w-8 h-8 rounded-full border-2 border-white bg-[#345E85] flex items-center justify-center text-[8px] font-black text-white">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-4 border-white bg-[#345E85] flex items-center justify-center text-[8px] font-black text-white shadow-lg">
                       +2
                     </div>
                   </div>
-                  <button className="text-[10px] font-black text-[#345E85] uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
-                    View Profile
-                    <ExternalLink className="w-3 h-3" />
+                  <button className="text-[9px] sm:text-[10px] font-black text-[#345E85] uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all active:scale-95 group/btn">
+                    Interface Deck
+                    <ExternalLink className="w-3 h-3 group-hover/btn:rotate-12 transition-transform" />
                   </button>
                 </div>
               </div>
@@ -390,47 +392,47 @@ const ReceiversPage: React.FC = () => {
         {/* Create Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/80" onClick={() => setShowCreateModal(false)} />
-            <div className="relative bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-10 space-y-8">
+            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+            <div className="relative bg-white rounded-[2rem] sm:rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in slide-in-from-bottom-8 duration-500">
+              <div className="p-6 sm:p-12 space-y-8">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Add Receiver</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Invite a new contact to receive your cargo</p>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Endpoint Registry</h2>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Initialize a new nodal reception link</p>
                   </div>
-                  <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all">
-                    <X className="w-6 h-6 text-slate-400" />
+                  <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all active:scale-90">
+                    <X className="w-6 h-6 text-slate-300" />
                   </button>
                 </div>
 
-                <form onSubmit={handleCreateReceiver} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                <form onSubmit={handleCreateReceiver} className="space-y-5 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name *</label>
+                      <label className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name *</label>
                       <input
                         type="text"
                         required
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-100 transition-all"
-                        placeholder="e.g. John"
+                        className="w-full px-5 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
+                        placeholder="e.g. Victor"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name *</label>
+                      <label className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name *</label>
                       <input
                         type="text"
                         required
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-100 transition-all"
-                        placeholder="e.g. Vance"
+                        className="w-full px-5 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
+                        placeholder="e.g. Okafor"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address *</label>
+                    <label className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sync Interface (Email) *</label>
                     <div className="relative">
                       <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                       <input
@@ -438,39 +440,39 @@ const ReceiversPage: React.FC = () => {
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-100 transition-all"
-                        placeholder="john.doe@example.com"
+                        className="w-full pl-14 pr-6 py-3.5 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
+                        placeholder="endpoint@protocol.com"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                    <label className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Spatial Link (Phone)</label>
                     <div className="relative">
                       <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-blue-100 transition-all"
+                        className="w-full pl-14 pr-6 py-3.5 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-bold focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
                         placeholder="+234..."
                       />
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-6">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                     <button
                       type="button"
                       onClick={() => setShowCreateModal(false)}
-                      className="flex-1 px-8 py-4 bg-slate-50 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                      className="flex-1 px-8 py-3.5 sm:py-4 bg-slate-50 text-slate-400 rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95"
                     >
-                      Cancel
+                      Abort
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all"
+                      className="flex-1 px-8 py-3.5 sm:py-4 bg-[#345E85] text-white rounded-xl sm:rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-slate-800 transition-all active:scale-95"
                     >
-                      Add Receiver
+                      Authorize Hub
                     </button>
                   </div>
                 </form>
@@ -482,47 +484,48 @@ const ReceiversPage: React.FC = () => {
         {/* Assign Modal */}
         {showAssignModal && selectedReceiver && (
           <div className="fixed inset-0 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/80" onClick={() => setShowAssignModal(false)} />
-            <div className="relative bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-10 space-y-8 max-h-[90vh] overflow-y-auto">
+            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setShowAssignModal(false)} />
+            <div className="relative bg-white rounded-[2rem] sm:rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in slide-in-from-top-8 duration-500">
+              <div className="p-6 sm:p-12 space-y-8 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center">
-                      <Package className="w-7 h-7 text-purple-600" />
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 flex items-center justify-center shadow-inner">
+                      <Package className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight">Assign Cargo</h2>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                        Select cargo to assign to {selectedReceiver.profile?.firstName || 'this receiver'}
+                      <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Logic Routing</h2>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 leading-relaxed">
+                        Authorize payload reception for {selectedReceiver.profile?.firstName || 'this node'}
                       </p>
                     </div>
                   </div>
-                  <button onClick={() => setShowAssignModal(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all">
-                    <X className="w-6 h-6 text-slate-400" />
+                  <button onClick={() => setShowAssignModal(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all active:scale-90">
+                    <X className="w-6 h-6 text-slate-300" />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   {cargos.length === 0 ? (
-                    <div className="text-center py-20 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                      <Package className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No cargo available to assign</p>
+                    <div className="text-center py-20 bg-slate-50 rounded-[2rem] border border-dashed border-slate-100 shadow-inner">
+                      <Package className="w-10 h-10 text-slate-200 mx-auto mb-4" />
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Zero Unrouted Payloads</p>
                     </div>
                   ) : (
                     cargos.map((cargo) => (
                       <div
                         key={cargo.id}
-                        className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-md hover:border-purple-100 transition-all"
+                        className="p-5 sm:p-6 bg-slate-50 rounded-2xl sm:rounded-[1.5rem] border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all duration-300"
                       >
-                        <div className="space-y-1">
-                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{cargo.title || 'Untitled Cargo'}</h3>
+                        <div className="space-y-1.5">
+                          <h3 className="text-xs sm:text-sm font-black text-[#0f172a] uppercase tracking-tight leading-none">{cargo.title || 'NULL_PAYLOAD'}</h3>
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest border-r border-slate-200 pr-2">{cargo.reference || cargo.id.substring(0, 8)}</span>
-                            <span className="text-[9px] font-black text-purple-600 uppercase tracking-widest">{cargo.status}</span>
+                            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest border-r border-slate-200 pr-2">{cargo.reference || cargo.id.substring(0, 8)}</span>
+                            <span className="text-[8px] sm:text-[9px] font-black text-indigo-500 uppercase tracking-widest">{cargo.status}</span>
                           </div>
                           {cargo.receiver && (
-                            <p className="text-[9px] font-bold text-slate-400 mt-1 italic">
-                              Assigned to: {cargo.receiver.profile?.firstName} {cargo.receiver.profile?.lastName}
+                            <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1.5">
+                              <div className="w-1 h-1 rounded-full bg-indigo-200" />
+                              Active Link: {cargo.receiver.profile?.firstName} {cargo.receiver.profile?.lastName}
                             </p>
                           )}
                         </div>
@@ -530,22 +533,22 @@ const ReceiversPage: React.FC = () => {
                           {cargo.receiverId === selectedReceiver.id ? (
                             <button
                               onClick={() => handleUnassignCargo(cargo.id)}
-                              className="px-6 py-2 bg-red-50 text-red-600 rounded-xl text-[9px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all"
+                              className="px-5 sm:px-6 py-2.5 bg-red-50 text-red-600 rounded-xl text-[8px] sm:text-[9px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-500 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-red-900/10 transition-all active:scale-95"
                             >
-                              Unassign
+                              Disconnect
                             </button>
                           ) : (
                             <button
                               onClick={() => handleAssignCargo(cargo.id)}
                               disabled={!!cargo.receiverId && cargo.receiverId !== selectedReceiver.id}
                               className={cn(
-                                "px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border",
+                                "px-5 sm:px-6 py-2.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95",
                                 cargo.receiverId
-                                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                                  : "bg-white text-purple-600 border-purple-100 hover:bg-purple-600 hover:text-white"
+                                  ? "bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed"
+                                  : "bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-900/10 whitespace-nowrap"
                               )}
                             >
-                              {cargo.receiverId ? 'Already Assigned' : 'Assign'}
+                              {cargo.receiverId ? 'LOCKED' : 'Route Here'}
                             </button>
                           )}
                         </div>
@@ -556,9 +559,9 @@ const ReceiversPage: React.FC = () => {
 
                 <button
                   onClick={() => setShowAssignModal(false)}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition-all"
+                  className="w-full py-4 bg-[#0f172a] text-white rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-slate-900/30 hover:bg-slate-800 transition-all active:scale-95 border-b-4 border-slate-700"
                 >
-                  Done
+                  Finalize Routing
                 </button>
               </div>
             </div>

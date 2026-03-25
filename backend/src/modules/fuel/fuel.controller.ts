@@ -99,7 +99,9 @@ export class FuelController {
         @Query() queryDto: GetFuelLogsDto,
         @GetTenant() tenantId: string,
     ) {
+        console.log('📡 FuelController: getFuelLogs hit', { tenantId, queryDto });
         const logs = await this.fuelService.getFuelLogs(queryDto, tenantId);
+        console.log(`✅ FuelController: returning ${logs.length} logs`);
 
         return {
             success: true,
@@ -217,6 +219,7 @@ export class FuelController {
         },
     })
     async getFuelStatistics(@GetTenant() tenantId: string) {
+        console.log('📊 FuelController: getFuelStatistics hit', { tenantId });
         const stats = await this.fuelService.getFuelStatistics(tenantId);
 
         return {

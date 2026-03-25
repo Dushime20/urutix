@@ -9,6 +9,6 @@ const d = new DataSource({
     database: process.env.DB_DATABASE
 });
 d.initialize().then(async () => {
-    const r = await d.query('SELECT email, role, status, "tenantId" FROM users LIMIT 10');
+    const r = await d.query('SELECT title, "recipientId", "tenantId", count(*) as total FROM notifications GROUP BY title, "recipientId", "tenantId" ORDER BY total DESC LIMIT 5');
     console.log(JSON.stringify(r, null, 2));
 }).catch(console.error).finally(() => process.exit());

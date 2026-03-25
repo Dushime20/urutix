@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import RouteBuilder from '../components/FleetDashboard/Routes/RouteBuilder';
 import OptimizedRouteMap from '../components/FleetDashboard/Routes/OptimizedRouteMap';
 
-const FleetRoutesPage: React.FC = () => {
+const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
     const [routes, setRoutes] = useState<OptimizedRoute[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,66 +42,68 @@ const FleetRoutesPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
+        <div className={isEmbedded ? "w-full" : "min-h-screen bg-slate-50 font-sans flex flex-col pt-12"}>
             {/* Route Builder Modal */}
             {showBuilder && (
                 <RouteBuilder
                     onClose={() => setShowBuilder(false)}
                     onSave={handleSaveRoute}
-                    onOptimize={fleetApi.calculateRoute}
+                    onOptimize={(stops: any[]) => fleetApi.calculateRoute(stops[0], stops[stops.length - 1], stops.slice(1, -1))}
                 />
             )}
 
             {/* Header */}
-            <div className="bg-slate-900 text-white pt-20 pb-8 px-4 md:px-8 shadow-lg shrink-0">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tight text-white mb-2">Routes</h1>
-                            <p className="text-slate-400">Plan and manage routes</p>
-                        </div>
-                        <button
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
-                            onClick={() => setShowBuilder(true)}
-                        >
-                            <Plus className="w-5 h-5" />
-                            Add Route
-                        </button>
-                    </div>
-
-                    <div className="mt-8 flex flex-col md:flex-row gap-4 items-center justify-between">
-                        {/* Search */}
-                        <div className="relative w-full md:w-96">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+            {!isEmbedded && (
+                <div className="bg-slate-900 text-white pt-20 pb-8 px-4 md:px-8 shadow-lg shrink-0">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <h1 className="text-3xl font-black tracking-tight text-white mb-2">Routes</h1>
+                                <p className="text-slate-400">Plan and manage routes</p>
+                            </div>
+                            <button
+                                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2"
+                                onClick={() => setShowBuilder(true)}
+                            >
+                                <Plus className="w-5 h-5" />
+                                Add Route
+                            </button>
                         </div>
 
-                        {/* Filters */}
-                        <div className="flex items-center gap-2 bg-slate-800/50 p-1 rounded-lg border border-slate-700">
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'list' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <List className="w-4 h-4" /> List
-                            </button>
-                            <button
-                                onClick={() => setViewMode('map')}
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'map' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                <MapIcon className="w-4 h-4" /> Map
-                            </button>
+                        <div className="mt-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+                            {/* Search */}
+                            <div className="relative w-full md:w-96">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search"
+                                    className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Filters */}
+                            <div className="flex items-center gap-2 bg-slate-800/50 p-1 rounded-lg border border-slate-700">
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'list' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    <List className="w-4 h-4" /> List
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('map')}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'map' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    <MapIcon className="w-4 h-4" /> Map
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <main className="flex-1 max-w-7xl mx-auto px-4 md:px-8 py-8 w-full">
+            <main className={isEmbedded ? "w-full py-0" : "flex-1 max-w-7xl mx-auto px-4 md:px-8 py-8 w-full"}>
                 {viewMode === 'map' ? (
                     <div className="h-[calc(100vh-300px)] grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Map Sidebar List */}
@@ -143,7 +145,7 @@ const FleetRoutesPage: React.FC = () => {
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-900 mb-2">No Routes</h3>
                                     <p className="text-slate-600 mb-6">Start by creating your first optimized route.</p>
-                                    <button className="text-blue-600 font-bold hover:underline">Add Route</button>
+                                    <button className="text-blue-600 font-bold hover:underline" onClick={() => setShowBuilder(true)}>Add Route</button>
                                 </div>
                             ) : (
                                 routes.map(route => (
@@ -219,7 +221,8 @@ const FleetRoutesPage: React.FC = () => {
                                 ))
                             )}
                         </div>
-                    ))}
+                    )
+                )}
             </main>
         </div>
     );

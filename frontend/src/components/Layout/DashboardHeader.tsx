@@ -356,18 +356,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, []);
 
   return (
-    <div data-header="dashboard-header" className="bg-white/80 backdrop-blur-xl border-b border-gray-100 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
-        <div className="flex justify-between items-center relative z-10 gap-2 sm:gap-3 md:gap-4">
+    <div data-header="dashboard-header" className="bg-white/95 backdrop-blur-xl border-b border-gray-50 text-gray-900 px-3 py-1.5 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
+      <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
+        <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2 bg-gray-50 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0 text-gray-600"
+              className="lg:hidden p-1.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 border border-slate-100"
             >
-              {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
-            <div className="flex items-center flex-shrink-0 cursor-pointer px-1 sm:px-2" onClick={() => navigate('/')}>
-              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-10 sm:h-12 md:h-16 lg:h-20 max-w-none w-auto object-contain" />
+            <div className="flex items-center flex-shrink-0 cursor-pointer px-1" onClick={() => navigate('/')}>
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-7 sm:h-10 md:h-14 lg:h-18 max-w-none w-auto object-contain transition-all" />
             </div>
 
             <div className="hidden lg:flex flex-1 items-center relative min-w-0 h-full">

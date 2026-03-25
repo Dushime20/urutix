@@ -135,8 +135,8 @@ export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, isLoa
   ];
 
   return (
-    <div className="mb-8 md:mb-12">
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 md:gap-5 px-4 lg:px-0">
+    <div className="mb-4 md:mb-12">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 md:gap-5 px-1.5 lg:px-0">
         {statCards.map((stat, index) => (
           <DashboardStatCard
             key={stat.label}

@@ -14,6 +14,8 @@ import {
   Users,
   Filter,
   Eye,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { CargoLoadConfirmation } from "@/components/LoanRequest";
 import CargoDetailsModal from "@/components/CargoDetailsModal";
@@ -702,100 +704,114 @@ const UnifiedCargoManagement = () => {
             <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
               {/* Filters - Only show for list views */}
               {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
-                <div className="mb-4 sm:mb-6">
-                    <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center">
-                      <div className="relative flex-1 w-full flex items-center gap-2">
-                        <div className="relative flex-1">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform text-slate-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            placeholder="Search cargo..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 pl-11 text-sm text-slate-700 transition focus:border-[#345E85] focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                            aria-label="Search cargo"
-                          />
+                <div className="mb-4 sm:mb-8">
+                  <div className="flex flex-col gap-4 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="relative flex-1 group">
+                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                          <Search className="w-4 h-4 text-slate-400 group-focus-within:text-[#345E85] transition-colors" />
                         </div>
+                        <input
+                          type="text"
+                          placeholder="Search cargo by title, reference, or type..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className={cn(
+                            "w-full pl-14 pr-6 py-4 text-sm font-bold bg-slate-50 border border-slate-100 rounded-[2rem]",
+                            "focus:bg-white focus:outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-200/60",
+                            "transition-all duration-300 placeholder:text-slate-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest"
+                          )}
+                          aria-label="Search cargo"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => setShowFiltersMobile(!showFiltersMobile)}
                           className={cn(
-                            "sm:hidden p-3 rounded-2xl border transition-all flex items-center justify-center gap-2 font-bold text-xs min-h-[46px]",
+                            "sm:hidden flex-1 px-6 py-4 rounded-[1.5rem] border transition-all flex items-center justify-center gap-3 font-black text-[10px] uppercase tracking-widest",
                             showFiltersMobile 
-                              ? "bg-[#345E85] border-blue-600 text-white shadow-lg shadow-blue-900/10" 
-                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                              ? "bg-slate-900 border-slate-900 text-white shadow-2xl shadow-slate-900/20" 
+                              : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
                           )}
                         >
                           <Filter className="w-4 h-4" />
-                          <span>FILTERS</span>
+                          <span>Advanced Filters</span>
                         </button>
                       </div>
+                    </div>
 
-                      {/* Horizontal Status Chips for Mobile Quick Filter */}
-                      <div className="flex sm:hidden overflow-x-auto pb-1 scrollbar-hide gap-2 -mx-1 px-1">
+                    {/* Horizontal Status Chips for Mobile Quick Filter - Prime Style */}
+                    <div className="relative flex sm:hidden">
+                      <div className="flex overflow-x-auto pb-2 scrollbar-hide gap-2 scroll-smooth px-1">
                          {['', 'DRAFT', 'PUBLISHED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED'].map((status) => (
                            <button
                              key={status}
                              onClick={() => setStatusFilter(status)}
                              className={cn(
-                               "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border",
+                               "px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all duration-300 border-2",
                                statusFilter === status
-                                 ? "bg-[#345E85] border-[#345E85] text-white shadow-md"
-                                 : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                                 ? "bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-900/10 scale-105"
+                                 : "bg-white border-slate-50 text-slate-400 hover:border-slate-200"
                              )}
                            >
-                             {status === '' ? 'ALL' : status.replace('_', ' ')}
+                             {status === '' ? 'Manifest_All' : status.replace('_', ' ')}
                            </button>
                          ))}
                       </div>
-
-                      {/* Desktop Filters / Mobile Expanded Filters */}
-                      <div className={cn(
-                        "flex flex-col gap-4 lg:flex-row lg:items-end w-full sm:w-auto",
-                        !showFiltersMobile ? "hidden sm:flex" : "flex"
-                      )}>
-                        <div className="w-full sm:w-auto">
-                          <FilterSelect
-                            label="Status"
-                            icon={<FaLayerGroup className="text-gray-500" />}
-                            value={statusFilter}
-                            placeholder="All Status"
-                            options={[
-                              { value: "DRAFT", label: "Draft" },
-                              { value: "PUBLISHED", label: "Published" },
-                              { value: "ASSIGNED", label: "Assigned" },
-                              { value: "IN_TRANSIT", label: "In Transit" },
-                              { value: "DELIVERED", label: "Delivered" },
-                              { value: "COMPLETED", label: "Completed" },
-                              { value: "CANCELLED", label: "Cancelled" },
-                            ]}
-                            onChange={setStatusFilter}
-                            className="w-full sm:min-w-[180px]"
-                          />
-                        </div>
-                        <div className="w-full sm:w-auto">
-                          <FilterSelect
-                            label="Cargo Type"
-                            icon={<FaBox className="text-gray-500" />}
-                            value={cargoTypeFilter}
-                            placeholder="All Types"
-                            options={[
-                              { value: "GENERAL", label: "General" },
-                              { value: "FRAGILE", label: "Fragile" },
-                              { value: "HAZARDOUS", label: "Hazardous" },
-                              { value: "REFRIGERATED", label: "Refrigerated" },
-                              { value: "LIQUID", label: "Liquid" },
-                              { value: "OVERSIZED", label: "Oversized" },
-                              { value: "VALUABLE", label: "Valuable" },
-                            ]}
-                            onChange={setCargoTypeFilter}
-                            className="w-full sm:min-w-[180px]"
-                          />
-                        </div>
-                      </div>
+                      <div className="absolute top-0 right-0 bottom-2 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none" />
                     </div>
 
+                    {/* Desktop Filters / Mobile Expanded Filters */}
+                    <div className={cn(
+                      "grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-4 w-full",
+                      !showFiltersMobile ? "hidden sm:grid lg:flex" : "grid"
+                    )}>
+                      <div className="w-full lg:w-64">
+                        <FilterSelect
+                          label={<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Status_Scope</span>}
+                          icon={<FaLayerGroup className="text-slate-400" />}
+                          value={statusFilter}
+                          placeholder="All Status"
+                          options={[
+                            { value: "DRAFT", label: "Draft" },
+                            { value: "PUBLISHED", label: "Published" },
+                            { value: "ASSIGNED", label: "Assigned" },
+                            { value: "IN_TRANSIT", label: "In Transit" },
+                            { value: "DELIVERED", label: "Delivered" },
+                            { value: "COMPLETED", label: "Completed" },
+                            { value: "CANCELLED", label: "Cancelled" },
+                          ]}
+                          onChange={setStatusFilter}
+                          className="w-full"
+                          selectClassName="rounded-2xl border-slate-100 bg-slate-50/50 py-3.5 font-bold text-xs"
+                        />
+                      </div>
+                      <div className="w-full lg:w-64">
+                        <FilterSelect
+                          label={<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">Payload_Category</span>}
+                          icon={<FaBox className="text-slate-400" />}
+                          value={cargoTypeFilter}
+                          placeholder="All Types"
+                          options={[
+                            { value: "GENERAL", label: "General" },
+                            { value: "FRAGILE", label: "Fragile" },
+                            { value: "HAZARDOUS", label: "Hazardous" },
+                            { value: "REFRIGERATED", label: "Refrigerated" },
+                            { value: "LIQUID", label: "Liquid" },
+                            { value: "OVERSIZED", label: "Oversized" },
+                            { value: "VALUABLE", label: "Valuable" },
+                          ]}
+                          onChange={setCargoTypeFilter}
+                          className="w-full"
+                          selectClassName="rounded-2xl border-slate-100 bg-slate-50/50 py-3.5 font-bold text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* View Mode Toggle - Prime Style */}
-                  <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 mt-6 max-w-fit">
                     <button
                       onClick={() => setViewMode('card')}
                       className={cn(
@@ -882,70 +898,128 @@ const UnifiedCargoManagement = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
+                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                          {/* Mobile View for "Table" Mode (Compact List) */}
+                          <div className="block md:hidden divide-y divide-slate-50">
+                            {filteredLoads.map((load: any) => (
+                              <div key={load.id} className="p-4 flex flex-col gap-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center">
+                                      <Package className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-black text-slate-800">{load.title || 'Untitled'}</div>
+                                      <div className="text-[10px] font-bold text-slate-400 uppercase">{load.cargoType}</div>
+                                    </div>
+                                  </div>
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider",
+                                    getStatusColor(load.status)
+                                  )}>
+                                    {getStatusDisplayName(load.status)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between bg-slate-50/50 p-2 rounded-xl">
+                                  <div className="text-[10px] font-bold text-slate-500">
+                                    {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={() => handleViewClick(load)} className="p-2 text-slate-400 hover:text-[#345E85]"><Eye className="w-4 h-4" /></button>
+                                    {!load.broker && <button onClick={() => handleEditCargo(load)} className="p-2 text-slate-400 hover:text-primary-600"><Edit className="w-4 h-4" /></button>}
+                                    {handleAssignBroker && !load.broker && <button onClick={() => handleAssignBroker(load)} className="p-2 text-purple-600"><Users className="w-4 h-4" /></button>}
+                                    {!load.broker && <button onClick={() => handleDeleteCargo(load)} className="p-2 text-red-400"><Trash2 className="w-4 h-4" /></button>}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Desktop View (Enhanced Table) */}
+                          <div className="hidden md:block overflow-x-auto">
+                            <table className="min-w-full divide-y divide-slate-100">
+                              <thead className="bg-slate-50/50">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Value</th>
+                                  <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                                 </tr>
                               </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
+                              <tbody className="bg-white divide-y divide-slate-50">
                                 {filteredLoads.map((load: any) => (
-                                  <tr key={load.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-3 whitespace-nowrap">
+                                  <tr key={load.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                       <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                          <Package className="h-5 w-5 text-gray-600" />
+                                        <div className="flex-shrink-0 h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center">
+                                          <Package className="h-5 w-5 text-slate-400" />
                                         </div>
                                         <div className="ml-3">
-                                          <div className="text-sm font-medium text-gray-900">{load.title || 'Untitled'}</div>
-                                          <div className="text-xs text-gray-500">{load.cargoType}</div>
+                                          <div className="text-sm font-black text-slate-800">{load.title || 'Untitled'}</div>
+                                          <div className="text-[10px] font-bold text-slate-400 uppercase">{load.cargoType}</div>
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="px-4 py-3">
-                                      <div className="text-xs text-gray-900">
+                                    <td className="px-6 py-4">
+                                      <div className="text-xs font-bold text-slate-700">
                                         {load.pickupLocation?.city || load.pickupLocation?.address || 'N/A'}
                                       </div>
-                                      <div className="text-xs text-gray-500">→</div>
-                                      <div className="text-xs text-gray-900">
+                                      <div className="text-[10px] text-slate-400">→</div>
+                                      <div className="text-xs font-bold text-slate-700">
                                         {load.deliveryLocation?.city || load.deliveryLocation?.address || 'N/A'}
                                       </div>
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap">
-                                      <div className="text-xs text-gray-900">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
-                                      <div className="text-xs text-gray-500">{load.volume ? `${load.volume} L` : ''}</div>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="text-xs font-bold text-slate-700">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
+                                      <div className="text-[10px] text-slate-400 font-bold">{load.volume ? `${load.volume} L` : ''}</div>
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap">
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                       <span className={cn(
-                                        "px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
+                                        "px-3 py-1.5 inline-flex text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm font-semibold",
                                         getStatusColor(load.status)
                                       )}>
                                         {getStatusDisplayName(load.status)}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700">
                                       {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                      <div className="flex items-center justify-end gap-2">
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                      <div className="flex items-center justify-end gap-1">
                                         <button
                                           onClick={() => handleViewClick(load)}
-                                          className="text-blue-600 hover:text-blue-900 transition-colors rounded p-1"
+                                          className="p-2 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-lg transition-all"
                                           title="View Details"
                                         >
                                           <Eye className="w-4 h-4" />
                                         </button>
+                                        {!load.broker && (
+                                          <button
+                                            onClick={() => handleEditCargo(load)}
+                                            className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                                            title="Edit Cargo"
+                                          >
+                                            <Edit className="w-4 h-4" />
+                                          </button>
+                                        )}
+                                        {handleAssignBroker && !load.broker && (
+                                          <button
+                                            onClick={() => handleAssignBroker(load)}
+                                            className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+                                            title="Assign Broker"
+                                          >
+                                            <Users className="w-4 h-4" />
+                                          </button>
+                                        )}
                                         <button
                                           onClick={() => !load.receiverId && handleAssignReceiver(load)}
-                                          className={`${load.receiverId ? 'text-gray-300 cursor-not-allowed' : 'text-purple-600 hover:text-purple-900'} transition-colors rounded p-1`}
-                                          title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
+                                          className={cn(
+                                            "p-2 rounded-lg transition-all",
+                                            load.receiverId ? "text-slate-200 cursor-not-allowed" : "text-slate-400 hover:text-teal-600 hover:bg-teal-50"
+                                          )}
+                                          title={load.receiverId ? "Receiver assigned" : "Assign Receiver"}
                                           disabled={!!load.receiverId}
                                         >
                                           <Users className="w-4 h-4" />
