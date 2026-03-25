@@ -2832,6 +2832,10 @@ export class FleetService {
   ): Promise<void> {
     const route = await this.findOneRoute(id, tenantId);
 
+    // First, remove all route-truck assignments
+    await this.routeTruckRepository.delete({ routeId: id });
+
+    // Then remove the route itself
     await this.routeRepository.remove(route);
   }
 

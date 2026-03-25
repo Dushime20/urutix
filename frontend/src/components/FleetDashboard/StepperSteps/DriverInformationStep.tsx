@@ -133,34 +133,12 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
         expiryDate: docData.expiryDate,
       };
       
-      console.log('📄 AddDriverDocumentModal: New document object created:', newDoc);
-      console.log('📄 AddDriverDocumentModal: File details:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      });
-      
-      console.log('🔄 AddDriverDocumentModal: Calling onSave function...');
       onSave(newDoc);
-      console.log('✅ AddDriverDocumentModal: onSave function completed successfully');
       toast.success('Document added successfully!');
-      
-      // Don't close modal here - let parent handle it
-      // The parent will close the modal after updating its state
-    } catch (error) {
-      console.error('❌ AddDriverDocumentModal: Error in handleSubmit try block:', error);
-      console.error('❌ AddDriverDocumentModal: Error type:', typeof error);
-      console.error('❌ AddDriverDocumentModal: Error message:', error?.message);
-      console.error('❌ AddDriverDocumentModal: Error stack:', error?.stack);
-      console.error('❌ AddDriverDocumentModal: Full error object:', JSON.stringify(error, null, 2));
-      
-      // Check if error is causing modal closure
-      console.error('🚨 AddDriverDocumentModal: ERROR DETECTED - This might cause both modals to close!');
-      
+    } catch (error: any) {
+      console.error('❌ AddDriverDocumentModal: Error in handleSubmit:', error);
       toast.error('Failed to add document. Please try again.');
     } finally {
-      console.log('🔄 AddDriverDocumentModal: Finally block executing, setting loading to false');
       setLoading(false);
     }
   };
@@ -188,83 +166,79 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
       }}
     >
       <div 
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling to backdrop
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-none max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-800"
+        onClick={(e) => e.stopPropagation()} 
       >
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <FilePlus className="w-5 h-5" />
             </div>
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Add Document</h2>
+            <h2 className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">Add Digital Credential</h2>
           </div>
           <button 
-            onClick={() => {
-              console.log('🔘 AddDriverDocumentModal: X button clicked');
-              console.trace('📍 AddDriverDocumentModal: X button click stack trace');
-              onClose();
-            }} 
+            onClick={onClose} 
             disabled={loading}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-all disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-6">
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Document Type *</label>
-              <select
-                value={docData.documentType}
-                onChange={(e) => setDocData({ ...docData, documentType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-              >
-                {documentTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Document Type *</label>
+                <select
+                  value={docData.documentType}
+                  onChange={(e) => setDocData({ ...docData, documentType: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+                  required
+                >
+                  {documentTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Document Title *</label>
-              <input
-                type="text"
-                value={docData.title}
-                onChange={(e) => setDocData({ ...docData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                required
-                placeholder="Enter document title"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                value={docData.description || ''}
-                onChange={(e) => setDocData({ ...docData, description: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter description (optional)"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Document Title *</label>
                 <input
-                  type="date"
-                  value={docData.expiryDate || ''}
-                  onChange={(e) => setDocData({ ...docData, expiryDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  type="text"
+                  value={docData.title}
+                  onChange={(e) => setDocData({ ...docData, title: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+                  required
+                  placeholder="Enter credential name"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Document File *</label>
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Detailed Description</label>
+              <textarea
+                value={docData.description || ''}
+                onChange={(e) => setDocData({ ...docData, description: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none resize-none"
+                placeholder="Enter document specifics (optional)"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Expiration Timeline</label>
+              <input
+                type="date"
+                value={docData.expiryDate || ''}
+                onChange={(e) => setDocData({ ...docData, expiryDate: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Source Asset *</label>
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${file ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-primary-400'}`}
+                className={`border-2 border-dashed rounded-lg p-10 text-center transition-all ${file ? 'border-blue-600/30 bg-blue-600/5 dark:bg-blue-600/10' : 'border-gray-200 dark:border-gray-800 hover:border-blue-600/30 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
               >
@@ -276,43 +250,50 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
                   className="hidden"
                 />
                 {!file ? (
-                  <div>
-                    <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-slate-900 mb-2">Upload Document</p>
-                    <p className="text-gray-500 mb-4">Drag and drop or click to browse</p>
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 bg-blue-600/5 dark:bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
+                      <Upload className="w-8 h-8 text-blue-600 dark:text-blue-500 opacity-60" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-1">Upload Source Credential</p>
+                      <p className="text-[9px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-tight">Drag and drop or select file system</p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest transition-all shadow-none"
                     >
-                      Choose File
+                      Browse Files
                     </button>
-                    <p className="text-xs text-gray-400 mt-2">Supported: PDF, Word, Images (Max 10MB)</p>
+                    <p className="text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest opacity-60">PDF, DOCX, IMG (MAX 10MB)</p>
                   </div>
                 ) : (
-                  <div>
-                    <FileText className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-slate-900 mb-2">{file.name}</p>
-                    <p className="text-sm text-gray-500 mb-4">{(file.size / 1024).toFixed(2)} KB</p>
-                    {preview && <img src={preview} alt="Preview" className="max-h-40 mx-auto rounded border mb-4" />}
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
+                      <FileText className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-1">{file.name}</p>
+                      <p className="text-[9px] text-gray-400 font-medium uppercase tracking-tight">{(file.size / 1024).toFixed(2)} KB</p>
+                    </div>
+                    {preview && <img src={preview} alt="Preview" className="max-h-40 mx-auto rounded-lg border border-gray-200 dark:border-gray-700 mb-4" />}
                     <button
                       type="button"
                       onClick={() => { setFile(null); setPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                      className="px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold rounded-lg uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
                     >
-                      Remove File
+                      Reset File
                     </button>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
               <button 
                 type="button" 
                 onClick={onClose} 
-                disabled={loading}
-                className="px-5 py-2.5 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all disabled:opacity-50"
+                className="px-6 py-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
               >
                 Cancel
               </button>
@@ -320,19 +301,9 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || !file || !docData.title || !docData.documentType}
-                className="px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
               >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    {file ? 'Save Document' : 'Add Document'}
-                  </>
-                )}
+                {loading ? 'Processing...' : (file ? 'Archive Credential' : 'Add Credential')}
               </button>
             </div>
           </div>
@@ -360,41 +331,24 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
     console.log('📝 DriverInformationStep: handleAddDocument called');
     console.log('📄 DriverInformationStep: Document to add:', doc);
     console.log('📋 DriverInformationStep: Current documents before adding:', documents);
-    console.log('📋 DriverInformationStep: Current documents length:', documents.length);
-    
     try {
-      console.log('🔄 DriverInformationStep: Creating updated documents array...');
       const updatedDocs = [...documents, doc];
-      console.log('📋 DriverInformationStep: Updated documents array created:', updatedDocs);
-      console.log('📋 DriverInformationStep: New documents length:', updatedDocs.length);
-      
-      console.log('🔄 DriverInformationStep: Updating local state...');
       setDocuments(updatedDocs);
       
-      console.log('🔄 DriverInformationStep: Calling handleInputChange...');
       try {
         handleInputChange('documents', updatedDocs);
-        console.log('✅ DriverInformationStep: handleInputChange completed successfully');
-      } catch (inputChangeError) {
+      } catch (inputChangeError: any) {
         console.error('❌ DriverInformationStep: Error in handleInputChange:', inputChangeError);
-        console.error('❌ DriverInformationStep: handleInputChange error type:', typeof inputChangeError);
-        console.error('❌ DriverInformationStep: handleInputChange error message:', inputChangeError?.message);
-        console.error('🚨 DriverInformationStep: handleInputChange ERROR - This might cause modal closure!');
-        throw inputChangeError; // Re-throw to be caught by outer try-catch
+        throw inputChangeError;
       }
       
-      console.log('✅ DriverInformationStep: Document added to state successfully');
-      toast.success(`Document "${doc.title}" added! You can add more documents or continue to the next step.`);
+      toast.success(`Document "${doc.title}" added!`);
       
-      console.log('🔄 DriverInformationStep: Setting timeout to close modal...');
-      // Close the document modal automatically after a small delay
       setTimeout(() => {
-        console.log('⏰ DriverInformationStep: Timeout executing - closing document modal');
         setShowAddModalWithLogging(false);
-        console.log('✅ DriverInformationStep: Document modal closed successfully');
       }, 100);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ DriverInformationStep: Error in handleAddDocument:', error);
       console.error('❌ DriverInformationStep: Error type:', typeof error);
       console.error('❌ DriverInformationStep: Error message:', error?.message);
@@ -421,129 +375,100 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
   };
 
   return (
-    <div className="space-y-12">
-      <div className="flex items-center gap-4 mb-8 bg-slate-50 p-6 rounded-[32px] border border-slate-100 shadow-sm">
-        <div className="w-12 h-12 rounded-2xl bg-white text-primary-500 flex items-center justify-center shadow-sm">
-          <User className="w-6 h-6 font-black" />
-        </div>
-        <div>
-          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Driver Information</h3>
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">Personnel Credentials</p>
-        </div>
+    <div className="space-y-12 text-gray-900 dark:text-white">
+      <div className="flex items-center gap-2 mb-8">
+        <User className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+        <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Personnel & Operator Protocol</h3>
       </div>
 
       {/* Personal Information */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <User className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Personal Information
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Identity & Personnel Profile</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">First Name *</label>
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="text"
-                value={formData.firstName || ''}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-                placeholder="e.g. Samuel"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">First Name *</label>
+            <input
+              type="text"
+              value={formData.firstName || ''}
+              onChange={(e) => handleInputChange('firstName', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="e.g. Samuel"
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Last Name *</label>
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="text"
-                value={formData.lastName || ''}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-                placeholder="e.g. Karanja"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Date of Birth *</label>
-            <div className="relative group">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="date"
-                value={formData.dateOfBirth || ''}
-                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Last Name *</label>
+            <input
+              type="text"
+              value={formData.lastName || ''}
+              onChange={(e) => handleInputChange('lastName', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="e.g. Karanja"
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Address *</label>
-            <div className="relative group">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="text"
-                value={formData.address || ''}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-                placeholder="e.g. Nairobi, Kenya"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Date of Birth *</label>
+            <input
+              type="date"
+              value={formData.dateOfBirth || ''}
+              onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Primary Residence *</label>
+            <input
+              type="text"
+              value={formData.address || ''}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="e.g. Nairobi, Kenya"
+            />
           </div>
         </div>
       </div>
 
       {/* License Information */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <CreditCard className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            License Information
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <CreditCard className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Regulatory Authorization & Documentation</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2 space-y-4"> {/* Increased height requested */}
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">License Number *</label>
-            <div className="relative group">
-              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="text"
-                value={formData.licenseNumber || ''}
-                onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-                placeholder="e.G. DL-987654321"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">License Registry ID *</label>
+            <input
+              type="text"
+              value={formData.licenseNumber || ''}
+              onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="e.G. DL-987654321"
+            />
           </div>
 
-          <div className="space-y-2 space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">License Type *</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Authorization Class *</label>
             <select
               value={formData.licenseType || ''}
               onChange={(e) => handleInputChange('licenseType', e.target.value)}
-              className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
             >
               <option value="">Select license type</option>
               <option value="CLASS_A">Class A - Heavy Combination</option>
+              {/* ... other options omitted for brevity but should remain in the actual file ... */}
               <option value="CLASS_B">Class B - Heavy Rigid</option>
               <option value="CLASS_C">Class C - Medium Rigid</option>
               <option value="CLASS_D">Class D - Light Rigid</option>
@@ -556,68 +481,50 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
             </select>
           </div>
 
-          <div className="space-y-2 space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Years of Experience *</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Operational Tenure (Years) *</label>
             <input
               type="number"
               value={formData.experience || ''}
               onChange={(e) => handleInputChange('experience', parseInt(e.target.value) || '')}
-              className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
               min={0}
-              max={50}
               placeholder="0"
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">License Issue Date *</label>
-            <div className="relative group">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="date"
-                value={formData.licenseIssueDate || ''}
-                onChange={(e) => handleInputChange('licenseIssueDate', e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Issue Timestamp *</label>
+            <input
+              type="date"
+              value={formData.licenseIssueDate || ''}
+              onChange={(e) => handleInputChange('licenseIssueDate', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+            />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">License Expiry Date *</label>
-            <div className="relative group">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="date"
-                value={formData.licenseExpiry || ''}
-                onChange={(e) => handleInputChange('licenseExpiry', e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-              />
-            </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Expiry Horizon *</label>
+            <input
+              type="date"
+              value={formData.licenseExpiry || ''}
+              onChange={(e) => handleInputChange('licenseExpiry', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+            />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">License State *</label>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Jurisdiction State *</label>
             <input
               type="text"
               value={formData.licenseState || ''}
               onChange={(e) => handleInputChange('licenseState', e.target.value)}
-              className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
               placeholder="e.g. Nairobi"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">License Country *</label>
-            <input
-              type="text"
-              value={formData.licenseCountry || ''}
-              onChange={(e) => handleInputChange('licenseCountry', e.target.value)}
-              className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-              required
-              placeholder="Kenya"
             />
           </div>
         </div>
@@ -625,66 +532,52 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 
       {/* Contact Information */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <Phone className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Contact Information
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Communication Protocols</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number *</label>
-            <div className="relative group">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="tel"
-                value={formData.contactInfo?.phone || ''}
-                onChange={(e) => handleInputChange('contactInfo', { ...formData.contactInfo, phone: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-                placeholder="+254 7..."
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Signal Phone *</label>
+            <input
+              type="tel"
+              value={formData.contactInfo?.phone || ''}
+              onChange={(e) => handleInputChange('contactInfo', { ...formData.contactInfo, phone: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="+254 7..."
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Email Address *</label>
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="email"
-                value={formData.contactInfo?.email || ''}
-                onChange={(e) => handleInputChange('contactInfo', { ...formData.contactInfo, email: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                required
-                placeholder="driver@urutix.com"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Digital Mailbox *</label>
+            <input
+              type="email"
+              value={formData.contactInfo?.email || ''}
+              onChange={(e) => handleInputChange('contactInfo', { ...formData.contactInfo, email: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="driver@urutix.com"
+            />
           </div>
         </div>
       </div>
 
       {/* Employment */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <Briefcase className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Employment
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Briefcase className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Contractual Engagement</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Employment Type *</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Engagement Type *</label>
             <select
               value={formData.employmentType || ''}
               onChange={(e) => handleInputChange('employmentType', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
             >
               <option value="">Select employment type</option>
@@ -695,22 +588,22 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               <option value="FREELANCE">Freelance</option>
             </select>
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Hire Date *</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Activation Date *</label>
             <input
               type="date"
               value={formData.hireDate || ''}
               onChange={(e) => handleInputChange('hireDate', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Status *</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Operational Status *</label>
             <select
               value={formData.status || ''}
               onChange={(e) => handleInputChange('status', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
             >
               <option value="">Select status</option>
@@ -725,50 +618,46 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 
       {/* Compliance & Safety */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Compliance & Safety
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Compliance & Safety Registry</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Medical Certificate Expiry</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Medical Clearance Expiry</label>
             <input
               type="date"
               value={formData.medicalCertExpiry || ''}
               onChange={(e) => handleInputChange('medicalCertExpiry', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Last Drug Test Date</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Subs. Screening Date</label>
             <input
               type="date"
               value={formData.drugTestDate || ''}
               onChange={(e) => handleInputChange('drugTestDate', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Background Check Date</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Security Vetting Date</label>
             <input
               type="date"
               value={formData.backgroundCheckDate || ''}
               onChange={(e) => handleInputChange('backgroundCheckDate', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Training Completion Date</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Skill Refresh Date</label>
             <input
               type="date"
               value={formData.trainingCompletionDate || ''}
               onChange={(e) => handleInputChange('trainingCompletionDate', e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
             />
           </div>
         </div>
@@ -776,78 +665,64 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 
       {/* Financial Details */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <DollarSign className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Financial Details (Optional)
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <DollarSign className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Financial Remuneration (Optional)</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Hourly Rate ($)</label>
-            <div className="relative group">
-              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="number"
-                step="0.01"
-                value={formData.hourlyRate || ''}
-                onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                placeholder="0.00"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Base Hourly Yield ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.hourlyRate || ''}
+              onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="0.00"
+            />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Mileage Rate ($/km)</label>
-            <div className="relative group">
-              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="number"
-                step="0.01"
-                value={formData.mileageRate || ''}
-                onChange={(e) => handleInputChange('mileageRate', e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                placeholder="0.00"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Distance Unit Rate ($/KM)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.mileageRate || ''}
+              onChange={(e) => handleInputChange('mileageRate', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="0.00"
+            />
           </div>
         </div>
       </div>
 
       {/* Additional Information */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">
-            <StickyNote className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-[0.2em]">
-            Additional Information
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <StickyNote className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Supplemental Observations</h4>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2 px-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Special Certifications</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Special Accreditation Notes</label>
             <textarea
               value={formData.specialCertifications || ''}
               onChange={(e) => handleInputChange('specialCertifications', e.target.value)}
-              className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[24px] text-sm font-medium text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-              rows={5}
-              placeholder="Enter any special certifications (e.g., Hazmat, Tanker, etc.)"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none resize-none"
+              rows={4}
+              placeholder="Hazmat, Tanker, etc."
             />
           </div>
 
-          <div className="space-y-2 px-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Notes</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Personnel Directives</label>
             <textarea
               value={formData.driverNotes || ''}
               onChange={(e) => handleInputChange('driverNotes', e.target.value)}
-              className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[24px] text-sm font-medium text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-              rows={5}
-              placeholder="Enter any additional notes about the driver"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none resize-none"
+              rows={4}
+              placeholder="Additional operational notes"
             />
           </div>
         </div>
@@ -855,52 +730,42 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 
       {/* Emergency Contact */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-2 px-1">
-          <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
-            <Heart className="w-4 h-4" />
-          </div>
-          <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]">
-            Emergency Contact
-          </h4>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Heart className="w-3.5 h-3.5 text-rose-600 dark:text-rose-500" />
+          <h4 className="text-[10px] font-bold text-rose-600 dark:text-rose-500 uppercase tracking-widest">Emergency Escalation Logic</h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Name</label>
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-rose-500 transition-colors" />
-              <input
-                type="text"
-                value={formData.emergencyContact?.name || ''}
-                onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, name: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none shadow-sm transition-all"
-                placeholder="Name"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Responder Alias</label>
+            <input
+              type="text"
+              value={formData.emergencyContact?.name || ''}
+              onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, name: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="Full Name"
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
-            <div className="relative group">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-rose-500 transition-colors" />
-              <input
-                type="tel"
-                value={formData.emergencyContact?.phone || ''}
-                onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, phone: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none shadow-sm transition-all"
-                placeholder="+254..."
-              />
-            </div>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Urgent Signal Access</label>
+            <input
+              type="tel"
+              value={formData.emergencyContact?.phone || ''}
+              onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, phone: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="+254..."
+            />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Relationship</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Kinship Relation</label>
             <input
               type="text"
               value={formData.emergencyContact?.relationship || ''}
               onChange={(e) => handleInputChange('emergencyContact', { ...formData.emergencyContact, relationship: e.target.value })}
-              className="w-full px-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none shadow-sm transition-all"
-              placeholder="e.g., Spouse"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="e.g. Spouse"
             />
           </div>
         </div>
@@ -908,51 +773,47 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
 
       {/* Documents Section */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between bg-slate-50 p-6 rounded-[32px] border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white text-primary-500 flex items-center justify-center shadow-sm">
-              <FilePlus className="w-6 h-6" />
+        <div className="flex items-center justify-between bg-blue-600/5 dark:bg-blue-600/10 p-5 rounded-lg border border-blue-600/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-500 flex items-center justify-center shadow-none border border-blue-600/10">
+              <FilePlus className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">Driver Documents</h4>
-              <p className="text-xs font-medium text-slate-400 mt-0.5">Licenses, certificates & permits</p>
+              <h4 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Credential Repository</h4>
+              <p className="text-[9px] font-bold text-blue-600 dark:text-blue-500/70 uppercase tracking-tight mt-0.5">Verified Authorization Assets</p>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => {
-              console.log('🔘 DriverInformationStep: Add Document button clicked');
-              setShowAddModalWithLogging(true);
-            }}
-            className="px-5 py-3 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2 text-xs uppercase tracking-widest"
+            onClick={() => setShowAddModalWithLogging(true)}
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest transition-all shadow-none"
           >
-            <Plus className="w-4 h-4" />
-            Add Document
+            Digital Upload
           </button>
         </div>
 
-        {/* Document List (ReadOnly Cards) */}
+        {/* Document List */}
         {documents.length === 0 ? (
-          <div className="border-2 border-dashed border-slate-200 rounded-[32px] p-12 text-center bg-slate-50/50">
-            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-sm font-black text-slate-400 uppercase tracking-widest">No documents added yet</p>
+          <div className="border border-gray-100 dark:border-gray-800 rounded-lg p-10 text-center bg-gray-50/50 dark:bg-gray-800/20">
+            <FileText className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto mb-4 opacity-50" />
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">DRIVE_VAULT EMPTY: NO CREDENTIALS DETECTED</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             {documents.map((doc, index) => (
-              <div key={index} className="group bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm hover:shadow-xl hover:border-primary-100 transition-all">
-                <div className="flex items-start justify-between">
+              <div key={index} className="group bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700 rounded-lg p-4 transition-all">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-500 flex items-center justify-center group-hover:bg-primary-500 group-hover:text-white transition-colors">
-                      <FileText className="w-6 h-6" />
+                    <div className="w-10 h-10 rounded-lg bg-white dark:bg-gray-800 text-blue-600 flex items-center justify-center border border-gray-100 dark:border-gray-700">
+                      <FileText className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-bold text-slate-900 group-hover:text-primary-600 transition-colors uppercase tracking-tight">{doc.title}</h5>
+                      <h5 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">{doc.title}</h5>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-black text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                        <span className="text-[9px] font-black text-blue-600 dark:text-blue-500 uppercase tracking-wider">
                           {doc.documentType.replace(/_/g, ' ')}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter opacity-70">
                           {(doc.file.size / 1024).toFixed(2)} KB
                         </span>
                       </div>
@@ -961,18 +822,19 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveDocument(index)}
-                    className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                    className="p-2 text-gray-300 hover:text-rose-600 transition-all opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
                 {doc.description && (
-                  <p className="text-xs font-medium text-slate-500 mt-4 pl-16 leading-relaxed bg-slate-50/50 p-3 rounded-xl border border-slate-50">{doc.description}</p>
+                  <div className="mt-3 pl-14">
+                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight">{doc.description}</p>
+                  </div>
                 )}
                 {doc.expiryDate && (
-                  <div className="mt-4 pl-16 flex items-center gap-2">
-                    <Calendar className="w-3 h-3 text-rose-400" />
-                    <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Expires: {doc.expiryDate}</span>
+                  <div className="mt-2 pl-14 flex items-center gap-2">
+                    <span className="text-[9px] font-black text-rose-600 dark:text-rose-500 uppercase tracking-widest">DEPROVISIONING DATE: {doc.expiryDate}</span>
                   </div>
                 )}
               </div>

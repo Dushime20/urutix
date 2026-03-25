@@ -54,75 +54,75 @@ export const SetLocationModal: React.FC<SetLocationModalProps> = ({ truck, isOpe
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-950/60 dark:bg-gray-950/90 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-all duration-300">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl dark:shadow-none max-w-md w-full overflow-hidden border border-gray-100 dark:border-gray-800 transform transition-all duration-200">
                 {/* Header */}
-                <div className="bg-purple-600 px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-700 flex items-center justify-center">
-                            <FaMapMarkerAlt className="text-white text-lg" />
+                <div className="bg-white dark:bg-gray-950 px-6 py-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
+                    <div className="flex items-center gap-4">
+                        <div className="size-10 rounded-lg bg-blue-600 dark:bg-blue-900/40 flex items-center justify-center transition-colors">
+                            <FaMapMarkerAlt className="text-white dark:text-blue-400 text-lg" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">Set Location</h2>
-                            <p className="text-xs text-purple-200">{truck.plateNumber}</p>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white transition-colors">Set Location</h2>
+                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">{truck.plateNumber}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-purple-200 hover:text-white transition-colors">
+                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-all">
                         <FaTimes className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Address / Location Name</label>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">Address / Location Name</label>
                         <input
                             type="text"
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                             placeholder="e.g. Nairobi, Kenya"
                             required
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Latitude (optional)</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">Latitude (optional)</label>
                             <input
                                 type="number"
                                 step="any"
                                 value={latitude}
                                 onChange={(e) => setLatitude(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none"
                                 placeholder="-1.2921"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Longitude (optional)</label>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">Longitude (optional)</label>
                             <input
                                 type="number"
                                 step="any"
                                 value={longitude}
                                 onChange={(e) => setLongitude(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none"
                                 placeholder="36.8219"
                             />
                         </div>
                     </div>
 
-                    <div className="pt-2 flex justify-end gap-3">
+                    <div className="pt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 mt-6 transition-colors">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+                            className="px-6 py-2.5 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-8 py-2.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-sm dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {submitting ? 'Saving...' : 'Update Location'}
                         </button>

@@ -891,36 +891,36 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
     );
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col transition-colors">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 flex items-center justify-between">
+                <div className="bg-gray-900 dark:bg-gray-950 px-6 py-5 flex items-center justify-between border-b border-gray-700 dark:border-gray-800">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
+                        <div className="w-12 h-12 rounded-lg bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
                             <FaTruck className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">
+                            <h2 className="text-xl font-semibold text-white">
                                 {mode === 'create' ? 'Add New Truck' : 'Edit Truck'}
                             </h2>
-                            <p className="text-sm text-slate-400">Step {currentStep} of {STEPS.length}</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500">Step {currentStep} of {STEPS.length}</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 dark:text-gray-500 hover:text-white hover:bg-white/10 dark:hover:bg-white/20 rounded-lg transition-colors"
                     >
                         <FaTimes className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Step Indicator */}
-                <div className="px-6 pt-6 pb-2 border-b border-slate-100">
+                <div className="px-6 pt-6 pb-2 border-b border-gray-100 dark:border-gray-800">
                     <StepIndicator />
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto px-6 py-6">
+                <div className="flex-1 overflow-y-auto px-6 py-6 bg-white dark:bg-gray-900 transition-colors">
                     {currentStep === 1 && <Step1Content />}
                     {currentStep === 2 && <Step2Content />}
                     {currentStep === 3 && <Step3Content />}
@@ -928,11 +928,11 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between transition-colors">
                     <button
                         type="button"
                         onClick={currentStep === 1 ? onClose : handlePrev}
-                        className="flex items-center gap-2 px-5 py-2.5 text-slate-600 hover:text-slate-800 font-semibold transition-colors"
+                        className="flex items-center gap-2 px-5 py-2.5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"
                     >
                         <FaChevronLeft className="w-3 h-3" />
                         {currentStep === 1 ? 'Cancel' : 'Back'}
@@ -942,7 +942,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                         <button
                             type="button"
                             onClick={handleNext}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition-all"
+                            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-all"
                         >
                             Continue
                             <FaChevronRight className="w-3 h-3" />
@@ -952,7 +952,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                             type="button"
                             onClick={handleSubmit}
                             disabled={loading}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-6 py-2.5 bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <>

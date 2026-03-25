@@ -83,38 +83,35 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-          <FaDollarSign className="w-5 h-5 text-gray-600" />
-          Cost Structure Configuration
-        </h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Configure pricing rates and surcharges for this truck.
-        </p>
+    <div className="space-y-6 text-gray-900 dark:text-white">
+      <div className="flex items-center gap-2 mb-6">
+        <FaDollarSign className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+        <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Financial Architecture & Tariff Configuration</h3>
       </div>
 
       {/* Cost Categories */}
-      <div className="space-y-6">
+      <div className="space-y-8">
         {costCategories.map((category) => (
-          <div key={category.title} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-4">
-              {category.icon}
-              <h4 className="text-md font-medium text-gray-900">{category.title}</h4>
+          <div key={category.title} className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-blue-600 dark:text-blue-500">{category.icon}</span>
+              <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{category.title}</h4>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {category.fields.map(({ key, label, placeholder, description }) => (
-                <div key={key}>
-                  <label className="block text-xs text-gray-600 mb-1">{label}</label>
+                <div key={key} className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">{label}</label>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.costStructure?.[key] || ''}
                     onChange={(e) => handleCostInputChange(key, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
                     placeholder={placeholder}
                   />
-                  <p className="text-xs text-gray-500 mt-1">{description}</p>
+                  <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium italic px-1 opacity-70 uppercase tracking-tighter">
+                    {description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -123,54 +120,52 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
       </div>
 
       {/* Cost Summary */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Cost Structure Summary</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Base Rate:</span>
-            <span className="ml-2 font-medium">${formData.costStructure?.baseRate || 0}/hour</span>
-          </div>
-          <div>
-            <span className="text-gray-600">Per KM Rate:</span>
-            <span className="ml-2 font-medium">${formData.costStructure?.perKmRate || 0}/km</span>
-          </div>
-          <div>
-            <span className="text-gray-600">Daily Rate:</span>
-            <span className="ml-2 font-medium">${formData.costStructure?.dailyRate || 0}/day</span>
-          </div>
-          <div>
-            <span className="text-gray-600">Fuel Surcharge:</span>
-            <span className="ml-2 font-medium">{formData.costStructure?.fuelSurcharge || 0}%</span>
-          </div>
-          <div>
-            <span className="text-gray-600">Hazmat Surcharge:</span>
-            <span className="ml-2 font-medium">{formData.costStructure?.hazmatSurcharge || 0}%</span>
-          </div>
-          <div>
-            <span className="text-gray-600">Refrigerated Surcharge:</span>
-            <span className="ml-2 font-medium">{formData.costStructure?.refrigeratedSurcharge || 0}%</span>
-          </div>
+      <div className="bg-blue-600/5 dark:bg-blue-600/10 rounded-lg p-4 border border-blue-600/10">
+        <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-4">Financial Yield Projections</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+          {[
+            { label: 'Base Hourly', value: `$${formData.costStructure?.baseRate || 0}` },
+            { label: 'Distance Unit', value: `$${formData.costStructure?.perKmRate || 0}` },
+            { label: 'Daily Ceiling', value: `$${formData.costStructure?.dailyRate || 0}` },
+            { label: 'Fuel Factor', value: `${formData.costStructure?.fuelSurcharge || 0}%` },
+            { label: 'Hazmat Load', value: `${formData.costStructure?.hazmatSurcharge || 0}%` },
+            { label: 'Thermal Load', value: `${formData.costStructure?.refrigeratedSurcharge || 0}%` },
+          ].map(({ label, value }) => (
+            <div key={label} className="space-y-1">
+              <span className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{label}</span>
+              <span className="block text-sm font-black text-gray-900 dark:text-white">{value}</span>
+            </div>
+          ))}
         </div>
         
         {/* Example Cost Calculation */}
-        <div className="mt-4 p-3 bg-white rounded border">
-          <h5 className="text-sm font-medium text-gray-900 mb-2">Example Cost Calculation (100km trip)</h5>
-          <div className="text-sm text-gray-600">
-            <div>Base Cost: ${formData.costStructure?.baseRate || 0} + (${formData.costStructure?.perKmRate || 0} × 100km)</div>
-            <div>Total Estimated Cost: <span className="font-medium text-gray-900">${calculateTotalCost().toFixed(2)}</span></div>
+        <div className="p-4 bg-white dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 shadow-none">
+          <h5 className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-3 flex items-center justify-between">
+            Operational Matrix Projection (100KM)
+            <span className="text-blue-600 font-black">ESTIMATION</span>
+          </h5>
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-tight">
+              <span>Base Formula</span>
+              <span>${formData.costStructure?.baseRate || 0} + (${formData.costStructure?.perKmRate || 0} × 100)</span>
+            </div>
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest">Total Projected Yield</span>
+              <span className="text-lg font-black text-blue-600 dark:text-blue-400">${calculateTotalCost().toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Pricing Notes */}
-      <div className="bg-primary-50 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">Pricing Notes</h4>
-        <div className="space-y-2 text-sm text-blue-800">
-          <p>• Base rates are applied to all trips</p>
-          <p>• Surcharges are calculated as percentages of the base cost</p>
-          <p>• Special handling surcharges apply when cargo requires specific equipment</p>
-          <p>• Fuel surcharges may vary based on current fuel prices</p>
-          <p>• All rates are subject to negotiation and market conditions</p>
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+        <h4 className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-3">Operational Directives</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-tight">
+          <p>• BASE RATES MANDATORY FOR ALL SORTIES</p>
+          <p>• SURCHARGES SCALED TO BASE COMPUTATION</p>
+          <p>• SPECIAL HANDLING REQUIRES ASSET VALIDATION</p>
+          <p>• FUEL FLUCTUATIONS ADJUSTED IN REAL-TIME</p>
+          <p>• MARKET VOLATILITY LIMITS RATE DURABILITY</p>
         </div>
       </div>
     </div>

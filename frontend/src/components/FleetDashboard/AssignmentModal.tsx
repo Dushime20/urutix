@@ -146,36 +146,36 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-primary-950/40 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-slate-950/60 dark:bg-gray-950/90 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-all duration-300">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-[32px] shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col border border-slate-100"
+                className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl dark:shadow-none max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800 transition-colors duration-200"
             >
                 {/* Header Composition */}
-                <div className="bg-white px-8 pt-8 pb-4">
+                <div className="bg-white dark:bg-gray-900 px-8 pt-8 pb-4 transition-colors duration-200">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 bg-primary-50 rounded-[20px] flex items-center justify-center text-primary-500 shadow-inner">
+                            <div className="size-14 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 transition-colors">
                                 <Users size={24} />
                             </div>
                             <div>
-                                <h1 className="text-xl font-black text-primary-500 tracking-tight">Driver Assignments</h1>
-                                <p className="text-[11px] font-bold text-slate-400 mt-1">Manage personnel for {truckName}</p>
+                                <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">Driver Assignments</h1>
+                                <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-1 transition-colors">Manage personnel for {truckName}</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                        <button onClick={onClose} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all">
                             <X size={20} />
                         </button>
                     </div>
 
                     {/* Navigation Pills */}
-                    <div className="bg-slate-50 rounded-2xl p-1 flex gap-1">
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-1 flex gap-1 transition-colors">
                         <button
                             onClick={() => setViewMode('active')}
-                            className={`flex-1 py-3 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'active'
-                                ? 'bg-white text-primary-500 shadow-sm border border-primary-100'
-                                : 'text-slate-400 hover:text-primary-500 hover:bg-white/50'
+                            className={`flex-1 py-3 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'active'
+                                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border border-gray-100 dark:border-gray-600'
+                                : 'text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
                                 }`}
                         >
                             <History size={14} />
@@ -183,9 +183,9 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                         </button>
                         <button
                             onClick={() => setViewMode('assign')}
-                            className={`flex-1 py-3 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'assign'
-                                ? 'bg-white text-primary-500 shadow-sm border border-primary-100'
-                                : 'text-slate-400 hover:text-primary-500 hover:bg-white/50'
+                            className={`flex-1 py-3 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${viewMode === 'assign'
+                                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 border border-gray-100 dark:border-gray-600'
+                                : 'text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
                                 }`}
                         >
                             <UserPlus size={14} />
@@ -195,11 +195,11 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                 </div>
 
                 {/* Body Composition */}
-                <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+                <div className="flex-1 overflow-y-auto p-8 bg-gray-50/50 dark:bg-gray-900 transition-colors duration-200">
                     {loading ? (
-                        <div className="py-20 flex flex-col items-center justify-center text-slate-300">
-                            <Loader2 size={32} className="animate-spin mb-4 text-slate-400" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">Loading data...</p>
+                        <div className="py-20 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 transition-colors">
+                            <Loader2 size={32} className="animate-spin mb-4 text-gray-500 dark:text-gray-400" />
+                            <p className="text-[10px] font-bold uppercase tracking-widest">Loading data...</p>
                         </div>
                     ) : (
                         <AnimatePresence mode="wait">
@@ -215,23 +215,23 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between px-2">
                                             <div className="flex items-center gap-2">
-                                                <div className="size-1.5 bg-emerald-500 rounded-full" />
-                                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Currently Assigned</h3>
+                                                <div className="size-1.5 bg-green-500 rounded-full" />
+                                                <h3 className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest transition-colors">Currently Assigned</h3>
                                             </div>
-                                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{activeAssignments.length} Drivers</span>
+                                            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest transition-colors">{activeAssignments.length} Drivers</span>
                                         </div>
 
                                         {activeAssignments.length > 0 ? (
                                             <div className="grid gap-3">
                                                 {activeAssignments.map((assignment, idx) => (
-                                                    <div key={idx} className="bg-white p-4 rounded-[24px] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-primary-100 transition-all">
+                                                    <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-none flex items-center justify-between group hover:border-blue-100 dark:hover:border-blue-900/50 transition-all">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
-                                                                <span className="font-black text-sm">{assignment.driverName.charAt(0)}</span>
+                                                            <div className="size-12 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                <span className="font-bold text-sm">{assignment.driverName.charAt(0)}</span>
                                                             </div>
                                                             <div>
-                                                                <h4 className="text-sm font-black text-slate-900">{assignment.driverName}</h4>
-                                                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                                                                <h4 className="text-sm font-bold text-gray-900 dark:text-white transition-colors">{assignment.driverName}</h4>
+                                                                <div className="flex items-center gap-2 text-[10px] font-medium text-gray-500 dark:text-gray-400 transition-colors">
                                                                     <Calendar size={12} />
                                                                     <span>Assigned {new Date(assignment.assignmentDate).toLocaleDateString()}</span>
                                                                 </div>
@@ -239,7 +239,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                                         </div>
                                                         <button
                                                             onClick={() => handleUnassign(assignment.driverId, assignment.driverName)}
-                                                            className="size-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                            className="size-10 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
                                                             disabled={submitting === assignment.driverId}
                                                         >
                                                             {submitting === assignment.driverId ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
@@ -248,14 +248,14 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="bg-white p-12 rounded-[28px] border-2 border-dashed border-slate-200 text-center flex flex-col items-center">
-                                                <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-6 group-hover:bg-slate-100 transition-colors">
+                                            <div className="bg-white dark:bg-gray-800 p-12 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-center flex flex-col items-center transition-colors">
+                                                <div className="size-12 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 dark:text-gray-600 mb-6 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 transition-colors">
                                                     <Users size={24} />
                                                 </div>
-                                                <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-6">No Drivers Assigned</p>
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-6 transition-colors">No Drivers Assigned</p>
                                                 <button
                                                     onClick={() => setViewMode('assign')}
-                                                    className="px-8 py-3 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/10"
+                                                    className="px-8 py-3 bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all"
                                                 >
                                                     Assign Driver
                                                 </button>
@@ -267,24 +267,24 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                     {inactiveAssignments.length > 0 && (
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-2 px-2">
-                                                <History size={14} className="text-slate-300" />
-                                                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Assignment History</h3>
+                                                <History size={14} className="text-gray-400 dark:text-gray-500" />
+                                                <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">Assignment History</h3>
                                             </div>
                                             <div className="grid gap-2">
                                                 {inactiveAssignments.map((assignment, idx) => (
-                                                    <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between opacity-70 hover:opacity-100 transition-opacity">
+                                                    <div key={idx} className="bg-gray-50/50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700 flex items-center justify-between opacity-70 hover:opacity-100 transition-all">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="size-8 bg-white rounded-xl flex items-center justify-center text-slate-400 text-xs font-black">
+                                                            <div className="size-8 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs font-bold transition-colors">
                                                                 {assignment.driverName.charAt(0)}
                                                             </div>
                                                             <div>
-                                                                <h4 className="text-xs font-black text-slate-700">{assignment.driverName}</h4>
-                                                                <p className="text-[9px] font-bold text-slate-400">
+                                                                <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 transition-colors">{assignment.driverName}</h4>
+                                                                <p className="text-[9px] font-medium text-gray-500 dark:text-gray-400 transition-colors">
                                                                     {new Date(assignment.assignmentDate).toLocaleDateString()}
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        <span className="text-[8px] font-black px-2 py-1 rounded-full bg-slate-200 text-slate-600 uppercase tracking-tighter">
+                                                        <span className="text-[8px] font-bold px-2 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 uppercase tracking-tighter transition-colors">
                                                             {assignment.status}
                                                         </span>
                                                     </div>
@@ -302,21 +302,21 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                     className="space-y-6"
                                 >
                                     {/* Sub-navigation Toggles */}
-                                    <div className="flex bg-white rounded-2xl p-1 border border-slate-100 shadow-sm mb-6">
+                                    <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 border border-gray-100 dark:border-gray-700 shadow-sm dark:shadow-none mb-6 transition-colors">
                                         <button
                                             onClick={() => setAssignSubMode('existing')}
-                                            className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${assignSubMode === 'existing'
-                                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
-                                                : 'text-slate-400 hover:text-primary-500'
+                                            className={`flex-1 py-2.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${assignSubMode === 'existing'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400'
                                                 }`}
                                         >
                                             Find Existing
                                         </button>
                                         <button
                                             onClick={() => setAssignSubMode('new')}
-                                            className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${assignSubMode === 'new'
-                                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
-                                                : 'text-slate-400 hover:text-primary-500'
+                                            className={`flex-1 py-2.5 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all ${assignSubMode === 'new'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400'
                                                 }`}
                                         >
                                             Invite New
@@ -327,27 +327,27 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                         <>
                                             {/* Search Input */}
                                             <div className="relative group">
-                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors" size={18} />
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" size={18} />
                                                 <input
                                                     type="text"
                                                     placeholder="SEARCH BY NAME OR LICENSE..."
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 outline-none transition-all shadow-sm"
+                                                    className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[11px] font-bold uppercase tracking-widest text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm dark:shadow-none"
                                                     autoFocus
                                                 />
                                             </div>
 
                                             {/* Search Results */}
                                             {availableDrivers.length === 0 ? (
-                                                <div className="py-20 text-center flex flex-col items-center bg-white rounded-[28px] border-2 border-dashed border-slate-100">
-                                                    <div className="size-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-6">
+                                                <div className="py-20 text-center flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-100 dark:border-gray-700 transition-colors">
+                                                    <div className="size-16 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-200 dark:text-gray-600 mb-6">
                                                         <Search size={32} />
                                                     </div>
-                                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">No available drivers found</p>
+                                                    <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">No available drivers found</p>
                                                     <button
                                                         onClick={() => setAssignSubMode('new')}
-                                                        className="mt-4 text-[10px] font-black text-primary-500 uppercase tracking-widest hover:underline"
+                                                        className="mt-4 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:underline transition-colors"
                                                     >
                                                         Invite a new driver instead?
                                                     </button>
@@ -355,24 +355,24 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                             ) : (
                                                 <div className="grid gap-3">
                                                     {availableDrivers.map(driver => (
-                                                        <div key={driver.id} className="bg-white p-4 rounded-[28px] border border-slate-100 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-500/5 transition-all flex items-center justify-between group">
+                                                        <div key={driver.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all flex items-center justify-between group">
                                                             <div className="flex items-center gap-4">
-                                                                <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
-                                                                    <span className="font-black text-sm">{driver.firstName[0]}{driver.lastName[0]}</span>
+                                                                <div className="size-12 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                    <span className="font-bold text-sm">{driver.firstName[0]}{driver.lastName[0]}</span>
                                                                 </div>
                                                                 <div>
-                                                                    <h4 className="text-sm font-black text-slate-900">{driver.firstName} {driver.lastName}</h4>
-                                                                    <div className="flex items-center gap-2 text-[10px] font-black">
-                                                                        <span className="text-slate-400 uppercase">{driver.licenseNumber}</span>
-                                                                        <div className="size-1 bg-emerald-500 rounded-full" />
-                                                                        <span className="text-emerald-500 uppercase tracking-tighter">Available</span>
+                                                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white transition-colors">{driver.firstName} {driver.lastName}</h4>
+                                                                    <div className="flex items-center gap-2 text-[10px] font-bold">
+                                                                        <span className="text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">{driver.licenseNumber}</span>
+                                                                        <div className="size-1 bg-green-500 rounded-full" />
+                                                                        <span className="text-green-600 dark:text-green-400 uppercase tracking-tighter transition-colors">Available</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             <button
                                                                 onClick={() => handleAssign(driver.id, `${driver.firstName} ${driver.lastName}`)}
                                                                 disabled={submitting !== null}
-                                                                className="px-6 py-2.5 bg-slate-50 text-primary-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-500 hover:text-white transition-all flex items-center gap-2"
+                                                                className="px-6 py-2.5 bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded-md hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all flex items-center gap-2"
                                                             >
                                                                 {submitting === driver.id ? <Loader2 size={14} className="animate-spin" /> : <><UserPlus size={14} /> Assign</>}
                                                             </button>
@@ -386,47 +386,47 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                         <form onSubmit={handleInviteAndAssign} className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">First Name</label>
+                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">First Name</label>
                                                     <input
                                                         required
                                                         type="text"
                                                         value={inviteFormData.firstName}
                                                         onChange={(e) => setInviteFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-slate-900 transition-all"
+                                                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                                                         placeholder="Enter Name"
                                                     />
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Last Name</label>
+                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Last Name</label>
                                                     <input
                                                         required
                                                         type="text"
                                                         value={inviteFormData.lastName}
                                                         onChange={(e) => setInviteFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-primary-600 transition-all"
+                                                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                                                         placeholder="Enter Surname"
                                                     />
                                                 </div>
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                                                <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Email Address</label>
                                                 <input
                                                     required
                                                     type="email"
                                                     value={inviteFormData.email}
                                                     onChange={(e) => setInviteFormData(prev => ({ ...prev, email: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-primary-600 transition-all"
+                                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                                                     placeholder="driver@example.com"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">License Number</label>
+                                                <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License Number</label>
                                                 <input
                                                     required
                                                     type="text"
                                                     value={inviteFormData.licenseNumber}
                                                     onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-primary-600 transition-all"
+                                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                                                     placeholder="DL-XXXXXX"
                                                 />
                                             </div>
@@ -434,7 +434,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                                 <button
                                                     type="submit"
                                                     disabled={submitting === 'invite'}
-                                                    className="w-full py-4 bg-primary-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-600 shadow-xl shadow-primary-500/20 transition-all"
+                                                    className="w-full py-4 bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all"
                                                 >
                                                     {submitting === 'invite' ? (
                                                         <Loader2 size={16} className="animate-spin" />
@@ -445,7 +445,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                                         </>
                                                     )}
                                                 </button>
-                                                <p className="text-[9px] font-medium text-slate-400 mt-4 text-center px-6 leading-relaxed">
+                                                <p className="text-[9px] font-medium text-gray-500 dark:text-gray-400 mt-4 text-center px-6 leading-relaxed">
                                                     The driver will receive an email to create their password and confirm their account activation.
                                                 </p>
                                             </div>
@@ -458,10 +458,10 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-8 bg-white flex justify-end">
+                <div className="p-8 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex justify-end transition-colors">
                     <button
                         onClick={onClose}
-                        className="px-8 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
+                        className="px-8 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2"
                     >
                         Close Window
                         <ArrowRight size={14} />

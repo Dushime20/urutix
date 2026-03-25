@@ -265,17 +265,17 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'available': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'in_transit': return 'bg-primary-50 text-primary-500 border-primary-50';
-      case 'maintenance': return 'bg-amber-50 text-amber-600 border-amber-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
+      case 'available': return 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900';
+      case 'in_transit': return 'bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400 border-primary-50 dark:border-primary-900';
+      case 'maintenance': return 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900';
+      default: return 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-700';
     }
   };
 
   const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
     return (
       <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:shadow-none">
           <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
             <circle
               cx="80"
@@ -290,21 +290,21 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             />
           </svg>
 
-          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
             <Icon size={18} />
           </div>
 
           <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+            <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
               {value}
             </span>
           </div>
 
-          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
         </div>
 
         <div className="mt-4 text-center px-2">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">
             {title}
           </p>
         </div>
@@ -315,7 +315,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   return (
     <div className="space-y-8 pb-12">
       {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
         <CircularStatsCard
           title="Total Trucks"
           value={analytics?.totalTrucks !== undefined ? analytics.totalTrucks : trucks.length}
@@ -347,7 +347,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       </div>
 
       {/* Control Surface */}
-      <div className="bg-white rounded-[32px] border border-slate-100 p-4 flex flex-col md:flex-row gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-4 flex flex-col md:flex-row gap-4 transition-colors duration-300">
         <div className="flex-1 relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
           <input
@@ -355,20 +355,20 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             placeholder="Search truck..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-[20px] text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-50 dark:border-slate-700 rounded-[20px] text-[11px] font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary-50 dark:focus:ring-primary-900/20 focus:border-primary-500 outline-none transition-all"
           />
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-50 p-1 rounded-[16px] border border-slate-100 mr-2">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-800 p-1 rounded-[16px] border border-slate-100 dark:border-slate-700 mr-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-[12px] transition-all ${viewMode === 'grid' ? 'bg-white text-primary-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-[12px] transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-primary-500 dark:text-primary-400 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 rounded-[12px] transition-all ${viewMode === 'table' ? 'bg-white text-primary-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-[12px] transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-primary-500 dark:text-primary-400 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               <List size={16} />
             </button>
@@ -376,7 +376,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 bg-slate-50 border border-slate-50 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none focus:bg-white focus:border-primary-500 transition-all"
+            className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-50 dark:border-slate-700 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-primary-500 transition-all"
           >
             <option value="">Status</option>
             <option value="AVAILABLE">Available</option>
@@ -395,10 +395,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       {/* Result Count & Sort Info */}
       {!loading && (
         <div className="flex items-center justify-between px-1">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
             Showing {paginatedTrucks.length} of {filteredAndSortedTrucks.length} trucks
           </p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
             Sorted by {sortConfig.key.replace(/([A-Z])/g, ' $1').trim()} ({sortConfig.direction})
           </p>
         </div>
@@ -416,10 +416,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 whileHover={{ y: -5 }}
-                className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
+                className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-xl dark:shadow-none hover:border-primary-200 dark:hover:border-primary-900 transition-all relative overflow-hidden group"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="size-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-primary-500 transition-colors">
+                  <div className="size-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
                     <Truck size={28} />
                   </div>
                   <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(truck.status)}`}>
@@ -427,15 +427,15 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                   </div>
                 </div>
                 <div className="mb-4">
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight mb-1">{truck.plateNumber}</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{truck.make} {truck.model}</p>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-1">{truck.plateNumber}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{truck.make} {truck.model}</p>
                 </div>
                 <div className="space-y-3 mb-4">
-                  <div className="flex items-center gap-3 text-slate-500">
+                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <Truck size={14} className="text-primary-400" />
                     <span className="text-xs font-medium">{truck.truckType || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-slate-500">
+                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <MapPin size={14} className="text-primary-400" />
                     <span className="text-xs font-medium truncate">
                       {typeof truck.currentLocation === 'string'
@@ -444,7 +444,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     </span>
                   </div>
                   {truck.assignedRoutes && truck.assignedRoutes.length > 0 && (
-                    <div className="flex items-center gap-3 text-slate-500">
+                    <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                       <Route size={14} className="text-emerald-400" />
                       <span className="text-xs font-medium">{truck.assignedRoutes.length} route{truck.assignedRoutes.length > 1 ? 's' : ''} assigned</span>
                     </div>
@@ -453,13 +453,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleViewTruck(truck)}
-                    className="flex-1 h-10 bg-primary-50 text-primary-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary-100 transition-all flex items-center justify-center gap-1"
+                    className="flex-1 h-10 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-all flex items-center justify-center gap-1"
                   >
                     <Eye size={14} /> View
                   </button>
                   <button
                     onClick={() => handleEditTruck(truck)}
-                    className="flex-1 h-10 bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-100 transition-all"
+                    className="flex-1 h-10 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                   >
                     Edit
                   </button>
@@ -467,35 +467,35 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 <div className="flex gap-1 mt-2">
                   <button
                     onClick={() => handleAssignDriver(truck)}
-                    className="flex-1 size-10 bg-slate-50 text-slate-400 hover:text-primary-500 rounded-xl flex items-center justify-center transition-all"
+                    className="flex-1 size-10 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 rounded-xl flex items-center justify-center transition-all"
                     title="Assign Driver"
                   >
                     <Users size={16} />
                   </button>
                   <button
                     onClick={() => handleAssignRoute(truck)}
-                    className="flex-1 size-10 bg-slate-50 text-slate-400 hover:text-emerald-500 rounded-xl flex items-center justify-center transition-all"
+                    className="flex-1 size-10 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 rounded-xl flex items-center justify-center transition-all"
                     title="Assign Route"
                   >
                     <Route size={16} />
                   </button>
                   <button
                     onClick={() => handleAddDocument(truck)}
-                    className="flex-1 size-10 bg-slate-50 text-slate-400 hover:text-primary-500 rounded-xl flex items-center justify-center transition-all"
+                    className="flex-1 size-10 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 rounded-xl flex items-center justify-center transition-all"
                     title="Add Document"
                   >
                     <FileText size={16} />
                   </button>
                   <button
                     onClick={() => handleSetLocation(truck)}
-                    className="flex-1 size-10 bg-slate-50 text-slate-400 hover:text-primary-500 rounded-xl flex items-center justify-center transition-all"
+                    className="flex-1 size-10 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 rounded-xl flex items-center justify-center transition-all"
                     title="Set Location"
                   >
                     <Navigation size={16} />
                   </button>
                   <button
                     onClick={() => handleDeleteTruck(truck)}
-                    className="flex-1 size-10 bg-slate-50 text-slate-400 hover:text-rose-600 rounded-xl flex items-center justify-center transition-all"
+                    className="flex-1 size-10 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600 rounded-xl flex items-center justify-center transition-all"
                     title="Delete"
                   >
                     <Trash2 size={16} />
@@ -506,46 +506,46 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           </AnimatePresence>
         </div>
       ) : (
-        <div className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 cursor-pointer hover:text-primary-500" onClick={() => handleSort('plateNumber')}>
+                <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 cursor-pointer hover:text-primary-500" onClick={() => handleSort('plateNumber')}>
                     <span className="flex items-center gap-2">Truck {getSortIcon('plateNumber')}</span>
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 cursor-pointer hover:text-primary-500" onClick={() => handleSort('truckType')}>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 cursor-pointer hover:text-primary-500" onClick={() => handleSort('truckType')}>
                     <span className="flex items-center gap-2">Type {getSortIcon('truckType')}</span>
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 cursor-pointer hover:text-primary-500" onClick={() => handleSort('status')}>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 cursor-pointer hover:text-primary-500" onClick={() => handleSort('status')}>
                     <span className="flex items-center gap-2">Status {getSortIcon('status')}</span>
                   </th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Location</th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Routes</th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Location</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Routes</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                 {paginatedTrucks.map(truck => (
-                  <tr key={truck.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={truck.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="size-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-primary-500 transition-colors">
+                        <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
                           <Truck size={20} />
                         </div>
                         <div>
-                          <p className="text-sm font-black text-slate-900 leading-none mb-1">{truck.plateNumber}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{truck.make} {truck.model}</p>
+                          <p className="text-sm font-black text-slate-900 dark:text-white leading-none mb-1">{truck.plateNumber}</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{truck.make} {truck.model}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
                           <Truck size={12} className="text-primary-400" />
                           {truck.truckType || 'Standard'}
                         </div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em]">Payload: {truck.capacityWeight?.toLocaleString() || 0} kg</p>
+                        <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">Payload: {truck.capacityWeight?.toLocaleString() || 0} kg</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -556,7 +556,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 max-w-[200px]">
                         <MapPin size={12} className="text-primary-400 shrink-0" />
-                        <span className="text-xs font-medium text-slate-500 truncate">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
                           {typeof truck.currentLocation === 'string'
                             ? truck.currentLocation
                             : truck.currentLocation?.address || 'Geolocation Offline'}
@@ -565,58 +565,58 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                     </td>
                     <td className="px-6 py-4">
                       {truck.assignedRoutes && truck.assignedRoutes.length > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest">
                           <Route size={10} /> {truck.assignedRoutes.length}
                         </span>
                       ) : (
-                        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">None</span>
+                        <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">None</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleViewTruck(truck)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-primary-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
                           title="View Details"
                         >
                           <Eye size={14} />
                         </button>
                         <button
                           onClick={() => handleEditTruck(truck)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-primary-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
                           title="Edit"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleAssignDriver(truck)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-primary-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
                           title="Assign Driver"
                         >
                           <Users size={14} />
                         </button>
                         <button
                           onClick={() => handleAssignRoute(truck)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-emerald-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
                           title="Assign Route"
                         >
                           <Route size={14} />
                         </button>
                         <button
                           onClick={() => handleAddDocument(truck)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-primary-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
                           title="Documents"
                         >
                           <FileText size={14} />
                         </button>
                         <button
                           onClick={() => handleDeleteTruck(truck)}
-                          className="p-2 bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
                           title="Delete"
                         >
                           <Trash2 size={14} />
                         </button>
-                        <div className="size-8 flex items-center justify-center text-slate-200">
+                        <div className="size-8 flex items-center justify-center text-slate-200 dark:text-slate-700">
                           <ChevronRight size={14} />
                         </div>
                       </div>
@@ -635,7 +635,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="p-2.5 bg-white border border-slate-100 text-slate-400 hover:text-primary-500 hover:border-primary-200 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-900 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={16} />
           </button>
@@ -648,14 +648,14 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             }, [])
             .map((item, idx) =>
               typeof item === 'string' ? (
-                <span key={`dots-${idx}`} className="px-2 text-slate-300 text-xs font-bold">...</span>
+                <span key={`dots-${idx}`} className="px-2 text-slate-300 dark:text-slate-700 text-xs font-bold">...</span>
               ) : (
                 <button
                   key={item}
                   onClick={() => setCurrentPage(item)}
                   className={`size-10 rounded-xl text-xs font-black transition-all ${currentPage === item
                     ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
-                    : 'bg-white border border-slate-100 text-slate-500 hover:text-primary-500 hover:border-primary-200'
+                    : 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-900'
                     }`}
                 >
                   {item}
@@ -665,7 +665,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="p-2.5 bg-white border border-slate-100 text-slate-400 hover:text-primary-500 hover:border-primary-200 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-900 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronRight size={16} />
           </button>
@@ -674,16 +674,16 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-          <div className="size-12 bg-slate-100 rounded-full mb-4" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading...</p>
+          <div className="size-12 bg-slate-100 dark:bg-slate-800 rounded-full mb-4" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Loading...</p>
         </div>
       )}
 
       {!loading && filteredAndSortedTrucks.length === 0 && (
         <div className="py-20 text-center flex flex-col items-center">
-          <div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6"><Truck size={32} /></div>
-          <h3 className="text-lg font-black text-slate-900 tracking-tight">No Trucks Found</h3>
-          <p className="text-sm font-medium text-slate-400 mt-2">No trucks found matching your search.</p>
+          <div className="size-16 bg-slate-50 dark:bg-slate-800 rounded-[28px] flex items-center justify-center text-slate-200 dark:text-slate-700 mb-6"><Truck size={32} /></div>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">No Trucks Found</h3>
+          <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-2">No trucks found matching your search.</p>
         </div>
       )}
 
@@ -861,16 +861,16 @@ const RouteAssignModal: React.FC<RouteAssignModalProps> = ({ isOpen, onClose, tr
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100000] p-4 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh] border border-slate-100 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh] border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-50">
+        <div className="flex items-center justify-between p-6 border-b border-slate-50 dark:border-slate-800">
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Assign Routes</h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              Manage route assignments for <span className="font-bold text-primary-600">{truck.plateNumber}</span>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Assign Routes</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+              Manage route assignments for <span className="font-bold text-primary-600 dark:text-primary-400">{truck.plateNumber}</span>
             </p>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-rose-500 transition-all flex items-center justify-center">
+          <button onClick={onClose} className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-all flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -878,13 +878,13 @@ const RouteAssignModal: React.FC<RouteAssignModalProps> = ({ isOpen, onClose, tr
         {/* Search */}
         <div className="px-6 pt-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               placeholder="Search routes..."
               value={routeSearch}
               onChange={(e) => setRouteSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
             />
           </div>
         </div>
@@ -894,21 +894,21 @@ const RouteAssignModal: React.FC<RouteAssignModalProps> = ({ isOpen, onClose, tr
           {/* Currently Assigned */}
           {assignedRoutes.length > 0 && (
             <div>
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Assigned Routes ({assignedRoutes.length})</h4>
+              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Assigned Routes ({assignedRoutes.length})</h4>
               <div className="space-y-2">
                 {assignedRoutes.map(route => (
-                  <div key={route.id} className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div key={route.id} className="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                       <Route size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">{route.name}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{route.origin} → {route.destination}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{route.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">{route.origin} → {route.destination}</p>
                     </div>
                     <button
                       onClick={() => handleUnassign(route.id)}
                       disabled={unassigning === route.id}
-                      className="px-3 py-1.5 bg-white border border-rose-200 text-rose-500 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-rose-50 transition-all disabled:opacity-50"
+                      className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/50 text-rose-500 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all disabled:opacity-50"
                     >
                       {unassigning === route.id ? <Loader2 size={12} className="animate-spin" /> : 'Remove'}
                     </button>
@@ -920,22 +920,22 @@ const RouteAssignModal: React.FC<RouteAssignModalProps> = ({ isOpen, onClose, tr
 
           {/* Available Routes */}
           <div>
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Available Routes ({unassignedRoutes.length})</h4>
+            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Available Routes ({unassignedRoutes.length})</h4>
             {unassignedRoutes.length === 0 ? (
               <div className="text-center py-8">
-                <Route className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                <p className="text-xs text-slate-400 font-medium">No available routes to assign</p>
+                <Route className="w-8 h-8 text-slate-200 dark:text-slate-800 mx-auto mb-2" />
+                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">No available routes to assign</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {unassignedRoutes.map(route => (
-                  <div key={route.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-primary-200 transition-all">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
+                  <div key={route.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl hover:border-primary-200 dark:hover:border-primary-900 transition-all">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center shrink-0">
                       <Route size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate">{route.name}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{route.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
                         {route.origin} → {route.destination}
                         {route.distance ? ` • ${route.distance} km` : ''}
                       </p>

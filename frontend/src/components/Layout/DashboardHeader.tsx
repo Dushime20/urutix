@@ -356,13 +356,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, []);
 
   return (
-    <div data-header="dashboard-header" className="bg-white/80 backdrop-blur-xl border-b border-gray-100 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
+    <div data-header="dashboard-header" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-slate-800 text-gray-900 dark:text-white px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-2 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2 bg-gray-50 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0 text-gray-600"
+              className="lg:hidden p-2 bg-gray-50 dark:bg-slate-800 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 active:bg-gray-200 transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0 text-gray-600 dark:text-slate-400"
             >
               {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -374,7 +374,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
               {/* Intelligent Nav Items with Density Management */}
               <div
                 ref={navRef}
-                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 text-sm font-medium flex-nowrap w-full"
+                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap w-full"
               >
                 {navItems.map(item => {
                   const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -393,8 +393,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         }}
                         className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
                                             ${isActive
-                            ? 'bg-primary-50 text-primary-500'
-                            : 'text-slate-500 hover:text-primary-500 hover:bg-slate-50'}
+                            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
                                         `}
                       >
                         <div className="absolute inset-0 bg-primary-100/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
@@ -407,9 +407,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                       </button>
 
                       {hasSubItems && openDropdown === item.label && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
-                          <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                             <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase"><TranslatedText text="Quick Actions" /></div>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                          <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                             <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase"><TranslatedText text="Quick Actions" /></div>
                           </div>
                           <div className="py-1">
                             {item.subItems?.map(subItem => (
@@ -417,8 +417,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                 key={subItem.path}
                                 onClick={() => handleNavClick(subItem.path)}
                                 className={`w-full text-left px-4 py-3 text-xs xl:text-sm transition-all flex items-center gap-3 group/item ${location.pathname === subItem.path
-                                  ? 'bg-primary-50/50 text-primary-500 font-bold'
-                                  : 'text-slate-600 hover:bg-slate-50 hover:text-primary-500'}`}
+                                  ? 'bg-primary-50/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 font-bold'
+                                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-500 dark:hover:text-primary-400'}`}
                               >
                                 <div className={`w-1 h-4 rounded-full transition-all ${location.pathname === subItem.path ? 'bg-primary-500 scale-y-100' : 'bg-transparent scale-y-0 grpup-hover/item:scale-y-75 group-hover/item:bg-primary-200'}`} />
                                 <TranslatedText text={subItem.label} />
@@ -459,10 +459,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 <User size={20} className="transition-transform group-hover:scale-110" />
               </button>
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[100] p-2">
-                  <div className="px-3 py-2 border-b border-gray-100 mb-2">
-                    <p className="text-sm font-semibold truncate">{user?.firstName || user?.email || 'User'}</p>
-                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-800 z-[100] p-2">
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-800 mb-2">
+                    <p className="text-sm font-semibold truncate text-slate-900 dark:text-white">{user?.firstName || user?.email || 'User'}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user?.email}</p>
                   </div>
                   <div className="py-1">
                     <button

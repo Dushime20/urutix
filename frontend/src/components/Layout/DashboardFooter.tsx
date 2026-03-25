@@ -12,15 +12,15 @@ const DashboardFooter = () => {
 
           {/* Links Section */}
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 order-2 md:order-2">
-            <a href="#" className="text-sm text-gray-500 hover:text-emerald-600 font-medium transition-colors">About Us</a>
-            <a href="#" className="text-sm text-gray-500 hover:text-emerald-600 font-medium transition-colors">Features</a>
-            <a href="#" className="text-sm text-gray-500 hover:text-emerald-600 font-medium transition-colors">Pricing</a>
-            <a href="#" className="text-sm text-gray-500 hover:text-emerald-600 font-medium transition-colors">Contact</a>
-            <a href="#" className="text-sm text-gray-500 hover:text-emerald-600 font-medium transition-colors">Privacy</a>
+            <a href="#" className="text-sm text-gray-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors">About Us</a>
+            <a href="#" className="text-sm text-gray-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors">Features</a>
+            <a href="#" className="text-sm text-gray-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors">Pricing</a>
+            <a href="#" className="text-sm text-gray-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors">Contact</a>
+            <a href="#" className="text-sm text-gray-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors">Privacy</a>
           </div>
 
           {/* Copyright Section */}
-          <div className="text-sm text-gray-400 order-3 md:order-3">
+          <div className="text-sm text-gray-400 dark:text-slate-500 order-3 md:order-3">
             © 2024 UrutiX. All rights reserved.
           </div>
         </div>

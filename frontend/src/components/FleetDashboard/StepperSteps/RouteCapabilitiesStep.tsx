@@ -66,40 +66,39 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-          <FaRoute className="w-5 h-5 text-gray-600" />
-          Route Capabilities Configuration
-        </h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Configure the types of routes and transport modes this truck can handle.
-        </p>
+      <div className="flex items-center gap-2 mb-6">
+        <FaRoute className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+        <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Global Navigation & Transit Protocol</h3>
       </div>
 
       {/* Route Categories */}
-      <div className="space-y-6">
+      <div className="space-y-8">
         {routeCategories.map((category) => (
-          <div key={category.title} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-4">
-              {category.icon}
-              <h4 className="text-md font-medium text-gray-900">{category.title}</h4>
+          <div key={category.title} className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-blue-600 dark:text-blue-500">{category.icon}</span>
+              <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{category.title}</h4>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {category.capabilities.map(({ key, label, description }) => (
-                <div key={key} className="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
-                  <label className="flex items-start space-x-3 cursor-pointer">
+                <label key={key} className="group flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">
+                  <div className="pt-0.5">
                     <input
                       type="checkbox"
                       checked={formData.routeCapabilities?.[key] || false}
                       onChange={() => handleRouteToggle(key)}
-                      className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-primary-500"
+                      className="w-3.5 h-3.5 rounded border-gray-200 dark:border-gray-600 text-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:ring-offset-0 bg-white dark:bg-gray-700 transition-all"
                     />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 text-sm">{label}</div>
-                      <div className="text-xs text-gray-600 mt-1">{description}</div>
-                    </div>
-                  </label>
-                </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 transition-colors mb-0.5">
+                      {label}
+                    </span>
+                    <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium leading-tight">
+                      {description}
+                    </p>
+                  </div>
+                </label>
               ))}
             </div>
           </div>
@@ -108,40 +107,38 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
 
       {/* Distance & Time Limits */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <FaMapMarkerAlt className="w-4 h-4 text-gray-500" />
-          <label className="block text-sm font-medium text-gray-700">
-            Distance & Time Limits
-          </label>
-        </div>
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center">
+          <FaMapMarkerAlt className="w-3.5 h-3.5 mr-2 text-blue-600 dark:text-blue-500" />
+          Range & Operational Latency
+        </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Max Distance (km)</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Operational Radius (KM)</label>
             <input
               type="number"
               value={formData.routeCapabilities?.maxDistance || ''}
               onChange={(e) => handleRouteInputChange('maxDistance', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               placeholder="1000"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Max Hours to Availability</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Ready Latency (HRS)</label>
             <input
               type="number"
               value={formData.routeCapabilities?.maxHoursToAvailability || ''}
               onChange={(e) => handleRouteInputChange('maxHoursToAvailability', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               placeholder="24"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Max Ferry Length (m)</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Ferry Entry Width (M)</label>
             <input
               type="number"
               value={formData.routeCapabilities?.maxFerryLength || ''}
               onChange={(e) => handleRouteInputChange('maxFerryLength', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               placeholder="20"
             />
           </div>
@@ -150,63 +147,35 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
 
       {/* Route Restrictions */}
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Route Restrictions
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.routeCapabilities?.hasWeightRestrictions || false}
-                  onChange={() => handleRouteToggle('hasWeightRestrictions')}
-                  className="rounded border-gray-300 text-gray-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Weight Restrictions</span>
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.routeCapabilities?.hasHeightRestrictions || false}
-                  onChange={() => handleRouteToggle('hasHeightRestrictions')}
-                  className="rounded border-gray-300 text-gray-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Height Restrictions</span>
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.routeCapabilities?.hasWidthRestrictions || false}
-                  onChange={() => handleRouteToggle('hasWidthRestrictions')}
-                  className="rounded border-gray-300 text-gray-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Width Restrictions</span>
-              </label>
-            </div>
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.routeCapabilities?.hasLengthRestrictions || false}
-                  onChange={() => handleRouteToggle('hasLengthRestrictions')}
-                  className="rounded border-gray-300 text-gray-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Length Restrictions</span>
-              </label>
-            </div>
-          </div>
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center">
+          Regulatory Constraints
+        </h4>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { key: 'hasWeightRestrictions', label: 'Weight' },
+            { key: 'hasHeightRestrictions', label: 'Height' },
+            { key: 'hasWidthRestrictions', label: 'Width' },
+            { key: 'hasLengthRestrictions', label: 'Length' },
+          ].map(({ key, label }) => (
+            <label key={key} className="group flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">
+              <input
+                type="checkbox"
+                checked={formData.routeCapabilities?.[key] || false}
+                onChange={() => handleRouteToggle(key)}
+                className="w-3.5 h-3.5 rounded border-gray-200 dark:border-gray-600 text-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:ring-offset-0 bg-white dark:bg-gray-700 transition-all"
+              />
+              <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                {label}
+              </span>
+            </label>
+          ))}
         </div>
       </div>
 
       {/* Route Summary */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Route Capabilities Summary</h4>
-        <div className="space-y-2">
+      <div className="bg-blue-600/5 dark:bg-blue-600/10 rounded-lg p-4 border border-blue-600/10">
+        <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-4">Transit Profile Summary</h4>
+        <div className="space-y-4">
           {routeCategories.map((category) => {
             const selectedCapabilities = category.capabilities.filter(
               ({ key }) => formData.routeCapabilities?.[key]
@@ -215,11 +184,14 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
             if (selectedCapabilities.length === 0) return null;
             
             return (
-              <div key={category.title} className="border-l-4 border-gray-500 pl-3">
-                <div className="text-sm font-medium text-gray-900 mb-1">{category.title}</div>
-                <div className="flex flex-wrap gap-1">
+              <div key={category.title} className="border-l-2 border-blue-600/20 pl-4 py-0.5">
+                <div className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <span className="opacity-50">{category.icon}</span>
+                  {category.title}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
                   {selectedCapabilities.map(({ key, label }) => (
-                    <span key={key} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">
+                    <span key={key} className="px-2 py-0.5 bg-white dark:bg-gray-800 text-[9px] font-bold text-gray-600 dark:text-gray-400 rounded border border-gray-100 dark:border-gray-700 uppercase tracking-wider">
                       {label}
                     </span>
                   ))}
@@ -229,7 +201,7 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
           })}
         </div>
         {Object.values(formData.routeCapabilities || {}).filter(Boolean).length === 0 && (
-          <span className="text-gray-500 text-sm">No route capabilities selected</span>
+          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest italic">NO CAPABILITIES REGISTERED</span>
         )}
       </div>
     </div>

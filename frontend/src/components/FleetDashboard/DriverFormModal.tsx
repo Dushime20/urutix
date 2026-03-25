@@ -84,24 +84,24 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 dark:bg-gray-950/90 backdrop-blur-sm p-4 overflow-y-auto transition-all duration-300">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl dark:shadow-none border border-gray-100 dark:border-gray-800 w-full max-w-lg overflow-hidden transform transition-all duration-200">
                 {/* Header */}
-                <div className="bg-[#0f172a] px-6 py-4 flex items-center justify-between border-b border-white/10">
+                <div className="bg-white dark:bg-gray-950 px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <FaUser className="text-white text-lg" />
+                        <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-900/40 flex items-center justify-center transition-colors">
+                            <FaUser className="text-white dark:text-blue-400 text-lg" />
                         </div>
                         <div>
-                            <h2 className="text-white font-bold text-lg leading-tight">
+                            <h2 className="text-gray-900 dark:text-white font-semibold text-lg leading-tight transition-colors">
                                 {mode === 'create' ? 'Register New Driver' : 'Edit Driver Profile'}
                             </h2>
-                            <p className="text-blue-200 text-xs mt-0.5">Enter driver credentials</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 transition-colors tracking-wide">Enter driver credentials</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-white/60 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-all"
                     >
                         <FaTimes size={18} />
                     </button>
@@ -113,16 +113,16 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         {/* First Name */}
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">First Name</label>
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">First Name</label>
                             <div className="relative group">
-                                <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#135bec] transition-colors" />
+                                <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                                 <input
                                     type="text"
                                     name="firstName"
                                     value={formData.firstName}
                                     onChange={handleChange}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] transition-all outline-none placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                     placeholder="e.g. John"
                                 />
                             </div>
@@ -130,16 +130,16 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
 
                         {/* Last Name */}
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Last Name</label>
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Last Name</label>
                             <div className="relative group">
-                                <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#135bec] transition-colors" />
+                                <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                                 <input
                                     type="text"
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleChange}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] transition-all outline-none placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                     placeholder="e.g. Doe"
                                 />
                             </div>
@@ -148,16 +148,16 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
 
                     {/* License Number */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Driver's License No.</label>
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Driver's License No.</label>
                         <div className="relative group">
-                            <FaIdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#135bec] transition-colors" />
+                            <FaIdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                             <input
                                 type="text"
                                 name="licenseNumber"
                                 value={formData.licenseNumber}
                                 onChange={handleChange}
                                 required
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] transition-all outline-none placeholder:text-slate-400"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                 placeholder="e.g. DL-12345678"
                             />
                         </div>
@@ -166,16 +166,16 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         {/* Phone */}
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Phone Number</label>
                             <div className="relative group">
-                                <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#135bec] transition-colors" />
+                                <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                                 <input
                                     type="tel"
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] transition-all outline-none placeholder:text-slate-400"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                     placeholder="+254 7..."
                                 />
                             </div>
@@ -183,29 +183,29 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
 
                         {/* Experience */}
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Experience (Years)</label>
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Experience (Years)</label>
                             <input
                                 type="number"
                                 name="experience"
                                 value={formData.experience}
                                 onChange={handleChange}
                                 min="0"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] transition-all outline-none"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none"
                             />
                         </div>
                     </div>
 
                     {/* Email */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                        <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Email Address</label>
                         <div className="relative group">
-                            <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#135bec] transition-colors" />
+                            <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] transition-all outline-none placeholder:text-slate-400"
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                 placeholder="john.doe@example.com"
                             />
                         </div>
@@ -214,12 +214,12 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                     {/* Status Selects */}
                     <div className="grid grid-cols-2 gap-4 pt-2">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Account Status</label>
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Account Status</label>
                             <select
                                 name="status"
                                 value={formData.status}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] outline-none"
+                                className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all"
                             >
                                 <option value="ACTIVE">Active</option>
                                 <option value="INACTIVE">Inactive</option>
@@ -227,12 +227,12 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                             </select>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Availability</label>
+                            <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Availability</label>
                             <select
                                 name="availabilityStatus"
                                 value={formData.availabilityStatus}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#135bec]/20 focus:border-[#135bec] outline-none"
+                                className="w-full px-3 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all"
                             >
                                 <option value="AVAILABLE">Available</option>
                                 <option value="ON_TRIP">On Trip</option>
@@ -242,11 +242,11 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-2">
+                    <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-800 mt-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                            className="px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"
                             disabled={loading}
                         >
                             Cancel
@@ -254,7 +254,7 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-[#135bec] to-blue-600 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98] transition-all flex items-center gap-2 "
+                            className="px-8 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest text-white bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center gap-2 shadow-sm dark:shadow-none"
                         >
                             {loading ? (
                                 <>

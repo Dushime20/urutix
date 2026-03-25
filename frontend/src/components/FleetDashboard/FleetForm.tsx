@@ -476,23 +476,23 @@ const FleetForm: React.FC<FleetFormProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center modal-overlay">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center modal-overlay">
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto transition-colors">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               {activeTab === 'trucks' ? (
-                <FaTruck className="w-6 h-6 text-primary-600" />
+                <FaTruck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               ) : (
-                <FaUser className="w-6 h-6 text-primary-600" />
+                <FaUser className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               )}
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {mode === 'create' ? `Add New ${activeTab === 'trucks' ? 'Truck' : 'Driver'}` : `Edit ${activeTab === 'trucks' ? 'Truck' : 'Driver'}`}
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <FaTimes className="w-5 h-5" />
             </button>
@@ -501,19 +501,19 @@ const FleetForm: React.FC<FleetFormProps> = ({
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
 
               {activeTab === 'trucks' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       License Plate *
                     </label>
                     <input
                       type="text"
                       value={formData.plateNumber || ''}
                       onChange={(e) => handleInputChange('plateNumber', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors"
                       required
                       maxLength={20}
                     />

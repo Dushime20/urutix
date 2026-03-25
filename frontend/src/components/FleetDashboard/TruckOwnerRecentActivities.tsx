@@ -9,7 +9,6 @@ import {
   MapPin,
   Clock,
   ChevronRight,
-  Shield,
   Activity
 } from 'lucide-react';
 
@@ -124,34 +123,34 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
   }, [activities]);
 
   return (
-    <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
       {/* List Header */}
-      <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center">
+      <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500 shadow-inner">
+          <div className="h-8 w-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
             <Clock size={16} />
           </div>
           <div>
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Chronology</h3>
-            <h4 className="text-lg font-black text-slate-900 tracking-tight">Recent Activity Vector</h4>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Chronology</h3>
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white">Recent Activity Vector</h4>
           </div>
         </div>
-        <button className="h-10 w-10 bg-slate-50 hover:bg-primary-500 hover:text-white rounded-xl flex items-center justify-center transition-all group">
-          <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+        <button className="h-10 w-10 bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all group">
+          <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform text-gray-400 dark:text-gray-500 group-hover:text-white" />
         </button>
       </div>
 
       {/* Activities Grid */}
-      <div className="divide-y divide-slate-50">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {isLoading ? (
           // Loading skeleton
           <div className="p-8 space-y-6">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex gap-6 animate-pulse">
-                <div className="w-12 h-12 bg-slate-100 rounded-[18px] flex-shrink-0" />
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-4 bg-slate-100 rounded-full w-1/3" />
-                  <div className="h-3 bg-slate-50 rounded-full w-2/3" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
                 </div>
               </div>
             ))}
@@ -160,16 +159,16 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
           displayedActivities.map((activity) => (
             <div
               key={activity.id}
-              className={`p-6 px-8 hover:bg-slate-50/50 transition-all cursor-pointer group relative`}
+              className={`p-6 px-8 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer group relative`}
             >
               <div className="flex items-start gap-6">
                 {/* Visual Anchor */}
                 <div
-                  className={`size-12 rounded-[18px] flex-shrink-0 flex items-center justify-center transition-all shadow-sm ${activity.type === 'maintenance_due'
-                    ? 'bg-rose-50 text-rose-500 group-hover:bg-rose-500 group-hover:text-white'
+                  className={`size-12 rounded-lg flex-shrink-0 flex items-center justify-center transition-all ${activity.type === 'maintenance_due'
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 group-hover:bg-red-600 group-hover:text-white'
                     : activity.type === 'payment_received'
-                      ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
-                      : 'bg-primary-50 text-primary-500 group-hover:bg-primary-500 group-hover:text-white'
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 group-hover:bg-green-600 group-hover:text-white'
+                      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white'
                     }`}
                 >
                   {getActivityIcon(activity.type)}
@@ -180,16 +179,16 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-black text-slate-900 text-sm tracking-tight">{activity.title}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white text-sm">{activity.title}</p>
                         {activity.status === 'warning' && (
-                          <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                          <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                         )}
                       </div>
-                      <p className="text-sm font-medium text-slate-500 leading-relaxed truncate">{activity.description}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-relaxed truncate">{activity.description}</p>
                     </div>
                     {activity.amount && (
                       <div className="text-right flex-shrink-0">
-                        <p className="font-black text-emerald-600 text-sm italic">
+                        <p className="font-semibold text-green-600 dark:text-green-400 text-sm">
                           + KES {activity.amount.toLocaleString()}
                         </p>
                       </div>
@@ -198,17 +197,17 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
 
                   {/* Meta Vector */}
                   <div className="flex items-center gap-4 mt-3">
-                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
                       <Clock size={12} className="opacity-60" />
                       {formatDate(activity.timestamp)}
                     </span>
-                    <div className="h-1 w-1 rounded-full bg-slate-200" />
+                    <div className="h-1 w-1 rounded-full bg-gray-300 dark:bg-gray-600" />
                     <span
-                      className={`text-[9px] font-black uppercase tracking-[0.2em] ${activity.status === 'completed'
-                        ? 'text-emerald-500'
+                      className={`text-xs font-medium ${activity.status === 'completed'
+                        ? 'text-green-600 dark:text-green-400'
                         : activity.status === 'warning'
-                          ? 'text-rose-500'
-                          : 'text-primary-500'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-blue-600 dark:text-blue-400'
                         }`}
                     >
                       {activity.status} PROTOCOL
@@ -221,11 +220,11 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
         ) : (
           // System Empty State
           <div className="p-20 text-center flex flex-col items-center">
-            <div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6">
+            <div className="size-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-600 mb-6">
               <Activity size={32} />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">No Historical Data</p>
-            <p className="text-sm font-medium text-slate-400 mt-2">Operational chronology will populate upon asset deployment.</p>
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">No Historical Data</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Operational chronology will populate upon asset deployment.</p>
           </div>
         )}
       </div>

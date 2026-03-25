@@ -91,13 +91,15 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4 print:bg-white print:p-0">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:rounded-none">
+    <div className="fixed inset-0 bg-slate-950/60 dark:bg-gray-950/90 backdrop-blur-sm flex items-center justify-center z-[10000] p-4 print:bg-white print:p-0 transition-all duration-300">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl dark:shadow-none max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-800 print:border-none print:shadow-none print:max-h-none print:rounded-none transform transition-all duration-200">
         {/* Header - Hidden when printing */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between print:hidden">
-          <div className="flex items-center gap-3">
-            <FaFileInvoice className="w-6 h-6 text-primary-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Payment Receipt</h2>
+        <div className="sticky top-0 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between print:hidden transition-colors z-10">
+          <div className="flex items-center gap-4">
+            <div className="size-10 rounded-lg bg-blue-600 dark:bg-blue-900/40 flex items-center justify-center transition-colors">
+              <FaFileInvoice className="w-5 h-5 text-white dark:text-blue-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">Payment Receipt</h2>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -124,46 +126,46 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </div>
 
         {/* Receipt Content */}
-        <div id="receipt-content" className="p-8 print:p-12 bg-white">
+        <div id="receipt-content" className="p-10 print:p-12 bg-white dark:bg-gray-900 transition-colors">
           {/* Receipt Header */}
-          <div className="mb-8 pb-6 border-b-2 border-gray-400">
-            <div className="flex items-center justify-between mb-6">
+          <div className="mb-10 pb-8 border-b-2 border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">PAYMENT RECEIPT</h1>
-                <p className="text-base text-gray-700 font-medium">Receipt Number: <span className="font-mono">{receipt.receiptNumber}</span></p>
+                <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-3 tracking-tighter transition-colors">PAYMENT RECEIPT</h1>
+                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest transition-colors">
+                  Receipt Number: <span className="font-mono text-blue-600 dark:text-blue-400">{receipt.receiptNumber}</span>
+                </p>
               </div>
               <div className="text-right">
-                <div className="mb-2">
-                  <span className="inline-block px-4 py-2 bg-green-600 text-white text-sm font-bold rounded">PAID</span>
+                <div className="mb-3">
+                  <span className="inline-block px-5 py-2 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-md transition-colors">PAID</span>
                 </div>
-                <p className="text-sm text-gray-700">Date: {formatDate(receipt.paymentDate)}</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">Date: {formatDate(receipt.paymentDate)}</p>
               </div>
             </div>
           </div>
 
           {/* Company Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
             <div>
-              <h3 className="text-xs font-bold text-gray-700 uppercase mb-3 tracking-wider">From</h3>
-              <div className="border-l-4 border-gray-400 pl-4">
-                <p className="font-bold text-gray-900 text-lg mb-1">
+              <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-4 tracking-[0.2em] transition-colors">Issued By</h3>
+              <div className="border-l-[3px] border-blue-600 dark:border-blue-500 pl-5 transition-colors">
+                <p className="font-bold text-gray-900 dark:text-white text-xl mb-1 transition-colors">
                   {receipt.truckOwner?.company || receipt.truckOwner?.name}
                 </p>
                 {receipt.truckOwner?.company && (
-                  <p className="text-sm text-gray-700 mb-1">{receipt.truckOwner?.name}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 transition-colors">{receipt.truckOwner?.name}</p>
                 )}
-                {receipt.truckOwner?.email && (
-                  <p className="text-sm text-gray-600">{receipt.truckOwner?.email}</p>
-                )}
-                {receipt.truckOwner?.phone && (
-                  <p className="text-sm text-gray-600">{receipt.truckOwner?.phone}</p>
-                )}
+                <div className="space-y-0.5">
+                  {receipt.truckOwner?.email && <p className="text-xs font-medium text-gray-400 dark:text-gray-500 transition-colors">{receipt.truckOwner?.email}</p>}
+                  {receipt.truckOwner?.phone && <p className="text-xs font-medium text-gray-400 dark:text-gray-500 transition-colors">{receipt.truckOwner?.phone}</p>}
+                </div>
               </div>
             </div>
             <div>
-              <h3 className="text-xs font-bold text-gray-700 uppercase mb-3 tracking-wider">To</h3>
-              <div className="border-l-4 border-gray-400 pl-4">
-                <p className="font-bold text-gray-900 text-lg">
+              <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-4 tracking-[0.2em] transition-colors">Issued To</h3>
+              <div className="border-l-[3px] border-gray-200 dark:border-gray-700 pl-5 transition-colors">
+                <p className="font-bold text-gray-900 dark:text-white text-xl transition-colors">
                   {receipt.cargo?.cargoOwner}
                 </p>
               </div>
@@ -171,91 +173,65 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           </div>
 
           {/* Trip Details */}
-          <div className="mb-10">
-            <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider border-b border-gray-300 pb-2">Trip Information</h3>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase mb-1">Truck Details</p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {receipt.plateNumber} - {receipt.make} {receipt.model}
-                  </p>
+          <div className="mb-12">
+            <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-5 tracking-[0.2em] border-b border-gray-100 dark:border-gray-800 pb-3 transition-colors">Trip Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-1">
+              {[
+                { label: 'Asset Details', value: `${receipt.plateNumber} \u2022 ${receipt.make} ${receipt.model}` },
+                { label: 'Certified Driver', value: `${receipt.driver?.firstName} ${receipt.driver?.lastName}` },
+                { label: 'Cargo Payload', value: receipt.cargo?.title },
+                { label: 'Assigned Route', value: `${receipt.cargo?.origin} \u2192 ${receipt.cargo?.destination}` },
+                { label: 'Execution Date', value: formatDate(receipt.tripStartDate) }
+              ].map((item, i) => (
+                <div key={i}>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 transition-colors">{item.label}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white transition-colors">{item.value}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase mb-1">Driver</p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {receipt.driver?.firstName} {receipt.driver?.lastName}
-                  </p>
-                  {receipt.driver?.phone && (
-                    <p className="text-sm text-gray-600 mt-1">{receipt.driver?.phone}</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase mb-1">Cargo Description</p>
-                  <p className="text-base font-semibold text-gray-900">{receipt.cargo?.title}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase mb-1">Route</p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {receipt.cargo?.origin} to {receipt.cargo?.destination}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase mb-1">Trip Start Date</p>
-                  <p className="text-base font-semibold text-gray-900">
-                    {formatDate(receipt.tripStartDate)}
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
           {/* Payment Summary */}
-          <div className="mb-10">
-            <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider border-b border-gray-300 pb-2">Payment Details</h3>
-            <div className="bg-gray-50 border-2 border-gray-300 p-6">
-              <div className="flex items-center justify-between mb-4">
+          <div className="mb-12">
+            <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase mb-5 tracking-[0.2em] border-b border-gray-100 dark:border-gray-800 pb-3 transition-colors">Financial Details</h3>
+            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 p-8 rounded-lg transition-colors">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div>
-                  <p className="text-sm text-gray-600 uppercase mb-2">Amount Paid</p>
-                  <p className="text-5xl font-bold text-gray-900">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-3 transition-colors">Net Amount Paid</p>
+                  <p className="text-6xl font-black text-gray-900 dark:text-white tracking-tighter transition-colors">
                     {formatCurrency(receipt.amount, receipt.currency)}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600 uppercase mb-2">Payment Date</p>
-                  <p className="text-lg font-bold text-gray-900">
+                <div className="md:text-right">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2 transition-colors">Full Fulfillment Date</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white transition-colors">
                     {formatDate(receipt.paymentDate)}
                   </p>
                 </div>
               </div>
-              <div className="pt-4 border-t border-gray-300 mt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Payment Method:</span>
-                  <span className="text-sm font-semibold text-gray-900">Bank Transfer / Mobile Money</span>
-                </div>
+              <div className="pt-6 border-t border-gray-100 dark:border-gray-700/50 mt-8 flex justify-between items-center transition-colors">
+                <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">Payment Indexing</span>
+                <span className="text-xs font-bold text-gray-900 dark:text-white transition-colors">E-Transfer Verified</span>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-10 pt-6 border-t-2 border-gray-400">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="mt-12 pt-8 border-t-2 border-gray-100 dark:border-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-8">
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-1">Receipt Generated</p>
-                <p className="text-sm font-semibold text-gray-900">{formatDate(receipt.generatedAt)}</p>
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 transition-colors">Receipt Digitization</p>
+                <p className="text-xs font-bold text-gray-900 dark:text-white transition-colors">{formatDate(receipt.generatedAt)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase mb-1">Reference Number</p>
-                <p className="text-sm font-mono font-semibold text-gray-900">{receipt.receiptNumber}</p>
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 transition-colors">Audit Ref Index</p>
+                <p className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 transition-colors uppercase tracking-widest">{receipt.receiptNumber}</p>
               </div>
             </div>
-            <div className="mt-8 pt-6 border-t border-gray-300">
-              <p className="text-xs text-gray-600 text-center leading-relaxed">
-                This is an official receipt for payment received. This document serves as proof of payment for the transportation services rendered. 
-                Please retain this receipt for your records and accounting purposes.
-              </p>
-              <p className="text-xs text-gray-500 text-center mt-3">
-                For inquiries, please contact the truck owner using the information provided above.
+            <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800 transition-colors">
+              <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 text-center leading-relaxed tracking-wide">
+                This document serves as an official electronic verification of fulfillment. Data integrity is maintained through our fleet analytics core. 
+                Please preserve this registry entry for tax compliance and institutional auditing.
               </p>
             </div>
           </div>
