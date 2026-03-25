@@ -137,4 +137,53 @@ export class FuelService {
             totalLogs: logs.length,
         };
     }
+
+    async getDriverFuelStatistics(driverId: string, tenantId: string): Promise<any> {
+        const logs = await this.fuelLogRepository.find({
+            where: { driverId, tenantId },
+            relations: ['truck'],
+            order: { fuelDate: 'DESC' }
+        });
+
+        if (logs.length === 0) {
+            return {
+                totalSpend: 0,
+                totalVolume: 0,
+                avgPricePerGallon: 0,
+                efficiencyMpg: 0,
+                totalLogs: 0,
+                ecoScore: 0,
+                co2Saved: 0
+            };
+        }
+
+        const totalSpend = logs.reduce((sum, log) => sum + Number(log.totalCost), 0);
+        const totalVolume = logs.reduce((sum, log) => sum + Number(log.gallons), 0);
+        const avgPricePerGallon = totalVolume > 0 ? totalSpend / totalVolume : 0;
+
+        // Calculate efficiency (MPG)
+        const logsWithOdometer = logs.filter(log => log.odometer);
+        let efficiencyMpg = 0;
+        if (logsWithOdometer.length >= 2) {
+            // Sort by odometer (descending because we ordered by fuelDate DESC)
+            const sorted = [...logsWithOdometer].sort((a, b) => Number(b.odometer) - Number(a.odometer));
+            const totalMiles = Number(sorted[0].odometer) - Number(sorted[sorted.length - 1].odometer);
+            const gallonsUsedBetweenFirstAndLast = sorted.slice(0, -1).reduce((sum, log) => sum + Number(log.gallons), 0);
+            efficiencyMpg = totalMiles / gallonsUsedBetweenFirstAndLast;
+        }
+
+        // Mock eco-driving metrics for now based on efficiency
+        const ecoScore = Math.min(100, Math.round((efficiencyMpg / 7) * 100)); // 7 MPG is standard goal
+        const co2Saved = totalVolume * 0.5; // Roughly 0.5kg saved per gallon efficiency gain (mock)
+
+        return {
+            totalSpend,
+            totalVolume,
+            avgPricePerGallon,
+            efficiencyMpg,
+            ecoScore,
+            co2Saved,
+            totalLogs: logs.length,
+        };
+    }
 }

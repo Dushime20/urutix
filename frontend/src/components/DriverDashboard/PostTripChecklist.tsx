@@ -15,11 +15,15 @@ import {
   PenTool,
   ShieldCheck,
   TrendingUp,
-  MapPin
+  MapPin,
+  Camera,
+  Upload,
+  File as FileIcon
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { toast } from 'react-hot-toast';
-import { safetyApi, InspectionTypes, InspectionStatuses, type InspectionType, type InspectionStatus } from '../../services/safetyApi';
+import { safetyApi, InspectionTypes, InspectionStatuses } from '../../services/safetyApi';
+import { documentApi } from '../../services/documents/documentApi';
 
 interface ChecklistItem {
   id: string;
@@ -54,6 +58,8 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
   const [location, setLocation] = useState<string>('');
   const [signature, setSignature] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [podFile, setPodFile] = useState<File | null>(null);
+  const [vehicleFile, setVehicleFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<ChecklistCategory[]>([
     {
       id: 'cargo',
@@ -164,7 +170,35 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
         notes: `Post-trip inspection signed by ${signature}. Odometer: ${odometer}, Location: ${location}`
       });
 
-      toast.success("Post-trip inspection submitted successfully!");
+      // Upload Compliance Photos if present
+      if (podFile || vehicleFile) {
+        const uploadPromises = [];
+        if (podFile) {
+          uploadPromises.push(documentApi.createDocument({
+              entityType: 'DRIVER',
+              entityId: driverId || 'unknown',
+              documentType: 'PROOF_OF_DELIVERY',
+              category: 'OPERATIONAL',
+              title: `POD - Trip Closure - ${new Date().toLocaleDateString()}`,
+              description: `Proof of Delivery uploaded during post-trip checklist by ${driverName || signature}`,
+              priority: 'NORMAL'
+          }, podFile));
+        }
+        if (vehicleFile) {
+          uploadPromises.push(documentApi.createDocument({
+              entityType: 'TRUCK',
+              entityId: truckId || 'unknown',
+              documentType: 'VEHICLE_CONDITION',
+              category: 'SAFETY',
+              title: `Veh Condition - ${new Date().toLocaleDateString()}`,
+              description: `Post-trip vehicle condition photo uploaded by ${driverName || signature}`,
+              priority: hasFailures ? 'HIGH' : 'NORMAL'
+          }, vehicleFile));
+        }
+        await Promise.all(uploadPromises);
+      }
+
+      toast.success("Post-trip inspection & documents submitted successfully!");
       if (onComplete) onComplete({ odometer, location });
     } catch (error) {
       console.error('Failed to submit post-trip inspection:', error);
@@ -308,6 +342,43 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
                     onChange={(e) => setLocation(e.target.value)}
                     className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-black text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                 />
+            </div>
+        </div>
+
+        <div className="mb-8 space-y-4">
+            <div className="flex items-center gap-3 mb-2 px-1">
+                <Camera size={16} className="text-slate-400" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Compliance Documentation</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                    onClick={() => document.getElementById('pod-upload')?.click()}
+                    className={`p-6 rounded-3xl border-2 border-dashed transition-all cursor-pointer flex items-center gap-4 ${podFile ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-100 bg-slate-50/50 hover:border-orange-200'}`}
+                >
+                    <input id="pod-upload" type="file" className="hidden" onChange={(e) => setPodFile(e.target.files?.[0] || null)} accept="image/*" />
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${podFile ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 border border-slate-100 shadow-sm'}`}>
+                        {podFile ? <FileIcon size={20} /> : <Upload size={20} />}
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-[#0f172a] uppercase tracking-tight">{podFile ? podFile.name : 'Proof of Delivery (POD)'}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{podFile ? 'Ready to Sync' : 'Tap to Snap Receipt/POD'}</p>
+                    </div>
+                </div>
+
+                <div 
+                    onClick={() => document.getElementById('veh-upload')?.click()}
+                    className={`p-6 rounded-3xl border-2 border-dashed transition-all cursor-pointer flex items-center gap-4 ${vehicleFile ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-100 bg-slate-50/50 hover:border-orange-200'}`}
+                >
+                    <input id="veh-upload" type="file" className="hidden" onChange={(e) => setVehicleFile(e.target.files?.[0] || null)} accept="image/*" />
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${vehicleFile ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 border border-slate-100 shadow-sm'}`}>
+                        {vehicleFile ? <FileIcon size={20} /> : <Camera size={20} />}
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-[#0f172a] uppercase tracking-tight">{vehicleFile ? vehicleFile.name : 'Vehicle Condition Photo'}</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{vehicleFile ? 'Inspection Proof Ready' : 'Mandatory for debrief'}</p>
+                    </div>
+                </div>
             </div>
         </div>
 

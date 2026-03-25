@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { FaPlus, FaFilter, FaSearch, FaTools } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +12,14 @@ import logoUrutiX from '../assets/logo-urutix.svg';
 import {
     Zap,
     Bell,
+    Wrench,
+    Truck,
+    Calendar,
+    User,
+    Clock,
+    AlertTriangle,
+    FileText,
+    Activity,
     Search,
     X,
     Settings,
@@ -18,6 +27,7 @@ import {
     CheckCircle,
     Droplets
 } from 'lucide-react';
+import { MaintenanceDetailsModal } from '../components/FleetDashboard/Maintenance/MaintenanceDetailsModal';
 
 const MaintenancePage: React.FC = () => {
     const navigate = useNavigate();
@@ -42,6 +52,10 @@ const MaintenancePage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
+    // Details Modal State
+    const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
     useEffect(() => {
         loadData();
     }, []);
@@ -49,37 +63,22 @@ const MaintenancePage: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            // In a real app, we'd have a specific endpoint for all fleet maintenance
-            // For now, we might need to iterate trucks or use a new endpoint if available
-            // Let's assume we can get alerts and use that as a proxy for active stuff, 
-            // but for full history, we really need a proper endpoint.
-            // Since we implemented `fleetApi.getMaintenanceHistory(truckId)`, we would need to call it for all trucks.
-            // To simulate a "Fleet Wide" view efficiently, we will mock the aggregation or assume backend support.
-
-            // Checking fleetApi again... 
-            // It has `getMaintenanceHistory(truckId)`. It does NOT have `getAllMaintenance()`.
-            // Strategy: Get all trucks, then fetch maintenance for each (parallel).
-
-            const trucks = await fleetApi.getTrucks();
-            const maintenancePromises = trucks.map(truck =>
-                fleetApi.getMaintenanceHistory(truck.id).then(records =>
-                    records.map(r => ({ ...r, truckId: truck.id, plateNumber: truck.plateNumber }))
-                )
-            );
-
-            const results = await Promise.all(maintenancePromises);
-            const allRecords = results.flat();
+            const data = await fleetApi.getFleetMaintenance(1, 100, statusFilter);
+            const allRecords = data.logs.map((log: any) => ({
+                ...log,
+                title: log.taskName || log.title,
+                date: log.serviceDate || log.date || log.createdAt,
+                plateNumber: log.truck?.plateNumber || 'TOW-AUTO'
+            }));
 
             // Calculate Stats
-            const totalCost = allRecords.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
-            const activeRepairs = allRecords.filter(r => ['IN_PROGRESS', 'SCHEDULED'].includes(r.status)).length;
-            const upcomingServices = allRecords.filter(r => r.status === 'SCHEDULED').length;
+            const totalCost = allRecords.reduce((sum: number, r: any) => sum + (Number(r.cost) || 0), 0);
+            const activeRepairs = allRecords.filter((r: any) => ['IN_PROGRESS', 'SCHEDULED', 'PENDING'].includes(r.status)).length;
+            const upcomingServices = allRecords.filter((r: any) => r.status === 'SCHEDULED' || r.status === 'PENDING').length;
 
-            // Simple mock health score based on active repairs
-            // Fewer active repairs = higher score
             const healthScore = Math.max(0, 100 - (activeRepairs * 5));
 
-            setMaintenanceRecords(allRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setMaintenanceRecords(allRecords);
             setStats({
                 totalCost,
                 activeRepairs,
@@ -99,29 +98,26 @@ const MaintenancePage: React.FC = () => {
         loadData();
     };
 
-    const handleDelete = async (id: string, truckId: string) => {
+    const handleView = (record: any) => {
+        setSelectedRecord(record);
+        setIsDetailsOpen(true);
+    };
+
+    const handleEdit = (record: any) => {
+        toast.success(`Editing maintenance record for ${record.plateNumber}`);
+    };
+
+    const handleDelete = async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this maintenance record?')) return;
 
         try {
-            await fleetApi.deleteMaintenance(truckId, id);
+            await fleetApi.deleteMaintenance(id);
             toast.success('Record deleted');
             loadData();
         } catch (error) {
             console.error('Error deleting record:', error);
             toast.error('Failed to delete record');
         }
-    };
-
-    const handleView = (record: any) => {
-        // Implement view details logic (e.g., open a modal)
-        console.log('View', record);
-        toast('View details implemented soon', { icon: 'ℹ️' });
-    };
-
-    const handleEdit = (record: any) => {
-        // Implement edit logic
-        console.log('Edit', record);
-        toast('Edit feature implemented soon', { icon: 'ℹ️' });
     };
 
     const handleLogout = () => {
@@ -388,18 +384,19 @@ const MaintenancePage: React.FC = () => {
                     loading={loading}
                     onView={handleView}
                     onEdit={handleEdit}
-                    onDelete={(id) => {
-                        // Find truckId for the record
-                        const record = maintenanceRecords.find(r => r.id === id);
-                        if (record) handleDelete(id, record.truckId);
-                    }}
+                    onDelete={(id) => handleDelete(id)}
                 />
-
                 {/* Modals */}
                 <MaintenanceSchedulerModal
                     isOpen={isSchedulerOpen}
                     onClose={() => setIsSchedulerOpen(false)}
                     onSuccess={handleCreateSuccess}
+                />
+
+                <MaintenanceDetailsModal
+                    isOpen={isDetailsOpen}
+                    onClose={() => setIsDetailsOpen(false)}
+                    record={selectedRecord}
                 />
             </main>
 

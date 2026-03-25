@@ -35,6 +35,7 @@ import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-l
   UserRole.FLEET_MANAGER,
   UserRole.FLEET_ACCOUNTANT,
   UserRole.FLEET_DISPATCHER,
+  UserRole.DRIVER,
 )
 @Controller('fuel')
 export class FuelController {
@@ -169,6 +170,27 @@ export class FuelController {
         return {
             success: true,
             message: 'Fuel log deleted successfully',
+        };
+    }
+
+    @Get('statistics/:driverId')
+    @ApiOperation({
+        summary: 'Get fuel statistics for a specific driver',
+        description: 'Get aggregated fuel consumption statistics for a specific driver',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Driver statistics retrieved successfully',
+    })
+    async getDriverStatistics(
+        @Param('driverId') driverId: string,
+        @GetTenant() tenantId: string
+    ) {
+        const stats = await this.fuelService.getDriverFuelStatistics(driverId, tenantId);
+
+        return {
+            success: true,
+            data: stats,
         };
     }
 

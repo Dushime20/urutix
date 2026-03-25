@@ -11,15 +11,18 @@ import {
   Weight,
   Ruler,
   Filter,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  Activity
 } from 'lucide-react';
 import { CargoDetails } from './CargoDetails';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CargoInspection } from './CargoInspection';
 import { ProofOfDelivery } from './ProofOfDelivery';
+import { CargoHealthModal } from './CargoHealthModal';
 import { driverApi } from '../../services/driverApi';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
 
 interface CargoItem {
   id: string;
@@ -56,6 +59,12 @@ interface CargoItem {
   inspectionResult?: any;
   notes: string[];
   documents: string[];
+  pod?: {
+    recipientName: string;
+    signatureBase64: string;
+    completedAt: string;
+    photoUrl?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +84,8 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   const [sortBy, setSortBy] = useState<'priority' | 'pickupTime' | 'value' | 'createdAt'>('priority');
   const [checkedCargos, setCheckedCargos] = useState<Set<string>>(new Set());
   const [proceeding, setProceeding] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
+  const [healthCargo, setHealthCargo] = useState<CargoItem | null>(null);
 
   const formatLocation = (loc: any): string => {
     if (!loc) return 'N/A';
@@ -153,6 +164,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
             inspectionStatus: load.metadata?.inspectionStatus || 'PENDING',
             notes: load.specialInstructions ? [load.specialInstructions] : [],
             documents: load.requiredDocuments || [],
+            pod: load.metadata?.pod || undefined,
             createdAt: load.createdAt || new Date().toISOString(),
             updatedAt: load.updatedAt || new Date().toISOString()
           };
@@ -598,9 +610,20 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                           <h4 className="text-xl font-bold text-[#0f172a] group-hover:text-[#345E85] transition-colors">
                             {cargo.name}
                           </h4>
-                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${getStatusColor(cargo.status)}`}>
-                            {cargo.status.replace('_', ' ')}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${getStatusColor(cargo.status)}`}>
+                              {cargo.status.replace('_', ' ')}
+                            </span>
+                            {cargo.status === 'DELIVERED' && (
+                              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
+                                <ShieldCheck size={12} />
+                                POD SECURED
+                              </span>
+                            )}
+                            <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${getPriorityColor(cargo.priority)}`}>
+                              {cargo.priority} Priority
+                            </span>
+                          </div>
                         </div>
                         <p className="text-sm font-medium text-slate-500 max-w-2xl">{cargo.description}</p>
                         
@@ -769,6 +792,17 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                       )}
 
                       <button
+                        onClick={() => {
+                            setHealthCargo(cargo);
+                            setShowHealthModal(true);
+                        }}
+                        className="px-4 py-3 bg-blue-50 border border-blue-100 text-blue-500 rounded-xl hover:bg-blue-100 transition-all flex items-center justify-center group/health"
+                        title="Telemetry Health Scan"
+                      >
+                        <Activity className="w-4 h-4 group-hover/health:scale-110 transition-transform" />
+                      </button>
+
+                      <button
                         onClick={handleContactShipper}
                         className="px-4 py-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:border-slate-300 hover:text-slate-600 transition-all flex items-center justify-center"
                         title="Contact Shipper"
@@ -793,6 +827,20 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showHealthModal && (
+          <CargoHealthModal 
+            isOpen={showHealthModal}
+            onClose={() => {
+                setShowHealthModal(false);
+                setHealthCargo(null);
+            }}
+            cargo={healthCargo}
+          />
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

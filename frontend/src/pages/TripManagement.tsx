@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Truck,
   User,
-  MapPin,
   Clock,
   CheckCircle,
   AlertTriangle,
@@ -15,8 +14,6 @@ import {
   ArrowUpDown,
   LayoutGrid,
   List,
-  Filter,
-  X
 } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -39,6 +36,13 @@ interface Trip {
   deliveryLocation: string;
   driverName: string;
   truckPlate: string;
+  pod?: {
+    recipientName: string;
+    signatureBase64: string;
+    completedAt: string;
+    completedBy: string;
+    photoUrl?: string;
+  };
 }
 
 interface SortConfig {
@@ -112,7 +116,8 @@ const TripManagement: React.FC = () => {
           pickupLocation: getPickupLocation(),
           deliveryLocation: getDeliveryLocation(),
           driverName: trip.driver ? `${trip.driver.firstName} ${trip.driver.lastName}` : 'Unassigned',
-          truckPlate: trip.truck?.plateNumber || 'Unassigned'
+          truckPlate: trip.truck?.plateNumber || 'Unassigned',
+          pod: trip.load?.metadata?.pod || undefined
         };
       });
     }
@@ -393,13 +398,21 @@ const TripManagement: React.FC = () => {
                         <p className="text-xs font-medium text-slate-400">Ref: {trip.loadId}</p>
                       </div>
                     </div>
-                    <span className={cn(
-                      "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5",
-                      getStatusColor(trip.status)
-                    )}>
-                      {getStatusIcon(trip.status)}
-                      {trip.status.replace('_', ' ')}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider inline-flex items-center gap-1",
+                        getStatusColor(trip.status)
+                      )}>
+                        {getStatusIcon(trip.status)}
+                        {trip.status.replace('_', ' ')}
+                      </span>
+                      {trip.pod && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1 shadow-sm">
+                          <CheckCircle size={8} />
+                          POD
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-4 mb-6">
@@ -490,13 +503,21 @@ const TripManagement: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={cn(
-                            "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5",
-                            getStatusColor(trip.status)
-                          )}>
-                            {getStatusIcon(trip.status)}
-                            {trip.status.replace('_', ' ')}
-                          </span>
+                          <div className="flex flex-col gap-1.5">
+                            <span className={cn(
+                              "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5",
+                              getStatusColor(trip.status)
+                            )}>
+                              {getStatusIcon(trip.status)}
+                              {trip.status.replace('_', ' ')}
+                            </span>
+                            {trip.pod && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-100 flex items-center justify-center w-fit shadow-sm">
+                                <CheckCircle size={8} className="mr-1" />
+                                POD Ready
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1 min-w-[180px]">
@@ -649,6 +670,58 @@ const TripManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Proof of Delivery Section */}
+              {selectedTrip.pod && (
+                <div className="space-y-4 pt-4 border-t border-slate-50">
+                  <h4 className="text-[11px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-2 flex items-center gap-2">
+                    <CheckCircle size={12} className="text-[#345E85]" />
+                    Proof of Delivery (POD)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recipient</p>
+                          <p className="text-sm font-bold text-slate-900">{selectedTrip.pod.recipientName}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completed At</p>
+                          <p className="text-xs font-medium text-slate-500">
+                            {new Date(selectedTrip.pod.completedAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {selectedTrip.pod.signatureBase64 && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Signature</p>
+                          <div className="bg-white p-2 rounded-xl border border-slate-200">
+                            <img 
+                              src={selectedTrip.pod.signatureBase64} 
+                              alt="Recipient Signature" 
+                              className="max-h-24 mx-auto object-contain"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedTrip.pod.photoUrl && (
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Delivery Photo</p>
+                        <div className="bg-white p-1 rounded-xl border border-slate-200 overflow-hidden h-40">
+                          <img 
+                            src={selectedTrip.pod.photoUrl} 
+                            alt="Delivery Proof" 
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Footer Actions */}
               <div className="flex justify-end pt-6 border-t border-slate-50">

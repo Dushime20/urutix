@@ -52,6 +52,7 @@ import { UserRole } from '../../entities/user.entity';
   UserRole.FLEET_DISPATCHER,
   UserRole.FLEET_ACCOUNTANT,
   UserRole.FLEET_SAFETY_OFFICER,
+  UserRole.DRIVER,
 )
 export class FleetController {
   constructor(private readonly fleetService: FleetService) { }
@@ -2307,6 +2308,17 @@ export class FleetController {
     status: 403,
     description: 'Forbidden - insufficient permissions',
   })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_ACCOUNTANT,
+    UserRole.FLEET_SAFETY_OFFICER,
+    UserRole.DRIVER,
+  )
   async findAllDrivers(
     @Request() req,
     @Query('search') search?: string,
@@ -2339,6 +2351,27 @@ export class FleetController {
     return {
       message: 'Drivers retrieved successfully',
       drivers,
+    };
+  }
+
+  @Get('drivers/me')
+  @Roles(
+    UserRole.DRIVER,
+    UserRole.FLEET_MANAGER,
+    UserRole.TENANT_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  @ApiOperation({
+    summary: 'Get current driver profile (fleet path)',
+    description: 'Retrieve detailed information about the currently logged-in driver through the fleet endpoint',
+  })
+  @ApiResponse({ status: 200, description: 'Driver profile retrieved successfully' })
+  async getDriverMe(@Request() req) {
+    const driver = await this.fleetService.findDriverByUserId(req.user.userId);
+    return {
+      message: 'Driver profile retrieved successfully',
+      driver,
     };
   }
 
@@ -2433,6 +2466,17 @@ export class FleetController {
     description: 'Forbidden - insufficient permissions',
   })
   @ApiResponse({ status: 404, description: 'Driver not found' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_ACCOUNTANT,
+    UserRole.FLEET_SAFETY_OFFICER,
+    UserRole.DRIVER,
+  )
   async findOneDriver(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     const driver = await this.fleetService.findOneDriver(
       id,
@@ -2494,6 +2538,17 @@ export class FleetController {
     description: 'Forbidden - insufficient permissions',
   })
   @ApiResponse({ status: 404, description: 'Driver not found' })
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+    UserRole.TRUCK_OWNER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.FLEET_ACCOUNTANT,
+    UserRole.FLEET_SAFETY_OFFICER,
+    UserRole.DRIVER,
+  )
   async getDriverStats(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
     const stats = await this.fleetService.getDriverStats(
       id,

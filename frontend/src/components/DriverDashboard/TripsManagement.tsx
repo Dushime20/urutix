@@ -7,7 +7,8 @@ import {
   ChevronRight,
   ArrowRight,
   Zap,
-  Package
+  Package,
+  ShieldCheck
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
 import toast from 'react-hot-toast';
@@ -221,6 +222,12 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     <div className="flex items-center gap-2">
                       <CheckCircle size={14} className="text-emerald-500" />
                       <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">Completed</span>
+                      {trip.pod && (
+                        <span className="ml-2 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                          <ShieldCheck size={8} />
+                          POD SECURED
+                        </span>
+                      )}
                     </div>
                   </div>
                   

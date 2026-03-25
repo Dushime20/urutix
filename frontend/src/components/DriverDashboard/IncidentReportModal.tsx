@@ -59,6 +59,25 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
     { id: 'other', title: 'Other', icon: HelpCircle, color: 'text-slate-600', bg: 'bg-slate-50' }
   ];
 
+  const handleGetLocation = () => {
+    if ("geolocation" in navigator) {
+      toast.loading('Fetching GPS coordinates...', { id: 'gps-fetch' });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setFormData(prev => ({ ...prev, location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` }));
+          toast.success('Location tagged successfully!', { id: 'gps-fetch' });
+        },
+        (error) => {
+          console.error('GPS Error:', error);
+          toast.error('Failed to get location. Please enter manually.', { id: 'gps-fetch' });
+        }
+      );
+    } else {
+      toast.error('Geolocation is not supported by your browser.');
+    }
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -266,9 +285,19 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                     </div>
                   )}
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
-                      <TranslatedText text="Location" />
-                    </label>
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                        <TranslatedText text="Location" />
+                      </label>
+                      <button 
+                        type="button"
+                        onClick={handleGetLocation}
+                        className="flex items-center gap-1.5 text-[8px] font-black text-[#345E85] uppercase tracking-widest hover:text-blue-700 transition-colors"
+                      >
+                        <Navigation size={10} />
+                        Auto-Tag GPS
+                      </button>
+                    </div>
                     <div className="relative">
                       <MapPin size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input 

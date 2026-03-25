@@ -70,11 +70,20 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
     enabled: !!driverId,
   });
 
-  // Fetch stats (mock for now as global stats might not be driver-specific)
+  // Fetch driver-specific fuel stats
+  const { data: driverStats } = useQuery({
+    queryKey: ['driver-fuel-stats', driverId],
+    queryFn: () => fuelApi.getDriverFuelStatistics(driverId),
+    enabled: !!driverId,
+  });
+
   const stats = {
-    totalSpend: logs?.reduce((sum: number, log: any) => sum + log.totalCost, 0) || 0,
-    totalVolume: logs?.reduce((sum: number, log: any) => sum + log.gallons, 0) || 0,
-    avgPrice: logs?.length ? (logs.reduce((sum: number, log: any) => sum + log.pricePerGallon, 0) / logs.length) : 0,
+    totalSpend: driverStats?.totalSpend || 0,
+    totalVolume: driverStats?.totalVolume || 0,
+    avgPrice: driverStats?.avgPricePerGallon || 0,
+    efficiencyMpg: driverStats?.efficiencyMpg || 0,
+    ecoScore: driverStats?.ecoScore || 0,
+    co2Saved: driverStats?.co2Saved || 0,
   };
 
   const createLogMutation = useMutation({
@@ -264,25 +273,25 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">CO2 Saved</p>
-                    <p className="text-2xl font-black text-emerald-600 tracking-tighter italic">142.5 KG</p>
+                    <p className="text-2xl font-black text-emerald-600 tracking-tighter italic">{stats.co2Saved.toFixed(1)} KG</p>
                     <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none">Safe Planet Contribution</p>
                 </div>
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Efficiency Rating</p>
-                    <p className="text-2xl font-black text-[#0f172a] tracking-tighter italic">94%</p>
-                    <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none">Top 10% of active drivers</p>
+                    <p className="text-2xl font-black text-[#0f172a] tracking-tighter italic">{stats.efficiencyMpg.toFixed(1)} MPG</p>
+                    <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none">Real-time Performance</p>
                 </div>
             </div>
 
             <div className="space-y-3 pt-6 border-t border-slate-100">
                  <div className="flex justify-between items-end text-[9px] font-black uppercase tracking-widest text-slate-400">
-                    <span>Gold Status Progress</span>
-                    <span className="text-emerald-600 font-black">85%</span>
+                    <span>Performance Score Progress</span>
+                    <span className="text-emerald-600 font-black">{stats.ecoScore}%</span>
                  </div>
                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div 
                         initial={{ width: 0 }}
-                        animate={{ width: '85%' }}
+                        animate={{ width: `${stats.ecoScore}%` }}
                         className="h-full bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                     />
                  </div>

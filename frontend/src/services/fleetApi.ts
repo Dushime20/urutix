@@ -227,6 +227,15 @@ export interface FleetApiResponse<T> {
   data?: T;
 }
 
+export interface TCOAnalysis {
+  fuelCost: number;
+  maintenanceCost: number;
+  insuranceCost: number;
+  otherCosts: number;
+  totalCost: number;
+  costPerMile: number;
+}
+
 // Fleet API Service
 export const fleetApi = {
   // Truck operations
@@ -440,33 +449,37 @@ export const fleetApi = {
     await api.delete(`/fleet/trucks/${truckId}/routes/${routeId}`);
   },
 
-  // Assignment operations for fleet management
-  getAssignments: async (filters?: FleetFilters): Promise<any[]> => {
-    const response = await api.get<FleetApiResponse<any[]>>('/fleet/assignments', {
-      params: filters,
+  // ===== MAINTENANCE =====
+  createMaintenance: async (data: any): Promise<any> => {
+    const response = await api.post('/maintenance', data);
+    return response.data;
+  },
+
+  getMaintenanceHistory: async (truckId: string): Promise<any[]> => {
+    const response = await api.get(`/maintenance/truck/${truckId}`);
+    return response.data.logs;
+  },
+
+  getFleetMaintenance: async (page = 1, limit = 50, status = 'ALL'): Promise<any> => {
+    const response = await api.get('/maintenance/fleet/all', {
+      params: { page, limit, status }
     });
-    return response.data.data || [];
+    return response.data;
   },
 
-  createAssignment: async (data: { driverId: string; truckId: string; routeId: string; startDate?: string; notes?: string }): Promise<any> => {
-    const response = await api.post<FleetApiResponse<any>>('/fleet/assignments', data);
-    return response.data.data || response.data;
+  updateMaintenance: async (id: string, data: any): Promise<any> => {
+    const response = await api.put(`/maintenance/${id}`, data);
+    return response.data;
   },
 
-  updateAssignment: async (id: string, data: any): Promise<any> => {
-    const response = await api.patch<FleetApiResponse<any>>(`/fleet/assignments/${id}`, data);
-    return response.data.data || response.data;
+  deleteMaintenance: async (id: string): Promise<void> => {
+    await api.delete(`/maintenance/${id}`);
   },
 
-  deleteAssignment: async (id: string): Promise<void> => {
-    await api.delete(`/fleet/assignments/${id}`);
-  },
-
-  // Analytics
-  getFleetAnalytics: async (): Promise<any> => {
-    const response = await api.get<FleetApiResponse<any>>('/fleet/analytics');
-    return response.data.data || response.data.analytics || {};
-  },
+  getTCOAnalysis: async (): Promise<TCOAnalysis> => {
+    const response = await api.get('/fleet/analytics/tco');
+    return response.data;
+  }
 };
 
 export default fleetApi;

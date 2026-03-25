@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Package, Bell, User, PlusCircle, Activity } from 'lucide-react';
+import { Home, Package, Bell, User, PlusCircle, Activity, DollarSign, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../utils/cn';
 
@@ -25,9 +25,15 @@ const MobileBottomNav: React.FC = () => {
     if (user?.role === 'CARGO_OWNER' || user?.role === 'CARGO_RECEIVER') {
         navItems.push({ icon: Package, label: 'Cargos', path: user.role === 'CARGO_OWNER' ? '/dashboard/cargos/list' : '/cargo-owner/cargos/my-cargos' });
         navItems.push({ icon: PlusCircle, label: 'Create', path: '/dashboard/cargos/create' });
-    } else if (user?.role === 'TRUCK_OWNER' || user?.role === 'DRIVER') {
-        navItems.push({ icon: Activity, label: 'Trips', path: user.role === 'TRUCK_OWNER' ? '/dashboard/trips' : '/dashboard/driver/trips' });
-    } else if (user?.role === 'BROKER') {
+    } else if (user?.role === 'DRIVER') {
+        navItems.push({ icon: Home, label: 'Overview', path: '/dashboard/driver' });
+        navItems.push({ icon: Activity, label: 'Missions', path: '/dashboard/driver/missions' });
+        navItems.push({ icon: DollarSign, label: 'Finance', path: '/dashboard/driver/finance' });
+        navItems.push({ icon: MessageSquare, label: 'Chat', path: '/dashboard/driver/messages' });
+    } else if (user?.role === 'TRUCK_OWNER') {
+        navItems.push({ icon: Activity, label: 'Trips', path: '/dashboard/trips' });
+    }
+ else if (user?.role === 'BROKER') {
         navItems.push({ icon: Package, label: 'Loads', path: '/dashboard/broker/loads' });
         navItems.push({ icon: Activity, label: 'Ops', path: '/dashboard/broker/discovery' });
     } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {

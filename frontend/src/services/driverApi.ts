@@ -89,6 +89,13 @@ export interface Trip {
   };
   earnings: number;
   notes?: string;
+  pod?: {
+    recipientName: string;
+    signatureBase64: string;
+    completedAt: string;
+    completedBy: string;
+    photoUrl?: string;
+  };
 }
 
 export interface EarningsData {
@@ -234,28 +241,33 @@ export interface EmergencyReportDto {
 
 class DriverApiService {
   // Driver Profile Management
+  async getCurrentDriver(): Promise<Driver> {
+    const response = await api.get('/drivers/me');
+    return response.data.driver;
+  }
+
   async getDriverProfile(driverId: string): Promise<Driver> {
-    const response = await api.get(`/fleet/drivers/${driverId}`);
+    const response = await api.get(`/drivers/${driverId}`);
     return response.data.driver;
   }
 
   async updateDriverProfile(driverId: string, updateDto: UpdateDriverDto): Promise<Driver> {
-    const response = await api.put(`/fleet/drivers/${driverId}`, updateDto);
+    const response = await api.put(`/drivers/${driverId}`, updateDto);
     return response.data.driver;
   }
 
   async deleteDriver(driverId: string): Promise<void> {
-    await api.delete(`/fleet/drivers/${driverId}`);
+    await api.delete(`/drivers/${driverId}`);
   }
 
   // Driver List and Search
   async getDrivers(filter: DriverFilterDto = {}): Promise<Driver[]> {
-    const response = await api.get('/fleet/drivers', { params: filter });
+    const response = await api.get('/drivers', { params: filter });
     return response.data.drivers;
   }
 
   async createDriver(createDto: CreateDriverDto): Promise<Driver> {
-    const response = await api.post('/fleet/drivers', createDto);
+    const response = await api.post('/drivers', createDto);
     return response.data.driver;
   }
 
@@ -322,7 +334,10 @@ class DriverApiService {
         (trip: any) => 
           trip.driverId === driverId && 
           (trip.status === 'COMPLETED' || trip.status === 'DELIVERED')
-      );
+      ).map((trip: any) => ({
+        ...trip,
+        pod: trip.load?.metadata?.pod || undefined
+      }));
     } catch (error: any) {
       // Silently handle 404 - endpoint may not be implemented yet
       if (error.response?.status === 404) {
@@ -359,7 +374,7 @@ class DriverApiService {
   // Earnings and Performance
   async getDriverStats(driverId: string): Promise<DriverStats> {
     try {
-      const response = await api.get(`/fleet/drivers/${driverId}/stats`);
+      const response = await api.get(`/drivers/${driverId}/stats`);
       return response.data;
     } catch (error: any) {
       // Return mock stats if endpoint doesn't exist yet
@@ -719,7 +734,22 @@ class DriverApiService {
   }
 
   async completeDelivery(driverId: string, loadId: string, podData: any): Promise<void> {
-    await api.post(`/drivers/${driverId}/complete-delivery`, { loadId, ...podData });
+    if (podData.photoFile) {
+      const formData = new FormData();
+      formData.append('loadId', loadId);
+      formData.append('recipientName', podData.recipientName);
+      formData.append('signatureBase64', podData.signatureBase64);
+      if (podData.notes) formData.append('notes', podData.notes);
+      formData.append('photo', podData.photoFile);
+
+      await api.post(`/drivers/${driverId}/complete-delivery`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      await api.post(`/drivers/${driverId}/complete-delivery`, { loadId, ...podData });
+    }
   }
 
   async getLeaderboard(period: 'MONTHLY' | 'WEEKLY' | 'YEARLY' = 'MONTHLY'): Promise<Array<{
@@ -734,7 +764,7 @@ class DriverApiService {
     trend: 'up' | 'down' | 'stable';
   }>> {
     try {
-      const response = await api.get('/fleet/drivers/leaderboard', { params: { period } });
+      const response = await api.get('/drivers/leaderboard', { params: { period } });
       return response.data.leaderboard;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -749,6 +779,29 @@ class DriverApiService {
       }
       throw error;
     }
+  }
+
+  // Maintenance and Repairs
+  async getMaintenanceHistory(truckId: string, page: number = 1, limit: number = 20): Promise<any> {
+    const response = await api.get(`/maintenance/truck/${truckId}`, {
+      params: { page, limit }
+    });
+    return response.data;
+  }
+
+  async reportTruckFault(data: {
+    truckId: string;
+    taskName: string;
+    description: string;
+    type: string;
+    odometerReading?: number;
+  }): Promise<void> {
+    await api.post('/maintenance', data);
+  }
+
+  async getMaintenanceLog(id: string): Promise<any> {
+    const response = await api.get(`/maintenance/${id}`);
+    return response.data;
   }
 }
 
