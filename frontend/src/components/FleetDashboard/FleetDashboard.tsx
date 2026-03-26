@@ -614,7 +614,6 @@ export const FleetDashboard: React.FC = () => {
                     ? 'bg-primary-50 text-primary-500 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'
                     }`}
-                    }`}
                 >
                   <tab.icon size={16} />
                   <TranslatedText text={tab.label} />
@@ -909,9 +908,6 @@ export const FleetDashboard: React.FC = () => {
                         className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all w-64"
                       />
                     </div>
-                  </div>
-                </div>
-              )}
                   </div>
                 </div>
               )}
