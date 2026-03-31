@@ -71,7 +71,7 @@ export const CargoInspectionReportModal: React.FC<CargoInspectionReportModalProp
                 {/* Status Card */}
                 <div className="lg:col-span-1 space-y-6">
                   <div className={`p-6 rounded-3xl border ${
-                    inspection.status === 'passed' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
+                    inspection.status === 'passed' ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-400'
                   }`}>
                     <div className="flex items-center gap-3 mb-4">
                       {inspection.status === 'passed' ? <ShieldCheck size={24} /> : <AlertTriangle size={24} />}
@@ -199,7 +199,7 @@ export const CargoInspectionReportModal: React.FC<CargoInspectionReportModalProp
               </div>
               <button
                 onClick={onClose}
-                className="px-8 py-3 bg-[#0f172a] hover:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-slate-900/20"
+                className="px-8 py-3 bg-[#0f172a] dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-slate-900/20 dark:shadow-none"
               >
                 Close Report
               </button>

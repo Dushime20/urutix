@@ -157,7 +157,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 	const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
 		return (
 			<div className="flex flex-col items-center group">
-				<div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50">
+				<div className="relative w-40 h-40 rounded-full bg-white dark:bg-gray-900 border-[8px] border-gray-50 dark:border-gray-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-gray-100 dark:hover:border-gray-700">
 					<svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
 						<circle
 							cx="80"
@@ -172,7 +172,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 						/>
 					</svg>
 
-					<div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+					<div className={cn("p-2 rounded-2xl mb-2 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:text-inherit transition-all duration-500", colorClass)}>
 						<Icon size={18} />
 					</div>
 
@@ -354,16 +354,16 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 			)}
 
 			{!loading && drivers.length === 0 && (
-				<div className="py-24 text-center flex flex-col items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-[40px] border-2 border-dashed border-slate-200 dark:border-slate-800">
-					<h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">No Drivers Found</h3>
-					<p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-2 max-w-xs">Add your first driver to get started.</p>
+				<div className="py-24 text-center flex flex-col items-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700">
+					<h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">No Drivers Found</h3>
+					<p className="text-sm font-medium text-gray-400 dark:text-gray-500 mt-2 max-w-xs">Add your first driver to get started.</p>
 				</div>
 			)}
 
 			{/* Details Portal - Comprehensive Driver Information */}
 			{selectedDriver && (
 				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[10001] p-4 animate-in fade-in duration-300">
-					<div className="bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-slate-100 dark:border-slate-800 transition-colors duration-300">
+					<div className="bg-white dark:bg-gray-900 rounded-lg max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800 transition-colors duration-300">
 						{/* Header Section */}
 						<div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden shrink-0">
 							<div className="absolute top-0 right-0 p-8 opacity-5">

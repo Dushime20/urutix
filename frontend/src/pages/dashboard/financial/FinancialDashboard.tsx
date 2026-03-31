@@ -104,7 +104,7 @@ const FinancialDashboard: React.FC = () => {
       whileHover={{ y: -5 }}
       className="flex flex-col items-center group cursor-pointer"
     >
-      <div className="relative size-40 lg:size-44 bg-white border-[6px] border-slate-50 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+      <div className="relative size-40 lg:size-44 bg-white dark:bg-gray-800 border-[6px] border-slate-50 dark:border-gray-700 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-gray-600 hover:shadow-xl hover:shadow-slate-200/50">
         {/* Subtle Decorative Ring */}
         <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
           <circle
@@ -121,10 +121,10 @@ const FinancialDashboard: React.FC = () => {
         </svg>
 
         {/* Central Content */}
-        <div className={cn("p-2 rounded-xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", gradient)}>
+        <div className={cn("p-2 rounded-xl mb-1 bg-slate-50 dark:bg-gray-700 text-slate-400 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-600 group-hover:text-inherit transition-all duration-500 shadow-sm", gradient)}>
           <Icon size={16} />
         </div>
-        <p className="text-xl lg:text-2xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
+        <p className="text-xl lg:text-2xl font-black text-[#0f172a] dark:text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
           {value}
         </p>
         {change && (
@@ -133,7 +133,7 @@ const FinancialDashboard: React.FC = () => {
           </span>
         )}
       </div>
-      <p className="mt-4 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-[#345E85] transition-colors text-center px-2">
+      <p className="mt-4 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors text-center px-2">
         {title}
       </p>
     </motion.div>
@@ -153,17 +153,17 @@ const FinancialDashboard: React.FC = () => {
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50 p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-        <div className="flex gap-2 p-1 bg-white rounded-2xl border border-slate-100 shadow-inner">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50 dark:bg-gray-800/50 p-6 rounded-[2rem] border border-slate-100 dark:border-gray-700 shadow-sm transition-colors">
+        <div className="flex gap-2 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-inner overflow-x-auto scrollbar-hide">
           {['week', 'month', 'quarter', 'year'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range as any)}
               className={cn(
-                "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                 timeRange === range
-                  ? 'bg-slate-900 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                  ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-lg'
+                  : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700'
               )}
             >
                {range}
@@ -171,17 +171,17 @@ const FinancialDashboard: React.FC = () => {
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <button className="h-12 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
+          <button className="h-12 px-6 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2">
             <Filter size={14} /> Filter Node
           </button>
-          <button className="h-12 px-6 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10 active:scale-95">
+          <button className="h-12 px-6 bg-[#345E85] dark:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10 active:scale-95">
             <Download size={14} /> Export Audit
           </button>
         </div>
       </div>
 
       {/* Primary Metrics Vector Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-10 bg-white/40 rounded-[3rem] border border-slate-100/50">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-10 bg-white/40 dark:bg-gray-800/20 rounded-[3rem] border border-slate-100/50 dark:border-gray-700/50 transition-colors">
         <SummaryCard 
           title="Total Revenue" 
           value={formatCurrency(stats.revenue)} 
@@ -223,13 +223,13 @@ const FinancialDashboard: React.FC = () => {
       {/* Analytics Architecture */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Expenditure Lifecycle Chart */}
-        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 border border-slate-100 dark:border-gray-700 shadow-sm transition-colors">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Expenditure Lifecycle</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Cross-category financial velocity</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Expenditure Lifecycle</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mt-1">Cross-category financial velocity</p>
             </div>
-            <BarChart3 className="text-[#345E85] w-6 h-6 opacity-40" />
+            <BarChart3 className="text-[#345E85] dark:text-blue-400 w-6 h-6 opacity-40" />
           </div>
           <div className="h-[300px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
@@ -240,11 +240,21 @@ const FinancialDashboard: React.FC = () => {
                     <stop offset="95%" stopColor="#345E85" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} axisLine={false} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-gray-700" vertical={false} />
+                <XAxis dataKey="month" stroke="#94a3b8" className="dark:stroke-gray-500" fontSize={10} axisLine={false} tickLine={false} />
+                <YAxis stroke="#94a3b8" className="dark:stroke-gray-500" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
                 <Tooltip
-                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                  contentStyle={{ 
+                    borderRadius: '1rem', 
+                    border: 'none', 
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', 
+                    fontWeight: 900, 
+                    textTransform: 'uppercase', 
+                    fontSize: '10px',
+                    backgroundColor: 'var(--tooltip-bg, #fff)',
+                    color: 'var(--tooltip-color, #000)'
+                  }}
+                  itemStyle={{ color: 'inherit' }}
                 />
                 <Area type="monotone" dataKey="total" stroke="#345E85" strokeWidth={3} fillOpacity={1} fill="url(#colorPrimary)" />
               </AreaChart>
@@ -253,13 +263,13 @@ const FinancialDashboard: React.FC = () => {
         </div>
 
         {/* Capital OS Distribution */}
-        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 border border-slate-100 dark:border-gray-700 shadow-sm transition-colors">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Capital Distribution</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Allocation across operational nodes</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Capital Distribution</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mt-1">Allocation across operational nodes</p>
             </div>
-            <PieChartIcon className="text-[#345E85] w-6 h-6 opacity-40" />
+            <PieChartIcon className="text-[#345E85] dark:text-blue-400 w-6 h-6 opacity-40" />
           </div>
           <div className="flex items-center h-[300px]">
             <ResponsiveContainer width="60%" height="100%">
@@ -285,9 +295,9 @@ const FinancialDashboard: React.FC = () => {
                 <div key={index} className="flex items-center justify-between group cursor-default">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-900 transition-colors truncate max-w-[100px]">{item.name}</span>
+                    <span className="text-[9px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate max-w-[100px]">{item.name}</span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-900">{formatCurrency(item.value)}</span>
+                  <span className="text-[10px] font-black text-slate-900 dark:text-white">{formatCurrency(item.value)}</span>
                 </div>
               )) : (
                 <div className="text-center py-10 opacity-30 text-[10px] font-black uppercase tracking-widest">No Sector Data</div>
@@ -298,7 +308,7 @@ const FinancialDashboard: React.FC = () => {
       </div>
 
       {/* Historic Logs Preview */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
+      <div className="bg-slate-900 dark:bg-gray-950 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl transition-colors">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-10">
             <div>

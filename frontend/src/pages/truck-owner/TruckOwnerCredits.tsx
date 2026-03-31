@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -12,10 +12,8 @@ import {
   ArrowDownRight,
   Clock,
   Filter,
-  Download,
-  RefreshCw
 } from 'lucide-react';
-import { authAPI } from '../../services/api';
+import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import StatCard from '../../components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../../components/translated-text';
@@ -46,40 +44,29 @@ const TruckOwnerCredits: React.FC = () => {
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   // Fetch credit balance and transactions
-  const { data: creditData, isLoading, refetch } = useQuery({
+  const { data: creditData, isLoading } = useQuery<Omit<CreditBalance, 'transactions'>>({
     queryKey: ['truck-owner-credits', user?.id],
     queryFn: async () => {
-      const response = await authAPI.get('/credits/balance');
+      const response = await api.get('/credits/balance');
       return {
         balance: response.data.data.currentBalance || 0,
         totalEarned: response.data.data.lifetimeEarned || 0,
         totalSpent: response.data.data.lifetimeSpent || 0,
-        transactions: [] // Will be fetched separately
       };
     },
     enabled: !!user?.id
   });
 
-  // Fetch transactions separately
-  const { data: transactionsData } = useQuery({
+  const { data: transactionsData } = useQuery<CreditTransaction[]>({
     queryKey: ['truck-owner-transactions', user?.id],
     queryFn: async () => {
-      const response = await authAPI.get('/credits/transactions?limit=100');
+      const response = await api.get('/credits/transactions?limit=100');
       return response.data.data || [];
     },
     enabled: !!user?.id
   });
 
   const transactions = transactionsData || [];
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -91,50 +78,48 @@ const TruckOwnerCredits: React.FC = () => {
     });
   };
 
-  const getTransactionIcon = (type: string) => {
+  const getTransactionIcon = (type: CreditTransaction['type']) => {
     switch (type) {
       case 'CREDIT':
       case 'PURCHASE':
         return <ArrowUpRight className="text-emerald-500" size={18} />;
       case 'DEBIT':
         return <ArrowDownRight className="text-rose-500" size={18} />;
-      case 'REFUND':
-        return <RefreshCw className="text-blue-500" size={18} />;
       default:
         return <DollarSign className="text-slate-400" size={18} />;
     }
   };
 
-  const getTransactionColor = (type: string) => {
+  const getTransactionColor = (type: CreditTransaction['type']) => {
     switch (type) {
       case 'CREDIT':
       case 'PURCHASE':
-        return 'text-emerald-600';
+        return 'text-emerald-500';
       case 'DEBIT':
-        return 'text-rose-600';
-      case 'REFUND':
-        return 'text-blue-600';
+        return 'text-rose-500';
       default:
-        return 'text-slate-600';
+        return 'text-blue-500';
     }
   };
 
-  const filteredTransactions = transactions?.filter(t => {
-    if (filterType !== 'all' && t.type !== filterType) return false;
-    
-    if (dateRange !== 'all') {
-      const days = parseInt(dateRange);
-      const transactionDate = new Date(t.createdAt);
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-      if (transactionDate < cutoffDate) return false;
-    }
-    
-    return true;
-  }) || [];
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t: CreditTransaction) => {
+      if (filterType !== 'all' && t.type !== filterType) return false;
+      
+      if (dateRange !== 'all') {
+        const days = parseInt(dateRange);
+        const transactionDate = new Date(t.createdAt);
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        if (transactionDate < cutoffDate) return false;
+      }
+      
+      return true;
+    });
+  }, [transactions, filterType, dateRange]);
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-8 space-y-8 transition-colors duration-200">
       {/* Credit Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
@@ -143,10 +128,11 @@ const TruckOwnerCredits: React.FC = () => {
             icon={<CreditCard />}
             subtitle={<TranslatedText text="Available Credits" />}
             color="primary"
+            variant="premium"
             loading={isLoading}
           />
 
-          <StatCard
+        <StatCard
             title={<TranslatedText text="Total Earned" />}
             value={creditData?.totalEarned || 0}
             icon={<TrendingUp />}
@@ -166,24 +152,24 @@ const TruckOwnerCredits: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm p-6 mb-6 transition-colors duration-200">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Filter size={18} className="text-slate-400" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-slate-600">
+              <Filter size={18} className="text-slate-400 dark:text-slate-500" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
                 <TranslatedText text="Filter Transactions" />
               </h3>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-600">
                   <TranslatedText text="Type:" />
                 </span>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as any)}
-                  className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                  className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 >
                   <option value="all">{tSync('All Types')}</option>
                   <option value="CREDIT">{tSync('Credits')}</option>
@@ -192,13 +178,13 @@ const TruckOwnerCredits: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-600">
                   <TranslatedText text="Period:" />
                 </span>
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value as any)}
-                  className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                  className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 >
                   <option value="7d">{tSync('Last 7 Days')}</option>
                   <option value="30d">{tSync('Last 30 Days')}</option>
@@ -211,70 +197,70 @@ const TruckOwnerCredits: React.FC = () => {
         </div>
 
         {/* Transactions List */}
-        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors duration-200">
+          <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                   <TranslatedText text="Transaction History" />
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 dark:text-slate-600 mt-1">
                   {filteredTransactions.length} {tSync('transaction')}{filteredTransactions.length !== 1 ? tSync('s') : ''}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {isLoading ? (
               <div className="p-20 text-center">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-                <p className="mt-4 text-sm font-bold text-slate-400">
+                <p className="mt-4 text-sm font-bold text-slate-400 dark:text-slate-600">
                   <TranslatedText text="Loading transactions..." />
                 </p>
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="p-20 text-center">
-                <Package size={48} className="mx-auto text-slate-300 mb-4" />
-                <p className="text-sm font-bold text-slate-400">
+                <Package size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4" />
+                <p className="text-sm font-bold text-slate-400 dark:text-slate-600">
                   <TranslatedText text="No transactions found" />
                 </p>
-                <p className="text-xs text-slate-400 mt-2">
+                <p className="text-xs text-slate-400 dark:text-slate-600 mt-2">
                   <TranslatedText text="Your credit transactions will appear here" />
                 </p>
               </div>
             ) : (
-              filteredTransactions.map((transaction, index) => (
+              filteredTransactions.map((transaction: CreditTransaction, index: number) => (
                 <motion.div
                   key={transaction.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="px-8 py-6 hover:bg-slate-50 transition-colors"
+                  className="px-8 py-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="h-12 w-12 bg-slate-50 rounded-2xl flex items-center justify-center flex-shrink-0">
+                      <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center flex-shrink-0">
                         {getTransactionIcon(transaction.type)}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
-                          <h4 className="text-sm font-black text-slate-900 truncate">
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white truncate">
                             {transaction.description}
                           </h4>
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                             transaction.type === 'CREDIT' || transaction.type === 'PURCHASE'
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : transaction.type === 'DEBIT'
-                              ? 'bg-rose-50 text-rose-600'
-                              : 'bg-blue-50 text-blue-600'
-                          }`}>
+                               ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30'
+                               : transaction.type === 'DEBIT'
+                               ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30'
+                               : 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30'
+                           }`}>
                             {transaction.type}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-600">
                           <div className="flex items-center gap-1.5">
                             <Clock size={12} />
                             <span>{formatDate(transaction.createdAt)}</span>
@@ -294,7 +280,7 @@ const TruckOwnerCredits: React.FC = () => {
                         {transaction.type === 'DEBIT' ? '-' : '+'}
                         {transaction.amount} {tSync('credits')}
                       </p>
-                      <p className="text-xs text-slate-400 font-bold mt-1">
+                      <p className="text-xs text-slate-400 dark:text-slate-600 font-bold mt-1">
                         {tSync('Balance')}: {transaction.balance}
                       </p>
                     </div>

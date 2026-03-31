@@ -192,6 +192,7 @@ export interface FuelEntry {
   status: 'verified' | 'pending' | 'flagged' | 'rejected';
   notes?: string;
   receiptUrl?: string;
+  odometerImageUrl?: string;
 }
 
 export interface UpdateTruckDto {
@@ -266,6 +267,19 @@ export interface TCOAnalysis {
   otherCosts: number;
   totalCost: number;
   costPerMile: number;
+  breakdown: {
+    fuel: number;
+    maintenance: number;
+    fixed: number;
+    labor: number;
+  };
+  vehicleBreakdown: Array<{
+    truckId: string;
+    plateNumber: string;
+    cpm: number;
+    totalCost: number;
+    topExpenseCategory: string;
+  }>;
 }
 
 // Fleet API Service

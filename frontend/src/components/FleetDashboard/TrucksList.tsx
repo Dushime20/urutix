@@ -268,14 +268,14 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       case 'available': return 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900';
       case 'in_transit': return 'bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400 border-primary-50 dark:border-primary-900';
       case 'maintenance': return 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900';
-      default: return 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-700';
+      default: return 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-100 dark:border-gray-700';
     }
   };
 
   const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
     return (
       <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:shadow-none">
+        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-gray-900 border-[8px] border-gray-50 dark:border-gray-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-gray-100 dark:hover:border-gray-700">
           <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
             <circle
               cx="80"
@@ -290,7 +290,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
             />
           </svg>
 
-          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+          <div className={cn("p-2 rounded-2xl mb-2 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:text-inherit transition-all duration-500", colorClass)}>
             <Icon size={18} />
           </div>
 
@@ -315,7 +315,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   return (
     <div className="space-y-8 pb-12">
       {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors duration-300">
         <CircularStatsCard
           title="Total Trucks"
           value={analytics?.totalTrucks !== undefined ? analytics.totalTrucks : trucks.length}
@@ -347,28 +347,28 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       </div>
 
       {/* Control Surface */}
-      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-4 flex flex-col md:flex-row gap-4 transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-4 flex flex-col md:flex-row gap-4 transition-colors duration-300">
         <div className="flex-1 relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" />
           <input
             type="text"
             placeholder="Search truck..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-50 dark:border-slate-700 rounded-[20px] text-[11px] font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary-50 dark:focus:ring-primary-900/20 focus:border-primary-500 outline-none transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-50 dark:border-gray-700 rounded-lg text-[11px] font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-gray-700 focus:ring-4 focus:ring-blue-50 dark:focus:ring-blue-900/20 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all"
           />
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-50 dark:bg-slate-800 p-1 rounded-[16px] border border-slate-100 dark:border-slate-700 mr-2">
+          <div className="flex items-center bg-gray-50 dark:bg-gray-800 p-1 rounded-lg border border-gray-100 dark:border-gray-700 mr-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-[12px] transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-primary-500 dark:text-primary-400 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 rounded-[12px] transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-primary-500 dark:text-primary-400 shadow-sm' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
             >
               <List size={16} />
             </button>
@@ -376,7 +376,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-50 dark:border-slate-700 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-primary-500 transition-all"
+            className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-50 dark:border-gray-700 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 outline-none focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
           >
             <option value="">Status</option>
             <option value="AVAILABLE">Available</option>
@@ -385,7 +385,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           </select>
           <button
             onClick={onAddTruck}
-            className="px-6 py-3 bg-primary-500 text-white rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-primary-500 transition-all shadow-xl shadow-primary-500/20"
+            className="px-6 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-blue-600 dark:hover:bg-blue-700 transition-all"
           >
             <Plus size={14} /> Add New Truck
           </button>
@@ -416,10 +416,10 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 whileHover={{ y: -5 }}
-                className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-xl dark:shadow-none hover:border-primary-200 dark:hover:border-primary-900 transition-all relative overflow-hidden group"
+                className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-6 hover:border-blue-200 dark:hover:border-blue-900 transition-all relative overflow-hidden group"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="size-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
+                  <div className="size-14 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
                     <Truck size={28} />
                   </div>
                   <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(truck.status)}`}>
@@ -506,7 +506,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           </AnimatePresence>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -635,7 +635,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="p-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-900 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={16} />
           </button>
@@ -665,7 +665,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="p-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-900 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="p-2.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-900 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ChevronRight size={16} />
           </button>
@@ -860,10 +860,10 @@ const RouteAssignModal: React.FC<RouteAssignModalProps> = ({ isOpen, onClose, tr
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100000] p-4 animate-in fade-in duration-200" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh] border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100000] p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-lg flex flex-col max-h-[85vh] border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-50 dark:border-slate-800">
+        <div className="flex items-center justify-between p-6 border-b border-gray-50 dark:border-gray-800">
           <div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Assign Routes</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">

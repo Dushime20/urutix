@@ -82,10 +82,10 @@ export const FleetInspections: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'passed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'failed': return 'bg-rose-50 text-rose-600 border-rose-100';
-      case 'conditional': return 'bg-amber-50 text-amber-600 border-amber-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
+      case 'passed': return 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30';
+      case 'failed': return 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30';
+      case 'conditional': return 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30';
+      default: return 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800';
     }
   };
 
@@ -180,9 +180,9 @@ export const FleetInspections: React.FC = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          inspection.type === 'pre_trip' ? 'bg-primary-50 text-primary-600' : 
-                          inspection.type === 'cargo' ? 'bg-blue-50 text-blue-600' :
-                          'bg-orange-50 text-orange-600'
+                          inspection.type === 'pre_trip' ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400' : 
+                          inspection.type === 'cargo' ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400' :
+                          'bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400'
                         }`}>
                           {inspection.type === 'pre_trip' ? <ShieldCheck size={20} /> : 
                            inspection.type === 'cargo' ? <Package size={20} /> : 

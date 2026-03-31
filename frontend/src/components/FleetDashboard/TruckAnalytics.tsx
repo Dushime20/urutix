@@ -112,7 +112,7 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
   const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string; value: number; icon: any; color: string; trend?: string }) => (
     <motion.div
       whileHover={{ y: -5 }}
-      className={`bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group`}
+      className={`bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 relative overflow-hidden group`}
     >
       <div className={`absolute top-0 right-0 p-10 opacity-[0.03] -mr-4 -mt-4 group-hover:scale-110 transition-transform duration-500`}>
         <Icon size={80} />
@@ -122,10 +122,10 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
           <div className={`size-10 rounded-xl flex items-center justify-center ${color} shadow-inner`}>
             <Icon size={20} />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{title}</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 transition-colors duration-200">{title}</span>
         </div>
         <div className="flex items-end gap-3">
-          <p className="text-3xl font-black text-slate-900 tracking-tight">{value}</p>
+          <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight transition-colors duration-200">{value}</p>
           {trend && (
             <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500 mb-1.5 uppercase tracking-wider">
               <TrendingUp size={12} />
@@ -143,22 +143,22 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
       <div className="space-y-3">
         <div className="flex justify-between items-end">
           <div className="flex items-center gap-2">
-            {Icon && <Icon size={14} className="text-slate-400" />}
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">{label}</span>
+            {Icon && <Icon size={14} className="text-slate-400 dark:text-slate-500" />}
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-sm font-black text-slate-900">{value}</span>
-            <span className="text-[10px] font-bold text-slate-400">/ {total}</span>
+            <span className="text-sm font-black text-slate-900 dark:text-white">{value}</span>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">/ {total}</span>
           </div>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
+        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 relative overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
             className={`h-full rounded-full ${color} shadow-sm relative`}
           >
-            <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            <div className="absolute inset-0 bg-white/20 dark:bg-black/10 animate-pulse" />
           </motion.div>
         </div>
       </div>
@@ -168,25 +168,25 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
   return (
     <div className="space-y-8 pb-12">
       {/* Header Matrix */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
         <div className="flex items-center gap-5">
-          <div className="size-14 bg-blue-50 rounded-[20px] flex items-center justify-center text-[#345E85] shadow-inner">
+          <div className="size-14 bg-blue-50 dark:bg-blue-950/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 transition-colors duration-200">
             <BarChart3 size={28} />
           </div>
           <div>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#345E85] mb-1">Fleet Overview</h2>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Fleet Capabilities</h1>
+            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400 mb-1 transition-colors duration-200">Fleet Overview</h2>
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight transition-colors duration-200">Fleet Capabilities</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col">
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Status</span>
-            <span className="text-xs font-black text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
-              <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col transition-colors duration-200">
+            <span className="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none mb-1 transition-colors duration-200">Status</span>
+            <span className="text-xs font-black text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider transition-colors duration-200">
+              <div className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
               Live
             </span>
           </div>
-          <button className="h-12 px-6 bg-[#1A1C1E] text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all flex items-center gap-2">
+          <button className="h-12 px-6 bg-gray-900 dark:bg-gray-800 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2">
             <Cpu size={14} />
             Refresh Data
           </button>
@@ -229,16 +229,16 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 col-span-2"
+          className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-8 col-span-2 transition-colors duration-200"
         >
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="size-10 bg-indigo-50 rounded-[14px] flex items-center justify-center text-indigo-600 shadow-inner">
+              <div className="size-10 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 transition-colors duration-200">
                 <Layers size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Cargo Capabilities</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Distribution of cargo types</p>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight transition-colors duration-200">Cargo Capabilities</h3>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-0.5 transition-colors duration-200">Distribution of cargo types</p>
               </div>
             </div>
           </div>
@@ -257,7 +257,7 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-[#1A1C1E] rounded-[40px] shadow-2xl p-8 text-white relative overflow-hidden"
+          className="bg-gray-900 dark:bg-black rounded-lg p-8 text-white border border-gray-800 dark:border-gray-900 relative overflow-hidden transition-colors duration-200"
         >
           <div className="absolute top-0 right-0 p-16 opacity-[0.05] grayscale -mr-8 -mt-8">
             <ShieldCheck size={140} />
@@ -287,50 +287,50 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
       {/* Equipment & Thermal Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Loading Equipment */}
-        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-[40px] border border-slate-100 dark:border-gray-800 shadow-sm p-8 transition-colors duration-200">
           <div className="flex items-center gap-4 mb-8">
-            <div className="size-10 bg-slate-50 rounded-[14px] flex items-center justify-center text-slate-600 shadow-inner">
+            <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-[14px] flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-inner">
               <Wrench size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Loading Equipment</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Onboard Tools & Hardware</p>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Loading Equipment</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-0.5">Onboard Tools & Hardware</p>
             </div>
           </div>
 
           <div className="space-y-6">
-            <ProgressBar label="Forklift Available" value={stats.equipmentCoverage.forklift} total={stats.totalTrucks} color="bg-slate-700" />
-            <ProgressBar label="Crane Available" value={stats.equipmentCoverage.crane} total={stats.totalTrucks} color="bg-slate-700" />
-            <ProgressBar label="Tail Lift Available" value={stats.equipmentCoverage.tailLift} total={stats.totalTrucks} color="bg-slate-700" />
+            <ProgressBar label="Forklift Available" value={stats.equipmentCoverage.forklift} total={stats.totalTrucks} color="bg-slate-700 dark:bg-slate-600" />
+            <ProgressBar label="Crane Available" value={stats.equipmentCoverage.crane} total={stats.totalTrucks} color="bg-slate-700 dark:bg-slate-600" />
+            <ProgressBar label="Tail Lift Available" value={stats.equipmentCoverage.tailLift} total={stats.totalTrucks} color="bg-slate-700 dark:bg-slate-600" />
           </div>
         </div>
 
         {/* Thermal Layers */}
-        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-[40px] border border-slate-100 dark:border-gray-800 shadow-sm p-8 transition-colors duration-200">
           <div className="flex items-center gap-4 mb-8">
-            <div className="size-10 bg-cyan-50 rounded-[14px] flex items-center justify-center text-cyan-600 shadow-inner">
+            <div className="size-10 bg-cyan-50 dark:bg-cyan-950/20 rounded-[14px] flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-inner">
               <Thermometer size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Temperature Zones</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Cold Chain Capabilities</p>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Temperature Zones</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-0.5">Cold Chain Capabilities</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-50/50 p-4 rounded-[24px] text-center border border-slate-50 group hover:bg-blue-600 hover:text-white transition-all cursor-default">
+            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
               <div className="text-2xl font-black mb-1">{stats.temperatureRanges.frozen}</div>
               <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Frozen Zone</div>
             </div>
-            <div className="bg-slate-50/50 p-4 rounded-[24px] text-center border border-slate-50 group hover:bg-cyan-500 hover:text-white transition-all cursor-default">
+            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-cyan-500 dark:hover:bg-cyan-500 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
               <div className="text-2xl font-black mb-1">{stats.temperatureRanges.chilled}</div>
               <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Chilled Zone</div>
             </div>
-            <div className="bg-slate-50/50 p-4 rounded-[24px] text-center border border-slate-50 group hover:bg-emerald-500 hover:text-white transition-all cursor-default">
+            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-emerald-500 dark:hover:bg-emerald-500 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
               <div className="text-2xl font-black mb-1">{stats.temperatureRanges.ambient}</div>
               <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Ambient Zone</div>
             </div>
-            <div className="bg-slate-50/50 p-4 rounded-[24px] text-center border border-slate-50 group hover:bg-rose-500 hover:text-white transition-all cursor-default">
+            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-rose-500 dark:hover:bg-rose-500 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
               <div className="text-2xl font-black mb-1">{stats.temperatureRanges.heated}</div>
               <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Heated Zone</div>
             </div>

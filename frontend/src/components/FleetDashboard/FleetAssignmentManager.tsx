@@ -136,12 +136,12 @@ const FleetAssignmentManager = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Fleet Assignment Manager</h2>
-          <p className="text-slate-600">Connect drivers, trucks, and routes</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-200">Fleet Assignment Manager</h2>
+          <p className="text-gray-600 dark:text-gray-400 transition-colors duration-200">Connect drivers, trucks, and routes</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+          className="flex items-center gap-2 bg-blue-600 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors duration-200"
         >
           <Plus className="w-4 h-4" />
           Create Assignment
@@ -149,7 +149,7 @@ const FleetAssignmentManager = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200">
+      <div className="border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'assignments', label: 'Active Assignments', icon: Link },
@@ -162,10 +162,10 @@ const FleetAssignmentManager = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -181,19 +181,19 @@ const FleetAssignmentManager = () => {
           {/* Filters */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search assignments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full"
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent w-full transition-colors duration-200"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors duration-200"
             >
               <option value="ALL">All Status</option>
               <option value="ACTIVE">Active</option>
@@ -205,12 +205,12 @@ const FleetAssignmentManager = () => {
           {/* Assignments Grid */}
           {filteredAssignments.length === 0 ? (
             <div className="text-center py-12">
-              <Link className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No Assignments Found</h3>
-              <p className="text-slate-600 mb-4">Create your first assignment to connect drivers, trucks, and routes.</p>
+              <Link className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4 transition-colors duration-200" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2 transition-colors duration-200">No Assignments Found</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 transition-colors duration-200">Create your first assignment to connect drivers, trucks, and routes.</p>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                className="bg-blue-600 dark:bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors duration-200"
               >
                 Create Assignment
               </button>
@@ -274,16 +274,16 @@ const FleetAssignmentManager = () => {
 // Assignment Card Component
 const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
       <div className="flex items-center justify-between mb-4">
         <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(assignment.status)}`}>
           {assignment.status}
         </span>
         <div className="flex items-center gap-2">
-          <button className="p-1 text-slate-400 hover:text-slate-600">
+          <button className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
             <Edit className="w-4 h-4" />
           </button>
-          <button className="p-1 text-slate-400 hover:text-red-600">
+          <button className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200">
             <Unlink className="w-4 h-4" />
           </button>
         </div>
@@ -295,10 +295,10 @@ const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
           <User className="w-4 h-4 text-blue-600" />
         </div>
         <div>
-          <p className="font-medium text-slate-900">
+          <p className="font-medium text-gray-900 dark:text-white transition-colors duration-200">
             {assignment.driver.firstName} {assignment.driver.lastName}
           </p>
-          <p className="text-sm text-slate-600">License: {assignment.driver.licenseNumber}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">License: {assignment.driver.licenseNumber}</p>
         </div>
       </div>
 
@@ -308,8 +308,8 @@ const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
           <Truck className="w-4 h-4 text-green-600" />
         </div>
         <div>
-          <p className="font-medium text-slate-900">{assignment.truck.plateNumber}</p>
-          <p className="text-sm text-slate-600">{assignment.truck.make} {assignment.truck.model}</p>
+          <p className="font-medium text-gray-900 dark:text-white transition-colors duration-200">{assignment.truck.plateNumber}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{assignment.truck.make} {assignment.truck.model}</p>
         </div>
       </div>
 
@@ -319,14 +319,14 @@ const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
           <Route className="w-4 h-4 text-purple-600" />
         </div>
         <div>
-          <p className="font-medium text-slate-900">{assignment.route.name}</p>
-          <p className="text-sm text-slate-600">
+          <p className="font-medium text-gray-900 dark:text-white transition-colors duration-200">{assignment.route.name}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
             {assignment.route.origin} → {assignment.route.destination}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-slate-600">
+      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
         <span>Assigned: {new Date(assignment.assignedAt).toLocaleDateString()}</span>
         <span>{assignment.route.distance} km</span>
       </div>
@@ -346,23 +346,23 @@ const getStatusColor = (status: string) => {
 // Driver Card Component
 const DriverCard = ({ driver }: { driver: any }) => {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-          <User className="w-5 h-5 text-blue-600" />
+        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-950/20 rounded-full flex items-center justify-center">
+          <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          <h3 className="font-medium text-slate-900">{driver.firstName} {driver.lastName}</h3>
-          <p className="text-sm text-slate-600">License: {driver.licenseNumber}</p>
+          <h3 className="font-medium text-gray-900 dark:text-white transition-colors duration-200">{driver.firstName} {driver.lastName}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">License: {driver.licenseNumber}</p>
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          driver.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'
+        <span className={`px-2 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${
+          driver.status === 'ACTIVE' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400' : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
         }`}>
           {driver.status}
         </span>
-        <span className="text-sm text-slate-600">Experience: {driver.experience || 0} years</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">Experience: {driver.experience || 0} years</span>
       </div>
     </div>
   );
@@ -371,23 +371,23 @@ const DriverCard = ({ driver }: { driver: any }) => {
 // Truck Card Component
 const TruckCard = ({ truck }: { truck: any }) => {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-          <Truck className="w-5 h-5 text-green-600" />
+        <div className="w-10 h-10 bg-green-100 dark:bg-green-950/20 rounded-full flex items-center justify-center">
+          <Truck className="w-5 h-5 text-green-600 dark:text-green-400" />
         </div>
         <div>
-          <h3 className="font-medium text-slate-900">{truck.plateNumber}</h3>
-          <p className="text-sm text-slate-600">{truck.make} {truck.model}</p>
+          <h3 className="font-medium text-gray-900 dark:text-white transition-colors duration-200">{truck.plateNumber}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{truck.make} {truck.model}</p>
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          truck.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+        <span className={`px-2 py-1 rounded-full text-xs font-medium transition-colors duration-200 ${
+          truck.status === 'AVAILABLE' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400'
         }`}>
           {truck.status}
         </span>
-        <span className="text-sm text-slate-600">{truck.capacityWeight}t</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{truck.capacityWeight}t</span>
       </div>
     </div>
   );
@@ -396,19 +396,19 @@ const TruckCard = ({ truck }: { truck: any }) => {
 // Route Card Component
 const RouteCard = ({ route }: { route: any }) => {
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-          <Route className="w-5 h-5 text-purple-600" />
+        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-950/20 rounded-full flex items-center justify-center">
+          <Route className="w-5 h-5 text-purple-600 dark:text-purple-400" />
         </div>
         <div>
-          <h3 className="font-medium text-slate-900">{route.name}</h3>
-          <p className="text-sm text-slate-600">{route.origin} → {route.destination}</p>
+          <h3 className="font-medium text-gray-900 dark:text-white transition-colors duration-200">{route.name}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{route.origin} → {route.destination}</p>
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">{route.distance} km</span>
-        <span className="text-sm text-slate-600">{route.estimatedTime}h</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{route.distance} km</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{route.estimatedTime}h</span>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
-import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight, Brain, Shield, AlertTriangle, TrendingUp, BarChart3, Activity, Clock } from 'lucide-react';
+import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight, Brain, AlertTriangle, BarChart3, Activity } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 
@@ -70,30 +70,30 @@ const FleetAnalytics: React.FC = () => {
                 </div>
             </div>
 
-            <div className="p-8 bg-white border border-slate-100 rounded-[3rem] flex flex-col justify-between shadow-sm">
+            <div className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] flex flex-col justify-between shadow-sm">
                 <div>
-                   <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-wider mb-2">Priority Alerts</h3>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Immediate Attention Required</p>
+                   <h3 className="text-sm font-black text-[#0f172a] dark:text-white uppercase tracking-wider mb-2">Priority Alerts</h3>
+                   <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">Immediate Attention Required</p>
                    
                    <div className="space-y-4">
                       {logs.slice(0, 3).map((log: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                            <div className={cn(
                              "size-8 rounded-xl flex items-center justify-center",
-                             log.status === 'FAULT_REPORT' ? "bg-rose-50 text-rose-500" : "bg-blue-50 text-blue-500"
+                             log.status === 'FAULT_REPORT' ? "bg-rose-50 dark:bg-rose-950/20 text-rose-500 dark:text-rose-400" : "bg-blue-50 dark:bg-blue-950/20 text-blue-500 dark:text-blue-400"
                            )}>
                               <AlertTriangle size={14} />
                            </div>
                            <div className="flex-1">
-                              <p className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{log.truck?.plateNumber || 'UNIT-402'}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase truncate">{log.taskName}</p>
+                              <p className="text-[10px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{log.truck?.plateNumber || 'UNIT-402'}</p>
+                              <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase truncate">{log.taskName}</p>
                            </div>
-                           <ArrowRight size={14} className="text-slate-300" />
+                           <ArrowRight size={14} className="text-slate-300 dark:text-slate-700" />
                         </div>
                       ))}
                    </div>
                 </div>
-                <button className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-[#0f172a] hover:text-white transition-all">
+                <button className="w-full h-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-[#0f172a] dark:hover:bg-slate-700 hover:text-white transition-all">
                    Deploy Full Diagnostics
                 </button>
             </div>
@@ -107,18 +107,18 @@ const FleetAnalytics: React.FC = () => {
               { label: 'Engine Efficiency', val: '91%', icon: Activity, status: 'Optimal' },
               { label: 'Tire Wear (Avg)', val: '62%', icon: BarChart3, status: 'Scheduled' }
            ].map((stat, i) => (
-              <div key={i} className="p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300 group">
+              <div key={i} className="p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-black/50 transition-all duration-300 group">
                  <div className="flex items-center justify-between mb-4">
-                    <div className="size-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                    <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 group-hover:text-white transition-all">
                        <stat.icon size={18} />
                     </div>
                     <span className={cn(
                       "text-[9px] font-black uppercase tracking-widest",
-                      stat.status === 'Critical' ? "text-rose-500" : "text-emerald-500"
+                      stat.status === 'Critical' ? "text-rose-500 dark:text-rose-400" : "text-emerald-500 dark:text-emerald-400"
                     )}>{stat.status}</span>
                  </div>
-                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</h4>
-                 <p className="text-2xl font-black text-[#0f172a] tracking-tight">{stat.val}</p>
+                 <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{stat.label}</h4>
+                 <p className="text-2xl font-black text-[#0f172a] dark:text-white tracking-tight">{stat.val}</p>
               </div>
            ))}
         </div>
@@ -147,7 +147,7 @@ const FleetAnalytics: React.FC = () => {
   const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
     return (
       <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50">
           <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
             <circle
               cx="80"
@@ -162,21 +162,21 @@ const FleetAnalytics: React.FC = () => {
             />
           </svg>
 
-          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
             <Icon size={18} />
           </div>
 
           <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+            <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
               {value}
             </span>
           </div>
 
-          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 dark:opacity-30 group-hover:rotate-90 transition-transform duration-1000" />
         </div>
 
         <div className="mt-4 text-center px-2">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors duration-300 line-clamp-1">
+          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
             {title}
           </p>
         </div>
@@ -185,17 +185,17 @@ const FleetAnalytics: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-[#f8fafc] text-[#0f172a] font-sans">
+    <div className="flex flex-col min-h-screen w-full bg-[#f8fafc] dark:bg-slate-950 text-[#0f172a] dark:text-white font-sans transition-colors duration-200">
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         <div>
           {/* Page Heading */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div className="flex flex-col gap-1">
-              <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Analytics</h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Overview</p>
+              <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Analytics</h1>
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Overview</p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center justify-center rounded-xl h-10 px-6 bg-white border border-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm">
+              <button className="flex items-center justify-center rounded-xl h-10 px-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm">
                 <span>Export Report</span>
               </button>
             </div>
@@ -203,12 +203,12 @@ const FleetAnalytics: React.FC = () => {
 
           {/* Tabs */}
           <div className="mb-8">
-            <div className="flex border-b border-slate-100 px-2 gap-8 overflow-x-auto no-scrollbar">
+            <div className="flex border-b border-slate-100 dark:border-slate-800 px-2 gap-8 overflow-x-auto no-scrollbar">
               {['overview', 'fuel', 'tco', 'maintenance'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex flex-col items-center justify-center border-b-[3px] pb-3 pt-4 px-2 transition-all whitespace-nowrap ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                  className={`flex flex-col items-center justify-center border-b-[3px] pb-3 pt-4 px-2 transition-all whitespace-nowrap ${activeTab === tab ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/50'}`}
                 >
                   <p className="text-[10px] font-black uppercase tracking-widest">{tab === 'tco' ? 'Costs' : `${tab.charAt(0).toUpperCase() + tab.slice(1)} ${tab === 'fuel' ? 'Stats' : tab === 'maintenance' ? 'Logs' : ''}`}</p>
                 </button>
@@ -225,8 +225,8 @@ const FleetAnalytics: React.FC = () => {
             ) : tcoData ? (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="mb-6 flex flex-col gap-1">
-                  <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Costs</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expense summary</p>
+                  <h2 className="text-xl font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Costs</h2>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Expense summary</p>
                 </div>
                 <TCOCharts data={tcoData} />
               </div>
@@ -237,7 +237,7 @@ const FleetAnalytics: React.FC = () => {
             <PredictiveMaintenanceContainer />
           ) : (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                 <CircularStatsCard
                   title="Available"
                   value="94.2%"
@@ -271,15 +271,15 @@ const FleetAnalytics: React.FC = () => {
               {/* Main Content Row: Charts & Calendar */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Fuel & TCO Trend */}
-                <div className="lg:col-span-2 flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
+                <div className="lg:col-span-2 flex flex-col gap-4 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Fuel & Costs</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operational breakdown</p>
+                      <h3 className="text-lg font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Fuel & Costs</h3>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Operational breakdown</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black text-[#0f172a] tracking-tight">$124,500</p>
-                      <p className="text-emerald-500 text-[9px] font-black uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">On Budget</p>
+                      <p className="text-2xl font-black text-[#0f172a] dark:text-white tracking-tight">$124,500</p>
+                      <p className="text-emerald-500 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full inline-block mt-1">On Budget</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-8 py-4">
@@ -305,45 +305,45 @@ const FleetAnalytics: React.FC = () => {
                 </div>
 
                 {/* Maintenance Calendar Widget */}
-                <div className="flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Schedule</h3>
-                    <button className="text-blue-600 text-[10px] font-black uppercase tracking-widest hover:text-blue-700">View All</button>
+                    <h3 className="text-lg font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Schedule</h3>
+                    <button className="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-blue-700 dark:hover:text-blue-300">View All</button>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-black text-slate-300 uppercase mb-2">
                     <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
                   </div>
                   <div className="grid grid-cols-7 gap-1.5">
                     {/* Simplified calendar grid */}
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 text-slate-300">24</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 text-slate-300">25</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-amber-50 border border-amber-100 text-amber-600">26</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 text-slate-300">27</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-blue-50 border border-blue-100 text-blue-600">28</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 text-slate-300">29</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 text-slate-300">30</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-black text-[#0f172a] bg-slate-100">1</div>
-                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-emerald-50 border border-emerald-100 text-emerald-600">2</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600">24</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600">25</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">26</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600">27</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400">28</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600">29</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600">30</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-black text-[#0f172a] dark:text-white bg-slate-100 dark:bg-slate-700">1</div>
+                    <div className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400">2</div>
                     {[3, 4, 5, 6, 7].map(d => (
-                      <div key={d} className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-400 hover:bg-slate-50 transition-colors">{d}</div>
+                      <div key={d} className="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">{d}</div>
                     ))}
                   </div>
                   <div className="mt-4 flex flex-col gap-3">
-                    <div className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors border border-transparent hover:border-slate-100 group">
+                    <div className="flex items-center gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl cursor-pointer transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800 group">
                       <div className="w-1 h-8 bg-amber-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-xs font-black text-[#0f172a] uppercase tracking-wide">F-150 Service</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unit 402 • Oct 26</p>
+                        <p className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-wide">F-150 Service</p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Unit 402 • Oct 26</p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors" />
+                      <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                     </div>
-                    <div className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors border border-transparent hover:border-slate-100 group">
+                    <div className="flex items-center gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl cursor-pointer transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800 group">
                       <div className="w-1 h-8 bg-blue-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-xs font-black text-[#0f172a] uppercase tracking-wide">Tire Rotation</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unit 911 • Oct 28</p>
+                        <p className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-wide">Tire Rotation</p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Unit 911 • Oct 28</p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors" />
+                      <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -352,62 +352,62 @@ const FleetAnalytics: React.FC = () => {
               {/* Bottom Row: Repairs Feed & Donut */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
                 {/* Breakdown & Repair Feed */}
-                <div className="flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Issues</h3>
-                    <button className="text-slate-400 hover:text-blue-600 flex items-center gap-2 transition-colors">
+                    <h3 className="text-lg font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Issues</h3>
+                    <button className="text-slate-400 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2 transition-colors">
                       <Filter className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                      <thead className="border-b border-slate-50">
+                      <thead className="border-b border-slate-50 dark:border-slate-800">
                         <tr>
-                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest">Vehicle</th>
-                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest">Description</th>
-                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">Status</th>
-                          <th className="pb-4 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">Cost</th>
+                          <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">Vehicle</th>
+                          <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">Description</th>
+                          <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-center">Status</th>
+                          <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-right">Cost</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        <tr className="group hover:bg-slate-50/50 transition-colors">
+                      <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                        <tr className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="py-4">
                             <div className="flex flex-col">
-                              <span className="text-xs font-black text-[#0f172a] uppercase tracking-tight">Truck #882</span>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mack Anthem</span>
+                              <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Truck #882</span>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mack Anthem</span>
                             </div>
                           </td>
-                          <td className="py-4 text-xs font-bold text-slate-500 uppercase tracking-wide">Cooling Fault</td>
+                          <td className="py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Cooling Fault</td>
                           <td className="py-4 text-center">
-                            <span className="px-2 py-1 rounded-lg bg-red-50 text-red-600 text-[9px] font-black uppercase tracking-widest border border-red-100">Critical</span>
+                            <span className="px-2 py-1 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-[9px] font-black uppercase tracking-widest border border-red-100 dark:border-red-900/30">Critical</span>
                           </td>
-                          <td className="py-4 text-right text-xs font-black text-[#0f172a]">$2,450</td>
+                          <td className="py-4 text-right text-xs font-black text-[#0f172a] dark:text-white">$2,450</td>
                         </tr>
-                        <tr className="group hover:bg-slate-50/50 transition-colors">
+                        <tr className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="py-4">
                             <div className="flex flex-col">
-                              <span className="text-xs font-black text-[#0f172a] uppercase tracking-tight">Van #104</span>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mercedes</span>
+                              <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Van #104</span>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mercedes</span>
                             </div>
                           </td>
-                          <td className="py-4 text-xs font-bold text-slate-500 uppercase tracking-wide">Brake Pads</td>
+                          <td className="py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Brake Pads</td>
                           <td className="py-4 text-center">
-                            <span className="px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest border border-blue-100">Service</span>
+                            <span className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-widest border border-blue-100 dark:border-blue-900/30">Service</span>
                           </td>
-                          <td className="py-4 text-right text-xs font-black text-[#0f172a]">$840</td>
+                          <td className="py-4 text-right text-xs font-black text-[#0f172a] dark:text-white">$840</td>
                         </tr>
-                        <tr className="group hover:bg-slate-50/50 transition-colors">
+                        <tr className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="py-4">
                             <div className="flex flex-col">
-                              <span className="text-xs font-black text-[#0f172a] uppercase tracking-tight">Unit #221</span>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tesla M3</span>
+                              <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Unit #221</span>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tesla M3</span>
                             </div>
                           </td>
-                          <td className="py-4 text-xs font-bold text-slate-500 uppercase tracking-wide">Sys Update</td>
+                          <td className="py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Sys Update</td>
                           <td className="py-4 text-center">
-                            <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100">Resolved</span>
+                            <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-900/30">Resolved</span>
                           </td>
-                          <td className="py-4 text-right text-xs font-black text-[#0f172a]">$0</td>
+                          <td className="py-4 text-right text-xs font-black text-[#0f172a] dark:text-white">$0</td>
                         </tr>
                       </tbody>
                     </table>
@@ -415,10 +415,10 @@ const FleetAnalytics: React.FC = () => {
                 </div>
 
                 {/* Cost Distribution by Vehicle Type */}
-                <div className="flex flex-col gap-4 rounded-[2rem] bg-white border border-slate-100 p-8 shadow-sm">
+                <div className="flex flex-col gap-4 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                   <div className="flex flex-col gap-1 mb-2">
-                    <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Spending</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category analysis</p>
+                    <h3 className="text-lg font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Spending</h3>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Category analysis</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center flex-1">
                     <div className="flex flex-col gap-4">
@@ -431,8 +431,8 @@ const FleetAnalytics: React.FC = () => {
                         <div key={i} className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
                           <div className="flex-1 flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{item.label}</span>
-                            <span className="text-xs font-black text-[#0f172a]">{item.pct}</span>
+                            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">{item.label}</span>
+                            <span className="text-xs font-black text-[#0f172a] dark:text-white">{item.pct}</span>
                           </div>
                         </div>
                       ))}
@@ -447,8 +447,8 @@ const FleetAnalytics: React.FC = () => {
                           <circle cx="50" cy="50" fill="transparent" r="40" stroke="#f59e0b" strokeDasharray="25.13 251.32" strokeDashoffset="-289.02" strokeWidth="12"></circle>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center flex-col">
-                          <span className="text-xl font-black text-[#0f172a] tracking-tight">$124k</span>
-                          <span className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Total</span>
+                          <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight">$124k</span>
+                          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest">Total</span>
                         </div>
                       </div>
                     </div>

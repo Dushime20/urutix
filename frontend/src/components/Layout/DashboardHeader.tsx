@@ -356,13 +356,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, []);
 
   return (
-    <div data-header="dashboard-header" className="bg-white/95 backdrop-blur-xl border-b border-gray-50 text-gray-900 px-3 py-1.5 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
+    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-1.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 border border-slate-100"
+              className="lg:hidden p-1.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -454,7 +454,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="h-10 w-10 rounded-full bg-[#0f172a] text-white flex items-center justify-center hover:bg-slate-900 transition-all shadow-lg shadow-slate-200/50 relative overflow-hidden group border-2 border-white"
+                className="h-10 w-10 rounded-full bg-[#0f172a] dark:bg-slate-800 text-white flex items-center justify-center hover:bg-slate-900 dark:hover:bg-slate-700 transition-all shadow-lg shadow-slate-200/50 dark:shadow-none relative overflow-hidden group border-2 border-white dark:border-slate-700"
               >
                 <User size={20} className="transition-transform group-hover:scale-110" />
               </button>
@@ -476,9 +476,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                   '/dashboard/settings';
                         navigate(profilePath);
                       }}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
                     >
-                      <User size={14} className="text-slate-400" />
+                      <User size={14} className="text-slate-400 dark:text-slate-500" />
                       <TranslatedText text="Profile Settings" />
                     </button>
 
@@ -489,9 +489,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             setShowUserMenu(false);
                             navigate('/dashboard/fleet/settings');
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
                         >
-                          <Settings size={14} className="text-slate-400" />
+                          <Settings size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Fleet Settings" />
                         </button>
                         <button
@@ -499,9 +499,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             setShowUserMenu(false);
                             navigate('/dashboard/fleet/settings');
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
                         >
-                          <Users size={14} className="text-slate-400" />
+                          <Users size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Team Management" />
                         </button>
                         <button
@@ -509,16 +509,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             setShowUserMenu(false);
                             navigate('/dashboard/fleet/support');
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg mb-1"
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg mb-1"
                         >
-                          <HelpCircle size={14} className="text-slate-400" />
+                          <HelpCircle size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Support & Help" />
                         </button>
                       </>
                     )}
                   </div>
-                  <div className="border-t border-slate-100 my-1 pt-1">
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-3">
+                  <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors flex items-center gap-3">
                       <LogOut size={14} /> <TranslatedText text="Sign Out" />
                     </button>
                   </div>
@@ -649,10 +649,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-2">
                     <ThemeToggle />
-                    <span className="text-xs font-medium text-slate-500"><TranslatedText text="Theme" /></span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400"><TranslatedText text="Theme" /></span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500"><TranslatedText text="Language" /></span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400"><TranslatedText text="Language" /></span>
                     <LanguageSwitcher />
                   </div>
                 </div>
