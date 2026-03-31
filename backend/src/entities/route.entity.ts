@@ -71,6 +71,9 @@ export class Route {
   @Column({ nullable: true })
   description?: string;
 
+  @Column({ type: 'uuid', nullable: true, name: 'created_by' })
+  createdBy?: string;
+
   @Column({ default: true })
   isActive: boolean;
 

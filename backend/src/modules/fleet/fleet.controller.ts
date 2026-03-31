@@ -250,13 +250,12 @@ export class FleetController {
       const tenantId = req.user.tenantId;
       console.log(`🔍 Controller - Calling findAllTrucks with tenantId: "${tenantId}"`);
 
-      // Determine if we should filter by user ID (ownership)
-      // Admins should see ALL trucks in the tenant
+      // Admins and fleet staff see ALL trucks in the tenant.
+      // TRUCK_OWNER only sees their own trucks.
       const isStaffOrAdmin = [
         UserRole.SUPER_ADMIN,
         UserRole.ADMIN,
         UserRole.TENANT_ADMIN,
-        UserRole.TRUCK_OWNER,
         UserRole.FLEET_MANAGER,
         UserRole.FLEET_DISPATCHER,
         UserRole.FLEET_ACCOUNTANT,
@@ -2767,7 +2766,18 @@ export class FleetController {
   @ApiResponse({ status: 200, description: 'Routes retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAllRoutes(@Request() req) {
-    const routes = await this.fleetService.findAllRoutes(req.user.tenantId);
+    const isAdmin = [
+      UserRole.SUPER_ADMIN,
+      UserRole.ADMIN,
+      UserRole.TENANT_ADMIN,
+      UserRole.FLEET_MANAGER,
+      UserRole.FLEET_DISPATCHER,
+    ].includes(req.user.role);
+
+    const routes = await this.fleetService.findAllRoutes(
+      req.user.tenantId,
+      isAdmin ? undefined : req.user.userId,
+    );
     return {
       message: 'Routes retrieved successfully',
       routes,

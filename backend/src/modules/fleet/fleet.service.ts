@@ -1096,13 +1096,12 @@ export class FleetService {
     console.log('  🔍 Query builder initialized with driverRepository');
     console.log('  🔍 Repository target:', this.driverRepository.target);
 
-    // Only filter by employerId for non-admin roles (truck owners should only see their drivers)
-    // Tenant admins and admins should see all drivers in their tenant
+    // Admins and fleet staff see ALL drivers in the tenant.
+    // TRUCK_OWNER only sees drivers under them (employerId = userId).
     const normalizedRole = userRole ? String(userRole).toUpperCase().trim() : '';
     const isAdminRole = normalizedRole === 'TENANT_ADMIN' || 
                         normalizedRole === 'ADMIN' || 
                         normalizedRole === 'SUPER_ADMIN' ||
-                        normalizedRole === 'TRUCK_OWNER' ||
                         normalizedRole === 'FLEET_MANAGER' ||
                         normalizedRole === 'FLEET_DISPATCHER' ||
                         normalizedRole === 'FLEET_ACCOUNTANT' ||
@@ -2677,6 +2676,7 @@ export class FleetService {
         ? routeData.assignedDrivers
         : [],
       tenantId,
+      createdBy: userId,
     };
 
     console.log('🔧 FleetService: Normalized route payload:', routePayload);
@@ -2726,6 +2726,11 @@ export class FleetService {
     const query = this.routeRepository
       .createQueryBuilder('route')
       .where('route.tenantId = :tenantId', { tenantId });
+
+    // Scope to owner — truck owners only see routes they created
+    if (userId) {
+      query.andWhere('route.createdBy = :userId', { userId });
+    }
 
     // Apply filters
     if (filters?.search) {

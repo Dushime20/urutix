@@ -421,11 +421,15 @@ export class BulkEmailService {
 
   async getPartnerEmailLogs(tenantId: string): Promise<BulkEmailLog[]> {
     try {
-      return await this.bulkEmailLogRepository.find({
-        where: { tenantId },
-        order: { createdAt: 'DESC' },
-        take: 100,
-      });
+      this.logger.log(`Fetching email logs for tenantId: ${tenantId}`);
+      const logs = await this.bulkEmailLogRepository
+        .createQueryBuilder('log')
+        .where('log.tenantId = :tenantId', { tenantId })
+        .orderBy('log.createdAt', 'DESC')
+        .take(100)
+        .getMany();
+      this.logger.log(`Found ${logs.length} logs for tenant ${tenantId}`);
+      return logs;
     } catch (error) {
       this.logger.error(`Error fetching partner email logs: ${error.message}`);
       return [];

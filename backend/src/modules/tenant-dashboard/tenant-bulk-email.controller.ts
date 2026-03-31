@@ -18,6 +18,7 @@ import { BulkEmailService } from '../../services/bulk-email.service';
 import { SmsService } from '../notifications/services/sms.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { User } from '../../entities/user.entity';
+import { BulkEmailLog } from '../../entities/bulk-email-log.entity';
 import {
   NotificationType,
   NotificationPriority,
@@ -36,6 +37,7 @@ export class TenantBulkEmailController {
     private readonly smsService: SmsService,
     private readonly notificationsService: NotificationsService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(BulkEmailLog) private readonly bulkEmailLogRepository: Repository<BulkEmailLog>,
   ) {}
 
   /** ── GET available partners for communication ── */
@@ -112,12 +114,36 @@ export class TenantBulkEmailController {
     }
   }
 
-  /** ── GET logs ── */
+  /** ── GET logs (bulk_email_logs + notification broadcast history) ── */
   @Get('logs')
   async getPartnerEmailLogs(@Request() req) {
     try {
-      const logs = await this.bulkEmailService.getPartnerEmailLogs(req.user.tenantId);
-      return { success: true, data: logs };
+      this.logger.log(`[logs] tenantId from JWT: ${req.user.tenantId} | userId: ${req.user.userId}`);
+      const [emailLogs, broadcastHistory] = await Promise.all([
+        this.bulkEmailService.getPartnerEmailLogs(req.user.tenantId),
+        this.notificationsService.getBroadcastHistory(req.user.tenantId),
+      ]);
+
+      // Merge and sort by date descending
+      const emailMapped = emailLogs.map(l => ({
+        id: l.id,
+        subject: l.subject,
+        message: l.body,
+        channels: l.metadata?.channels || ['email'],
+        sentBy: l.metadata?.tenantAdminEmail || l.metadata?.sentBy,
+        recipientsCount: l.recipientsCount,
+        sentCount: l.sentCount,
+        failedCount: l.failedCount,
+        status: l.status,
+        createdAt: l.createdAt,
+        metadata: l.metadata,
+      }));
+
+      const merged = [...emailMapped, ...broadcastHistory].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      return { success: true, data: merged };
     } catch (error) {
       throw new HttpException(
         { success: false, message: 'Failed to fetch logs', error: error.message },
@@ -295,7 +321,7 @@ export class TenantBulkEmailController {
         );
         results.in_app = { success: true, sent: users.length };
       } catch (e) {
-        require('fs').appendFileSync('C:\\Users\\HP\\Desktop\\urutix\\in-app-error.log', '\n' + e.stack);
+        this.logger.error(`[in_app] Failed to send bulk notifications: ${e.message}`, e.stack);
         results.in_app = { success: false, error: e.message };
       }
     }
@@ -309,6 +335,38 @@ export class TenantBulkEmailController {
       acc[role]++;
       return acc;
     }, {});
+
+    // ── Write a campaign log entry for all channel types ────────────────
+    try {
+      const anySuccess = Object.values(results).some((r: any) => r?.success);
+      const sentCount = Object.values(results).reduce((sum: number, r: any) => {
+        return sum + (r?.success ? (r.sent ?? r.recipientsCount ?? users.length) : 0);
+      }, 0);
+      const failedCount = Object.values(results).reduce((sum: number, r: any) => {
+        return sum + (!r?.success ? users.length : 0);
+      }, 0);
+
+      const log = this.bulkEmailLogRepository.create({
+        tenantId,
+        createdBy: req.user.userId,
+        subject,
+        body: message,
+        recipientsCount: users.length,
+        sentCount,
+        failedCount,
+        status: anySuccess ? 'sent' : 'failed',
+        metadata: {
+          channels,
+          filters,
+          sentBy: req.user.email,
+          results,
+          recipientSummary,
+        },
+      });
+      await this.bulkEmailLogRepository.save(log);
+    } catch (logErr) {
+      this.logger.error(`Failed to write campaign log: ${logErr.message}`);
+    }
 
     return {
       success: true,

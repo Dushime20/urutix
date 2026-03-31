@@ -29,9 +29,12 @@ interface GroupedPartners {
 interface CampaignLog {
   id: string;
   subject: string;
+  message?: string;
+  channels: string[];
+  sentBy?: string;
   recipientsCount: number;
-  sentCount: number;
-  failedCount: number;
+  sentCount?: number;
+  failedCount?: number;
   status: string;
   createdAt: string;
   metadata?: any;
@@ -135,7 +138,10 @@ const TenantCommunication: React.FC = () => {
     try {
       const res = await api.get('/tenant-dashboard/communicate/logs');
       if (res.data.success) setLogs(res.data.data);
-    } catch { /* silent */ } finally { setLogsLoading(false); }
+      else toast.error(res.data.message || 'Failed to load history');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to load communication history');
+    } finally { setLogsLoading(false); }
   };
 
   const toggleChannel = (ch: Channel) => {
@@ -655,7 +661,13 @@ const TenantCommunication: React.FC = () => {
             </button>
           </div>
 
-          {logs.length === 0 ? (
+          {logsLoading ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : logs.length === 0 ? (
             <div className="py-20 text-center">
               <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4">
                 <Clock className="text-slate-300 dark:text-slate-600" size={32} />
@@ -664,41 +676,44 @@ const TenantCommunication: React.FC = () => {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Start communicating with your partners using the compose tab.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 transition-colors duration-200">
               <table className="w-full">
                 <thead className="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-200">
                   <tr>
                     <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Subject</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Channels</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sent By</th>
                     <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Recipients</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sent</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Failed</th>
                     <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
                     <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300 text-sm max-w-xs truncate">{log.subject}</td>
-                      <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600 dark:text-slate-400">{log.recipientsCount}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">{log.sentCount}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full">{log.failedCount}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                          log.status === 'sent' || log.status === 'sending' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                          : log.status === 'failed' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                          : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                        }`}>{log.status}</span>
-                      </td>
-                      <td className="px-6 py-4 text-right text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {logs.map(log => {
+                    const channels = (log.channels || ['email']).map((c: string) => c.toLowerCase()) as Channel[];
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300 text-sm max-w-[180px] truncate">{log.subject}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {channels.map(ch => <ChannelPill key={ch} ch={ch} />)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 max-w-[140px] truncate">{log.sentBy || '—'}</td>
+                        <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600 dark:text-slate-400">{log.recipientsCount}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                            log.status === 'sent' || log.status === 'sending' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                            : log.status === 'failed' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                          }`}>{log.status}</span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums whitespace-nowrap">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
