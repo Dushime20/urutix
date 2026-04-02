@@ -499,21 +499,21 @@ export const FleetDashboard: React.FC = () => {
 
   return (
     <DetailedErrorBoundary>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="sticky top-0 z-40 bg-white dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-slate-800 transition-colors">
           <div className="max-w-[1600px] mx-auto px-6 py-4">
             <DashboardHeader />
           </div>
         </div>
 
         {/* Intelligence Header Context */}
-        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 relative overflow-hidden transition-colors duration-200">
-          <div className="absolute top-0 right-0 p-20 opacity-[0.02] dark:opacity-[0.01] scale-[2.5] pointer-events-none rotate-12">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200">
+          <div className="absolute top-0 right-0 p-20 opacity-[0.02] dark:opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
             <Layers size={140} className="text-blue-500 dark:text-blue-400" />
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -553,14 +553,14 @@ export const FleetDashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCreateDriver}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg font-semibold text-sm hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 active:scale-95 transition-all"
+                  className="flex items-center gap-2.5 px-6 py-4 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-lg font-semibold text-sm hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 active:scale-95 transition-all shadow-sm"
                 >
                   <User size={18} />
                   <TranslatedText text="Add New Driver" />
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/fleet/fuel')}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 transition-all"
+                  className="flex items-center gap-2.5 px-6 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg font-semibold text-sm hover:bg-gray-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
                 >
                   <Fuel size={18} />
                   <TranslatedText text="Log Fuel" />
@@ -681,8 +681,8 @@ export const FleetDashboard: React.FC = () => {
               {/* Operations Matrix */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Deployment Visualization */}
-                <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[560px] transition-colors duration-200">
-                  <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col h-[560px] transition-colors duration-300 shadow-sm">
+                  <div className="px-8 py-6 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between shrink-0">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <MapIcon size={16} className="text-blue-600 dark:text-blue-400" />
@@ -690,7 +690,7 @@ export const FleetDashboard: React.FC = () => {
                           <TranslatedText text="Live Tracking" />
                         </h3>
                       </div>
-                      <h4 className="text-xl font-bold text-gray-900 dark:text-white">
+                      <h4 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
                         <TranslatedText text="Fleet Map" />
                       </h4>
                     </div>
@@ -708,7 +708,7 @@ export const FleetDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex-1 relative bg-slate-50 z-0">
+                  <div className="flex-1 relative bg-slate-50 dark:bg-slate-950 z-0">
                     <MapContainer
                       center={[-1.2921, 36.8219]}
                       zoom={13}
@@ -764,7 +764,7 @@ export const FleetDashboard: React.FC = () => {
                 {/* Performance Hub */}
                 <div className="flex flex-col gap-8">
                   {/* Elite Personnel Card */}
-                  <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-8 flex flex-col relative overflow-hidden h-[300px] transition-colors duration-300">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-8 flex flex-col relative overflow-hidden h-[300px] transition-colors duration-300 shadow-sm">
                     <div className="absolute top-0 right-0 p-8 opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
                       <Shield size={100} className="text-amber-400" />
                     </div>
@@ -793,7 +793,7 @@ export const FleetDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <button className="mt-auto w-full py-4 bg-gray-50 dark:bg-gray-800 hover:bg-blue-500 hover:text-white text-blue-500 dark:text-blue-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
+                    <button className="mt-auto w-full py-4 bg-gray-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                       View Driver Profile
                     </button>
                   </div>

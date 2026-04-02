@@ -12,6 +12,8 @@ import {
   Globe,
   Shield,
   Mail,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -20,6 +22,7 @@ import { fetchAllUsers, createTenantUser, updateUser, deleteUser } from '../serv
 import { TranslatedText } from '../components/translated-text';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import toast from 'react-hot-toast';
+import { Dialog, DialogContent } from '../components/ui/Dialog';
 
 
 const Settings: React.FC = () => {
@@ -144,6 +147,17 @@ const Settings: React.FC = () => {
       canManageApprovals: false,
     },
   });
+  
+  // Password Change State
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   const handleNotificationChange = (key: string, value: boolean) => {
     setNotifications(prev => ({
@@ -249,7 +263,7 @@ const Settings: React.FC = () => {
       email: receiver.email,
       password: '', // Don't show password
       role: receiver.role,
-      permissions: receiver.permissions,
+      permissions: receiver.permissions || [],
       paymentPermissions: receiver.paymentPermissions || {
         canInitiatePayments: false,
         canApprovePayments: false,
@@ -334,9 +348,35 @@ const Settings: React.FC = () => {
       }
       setShowAddReceiver(false);
       loadReceivers();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authAPI.changePassword(passwordForm);
+      toast.success('Password changed successfully');
+      setShowChangePassword(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
     } catch (err: any) {
-      console.error('Error saving receiver:', err);
-      toast.error(err.response?.data?.message || 'Failed to save team member');
+      console.error('Error changing password:', err);
+      toast.error(err.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -696,7 +736,10 @@ const Settings: React.FC = () => {
                     <Lock size={16} className="text-indigo-600 dark:text-blue-500" />
                     Password
                   </h3>
-                  <button className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10 flex items-center gap-2">
+                   <button 
+                    onClick={() => setShowChangePassword(true)}
+                    className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10 flex items-center gap-2"
+                  >
                     <Edit size={14} />
                     Change Password
                   </button>
@@ -869,13 +912,9 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      {showAddReceiver && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowAddReceiver(false)}
-          />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-scale-in border border-slate-200 dark:border-slate-800">
+      <Dialog open={showAddReceiver} onOpenChange={setShowAddReceiver}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none bg-transparent">
+          <div className="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
               <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">
                 {editingReceiver ? 'Edit Team Member' : 'Add Team Member'}
@@ -1055,8 +1094,113 @@ const Settings: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none bg-transparent">
+          <div className="relative w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
+              <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                Change Password
+              </h3>
+              <button
+                onClick={() => setShowChangePassword(false)}
+                className="p-2 text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+              >
+                <div className="sr-only">Close</div>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3 bg-gray-50 dark:bg-slate-950 rounded-b-2xl">
+              <button
+                onClick={() => setShowChangePassword(false)}
+                className="px-6 py-3 bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-800 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 font-bold text-xs uppercase tracking-widest transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordChange}
+                disabled={loading}
+                className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+              >
+                {loading ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 
