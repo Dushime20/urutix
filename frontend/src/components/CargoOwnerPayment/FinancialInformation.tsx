@@ -67,7 +67,9 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
 
   // Load payment information from profile
   useEffect(() => {
-    const paymentInfoData = profileData?.profile?.preferences?.paymentInfo ||
+    const paymentInfoData =
+      profileData?.data?.user?.profile?.preferences?.paymentInfo ||
+      profileData?.profile?.preferences?.paymentInfo ||
       profileData?.preferences?.paymentInfo ||
       profileData?.data?.profile?.preferences?.paymentInfo;
     if (paymentInfoData) {
@@ -78,7 +80,11 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
   // Save payment information mutation
   const savePaymentInfoMutation = useMutation({
     mutationFn: async (info: PaymentInfo) => {
-      const currentPreferences = profileData?.profile?.preferences || profileData?.preferences || profileData?.data?.profile?.preferences || {};
+      const currentPreferences =
+        profileData?.data?.user?.profile?.preferences ||
+        profileData?.profile?.preferences ||
+        profileData?.preferences ||
+        profileData?.data?.profile?.preferences || {};
       // Update through auth profile endpoint
       const response = await api.patch('/auth/profile', {
         preferences: {

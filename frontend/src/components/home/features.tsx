@@ -73,9 +73,9 @@ export function Features() {
           <h2 className="text-base font-semibold text-primary-600 tracking-wide uppercase mb-2">
             <TranslatedText text="Powerful Capabilities" />
           </h2>
-          <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6">
+          <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-900 mb-6">
             <TranslatedText text="Everything you need to manage" />{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">
+            <span className="text-primary-600">
               <TranslatedText text="global logistics" />
             </span>
           </h3>
@@ -95,7 +95,7 @@ export function Features() {
             <motion.div
               key={feature.title}
               variants={item}
-              className="group p-8 rounded-2xl bg-white border border-slate-100 hover:border-primary-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+              className="group p-8 rounded-2xl bg-white border border-slate-100 hover:border-primary-100 transition-all duration-300 relative overflow-hidden"
             >
               <div className={`h-14 w-14 rounded-xl ${feature.bg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                 <feature.icon className={`h-7 w-7 ${feature.color}`} />
@@ -109,7 +109,7 @@ export function Features() {
                 <TranslatedText text={feature.description} />
               </p>
 
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-gradient-to-r from-primary-500 to-indigo-500 group-hover:w-full transition-all duration-500" />
+              <div className="absolute bottom-0 left-0 h-1 w-0 bg-primary-500 group-hover:w-full transition-all duration-500" />
             </motion.div>
           ))}
         </motion.div>

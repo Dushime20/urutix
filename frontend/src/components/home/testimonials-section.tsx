@@ -32,8 +32,8 @@ export function TestimonialsSection() {
     <section className="py-20 lg:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            <TranslatedText text="Trusted by Industry" /> <span className="text-primary"><TranslatedText text="Leaders" /></span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-900 mb-4">
+            <TranslatedText text="Trusted by Industry" /> <span className="text-primary-600"><TranslatedText text="Leaders" /></span>
           </h2>
         </div>
 
@@ -42,9 +42,9 @@ export function TestimonialsSection() {
             <Card key={index} className="bg-card border-border">
               <CardContent className="pt-6">
                 <Quote className="w-8 h-8 text-primary/40 mb-4" />
-                <p className="text-foreground mb-6 leading-relaxed">"<TranslatedText text={testimonial.quote} />"</p>
+                <p className="text-slate-700 dark:text-slate-700 mb-6 leading-relaxed">"<TranslatedText text={testimonial.quote} />"</p>
                 <div className="border-t border-border pt-4">
-                  <p className="font-semibold text-foreground">{testimonial.author}</p>
+                  <p className="font-semibold text-slate-900 dark:text-slate-900">{testimonial.author}</p>
                   <p className="text-sm text-muted-foreground">
                     <TranslatedText text={testimonial.title} />
                   </p>

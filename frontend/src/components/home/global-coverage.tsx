@@ -15,10 +15,10 @@ export function GlobalCoverage() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-6">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-900 mb-6">
               <TranslatedText text="Global reach," />
               <br />
-              <span className="text-primary">
+              <span className="text-primary-600">
                 <TranslatedText text="local expertise" />
               </span>
             </h2>
@@ -29,7 +29,7 @@ export function GlobalCoverage() {
             <div className="grid grid-cols-2 gap-6">
               {regions.map((region) => (
                 <div key={region.name}>
-                  <h4 className="font-semibold text-foreground mb-2">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-900 mb-2">
                     <TranslatedText text={region.name} />
                   </h4>
                   <ul className="space-y-1">

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Plus, Search, Receipt, 
@@ -36,6 +37,10 @@ interface Expense {
 const ExpenseManagement: React.FC = () => {
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [viewExpense, setViewExpense] = useState<Expense | null>(null);
+  const [editExpense, setEditExpense] = useState<Expense | null>(null);
+  const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Expense>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     type: '',
@@ -82,6 +87,31 @@ const ExpenseManagement: React.FC = () => {
       toast.success('Expense deleted');
     }
   });
+
+  const updateExpenseMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => financialAPI.updateExpense(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Expense updated');
+      setEditExpense(null);
+    },
+    onError: () => toast.error('Failed to update expense'),
+  });
+
+  const handleOpenEdit = (expense: Expense) => {
+    setEditExpense(expense);
+    setEditForm({
+      description: expense.description,
+      amount: expense.amount,
+      type: expense.type,
+      date: expense.date?.split('T')[0],
+      truckId: expense.truckId || '',
+      vendor: expense.vendor || '',
+      notes: expense.notes || '',
+      taxDeductible: expense.taxDeductible,
+      status: expense.status,
+    });
+  };
 
   // Computed Values
   const filteredExpenses = useMemo(() => {
@@ -318,18 +348,19 @@ const ExpenseManagement: React.FC = () => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 hover:border-[#345E85] dark:hover:border-blue-500 transition-all shadow-sm">
+                        <button
+                          onClick={() => setViewExpense(expense)}
+                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 hover:border-[#345E85] dark:hover:border-blue-500 transition-all shadow-sm">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-sm">
+                        <button
+                          onClick={() => handleOpenEdit(expense)}
+                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-sm">
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => {
-                            if(confirm("Confirm deletion?")) deleteExpenseMutation.mutate(expense.id);
-                          }}
-                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-600 dark:hover:border-rose-500 transition-all shadow-sm"
-                        >
+                          onClick={() => setDeleteExpense(expense)}
+                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-600 dark:hover:border-rose-500 transition-all shadow-sm">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -342,29 +373,196 @@ const ExpenseManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Modern Add Modal Placeholder */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
-            <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-[#345E85] dark:bg-blue-600 text-white flex items-center justify-center">
-                  <Plus className="w-7 h-7" />
+      {/* Delete Confirmation Modal */}
+      {deleteExpense && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-5">
+              <Trash2 className="w-7 h-7 text-rose-500" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Delete Expense?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+              <span className="font-bold text-slate-700 dark:text-slate-300">{deleteExpense.description}</span>
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-8">
+              ${Number(deleteExpense.amount).toLocaleString()} · {new Date(deleteExpense.date).toLocaleDateString()}
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-8">This action cannot be undone.</p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setDeleteExpense(null)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={() => { deleteExpenseMutation.mutate(deleteExpense.id); setDeleteExpense(null); }}
+                disabled={deleteExpenseMutation.isPending}
+                className="flex-1 py-3 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 disabled:opacity-50 transition-colors">
+                {deleteExpenseMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* View Expense Modal */}
+      {viewExpense && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#345E85]/10 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Eye className="w-5 h-5 text-[#345E85] dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Record Expense</h3>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Expense Details</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Read Only</p>
+                </div>
+              </div>
+              <button onClick={() => setViewExpense(null)} className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <XCircle className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-7 space-y-4">
+              {[
+                { label: 'Description', value: viewExpense.description },
+                { label: 'Amount', value: `$${Number(viewExpense.amount).toLocaleString()}` },
+                { label: 'Category', value: viewExpense.category },
+                { label: 'Date', value: new Date(viewExpense.date).toLocaleDateString() },
+                { label: 'Status', value: viewExpense.status },
+                { label: 'Vendor', value: viewExpense.vendor || '—' },
+                { label: 'Tax Deductible', value: viewExpense.taxDeductible ? 'Yes' : 'No' },
+                { label: 'Notes', value: viewExpense.notes || '—' },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-center py-3 border-b border-slate-50 dark:border-slate-800">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="p-7 flex-shrink-0">
+              <button onClick={() => setViewExpense(null)}
+                className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Expense Modal */}
+      {editExpense && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Edit3 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Edit Expense</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Update record</p>
+                </div>
+              </div>
+              <button onClick={() => setEditExpense(null)} className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <XCircle className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-7">
+              <div className="grid grid-cols-2 gap-5">
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description</label>
+                  <input value={editForm.description || ''} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Amount ($)</label>
+                  <input type="number" step="0.01" value={editForm.amount || ''} onChange={e => setEditForm(p => ({ ...p, amount: Number(e.target.value) }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
+                  <select value={editForm.type || ''} onChange={e => setEditForm(p => ({ ...p, type: e.target.value as any }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all">
+                    {expenseTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Date</label>
+                  <input type="date" value={editForm.date || ''} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                  <select value={editForm.status || ''} onChange={e => setEditForm(p => ({ ...p, status: e.target.value as any }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all">
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="paid">Paid</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Vendor</label>
+                  <input value={editForm.vendor || ''} onChange={e => setEditForm(p => ({ ...p, vendor: e.target.value }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Notes</label>
+                  <textarea rows={2} value={editForm.notes || ''} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))}
+                    className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-100 transition-all resize-none" />
+                </div>
+                <div className="col-span-2 flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <input type="checkbox" id="editTaxDeductible" checked={!!editForm.taxDeductible}
+                    onChange={e => setEditForm(p => ({ ...p, taxDeductible: e.target.checked }))}
+                    className="w-5 h-5 rounded-lg text-indigo-600" />
+                  <label htmlFor="editTaxDeductible" className="text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer">Tax Deductible</label>
+                </div>
+              </div>
+            </div>
+            <div className="p-7 flex gap-3 flex-shrink-0">
+              <button onClick={() => setEditExpense(null)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={() => updateExpenseMutation.mutate({ id: editExpense.id, data: editForm })}
+                disabled={updateExpenseMutation.isPending}
+                className="flex-[2] py-3 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                {updateExpenseMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Record Expense Modal — portal renders at document.body */}
+      {showAddModal && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50 rounded-t-[3rem] flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#345E85] dark:bg-blue-600 text-white flex items-center justify-center">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Record Expense</h3>
                   <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Entry Lifecycle Management</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="w-12 h-12 rounded-2xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all flex items-center justify-center text-slate-400 dark:text-slate-500"
+                className="w-10 h-10 rounded-2xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all flex items-center justify-center text-slate-400 dark:text-slate-500"
               >
-                <XCircle className="w-6 h-6" />
+                <XCircle className="w-5 h-5" />
               </button>
             </div>
             
-            <form className="p-10" onSubmit={(e) => {
+            <div className="overflow-y-auto flex-1">
+            <form className="p-8" onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
               const data = Object.fromEntries(formData.entries());
@@ -376,7 +574,7 @@ const ExpenseManagement: React.FC = () => {
                 category: (data as any).type 
               });
             }}>
-              <div className="grid grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-2 gap-6 mb-6">
                 <div className="col-span-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Description</label>
                   <input name="description" required className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all" placeholder="e.g. Weekly Fuel Refill" />
@@ -408,7 +606,7 @@ const ExpenseManagement: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 mb-10 bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3 mb-8 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <input type="checkbox" name="taxDeductible" id="taxDeductible" className="w-5 h-5 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-[#345E85] dark:text-blue-500 focus:ring-[#345E85] dark:focus:ring-blue-500" />
                 <label htmlFor="taxDeductible" className="text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer">Mark as Tax Deductible (Optimizes business tax profile)</label>
               </div>
@@ -417,21 +615,23 @@ const ExpenseManagement: React.FC = () => {
                 <button 
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-8 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+                  className="flex-1 px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
                   disabled={createExpenseMutation.isPending}
-                  className="flex-[2] px-8 py-5 bg-[#345E85] dark:bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10 dark:shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+                  className="flex-[2] px-8 py-4 bg-[#345E85] dark:bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10 dark:shadow-blue-500/20 active:scale-95 disabled:opacity-50"
                 >
                   {createExpenseMutation.isPending ? "Processing..." : "Finalize Record"}
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

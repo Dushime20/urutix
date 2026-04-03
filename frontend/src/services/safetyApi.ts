@@ -62,6 +62,9 @@ export const safetyApi = {
   getIncidents: async (params?: any) => {
     return api.get('/safety/incidents', { params });
   },
+  createIncident: async (data: any) => {
+    return api.post('/safety/incidents', data);
+  },
   getIncident: async (id: string) => {
     return api.get(`/safety/incidents/${id}`);
   },

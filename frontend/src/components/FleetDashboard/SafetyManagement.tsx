@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Shield,
   AlertTriangle,
@@ -9,13 +10,15 @@ import {
   Download,
   Clock,
   User,
-  Activity
+  Activity,
+  XCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { FleetInspections } from './FleetInspections';
 import { safetyApi } from '../../services/safetyApi';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 interface SafetyManagementProps {
   fleetId?: string;
@@ -23,6 +26,19 @@ interface SafetyManagementProps {
 
 export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [reviewIncident, setReviewIncident] = useState<any>(null);
+  const queryClient = useQueryClient();
+
+  const createIncidentMutation = useMutation({
+    mutationFn: (data: any) => safetyApi.createIncident(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['safety-stats'] });
+      toast.success('Incident reported successfully');
+      setShowIncidentModal(false);
+    },
+    onError: () => toast.error('Failed to report incident'),
+  });
 
   const { data: inspectionsData } = useQuery({
     queryKey: ['safety-stats'],
@@ -149,7 +165,9 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
                     </div>
                   </div>
                 </div>
-                <button className="h-10 px-5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white hover:bg-[#0f172a] dark:hover:bg-slate-700 hover:text-white hover:border-[#0f172a] dark:hover:border-slate-600 transition-all shadow-sm">
+                <button
+                  onClick={() => setReviewIncident(incident)}
+                  className="h-10 px-5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white hover:bg-[#0f172a] dark:hover:bg-slate-700 hover:text-white hover:border-[#0f172a] dark:hover:border-slate-600 transition-all shadow-sm">
                   Review Incident
                 </button>
               </div>
@@ -174,7 +192,9 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="h-12 px-6 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+          <button
+            onClick={() => setShowIncidentModal(true)}
+            className="h-12 px-6 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
             <Plus size={14} />
             Report Incident
           </button>
@@ -373,6 +393,202 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Review Incident Modal */}
+      {reviewIncident && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center",
+                  reviewIncident.severity === 'critical' || reviewIncident.severity === 'major'
+                    ? "bg-rose-50 dark:bg-rose-900/20" : "bg-amber-50 dark:bg-amber-900/20")}>
+                  <AlertTriangle className={cn("w-5 h-5",
+                    reviewIncident.severity === 'critical' || reviewIncident.severity === 'major'
+                      ? "text-rose-500" : "text-amber-500")} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white capitalize">
+                    {reviewIncident.type?.replace('_', ' ')}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest",
+                      reviewIncident.severity === 'critical' ? "bg-rose-100 text-rose-600" :
+                      reviewIncident.severity === 'major' ? "bg-orange-100 text-orange-600" :
+                      "bg-blue-100 text-blue-600")}>{reviewIncident.severity}</span>
+                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest">{reviewIncident.status}</span>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setReviewIncident(null)}
+                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <XCircle className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            {/* Details */}
+            <div className="overflow-y-auto flex-1 p-7 space-y-3">
+              {[
+                { label: 'Date', value: new Date(reviewIncident.date).toLocaleDateString() },
+                { label: 'Location', value: reviewIncident.location },
+                { label: 'Description', value: reviewIncident.description },
+                { label: 'Driver', value: reviewIncident.driverName || '—' },
+                { label: 'Truck Plate', value: reviewIncident.truckPlate || '—' },
+                { label: 'Injuries', value: reviewIncident.injuries || 'None reported' },
+                { label: 'Property Damage', value: reviewIncident.propertyDamage ? `$${Number(reviewIncident.propertyDamage).toLocaleString()}` : '—' },
+                { label: 'Police Report', value: reviewIncident.policeReport ? 'Yes' : 'No' },
+                { label: 'Report Number', value: reviewIncident.reportNumber || '—' },
+                { label: 'Assigned To', value: reviewIncident.assignedTo || '—' },
+                { label: 'Cost', value: reviewIncident.cost ? `$${Number(reviewIncident.cost).toLocaleString()}` : '—' },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-start py-3 border-b border-slate-50 dark:border-slate-800">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 text-right max-w-[60%]">{value}</span>
+                </div>
+              ))}
+              {reviewIncident.correctiveActions?.length > 0 && (
+                <div className="py-3">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Corrective Actions</span>
+                  <ul className="space-y-1">
+                    {reviewIncident.correctiveActions.map((action: string, i: number) => (
+                      <li key={i} className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                        <span className="text-rose-400 mt-0.5">•</span>{action}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="p-7 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
+              <button onClick={() => setReviewIncident(null)}
+                className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Report Incident Modal */}
+      {showIncidentModal && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-rose-500" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Report Incident</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Safety incident report</p>
+                </div>
+              </div>
+              <button onClick={() => setShowIncidentModal(false)}
+                className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <XCircle className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="overflow-y-auto flex-1">
+              <form id="incident-form" className="p-7 grid grid-cols-2 gap-5"
+                onSubmit={e => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  const data: any = Object.fromEntries(fd.entries());
+                  data.policeReport = fd.get('policeReport') === 'on';
+                  createIncidentMutation.mutate(data);
+                }}>
+                {/* Type */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Incident Type *</label>
+                  <select name="type" required className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all">
+                    <option value="accident">Accident</option>
+                    <option value="near_miss">Near Miss</option>
+                    <option value="injury">Injury</option>
+                    <option value="property_damage">Property Damage</option>
+                    <option value="traffic_violation">Traffic Violation</option>
+                  </select>
+                </div>
+                {/* Severity */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Severity *</label>
+                  <select name="severity" required className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all">
+                    <option value="minor">Minor</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="major">Major</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                {/* Date */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Date *</label>
+                  <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all" />
+                </div>
+                {/* Location */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Location *</label>
+                  <input name="location" required placeholder="e.g. Nairobi Highway KM 45"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all" />
+                </div>
+                {/* Description */}
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description *</label>
+                  <textarea name="description" required rows={3} placeholder="Describe what happened..."
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all resize-none" />
+                </div>
+                {/* Driver name */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Driver Name</label>
+                  <input name="driverName" placeholder="Optional"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all" />
+                </div>
+                {/* Truck plate */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Truck Plate</label>
+                  <input name="truckPlate" placeholder="Optional"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all" />
+                </div>
+                {/* Injuries */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Injuries</label>
+                  <input name="injuries" placeholder="Describe any injuries"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all" />
+                </div>
+                {/* Property damage */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Property Damage ($)</label>
+                  <input name="propertyDamage" type="number" step="0.01" placeholder="0.00"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-rose-100 transition-all" />
+                </div>
+                {/* Police report */}
+                <div className="col-span-2 flex items-center gap-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <input type="checkbox" name="policeReport" id="policeReport" className="w-5 h-5 rounded-lg text-rose-500" />
+                  <label htmlFor="policeReport" className="text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer">Police report filed</label>
+                </div>
+              </form>
+            </div>
+
+            {/* Actions */}
+            <div className="p-7 flex gap-3 flex-shrink-0 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" onClick={() => setShowIncidentModal(false)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                Cancel
+              </button>
+              <button type="submit" form="incident-form" disabled={createIncidentMutation.isPending}
+                className="flex-[2] py-3 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 disabled:opacity-50 transition-colors">
+                {createIncidentMutation.isPending ? 'Submitting...' : 'Submit Report'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

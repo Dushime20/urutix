@@ -116,12 +116,12 @@ const UnifiedFinancialManagement = () => {
       icon: Calculator,
       description: "Analyze trip costs and profitability",
     }] : []),
-    // Add Financial Information tab for cargo owners and lenders
-    ...((location.pathname.includes("/cargo-owner") || location.pathname.includes("/lender")) ? [{
+    // Add Financial Information tab for cargo owners, lenders and fleet users
+    ...((location.pathname.includes("/cargo-owner") || location.pathname.includes("/lender") || location.pathname.includes("/fleet")) ? [{
       id: "financial-info" as TabType,
-      label: "Financial Information",
-      icon: CreditCard,
-      description: "Manage your payment information",
+      label: "Payment Methods",
+      icon: Wallet,
+      description: "Manage your payment methods",
     }] : []),
     {
       id: "loans" as TabType,

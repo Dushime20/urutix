@@ -22,6 +22,7 @@ import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { FuelService } from './fuel.service';
+import { FuelWalletService } from './fuel-wallet.service';
 import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-log.dto';
 
 @ApiTags('Fuel Management')
@@ -39,7 +40,66 @@ import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-l
 )
 @Controller('fuel')
 export class FuelController {
-    constructor(private readonly fuelService: FuelService) { }
+    constructor(
+        private readonly fuelService: FuelService,
+        private readonly fuelWalletService: FuelWalletService,
+    ) { }
+
+    // ── WALLET ENDPOINTS ────────────────────────────────────────────────────
+
+    @Get('wallets/my-wallet')
+    @ApiOperation({ summary: 'Get or create wallet for current user' })
+    async getMyWallet(@GetTenant() tenantId: string, @Request() req) {
+        const wallet = await this.fuelWalletService.getOrCreateWalletForOwner(req.user.userId, tenantId);
+        return { success: true, data: wallet };
+    }
+
+    @Get('wallets/stats/overview')
+    @ApiOperation({ summary: 'Get wallet stats overview' })
+    async getWalletStats(@GetTenant() tenantId: string, @Request() req) {
+        const stats = await this.fuelWalletService.getWalletStats(tenantId, req.user.userId);
+        return { success: true, data: stats };
+    }
+
+    @Get('wallets/driver/:driverId')
+    @ApiOperation({ summary: 'Get wallet by driver ID' })
+    async getDriverWallet(@Param('driverId') driverId: string, @GetTenant() tenantId: string) {
+        const wallet = await this.fuelWalletService.getWalletByDriver(driverId, tenantId);
+        return { success: true, data: wallet };
+    }
+
+    @Get('wallets/:id')
+    @ApiOperation({ summary: 'Get wallet by ID' })
+    async getWallet(@Param('id') id: string, @GetTenant() tenantId: string) {
+        const wallet = await this.fuelWalletService.getWallet(id, tenantId);
+        return { success: true, data: wallet };
+    }
+
+    @Post('wallets/:id/credit')
+    @ApiOperation({ summary: 'Add credit to wallet' })
+    async addWalletCredit(
+        @Param('id') id: string,
+        @Body() body: { amount: number; description: string; metadata?: any },
+        @GetTenant() tenantId: string,
+        @Request() req,
+    ) {
+        const wallet = await this.fuelWalletService.addCredit(
+            id, body.amount, body.description, tenantId, req.user.userId, body.metadata,
+        );
+        return { success: true, data: wallet };
+    }
+
+    @Get('wallets/:id/transactions')
+    @ApiOperation({ summary: 'Get wallet transactions' })
+    async getWalletTransactions(
+        @Param('id') id: string,
+        @GetTenant() tenantId: string,
+        @Query('limit') limit?: number,
+        @Query('offset') offset?: number,
+    ) {
+        const result = await this.fuelWalletService.getTransactionHistory(id, tenantId, limit || 50, offset || 0);
+        return { success: true, data: result.transactions, total: result.total };
+    }
 
     @Post('logs')
     @ApiOperation({

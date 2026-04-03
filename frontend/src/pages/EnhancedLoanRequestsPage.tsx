@@ -413,13 +413,13 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 p-6 md:p-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4 mb-8">
           <div className="flex flex-col">
-            <h2 className="text-3xl font-black text-[#0f172a] tracking-tight uppercase">
-              Loan <span className="text-[#345E85]">Requests</span>
+            <h2 className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tight uppercase">
+              Loan <span className="text-[#345E85] dark:text-blue-400">Requests</span>
             </h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
               Real-time financing workflow management
@@ -427,13 +427,13 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <div className="relative group">
-              <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-[#345E85] transition-colors" />
+              <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-[#345E85] dark:group-focus-within:text-blue-400 transition-colors" />
               <input 
                 type="text"
                 placeholder="SEARCH LOANS..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-white border border-slate-100 rounded-2xl py-4 pl-14 pr-6 text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-200 transition-all w-64 lg:w-80"
+                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 pl-14 pr-6 text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 dark:text-slate-300 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50 dark:focus:ring-blue-900/20 focus:border-blue-200 dark:focus:border-blue-700 transition-all w-64 lg:w-80"
               />
             </div>
           </div>

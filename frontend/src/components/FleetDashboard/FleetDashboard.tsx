@@ -141,6 +141,8 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/safety')) setActiveTab('safety');
     else if (path.includes('/fleet/loan-requests')) setActiveTab('loans');
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
+    else if (path.includes('/fleet/financial-info')) setActiveTab('financial');
+    else if (path.includes('/fleet/cost-analysis')) setActiveTab('financial');
     else if (path.includes('/fleet/expenses')) setActiveTab('expenses');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
     else if (path.includes('/fleet/assignments')) setActiveTab('assignments');

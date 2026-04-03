@@ -391,7 +391,7 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
             <form onSubmit={handleSubmit} className="p-10 space-y-8 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Designation</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Route Name</label>
                   <input
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-700 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
                     value={formData.name || ''}
@@ -423,7 +423,7 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Target Terminal</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Destination</label>
                   <input
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-700 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
                     value={formData.destination || ''}
