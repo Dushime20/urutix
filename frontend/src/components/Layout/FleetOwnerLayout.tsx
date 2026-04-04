@@ -71,7 +71,12 @@ const FleetOwnerLayout: React.FC = () => {
     location.pathname === '/dashboard/fleet/routes' ||
     location.pathname === '/dashboard/fleet/trucks' ||
     location.pathname === '/dashboard/fleet/drivers' ||
-    location.pathname === '/dashboard/fleet/assignments';
+    location.pathname === '/dashboard/fleet/assignments' ||
+    location.pathname === '/dashboard/fleet/cost-analysis' ||
+    location.pathname === '/dashboard/fleet/financial/cost-analysis' ||
+    location.pathname === '/dashboard/fleet/financial/expenses' ||
+    location.pathname === '/dashboard/fleet/financial/overview' ||
+    location.pathname === '/dashboard/fleet/financial/reports';
 
   return (
     <>

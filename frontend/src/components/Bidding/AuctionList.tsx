@@ -235,9 +235,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     }
     setLoadingDrivers(true);
     try {
-      const allDrivers = await fleetApi.getDrivers({ status: 'ACTIVE' });
-      const available = allDrivers.filter((driver: any) => !driver.currentTripId);
-      setAvailableDrivers(available || []);
+      // Find the selected truck and use its assignedDrivers array
+      const selectedTruck = trucks.find((t: any) => t.id === selectedTruckId);
+      const assigned: { driverId: string; driverName: string }[] = selectedTruck?.assignedDrivers || [];
+
+      if (assigned.length === 0) {
+        setAvailableDrivers([]);
+        setLoadingDrivers(false);
+        return;
+      }
+
+      // Map to the shape the dropdown expects
+      const drivers = assigned.map((d: any) => ({
+        id: d.driverId,
+        firstName: d.driverName?.split(' ')[0] || d.driverName || '',
+        lastName: d.driverName?.split(' ').slice(1).join(' ') || '',
+      }));
+      setAvailableDrivers(drivers);
     } catch (error) {
       console.error('Error loading available drivers:', error);
       setAvailableDrivers([]);
@@ -933,7 +947,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                       disabled={!selectedTruckId || loadingDrivers}
                       className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-blue-500 transition-all cursor-pointer disabled:bg-gray-50 dark:disabled:bg-slate-900 disabled:text-gray-400 dark:disabled:text-slate-600 appearance-none"
                     >
-                      <option value="">{loadingDrivers ? 'Loading...' : 'Select Driver'}</option>
+                      <option value="">{!selectedTruckId ? 'Select a truck first' : loadingDrivers ? 'Loading...' : availableDrivers.length === 0 ? 'No drivers assigned' : 'Select Driver'}</option>
                       {availableDrivers.map((d) => (
                         <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
                       ))}

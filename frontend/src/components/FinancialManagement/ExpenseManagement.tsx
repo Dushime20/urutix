@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -9,7 +9,7 @@ import {
   TrendingUp, ShieldCheck, Landmark
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { financialAPI, fleetAPI } from '@/services/api';
+import { financialAPI, fleetAPI, tripsAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 
@@ -42,6 +42,7 @@ const ExpenseManagement: React.FC = () => {
   const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
   const [editForm, setEditForm] = useState<Partial<Expense>>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTruckId, setSelectedTruckId] = useState('');
   const [filters, setFilters] = useState({
     type: '',
     status: '',
@@ -68,6 +69,24 @@ const ExpenseManagement: React.FC = () => {
       return [];
     }
   });
+
+
+  const { data: tripsData } = useQuery({
+    queryKey: ['trips-active'],
+    queryFn: async () => {
+      const response = await tripsAPI.getAll({ limit: 50, status: 'IN_PROGRESS' });
+      const data = response.data;
+      if (Array.isArray(data?.trips)) return data.trips;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data)) return data;
+      return [];
+    }
+  });
+
+  // Derive drivers assigned to the selected truck from assignedDrivers array
+  const assignedDrivers: { driverId: string; driverName: string }[] = selectedTruckId
+    ? (trucksData?.find((t: any) => t.id === selectedTruckId)?.assignedDrivers || [])
+    : [];
 
   // Mutations
   const createExpenseMutation = useMutation({
@@ -385,7 +404,7 @@ const ExpenseManagement: React.FC = () => {
               <span className="font-bold text-slate-700 dark:text-slate-300">{deleteExpense.description}</span>
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mb-8">
-              ${Number(deleteExpense.amount).toLocaleString()} · {new Date(deleteExpense.date).toLocaleDateString()}
+              ${Number(deleteExpense.amount).toLocaleString()} Â· {new Date(deleteExpense.date).toLocaleDateString()}
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mb-8">This action cannot be undone.</p>
             <div className="flex gap-3 w-full">
@@ -407,44 +426,82 @@ const ExpenseManagement: React.FC = () => {
       )}
 
       {/* View Expense Modal */}
+      {/* View Expense Modal */}
       {viewExpense && createPortal(
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#345E85]/10 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Eye className="w-5 h-5 text-[#345E85] dark:text-blue-400" />
+            <div className="p-7 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center",
+                  expenseTypes.find(t => t.value === viewExpense.type)?.bg || 'bg-slate-50 dark:bg-slate-800')}>
+                  {(() => { const Icon = expenseTypes.find(t => t.value === viewExpense.type)?.icon || Receipt; return <Icon className={cn("w-6 h-6", expenseTypes.find(t => t.value === viewExpense.type)?.color || 'text-slate-500')} />; })()}
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">Expense Details</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Read Only</p>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">{viewExpense.description}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{viewExpense.category}</p>
                 </div>
               </div>
               <button onClick={() => setViewExpense(null)} className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 <XCircle className="w-4 h-4 text-slate-500" />
               </button>
             </div>
-            <div className="overflow-y-auto flex-1 p-7 space-y-4">
-              {[
-                { label: 'Description', value: viewExpense.description },
-                { label: 'Amount', value: `$${Number(viewExpense.amount).toLocaleString()}` },
-                { label: 'Category', value: viewExpense.category },
-                { label: 'Date', value: new Date(viewExpense.date).toLocaleDateString() },
-                { label: 'Status', value: viewExpense.status },
-                { label: 'Vendor', value: viewExpense.vendor || '—' },
-                { label: 'Tax Deductible', value: viewExpense.taxDeductible ? 'Yes' : 'No' },
-                { label: 'Notes', value: viewExpense.notes || '—' },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center py-3 border-b border-slate-50 dark:border-slate-800">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{value}</span>
-                </div>
-              ))}
+            <div className="mx-7 mb-5 p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">${Number(viewExpense.amount).toLocaleString()}</p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <span className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                  viewExpense.status === 'paid' ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" :
+                  viewExpense.status === 'pending' ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400" :
+                  "bg-slate-100 dark:bg-slate-800 text-slate-500")}>
+                  {viewExpense.status}
+                </span>
+                {viewExpense.taxDeductible && (
+                  <span className="flex items-center gap-1 text-[9px] font-black text-emerald-500 uppercase tracking-widest">
+                    <CheckCircle className="w-3 h-3" /> Tax Deductible
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="p-7 flex-shrink-0">
+            <div className="overflow-y-auto flex-1 px-7 pb-2">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Date', value: new Date(viewExpense.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) },
+                  { label: 'Vendor', value: viewExpense.vendor },
+                  { label: 'Truck', value: viewExpense.truckId ? `TRK-${viewExpense.truckId.slice(0,6)}` : null },
+                  { label: 'Driver', value: (() => {
+                    if (!viewExpense.driverId) return null;
+                    const allDrivers = (trucksData || []).flatMap((t: any) => t.assignedDrivers || []);
+                    const found = allDrivers.find((d: any) => d.driverId === viewExpense.driverId);
+                    return found?.driverName || `DRV-${viewExpense.driverId.slice(0,6)}`;
+                  })() },
+                  { label: 'Trip', value: viewExpense.tripId ? `TRP-${viewExpense.tripId.slice(0,6)}` : null },
+                  { label: 'Location', value: viewExpense.location },
+                  { label: 'Added', value: new Date(viewExpense.createdAt).toLocaleDateString() },
+                  { label: 'Updated', value: new Date(viewExpense.updatedAt).toLocaleDateString() },
+                ].filter(item => !!item.value).map(({ label, value }) => (
+                  <div key={label} className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{value}</p>
+                  </div>
+                ))}
+              </div>
+              {viewExpense.notes && (
+                <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Notes</p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{viewExpense.notes}</p>
+                </div>
+              )}
+            </div>
+            <div className="p-7 flex gap-3 flex-shrink-0">
               <button onClick={() => setViewExpense(null)}
-                className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 Close
+              </button>
+              <button onClick={() => { setViewExpense(null); handleOpenEdit(viewExpense); }}
+                className="flex-1 py-3 rounded-2xl bg-[#345E85] dark:bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors">
+                Edit
               </button>
             </div>
           </div>
@@ -539,6 +596,38 @@ const ExpenseManagement: React.FC = () => {
         document.body
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deleteExpense && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-5">
+              <Trash2 className="w-7 h-7 text-rose-500" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Delete Expense?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+              <span className="font-bold text-slate-700 dark:text-slate-300">{deleteExpense.description}</span>
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">
+              ${Number(deleteExpense.amount).toLocaleString()} · {new Date(deleteExpense.date).toLocaleDateString()}
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-8">This action cannot be undone.</p>
+            <div className="flex gap-3 w-full">
+              <button onClick={() => setDeleteExpense(null)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={() => { deleteExpenseMutation.mutate(deleteExpense.id); setDeleteExpense(null); }}
+                disabled={deleteExpenseMutation.isPending}
+                className="flex-1 py-3 rounded-2xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 disabled:opacity-50 transition-colors">
+                {deleteExpenseMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Record Expense Modal — portal renders at document.body */}
       {showAddModal && createPortal(
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ zIndex: 99999 }}>
@@ -553,14 +642,13 @@ const ExpenseManagement: React.FC = () => {
                   <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Entry Lifecycle Management</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowAddModal(false)}
+              <button
+                onClick={() => { setShowAddModal(false); setSelectedTruckId(''); }}
                 className="w-10 h-10 rounded-2xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all flex items-center justify-center text-slate-400 dark:text-slate-500"
               >
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-            
             <div className="overflow-y-auto flex-1">
             <form className="p-8" onSubmit={(e) => {
               e.preventDefault();
@@ -571,7 +659,10 @@ const ExpenseManagement: React.FC = () => {
                 amount: Number(data.amount),
                 taxDeductible: data.taxDeductible === 'on',
                 status: 'pending',
-                category: (data as any).type 
+                category: (data as any).type,
+                driverId: data.driverId || undefined,
+                tripId: data.tripId || undefined,
+                truckId: data.truckId || undefined,
               });
             }}>
               <div className="grid grid-cols-2 gap-6 mb-6">
@@ -579,51 +670,68 @@ const ExpenseManagement: React.FC = () => {
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Description</label>
                   <input name="description" required className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all" placeholder="e.g. Weekly Fuel Refill" />
                 </div>
-                
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Amount ($)</label>
                   <input name="amount" type="number" step="0.01" required className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all" placeholder="0.00" />
                 </div>
-
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Expense Category</label>
                   <select name="type" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all">
                     {expenseTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Date</label>
                   <input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all" />
                 </div>
-
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Related Truck</label>
-                  <select name="truckId" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all">
+                  <select name="truckId" value={selectedTruckId}
+                    onChange={e => setSelectedTruckId(e.target.value)}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all">
                     <option value="">General Expense</option>
                     {trucksData?.map((t: any) => <option key={t.id} value={t.id}>{t.plateNumber}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                    Driver {selectedTruckId && assignedDrivers.length === 0 && <span className="text-slate-300 normal-case font-medium">(no driver assigned)</span>}
+                  </label>
+                  <select name="driverId"
+                    disabled={!selectedTruckId || assignedDrivers.length === 0}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <option value="">
+                      {!selectedTruckId ? 'Select a truck first' : assignedDrivers.length === 0 ? 'No driver assigned' : 'Select driver'}
+                    </option>
+                    {assignedDrivers.map((d: any) => (
+                      <option key={d.driverId} value={d.driverId}>{d.driverName}</option>
+                    ))}
+                  </select>
+                  {assignedDrivers.length === 1 && (
+                    <input type="hidden" name="driverId" value={assignedDrivers[0].driverId} />
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Related Trip</label>
+                  <select name="tripId" className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all">
+                    <option value="">No Trip</option>
+                    {tripsData?.map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.tripNumber || t.id.slice(0, 8)} — {t.status}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-
               <div className="flex items-center gap-3 mb-8 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <input type="checkbox" name="taxDeductible" id="taxDeductible" className="w-5 h-5 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-[#345E85] dark:text-blue-500 focus:ring-[#345E85] dark:focus:ring-blue-500" />
                 <label htmlFor="taxDeductible" className="text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer">Mark as Tax Deductible (Optimizes business tax profile)</label>
               </div>
-
               <div className="flex items-center gap-4">
-                <button 
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
-                >
+                <button type="button" onClick={() => { setShowAddModal(false); setSelectedTruckId(''); }}
+                  className="flex-1 px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
                   Cancel
                 </button>
-                <button 
-                  type="submit"
-                  disabled={createExpenseMutation.isPending}
-                  className="flex-[2] px-8 py-4 bg-[#345E85] dark:bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10 dark:shadow-blue-500/20 active:scale-95 disabled:opacity-50"
-                >
+                <button type="submit" disabled={createExpenseMutation.isPending}
+                  className="flex-[2] px-8 py-4 bg-[#345E85] dark:bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-xl shadow-blue-900/10 dark:shadow-blue-500/20 active:scale-95 disabled:opacity-50">
                   {createExpenseMutation.isPending ? "Processing..." : "Finalize Record"}
                 </button>
               </div>

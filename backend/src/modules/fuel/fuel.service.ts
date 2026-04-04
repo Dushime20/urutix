@@ -109,6 +109,7 @@ export class FuelService {
             const logs = await this.fuelLogRepository.find({
                 where: { tenantId },
                 relations: ['truck'],
+                order: { fuelDate: 'ASC' },
             });
 
             const totalSpend = logs.reduce((sum, log) => sum + Number(log.totalCost || 0), 0);
@@ -119,15 +120,58 @@ export class FuelService {
             const logsWithOdometer = logs.filter(log => log.odometer && Number(log.odometer) > 0);
             let fleetEfficiency = 0;
             if (logsWithOdometer.length >= 2) {
-                // Sort by odometer
                 const sorted = [...logsWithOdometer].sort((a, b) => Number(a.odometer) - Number(b.odometer));
-                const totalMiles = Number(sorted[sorted.length - 1].odometer) -
-                    Number(sorted[0].odometer);
+                const totalMiles = Number(sorted[sorted.length - 1].odometer) - Number(sorted[0].odometer);
                 const totalGallonsForEfficiency = sorted.slice(1).reduce((sum, log) => sum + Number(log.gallons || 0), 0);
                 fleetEfficiency = totalGallonsForEfficiency > 0 ? totalMiles / totalGallonsForEfficiency : 0;
             }
 
             const fraudAlerts = logs.filter(log => log.isFlagged).length;
+
+            // Build daily trend for the last 30 days
+            const dailyMap = new Map<string, { cost: number; gallons: number }>();
+            const now = new Date();
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = d.toISOString().slice(0, 10);
+                dailyMap.set(key, { cost: 0, gallons: 0 });
+            }
+            for (const log of logs) {
+                const key = new Date(log.fuelDate).toISOString().slice(0, 10);
+                if (dailyMap.has(key)) {
+                    const entry = dailyMap.get(key)!;
+                    entry.cost += Number(log.totalCost || 0);
+                    entry.gallons += Number(log.gallons || 0);
+                }
+            }
+            const dailyTrend = Array.from(dailyMap.entries()).map(([date, vals]) => ({
+                name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                cost: Math.round(vals.cost * 100) / 100,
+                gallons: Math.round(vals.gallons * 100) / 100,
+            }));
+
+            // Per-truck efficiency (MPG) from logs with odometer readings
+            const truckMap = new Map<string, { plate: string; logsWithOdo: typeof logsWithOdometer }>();
+            for (const log of logsWithOdometer) {
+                const plate = log.truck?.plateNumber || log.truckId;
+                if (!truckMap.has(log.truckId)) {
+                    truckMap.set(log.truckId, { plate, logsWithOdo: [] });
+                }
+                truckMap.get(log.truckId)!.logsWithOdo.push(log);
+            }
+            const truckEfficiency = Array.from(truckMap.values())
+                .map(({ plate, logsWithOdo }) => {
+                    if (logsWithOdo.length < 2) return null;
+                    const sorted = [...logsWithOdo].sort((a, b) => Number(a.odometer) - Number(b.odometer));
+                    const miles = Number(sorted[sorted.length - 1].odometer) - Number(sorted[0].odometer);
+                    const gallonsUsed = sorted.slice(1).reduce((s, l) => s + Number(l.gallons || 0), 0);
+                    const mpg = gallonsUsed > 0 ? miles / gallonsUsed : 0;
+                    return { plate, mpg: Number.isFinite(mpg) ? Math.round(mpg * 10) / 10 : 0 };
+                })
+                .filter(Boolean)
+                .sort((a, b) => b!.mpg - a!.mpg)
+                .slice(0, 10);
 
             return {
                 totalSpend,
@@ -136,6 +180,8 @@ export class FuelService {
                 fleetEfficiency: Number.isFinite(fleetEfficiency) ? fleetEfficiency : 0,
                 fraudAlerts,
                 totalLogs: logs.length,
+                dailyTrend,
+                truckEfficiency,
             };
         } catch (error) {
             console.error('❌ Error in getFuelStatistics:', error);
@@ -146,6 +192,8 @@ export class FuelService {
                 fleetEfficiency: 0,
                 fraudAlerts: 0,
                 totalLogs: 0,
+                dailyTrend: [],
+                truckEfficiency: [],
                 isPartial: true
             };
         }

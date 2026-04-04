@@ -12,6 +12,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import api from '@/services/api';
 
 interface LoadPerformance {
   title: string;
@@ -53,56 +54,46 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
 
   const loadAnalytics = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Load analytics data
-      const response = await fetch('/api/bidding/analytics');
-      const data = await response.json();
+      // Use existing authenticated endpoints
+      const [bidsRes, statsRes] = await Promise.all([
+        api.get('/bidding/bids'),
+        api.get('/bidding/dashboard/stats'),
+      ]);
 
-      // Ensure all required properties exist with fallbacks
-      setAnalytics({
-        totalBids: data.totalBids || 0,
-        successfulBids: data.successfulBids || 0,
-        averageBidAmount: data.averageBidAmount || 0,
-        totalValue: data.totalValue || 0,
-        successRate: data.successRate || 0,
-        averageResponseTime: data.averageResponseTime || 0,
-        topPerformingLoads: data.topPerformingLoads || [],
-        bidTrends: data.bidTrends || [],
+      const bids: any[] = bidsRes.data?.bids || bidsRes.data?.data || bidsRes.data || [];
+      const stats = statsRes.data?.stats || statsRes.data?.data || statsRes.data || {};
+
+      const successfulBids = bids.filter((b: any) => b.status === 'ACCEPTED' || b.status === 'WON');
+      const totalValue = bids.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0);
+      const avgAmount = bids.length > 0 ? totalValue / bids.length : 0;
+      const successRate = bids.length > 0 ? Math.round((successfulBids.length / bids.length) * 100) : 0;
+
+      // Group by load for top performing loads
+      const loadMap: Record<string, any> = {};
+      bids.forEach((b: any) => {
+        const key = b.loadId || b.auctionId || 'unknown';
+        if (!loadMap[key]) {
+          loadMap[key] = { title: b.load?.title || b.auction?.load?.title || `Load ${key.slice(0,6)}`, totalBids: 0, finalPrice: 0, status: b.status };
+        }
+        loadMap[key].totalBids++;
+        if (b.status === 'ACCEPTED' || b.status === 'WON') loadMap[key].finalPrice = Number(b.amount);
       });
-    } catch (error) {
-      setError('Failed to load analytics data - using demo data');
-      console.error('Analytics error:', error);
 
-      // Set demo data when API fails
       setAnalytics({
-        totalBids: 25,
-        successfulBids: 18,
-        averageBidAmount: 1500,
-        totalValue: 45000,
-        successRate: 72,
-        averageResponseTime: 45,
-        topPerformingLoads: [
-          {
-            title: 'Electronics Shipment',
-            totalBids: 8,
-            finalPrice: 2200,
-            status: 'COMPLETED'
-          },
-          {
-            title: 'Furniture Delivery',
-            totalBids: 6,
-            finalPrice: 1800,
-            status: 'COMPLETED'
-          },
-          {
-            title: 'Automotive Parts',
-            totalBids: 5,
-            finalPrice: 1600,
-            status: 'ACTIVE'
-          }
-        ],
+        totalBids: stats.totalBids ?? bids.length,
+        successfulBids: stats.wonBids ?? successfulBids.length,
+        averageBidAmount: stats.averageBidAmount ?? avgAmount,
+        totalValue: stats.totalValue ?? totalValue,
+        successRate: stats.winRate ?? successRate,
+        averageResponseTime: stats.averageResponseTime ?? 0,
+        topPerformingLoads: Object.values(loadMap).slice(0, 5),
         bidTrends: [],
       });
+    } catch (error) {
+      console.error('Analytics error:', error);
+      setError('Failed to load analytics data');
     } finally {
       setLoading(false);
     }

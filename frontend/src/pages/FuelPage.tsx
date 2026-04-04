@@ -33,23 +33,7 @@ import {
     ResponsiveContainer
 } from 'recharts';
 
-const MOCK_LINE_DATA = [
-    { name: 'Mon', cost: 1200, gallons: 300 },
-    { name: 'Tue', cost: 1400, gallons: 340 },
-    { name: 'Wed', cost: 1100, gallons: 280 },
-    { name: 'Thu', cost: 1800, gallons: 450 },
-    { name: 'Fri', cost: 2100, gallons: 520 },
-    { name: 'Sat', cost: 900, gallons: 220 },
-    { name: 'Sun', cost: 800, gallons: 200 },
-];
 
-const MOCK_BAR_DATA = [
-    { plate: 'URT-001', mpg: 6.8 },
-    { plate: 'URT-012', mpg: 5.4 },
-    { plate: 'URT-045', mpg: 7.2 },
-    { plate: 'URT-098', mpg: 4.9 },
-    { plate: 'URT-102', mpg: 6.1 },
-];
 
 const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     const [stats, setStats] = useState<any>(null);
@@ -89,7 +73,9 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                     totalGallons: statsData.totalVolume,
                     avgCostPerGallon: statsData.avgPricePerGallon,
                     avgMpg: statsData.fleetEfficiency,
-                    flaggedTransactions: statsData.fraudAlerts
+                    flaggedTransactions: statsData.fraudAlerts,
+                    dailyTrend: statsData.dailyTrend || [],
+                    truckEfficiency: statsData.truckEfficiency || [],
                 });
             }
 
@@ -269,8 +255,9 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                             </div>
 
                             <div className="h-[300px] w-full">
+                                {stats?.dailyTrend?.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={stats?.dailyTrend || MOCK_LINE_DATA}>
+                                    <AreaChart data={stats.dailyTrend}>
                                         <defs>
                                             <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#345E85" stopOpacity={0.1} />
@@ -284,6 +271,7 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                                             tickLine={false}
                                             tick={{ fontSize: 10, fontWeight: 800, fill: '#64748B' }}
                                             dy={10}
+                                            interval="preserveStartEnd"
                                         />
                                         <YAxis hide />
                                         <Tooltip
@@ -301,6 +289,11 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                                         <Area type="monotone" dataKey="cost" stroke="#345E85" strokeWidth={4} fillOpacity={1} fill="url(#colorCost)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-600 text-[11px] font-black uppercase tracking-widest">
+                                        No fuel data yet
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -318,7 +311,7 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                                 </h3>
 
                                 <div className="space-y-4 pt-4">
-                                    {(stats?.truckEfficiency?.length > 0 ? stats.truckEfficiency : MOCK_BAR_DATA).map((item: any, idx: number) => (
+                                    {stats?.truckEfficiency?.length > 0 ? stats.truckEfficiency.map((item: any, idx: number) => (
                                         <div key={item.plate} className="space-y-1.5">
                                             <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400">
                                                 <span>{item.plate}</span>
@@ -333,7 +326,11 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                                                 />
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/30 pt-4">
+                                            No odometer data available
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
