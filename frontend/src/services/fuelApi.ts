@@ -36,6 +36,8 @@ export interface FuelStatistics {
     fleetEfficiency: number;
     fraudAlerts: number;
     totalLogs: number;
+    dailyTrend?: Array<{ name: string; cost: number }>;
+    truckEfficiency?: Array<{ plate: string; mpg: number }>;
 }
 
 export interface CreateFuelLogData {
@@ -50,6 +52,8 @@ export interface CreateFuelLogData {
     receiptNumber?: string;
     paymentMethod?: string;
     notes?: string;
+    receiptFile?: File;
+    odometerVerificationFile?: File;
 }
 
 export const fuelApi = {
@@ -58,7 +62,29 @@ export const fuelApi = {
      */
     createFuelLog: async (data: CreateFuelLogData): Promise<FuelLog> => {
         try {
-            const response = await api.post('/fuel/logs', data);
+            const formData = new FormData();
+            
+            // Append all non-file fields
+            Object.entries(data).forEach(([key, value]) => {
+                if (key !== 'receiptFile' && key !== 'odometerVerificationFile' && value !== undefined && value !== null) {
+                    formData.append(key, value.toString());
+                }
+            });
+
+            // Append files if they exist
+            if (data.receiptFile) {
+                formData.append('receiptFile', data.receiptFile);
+            }
+            if (data.odometerVerificationFile) {
+                formData.append('odometerVerificationFile', data.odometerVerificationFile);
+            }
+
+            const response = await api.post('/fuel/logs', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
             console.log('📦 createFuelLog response:', JSON.stringify(response.data));
             if (response.data.success === false) {
                 throw new Error(response.data.message || 'Failed to create fuel log');
@@ -279,6 +305,11 @@ export const fuelApi = {
 
     getPendingAdvances: async () => {
         const response = await api.get('/fuel/advances/pending/all');
+        return response.data.data;
+    },
+
+    getPendingAdvancesForMyDrivers: async () => {
+        const response = await api.get('/fuel/advances/pending/my-drivers');
         return response.data.data;
     },
 

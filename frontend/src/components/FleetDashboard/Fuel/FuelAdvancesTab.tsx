@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { fuelApi } from '../../../services/fuelApi';
-import { StatCard } from '../../EnliteUI/Cards/StatCard';
-import { DollarSign, Check, X } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { DollarSign, Check, X, Clock, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const FuelAdvancesTab: React.FC = () => {
+    const { user } = useAuth();
     const [pendingAdvances, setPendingAdvances] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<any>(null);
+
+    // Truck owners see only their drivers' advances; admins/fleet managers see all
+    const isAdminRole = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'FLEET_MANAGER', 'FLEET_ACCOUNTANT'].includes(user?.role || '');
 
     useEffect(() => {
         loadData();
@@ -17,10 +21,10 @@ export const FuelAdvancesTab: React.FC = () => {
         setLoading(true);
         try {
             const [advances, advanceStats] = await Promise.all([
-                fuelApi.getPendingAdvances(),
-                fuelApi.getAdvanceStats()
+                isAdminRole ? fuelApi.getPendingAdvances() : fuelApi.getPendingAdvancesForMyDrivers(),
+                fuelApi.getAdvanceStats(),
             ]);
-            setPendingAdvances(advances);
+            setPendingAdvances(advances || []);
             setStats(advanceStats);
         } catch (error) {
             console.error('Failed to load advances', error);
@@ -32,7 +36,7 @@ export const FuelAdvancesTab: React.FC = () => {
     const handleApprove = async (id: string) => {
         try {
             await fuelApi.approveAdvance(id);
-            toast.success('Advance approved');
+            toast.success('Advance approved — driver wallet credited');
             loadData();
         } catch (error: any) {
             toast.error(error?.response?.data?.message || 'Failed to approve advance');
@@ -40,9 +44,10 @@ export const FuelAdvancesTab: React.FC = () => {
     };
 
     const handleReject = async (id: string) => {
-        const reason = window.prompt("Rejection reason (optional)");
+        const reason = window.prompt('Rejection reason (optional)');
+        if (reason === null) return; // cancelled
         try {
-            await fuelApi.rejectAdvance(id, reason || 'Rejected by Admin');
+            await fuelApi.rejectAdvance(id, reason || 'Rejected');
             toast.success('Advance rejected');
             loadData();
         } catch (error: any) {
@@ -50,93 +55,127 @@ export const FuelAdvancesTab: React.FC = () => {
         }
     };
 
+    const formatCurrency = (val: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+
     return (
         <div className="space-y-6">
+            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard
-                    title="Total Advances"
-                    value={stats?.totalAdvances || 0}
-                    icon={<DollarSign size={24} />}
-                    color="primary"
-                />
-                <StatCard
-                    title="Pending Value"
-                    value={`$${stats?.pendingAmount?.toLocaleString() || '0.00'}`}
-                    icon={<DollarSign size={24} />}
-                    color="accent"
-                />
-                <StatCard
-                    title="Unreconciled Balance"
-                    value={`$${((stats?.totalAdvanced || 0) - (stats?.totalReconciled || 0)).toLocaleString()}`}
-                    icon={<DollarSign size={24} />}
-                    color="error"
-                />
+                {[
+                    { label: 'Total Advances', value: stats?.totalAdvances || 0, color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: 'Pending Value', value: formatCurrency(stats?.pendingAmount), color: 'text-amber-600', bg: 'bg-amber-50' },
+                    { label: 'Unreconciled', value: formatCurrency((stats?.totalAdvanced || 0) - (stats?.totalReconciled || 0)), color: 'text-rose-600', bg: 'bg-rose-50' },
+                ].map(s => (
+                    <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] p-6 flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center`}>
+                            <DollarSign size={20} className={s.color} />
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
+                            <p className={`text-xl font-black ${s.color} tracking-tight`}>{s.value}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500 mb-8 flex items-center gap-3">
-                    <span className="w-8 h-px bg-slate-200 dark:bg-slate-800"></span>
-                    Pending Fuel Advances
-                </h3>
+            {/* Table */}
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                            Pending Advance Requests
+                        </h3>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                            {isAdminRole ? 'All tenant drivers' : 'Your drivers only'}
+                        </p>
+                    </div>
+                    <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-amber-100 dark:border-amber-800/30 flex items-center gap-1.5">
+                        <Clock size={10} /> {pendingAdvances.length} Pending
+                    </span>
+                </div>
+
                 {loading ? (
-                    <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                        <div className="w-4 h-4 border-2 border-primary-500 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-xs font-black uppercase tracking-widest">Loading advances...</p>
+                    <div className="flex items-center gap-3 p-12 text-slate-400">
+                        <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-xs font-black uppercase tracking-widest">Loading...</p>
+                    </div>
+                ) : pendingAdvances.length === 0 ? (
+                    <div className="p-20 text-center flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-300 dark:text-slate-600">
+                            <Check size={32} />
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-widest">All Clear</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">No pending advance requests from your drivers</p>
+                        </div>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800/50 text-slate-400 dark:text-slate-500 text-left transition-colors">
-                                    <th className="p-6 px-8 text-[10px] font-black uppercase tracking-widest">Driver ID</th>
-                                    <th className="p-6 px-8 text-[10px] font-black uppercase tracking-widest">Amount Requested</th>
-                                    <th className="p-6 px-8 text-[10px] font-black uppercase tracking-widest">Trip ID</th>
-                                    <th className="p-6 px-8 text-[10px] font-black uppercase tracking-widest">Notes</th>
-                                    <th className="p-6 px-8 text-center text-[10px] font-black uppercase tracking-widest">Actions</th>
+                                <tr className="bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800/50 text-left">
+                                    <th className="p-5 px-8 text-[9px] font-black uppercase tracking-widest text-slate-400">Driver</th>
+                                    <th className="p-5 px-8 text-[9px] font-black uppercase tracking-widest text-slate-400">Amount</th>
+                                    <th className="p-5 px-8 text-[9px] font-black uppercase tracking-widest text-slate-400">Linked Trip</th>
+                                    <th className="p-5 px-8 text-[9px] font-black uppercase tracking-widest text-slate-400">Date</th>
+                                    <th className="p-5 px-8 text-[9px] font-black uppercase tracking-widest text-slate-400">Notes</th>
+                                    <th className="p-5 px-8 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                                {pendingAdvances.map(advance => (
-                                    <tr key={advance.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
-                                        <td className="p-6 px-8 font-black text-[11px] text-blue-600 dark:text-blue-400 uppercase tracking-tight">{advance.driverId}</td>
-                                        <td className="p-6 px-8 text-sm font-black text-slate-900 dark:text-white">${advance.advanceAmount?.toFixed(2)}</td>
-                                        <td className="p-6 px-8 text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight">{advance.tripId || 'N/A'}</td>
-                                        <td className="p-6 px-8 text-xs font-medium text-slate-600 dark:text-slate-400">{advance.notes || 'No notes'}</td>
-                                        <td className="p-6 px-8">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button 
-                                                    onClick={() => handleApprove(advance.id)} 
-                                                    className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-800/50 transition-all active:scale-95" 
-                                                    title="Approve"
-                                                >
-                                                    <Check size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleReject(advance.id)} 
-                                                    className="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 p-3 rounded-xl border border-rose-100 dark:border-rose-800/30 hover:bg-rose-100 dark:hover:bg-rose-800/50 transition-all active:scale-95" 
-                                                    title="Reject"
-                                                >
-                                                    <X size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {pendingAdvances.length === 0 && (
-                                    <tr>
-                                        <td colSpan={5} className="p-20 text-center">
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 dark:bg-slate-950 border border-transparent dark:border-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-700 shadow-xl shadow-slate-900/5">
-                                                    <Check size={32} />
+                                {pendingAdvances.map(advance => {
+                                    const driverName = advance.driver
+                                        ? `${advance.driver.firstName} ${advance.driver.lastName}`
+                                        : advance.driverId?.slice(0, 8);
+                                    const tripRef = advance.trip?.tripNumber || (advance.tripId ? advance.tripId.slice(0, 8) : 'N/A');
+
+                                    return (
+                                        <tr key={advance.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="p-5 px-8">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                                        <User size={14} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">{driverName}</p>
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{advance.driver?.email || ''}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Queue Fully Reconciled</p>
-                                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest mt-1">There are no pending fuel advance requests requiring administrative review.</p>
+                                            </td>
+                                            <td className="p-5 px-8">
+                                                <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                                                    {formatCurrency(advance.advanceAmount)}
+                                                </span>
+                                            </td>
+                                            <td className="p-5 px-8 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight">
+                                                {tripRef}
+                                            </td>
+                                            <td className="p-5 px-8 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                                                {new Date(advance.advanceDate).toLocaleDateString()}
+                                            </td>
+                                            <td className="p-5 px-8 text-[10px] font-medium text-slate-500 dark:text-slate-400 max-w-[160px] truncate">
+                                                {advance.notes || '—'}
+                                            </td>
+                                            <td className="p-5 px-8">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => handleApprove(advance.id)}
+                                                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-800/50 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest"
+                                                    >
+                                                        <Check size={13} /> Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReject(advance.id)}
+                                                        className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-100 dark:border-rose-800/30 hover:bg-rose-100 dark:hover:bg-rose-800/50 transition-all active:scale-95 text-[9px] font-black uppercase tracking-widest"
+                                                    >
+                                                        <X size={13} /> Reject
+                                                    </button>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

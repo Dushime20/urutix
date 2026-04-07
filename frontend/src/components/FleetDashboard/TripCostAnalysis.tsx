@@ -47,11 +47,19 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
     totalCost: 0,
   });
 
-  // Fetch trips for selection
+  // Fetch trips for selection — always enabled so the dropdown stays populated
   const { data: tripsData } = useQuery({
-    queryKey: ['trips', 'all'],
-    queryFn: () => tripsAPI.getAll({ status: 'PLANNED,IN_PROGRESS' }),
-    enabled: !selectedTripId,
+    queryKey: ['trips', 'cost-analysis'],
+    queryFn: async () => {
+      // Fetch PLANNED and IN_PROGRESS trips separately and merge
+      const [planned, inProgress, completed] = await Promise.all([
+        tripsAPI.getAll({ status: 'PLANNED', limit: 50 }),
+        tripsAPI.getAll({ status: 'IN_PROGRESS', limit: 50 }),
+        tripsAPI.getAll({ status: 'COMPLETED', limit: 50 }),
+      ]);
+      const extract = (r: any) => r?.data?.data || r?.data?.trips || r?.data || [];
+      return [...extract(planned), ...extract(inProgress), ...extract(completed)];
+    },
   });
 
   // Fetch selected trip details
@@ -61,7 +69,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
     enabled: !!selectedTripId,
   });
 
-  const trip = tripData?.data?.trip || tripData?.trip;
+  const trip = tripData?.data?.data || tripData?.data?.trip || tripData?.trip || tripData?.data;
 
   // Calculate costs based on trip data
   React.useEffect(() => {
@@ -144,9 +152,9 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
             className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
           >
             <option value="">Select a trip...</option>
-            {tripsData?.data?.trips?.map((t: any) => (
+            {(Array.isArray(tripsData) ? tripsData : []).map((t: any) => (
               <option key={t.id} value={t.id}>
-                {t.tripNumber} - {t.load?.title || 'Untitled Load'}
+                {t.tripNumber} — {t.load?.title || t.load?.description || 'Untitled Load'}
               </option>
             ))}
           </select>
@@ -173,9 +181,9 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
             className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
           >
             <option value="">Select a trip...</option>
-            {tripsData?.data?.trips?.map((t: any) => (
+            {(Array.isArray(tripsData) ? tripsData : []).map((t: any) => (
               <option key={t.id} value={t.id}>
-                {t.tripNumber} - {t.load?.title || 'Untitled Load'}
+                {t.tripNumber} — {t.load?.title || t.load?.description || 'Untitled Load'}
               </option>
             ))}
           </select>

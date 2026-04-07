@@ -547,6 +547,10 @@ const DriverDashboard: React.FC = () => {
         isOpen={showPostTripModal}
         onClose={() => setShowPostTripModal(false)}
         onComplete={confirmTripCompletion}
+        truckId={currentTrip?.truck?.id}
+        truckPlate={currentTrip?.truck?.plateNumber}
+        driverId={driverId}
+        driverName={driver ? `${driver.firstName} ${driver.lastName}` : undefined}
       />
     </div>
   );

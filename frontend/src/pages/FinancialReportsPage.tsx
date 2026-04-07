@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   FileText,
@@ -21,9 +22,16 @@ import {
   FilePlus
 } from 'lucide-react';
 import FinancialReportsEnlite, { type ReportTemplate, type GeneratedReport } from '../components/LenderDashboard/FinancialReports.enlite';
+import { financialReportsApi } from '../services/financialReportsApi';
 
 const FinancialReportsPage: React.FC = () => {
-  const [loading] = useState(false);
+  // Fetch financial reports from backend
+  const { data: reportsData, isLoading: reportsLoading, refetch } = useQuery({
+    queryKey: ['financial-reports'],
+    queryFn: () => financialReportsApi.getFinancialReports({ limit: 10 }),
+  });
+
+  const loading = reportsLoading;
 
   const [templates] = useState<ReportTemplate[]>([
     {
@@ -80,30 +88,81 @@ const FinancialReportsPage: React.FC = () => {
     }
   ]);
 
-  const [recentReports] = useState<GeneratedReport[]>([
-    {
-      id: 'RPT-7701',
-      templateId: 'portfolio-summary',
-      name: 'Financial Health - Aug 2024',
-      category: 'portfolio',
-      generatedAt: '2024-08-10T14:30:00',
-      generatedBy: 'System Admin',
-      format: 'pdf',
-      size: '2.4 MB',
-      status: 'completed'
-    },
-    {
-      id: 'RPT-8842',
-      templateId: 'risk-assessment',
-      name: 'Weekly Risk Matrix - Q3',
-      category: 'risk',
-      generatedAt: '2024-08-11T09:15:00',
-      generatedBy: 'Risk Lab',
-      format: 'pdf',
-      size: '3.1 MB',
-      status: 'completed'
+  // Map backend reports to GeneratedReport format
+  const recentReports: GeneratedReport[] = (reportsData?.reports || []).map(report => ({
+    id: report.id,
+    templateId: report.type,
+    name: `${report.type.replace(/_/g, ' ').toUpperCase()} - ${new Date(report.startDate).toLocaleDateString()}`,
+    category: getCategoryFromType(report.type),
+    generatedAt: report.createdAt,
+    generatedBy: report.generatedBy || 'System',
+    format: report.format || 'pdf',
+    size: 'N/A',
+    status: 'completed' as const,
+  }));
+
+  function getCategoryFromType(type: string): string {
+    if (type.includes('portfolio')) return 'portfolio';
+    if (type.includes('pl') || type.includes('cash') || type.includes('balance')) return 'financial';
+    if (type.includes('risk')) return 'risk';
+    return 'performance';
+  }
+
+  const handleGenerateReport = async (template: ReportTemplate) => {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      
+      // Set date range based on frequency
+      switch (template.frequency) {
+        case 'daily':
+          startDate.setDate(startDate.getDate() - 1);
+          break;
+        case 'weekly':
+          startDate.setDate(startDate.getDate() - 7);
+          break;
+        case 'monthly':
+          startDate.setMonth(startDate.getMonth() - 1);
+          break;
+        case 'quarterly':
+          startDate.setMonth(startDate.getMonth() - 3);
+          break;
+        default:
+          startDate.setMonth(startDate.getMonth() - 1);
+      }
+
+      await financialReportsApi.generateFinancialReport({
+        type: template.id,
+        period: template.frequency === 'on-demand' ? 'monthly' : template.frequency,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+
+      // Refetch reports after generation
+      refetch();
+      alert(`Report "${template.name}" generated successfully!`);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Failed to generate report. Please try again.');
     }
-  ]);
+  };
+
+  const handleDownloadReport = async (report: GeneratedReport) => {
+    try {
+      const blob = await financialReportsApi.downloadReport(report.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${report.name}.${report.format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('Failed to download report. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
@@ -121,7 +180,7 @@ const FinancialReportsPage: React.FC = () => {
               <FilePlus size={14} /> Create Custom
             </button>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => refetch()}
               className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
             >
               <RotateCcw size={14} /> Refresh
@@ -133,9 +192,9 @@ const FinancialReportsPage: React.FC = () => {
           loading={loading}
           templates={templates}
           recentReports={recentReports}
-          onGenerate={(t) => alert(`Executing generation for ${t.name}...`)}
+          onGenerate={handleGenerateReport}
           onViewDetails={(t) => alert(`Opening parameters for ${t.id}...`)}
-          onDownload={(r) => alert(`Downloading archive ${r.id}...`)}
+          onDownload={handleDownloadReport}
         />
       </div>
     </div>
