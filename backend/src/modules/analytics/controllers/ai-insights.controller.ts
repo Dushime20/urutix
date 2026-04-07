@@ -185,10 +185,9 @@ export class AIInsightsController {
     ]);
 
     return {
-      summary: insights.summary,
+      insights,
       latestPrediction: predictions,
-      activeAlerts: alerts.filter((alert: any) => alert.severity === 'high').length,
-      totalInsights: insights.summary.totalInsights,
+      activeAlerts: Array.isArray(alerts.alerts) ? alerts.alerts.filter((alert: any) => alert.severity === 'high').length : 0,
       generatedAt: new Date().toISOString()
     };
   }

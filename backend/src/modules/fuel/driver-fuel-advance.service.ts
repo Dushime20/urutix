@@ -156,6 +156,21 @@ export class DriverFuelAdvanceService {
         });
     }
 
+    async getPendingAdvancesForEmployer(
+        employerId: string,
+        tenantId: string,
+    ): Promise<DriverFuelAdvance[]> {
+        return await this.advanceRepository
+            .createQueryBuilder('advance')
+            .leftJoinAndSelect('advance.driver', 'driver')
+            .leftJoinAndSelect('advance.trip', 'trip')
+            .where('advance.tenantId = :tenantId', { tenantId })
+            .andWhere('advance.status = :status', { status: DriverFuelAdvanceStatus.PENDING })
+            .andWhere('driver.employerId = :employerId', { employerId })
+            .orderBy('advance.advanceDate', 'ASC')
+            .getMany();
+    }
+
     async getAdvanceStats(tenantId: string): Promise<any> {
         const advances = await this.advanceRepository.find({
             where: { tenantId },

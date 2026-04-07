@@ -29,13 +29,17 @@ import { Auction } from '../../entities/auction.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { errorMessage } from '../../utils/error';
 import { UserRole } from '../../entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('Bidding & Auctions')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('bidding')
 export class BiddingController {
-  constructor(private readonly biddingService: BiddingService) { }
+  constructor(
+    private readonly biddingService: BiddingService,
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   @Get('test')
   @ApiOperation({
@@ -235,11 +239,32 @@ export class BiddingController {
     if (!req.user) {
       throw new Error('User not authenticated');
     }
-    return this.biddingService.createBid(
+    const bid = await this.biddingService.createBid(
       createBidDto,
       req.user.userId,
       req.user.tenantId,
     );
+
+    // Emit bid.submitted event for notifications (simplified - no load details needed)
+    try {
+      this.eventEmitter.emit('bid.submitted', {
+        bidId: bid.id,
+        cargoId: bid.loadId,
+        cargoOwnerId: bid.load?.cargoOwnerId || 'unknown',
+        truckOwnerId: req.user.userId,
+        tenantId: req.user.tenantId,
+        bidDetails: {
+          amount: bid.bidAmount,
+          proposedPickupDate: bid.proposedPickupDate,
+          proposedDeliveryDate: bid.proposedDeliveryDate,
+          notes: bid.bidNotes,
+        },
+      });
+    } catch (eventError) {
+      console.warn('⚠️ Failed to emit bid.submitted event (non-critical):', eventError.message);
+    }
+
+    return bid;
   }
 
   @Get('loads/:loadId/bids')
@@ -359,12 +384,39 @@ export class BiddingController {
     @Param('bidId') bidId: string,
     @Request() req: any,
   ): Promise<Bid> {
-    return this.biddingService.acceptBid(
+    const bid = await this.biddingService.acceptBid(
       bidId,
       req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
       req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
       req.user?.role as UserRole,
     );
+
+    // Emit bid.accepted event for notifications
+    try {
+      if (bid.load) {
+        const pickupLocation = bid.load.locations?.find(loc => loc.type === 'PICKUP');
+        const deliveryLocation = bid.load.locations?.find(loc => loc.type === 'DELIVERY');
+        
+        this.eventEmitter.emit('bid.accepted', {
+          bidId: bid.id,
+          cargoId: bid.loadId,
+          cargoOwnerId: bid.load.cargoOwnerId,
+          truckOwnerId: bid.truckOwnerId,
+          driverId: null, // Driver not assigned at bid acceptance
+          tenantId: req.user.tenantId,
+          bidDetails: {
+            amount: bid.bidAmount,
+            cargoTitle: bid.load.title || 'Cargo',
+            origin: pickupLocation?.locationData?.address || pickupLocation?.locationData?.city || 'Unknown',
+            destination: deliveryLocation?.locationData?.address || deliveryLocation?.locationData?.city || 'Unknown',
+          },
+        });
+      }
+    } catch (eventError) {
+      console.warn('⚠️ Failed to emit bid.accepted event (non-critical):', eventError.message);
+    }
+
+    return bid;
   }
 
   @Get('auctions')
@@ -729,3 +781,4 @@ export class BiddingController {
     return { success: true };
   }
 }
+

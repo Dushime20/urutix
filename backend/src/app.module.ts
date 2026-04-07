@@ -33,6 +33,8 @@ import { BrokersModule } from './modules/brokers/brokers.module';
 import { FuelModule } from './modules/fuel/fuel.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
+import { MessengerModule } from './modules/messenger/messenger.module';
 import { MultiModalModule } from './modules/multi-modal/multi-modal.module';
 import { EventsModule } from './modules/events/events.module';
 import { databaseConfig } from './config/database.config';
@@ -75,6 +77,8 @@ import { Tenant } from './entities/tenant.entity';
     FuelModule,
     SubscriptionModule,
     AnalyticsModule,
+    ActivityLogsModule,
+    MessengerModule,
     MultiModalModule,
     EventsModule,
     MaintenanceModule,

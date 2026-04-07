@@ -89,7 +89,6 @@ export class SafetyGuardianService {
     // Notify Operations (War Room)
     await this.realTimeProcessor.processAnalyticsStream(
       trip.tenantId,
-      'route_anomaly',
       {
         type: 'SAFETY_INTERVENTION',
         id: trip.id,

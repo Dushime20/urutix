@@ -9,6 +9,7 @@ import {
     Query,
     UseGuards,
     Request,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -17,12 +18,17 @@ import {
     ApiBearerAuth,
     ApiQuery,
 } from '@nestjs/swagger';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
+import { Driver } from '../../entities/driver.entity';
+import { Trip } from '../../entities/trip.entity';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { FuelService } from './fuel.service';
 import { FuelWalletService } from './fuel-wallet.service';
+import { DriverFuelAdvanceService } from './driver-fuel-advance.service';
 import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-log.dto';
 
 @ApiTags('Fuel Management')
@@ -43,6 +49,11 @@ export class FuelController {
     constructor(
         private readonly fuelService: FuelService,
         private readonly fuelWalletService: FuelWalletService,
+        private readonly advanceService: DriverFuelAdvanceService,
+        @InjectRepository(Driver)
+        private readonly driverRepository: Repository<Driver>,
+        @InjectRepository(Trip)
+        private readonly tripRepository: Repository<Trip>,
     ) { }
 
     // ── WALLET ENDPOINTS ────────────────────────────────────────────────────
@@ -286,5 +297,118 @@ export class FuelController {
             success: true,
             data: stats,
         };
+    }
+
+    // ── ADVANCE ENDPOINTS ────────────────────────────────────────────────────
+
+    @Post('advances/request')
+    @ApiOperation({ summary: 'Request a fuel advance' })
+    async requestAdvance(
+        @Body() body: { tripId?: string; advanceAmount: number; notes?: string },
+        @GetTenant() tenantId: string,
+        @Request() req,
+    ) {
+        const driver = await this.driverRepository.findOne({ where: { userId: req.user.userId, tenantId } });
+        if (!driver) throw new InternalServerErrorException('Driver profile not found for this user');
+
+        // Resolve trip number → UUID if needed
+        let resolvedTripId: string | undefined = body.tripId;
+        if (resolvedTripId) {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(resolvedTripId)) {
+                const trip = await this.tripRepository.findOne({
+                    where: { tripNumber: resolvedTripId, tenantId },
+                });
+                if (!trip) throw new InternalServerErrorException(`Trip "${resolvedTripId}" not found`);
+                resolvedTripId = trip.id;
+            }
+        }
+
+        const advance = await this.advanceService.requestAdvance(
+            driver.id,
+            body.advanceAmount,
+            tenantId,
+            resolvedTripId,
+            body.notes,
+        );
+        return { success: true, data: advance };
+    }
+
+    @Get('advances/pending/all')
+    @ApiOperation({ summary: 'Get all pending advances (admin/fleet manager)' })
+    async getPendingAdvances(@GetTenant() tenantId: string) {
+        const advances = await this.advanceService.getPendingAdvances(tenantId);
+        return { success: true, data: advances };
+    }
+
+    @Get('advances/pending/my-drivers')
+    @ApiOperation({ summary: 'Get pending advances for drivers employed by the logged-in truck owner' })
+    async getPendingAdvancesForMyDrivers(@GetTenant() tenantId: string, @Request() req) {
+        const advances = await this.advanceService.getPendingAdvancesForEmployer(req.user.userId, tenantId);
+        return { success: true, data: advances };
+    }
+
+    @Get('advances/stats/overview')
+    @ApiOperation({ summary: 'Get advance stats overview' })
+    async getAdvanceStats(@GetTenant() tenantId: string) {
+        const stats = await this.advanceService.getAdvanceStats(tenantId);
+        return { success: true, data: stats };
+    }
+
+    @Get('advances/driver/:driverId')
+    @ApiOperation({ summary: 'Get advances for a driver' })
+    async getDriverAdvances(
+        @Param('driverId') driverId: string,
+        @Query('status') status: string,
+        @GetTenant() tenantId: string,
+    ) {
+        const advances = await this.advanceService.getDriverAdvances(driverId, tenantId, status as any);
+        return { success: true, data: advances };
+    }
+
+    @Get('advances/driver/:driverId/balance')
+    @ApiOperation({ summary: 'Get advance balance for a driver' })
+    async getDriverAdvanceBalance(
+        @Param('driverId') driverId: string,
+        @GetTenant() tenantId: string,
+    ) {
+        const balance = await this.advanceService.getDriverAdvanceBalance(driverId, tenantId);
+        return { success: true, data: { balance } };
+    }
+
+    @Get('advances/:id')
+    @ApiOperation({ summary: 'Get advance by ID' })
+    async getAdvance(@Param('id') id: string, @GetTenant() tenantId: string) {
+        const advance = await this.advanceService.getAdvance(id, tenantId);
+        return { success: true, data: advance };
+    }
+
+    @Put('advances/:id/approve')
+    @ApiOperation({ summary: 'Approve an advance' })
+    async approveAdvance(@Param('id') id: string, @GetTenant() tenantId: string, @Request() req) {
+        const advance = await this.advanceService.approveAdvance(id, tenantId, req.user.userId);
+        return { success: true, data: advance };
+    }
+
+    @Put('advances/:id/reject')
+    @ApiOperation({ summary: 'Reject an advance' })
+    async rejectAdvance(
+        @Param('id') id: string,
+        @Body() body: { rejectionReason: string },
+        @GetTenant() tenantId: string,
+    ) {
+        const advance = await this.advanceService.rejectAdvance(id, tenantId, body.rejectionReason);
+        return { success: true, data: advance };
+    }
+
+    @Put('advances/:id/reconcile')
+    @ApiOperation({ summary: 'Reconcile an advance' })
+    async reconcileAdvance(
+        @Param('id') id: string,
+        @Body() body: { reconciliationAmount: number; reconciliationNotes?: string },
+        @GetTenant() tenantId: string,
+    ) {
+        const advance = await this.advanceService.reconcileAdvance(id, tenantId, body.reconciliationAmount, body.reconciliationNotes);
+        return { success: true, data: advance };
     }
 }

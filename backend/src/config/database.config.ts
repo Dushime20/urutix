@@ -115,6 +115,7 @@ import { NotificationLog } from './../entities/notification-log.entity';
 // Analytics entities
 import { CargoOwnerAnalytics } from './../entities/cargo-owner-analytics.entity';
 import { AnalyticsInsights } from './../entities/analytics-insights.entity';
+import { Message } from './../entities/message.entity';
 
 import { config } from 'dotenv';
 config();
@@ -247,6 +248,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     CargoOwnerAnalytics,
     AnalyticsInsights,
     MaintenanceLog,
+    // Messenger entities
+    Message,
   ],
   synchronize: false,
   autoLoadEntities: false,
@@ -377,6 +380,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     CargoOwnerAnalytics,
     AnalyticsInsights,
     MaintenanceLog,
+    // Messenger entities
+    Message,
   ],
   synchronize: true,
   autoLoadEntities: false,

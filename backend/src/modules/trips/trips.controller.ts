@@ -31,6 +31,7 @@ import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ApiResponseDto,
   PaginatedResponseDto,
@@ -50,7 +51,10 @@ import {
 )
 @ApiBearerAuth('JWT-auth')
 export class TripsController {
-  constructor(private readonly tripsService: TripsService) {}
+  constructor(
+    private readonly tripsService: TripsService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -151,29 +155,6 @@ export class TripsController {
   })
   @ApiOkResponse({
     description: 'Active trips retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        message: {
-          type: 'string',
-          example: 'Active trips retrieved successfully',
-        },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'trip-uuid' },
-              tripNumber: { type: 'string', example: 'TRIP-2024-001' },
-              status: { type: 'string', example: 'IN_PROGRESS' },
-              agreedPrice: { type: 'number', example: 2500.0 },
-            },
-          },
-        },
-        statusCode: { type: 'number', example: 200 },
-      },
-    },
   })
   async getActiveTrips(@Request() req): Promise<ApiResponseDto> {
     const trips = await this.tripsService.getActiveTrips(req.user.tenantId);
@@ -181,6 +162,26 @@ export class TripsController {
       success: true,
       message: 'Active trips retrieved successfully',
       data: trips,
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('my-trips')
+  @ApiOperation({
+    summary: 'Get trips for the logged-in driver',
+    description: 'Returns current, upcoming, and history trips for the authenticated driver',
+  })
+  @ApiOkResponse({ description: 'Driver trips retrieved successfully' })
+  async getMyTrips(@Request() req): Promise<ApiResponseDto> {
+    const result = await this.tripsService.getMyTrips(
+      req.user.userId,
+      req.user.tenantId,
+    );
+    return {
+      success: true,
+      message: 'Driver trips retrieved successfully',
+      data: result,
       statusCode: 200,
       timestamp: new Date().toISOString(),
     };
@@ -296,34 +297,114 @@ export class TripsController {
   }
 
   @Post(':id/complete')
-  @ApiOperation({
-    summary: 'Complete a trip',
-    description: 'Mark a trip as COMPLETED',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Trip ID',
-    example: 'trip-uuid',
-  })
-  @ApiOkResponse({
-    description: 'Trip completed successfully',
-  })
-  async complete(
-    @Param('id') id: string,
-    @Request() req,
-  ): Promise<ApiResponseDto> {
+  @ApiOperation({ summary: 'Complete a trip', description: 'Mark a trip as COMPLETED' })
+  @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
+  @ApiOkResponse({ description: 'Trip completed successfully' })
+  async complete(@Param('id') id: string, @Request() req): Promise<ApiResponseDto> {
     const trip = await this.tripsService.updateTripStatus(
       id,
-      { status: TripStatus.COMPLETED },
+      { status: TripStatus.COMPLETED, actualEndTime: new Date() },
       req.user.tenantId,
     );
-    return {
-      success: true,
-      message: 'Trip completed successfully',
-      data: trip,
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-    };
+
+    // Emit trip.completed event for notifications
+    try {
+      if (trip.load) {
+        const pickupLocation = trip.load.locations?.find(loc => loc.type === 'PICKUP');
+        const deliveryLocation = trip.load.locations?.find(loc => loc.type === 'DELIVERY');
+        
+        // Calculate duration if we have start and end times
+        let duration = null;
+        if (trip.actualStartTime && trip.actualEndTime) {
+          duration = (new Date(trip.actualEndTime).getTime() - new Date(trip.actualStartTime).getTime()) / 1000; // in seconds
+        }
+        
+        this.eventEmitter.emit('trip.completed', {
+          tripId: trip.id,
+          cargoOwnerId: trip.load.cargoOwnerId,
+          truckOwnerId: trip.truck?.ownerId || 'unknown',
+          driverId: trip.driverId,
+          tenantId: req.user.tenantId,
+          tripDetails: {
+            cargoTitle: trip.load.title || 'Cargo',
+            origin: pickupLocation?.locationData?.address || pickupLocation?.locationData?.city || 'Unknown',
+            destination: deliveryLocation?.locationData?.address || deliveryLocation?.locationData?.city || 'Unknown',
+            completedAt: trip.actualEndTime || new Date(),
+            distance: trip.totalDistance || null,
+            duration: duration,
+          },
+        });
+      }
+    } catch (eventError) {
+      console.warn('⚠️ Failed to emit trip.completed event (non-critical):', eventError.message);
+    }
+
+    return { success: true, message: 'Trip completed successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/start')
+  @ApiOperation({ summary: 'Start a trip', description: 'Mark a trip as IN_PROGRESS' })
+  @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
+  @ApiOkResponse({ description: 'Trip started successfully' })
+  async start(@Param('id') id: string, @Request() req): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.updateTripStatus(
+      id,
+      { status: TripStatus.IN_PROGRESS, actualStartTime: new Date() },
+      req.user.tenantId,
+    );
+
+    // Emit trip.started event for notifications
+    try {
+      if (trip.load) {
+        const pickupLocation = trip.load.locations?.find(loc => loc.type === 'PICKUP');
+        const deliveryLocation = trip.load.locations?.find(loc => loc.type === 'DELIVERY');
+        
+        this.eventEmitter.emit('trip.started', {
+          tripId: trip.id,
+          cargoOwnerId: trip.load.cargoOwnerId,
+          truckOwnerId: trip.truck?.ownerId || 'unknown',
+          driverId: trip.driverId,
+          tenantId: req.user.tenantId,
+          tripDetails: {
+            cargoTitle: trip.load.title || 'Cargo',
+            origin: pickupLocation?.locationData?.address || pickupLocation?.locationData?.city || 'Unknown',
+            destination: deliveryLocation?.locationData?.address || deliveryLocation?.locationData?.city || 'Unknown',
+            estimatedArrival: trip.estimatedEndTime || new Date(),
+            trackingUrl: `/trips/${trip.id}/track`,
+          },
+        });
+      }
+    } catch (eventError) {
+      console.warn('⚠️ Failed to emit trip.started event (non-critical):', eventError.message);
+    }
+
+    return { success: true, message: 'Trip started successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/pause')
+  @ApiOperation({ summary: 'Pause a trip', description: 'Mark a trip as DELAYED' })
+  @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
+  @ApiOkResponse({ description: 'Trip paused successfully' })
+  async pause(@Param('id') id: string, @Request() req): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.updateTripStatus(
+      id,
+      { status: TripStatus.DELAYED },
+      req.user.tenantId,
+    );
+    return { success: true, message: 'Trip paused successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/resume')
+  @ApiOperation({ summary: 'Resume a trip', description: 'Mark a trip back to IN_PROGRESS' })
+  @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
+  @ApiOkResponse({ description: 'Trip resumed successfully' })
+  async resume(@Param('id') id: string, @Request() req): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.updateTripStatus(
+      id,
+      { status: TripStatus.IN_PROGRESS },
+      req.user.tenantId,
+    );
+    return { success: true, message: 'Trip resumed successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
   }
 
   @Delete(':id')
@@ -405,3 +486,4 @@ export class TripsController {
     };
   }
 }
+

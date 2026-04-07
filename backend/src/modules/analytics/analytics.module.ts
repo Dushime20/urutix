@@ -2,8 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
-// Analytics entities
-import { CargoOwnerAnalytics } from '../../entities/cargo-owner-analytics.entity';
+// Analytics entities (CargoOwnerAnalytics import removed - table doesn't exist)
 import { AnalyticsInsights } from '../../entities/analytics-insights.entity';
 
 // Existing entities that analytics depends on
@@ -39,7 +38,7 @@ import { CarrierIntelligenceService } from './services/carrier-intelligence.serv
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { AIInsightsService } from './services/ai-insights.service';
 import { PredictiveAnalyticsService } from './services/predictive-analytics.service';
-import { MLPipelineService } from './services/ml-pipeline.service';
+import { MlPipelineService } from './services/ml-pipeline.service';
 import { RealTimeProcessorService } from './services/real-time-processor.service';
 import { ApiMarketplaceService } from './services/api-marketplace.service';
 import { SafetyGuardianService } from './services/safety-guardian.service';
@@ -56,8 +55,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      // Analytics entities
-      CargoOwnerAnalytics,
+      // Analytics entities (CargoOwnerAnalytics removed - table doesn't exist, using real tables instead)
       AnalyticsInsights,
       // Existing entities for integration
       Load,
@@ -66,12 +64,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
       User,
       CreditPricingRule,
       TenantSubscription,
-      Trip, // Add Trip entity for PredictiveAnalyticsService
-      Driver, // Add Driver entity
-      SafetyIncident, // Add SafetyIncident entity
-      Truck, // Add Truck entity
-      SafetyInspection, // Add SafetyInspection entity
-      InsuranceClaim, // Add InsuranceClaim entity
+      Trip,
+      Driver,
+      SafetyIncident,
+      Truck,
+      SafetyInspection,
+      InsuranceClaim,
       Payment,
       Notification,
     ]),
@@ -102,7 +100,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     MarketIntelligenceService,
     AIInsightsService,
     PredictiveAnalyticsService,
-    MLPipelineService,
+    MlPipelineService,
     RealTimeProcessorService,
     ApiMarketplaceService,
     SafetyGuardianService,
@@ -119,7 +117,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     MarketIntelligenceService,
     AIInsightsService,
     PredictiveAnalyticsService,
-    MLPipelineService,
+    MlPipelineService,
     RealTimeProcessorService,
     ApiMarketplaceService,
     SafetyGuardianService,
