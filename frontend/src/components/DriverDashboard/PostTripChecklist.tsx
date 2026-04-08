@@ -63,6 +63,14 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [podFile, setPodFile] = useState<File | null>(null);
   const [vehicleFile, setVehicleFile] = useState<File | null>(null);
+
+  // Debug logging
+  console.log('🔍 PostTripChecklist Props:', {
+    truckId,
+    truckPlate,
+    driverId,
+    driverName,
+  });
   const [categories, setCategories] = useState<ChecklistCategory[]>([
     {
       id: 'cargo',
@@ -158,7 +166,7 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
     const hasFailures = allItems.some(i => i.status === 'failed');
 
     try {
-      await safetyApi.createInspection({
+      const inspectionData = {
         type: InspectionTypes.POST_TRIP,
         inspector: signature,
         inspectionDate: new Date().toISOString(),
@@ -169,7 +177,11 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
         status: hasFailures ? InspectionStatuses.FAILED : InspectionStatuses.PASSED,
         items: allItems,
         notes: `Post-trip inspection signed by ${signature}. Odometer: ${odometer}, Location: ${location}`
-      });
+      };
+
+      console.log('🔍 Creating inspection with data:', inspectionData);
+
+      await safetyApi.createInspection(inspectionData);
 
       if (podFile || vehicleFile) {
         const uploadPromises = [];
@@ -177,7 +189,7 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
           uploadPromises.push(documentApi.createDocument({
               entityType: 'DRIVER',
               entityId: driverId,
-              documentType: 'PROOF_OF_DELIVERY',
+              documentType: 'POD',
               category: 'OPERATIONAL',
               title: `POD - Trip Closure - ${new Date().toLocaleDateString()}`,
               description: `Proof of Delivery uploaded during post-trip checklist by ${driverName || signature}`,
@@ -188,7 +200,7 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
           uploadPromises.push(documentApi.createDocument({
               entityType: 'TRUCK',
               entityId: truckId,
-              documentType: 'VEHICLE_CONDITION',
+              documentType: 'VEHICLE_INSPECTION',
               category: 'SAFETY',
               title: `Veh Condition - ${new Date().toLocaleDateString()}`,
               description: `Post-trip vehicle condition photo uploaded by ${driverName || signature}`,
@@ -313,6 +325,39 @@ export const PostTripChecklist: React.FC<PostTripChecklistProps> = ({
                         <h4 className="text-3xl font-black text-[#0f172a] dark:text-white uppercase tracking-tight italic">Trip Stats Verification</h4>
                         <p className="text-sm font-medium text-slate-400">Please provide your final mission metrics.</p>
                     </div>
+
+                    {/* Truck and Driver Information */}
+                    {(truckPlate || driverName) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {truckPlate && (
+                          <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
+                                <Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-wider">Assigned Truck</p>
+                                <p className="text-lg font-black text-blue-900 dark:text-blue-100">{truckPlate}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {driverName && (
+                          <div className="p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center">
+                                <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">Driver</p>
+                                <p className="text-lg font-black text-emerald-900 dark:text-emerald-100">{driverName}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="grid gap-10">
                         <div className="p-10 bg-slate-50 dark:bg-slate-800/40 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/50 shadow-sm focus-within:ring-4 focus-within:ring-[#345E85]/5 transition-all">

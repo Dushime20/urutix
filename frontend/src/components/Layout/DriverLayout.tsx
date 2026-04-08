@@ -100,6 +100,10 @@ const DriverLayout: React.FC = () => {
             toast.error('Failed to finalize mission');
           }
         }}
+        truckId={currentTrip?.truck?.id}
+        truckPlate={currentTrip?.truck?.plateNumber}
+        driverId={driverId}
+        driverName={currentDriverProfile ? `${currentDriverProfile.firstName} ${currentDriverProfile.lastName}` : undefined}
       />
 
       <MobileBottomNav />

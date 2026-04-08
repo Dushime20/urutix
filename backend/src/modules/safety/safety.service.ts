@@ -92,6 +92,7 @@ export class SafetyService {
     try {
       const query = this.incidentRepository
         .createQueryBuilder('incident')
+        .leftJoinAndSelect('trucks', 'truck', 'incident.truckId = truck.id')
         .where('incident.tenantId = :tenantId', { tenantId })
         .andWhere('incident.deletedAt IS NULL')
         .orderBy('incident.date', 'DESC');
@@ -118,7 +119,16 @@ export class SafetyService {
         });
       }
 
-      return await query.getMany();
+      const incidents = await query.getRawAndEntities();
+      
+      // Map truck plate numbers to incidents
+      return incidents.entities.map((incident, index) => {
+        const raw = incidents.raw[index];
+        if (raw && raw.truck_plateNumber && !incident.truckPlate) {
+          incident.truckPlate = raw.truck_plateNumber;
+        }
+        return incident;
+      });
     } catch (error) {
       console.error('❌ Error fetching safety incidents:', error);
       throw new BadRequestException(
