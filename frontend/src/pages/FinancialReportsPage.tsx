@@ -31,62 +31,34 @@ const FinancialReportsPage: React.FC = () => {
     queryFn: () => financialReportsApi.getFinancialReports({ limit: 10 }),
   });
 
-  const loading = reportsLoading;
+  // Fetch report templates from backend
+  const { data: templatesData, isLoading: templatesLoading } = useQuery({
+    queryKey: ['report-templates'],
+    queryFn: () => financialReportsApi.getReportTemplates(),
+  });
 
-  const [templates] = useState<ReportTemplate[]>([
-    {
-      id: 'portfolio-summary',
-      name: 'Portfolio Summary',
-      description: 'Comprehensive overview of loan portfolio performance, active assets, and key metrics.',
-      category: 'portfolio',
-      type: 'summary',
-      frequency: 'on-demand',
-      format: 'pdf',
-      icon: <PieChart size={18} />,
-      estimatedTime: '2m',
-      dataPoints: ['Total Value', 'Active Loans', 'Disbursed'],
-      isScheduled: true
-    },
-    {
-      id: 'income-statement',
-      name: 'P&L Statement',
-      description: 'Detailed profit and loss statement showing revenue from interest and fee corridors.',
-      category: 'financial',
-      type: 'detailed',
-      frequency: 'monthly',
-      format: 'excel',
-      icon: <DollarSign size={18} />,
-      estimatedTime: '4m',
-      dataPoints: ['Revenue', 'Expenses', 'Net Income'],
-      isScheduled: true
-    },
-    {
-      id: 'risk-assessment',
-      name: 'Risk Audit',
-      description: 'Deep-dive analysis of credit exposure, default patterns, and portfolio risk distribution.',
-      category: 'risk',
-      type: 'analytical',
-      frequency: 'weekly',
-      format: 'pdf',
-      icon: <Shield size={18} />,
-      estimatedTime: '6m',
-      dataPoints: ['PD', 'Value at Risk', 'Concentration'],
-      isScheduled: true
-    },
-    {
-      id: 'borrower-performance',
-      name: 'Entity Registry',
-      description: 'Analytical audit of borrower behavior, repayment hygiene, and credit trends.',
-      category: 'performance',
-      type: 'detailed',
-      frequency: 'monthly',
-      format: 'excel',
-      icon: <Users size={18} />,
-      estimatedTime: '3m',
-      dataPoints: ['Repayment Rate', 'Credit Score Trends'],
-      isScheduled: false
+  const loading = reportsLoading || templatesLoading;
+
+  // Use templates from backend or fallback to empty array
+  const templates: ReportTemplate[] = (templatesData?.templates || []).map(template => ({
+    ...template,
+    icon: getIconForCategory(template.category),
+  }));
+
+  function getIconForCategory(category: string) {
+    switch (category) {
+      case 'portfolio':
+        return <PieChart size={18} />;
+      case 'financial':
+        return <DollarSign size={18} />;
+      case 'risk':
+        return <Shield size={18} />;
+      case 'performance':
+        return <Users size={18} />;
+      default:
+        return <FileText size={18} />;
     }
-  ]);
+  }
 
   // Map backend reports to GeneratedReport format
   const recentReports: GeneratedReport[] = (reportsData?.reports || []).map(report => ({

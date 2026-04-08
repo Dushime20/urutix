@@ -1,4 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -41,12 +42,16 @@ import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
 import { Tenant } from './entities/tenant.entity';
+import { ActivityLoggingInterceptor } from './interceptors/activity-logging.interceptor';
+import { ActivityLogService } from './services/activity-log.service';
+import { ActivityLog } from './entities/activity-log.entity';
+import { UserSession } from './entities/user-session.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(databaseConfig),
-    TypeOrmModule.forFeature([Tenant]), // Add Tenant entity for middleware
+    TypeOrmModule.forFeature([Tenant, ActivityLog, UserSession]), // Add entities for interceptor
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     EnhancedAuthModule,
@@ -84,7 +89,14 @@ import { Tenant } from './entities/tenant.entity';
     MaintenanceModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    ActivityLogService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLoggingInterceptor,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

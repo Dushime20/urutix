@@ -48,7 +48,7 @@ const UnifiedAnalyticsManagement = () => {
     } else if (tab === "history") {
       navigate(`${basePath}/history`, { replace: true });
     } else {
-      navigate(`${basePath}/analytics`, { replace: true });
+      navigate(`${basePath}/analytics/operational`, { replace: true });
     }
   };
 

@@ -39,6 +39,11 @@ export interface GeneratedReport {
 }
 
 export const financialReportsApi = {
+  async getReportTemplates(): Promise<{ templates: ReportTemplate[] }> {
+    const response = await api.get('/financial/reports/templates');
+    return response.data.data;
+  },
+
   async getFinancialReports(params?: {
     type?: string;
     period?: string;
