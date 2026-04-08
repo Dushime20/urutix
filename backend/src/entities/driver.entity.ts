@@ -195,6 +195,21 @@ export class Driver {
   @Column('jsonb', { default: {} })
   preferences: Record<string, any>;
 
+  @Column('jsonb', { default: { breaks: [], drivingHours: 0, onDutyHours: 0, offDutyHours: 0 } })
+  hoursOfService: {
+    breaks: Array<{
+      id: string;
+      breakType: string;
+      startTime: string;
+      endTime: string | null;
+      duration: number | null;
+      notes: string;
+    }>;
+    drivingHours: number;
+    onDutyHours: number;
+    offDutyHours: number;
+  };
+
   @CreateDateColumn()
   createdAt: Date;
 

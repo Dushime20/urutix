@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { notificationApi, Notification } from '../services/notificationApi';
+import { notificationApi } from '../services/notifications/notificationApi';
+import type { Notification } from '../services/notifications/notificationApi';
 import { useAuth } from './AuthContext';
 
 interface NotificationContextType {
@@ -57,7 +58,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       await notificationApi.markAsRead(id);
       setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n)
+        prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString(), status: 'READ' } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err: any) {
@@ -67,12 +68,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
+      const unreadIds = notifications.filter(n => !n.readAt).map(n => n.id);
       if (unreadIds.length === 0) return;
 
       await notificationApi.bulkMarkAsRead(unreadIds);
       setNotifications(prev => 
-        prev.map(n => ({ ...n, isRead: true, readAt: new Date().toISOString() }))
+        prev.map(n => ({ ...n, readAt: new Date().toISOString(), status: 'READ' }))
       );
       setUnreadCount(0);
     } catch (err: any) {
@@ -86,7 +87,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setNotifications(prev => prev.filter(n => n.id !== id));
       // Update unread count if the deleted notification was unread
       const notification = notifications.find(n => n.id === id);
-      if (notification && !notification.isRead) {
+      if (notification && !notification.readAt) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (err: any) {

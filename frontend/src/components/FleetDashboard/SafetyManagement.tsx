@@ -12,17 +12,431 @@ import {
   User,
   Activity,
   XCircle,
+  Coffee,
+  Play,
+  Square,
+  TrendingUp,
+  TrendingDown,
+  Award,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { FleetInspections } from './FleetInspections';
 import { safetyApi } from '../../services/safetyApi';
+import { fleetApi } from '../../services/fleetApi';
+import { driverApi } from '../../services/driverApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 interface SafetyManagementProps {
   fleetId?: string;
 }
+
+// Driver Scores Tab Component
+const DriverScoresTab: React.FC = () => {
+  const queryClient = useQueryClient();
+  const [selectedDriver, setSelectedDriver] = useState<any>(null);
+
+  // Fetch all drivers
+  const { data: driversData, isLoading } = useQuery({
+    queryKey: ['fleet-drivers'],
+    queryFn: () => fleetApi.getDrivers({}),
+  });
+
+  const drivers = Array.isArray(driversData) ? driversData : [];
+
+  // Fetch breaks for selected driver
+  const { data: breaksData } = useQuery({
+    queryKey: ['driver-breaks', selectedDriver?.id],
+    queryFn: () => selectedDriver ? driverApi.getBreaks(selectedDriver.id, { limit: 5 }) : null,
+    enabled: !!selectedDriver,
+  });
+
+  // Fetch trip history for selected driver
+  const { data: tripHistory, isLoading: loadingTrips } = useQuery({
+    queryKey: ['driver-trip-history', selectedDriver?.id],
+    queryFn: () => selectedDriver ? driverApi.getTripHistory(selectedDriver.id, 'all') : null,
+    enabled: !!selectedDriver,
+  });
+
+  const activeBreak = breaksData?.breaks?.find((b: any) => !b.endTime);
+
+  // Start break mutation
+  const startBreakMutation = useMutation({
+    mutationFn: (driverId: string) => driverApi.startBreak(driverId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['driver-breaks'] });
+      toast.success('Break started successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to start break');
+    },
+  });
+
+  // End break mutation
+  const endBreakMutation = useMutation({
+    mutationFn: (driverId: string) => driverApi.endBreak(driverId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['driver-breaks'] });
+      toast.success('Break ended successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to end break');
+    },
+  });
+
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 75) return 'text-blue-600 dark:text-blue-400';
+    if (score >= 60) return 'text-amber-600 dark:text-amber-400';
+    return 'text-rose-600 dark:text-rose-400';
+  };
+
+  const getScoreBgColor = (score: number) => {
+    if (score >= 90) return 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900';
+    if (score >= 75) return 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900';
+    if (score >= 60) return 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900';
+    return 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-20 text-center flex flex-col items-center">
+        <Activity className="animate-pulse text-primary-500 mb-4" size={32} />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Driver Scores...</p>
+      </div>
+    );
+  }
+
+  if (drivers.length === 0) {
+    return (
+      <div className="p-20 text-center flex flex-col items-center">
+        <User className="text-slate-200 dark:text-slate-800 mb-6" size={48} />
+        <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">No Drivers Found</h3>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Add drivers to your fleet to see their safety scores.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Driver Safety Scores</h3>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Performance & Compliance Tracking</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">{drivers.length} Active Drivers</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {drivers.map((driver: any) => {
+          const safetyScore = Number(driver.safetyScore) || 100;
+          const rating = Number(driver.rating) || 0;
+          const totalTrips = Number(driver.totalTrips) || 0;
+          const onTimeRate = Number(driver.onTimeDeliveryRate) || 0;
+
+          return (
+            <div
+              key={driver.id}
+              className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 hover:shadow-xl hover:shadow-slate-200/40 dark:hover:shadow-none transition-all duration-300 group cursor-pointer"
+              onClick={() => setSelectedDriver(driver)}
+            >
+              {/* Driver Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="size-12 bg-primary-50 dark:bg-primary-950/30 rounded-2xl flex items-center justify-center text-primary-600 dark:text-primary-400 font-black text-lg">
+                    {driver.firstName?.[0] || 'D'}{driver.lastName?.[0] || 'R'}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">{driver.firstName} {driver.lastName}</h4>
+                    <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{driver.status}</p>
+                  </div>
+                </div>
+                <div className={cn("px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest", getScoreBgColor(safetyScore), getScoreColor(safetyScore))}>
+                  {safetyScore.toFixed(0)}%
+                </div>
+              </div>
+
+              {/* Score Metrics */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Award size={12} className="text-amber-500" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Rating</span>
+                  </div>
+                  <p className="text-lg font-black text-slate-900 dark:text-white">{rating.toFixed(1)}</p>
+                </div>
+                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Activity size={12} className="text-blue-500" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Trips</span>
+                  </div>
+                  <p className="text-lg font-black text-slate-900 dark:text-white">{totalTrips}</p>
+                </div>
+              </div>
+
+              {/* On-Time Rate Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">On-Time Rate</span>
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{onTimeRate.toFixed(0)}%</span>
+                </div>
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${onTimeRate}%` }}
+                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedDriver(driver);
+                  }}
+                  className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Driver Detail Modal */}
+      {selectedDriver && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="p-7 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-14 bg-primary-50 dark:bg-primary-950/30 rounded-2xl flex items-center justify-center text-primary-600 dark:text-primary-400 font-black text-2xl">
+                  {selectedDriver.firstName?.[0]}{selectedDriver.lastName?.[0]}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">{selectedDriver.firstName} {selectedDriver.lastName}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedDriver.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDriver(null)}
+                className="size-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <XCircle className="size-5 text-slate-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-7 space-y-6">
+              {/* Safety Score Card */}
+              <div className={cn("p-6 rounded-[24px] border", getScoreBgColor(Number(selectedDriver.safetyScore) || 100))}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">Safety Score</h4>
+                  <Shield className={cn("size-6", getScoreColor(Number(selectedDriver.safetyScore) || 100))} />
+                </div>
+                <p className={cn("text-5xl font-black mb-2", getScoreColor(Number(selectedDriver.safetyScore) || 100))}>
+                  {(Number(selectedDriver.safetyScore) || 100).toFixed(0)}%
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">Overall safety performance rating</p>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Award className="size-4 text-amber-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Rating</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{(Number(selectedDriver.rating) || 0).toFixed(1)}</p>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="size-4 text-blue-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Trips</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{Number(selectedDriver.totalTrips) || 0}</p>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="size-4 text-emerald-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">On-Time Rate</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{(Number(selectedDriver.onTimeDeliveryRate) || 0).toFixed(0)}%</p>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="size-4 text-purple-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Distance</span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{(Number(selectedDriver.totalDistance) || 0).toLocaleString()} km</p>
+                </div>
+              </div>
+
+              {/* Break Management */}
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 rounded-[24px] border border-blue-200 dark:border-blue-900/50">
+                <h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-4">
+                  <Coffee size={14} /> Break Management
+                </h4>
+                
+                {activeBreak ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="size-2 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-sm font-bold text-blue-900 dark:text-blue-100">Driver is currently on break</span>
+                    </div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                      Started: {new Date(activeBreak.startTime).toLocaleString()}
+                    </div>
+                    <button
+                      onClick={() => endBreakMutation.mutate(selectedDriver.id)}
+                      disabled={endBreakMutation.isPending}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Square size={14} />
+                      {endBreakMutation.isPending ? 'Ending Break...' : 'End Break'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => startBreakMutation.mutate(selectedDriver.id)}
+                    disabled={startBreakMutation.isPending}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Play size={14} />
+                    {startBreakMutation.isPending ? 'Starting Break...' : 'Start Break'}
+                  </button>
+                )}
+              </div>
+
+              {/* Recent Breaks */}
+              {breaksData?.breaks && breaksData.breaks.filter((b: any) => b.endTime).length > 0 && (
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">Recent Breaks</h4>
+                  <div className="space-y-2">
+                    {breaksData.breaks
+                      .filter((b: any) => b.endTime)
+                      .slice(0, 5)
+                      .map((breakItem: any) => (
+                        <div key={breakItem.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white">{breakItem.breakType}</span>
+                            <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                              {new Date(breakItem.startTime).toLocaleDateString()} {new Date(breakItem.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          <span className="text-xs font-black text-slate-600 dark:text-slate-400">
+                            {Math.floor((breakItem.duration || 0) / 60)}h {(breakItem.duration || 0) % 60}m
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Trip History */}
+              <div>
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">Trip History</h4>
+                {loadingTrips ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="size-8 border-4 border-slate-100 dark:border-slate-800 border-t-blue-500 rounded-full animate-spin" />
+                  </div>
+                ) : !tripHistory || tripHistory.length === 0 ? (
+                  <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">No trip history available</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {tripHistory.slice(0, 10).map((trip: any) => {
+                      const isCompleted = trip.status === 'COMPLETED' || trip.status === 'DELIVERED';
+                      const statusColor = isCompleted 
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900'
+                        : trip.status === 'IN_PROGRESS' || trip.status === 'IN_TRANSIT'
+                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900'
+                        : trip.status === 'CANCELLED'
+                        ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
+
+                      return (
+                        <div key={trip.id} className="p-4 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-black text-slate-900 dark:text-white">
+                                  {trip.tripNumber || `Trip #${trip.id.slice(0, 8)}`}
+                                </span>
+                                <span className={cn("px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest", statusColor)}>
+                                  {trip.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400">
+                                <span>📍 {trip.origin?.city || trip.origin?.address || 'Unknown'}</span>
+                                <span>→</span>
+                                <span>📍 {trip.destination?.city || trip.destination?.address || 'Unknown'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 text-[9px]">
+                            <div>
+                              <span className="text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold block mb-1">Start Date</span>
+                              <span className="text-slate-900 dark:text-white font-bold">
+                                {trip.startTime ? new Date(trip.startTime).toLocaleDateString() : 'Not started'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold block mb-1">
+                                {isCompleted ? 'Completed' : 'Expected'}
+                              </span>
+                              <span className="text-slate-900 dark:text-white font-bold">
+                                {trip.endTime 
+                                  ? new Date(trip.endTime).toLocaleDateString()
+                                  : trip.estimatedArrival 
+                                  ? new Date(trip.estimatedArrival).toLocaleDateString()
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {trip.distance && (
+                            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center justify-between text-[9px]">
+                                <span className="text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold">Distance</span>
+                                <span className="text-slate-900 dark:text-white font-bold">{trip.distance} km</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-7 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setSelectedDriver(null)}
+                className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
 
 export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -382,7 +796,11 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
             <IncidentsContainer />
           )}
 
-          {(activeTab !== 'overview' && activeTab !== 'inspections') && (
+          {activeTab === 'scores' && (
+            <DriverScoresTab />
+          )}
+
+          {(activeTab !== 'overview' && activeTab !== 'inspections' && activeTab !== 'incidents' && activeTab !== 'scores') && (
             <div className="p-20 text-center flex flex-col items-center">
               <div className="size-16 bg-slate-50 dark:bg-slate-800 rounded-[28px] flex items-center justify-center text-slate-200 dark:text-slate-700 mb-6">
                 <Shield size={32} className="opacity-20" />

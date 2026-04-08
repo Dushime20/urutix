@@ -100,3 +100,37 @@ export class TripCompletedEvent {
     },
   ) {}
 }
+
+export class DriverBreakStartedEvent {
+  constructor(
+    public readonly driverId: string,
+    public readonly breakId: string,
+    public readonly tenantId: string,
+    public readonly breakDetails: {
+      breakType: string;
+      startTime: Date;
+      driverName: string;
+      currentTripId?: string;
+      currentLoadId?: string;
+      estimatedDuration?: number;
+      notes?: string;
+    },
+  ) {}
+}
+
+export class DriverBreakEndedEvent {
+  constructor(
+    public readonly driverId: string,
+    public readonly breakId: string,
+    public readonly tenantId: string,
+    public readonly breakDetails: {
+      breakType: string;
+      startTime: Date;
+      endTime: Date;
+      duration: number; // in minutes
+      driverName: string;
+      currentTripId?: string;
+      currentLoadId?: string;
+    },
+  ) {}
+}

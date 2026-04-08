@@ -34,7 +34,7 @@ import { DriverEarningsChart } from '../../components/DriverDashboard/DriverEarn
 import { DriverPerformanceChart } from '../../components/DriverDashboard/DriverPerformanceChart';
 import { CurrentTrip } from '../../components/DriverDashboard/CurrentTrip';
 import { EarningsOverview } from '../../components/DriverDashboard/EarningsOverview';
-import { SafetyMetrics } from '../../components/DriverDashboard/SafetyMetrics';
+import { SafetyRecords } from '../../components/DriverDashboard/SafetyRecords';
 import { UpcomingTrips } from '../../components/DriverDashboard/UpcomingTrips';
 import { QuickActions } from '../../components/DriverDashboard/QuickActions';
 import { NotificationsPanel } from '../../components/DriverDashboard/NotificationsPanel';
@@ -493,7 +493,7 @@ const DriverDashboard: React.FC = () => {
         {(activeTab === 'finance' || activeTab === 'earnings') && <EarningsOverview driverId={driverId} />}
         {activeTab === 'wallet' && <WalletAdvances driverId={driverId} />}
         {activeTab === 'fuel' && <FuelManagement driverId={driverId} />}
-        {activeTab === 'safety' && <SafetyMetrics driverId={driverId} onReportIncident={() => setShowIncidentModal(true)} />}
+        {activeTab === 'safety' && <SafetyRecords driverId={driverId} onReportIncident={() => setShowIncidentModal(true)} />}
         {activeTab === 'documents' && <DriverDocuments driverId={driverId} />}
         {activeTab === 'truck_details' && <MyTruck driverId={driverId} />}
         {activeTab === 'profile' && <DriverProfile driver={driver || currentDriverProfile} loading={driverLoading} />}

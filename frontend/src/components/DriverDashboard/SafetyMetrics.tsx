@@ -66,14 +66,44 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
   onReportIncident 
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
-  const [showViolations, setShowViolations] = useState(false);
-  const [showCertifications, setShowCertifications] = useState(false);
+  const [showIncidents, setShowIncidents] = useState(false);
+  const [showTripHistory, setShowTripHistory] = useState(false);
 
-  const { data: safetyData, isLoading } = useQuery({
-    queryKey: ['driver-safety', driverId, selectedPeriod],
-    queryFn: () => driverApi.getSafetyMetrics(driverId, selectedPeriod),
+  // Fetch driver data
+  const { data: driverData } = useQuery({
+    queryKey: ['driver-details', driverId],
+    queryFn: () => driverApi.getDriver(driverId),
     enabled: !!driverId,
   });
+
+  // Fetch incidents
+  const { data: incidentsData } = useQuery({
+    queryKey: ['driver-incidents', driverId],
+    queryFn: async () => {
+      // This would need a backend endpoint - for now return empty
+      return [];
+    },
+    enabled: !!driverId,
+  });
+
+  // Fetch trip history with breaks
+  const { data: tripHistory } = useQuery({
+    queryKey: ['driver-trip-history', driverId],
+    queryFn: () => driverApi.getTripHistory(driverId, 'all'),
+    enabled: !!driverId,
+  });
+
+  // Fetch break history
+  const { data: breaksData } = useQuery({
+    queryKey: ['driver-breaks', driverId],
+    queryFn: () => driverApi.getBreaks(driverId, { limit: 20 }),
+    enabled: !!driverId,
+  });
+
+  const driver = driverData || {};
+  const incidents = incidentsData || [];
+  const trips = tripHistory || [];
+  const breaks = breaksData?.breaks || [];
 
   // Mock data for demonstration
   const mockSafetyData: SafetyData = {

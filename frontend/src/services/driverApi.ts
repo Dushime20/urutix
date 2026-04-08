@@ -362,8 +362,13 @@ class DriverApiService {
 
   async getTripHistory(driverId: string, _period: string): Promise<Trip[]> {
     try {
-      const response = await api.get('/trips/my-trips');
-      const raw: any[] = response.data?.data?.history || [];
+      const response = await api.get('/trips', {
+        params: {
+          userId: driverId,
+          limit: 20,
+        }
+      });
+      const raw: any[] = response.data?.data || [];
       return raw.map(normalizeTrip);
     } catch (error: any) {
       if (error.response?.status === 404) return [];
@@ -599,6 +604,20 @@ class DriverApiService {
 
   async endBreak(driverId: string): Promise<void> {
     await api.post(`/drivers/${driverId}/break/end`);
+  }
+
+  async getBreaks(driverId: string, filters?: { startDate?: string; endDate?: string; limit?: number }): Promise<{ breaks: any[]; total: number }> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    const response = await api.get(`/drivers/${driverId}/breaks?${params.toString()}`);
+    return response.data;
+  }
+
+  async deleteBreak(driverId: string, breakId: string): Promise<void> {
+    await api.delete(`/drivers/${driverId}/breaks/${breakId}`);
   }
 
   // Documents and Files

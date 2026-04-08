@@ -38,6 +38,7 @@ import type { Driver } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import DocumentUploadModal from '../documents/DocumentUploadModal';
 import { cn } from '../../utils/cn';
+import { DriverBreakManagement } from './DriverBreakManagement';
 
 type StatusOption = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ON_LEAVE' | 'TERMINATED' | '';
 type AvailabilityOption = 'AVAILABLE' | 'UNAVAILABLE' | 'IN_TRANSIT' | '';
@@ -474,6 +475,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 											)}
 										</div>
 									</div>
+
+									{/* Safety & Break Management */}
+									<DriverBreakManagement driverId={selectedDriver.id} />
 								</div>
 
 								{/* License & Employment */}
