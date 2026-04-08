@@ -236,6 +236,17 @@ export class TenantController {
   @ApiOkResponse({
     description: 'Pending KYC tenants retrieved successfully',
   })
+
+  @Get('kyc/pending')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, TenantGuard)
+  @ApiOperation({
+    summary: 'Get Pending KYC Tenants',
+    description: 'Get all tenants with pending or submitted KYC (Super Admin only)',
+  })
+  @ApiOkResponse({
+    description: 'Pending KYC tenants retrieved successfully',
+  })
   async getPendingKYCTenants(): Promise<ApiResponseDto> {
     const submitted = await this.tenantService.getTenantsByKYCStatus('SUBMITTED');
     const pending = await this.tenantService.getTenantsByKYCStatus('PENDING');

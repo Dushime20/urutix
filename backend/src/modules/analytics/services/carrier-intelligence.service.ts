@@ -15,7 +15,8 @@ export class CarrierIntelligenceService {
   }
 
   async analyzeCarrierPerformance(_tenantId: string, _userId: string, _period?: string) {
-    return { analysis: [], reason: 'Analytics table not yet available' };
+    // Return empty array with correct structure until analytics table is available
+    return [];
   }
 
   async getCarrierRecommendationsForRoute(_tenantId: string, _userId: string, _routeHash: string) {

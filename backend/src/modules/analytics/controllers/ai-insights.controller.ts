@@ -187,7 +187,7 @@ export class AIInsightsController {
     return {
       insights,
       latestPrediction: predictions,
-      activeAlerts: Array.isArray(alerts.alerts) ? alerts.alerts.filter((alert: any) => alert.severity === 'high').length : 0,
+      activeAlerts: Array.isArray(alerts) ? alerts.filter((alert: any) => alert.severity === 'high').length : 0,
       generatedAt: new Date().toISOString()
     };
   }
