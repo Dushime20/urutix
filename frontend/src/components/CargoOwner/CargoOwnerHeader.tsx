@@ -17,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import LanguageSwitcher from '../LanguageSwitcher';
+import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -99,12 +100,7 @@ const CargoOwnerHeader: React.FC<CargoOwnerHeaderProps> = ({
           <LanguageSwitcher />
 
           {/* Notifications */}
-          <button className="relative p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-              3
-            </span>
-          </button>
+          <CargoOwnerNotificationDropdown />
 
           {/* User Profile Dropdown */}
           <div className="relative">

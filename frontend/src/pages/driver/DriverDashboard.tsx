@@ -68,7 +68,6 @@ const DriverDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showRelayModal, setShowRelayModal] = useState(false);
   const [showPostTripModal, setShowPostTripModal] = useState(false);
@@ -293,7 +292,6 @@ const DriverDashboard: React.FC = () => {
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
-        onToggleNotifications={() => setShowNotifications(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabs={tabs}
@@ -515,15 +513,6 @@ const DriverDashboard: React.FC = () => {
         )}
         {activeTab === 'settings' && <DriverSettings />}
       </div>
-
-      {showNotifications && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowNotifications(false)} />
-          <div className="relative z-10 w-full max-w-md animate-in zoom-in-95 duration-200">
-            <NotificationsPanel notifications={notifications} loading={notificationsLoading} onClose={() => setShowNotifications(false)} />
-          </div>
-        </div>
-      )}
 
       {showIncidentModal && (
         <IncidentReportModal

@@ -1075,9 +1075,9 @@ export class DriverService {
 
       const savedIncident = await this.safetyIncidentRepository.save(incident);
 
-      // Trigger notification to fleet managers
+      // Notify truck owner (fleet manager)
       await this.notificationService.createNotification({
-        recipientId: driver.employerId, // Notify the fleet owner/manager
+        recipientId: driver.employerId,
         tenantId,
         title: `🚨 Incident Reported: ${incident.type.toUpperCase()}`,
         message: `Driver ${driver.firstName} ${driver.lastName} reported a ${incident.severity} severity ${incident.type} at ${incident.location}.`,
@@ -1090,6 +1090,42 @@ export class DriverService {
         actionUrl: `/dashboard/fleet/safety/${savedIncident.id}`,
         actionText: 'View Incident',
       });
+      this.logger.log(`✅ Notified truck owner: ${driver.employerId}`);
+
+      // Check if driver is on an active trip and notify cargo owner
+      const activeTrip = await this.tripRepository.findOne({
+        where: {
+          driverId,
+          tenantId,
+          status: TripStatus.IN_PROGRESS,
+        },
+        relations: ['load'],
+      });
+
+      if (activeTrip?.load?.cargoOwnerId) {
+        await this.notificationService.createNotification({
+          recipientId: activeTrip.load.cargoOwnerId,
+          tenantId,
+          title: `🚨 Incident During Delivery`,
+          message: `An incident occurred during delivery of your shipment "${activeTrip.load.title}". Severity: ${incident.severity}. Type: ${incident.type}.`,
+          notificationType: NotificationType.ALERT,
+          category: NotificationCategory.SAFETY,
+          priority: NotificationPriority.HIGH,
+          entityId: savedIncident.id,
+          entityType: EntityType.CARGO,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+          actionUrl: `/cargo-owner/shipments/${activeTrip.load.id}`,
+          actionText: 'View Shipment',
+          metadata: {
+            incidentId: savedIncident.id,
+            loadId: activeTrip.load.id,
+            loadTitle: activeTrip.load.title,
+            incidentType: incident.type,
+            severity: incident.severity,
+          },
+        });
+        this.logger.log(`✅ Notified cargo owner: ${activeTrip.load.cargoOwnerId}`);
+      }
 
       return savedIncident;
     } catch (error) {

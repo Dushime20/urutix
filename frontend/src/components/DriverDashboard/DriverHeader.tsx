@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import LanguageSwitcher from '../LanguageSwitcher';
+import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import { TranslatedText } from '../translated-text';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,7 +35,6 @@ interface DriverHeaderProps {
   lastUpdated: Date;
   isRefreshing: boolean;
   onRefresh: () => void;
-  onToggleNotifications: () => void;
   activeTab: string;
   setActiveTab: (tabId: string) => void;
   tabs: Tab[];
@@ -44,7 +44,6 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
   driver,
   activeTab,
   setActiveTab,
-  onToggleNotifications,
   isRefreshing,
   onRefresh,
   tabs
@@ -192,14 +191,8 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
             <LanguageSwitcher />
 
             {/* Notifications */}
-            <div className="hidden lg:block relative">
-              <button
-                onClick={onToggleNotifications}
-                className="p-2.5 rounded-full border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all relative group"
-              >
-                <Bell size={20} className="text-slate-400" />
-                <span className="absolute top-2 right-2 h-2 w-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm ring-1 ring-rose-200 animate-pulse"></span>
-              </button>
+            <div className="hidden lg:block">
+              <CargoOwnerNotificationDropdown />
             </div>
 
             {/* Help Button */}

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, X, Package, DollarSign, Truck } from 'lucide-react';
-import { useCargoOwnerNotifications } from '../../hooks/useCargoOwnerNotifications';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface CargoOwnerNotificationDropdownProps {
     className?: string;
@@ -14,13 +14,22 @@ const CargoOwnerNotificationDropdown: React.FC<CargoOwnerNotificationDropdownPro
         notifications,
         unreadCount,
         isConnected,
+        isLoading,
         markAsRead,
         markAllAsRead,
-    } = useCargoOwnerNotifications();
+    } = useNotifications();
 
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    console.log('🔔 NotificationDropdown render:', {
+        notifications,
+        notificationsLength: notifications.length,
+        unreadCount,
+        isConnected,
+        isLoading,
+    });
 
     // Mark all as read when closing the dropdown? No, user might want to keep them unread 
     // unless explicitly clicking "Mark all read". 
@@ -32,6 +41,12 @@ const CargoOwnerNotificationDropdown: React.FC<CargoOwnerNotificationDropdownPro
         if (activeTab === 'unread') return !n.isRead;
         return true;
     }).slice(0, 15); // Show max 15 notifications
+
+    console.log('🔔 Filtered notifications:', {
+        activeTab,
+        filteredNotifications,
+        filteredLength: filteredNotifications.length,
+    });
 
     // Get notification icon
     const getNotificationIcon = (type: string) => {

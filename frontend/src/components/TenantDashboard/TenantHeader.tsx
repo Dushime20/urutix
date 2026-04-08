@@ -26,6 +26,7 @@ import {
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import LanguageSwitcher from '../LanguageSwitcher';
+import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -57,11 +58,9 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   const { user, logout } = useAuth();
   const { tSync } = useTranslation();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
 
   const groupedTabs = [
@@ -100,13 +99,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
     }
   ];
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['tenant-notifications', tenant?.id],
-    queryFn: () => tenantApi.getRecentActivity(tenant?.id, 5),
-    enabled: !!tenant?.id,
-    staleTime: 30000, // 30 seconds
-  });
-
   const { data: balanceData } = useQuery({
     queryKey: ['tenant-credit-balance', tenant?.id],
     queryFn: () => tenantApi.getCreditBalance(),
@@ -114,15 +106,11 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   });
 
   const currentBalance = balanceData?.currentBalance || 0;
-  const unreadCount = notifications.filter(n => n.status === 'warning' || n.status === 'error').length;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
       }
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
         setActiveGroup(null);
@@ -294,48 +282,8 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
             <LanguageSwitcher />
 
             {/* Notification Bell - Hidden on mobile as it's in the mobile bottom nav */}
-            <div className="hidden lg:block relative" ref={notificationRef}>
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all relative ${showNotifications ? 'bg-gray-50 dark:bg-slate-800' : ''}`}
-              >
-                <FaBell className="w-5 h-5 text-slate-400" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 py-2 z-50 origin-top-right overflow-hidden text-slate-900 dark:text-white"
-                  >
-                    <div className="px-4 py-3 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between">
-                      <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider text-left"><TranslatedText text="Notifications" /></h3>
-                      <span className="text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded-full">{notifications.length} <TranslatedText text="New" /></span>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {notifications.map((notification: any) => (
-                        <div key={notification.id} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group text-left">
-                          <div className="flex items-start space-x-3">
-                            <div className={`p-1.5 rounded-full mt-0.5 shrink-0 ${notification.status === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500' : 'bg-primary-50 dark:bg-primary-900/30 text-primary-500'}`}>
-                              <FaClock className="w-3 h-3" />
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 transition-colors"><TranslatedText text={notification.action} /></p>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 font-medium"><TranslatedText text={notification.description} /></p>
-                              <p className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-1.5"><TranslatedText text={notification.timestamp} /></p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div className="hidden lg:block">
+              <CargoOwnerNotificationDropdown />
             </div>
 
             {/* HELP Button */}

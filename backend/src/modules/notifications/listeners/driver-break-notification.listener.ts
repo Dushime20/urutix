@@ -52,25 +52,13 @@ export class DriverBreakNotificationListener {
         return;
       }
 
-      const recipientIds: string[] = [];
       let cargoOwnerId: string | null = null;
       let loadDetails: any = null;
 
-      // Get fleet manager/dispatcher (employer)
-      const fleetManager = await this.userRepository.findOne({
+      // Get truck owner (employer) - ALWAYS notify
+      const truckOwner = await this.userRepository.findOne({
         where: { id: driver.employerId, tenantId: event.tenantId },
       });
-
-      if (fleetManager) {
-        recipientIds.push(fleetManager.id);
-      }
-
-      // Get truck owner if driver has assigned truck
-      if (driver.currentTruckId) {
-        // Truck owner is typically the employer, but could be different
-        // For now, we'll use the employer as truck owner
-        // You might need to query the Truck entity if truck ownership is separate
-      }
 
       // Check if driver is on an active trip/load
       if (event.breakDetails.currentLoadId) {
@@ -86,26 +74,21 @@ export class DriverBreakNotificationListener {
             destination: load.deliveryLocation,
             estimatedDelivery: load.deliveryDate,
           };
-
-          // Add cargo owner to recipients
-          if (cargoOwnerId) {
-            recipientIds.push(cargoOwnerId);
-          }
         }
       }
 
-      // Notify Fleet Manager/Dispatcher
-      if (fleetManager) {
+      // ALWAYS notify Truck Owner (Fleet Manager/Dispatcher)
+      if (truckOwner) {
         await this.notificationService.createNotification({
           tenantId: event.tenantId,
-          recipientId: fleetManager.id,
+          recipientId: truckOwner.id,
           entityType: EntityType.DRIVER,
           entityId: event.driverId,
           notificationType: NotificationType.DRIVER_ALERT,
           category: NotificationCategory.DRIVER,
           priority: NotificationPriority.NORMAL,
           title: 'Driver Break Started',
-          message: `${event.breakDetails.driverName} has started a ${event.breakDetails.breakType.toLowerCase()} break`,
+          message: `${event.breakDetails.driverName} has started a ${event.breakDetails.breakType.toLowerCase()} break${loadDetails ? ` during delivery of "${loadDetails.title}"` : ''}`,
           shortMessage: `${event.breakDetails.driverName} on break`,
           channels: [NotificationChannel.IN_APP],
           metadata: {
@@ -119,9 +102,10 @@ export class DriverBreakNotificationListener {
             notes: event.breakDetails.notes,
           },
         });
+        this.logger.log(`✅ Notified truck owner: ${truckOwner.id}`);
       }
 
-      // Notify Cargo Owner (only if driver is on active delivery)
+      // ALWAYS notify Cargo Owner if driver is on active delivery
       if (cargoOwnerId && loadDetails) {
         const etaImpact = event.breakDetails.estimatedDuration || 30; // Default 30 min
         await this.notificationService.createNotification({
@@ -147,10 +131,11 @@ export class DriverBreakNotificationListener {
             breakType: event.breakDetails.breakType,
           },
         });
+        this.logger.log(`✅ Notified cargo owner: ${cargoOwnerId}`);
       }
 
       this.logger.log(
-        `Successfully sent break started notifications to ${recipientIds.length} recipients`,
+        `Successfully sent break started notifications (Truck Owner: ${!!truckOwner}, Cargo Owner: ${!!cargoOwnerId})`,
       );
     } catch (error) {
       this.logger.error(
@@ -177,18 +162,13 @@ export class DriverBreakNotificationListener {
         return;
       }
 
-      const recipientIds: string[] = [];
       let cargoOwnerId: string | null = null;
       let loadDetails: any = null;
 
-      // Get fleet manager/dispatcher (employer)
-      const fleetManager = await this.userRepository.findOne({
+      // Get truck owner (employer) - ALWAYS notify
+      const truckOwner = await this.userRepository.findOne({
         where: { id: driver.employerId, tenantId: event.tenantId },
       });
-
-      if (fleetManager) {
-        recipientIds.push(fleetManager.id);
-      }
 
       // Check if driver is on an active trip/load
       if (event.breakDetails.currentLoadId) {
@@ -203,26 +183,21 @@ export class DriverBreakNotificationListener {
             origin: load.pickupLocation,
             destination: load.deliveryLocation,
           };
-
-          // Add cargo owner to recipients
-          if (cargoOwnerId) {
-            recipientIds.push(cargoOwnerId);
-          }
         }
       }
 
-      // Notify Fleet Manager/Dispatcher
-      if (fleetManager) {
+      // ALWAYS notify Truck Owner (Fleet Manager/Dispatcher)
+      if (truckOwner) {
         await this.notificationService.createNotification({
           tenantId: event.tenantId,
-          recipientId: fleetManager.id,
+          recipientId: truckOwner.id,
           entityType: EntityType.DRIVER,
           entityId: event.driverId,
           notificationType: NotificationType.DRIVER_ALERT,
           category: NotificationCategory.DRIVER,
           priority: NotificationPriority.LOW,
           title: 'Driver Break Ended',
-          message: `${event.breakDetails.driverName} has completed their break (${event.breakDetails.duration} minutes) and is now available`,
+          message: `${event.breakDetails.driverName} has completed their break (${event.breakDetails.duration} minutes) and is now available${loadDetails ? ` for delivery of "${loadDetails.title}"` : ''}`,
           shortMessage: `${event.breakDetails.driverName} available`,
           channels: [NotificationChannel.IN_APP],
           metadata: {
@@ -236,9 +211,10 @@ export class DriverBreakNotificationListener {
             currentLoadId: event.breakDetails.currentLoadId,
           },
         });
+        this.logger.log(`✅ Notified truck owner: ${truckOwner.id}`);
       }
 
-      // Notify Cargo Owner (only if driver is on active delivery)
+      // ALWAYS notify Cargo Owner if driver is on active delivery
       if (cargoOwnerId && loadDetails) {
         await this.notificationService.createNotification({
           tenantId: event.tenantId,
@@ -262,10 +238,11 @@ export class DriverBreakNotificationListener {
             breakDuration: event.breakDetails.duration,
           },
         });
+        this.logger.log(`✅ Notified cargo owner: ${cargoOwnerId}`);
       }
 
       this.logger.log(
-        `Successfully sent break ended notifications to ${recipientIds.length} recipients`,
+        `Successfully sent break ended notifications (Truck Owner: ${!!truckOwner}, Cargo Owner: ${!!cargoOwnerId})`,
       );
     } catch (error) {
       this.logger.error(
