@@ -55,6 +55,16 @@ export class SubscriptionService {
   }
 
   /**
+   * Get all subscription plans, including inactive (admin only)
+   */
+  async getAllSubscriptionPlans(includeInactive = false): Promise<SubscriptionPlan[]> {
+    return this.subscriptionPlanRepository.find({
+      where: includeInactive ? {} : { isActive: true },
+      order: { displayOrder: 'ASC' },
+    });
+  }
+
+  /**
    * Get a specific plan by ID or slug
    */
   async getPlan(idOrSlug: string): Promise<SubscriptionPlan> {
@@ -67,6 +77,56 @@ export class SubscriptionService {
     }
 
     return plan;
+  }
+
+  /**
+   * Create a new subscription plan (admin only)
+   */
+  async createSubscriptionPlan(data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
+    const existing = await this.subscriptionPlanRepository.findOne({ where: { slug: data.slug } });
+    if (existing) {
+      throw new BadRequestException(`Plan with slug ${data.slug} already exists`);
+    }
+
+    const plan = this.subscriptionPlanRepository.create(data);
+    return this.subscriptionPlanRepository.save(plan);
+  }
+
+  /**
+   * Update a subscription plan (admin only)
+   */
+  async updateSubscriptionPlan(id: string, data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
+    const plan = await this.getPlan(id);
+    
+    if (data.slug && data.slug !== plan.slug) {
+      const existing = await this.subscriptionPlanRepository.findOne({ where: { slug: data.slug } });
+      if (existing) {
+        throw new BadRequestException(`Plan with slug ${data.slug} already exists`);
+      }
+    }
+
+    Object.assign(plan, data);
+    return this.subscriptionPlanRepository.save(plan);
+  }
+
+  /**
+   * Delete a subscription plan (admin only)
+   */
+  async deleteSubscriptionPlan(id: string): Promise<void> {
+    const plan = await this.getPlan(id);
+    
+    // Check if there are active subscriptions using this plan
+    const activeSubscriptions = await this.tenantSubscriptionRepository.count({
+      where: { planId: id, status: SubscriptionStatus.ACTIVE }
+    });
+
+    if (activeSubscriptions > 0) {
+      // Soft delete/deactivate instead of hard delete if in use
+      plan.isActive = false;
+      await this.subscriptionPlanRepository.save(plan);
+    } else {
+      await this.subscriptionPlanRepository.remove(plan);
+    }
   }
 
   /**

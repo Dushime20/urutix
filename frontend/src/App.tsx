@@ -73,6 +73,7 @@ const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions
 const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
 const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory'));
 const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
+const SubscriptionPlansMgmt = lazy(() => import('./pages/admin/SubscriptionPlansMgmt'));
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
 const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
@@ -421,6 +422,7 @@ function App() {
                       <Route path="tenants" element={<AdminTenants />} />
                       <Route path="routes" element={<AdminRoutes />} />
                       <Route path="subscriptions" element={<TenantSubscriptions />} />
+                      <Route path="subscription-plans" element={<SubscriptionPlansMgmt />} />
                       <Route path="pricing-rules" element={<CreditPricingRules />} />
                       <Route path="credit-usage" element={<CreditUsageHistory />} />
                       <Route path="roles" element={<RoleManagement />} />

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request, ValidationPipe, Param, Post } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, ValidationPipe, Param, Post, Patch, Delete } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -174,6 +174,56 @@ export class AdminController {
   @ApiOperation({ summary: 'Create a route for a tenant' })
   createRouteForTenant(@Body() body: { tenantId: string; route: any }) {
     return this.adminService.createRouteForTenant(body.tenantId, body.route);
+  }
+
+  // Subscription Plan Management Endpoints
+  @Get('subscription-plans')
+  @ApiOperation({ summary: 'Get all subscription plans (admin)' })
+  @ApiOkResponse({ description: 'Returns all subscription plans' })
+  async getAllSubscriptionPlans() {
+    const plans = await this.subscriptionService.getAllSubscriptionPlans(true);
+    return {
+      success: true,
+      data: plans,
+    };
+  }
+
+  @Post('subscription-plans')
+  @ApiOperation({ summary: 'Create a new subscription plan (admin)' })
+  @ApiOkResponse({ description: 'Subscription plan created successfully' })
+  async createSubscriptionPlan(
+    @Body(new ValidationPipe({ transform: true, whitelist: true })) body: any
+  ) {
+    const plan = await this.subscriptionService.createSubscriptionPlan(body);
+    return {
+      success: true,
+      data: plan,
+    };
+  }
+
+  @Patch('subscription-plans/:id')
+  @ApiOperation({ summary: 'Update a subscription plan (admin)' })
+  @ApiOkResponse({ description: 'Subscription plan updated successfully' })
+  async updateSubscriptionPlan(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true })) body: any
+  ) {
+    const plan = await this.subscriptionService.updateSubscriptionPlan(id, body);
+    return {
+      success: true,
+      data: plan,
+    };
+  }
+
+  @Delete('subscription-plans/:id')
+  @ApiOperation({ summary: 'Delete a subscription plan (admin)' })
+  @ApiOkResponse({ description: 'Subscription plan deleted successfully' })
+  async deleteSubscriptionPlan(@Param('id') id: string) {
+    await this.subscriptionService.deleteSubscriptionPlan(id);
+    return {
+      success: true,
+      message: 'Subscription plan deleted successfully',
+    };
   }
 
   // Subscription Management Endpoints
