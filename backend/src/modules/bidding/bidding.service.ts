@@ -1010,6 +1010,14 @@ export class BiddingService {
       .getMany();
   }
 
+  // Admin endpoint to get all bids in the system
+  async getAllBidsForAdmin(): Promise<Bid[]> {
+    return this.bidRepository.find({
+      relations: ['load', 'load.cargoOwner', 'load.cargoOwner.profile', 'truckOwner', 'truckOwner.profile'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async getBidHistory(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
     // For truck owners, return their submitted bids
     if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
@@ -1046,18 +1054,22 @@ export class BiddingService {
       const wonBids = myBids.filter(b => b.status === BidStatus.ACCEPTED).length;
       const totalValue = myBids
         .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
-        .reduce((sum, b) => sum + (b.bidAmount || 0), 0);
+        .reduce((sum, b) => sum + (parseFloat(String(b.bidAmount)) || 0), 0);
 
       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
 
       // For truck owners, 'totalAuctions' implies auctions they participated in
       const uniqueAuctions = new Set(myBids.map(b => b.loadId)).size;
 
+      // Calculate trends (last 7 days)
+      const trends = this.calculateBidTrends(myBids);
+
       return {
         totalAuctions: uniqueAuctions,
         activeBids,
         totalValue,
-        successRate
+        successRate,
+        trends
       };
     } else {
       // Broker / Cargo Owner Stats
@@ -1077,7 +1089,8 @@ export class BiddingService {
           totalAuctions: 0,
           activeBids: 0,
           totalValue: 0,
-          successRate: 0
+          successRate: 0,
+          trends: []
         };
       }
 
@@ -1091,7 +1104,7 @@ export class BiddingService {
       });
 
       const activeBids = bids.filter(b => b.status === BidStatus.PENDING).length;
-      const totalValue = loads.reduce((sum, l) => sum + (l.loadValue || 0), 0);
+      const totalValue = loads.reduce((sum, l) => sum + (parseFloat(String(l.loadValue)) || 0), 0);
 
       // Success rate for owners: Auctions that resulted in a match (CLOSED with winningBidId)
       const closedAndWon = auctions.filter(a => a.status === AuctionStatus.CLOSED && a.winningBidId).length;
@@ -1099,13 +1112,74 @@ export class BiddingService {
 
       const successRate = totalClosed > 0 ? Math.round((closedAndWon / totalClosed) * 100) : 0;
 
+      // Calculate trends (last 7 days)
+      const trends = this.calculateAuctionTrends(auctions, bids);
+
       return {
         totalAuctions: auctions.length,
         activeBids,
         totalValue,
-        successRate
+        successRate,
+        trends
       };
     }
+  }
+
+  private calculateBidTrends(bids: any[]) {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    return last7Days.map(date => {
+      const dayBids = bids.filter(b => {
+        const bidDate = new Date(b.createdAt).toISOString().split('T')[0];
+        return bidDate === date;
+      });
+
+      const avgAmount = dayBids.length > 0
+        ? dayBids.reduce((sum, b) => sum + (parseFloat(String(b.bidAmount)) || 0), 0) / dayBids.length
+        : 0;
+
+      return {
+        date,
+        bids: dayBids.length,
+        avgAmount: Math.round(avgAmount),
+        won: dayBids.filter(b => b.status === BidStatus.ACCEPTED).length
+      };
+    });
+  }
+
+  private calculateAuctionTrends(auctions: any[], bids: any[]) {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    return last7Days.map(date => {
+      const dayAuctions = auctions.filter(a => {
+        const auctionDate = new Date(a.createdAt).toISOString().split('T')[0];
+        return auctionDate === date;
+      });
+
+      const dayBids = bids.filter(b => {
+        const bidDate = new Date(b.createdAt).toISOString().split('T')[0];
+        return bidDate === date;
+      });
+
+      const avgBidsPerAuction = dayAuctions.length > 0
+        ? dayBids.length / dayAuctions.length
+        : 0;
+
+      return {
+        date,
+        auctions: dayAuctions.length,
+        bids: dayBids.length,
+        avgBidsPerAuction: Math.round(avgBidsPerAuction * 10) / 10
+      };
+    });
   }
 
   private async getCurrentHighestBid(loadId: string): Promise<number | null> {

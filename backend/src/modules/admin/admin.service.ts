@@ -199,17 +199,38 @@ export class AdminService {
   // Admin-wide listings (no tenant filter or optional filter)
   async listAllTrucks(tenantId?: string) {
     try {
+      this.logger.log(`🚛 listAllTrucks called with tenantId: ${tenantId || 'none'}`);
+      
       const where = tenantId ? ({ tenantId } as any) : ({} as any);
-      const trucks = await this.truckRepo.find({
-        where,
-        take: 500,
-        order: { createdAt: 'DESC' } as any,
-      });
+      
+      // Use query builder to include soft-deleted records if needed
+      const queryBuilder = this.truckRepo.createQueryBuilder('truck')
+        .withDeleted() // Include soft-deleted records
+        .orderBy('truck.createdAt', 'DESC')
+        .take(500);
+      
+      if (tenantId) {
+        queryBuilder.where('truck.tenantId = :tenantId', { tenantId });
+      }
+      
+      this.logger.log(`🔍 Executing query...`);
+      const trucks = await queryBuilder.getMany();
+
+      this.logger.log(`✅ Found ${trucks.length} trucks in database`);
+      
+      if (trucks.length === 0) {
+        this.logger.warn('⚠️  No trucks found! Checking database directly...');
+        // Try a raw query to see if trucks exist
+        const rawCount = await this.truckRepo.query('SELECT COUNT(*) as count FROM trucks');
+        this.logger.warn(`📊 Raw count from database: ${rawCount[0]?.count || 0}`);
+      }
 
       // Get all unique tenant IDs and owner IDs
       const tenantIds = [...new Set(trucks.map(t => t.tenantId).filter(Boolean))];
       const ownerIds = [...new Set(trucks.map(t => t.ownerId).filter(Boolean))];
       const driverIds = [...new Set(trucks.map(t => t.currentDriverId).filter(Boolean))];
+
+      this.logger.log(`📋 Fetching related data: ${tenantIds.length} tenants, ${ownerIds.length} owners, ${driverIds.length} drivers`);
 
       // Fetch tenants, owners, and drivers in parallel
       const [tenants, owners, drivers] = await Promise.all([
@@ -295,10 +316,11 @@ export class AdminService {
         };
       });
 
-      this.logger.log(`Fetched ${formattedTrucks.length} trucks with owner and tenant data`);
+      this.logger.log(`✅ Returning ${formattedTrucks.length} formatted trucks`);
       return { trucks: formattedTrucks };
     } catch (error) {
-      this.logger.error('Error fetching trucks:', error);
+      this.logger.error('❌ Error fetching trucks:', error);
+      this.logger.error('Error stack:', error.stack);
       // Return empty array instead of throwing to prevent 500 errors
       return { trucks: [] };
     }

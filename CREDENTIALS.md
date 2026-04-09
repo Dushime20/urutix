@@ -23,6 +23,14 @@
 
 ## Admin Users
 
+### System Administrator
+- **Email**: `admin@urutix.com`
+- **Password**: `Admin@123456`
+- **Role**: ADMIN
+- **Tenant**: Admin Global
+- **Status**: ✅ Email Verified (ACTIVE)
+- **Access**: Full system administration
+
 ### Super Admin
 - **Email**: `urutixv@gmail.com`
 - **Password**: `test123`
@@ -48,6 +56,14 @@
 - **Role**: TENANT_ADMIN
 - **Status**: ✅ Email Verified
 - **Access**: Tenant-level administration
+
+### Demo Tenant Administrator
+- **Email**: `tenantadmin@demo.com`
+- **Password**: `TenantAdmin@123`
+- **Role**: TENANT_ADMIN
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+- **Access**: Full tenant administration for Demo Tenant
 
 ### Verified Cargo Owners
 - **Email**: `tenant@gmail.com`
@@ -120,8 +136,10 @@
 ## Quick Start Testing
 
 ### For Admin Testing:
-1. Use `urutixv@gmail.com` / `test123` for full admin access
-2. Use `tenant.admin@test.com` / `test123` for tenant admin features
+1. Use `admin@urutix.com` / `Admin@123456` for full system admin access
+2. Use `urutixv@gmail.com` / `test123` for super admin access
+3. Use `tenant.admin@test.com` / `test123` for tenant admin features
+4. Use `tenantadmin@demo.com` / `TenantAdmin@123` for Demo Tenant admin
 
 ### For Cargo Owner Testing:
 1. Use `tenant@gmail.com` / `test123` (verified account)

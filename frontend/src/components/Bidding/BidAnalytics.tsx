@@ -22,7 +22,7 @@ interface LoadPerformance {
 }
 
 interface BidAnalyticsProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
 const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
@@ -89,7 +89,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
         successRate: stats.winRate ?? successRate,
         averageResponseTime: stats.averageResponseTime ?? 0,
         topPerformingLoads: Object.values(loadMap).slice(0, 5),
-        bidTrends: [],
+        bidTrends: stats.trends || [],
       });
     } catch (error) {
       console.error('Analytics error:', error);
@@ -358,16 +358,77 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
             <h5 className="text-[10px] font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-[0.2em]">Market volatility & trends</h5>
           </div>
 
-           <div className="h-64 bg-slate-50/50 dark:bg-slate-950/50 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50 dark:opacity-30"></div>
-            <BarChart2 className="h-12 w-12 text-slate-300 dark:text-slate-700 mb-4 group-hover:scale-110 group-hover:text-slate-400 dark:group-hover:text-slate-500 transition-all duration-500" />
-            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">Predictive Hub Coming Soon</p>
-             <div className="mt-4 flex gap-1">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
-              ))}
+          {analytics.bidTrends && analytics.bidTrends.length > 0 ? (
+            <div className="space-y-6">
+              <div className="h-64 relative">
+                <div className="absolute inset-0 flex items-end justify-between gap-2 px-4">
+                  {analytics.bidTrends.map((trend, idx) => {
+                    const maxValue = Math.max(...analytics.bidTrends.map(t => 
+                      userRole === 'CARGO_OWNER' ? t.bids || 0 : t.bids || 0
+                    ), 1);
+                    const value = userRole === 'CARGO_OWNER' ? (trend.bids || 0) : (trend.bids || 0);
+                    const height = (value / maxValue) * 100;
+                    
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-2 group/bar">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-xl relative overflow-hidden transition-all duration-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          style={{ height: `${Math.max(height, 5)}%` }}>
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#345E85] to-blue-400 dark:from-blue-600 dark:to-blue-400 opacity-80 group-hover/bar:opacity-100 transition-opacity" />
+                          <div className="absolute inset-x-0 top-0 h-1 bg-white/30" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[8px] font-black text-slate-900 dark:text-slate-100 mb-0.5">{value}</p>
+                          <p className="text-[7px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            {new Date(trend.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp size={14} className="text-emerald-500" />
+                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      {userRole === 'CARGO_OWNER' ? 'Avg Bids/Auction' : 'Avg Bid Amount'}
+                    </span>
+                  </div>
+                  <p className="text-lg font-black text-[#0f172a] dark:text-slate-100">
+                    {userRole === 'CARGO_OWNER' 
+                      ? (analytics.bidTrends.reduce((sum, t) => sum + (t.avgBidsPerAuction || 0), 0) / analytics.bidTrends.length).toFixed(1)
+                      : formatCurrency(analytics.bidTrends.reduce((sum, t) => sum + (t.avgAmount || 0), 0) / analytics.bidTrends.length)
+                    }
+                  </p>
+                </div>
+
+                <div className="bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity size={14} className="text-blue-500" />
+                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      7-Day Activity
+                    </span>
+                  </div>
+                  <p className="text-lg font-black text-[#0f172a] dark:text-slate-100">
+                    {analytics.bidTrends.reduce((sum, t) => sum + (t.bids || 0), 0)} Bids
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="h-64 bg-slate-50/50 dark:bg-slate-950/50 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50 dark:opacity-30"></div>
+              <BarChart2 className="h-12 w-12 text-slate-300 dark:text-slate-700 mb-4 group-hover:scale-110 group-hover:text-slate-400 dark:group-hover:text-slate-500 transition-all duration-500" />
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">No trend data available</p>
+              <div className="mt-4 flex gap-1">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -73,8 +73,8 @@ export class PermissionGuard implements CanActivate {
       throw new UnauthorizedException('User not authenticated');
     }
 
-    // SUPER_ADMIN bypasses all permission checks
-    if (user.role === 'SUPER_ADMIN') {
+    // SUPER_ADMIN and ADMIN bypass all permission checks
+    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
       return true;
     }
 
@@ -148,8 +148,8 @@ export function createPermissionGuard(...permissions: string[]) {
         throw new UnauthorizedException('User not authenticated');
       }
 
-      // SUPER_ADMIN bypasses all checks
-      if (user.role === 'SUPER_ADMIN') {
+      // SUPER_ADMIN and ADMIN bypass all checks
+      if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
         return true;
       }
 

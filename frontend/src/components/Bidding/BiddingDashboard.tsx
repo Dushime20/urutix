@@ -13,7 +13,6 @@ import {
   History as HistoryIcon
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
-import toast from 'react-hot-toast';
 import AuctionList from './AuctionList';
 import MyAuctions from './MyAuctions';
 import BidHistory from './BidHistory';
@@ -23,7 +22,7 @@ import { cn } from '@/utils/cn';
 import { useLocation } from 'react-router-dom';
 
 interface BiddingDashboardProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
 const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
@@ -83,7 +82,13 @@ const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState(userRole === 'CARGO_OWNER' ? 'my-auctions' : 'auctions');
+  const [activeTab, setActiveTab] = useState(
+    userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
+      ? 'all-bids' 
+      : userRole === 'CARGO_OWNER' 
+        ? 'my-auctions' 
+        : 'auctions'
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
@@ -111,14 +116,8 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       const response = await biddingAPI.getDashboardStats();
       setStats(response.data);
     } catch (error) {
-      setError('Failed to load dashboard statistics - using demo data');
+      setError('Failed to load dashboard statistics');
       console.error('Dashboard stats error:', error);
-      setStats({
-        totalAuctions: 12,
-        activeBids: 8,
-        totalValue: 45000,
-        successRate: 72,
-      });
     } finally {
       setLoading(false);
     }
@@ -341,6 +340,87 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     </div>
   );
 
+  const renderAdminStats = () => (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+      <StatsCard
+        title="Total Auctions"
+        value={stats.totalAuctions}
+        icon={Gavel}
+        colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
+        secondaryColor="text-[#345E85] dark:text-blue-400"
+      />
+      <StatsCard
+        title="Active Bids"
+        value={Array.isArray(stats.activeBids) ? stats.activeBids.length : stats.activeBids}
+        icon={Users}
+        colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+        secondaryColor="text-emerald-600 dark:text-emerald-400"
+      />
+      <StatsCard
+        title="Total Value"
+        value={(() => {
+          const rawValue = stats.totalValue;
+          let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
+          if (typeof value !== 'number') value = parseFloat(value as string) || 0;
+          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+          if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+          return value.toLocaleString();
+        })()}
+        icon={DollarSign}
+        colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+        secondaryColor="text-amber-600 dark:text-amber-400"
+      />
+      <StatsCard
+        title="Success Rate"
+        value={(() => {
+          const rate = Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate;
+          return `${rate}%`;
+        })()}
+        icon={TrendingUp}
+        colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
+        secondaryColor="text-purple-600 dark:text-purple-400"
+      />
+    </div>
+  );
+
+  const renderAdminTabs = () => (
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full overflow-hidden">
+        <nav className="flex items-center gap-1 sm:gap-2 p-1 overflow-x-auto scrollbar-hide w-full">
+          <button
+            onClick={() => setActiveTab('all-bids')}
+            className={cn(
+              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              activeTab === 'all-bids'
+                ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+            )}
+          >
+            <HistoryIcon size={14} />
+            All Bids
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={cn(
+              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              activeTab === 'analytics'
+                ? "bg-indigo-600 text-white shadow-xl shadow-indigo-900/10"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+            )}
+          >
+            <BarChart3 size={14} />
+            Analytics
+          </button>
+        </nav>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
+        {activeTab === 'all-bids' && <BidHistory userRole={userRole} />}
+        {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="text-center py-12 sm:py-20">
@@ -359,13 +439,19 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
               <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-[#345E85] dark:text-blue-400" />
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">
-              {userRole === 'CARGO_OWNER' ? 'Auction Hub' : 'Bid & Strategize'}
+              {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
+                ? 'Admin Bidding Overview' 
+                : userRole === 'CARGO_OWNER' 
+                  ? 'Auction Hub' 
+                  : 'Bid & Strategize'}
             </h1>
           </div>
           <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest sm:tracking-[0.2em] max-w-xl">
-            {userRole === 'CARGO_OWNER'
-              ? 'Marketplace-driven cargo allocation & pricing control'
-              : 'Competitive bidding workflow & discovery mechanisms'}
+            {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN'
+              ? 'System-wide bidding analytics & monitoring'
+              : userRole === 'CARGO_OWNER'
+                ? 'Marketplace-driven cargo allocation & pricing control'
+                : 'Competitive bidding workflow & discovery mechanisms'}
           </p>
         </div>
       </div>
@@ -387,8 +473,16 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         </div>
       )}
 
-      {userRole === 'CARGO_OWNER' ? renderCargoOwnerStats() : renderTruckOwnerStats()}
-      {userRole === 'CARGO_OWNER' ? renderCargoOwnerTabs() : renderTruckOwnerTabs()}
+      {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
+        ? renderAdminStats() 
+        : userRole === 'CARGO_OWNER' 
+          ? renderCargoOwnerStats() 
+          : renderTruckOwnerStats()}
+      {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
+        ? renderAdminTabs() 
+        : userRole === 'CARGO_OWNER' 
+          ? renderCargoOwnerTabs() 
+          : renderTruckOwnerTabs()}
     </div>
   );
 };

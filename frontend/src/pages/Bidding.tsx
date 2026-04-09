@@ -4,11 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Bidding: React.FC = () => {
   const { user } = useAuth();
-  const [userRole, setUserRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER'>('CARGO_OWNER');
+  const [userRole, setUserRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN'>('CARGO_OWNER');
 
   useEffect(() => {
     if (user?.role) {
-      setUserRole(user.role as 'CARGO_OWNER' | 'TRUCK_OWNER');
+      setUserRole(user.role as 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN');
     }
   }, [user]);
 
