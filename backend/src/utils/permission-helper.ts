@@ -88,12 +88,18 @@ export class PermissionHelper {
      * Check if a role has a specific permission
      */
     async roleHasPermission(roleName: string, permission: string): Promise<boolean> {
-        // SUPER_ADMIN always has all permissions
-        if (roleName === 'SUPER_ADMIN') {
+        // SUPER_ADMIN and ADMIN always have all permissions
+        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
             return true;
         }
 
         const permissions = await this.getRolePermissions(roleName);
+        
+        // Check for wildcard permission
+        if (permissions.includes('*')) {
+            return true;
+        }
+        
         return permissions.includes(permission);
     }
 
@@ -101,11 +107,17 @@ export class PermissionHelper {
      * Check if a role has any of the specified permissions
      */
     async roleHasAnyPermission(roleName: string, permissions: string[]): Promise<boolean> {
-        if (roleName === 'SUPER_ADMIN') {
+        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
             return true;
         }
 
         const rolePermissions = await this.getRolePermissions(roleName);
+        
+        // Check for wildcard permission
+        if (rolePermissions.includes('*')) {
+            return true;
+        }
+        
         return permissions.some(p => rolePermissions.includes(p));
     }
 
@@ -113,11 +125,17 @@ export class PermissionHelper {
      * Check if a role has all of the specified permissions
      */
     async roleHasAllPermissions(roleName: string, permissions: string[]): Promise<boolean> {
-        if (roleName === 'SUPER_ADMIN') {
+        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
             return true;
         }
 
         const rolePermissions = await this.getRolePermissions(roleName);
+        
+        // Check for wildcard permission
+        if (rolePermissions.includes('*')) {
+            return true;
+        }
+        
         return permissions.every(p => rolePermissions.includes(p));
     }
 

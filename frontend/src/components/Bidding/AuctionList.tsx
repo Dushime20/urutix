@@ -53,7 +53,7 @@ interface Auction {
 }
 
 interface AuctionListProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
   showWatchedOnly?: boolean;
 }
 

@@ -65,7 +65,7 @@ interface Bid {
 }
 
 interface BidHistoryProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
 const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
@@ -91,8 +91,10 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     setLoading(true);
     setError(null);
     try {
-      // Use getMyBids for both cargo owners and truck owners
-      const response = await biddingAPI.getMyBids();
+      // Use admin endpoint for admin users, otherwise use regular endpoint
+      const response = (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN')
+        ? await biddingAPI.getAllBidsForAdmin()
+        : await biddingAPI.getMyBids();
       const bidsData = response.data || response;
 
       // Filter bids based on status filter

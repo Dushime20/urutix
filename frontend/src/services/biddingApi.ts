@@ -182,6 +182,9 @@ export const biddingAPI = {
   // Views & My bids
   recordAuctionView: (auctionId: string) => api.post(`/bidding/auctions/${auctionId}/view`),
   getMyBids: () => api.get('/bidding/bids'),
+  
+  // Admin endpoints
+  getAllBidsForAdmin: () => api.get('/bidding/admin/all-bids'),
 };
 
 import { formatCurrency } from '../utils/formatNumber';

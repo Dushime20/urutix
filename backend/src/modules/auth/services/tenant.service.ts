@@ -419,7 +419,16 @@ export class TenantService {
   }
 
   async getAllTenants(): Promise<Tenant[]> {
-    return this.tenantRepository.find();
+    try {
+      this.logger.log('Fetching all tenants...');
+      const tenants = await this.tenantRepository.find();
+      this.logger.log(`Found ${tenants.length} tenants`);
+      return tenants;
+    } catch (error) {
+      this.logger.error('Error fetching all tenants:', error);
+      this.logger.error('Error stack:', error.stack);
+      throw error;
+    }
   }
 
   async getSearchedTenants(query: FindTenantsDto) {

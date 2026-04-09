@@ -25,7 +25,7 @@ export class TenantGuard implements CanActivate {
       throw new UnauthorizedException('User not found in request');
     }
 
-    // Super admins can access any tenant
+    // Super admins and admins can access any tenant without restrictions
     if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
       return true;
     }

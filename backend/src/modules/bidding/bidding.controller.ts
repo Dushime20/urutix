@@ -780,5 +780,23 @@ export class BiddingController {
     );
     return { success: true };
   }
+
+  @Get('admin/all-bids')
+  @ApiOperation({ summary: 'Get all bids in the system (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Returns all bids in the system' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getAllBidsForAdmin(@Request() req): Promise<Bid[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Check if user is admin
+    if (req.user.role !== UserRole.ADMIN && req.user.role !== 'ADMIN' && 
+        req.user.role !== UserRole.SUPER_ADMIN && req.user.role !== 'SUPER_ADMIN') {
+      throw new Error('Forbidden - Admin access required');
+    }
+    
+    return this.biddingService.getAllBidsForAdmin();
+  }
 }
 
