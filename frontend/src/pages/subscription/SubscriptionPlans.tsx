@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -9,7 +10,6 @@ import {
   FaCrown,
   FaRocket,
   FaStar,
-  FaQuestionCircle,
   FaCalculator,
   FaChartBar,
   FaShieldAlt,
@@ -24,9 +24,10 @@ interface SubscriptionPlan {
   name: string;
   slug: string;
   description: string;
-  priceMonthly: number;
-  priceYearly: number;
-  includedCredits: number;
+  pricePerCredit: number;
+  totalCredits: number;
+  creditsPerTonTenant: number;
+  creditsPerTonTruckOwner: number;
   features: {
     maxTrucks?: number;
     maxUsers?: number;
@@ -46,11 +47,21 @@ interface SubscriptionPlan {
 
 const SubscriptionPlans: React.FC = () => {
   const navigate = useNavigate();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions'>('plans');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
-  const [estimatedLoads, setEstimatedLoads] = useState(50);
+  const [estimatedTons, setEstimatedTons] = useState(50);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile_money'>('card');
+  const [paymentData, setPaymentData] = useState({
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: '',
+    phoneNumber: '',
+    mobileProvider: 'mtn'
+  });
 
   // Fetch plans
   const { data: plansData, isLoading } = useQuery({
@@ -61,62 +72,95 @@ const SubscriptionPlans: React.FC = () => {
     },
   });
 
-  // Create subscription mutation
-  const createSubscription = useMutation({
-    mutationFn: async (data: { planId: string; billingCycle: string }) => {
-      const response = await api.post('/subscriptions', {
-        ...data,
-        startTrial: true,
-        trialDays: 14,
-      });
+  // Fetch user's subscriptions
+  const { data: subscriptionsData, isLoading: isLoadingSubscriptions } = useQuery({
+    queryKey: ['my-subscriptions'],
+    queryFn: async () => {
+      const response = await api.get('/subscriptions/my-subscriptions');
       return response.data;
-    },
-    onSuccess: () => {
-      toast.success('Subscription created successfully! Your 14-day trial has started.');
-      navigate('/billing');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create subscription');
     },
   });
 
-  const handleSelectPlan = (planId: string) => {
-    setSelectedPlan(planId);
-    createSubscription.mutate({ planId, billingCycle });
+  // Purchase subscription mutation
+  const purchaseSubscription = useMutation({
+    mutationFn: async (data: { 
+      planId: string; 
+      paymentMethod: string;
+      paymentDetails: any;
+    }) => {
+      const response = await api.post('/subscriptions/purchase', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Subscription purchased successfully! Credits have been added to your account.');
+      setShowPaymentModal(false);
+      setSelectedPlan(null);
+      navigate('/tenant-admin/billing');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to purchase subscription');
+    },
+  });
+
+  const handleSelectPlan = (plan: SubscriptionPlan) => {
+    setSelectedPlan(plan);
+    setShowPaymentModal(true);
+  };
+
+  const handlePayment = () => {
+    if (!selectedPlan) return;
+
+    // Validate payment data
+    if (paymentMethod === 'card') {
+      if (!paymentData.cardNumber || !paymentData.cardName || !paymentData.expiryDate || !paymentData.cvv) {
+        toast.error('Please fill in all card details');
+        return;
+      }
+    } else {
+      if (!paymentData.phoneNumber) {
+        toast.error('Please enter your phone number');
+        return;
+      }
+    }
+
+    purchaseSubscription.mutate({
+      planId: selectedPlan.id,
+      paymentMethod,
+      paymentDetails: paymentMethod === 'card' ? {
+        cardNumber: paymentData.cardNumber,
+        cardName: paymentData.cardName,
+        expiryDate: paymentData.expiryDate,
+        cvv: paymentData.cvv
+      } : {
+        phoneNumber: paymentData.phoneNumber,
+        provider: paymentData.mobileProvider
+      }
+    });
   };
 
   const plans: SubscriptionPlan[] = plansData?.data || [];
 
-  const getPrice = (plan: SubscriptionPlan) => {
-    return billingCycle === 'monthly' ? Number(plan.priceMonthly) : Number(plan.priceYearly);
-  };
-
-  const getMonthlyEquivalent = (plan: SubscriptionPlan) => {
-    if (billingCycle === 'yearly') {
-      return (Number(plan.priceYearly) / 12).toFixed(2);
+  const getTotalAmount = (plan: SubscriptionPlan) => {
+    if (plan.totalCredits === -1) {
+      return 0; // Unlimited credits - pay as you go
     }
-    return Number(plan.priceMonthly).toFixed(2);
-  };
-
-  const getSavings = (plan: SubscriptionPlan) => {
-    if (billingCycle === 'yearly') {
-      const monthlyTotal = Number(plan.priceMonthly) * 12;
-      const savings = monthlyTotal - Number(plan.priceYearly);
-      const percentage = Math.round((savings / monthlyTotal) * 100);
-      return { amount: savings, percentage };
-    }
-    return null;
+    return Number(plan.pricePerCredit) * plan.totalCredits;
   };
 
   const getRecommendedPlan = () => {
-    if (estimatedLoads <= 50) return 'starter';
-    if (estimatedLoads <= 200) return 'professional';
+    if (estimatedTons <= 50) return 'starter';
+    if (estimatedTons <= 200) return 'professional';
     return 'enterprise';
   };
 
-  const calculateCreditsNeeded = () => {
-    // Estimate: 5 credits per load posting + 2 credits per AI match
-    return estimatedLoads * 7;
+  const calculateCreditsNeeded = (plan: SubscriptionPlan) => {
+    // Calculate credits needed based on estimated tons
+    return estimatedTons * Number(plan.creditsPerTonTenant);
+  };
+
+  const calculateCost = (plan: SubscriptionPlan) => {
+    const creditsNeeded = calculateCreditsNeeded(plan);
+    return creditsNeeded * Number(plan.pricePerCredit);
   };
 
   if (isLoading) {
@@ -132,6 +176,60 @@ const SubscriptionPlans: React.FC = () => {
 
   return (
     <div className="space-y-6 antialiased">
+      {/* Top Navigation & Actions Bar */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white rounded-[24px] p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        {/* Nav Tabs */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveTab('plans')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              activeTab === 'plans'
+                ? 'bg-[#345E85] text-white shadow-lg'
+                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Available Plans
+          </button>
+          <button
+            onClick={() => setActiveTab('subscriptions')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              activeTab === 'subscriptions'
+                ? 'bg-[#345E85] text-white shadow-lg'
+                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            My Subscriptions
+          </button>
+        </div>
+
+        {/* Action Items (Pill + Buttons) - Only for Plans Tab */}
+        {activeTab === 'plans' && (
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#345E85] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+              <FaGift className="text-blue-500" />
+              🎉 Instant Activation
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowCalculator(!showCalculator)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
+              >
+                <FaCalculator className="text-xs" />
+                {showCalculator ? 'Hide' : 'Calculator'}
+              </button>
+              <button
+                onClick={() => setShowComparison(!showComparison)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
+              >
+                <FaChartBar className="text-xs" />
+                Compare
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Header - Enlite Prime Style */}
       <div className="bg-white rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         {/* Decorative Background Blur */}
@@ -158,31 +256,9 @@ const SubscriptionPlans: React.FC = () => {
         </div>
       </div>
 
+      {activeTab === 'plans' && (
       <div className="space-y-8">
-        {/* Header Actions */}
         <div className="flex flex-col items-center gap-6">
-          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#345E85] px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm">
-            <FaGift className="text-blue-500" />
-            🎉 14-Day Free Trial • No Credit Card Required
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-center gap-4">
-            <button
-              onClick={() => setShowCalculator(!showCalculator)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-[#345E85] rounded-2xl hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-widest shadow-sm"
-            >
-              <FaCalculator />
-              {showCalculator ? 'Hide Calculator' : 'Credit Calculator'}
-            </button>
-            <button
-              onClick={() => setShowComparison(!showComparison)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-[#345E85] rounded-2xl hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-widest shadow-sm"
-            >
-              <FaChartBar />
-              Compare Plans
-            </button>
-          </div>
 
           {/* Credit Calculator */}
           {showCalculator && (
@@ -198,20 +274,20 @@ const SubscriptionPlans: React.FC = () => {
               <div className="space-y-8">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                    How many loads do you post per month?
+                    How many tons do you ship per month?
                   </label>
                   <input
                     type="range"
                     min="10"
                     max="500"
                     step="10"
-                    value={estimatedLoads}
-                    onChange={(e) => setEstimatedLoads(Number(e.target.value))}
+                    value={estimatedTons}
+                    onChange={(e) => setEstimatedTons(Number(e.target.value))}
                     className="w-full h-3 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#345E85]"
                   />
                   <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest mt-4">
                     <span>10</span>
-                    <span className="text-[#345E85] scale-125 transform transition-transform">{estimatedLoads} loads</span>
+                    <span className="text-[#345E85] scale-125 transform transition-transform">{estimatedTons} tons</span>
                     <span>500+</span>
                   </div>
                 </div>
@@ -225,7 +301,7 @@ const SubscriptionPlans: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-3xl font-black text-[#345E85] tracking-tight">
-                        ~{calculateCreditsNeeded().toLocaleString()}
+                        {estimatedTons * 2} credits
                       </div>
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                         Estimated Credits Needed
@@ -236,40 +312,16 @@ const SubscriptionPlans: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Billing Toggle */}
-          <div className="inline-flex items-center bg-white rounded-[20px] p-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${billingCycle === 'monthly'
-                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-900/20'
-                : 'text-slate-400 hover:text-slate-900'
-                }`}
-            >
-              Monthly Billed
-            </button>
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all relative ${billingCycle === 'yearly'
-                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-900/20'
-                : 'text-slate-400 hover:text-slate-900'
-                }`}
-            >
-              Yearly Billed
-              <span className="absolute -top-3 -right-3 bg-emerald-500 text-white text-[9px] px-2 py-1 rounded-[10px] font-black shadow-md">
-                SAVE 17%
-              </span>
-            </button>
-          </div>
         </div>
 
         {/* Plans Grid */}
         <div className="grid md:grid-cols-3 gap-8">
           {plans.map((plan) => {
-            const savings = getSavings(plan);
             const isPopular = plan.slug === 'professional';
             const isEnterprise = plan.slug === 'enterprise';
             const isRecommended = plan.slug === getRecommendedPlan();
+            const totalAmount = getTotalAmount(plan);
+            const isUnlimited = plan.totalCredits === -1;
 
             return (
               <div
@@ -315,53 +367,69 @@ const SubscriptionPlans: React.FC = () => {
                   <div className="mb-8">
                     <div className="flex items-baseline mb-2">
                       <span className="text-5xl font-black text-[#345E85] tracking-tight">
-                        ${getMonthlyEquivalent(plan)}
+                        ${Number(plan.pricePerCredit).toFixed(2)}
                       </span>
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">/ month</span>
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">/ credit</span>
                     </div>
-                    {billingCycle === 'yearly' && (
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                        Billed ${getPrice(plan)} annually
-                      </p>
+                    {!isUnlimited && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                          Total: {plan.totalCredits.toLocaleString()} credits
+                        </p>
+                        <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                          <FaLightbulb className="text-emerald-500 w-3 h-3" />
+                          Package: ${totalAmount.toFixed(2)}
+                        </div>
+                      </div>
                     )}
-                    {savings && (
-                      <div className="mt-4 inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-                        <FaLightbulb className="text-emerald-500 w-3 h-3" />
-                        Save ${savings.amount.toFixed(0)}/year ({savings.percentage}%)
+                    {isUnlimited && (
+                      <div className="mt-4">
+                        <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                          <FaRocket className="text-blue-500 w-3 h-3" />
+                          Pay as you go
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Credits */}
+                  {/* Credit Consumption */}
                   <div className="bg-slate-50/50 rounded-[24px] p-6 mb-8 border border-slate-100">
-                    <div className="text-center">
-                      <div className="text-3xl font-black text-slate-900 tracking-tight mb-1">
-                        {plan.includedCredits.toLocaleString()}
+                    <div className="space-y-3">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Credit Consumption</div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 font-semibold">Per Ton (You):</span>
+                        <span className="font-black text-blue-600">{Number(plan.creditsPerTonTenant).toFixed(1)} credits</span>
                       </div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">credits / month</div>
-                      <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-2 bg-blue-50 inline-block px-3 py-1 rounded-full">
-                        ~{Math.floor(plan.includedCredits / 7)} loads capacity
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 font-semibold">Per Ton (Truck Owner):</span>
+                        <span className="font-black text-indigo-600">{Number(plan.creditsPerTonTruckOwner).toFixed(1)} credits</span>
                       </div>
+                      {showCalculator && (
+                        <div className="pt-3 border-t border-slate-200 mt-3">
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Estimated Cost</div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-600">{estimatedTons} tons/month:</span>
+                            <span className="font-black text-emerald-600">${calculateCost(plan).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
                   {/* CTA Button */}
                   <button
-                    onClick={() => handleSelectPlan(plan.id)}
-                    disabled={createSubscription.isPending && selectedPlan === plan.id}
+                    onClick={() => handleSelectPlan(plan)}
                     className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${isPopular
                       ? 'bg-[#345E85] text-white hover:bg-[#2a4d6d] hover:shadow-lg hover:shadow-blue-900/20'
                       : isEnterprise
                         ? 'bg-slate-900 text-white hover:bg-black hover:shadow-lg hover:shadow-black/20'
                         : 'bg-white border border-[#345E85]/20 text-[#345E85] hover:bg-blue-50'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      }`}
                   >
-                    {createSubscription.isPending && selectedPlan === plan.id
-                      ? 'Processing...'
-                      : 'Start 14-Day Free Trial'}
+                    Buy Now
                   </button>
                   <p className="text-center text-[9px] font-black text-slate-400 uppercase tracking-widest mt-4">
-                    No credit card required • Cancel anytime
+                    Secure payment • Instant activation
                   </p>
                 </div>
 
@@ -488,10 +556,34 @@ const SubscriptionPlans: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Monthly Credits</td>
+                    <td className="py-4 px-4 font-medium text-slate-700">Price per Credit</td>
                     {plans.map(plan => (
                       <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
-                        {plan.includedCredits.toLocaleString()}
+                        ${Number(plan.pricePerCredit).toFixed(2)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="py-4 px-4 font-medium text-slate-700">Total Credits</td>
+                    {plans.map(plan => (
+                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
+                        {plan.totalCredits === -1 ? 'Unlimited' : plan.totalCredits.toLocaleString()}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="py-4 px-4 font-medium text-slate-700">Credits/Ton (Tenant)</td>
+                    {plans.map(plan => (
+                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-blue-600">
+                        {Number(plan.creditsPerTonTenant).toFixed(1)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="py-4 px-4 font-medium text-slate-700">Credits/Ton (Truck Owner)</td>
+                    {plans.map(plan => (
+                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
+                        {Number(plan.creditsPerTonTruckOwner).toFixed(1)}
                       </td>
                     ))}
                   </tr>
@@ -613,81 +705,359 @@ const SubscriptionPlans: React.FC = () => {
             <p className="text-sm text-slate-600">Transparent pricing</p>
           </div>
         </div>
-
-        {/* FAQ Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto border-2 border-indigo-100">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <FaQuestionCircle className="text-3xl text-indigo-600" />
-            <h2 className="text-3xl font-bold text-slate-900">
-              Frequently Asked Questions
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-slate-50 rounded-lg p-5">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-start gap-2">
-                <span className="text-indigo-600">Q:</span>
-                What are credits?
-              </h3>
-              <p className="text-slate-600 text-sm pl-6">
-                Credits are used to access platform features. Each action (like posting a load or using AI matching) costs a certain number of credits. Your plan includes monthly credits, and you can purchase more if needed.
-              </p>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-5">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-start gap-2">
-                <span className="text-indigo-600">Q:</span>
-                Can I change plans later?
-              </h3>
-              <p className="text-slate-600 text-sm pl-6">
-                Yes! You can upgrade or downgrade your plan at any time. Upgrades take effect immediately with prorated credits, while downgrades take effect at the end of your billing period.
-              </p>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-5">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-start gap-2">
-                <span className="text-indigo-600">Q:</span>
-                What happens after the trial?
-              </h3>
-              <p className="text-slate-600 text-sm pl-6">
-                After your 14-day trial, you'll be charged based on your selected plan and billing cycle. You can cancel anytime during the trial with no charges.
-              </p>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-5">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-start gap-2">
-                <span className="text-indigo-600">Q:</span>
-                Do unused credits roll over?
-              </h3>
-              <p className="text-slate-600 text-sm pl-6">
-                Subscription credits expire at the end of each billing period. However, purchased credit top-ups are valid for 12 months.
-              </p>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-5">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-start gap-2">
-                <span className="text-indigo-600">Q:</span>
-                Can I cancel anytime?
-              </h3>
-              <p className="text-slate-600 text-sm pl-6">
-                Absolutely! There are no long-term contracts. You can cancel your subscription at any time from your billing dashboard.
-              </p>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-5">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-start gap-2">
-                <span className="text-indigo-600">Q:</span>
-                What payment methods do you accept?
-              </h3>
-              <p className="text-slate-600 text-sm pl-6">
-                We accept all major credit cards, debit cards, and mobile money payments. All transactions are secure and encrypted.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="text-slate-600 mb-4">Still have questions?</p>
-            <button className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-bold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg">
-              Contact Sales Team
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+      )}
+
+      {/* My Subscriptions Tab */}
+      {activeTab === 'subscriptions' && (
+        <div className="space-y-6">
+          {isLoadingSubscriptions ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#345E85] mx-auto"></div>
+                <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Subscriptions...</p>
+              </div>
+            </div>
+          ) : subscriptionsData?.data?.length > 0 ? (
+            <div className="grid gap-6">
+              {subscriptionsData.data.map((subscription: any) => (
+                <div
+                  key={subscription.id}
+                  className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-16 h-16 rounded-[20px] flex items-center justify-center ${
+                        subscription.status === 'active' ? 'bg-emerald-50' :
+                        subscription.status === 'cancelled' ? 'bg-slate-50' :
+                        'bg-yellow-50'
+                      }`}>
+                        <FaCrown className={`text-2xl ${
+                          subscription.status === 'active' ? 'text-emerald-500' :
+                          subscription.status === 'cancelled' ? 'text-slate-400' :
+                          'text-yellow-500'
+                        }`} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                          {subscription.plan?.name || 'Unknown Plan'}
+                        </h3>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                          {subscription.plan?.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${
+                      subscription.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                      subscription.status === 'cancelled' ? 'bg-slate-50 text-slate-600 border border-slate-200' :
+                      'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                    }`}>
+                      {subscription.status}
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6 mb-6">
+                    <div className="bg-slate-50/50 rounded-[20px] p-5 border border-slate-100">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Billing Cycle
+                      </div>
+                      <div className="text-lg font-black text-slate-900 capitalize">
+                        {subscription.billingCycle}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50/50 rounded-[20px] p-5 border border-slate-100">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Current Period
+                      </div>
+                      <div className="text-sm font-bold text-slate-700">
+                        {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50/50 rounded-[20px] p-5 border border-slate-100">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Auto Renew
+                      </div>
+                      <div className="text-lg font-black text-slate-900">
+                        {subscription.autoRenew ? 'Yes' : 'No'}
+                      </div>
+                    </div>
+                  </div>
+
+
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-[32px] p-12 text-center border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+              <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                <FaCrown className="text-4xl text-slate-300" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
+                No Subscriptions Yet
+              </h3>
+              <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                You haven't purchased any subscription plans yet. Browse our available plans to get started.
+              </p>
+              <button
+                onClick={() => setActiveTab('plans')}
+                className="px-8 py-4 bg-[#345E85] text-white rounded-2xl hover:bg-[#2a4d6d] transition-all font-black text-[11px] uppercase tracking-widest shadow-lg"
+              >
+                View Available Plans
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPlan && createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      Complete Your Purchase
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {selectedPlan.name} Plan
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowPaymentModal(false);
+                      setSelectedPlan(null);
+                    }}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                  >
+                    <FaTimes className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                {/* Order Summary */}
+                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                    Order Summary
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">Plan:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{selectedPlan.name}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">Credits:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {selectedPlan.totalCredits === -1 ? 'Unlimited' : selectedPlan.totalCredits.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">Price per Credit:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        ${Number(selectedPlan.pricePerCredit).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-black text-slate-900 dark:text-white">Total Amount:</span>
+                        <span className="text-2xl font-black text-[#345E85] dark:text-blue-400">
+                          ${getTotalAmount(selectedPlan).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Method Selection */}
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                    Payment Method
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setPaymentMethod('card')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === 'card'
+                          ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">💳</div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">Credit Card</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod('mobile_money')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === 'mobile_money'
+                          ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">📱</div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">Mobile Money</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Payment Form - Credit Card */}
+                {paymentMethod === 'card' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Card Number
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                        value={paymentData.cardNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\s/g, '');
+                          const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                          setPaymentData({ ...paymentData, cardNumber: formatted });
+                        }}
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Cardholder Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="John Doe"
+                        value={paymentData.cardName}
+                        onChange={(e) => setPaymentData({ ...paymentData, cardName: e.target.value })}
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          Expiry Date
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          maxLength={5}
+                          value={paymentData.expiryDate}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (value.length >= 2) {
+                              value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                            }
+                            setPaymentData({ ...paymentData, expiryDate: value });
+                          }}
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          CVV
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="123"
+                          maxLength={4}
+                          value={paymentData.cvv}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            setPaymentData({ ...paymentData, cvv: value });
+                          }}
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Form - Mobile Money */}
+                {paymentMethod === 'mobile_money' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Mobile Provider
+                      </label>
+                      <select
+                        value={paymentData.mobileProvider}
+                        onChange={(e) => setPaymentData({ ...paymentData, mobileProvider: e.target.value })}
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      >
+                        <option value="mtn">MTN Mobile Money</option>
+                        <option value="airtel">Airtel Money</option>
+                        <option value="tigo">Tigo Cash</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+250 788 123 456"
+                        value={paymentData.phoneNumber}
+                        onChange={(e) => setPaymentData({ ...paymentData, phoneNumber: e.target.value })}
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      />
+                      <p className="text-xs text-slate-500 mt-2">
+                        You will receive a prompt on your phone to confirm the payment
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Security Notice */}
+                <div className="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                  <FaShieldAlt className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      Secure Payment
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Your payment information is encrypted and secure. We never store your card details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center gap-4">
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedPlan(null);
+                  }}
+                  className="px-6 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePayment}
+                  disabled={purchaseSubscription.isPending}
+                  className="px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                >
+                  {purchaseSubscription.isPending ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    `Pay $${getTotalAmount(selectedPlan).toFixed(2)}`
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      </div>
   );
 };
 

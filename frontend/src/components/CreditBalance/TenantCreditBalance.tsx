@@ -22,28 +22,17 @@ const TenantCreditBalance: React.FC = () => {
     },
     enabled: user?.role === 'TENANT_ADMIN',
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: false, // Don't retry on failure
+    staleTime: 60000, // Consider data stale after 1 minute
   });
 
   if (!user || user.role !== 'TENANT_ADMIN') {
     return null;
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg animate-pulse">
-        <Wallet className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-500">Loading...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg">
-        <AlertCircle className="w-4 h-4 text-red-500" />
-        <span className="text-sm text-red-600">Error loading balance</span>
-      </div>
-    );
+  // Don't show anything if loading or error - fail silently
+  if (isLoading || error) {
+    return null;
   }
 
   const balance = balanceData?.data?.currentBalance || 0;

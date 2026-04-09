@@ -69,6 +69,19 @@ export class SubscriptionController {
     };
   }
 
+  @Get('my-subscriptions')
+  @ApiOperation({ summary: 'Get subscriptions purchased by authenticated user' })
+  @ApiResponse({ status: 200, description: 'Returns user subscriptions' })
+  async getMySubscriptions(@Request() req) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+    const subscriptions = await this.subscriptionService.getSubscriptionHistory(tenantId, userId);
+    return {
+      success: true,
+      data: subscriptions,
+    };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new subscription' })
   @ApiResponse({ status: 201, description: 'Subscription created successfully' })
@@ -80,6 +93,37 @@ export class SubscriptionController {
       success: true,
       message: 'Subscription created successfully',
       data: subscription,
+    };
+  }
+
+  @Post('purchase')
+  @ApiOperation({ summary: 'Purchase a subscription plan with payment' })
+  @ApiResponse({ status: 201, description: 'Subscription purchased successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async purchaseSubscription(
+    @Request() req,
+    @Body() body: {
+      planId: string;
+      paymentMethod: 'card' | 'mobile_money';
+      paymentDetails: any;
+    },
+  ) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+
+    // Process payment and create subscription
+    const result = await this.subscriptionService.purchaseSubscription({
+      tenantId,
+      userId,
+      planId: body.planId,
+      paymentMethod: body.paymentMethod,
+      paymentDetails: body.paymentDetails,
+    });
+
+    return {
+      success: true,
+      message: 'Subscription purchased successfully! Credits have been added to your account.',
+      data: result,
     };
   }
 

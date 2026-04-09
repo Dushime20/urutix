@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   XCircle
 } from 'lucide-react';
+import { FaCreditCard } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -34,9 +35,10 @@ interface SubscriptionPlan {
   name: string;
   slug: string;
   description?: string;
-  priceMonthly: number;
-  priceYearly?: number;
-  includedCredits: number;
+  pricePerCredit?: number;
+  totalCredits?: number;
+  creditsPerTonTenant?: number;  // Credits consumed per ton for Tenant Admin
+  creditsPerTonTruckOwner?: number;  // Credits consumed per ton for Truck Owner
   features: PlanFeatures;
   isActive: boolean;
   displayOrder: number;
@@ -64,7 +66,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<Partial<SubscriptionPlan>>({ features: DEFAULT_FEATURES });
-  const [featuresInput, setFeaturesInput] = useState<string>(JSON.stringify(DEFAULT_FEATURES, null, 2));
+  const [features, setFeatures] = useState<PlanFeatures>(DEFAULT_FEATURES);
 
   useEffect(() => {
     fetchPlans();
@@ -91,21 +93,22 @@ const SubscriptionPlansMgmt: React.FC = () => {
     if (plan) {
       setIsEditMode(true);
       setCurrentPlan(plan);
-      setFeaturesInput(JSON.stringify(plan.features || {}, null, 2));
+      setFeatures(plan.features || DEFAULT_FEATURES);
     } else {
       setIsEditMode(false);
       setCurrentPlan({
         name: '',
         slug: '',
         description: '',
-        priceMonthly: 0,
-        priceYearly: 0,
-        includedCredits: 0,
+        pricePerCredit: 0.15,
+        totalCredits: -1,
+        creditsPerTonTenant: 2,
+        creditsPerTonTruckOwner: 5,
         isActive: true,
         displayOrder: 0,
         features: DEFAULT_FEATURES
       });
-      setFeaturesInput(JSON.stringify(DEFAULT_FEATURES, null, 2));
+      setFeatures(DEFAULT_FEATURES);
     }
     setIsModalOpen(true);
   };
@@ -117,17 +120,9 @@ const SubscriptionPlansMgmt: React.FC = () => {
 
   const savePlan = async () => {
     try {
-      let parsedFeatures = {};
-      try {
-        parsedFeatures = JSON.parse(featuresInput);
-      } catch (e) {
-        toast.error('Invalid JSON in features field');
-        return;
-      }
-
       const payload = {
         ...currentPlan,
-        features: parsedFeatures
+        features: features
       };
 
       if (isEditMode && currentPlan.id) {
@@ -245,15 +240,11 @@ const SubscriptionPlansMgmt: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white">${plan.priceMonthly}</span>
-                    <span className="text-sm font-semibold text-slate-500">/mo</span>
+                  <div className="text-center py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                    <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Credit Economics</div>
+                    <div className="text-2xl font-black text-blue-600 dark:text-blue-400">${plan.pricePerCredit || 0.15}</div>
+                    <div className="text-xs text-slate-500">per credit</div>
                   </div>
-                  {plan.priceYearly && (
-                    <span className="text-sm text-slate-500">
-                      or ${plan.priceYearly}/yr (${Math.round(plan.priceYearly/12)}/mo)
-                    </span>
-                  )}
                 </div>
                 
                 <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[40px]">
@@ -262,19 +253,27 @@ const SubscriptionPlansMgmt: React.FC = () => {
 
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl space-y-3 mt-2 border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">Included Credits:</span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                      {plan.includedCredits}
-                      <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 px-1.5 py-0.5 rounded-sm uppercase tracking-wide">Credits</span>
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Price per Credit:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">${plan.pricePerCredit || 0.15}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Max Credits:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {plan.totalCredits === -1 ? 'Unlimited' : (plan.totalCredits || 0).toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">Max Users:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{plan.features?.maxUsers || 'Unlimited'}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">Max Trucks:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{plan.features?.maxTrucks || 'Unlimited'}</span>
+                  
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Credit per Ton</div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400">Tenant Admin:</span>
+                      <span className="font-bold text-blue-600 dark:text-blue-400">{plan.creditsPerTonTenant || 2} credits/ton</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400">Truck Owner:</span>
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{plan.creditsPerTonTruckOwner || 5} credits/ton</span>
+                    </div>
                   </div>
                   
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
@@ -337,38 +336,123 @@ const SubscriptionPlansMgmt: React.FC = () => {
                   value={currentPlan.description || ''}
                   onChange={(e) => setCurrentPlan({...currentPlan, description: e.target.value})}
                   rows={2}
+                  placeholder="Brief description of this subscription plan"
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white resize-none"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Monthly Price ($)</label>
-                  <input
-                    type="number"
-                    value={currentPlan.priceMonthly ?? ''}
-                    onChange={(e) => setCurrentPlan({...currentPlan, priceMonthly: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white"
-                  />
+              {/* Credit Purchase Configuration */}
+              <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <FaCreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Credit Purchase Settings</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">Define how tenants purchase credits from system admin</p>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Yearly Price ($)</label>
-                  <input
-                    type="number"
-                    value={currentPlan.priceYearly ?? ''}
-                    onChange={(e) => setCurrentPlan({...currentPlan, priceYearly: parseFloat(e.target.value)})}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white"
-                  />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Price per Credit ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={currentPlan.pricePerCredit ?? ''}
+                      onChange={(e) => setCurrentPlan({...currentPlan, pricePerCredit: parseFloat(e.target.value)})}
+                      placeholder="0.15"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:text-white"
+                    />
+                    <p className="text-xs text-slate-500">What tenant pays per credit</p>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Max Credits Available</label>
+                    <input
+                      type="number"
+                      value={currentPlan.totalCredits ?? ''}
+                      onChange={(e) => setCurrentPlan({...currentPlan, totalCredits: parseInt(e.target.value)})}
+                      placeholder="-1 for unlimited"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:text-white"
+                    />
+                    <p className="text-xs text-slate-500">-1 for unlimited credits</p>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Included Credits</label>
-                  <input
-                    type="number"
-                    value={currentPlan.includedCredits ?? ''}
-                    onChange={(e) => setCurrentPlan({...currentPlan, includedCredits: parseInt(e.target.value)})}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white"
-                  />
+              </div>
+
+              {/* Credit Consumption Configuration */}
+              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <FaCreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Credit Consumption Rules</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">Define how credits are consumed based on cargo weight (tons)</p>
+                  </div>
                 </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Credits per Ton (Tenant Admin)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={currentPlan.creditsPerTonTenant ?? ''}
+                      onChange={(e) => setCurrentPlan({...currentPlan, creditsPerTonTenant: parseFloat(e.target.value)})}
+                      placeholder="2"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                    />
+                    <p className="text-xs text-slate-500">Credits deducted per ton for tenant</p>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Credits per Ton (Truck Owner)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={currentPlan.creditsPerTonTruckOwner ?? ''}
+                      onChange={(e) => setCurrentPlan({...currentPlan, creditsPerTonTruckOwner: parseFloat(e.target.value)})}
+                      placeholder="5"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                    />
+                    <p className="text-xs text-slate-500">Credits deducted per ton for truck owner</p>
+                  </div>
+                </div>
+
+                {/* Example Calculation */}
+                {currentPlan.creditsPerTonTenant && currentPlan.creditsPerTonTruckOwner && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-blue-200 dark:border-blue-700 space-y-2">
+                    <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Example: 10 Ton Cargo</div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Tenant Admin Cost:</span>
+                      <span className="font-black text-blue-600 dark:text-blue-400">
+                        {(currentPlan.creditsPerTonTenant * 10).toFixed(1)} credits
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Truck Owner Cost:</span>
+                      <span className="font-black text-indigo-600 dark:text-indigo-400">
+                        {(currentPlan.creditsPerTonTruckOwner * 10).toFixed(1)} credits
+                      </span>
+                    </div>
+                    {currentPlan.pricePerCredit && (
+                      <div className="pt-2 border-t border-blue-100 dark:border-blue-800">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600 dark:text-slate-400">Tenant's Cost (USD):</span>
+                          <span className="font-black text-emerald-600 dark:text-emerald-400">
+                            ${(currentPlan.creditsPerTonTenant * 10 * currentPlan.pricePerCredit).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -393,19 +477,6 @@ const SubscriptionPlansMgmt: React.FC = () => {
                       className="w-20 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white"
                     />
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center mb-1">
-                   <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Features (JSON)</label>
-                   <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">Format strictly</span>
-                </div>
-                <textarea
-                  value={featuresInput}
-                  onChange={(e) => setFeaturesInput(e.target.value)}
-                  rows={8}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-500 text-emerald-400 resize-none"
-                />
               </div>
 
             </div>

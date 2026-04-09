@@ -292,7 +292,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: DollarSign,
           subItems: [
             { label: 'Capital Dashboard', path: '/tenant-admin/financial' },
-            { label: 'Subscription Deck', path: '/tenant-admin/subscription-plans' },
             { label: 'Purchase Credits', path: '/tenant-admin/purchase-credits' },
             { label: 'Transaction History', path: '/tenant-admin/billing' },
             { label: 'General Settings', path: '/tenant-admin/settings' },
@@ -391,7 +390,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
               {/* Intelligent Nav Items with Density Management */}
               <div
                 ref={navRef}
-                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap w-full"
+                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap"
               >
                 {navItems.map(item => {
                   const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -425,8 +424,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
                       {hasSubItems && openDropdown === item.label && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
-                          <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
-                             <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase"><TranslatedText text="Quick Actions" /></div>
+                          <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1 space-y-2">
+                            <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase"><TranslatedText text="Quick Actions" /></div>
+                            {item.label === 'Commercial & Settings' && user?.role === 'TENANT_ADMIN' && (
+                              <TenantCreditBalance />
+                            )}
                           </div>
                           <div className="py-1">
                             {item.subItems?.map(subItem => (
@@ -453,9 +455,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-auto">
             <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
-              <div className="hidden sm:block">
-                <TenantCreditBalance />
-              </div>
               <LanguageSwitcher />
               <div className="hidden sm:block">
                 <ThemeToggle />
@@ -651,6 +650,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                   className="overflow-hidden bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl mt-1 ml-2 border-l-2 border-primary-200 dark:border-primary-800"
                                 >
                                   <div className="py-2 space-y-1">
+                                    {item.label === 'Commercial & Settings' && user?.role === 'TENANT_ADMIN' && (
+                                      <div className="px-4 py-3 border-b border-slate-100/50 dark:border-slate-800/50 mb-2">
+                                        <TenantCreditBalance />
+                                      </div>
+                                    )}
                                     {item.subItems?.map(sub => (
                                       <button 
                                         key={sub.path} 

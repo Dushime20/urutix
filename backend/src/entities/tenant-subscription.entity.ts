@@ -38,9 +38,7 @@ export class TenantSubscription {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;
 
-  // Note: This column doesn't exist in the database but is referenced in code
-  // Marked as nullable to prevent errors
-  @Column({ type: 'uuid', name: 'user_id', nullable: true, select: false })
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
   userId?: string;
 
   @Column({ type: 'uuid', name: 'plan_id' })

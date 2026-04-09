@@ -134,10 +134,10 @@ export class SubscriptionService {
    */
   async getCurrentSubscription(tenantId: string, userId?: string): Promise<TenantSubscription | null> {
     const where: any = { tenantId, status: SubscriptionStatus.ACTIVE };
+    
+    // Add userId to query if provided
     if (userId) {
       where.userId = userId;
-    } else {
-      where.userId = null;
     }
 
     return this.tenantSubscriptionRepository.findOne({
@@ -150,18 +150,20 @@ export class SubscriptionService {
    * Get tenant's or user's subscription history
    */
   async getSubscriptionHistory(tenantId: string, userId?: string): Promise<TenantSubscription[]> {
-    const where: any = { tenantId };
+    const queryBuilder = this.tenantSubscriptionRepository
+      .createQueryBuilder('subscription')
+      .leftJoinAndSelect('subscription.plan', 'plan')
+      .where('subscription.tenantId = :tenantId', { tenantId });
+
     if (userId) {
-      where.userId = userId;
+      queryBuilder.andWhere('subscription.userId = :userId', { userId });
     } else {
-      where.userId = null;
+      queryBuilder.andWhere('subscription.userId IS NULL');
     }
 
-    return this.tenantSubscriptionRepository.find({
-      where,
-      relations: ['plan'],
-      order: { createdAt: 'DESC' },
-    });
+    queryBuilder.orderBy('subscription.createdAt', 'DESC');
+
+    return queryBuilder.getMany();
   }
 
   /**
@@ -208,9 +210,15 @@ export class SubscriptionService {
    * Create a new subscription for a tenant or user
    */
   async createSubscription(dto: CreateSubscriptionDto): Promise<TenantSubscription> {
+    // Check for existing subscription and cancel it if found (allow upgrades/replacements)
     const existingSubscription = await this.getCurrentSubscription(dto.tenantId, dto.userId);
     if (existingSubscription) {
-      throw new BadRequestException(`${dto.userId ? 'User' : 'Tenant'} already has an active subscription`);
+      // Cancel the existing subscription to allow the new one
+      await this.tenantSubscriptionRepository.update(existingSubscription.id, {
+        status: SubscriptionStatus.CANCELLED,
+        cancelledAt: new Date(),
+      });
+      // Existing subscription cancelled to allow new purchase
     }
 
     const plan = await this.getPlan(dto.planId);
@@ -270,6 +278,68 @@ export class SubscriptionService {
     }
 
     return savedSubscription;
+  }
+
+  /**
+   * Purchase a subscription with payment processing
+   */
+  async purchaseSubscription(data: {
+    tenantId: string;
+    userId: string;
+    planId: string;
+    paymentMethod: 'card' | 'mobile_money';
+    paymentDetails: any;
+  }): Promise<any> {
+    // Get the plan
+    const plan = await this.getPlan(data.planId);
+
+    // Calculate total amount
+    const totalAmount = plan.totalCredits === -1 ? 0 : Number(plan.pricePerCredit) * plan.totalCredits;
+
+    // TODO: Process payment with payment gateway
+    // For now, we'll simulate successful payment
+    const paymentResult = {
+      success: true,
+      transactionId: `TXN-${Date.now()}`,
+      amount: totalAmount,
+      paymentMethod: data.paymentMethod,
+    };
+
+    if (!paymentResult.success) {
+      throw new BadRequestException('Payment processing failed');
+    }
+
+    // Create subscription with userId to track who purchased it
+    const subscription = await this.createSubscription({
+      tenantId: data.tenantId,
+      userId: data.userId,
+      planId: data.planId,
+      billingCycle: BillingCycle.MONTHLY,
+      paymentMethodId: paymentResult.transactionId,
+      startTrial: false,
+    });
+
+    // Grant credits based on plan
+    if (plan.totalCredits > 0) {
+      await this.creditService.grantSubscriptionCredits(
+        data.tenantId,
+        plan.totalCredits,
+        subscription.id,
+        subscription.currentPeriodEnd,
+        data.userId,
+      );
+    }
+
+    return {
+      subscription,
+      payment: paymentResult,
+      creditsAdded: plan.totalCredits,
+      plan: {
+        name: plan.name,
+        pricePerCredit: plan.pricePerCredit,
+        totalCredits: plan.totalCredits,
+      },
+    };
   }
 
   /**

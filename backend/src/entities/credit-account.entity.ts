@@ -21,12 +21,12 @@ export class CreditAccount {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
+  @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
   @Index()
-  userId: string;
+  userId?: string;
 
   @Column({ type: 'int', default: 0, name: 'current_balance' })
   currentBalance: number;
