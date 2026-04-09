@@ -412,6 +412,119 @@ export class FinancialController {
       timestamp: new Date().toISOString(),
     };
   }
+  @Get('reports/templates')
+  @ApiOperation({
+    summary: 'Get report templates',
+    description: 'Retrieve available financial report templates',
+  })
+  async getReportTemplates(): Promise<ApiResponseDto> {
+    const templates = [
+      {
+        id: 'portfolio-summary',
+        name: 'Portfolio Summary',
+        description: 'Comprehensive overview of loan portfolio performance, active assets, and key metrics.',
+        category: 'portfolio',
+        type: 'summary',
+        frequency: 'on-demand',
+        format: 'pdf',
+        estimatedTime: '2m',
+        dataPoints: ['Total Value', 'Active Loans', 'Disbursed'],
+        isScheduled: true
+      },
+      {
+        id: 'pl_statement',
+        name: 'P&L Statement',
+        description: 'Detailed profit and loss statement showing revenue from interest and fee corridors.',
+        category: 'financial',
+        type: 'detailed',
+        frequency: 'monthly',
+        format: 'excel',
+        estimatedTime: '4m',
+        dataPoints: ['Revenue', 'Expenses', 'Net Income'],
+        isScheduled: true
+      },
+      {
+        id: 'cash_flow',
+        name: 'Cash Flow Analysis',
+        description: 'Track cash inflows and outflows across all operations.',
+        category: 'financial',
+        type: 'detailed',
+        frequency: 'monthly',
+        format: 'excel',
+        estimatedTime: '3m',
+        dataPoints: ['Operating Cash Flow', 'Investing', 'Financing'],
+        isScheduled: true
+      },
+      {
+        id: 'risk-assessment',
+        name: 'Risk Audit',
+        description: 'Deep-dive analysis of credit exposure, default patterns, and portfolio risk distribution.',
+        category: 'risk',
+        type: 'analytical',
+        frequency: 'weekly',
+        format: 'pdf',
+        estimatedTime: '6m',
+        dataPoints: ['PD', 'Value at Risk', 'Concentration'],
+        isScheduled: true
+      },
+      {
+        id: 'borrower-performance',
+        name: 'Entity Registry',
+        description: 'Analytical audit of borrower behavior, repayment hygiene, and credit trends.',
+        category: 'performance',
+        type: 'detailed',
+        frequency: 'monthly',
+        format: 'excel',
+        estimatedTime: '3m',
+        dataPoints: ['Repayment Rate', 'Credit Score Trends'],
+        isScheduled: false
+      },
+      {
+        id: 'revenue',
+        name: 'Revenue Report',
+        description: 'Detailed breakdown of revenue streams and income sources.',
+        category: 'financial',
+        type: 'detailed',
+        frequency: 'monthly',
+        format: 'pdf',
+        estimatedTime: '3m',
+        dataPoints: ['Total Revenue', 'Revenue by Source', 'Growth Rate'],
+        isScheduled: true
+      },
+      {
+        id: 'expense',
+        name: 'Expense Analysis',
+        description: 'Comprehensive analysis of operational expenses and cost centers.',
+        category: 'financial',
+        type: 'detailed',
+        frequency: 'monthly',
+        format: 'excel',
+        estimatedTime: '3m',
+        dataPoints: ['Total Expenses', 'Expense by Category', 'Cost Trends'],
+        isScheduled: true
+      },
+      {
+        id: 'profitability',
+        name: 'Profitability Analysis',
+        description: 'Analysis of profit margins, ROI, and overall profitability metrics.',
+        category: 'financial',
+        type: 'analytical',
+        frequency: 'quarterly',
+        format: 'pdf',
+        estimatedTime: '5m',
+        dataPoints: ['Gross Profit', 'Net Profit', 'Profit Margins', 'ROI'],
+        isScheduled: true
+      }
+    ];
+
+    return {
+      success: true,
+      message: 'Report templates retrieved successfully',
+      data: { templates },
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
   @Post('reports')
   @ApiOperation({

@@ -189,31 +189,31 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="fixed inset-0 bg-slate-950/60 dark:bg-gray-950/90 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-all duration-300">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-white rounded-[32px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl dark:shadow-none border border-gray-100 dark:border-gray-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-8 border-b border-slate-100">
+          <div className="flex items-center justify-between p-8 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 transition-colors">
             <div className="flex items-center gap-4">
-              <div className="size-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+              <div className="size-12 bg-blue-600 dark:bg-blue-900/40 rounded-lg flex items-center justify-center text-white dark:text-blue-400 transition-colors">
                 <Navigation size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">
                   {mode === 'create' ? 'Create New Route' : 'Edit Route'}
                 </h2>
-                <p className="text-sm font-medium text-slate-500 mt-1">
+                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1 transition-colors">
                   {mode === 'create' ? 'Add a new logistics corridor' : 'Update route information'}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="size-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center transition-all"
+              className="size-10 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"
             >
               <X size={18} />
             </button>
@@ -223,23 +223,23 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
           <form onSubmit={handleSubmit} className="p-8 space-y-8">
             {/* Route Name */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+              <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                 Route Name *
               </label>
               <div className="relative group">
-                <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                <Navigation className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full pl-12 pr-4 py-4 bg-white border rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all ${
-                    errors.name ? 'border-rose-300 bg-rose-50' : 'border-slate-100'
+                  className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                    errors.name ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
                   }`}
                   placeholder="e.g., Nairobi to Mombasa Express"
                 />
               </div>
               {errors.name && (
-                <div className="flex items-center gap-2 text-rose-600 text-xs font-medium px-1">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
                   <AlertTriangle size={12} />
                   {errors.name}
                 </div>
@@ -249,23 +249,23 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
             {/* Origin and Destination */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Origin *
                 </label>
                 <div className="relative group">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                   <input
                     type="text"
                     value={formData.origin}
                     onChange={(e) => handleInputChange('origin', e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 bg-white border rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all ${
-                      errors.origin ? 'border-rose-300 bg-rose-50' : 'border-slate-100'
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                      errors.origin ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
                     }`}
                     placeholder="e.g., Nairobi"
                   />
                 </div>
                 {errors.origin && (
-                  <div className="flex items-center gap-2 text-rose-600 text-xs font-medium px-1">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
                     <AlertTriangle size={12} />
                     {errors.origin}
                   </div>
@@ -273,23 +273,23 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Destination *
                 </label>
                 <div className="relative group">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                   <input
                     type="text"
                     value={formData.destination}
                     onChange={(e) => handleInputChange('destination', e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 bg-white border rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all ${
-                      errors.destination ? 'border-rose-300 bg-rose-50' : 'border-slate-100'
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                      errors.destination ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
                     }`}
                     placeholder="e.g., Mombasa"
                   />
                 </div>
                 {errors.destination && (
-                  <div className="flex items-center gap-2 text-rose-600 text-xs font-medium px-1">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
                     <AlertTriangle size={12} />
                     {errors.destination}
                   </div>
@@ -300,25 +300,25 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
             {/* Distance and Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Distance (km) *
                 </label>
                 <div className="relative group">
-                  <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                  <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     value={formData.distance}
                     onChange={(e) => handleInputChange('distance', e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 bg-white border rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all ${
-                      errors.distance ? 'border-rose-300 bg-rose-50' : 'border-slate-100'
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                      errors.distance ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
                     }`}
                     placeholder="0.0"
                   />
                 </div>
                 {errors.distance && (
-                  <div className="flex items-center gap-2 text-rose-600 text-xs font-medium px-1">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
                     <AlertTriangle size={12} />
                     {errors.distance}
                   </div>
@@ -326,24 +326,24 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Estimated Time (hours) *
                 </label>
                 <div className="relative group">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                   <input
                     type="number"
                     min="1"
                     value={formData.estimatedTime}
                     onChange={(e) => handleInputChange('estimatedTime', e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 bg-white border rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all ${
-                      errors.estimatedTime ? 'border-rose-300 bg-rose-50' : 'border-slate-100'
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                      errors.estimatedTime ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
                     }`}
                     placeholder="0"
                   />
                 </div>
                 {errors.estimatedTime && (
-                  <div className="flex items-center gap-2 text-rose-600 text-xs font-medium px-1">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
                     <AlertTriangle size={12} />
                     {errors.estimatedTime}
                   </div>
@@ -354,13 +354,13 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
             {/* Route Type and Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Route Type
                 </label>
                 <select
                   value={formData.routeType}
                   onChange={(e) => handleInputChange('routeType', e.target.value)}
-                  className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all"
+                  className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all"
                 >
                   <option value="highway">Highway</option>
                   <option value="city">City</option>
@@ -370,13 +370,13 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Status
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full px-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all"
+                  className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -387,34 +387,34 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+              <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                 Description (Optional)
               </label>
               <div className="relative group">
-                <FileText className="absolute left-4 top-4 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                <FileText className="absolute left-4 top-4 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={4}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-[20px] text-sm font-medium text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none shadow-sm transition-all resize-none"
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   placeholder="Additional route information, special instructions, or notes..."
                 />
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-5 pt-8 border-t border-gray-100 dark:border-gray-800 transition-colors">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 text-slate-500 hover:text-slate-700 font-bold text-sm transition-all"
+                className="px-6 py-3 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-bold text-[10px] uppercase tracking-widest transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-[18px] font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                className="px-10 py-3 bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-900 text-white rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20 dark:shadow-none flex items-center gap-2"
               >
                 {loading ? (
                   <>

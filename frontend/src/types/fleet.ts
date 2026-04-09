@@ -511,6 +511,8 @@ export interface FleetItem {
   // Driver specific fields
   firstName?: string;
   lastName?: string;
+  email?: string;
+  phone?: string;
   licenseNumber?: string;
   licenseType?: string;
   experience?: number;
@@ -534,6 +536,24 @@ export interface FleetItem {
   employmentType?: string;
   hireDate?: string | Date;
   trips?: TripRecord[];
+  
+  // Additional driver fields for form compatibility
+  licenseClasses?: string[];
+  terminationDate?: string | Date;
+  availabilityStatus?: string;
+  hourlyRate?: number;
+  mileageRate?: number;
+  medicalCertExpiry?: string | Date;
+  drugTestDate?: string | Date;
+  backgroundCheckDate?: string | Date;
+  trainingCompletionDate?: string | Date;
+  driverNotes?: string;
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
+  documents?: any[];
 }
 
 export interface FleetFilters {

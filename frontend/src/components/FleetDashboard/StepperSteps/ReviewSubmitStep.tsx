@@ -32,11 +32,11 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
   const renderSection = (title: string, icon: React.ReactNode, data: any, fields: string[]) => {
     return (
       <div className="space-y-3">
-        <h4 className="text-lg font-medium text-gray-800 flex items-center">
+        <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center">
           {icon}
           <span className="ml-2">{title}</span>
         </h4>
-        <div className="bg-gray-50 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {fields.map((field) => {
               const value = getValueFromPath(data, field);
@@ -44,10 +44,10 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
               
               return (
                 <div key={field} className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-600 capitalize">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">
                     {labelFromPath(field)}:
                   </span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-gray-900 dark:text-gray-100">
                     {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
                   </span>
                 </div>
@@ -106,14 +106,14 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
     if (selected.length === 0) return null;
     return (
       <div className="space-y-3">
-        <h4 className="text-lg font-medium text-gray-800 flex items-center">
-          <FaCertificate className="w-5 h-5 text-gray-600" />
+        <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center">
+          <FaCertificate className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           <span className="ml-2">Driver Certifications</span>
         </h4>
-        <div className="bg-gray-50 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
           <div className="flex flex-wrap gap-2">
             {selected.map((key) => (
-              <span key={key} className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+              <span key={key} className="px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
                 {certLabels[key]}
               </span>
             ))}
@@ -126,14 +126,14 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3 mb-6">
-        <FaCheck className="w-6 h-6 text-green-600" />
-        <h3 className="text-xl font-semibold text-gray-900">Review & Submit</h3>
+        <FaCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Review & Submit</h3>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6 transition-colors duration-200">
         <div className="flex items-center">
-          <FaCheck className="w-5 h-5 text-gray-600 mr-2" />
-          <p className="text-gray-800 font-medium">
+          <FaCheck className="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2" />
+          <p className="text-gray-800 dark:text-gray-200 font-medium">
             Please review all the information below before submitting. You can go back to previous steps to make changes.
           </p>
         </div>
@@ -143,7 +143,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
         <>
           {renderSection(
             'Driver Information',
-            <FaUser className="w-5 h-5 text-gray-600" />,
+            <FaUser className="w-5 h-5 text-gray-600 dark:text-gray-400" />,
             formData,
             driverFields
           )}

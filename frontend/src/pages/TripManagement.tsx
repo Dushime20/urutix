@@ -217,7 +217,7 @@ const TripManagement: React.FC = () => {
   const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
     return (
       <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none">
           <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
             <circle
               cx="80"
@@ -228,25 +228,25 @@ const TripManagement: React.FC = () => {
               strokeWidth="3"
               strokeDasharray="452"
               strokeDashoffset="350"
-              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
+              className={cn("opacity-10 dark:opacity-20 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
             />
           </svg>
 
-          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
             <Icon size={18} />
           </div>
 
           <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+            <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
               {value}
             </span>
           </div>
 
-          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
         </div>
 
         <div className="mt-4 text-center px-2">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
             {title}
           </p>
         </div>
@@ -255,69 +255,69 @@ const TripManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-6 md:p-8 space-y-8">
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85] shadow-inner">
+          <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-[#345E85] dark:text-blue-400 shadow-inner">
             <Route size={20} />
           </div>
-          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Logistics</h2>
+          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85] dark:text-blue-400">Logistics</h2>
         </div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Trip Management</h1>
-        <p className="text-slate-500 font-medium mt-1">Monitor active trips, schedule shipments, and track fleet performance.</p>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Trip Management</h1>
+        <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Monitor active trips, schedule shipments, and track fleet performance.</p>
       </div>
 
       {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
         <CircularStatsCard
           title="Total Trips"
           value={trips.length}
           icon={Route}
-          colorClass="bg-blue-50 text-[#345E85]"
-          secondaryColor="text-[#345E85]"
+          colorClass="bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400"
+          secondaryColor="text-[#345E85] dark:text-blue-400"
         />
         <CircularStatsCard
           title="In Progress"
           value={trips.filter((t: Trip) => t.status === 'IN_PROGRESS').length}
           icon={Truck}
-          colorClass="bg-info-50 text-blue-500"
-          secondaryColor="text-blue-500"
+          colorClass="bg-info-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400"
+          secondaryColor="text-blue-500 dark:text-blue-400"
         />
         <CircularStatsCard
           title="Planned"
           value={trips.filter((t: Trip) => t.status === 'PLANNED').length}
           icon={Clock}
-          colorClass="bg-amber-50 text-amber-500"
-          secondaryColor="text-amber-500"
+          colorClass="bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400"
+          secondaryColor="text-amber-500 dark:text-amber-400"
         />
         <CircularStatsCard
           title="Completed"
           value={trips.filter((t: Trip) => t.status === 'COMPLETED').length}
           icon={CheckCircle}
-          colorClass="bg-emerald-50 text-emerald-600"
-          secondaryColor="text-emerald-600"
+          colorClass="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
+          secondaryColor="text-emerald-600 dark:text-emerald-400"
         />
       </div>
 
       {/* Filters and View Toggle */}
-      <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4" />
             <input
               type="text"
               placeholder="Search by ID, driver, truck, or location..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/20 focus:border-[#345E85] dark:focus:border-blue-500 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500"
             />
           </div>
 
           <div className="flex items-center gap-3 overflow-x-auto pb-1 lg:pb-0">
             {/* Status Filter */}
-            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
               {(['all', 'planned', 'in_progress', 'completed'] as const).map((statusOption) => (
                 <button
                   key={statusOption}
@@ -325,8 +325,8 @@ const TripManagement: React.FC = () => {
                   className={cn(
                     "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all whitespace-nowrap",
                     filter === statusOption
-                      ? "bg-white text-[#345E85] shadow-sm"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                      ? "bg-white dark:bg-slate-800 text-[#345E85] dark:text-blue-400 shadow-sm"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                   )}
                 >
                   {statusOption === 'all' ? 'All' : statusOption.replace('_', ' ')}
@@ -335,12 +335,12 @@ const TripManagement: React.FC = () => {
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => setView('list')}
                 className={cn(
                   "p-2 rounded-lg transition-all",
-                  view === 'list' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  view === 'list' ? "bg-white dark:bg-slate-800 text-[#345E85] dark:text-blue-400 shadow-sm" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 )}
               >
                 <List size={18} />
@@ -349,7 +349,7 @@ const TripManagement: React.FC = () => {
                 onClick={() => setView('grid')}
                 className={cn(
                   "p-2 rounded-lg transition-all",
-                  view === 'grid' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  view === 'grid' ? "bg-white dark:bg-slate-800 text-[#345E85] dark:text-blue-400 shadow-sm" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 )}
               >
                 <LayoutGrid size={18} />
@@ -359,7 +359,7 @@ const TripManagement: React.FC = () => {
             {/* Sort Toggle */}
             <button
               onClick={() => setSortConfig({ ...sortConfig, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}
-              className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-[#345E85] hover:border-[#345E85] transition-all"
+              className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 hover:border-[#345E85] dark:hover:border-blue-500 transition-all shadow-sm"
               title={sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}
             >
               <ArrowUpDown size={18} className={sortConfig.direction === 'asc' ? 'rotate-180' : ''} />
@@ -370,12 +370,12 @@ const TripManagement: React.FC = () => {
 
       {/* Content Area */}
       {sortedTrips.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-[32px] border border-slate-100 shadow-sm">
-          <div className="h-20 w-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-slate-300">
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="h-20 w-20 bg-slate-50 dark:bg-slate-800 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-slate-300 dark:text-slate-600">
             <Route size={40} />
           </div>
-          <h3 className="text-lg font-black text-slate-900 mb-2">No trips found</h3>
-          <p className="text-slate-500 font-medium max-w-xs mx-auto">
+          <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">No trips found</h3>
+          <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
             Try adjusting filters or search terms to find what you're looking for.
           </p>
         </div>
@@ -386,28 +386,29 @@ const TripManagement: React.FC = () => {
               {sortedTrips.map((trip: Trip) => (
                 <div
                   key={trip.id}
-                  className="bg-white rounded-[24px] border border-slate-100 p-6 hover:shadow-xl transition-all group relative overflow-hidden"
+                  className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-6 hover:shadow-xl dark:hover:shadow-none transition-all group relative overflow-hidden"
                 >
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#345E85] group-hover:scale-110 transition-transform">
+                      <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-[#345E85] dark:text-blue-400 group-hover:scale-110 transition-transform">
                         <Route size={24} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-black text-slate-900 tracking-tight">{trip.tripNumber}</h3>
-                        <p className="text-xs font-medium text-slate-400">Ref: {trip.loadId}</p>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{trip.tripNumber}</h3>
+                        <p className="text-xs font-medium text-slate-400 dark:text-slate-500">Ref: {trip.loadId}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={cn(
-                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider inline-flex items-center gap-1",
-                        getStatusColor(trip.status)
+                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider inline-flex items-center gap-1 shadow-sm",
+                        getStatusColor(trip.status),
+                        "dark:bg-opacity-10 dark:border dark:border-current"
                       )}>
                         {getStatusIcon(trip.status)}
                         {trip.status.replace('_', ' ')}
                       </span>
                       {trip.pod && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-1 shadow-sm">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 flex items-center gap-1 shadow-sm">
                           <CheckCircle size={8} />
                           POD
                         </span>
@@ -416,51 +417,51 @@ const TripManagement: React.FC = () => {
                   </div>
 
                   <div className="space-y-4 mb-6">
-                    <div className="relative pl-6 space-y-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                    <div className="relative pl-6 space-y-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
                       <div className="relative">
-                        <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-emerald-500 rounded-full" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Origin</p>
-                        <p className="text-sm font-bold text-slate-900 line-clamp-1" title={trip.pickupLocation}>
+                        <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-full" />
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Origin</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1" title={trip.pickupLocation}>
                           {trip.pickupLocation}
                         </p>
                       </div>
                       <div className="relative">
-                        <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-rose-500 rounded-full" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Destination</p>
-                        <p className="text-sm font-bold text-slate-900 line-clamp-1" title={trip.deliveryLocation}>
+                        <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-rose-500 rounded-full" />
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Destination</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1" title={trip.deliveryLocation}>
                           {trip.deliveryLocation}
                         </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 dark:border-slate-800">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                        <div className="h-8 w-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
                           <Truck size={14} />
                         </div>
                         <div className="overflow-hidden">
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">Vehicle</p>
-                          <p className="text-xs font-bold text-slate-900 truncate">{trip.truckPlate}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Vehicle</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-200 truncate">{trip.truckPlate}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                        <div className="h-8 w-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
                           <User size={14} />
                         </div>
                         <div className="overflow-hidden">
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">Driver</p>
-                          <p className="text-xs font-bold text-slate-900 truncate">{trip.driverName}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Driver</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-200 truncate">{trip.driverName}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                    <div className="flex items-center gap-2 text-slate-500">
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-800">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                       <Calendar size={14} />
                       <span className="text-xs font-medium">{formatDate(trip.plannedStartTime)}</span>
                     </div>
-                    <div className="text-sm font-black text-[#345E85]">
+                    <div className="text-sm font-black text-[#345E85] dark:text-blue-400">
                       {formatCurrency(trip.agreedPrice)}
                     </div>
                   </div>
@@ -474,45 +475,46 @@ const TripManagement: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100">
-                  <thead className="bg-slate-50/50">
+                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                  <thead className="bg-slate-50/50 dark:bg-slate-800/50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Trip ID</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Route</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Vehicle & Driver</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Schedule</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Price</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Action</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Trip ID</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Route</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Vehicle & Driver</th>
+                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Schedule</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Price</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-slate-50">
+                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-50 dark:divide-slate-800">
                     {sortedTrips.map((trip: Trip) => (
-                      <tr key={trip.id} className="hover:bg-blue-50/30 transition-colors group">
+                      <tr key={trip.id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
+                            <div className="h-8 w-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-[#345E85] dark:text-blue-400">
                               <Route size={14} />
                             </div>
                             <div>
-                              <div className="text-sm font-bold text-slate-900">{trip.tripNumber}</div>
-                              <div className="text-[10px] font-medium text-slate-400">Ref: {trip.loadId}</div>
+                              <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{trip.tripNumber}</div>
+                              <div className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Ref: {trip.loadId}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-1.5">
                             <span className={cn(
-                              "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5",
-                              getStatusColor(trip.status)
+                              "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 border border-transparent shadow-sm",
+                              getStatusColor(trip.status),
+                              "dark:bg-opacity-10 dark:border-current"
                             )}>
                               {getStatusIcon(trip.status)}
                               {trip.status.replace('_', ' ')}
                             </span>
                             {trip.pod && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-100 flex items-center justify-center w-fit shadow-sm">
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 flex items-center justify-center w-fit shadow-sm">
                                 <CheckCircle size={8} className="mr-1" />
                                 POD Ready
                               </span>
@@ -523,13 +525,13 @@ const TripManagement: React.FC = () => {
                           <div className="flex flex-col gap-1 min-w-[180px]">
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]" title={trip.pickupLocation}>
+                              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[150px]" title={trip.pickupLocation}>
                                 {trip.pickupLocation}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600 truncate max-w-[150px]" title={trip.deliveryLocation}>
+                              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[150px]" title={trip.deliveryLocation}>
                                 {trip.deliveryLocation}
                               </span>
                             </div>
@@ -537,31 +539,31 @@ const TripManagement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                              <Truck size={12} className="text-slate-400" />
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
+                              <Truck size={12} className="text-slate-400 dark:text-slate-500" />
                               {trip.truckPlate}
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                              <User size={12} className="text-slate-400" />
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <User size={12} className="text-slate-400 dark:text-slate-500" />
                               {trip.driverName}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs font-medium text-slate-600">
+                          <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
                             {formatDate(trip.plannedStartTime)}
                           </div>
-                          <div className="text-[10px] text-slate-400">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">
                             to {formatDate(trip.plannedEndTime)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="text-sm font-bold text-[#345E85]">{formatCurrency(trip.agreedPrice)}</div>
+                          <div className="text-sm font-bold text-[#345E85] dark:text-blue-400">{formatCurrency(trip.agreedPrice)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <button
                             onClick={() => setSelectedTrip(trip)}
-                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#345E85] transition-colors"
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 transition-colors"
                           >
                             <Eye size={18} />
                           </button>
@@ -578,118 +580,123 @@ const TripManagement: React.FC = () => {
 
       {/* Trip Details Modal - Restyled */}
       <Dialog open={!!selectedTrip} onOpenChange={(open) => !open && setSelectedTrip(null)}>
-        <DialogContent className="max-w-2xl bg-white rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
-          <DialogHeader className="p-8 pb-4 border-b border-slate-50">
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
+          <DialogHeader className="p-8 pb-4 border-b border-slate-50 dark:border-slate-800">
             <DialogTitle className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85]">
+              <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-[#345E85] dark:text-blue-400">
                 <Route size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Trip Details</h2>
-                <p className="text-sm font-medium text-slate-400">{selectedTrip?.tripNumber}</p>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Trip Details</h2>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500">{selectedTrip?.tripNumber}</p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
           {selectedTrip && (
-            <div className="p-8 space-y-8">
+            <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
               {/* Status Banner */}
               <div className={cn(
-                "p-4 rounded-2xl flex items-center justify-between",
-                getStatusColor(selectedTrip.status).replace('text-', 'bg-').replace('100', '50/50')
+                "p-4 rounded-2xl border flex items-center justify-between",
+                selectedTrip.status === 'COMPLETED' ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" :
+                selectedTrip.status === 'IN_PROGRESS' ? "bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-400" :
+                "bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800 text-amber-700 dark:text-amber-400"
               )}>
                 <div className="flex items-center gap-3">
-                  <span className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center bg-white shadow-sm",
-                    getStatusColor(selectedTrip.status).split(' ')[1] // Extract text color class for icon
-                  )}>
+                  <div className="h-10 w-10 rounded-xl bg-white/80 dark:bg-slate-900/80 flex items-center justify-center border border-current">
                     {getStatusIcon(selectedTrip.status)}
-                  </span>
+                  </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Status</p>
-                    <p className="font-bold text-sm tracking-tight">{selectedTrip.status.replace('_', ' ')}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider opacity-70">Current Status</p>
+                    <p className="text-sm font-black">{selectedTrip.status.replace('_', ' ')}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Load Ref</p>
-                  <p className="font-bold text-sm tracking-tight">{selectedTrip.loadId}</p>
-                </div>
+                {selectedTrip.status === 'IN_PROGRESS' && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-white/50 dark:bg-slate-800/50 rounded-lg text-[10px] font-bold border border-current">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    LIVE
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Route Info */}
-                <div className="space-y-4">
-                  <h4 className="text-[11px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-2">Route Information</h4>
-                  <div className="space-y-6 relative pl-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                {/* Route Information */}
+                <div className="space-y-6">
+                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Route Information</h3>
+                  <div className="relative pl-6 space-y-8 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
                     <div className="relative">
-                      <div className="absolute -left-4 top-1 h-3.5 w-3.5 bg-white border-2 border-emerald-500 rounded-full" />
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-1">From</p>
-                      <p className="text-sm font-bold text-slate-900">{selectedTrip.pickupLocation}</p>
-                      <p className="text-xs font-medium text-slate-500 mt-0.5">{formatDate(selectedTrip.plannedStartTime)}</p>
+                      <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-full" />
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Pickup</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">{selectedTrip.pickupLocation}</p>
+                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">{formatDate(selectedTrip.plannedStartTime)}</p>
                     </div>
                     <div className="relative">
-                      <div className="absolute -left-4 top-1 h-3.5 w-3.5 bg-white border-2 border-rose-500 rounded-full" />
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-1">To</p>
-                      <p className="text-sm font-bold text-slate-900">{selectedTrip.deliveryLocation}</p>
-                      <p className="text-xs font-medium text-slate-500 mt-0.5">{formatDate(selectedTrip.plannedEndTime)}</p>
+                      <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-rose-500 rounded-full" />
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Delivery</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">{selectedTrip.deliveryLocation}</p>
+                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">{formatDate(selectedTrip.plannedEndTime)}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Assignment Info */}
-                <div className="space-y-4">
-                  <h4 className="text-[11px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-2">Assignment & Financials</h4>
+                {/* Fleet Allocation */}
+                <div className="space-y-6">
+                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Fleet & Financials</h3>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-slate-400 shadow-sm">
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm border border-slate-50 dark:border-slate-800">
                         <Truck size={18} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle</p>
-                        <p className="text-sm font-bold text-slate-900">{selectedTrip.truckPlate}</p>
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Vehicle</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.truckPlate}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-slate-400 shadow-sm">
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm border border-slate-50 dark:border-slate-800">
                         <User size={18} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Driver</p>
-                        <p className="text-sm font-bold text-slate-900">{selectedTrip.driverName}</p>
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Driver</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.driverName}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-emerald-500 shadow-sm">
-                        <DollarSign size={18} />
+                    <div className="p-4 bg-[#345E85]/5 dark:bg-blue-900/10 rounded-2xl border border-[#345E85]/10 dark:border-blue-800/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Agreed Price</span>
+                        <span className="text-lg font-black text-[#345E85] dark:text-blue-400">{formatCurrency(selectedTrip.agreedPrice)}</span>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/70">Agreed Price</p>
-                        <p className="text-lg font-black text-emerald-700">{formatCurrency(selectedTrip.agreedPrice)}</p>
+                      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#345E85] dark:bg-blue-500 rounded-full w-3/4" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Proof of Delivery Section */}
+              {/* POD Section */}
               {selectedTrip.pod && (
-                <div className="space-y-4 pt-4 border-t border-slate-50">
-                  <h4 className="text-[11px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-2 flex items-center gap-2">
-                    <CheckCircle size={12} className="text-[#345E85]" />
-                    Proof of Delivery (POD)
-                  </h4>
+                <div className="pt-8 border-t border-slate-50 dark:border-slate-800 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Proof of Delivery</h3>
+                    <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black border border-emerald-100 dark:border-emerald-800 flex items-center gap-1">
+                      <CheckCircle size={12} /> VERIFIED
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                      <div className="flex justify-between items-start">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between mb-4">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recipient</p>
-                          <p className="text-sm font-bold text-slate-900">{selectedTrip.pod.recipientName}</p>
+                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Recipient</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.pod.recipientName}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completed At</p>
-                          <p className="text-xs font-medium text-slate-500">
-                            {new Date(selectedTrip.pod.completedAt).toLocaleString()}
-                          </p>
+                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Completed</p>
+                          <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{new Date(selectedTrip.pod.completedAt).toLocaleString()}</p>
                         </div>
                       </div>
                       

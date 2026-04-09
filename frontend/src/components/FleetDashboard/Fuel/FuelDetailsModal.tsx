@@ -105,46 +105,46 @@ const FuelDetailsModal: React.FC<FuelDetailsModalProps> = ({ log, isOpen, onClos
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[250] flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md z-[250] flex items-center justify-center p-4 transition-colors">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 30 }}
-                        className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]"
+                        className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-2xl overflow-hidden border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh] transition-colors"
                     >
                         {/* Header Image/Background */}
-                        <div className="h-32 bg-[#1A1C1E] relative overflow-hidden flex items-center px-10">
+                        <div className="h-32 bg-[#1A1C1E] dark:bg-slate-950 relative overflow-hidden flex items-center px-10 border-b border-white/5 dark:border-slate-800 transition-colors">
                             <div className="absolute top-0 right-0 p-10 opacity-10 scale-[2] pointer-events-none">
                                 <Fuel size={120} className="text-white" />
                             </div>
                             <div className="relative z-10 flex items-center justify-between w-full">
                                 <div>
-                                    <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary-400 mb-1">Details</h2>
+                                    <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary-400 dark:text-blue-400 mb-1">Details</h2>
                                     <h1 className="text-2xl font-black text-white tracking-tight uppercase">ID: {log.id.substring(0, 8)}</h1>
                                 </div>
-                                <button onClick={onClose} className="size-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all">
+                                <button onClick={onClose} className="size-10 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-slate-800 rounded-xl transition-all">
                                     <X size={24} />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="p-10 space-y-8 overflow-y-auto">
+                        <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
                             {/* Key Stats Row */}
                             <div className="grid grid-cols-3 gap-6">
-                                <div className="p-6 bg-slate-50 rounded-[28px] border border-slate-100 space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Cost</p>
-                                    <p className="text-xl font-black text-slate-900">${log.totalCost.toFixed(2)}</p>
+                                <div className="p-6 bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 transition-all hover:border-blue-100 dark:hover:border-blue-900">
+                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Total Cost</p>
+                                    <p className="text-2xl font-black text-gray-900 dark:text-white transition-colors tracking-tight">${log.totalCost.toFixed(2)}</p>
                                 </div>
-                                <div className="p-6 bg-slate-50 rounded-[28px] border border-slate-100 space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency</p>
+                                <div className="p-6 bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 transition-all hover:border-emerald-100 dark:hover:border-emerald-900">
+                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Efficiency</p>
                                     <div className="flex items-center gap-2">
-                                        <TrendingUp size={14} className="text-emerald-500" />
-                                        <p className="text-xl font-black text-slate-900">7.2 <span className="text-[10px] text-slate-400">MPG</span></p>
+                                        <TrendingUp size={16} className="text-emerald-500 dark:text-emerald-400" />
+                                        <p className="text-2xl font-black text-gray-900 dark:text-white transition-colors tracking-tight">7.2 <span className="text-[10px] text-slate-400 dark:text-slate-500">MPG</span></p>
                                     </div>
                                 </div>
-                                <div className="p-6 bg-slate-50 rounded-[28px] border border-slate-100 space-y-1">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</p>
-                                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${log.status === 'verified' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                                <div className="p-6 bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 transition-all">
+                                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Status</p>
+                                    <span className={`inline-flex px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors border ${log.status === 'verified' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/30' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/30'
                                         }`}>
                                         {log.status}
                                     </span>
@@ -153,87 +153,108 @@ const FuelDetailsModal: React.FC<FuelDetailsModalProps> = ({ log, isOpen, onClos
 
                             {/* Details Grid */}
                             <div className="grid grid-cols-2 gap-10">
-                                <div className="space-y-6">
-                                    <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2">Time & Location</h4>
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3 text-slate-600">
-                                                <Calendar size={14} className="text-slate-400" />
-                                                <span className="text-[11px] font-bold uppercase tracking-wide">{new Date(log.date).toLocaleDateString()}</span>
+                                <div className="space-y-10">
+                                    <div className="space-y-6">
+                                        <h4 className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
+                                            <span className="w-8 h-px bg-slate-900 dark:bg-blue-500/50"></span>
+                                            Time & Location
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                                    <Calendar size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase tracking-tight">{new Date(log.date).toLocaleDateString()}</span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-slate-600">
-                                                <Clock size={14} className="text-slate-400" />
-                                                <span className="text-[11px] font-bold uppercase tracking-wide">{new Date(log.date).toLocaleTimeString()}</span>
+                                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                                    <Clock size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase tracking-tight">{new Date(log.date).toLocaleTimeString()}</span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-slate-600">
-                                                <MapPin size={14} className="text-slate-400" />
-                                                <span className="text-[11px] font-bold uppercase tracking-wide">{log.location}</span>
+                                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                                    <MapPin size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase tracking-tight">{log.location}</span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-slate-600">
-                                                <Globe size={14} className="text-slate-400" />
-                                                <span className="text-[11px] font-bold uppercase tracking-wide">Tax State: {log.jurisdiction}</span>
+                                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                                    <Globe size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase tracking-tight">Tax State: {log.jurisdiction}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2">Vehicle & Driver</h4>
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3 text-slate-600">
-                                                <Truck size={14} className="text-slate-400" />
-                                                <span className="text-[11px] font-bold uppercase tracking-wide">Truck: {log.truckId}</span>
+                                    <div className="space-y-6">
+                                        <h4 className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
+                                            <span className="w-8 h-px bg-slate-900 dark:bg-blue-500/50"></span>
+                                            Vehicle & Driver
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                                    <Truck size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase tracking-tight">Truck: {log.truckId}</span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-slate-600">
-                                                <User size={14} className="text-slate-400" />
-                                                <span className="text-[11px] font-bold uppercase tracking-wide">Driver: {log.driverId}</span>
+                                            <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+                                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+                                                    <User size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase tracking-tight">Driver: {log.driverId}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2">Photos</h4>
-                                        <div className="grid grid-cols-1 gap-4">
+                                <div className="space-y-10">
+                                    <div className="space-y-6">
+                                        <h4 className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] flex items-center gap-3">
+                                            <span className="w-8 h-px bg-slate-900 dark:bg-blue-500/50"></span>
+                                            Visual Evidence
+                                        </h4>
+                                        <div className="grid grid-cols-1 gap-6">
                                             {/* Receipt Photo */}
-                                            <div className="space-y-2">
-                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1">Fuel Receipt</p>
-                                                <div className="aspect-[16/9] bg-slate-50 rounded-[24px] border border-slate-100 relative group overflow-hidden">
+                                            <div className="space-y-3">
+                                                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Fuel Receipt</p>
+                                                <div className="aspect-[16/9] bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 relative group overflow-hidden transition-all shadow-sm">
                                                     {log.receiptUrl ? (
                                                         <>
                                                             <img src={log.receiptUrl} alt="Receipt" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                                                <button className="p-2.5 bg-white text-slate-900 rounded-lg hover:scale-110 transition-transform">
-                                                                    <ExternalLink size={14} />
+                                                            <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
+                                                                <button className="p-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-xl hover:scale-110 transition-transform shadow-xl">
+                                                                    <ExternalLink size={16} />
                                                                 </button>
                                                             </div>
                                                         </>
                                                     ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-2">
-                                                            <FileText size={24} />
-                                                            <p className="text-[8px] font-black uppercase tracking-widest">No receipt image</p>
+                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-3">
+                                                            <FileText size={32} />
+                                                            <p className="text-[9px] font-black uppercase tracking-widest">No capture identified</p>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
 
                                             {/* Odometer Photo */}
-                                            <div className="space-y-2">
-                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-1">Odometer Capture</p>
-                                                <div className="aspect-[16/9] bg-slate-50 rounded-[24px] border border-slate-100 relative group overflow-hidden">
+                                            <div className="space-y-3">
+                                                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Odometer Verification</p>
+                                                <div className="aspect-[16/9] bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 relative group overflow-hidden transition-all shadow-sm">
                                                     {log.odometerImageUrl ? (
                                                         <>
                                                             <img src={log.odometerImageUrl} alt="Odometer" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                                                <button className="p-2.5 bg-white text-slate-900 rounded-lg hover:scale-110 transition-transform">
-                                                                    <ExternalLink size={14} />
+                                                            <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
+                                                                <button className="p-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-xl hover:scale-110 transition-transform shadow-xl">
+                                                                    <ExternalLink size={16} />
                                                                 </button>
                                                             </div>
                                                         </>
                                                     ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-2">
-                                                            <Camera size={24} />
-                                                            <p className="text-[8px] font-black uppercase tracking-widest">No odometer image</p>
+                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-3">
+                                                            <Camera size={32} />
+                                                            <p className="text-[9px] font-black uppercase tracking-widest">No capture identified</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -242,12 +263,12 @@ const FuelDetailsModal: React.FC<FuelDetailsModalProps> = ({ log, isOpen, onClos
                                     </div>
 
                                     {log.notes && (
-                                        <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100 space-y-2">
-                                            <div className="flex items-center gap-2 text-amber-600">
+                                        <div className="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-[2rem] border border-amber-100 dark:border-amber-900/30 space-y-3 transition-colors">
+                                            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                                                 <AlertTriangle size={14} />
-                                                <span className="text-[9px] font-black uppercase tracking-widest">Important Notes</span>
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Dispatcher Notes</span>
                                             </div>
-                                            <p className="text-[10px] font-medium text-amber-800 leading-relaxed italic">
+                                            <p className="text-[11px] font-medium text-amber-800 dark:text-amber-200 leading-relaxed italic">
                                                 "{log.notes}"
                                             </p>
                                         </div>
@@ -256,16 +277,16 @@ const FuelDetailsModal: React.FC<FuelDetailsModalProps> = ({ log, isOpen, onClos
                             </div>
                         </div>
 
-                        {/* Footer Protocol */}
-                        <div className="p-8 border-t border-slate-50 flex gap-4">
-                            <button className="flex-1 h-12 bg-slate-50 hover:bg-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all active:scale-95 border border-slate-100">
-                                Report Issue
+                        {/* Footer Actions */}
+                        <div className="p-10 border-t border-slate-50 dark:border-slate-800 flex gap-4 bg-[#fafafa]/50 dark:bg-slate-800/30">
+                            <button className="flex-1 h-14 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all active:scale-95 border border-slate-100 dark:border-slate-800 shadow-sm">
+                                Report Discrepancy
                             </button>
                             <button
                                 onClick={handleDownload}
-                                className="flex-1 h-12 bg-primary-50 text-primary-600 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-primary-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                className="flex-1 h-14 bg-gray-900 dark:bg-blue-600 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-gray-800 dark:hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-gray-900/10 dark:shadow-blue-600/20"
                             >
-                                <Download size={14} /> Download
+                                <Download size={16} /> Export Analysis
                             </button>
                         </div>
                     </motion.div>

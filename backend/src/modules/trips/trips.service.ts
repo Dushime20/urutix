@@ -115,6 +115,38 @@ export class TripsService {
     });
   }
 
+  async getMyTrips(
+    userId: string,
+    tenantId: string,
+  ): Promise<{ current: Trip | null; upcoming: Trip[]; history: Trip[] }> {
+    // Find the driver record linked to this user
+    const trips = await this.tripRepository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.driver', 'driver')
+      .leftJoinAndSelect('trip.truck', 'truck')
+      .leftJoinAndSelect('trip.load', 'load')
+      .leftJoinAndSelect('trip.pickupLocation', 'pickupLocation')
+      .leftJoinAndSelect('trip.deliveryLocation', 'deliveryLocation')
+      .where('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('driver.userId = :userId', { userId })
+      .orderBy('trip.plannedStartTime', 'DESC')
+      .getMany();
+
+    const current = trips.find(
+      (t) => t.status === TripStatus.IN_PROGRESS,
+    ) || null;
+
+    const upcoming = trips.filter(
+      (t) => t.status === TripStatus.PLANNED || t.status === TripStatus.DELAYED,
+    );
+
+    const history = trips.filter(
+      (t) => t.status === TripStatus.COMPLETED || t.status === TripStatus.CANCELLED,
+    );
+
+    return { current, upcoming, history };
+  }
+
   async updateTripStatus(
     id: string,
     updateTripStatusDto: UpdateTripStatusDto,

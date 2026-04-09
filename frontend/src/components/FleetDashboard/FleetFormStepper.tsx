@@ -955,7 +955,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     setLoading(true);
 
     // Show loading toast
-    const loadingToast = toast.loading(`Creating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`);
+    const loadingToast = toast.loading(
+      mode === 'edit' 
+        ? `Updating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`
+        : `Creating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`
+    );
 
     try {
       console.log('📤 Submitting form data:', formData);
@@ -1036,7 +1040,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     setLoading(true);
 
     // Show loading toast
-    const loadingToast = toast.loading(`Creating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`);
+    const loadingToast = toast.loading(
+      mode === 'edit' 
+        ? `Updating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`
+        : `Creating ${activeTab === 'drivers' ? 'driver' : 'truck'}...`
+    );
 
     try {
       console.log('📤 Submitting form data manually:', formData);
@@ -1178,21 +1186,21 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         setSidebarOpen(false); // Close sidebar on mobile when dialog closes
       }
     }}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-hidden p-0 flex flex-col rounded-[32px] border-slate-100 shadow-2xl">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-hidden p-0 flex flex-col rounded-lg border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 transition-colors duration-200 shadow-none">
         {/* Premium Header */}
-        <DialogHeader className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-8 border-b border-slate-50 bg-white">
+        <DialogHeader className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-8 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 transition-colors duration-200">
           <div className="flex-1 min-w-0">
-            <DialogTitle className="text-2xl font-black text-primary-500 tracking-tight">
+            <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
               {mode === 'create'
-                ? `Create ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
-                : `Edit ${activeTab === 'drivers' ? 'Driver' : 'Truck'}`
+                ? `Create New ${activeTab === 'drivers' ? 'Driver' : 'Vehicle'}`
+                : `Edit ${activeTab === 'drivers' ? 'Driver' : 'Vehicle'}`
               }
             </DialogTitle>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-              <Layout size={12} className="text-primary-500" />
-              <span>{activeTab === 'drivers' ? 'Driver' : 'Truck'} Form</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-widest">
+              <Layout size={12} className="text-blue-600 dark:text-blue-500" />
+              <span>{activeTab === 'drivers' ? 'Personnel' : 'Fleet'} Registry</span>
               <ChevronRight size={10} />
-              <span className="text-primary-500">{mode === 'create' ? 'Create' : 'Edit'}</span>
+              <span className="text-blue-600 dark:text-blue-500 font-bold">{mode === 'create' ? 'Onboarding' : 'Management'}</span>
             </div>
           </div>
           {/* Mobile Sidebar Toggle */}
@@ -1200,10 +1208,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-all"
+              className="lg:hidden p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all border border-gray-100 dark:border-gray-700 shadow-none"
               aria-label="Toggle navigation"
             >
-              <Settings2 size={20} className="text-slate-600" />
+              <Settings2 size={20} className="text-gray-900 dark:text-white" />
             </button>
           )}
         </DialogHeader>
@@ -1220,9 +1228,9 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
           {/* Vertical Sidebar Navigation */}
           {!(activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing') && (
-            <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-72 bg-slate-50 border-r border-slate-100 overflow-y-auto flex-shrink-0 lg:relative fixed inset-y-0 left-0 z-50 lg:z-auto p-4`}>
+            <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-72 bg-gray-50 dark:bg-gray-800 border-r border-gray-100 dark:border-gray-800 overflow-y-auto flex-shrink-0 lg:relative fixed inset-y-0 left-0 z-50 lg:z-auto p-4 transition-colors duration-200`}>
               <div className="mb-6 px-4">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Step Progression</h3>
+                <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Onboarding Workflow</h3>
               </div>
               <nav className="space-y-2">
                 {steps.map((step) => {
@@ -1237,25 +1245,25 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                         setCurrentStep(step.id);
                         setSidebarOpen(false); // Close sidebar on mobile after selection
                       }}
-                      className={`w-full group flex items-start gap-4 p-4 rounded-[20px] text-left transition-all ${isActive
-                        ? "bg-white text-primary-500 shadow-xl shadow-primary-50 border border-primary-50"
-                        : "text-slate-400 hover:text-primary-500 hover:bg-white/50"
+                      className={`w-full group flex items-start gap-4 p-4 rounded-lg text-left transition-all shadow-none ${isActive
+                        ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-500 border border-gray-100 dark:border-gray-600"
+                        : "text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-500 hover:bg-white dark:hover:bg-gray-700 border border-transparent"
                         }`}
                     >
-                      <div className={`flex items-center justify-center shrink-0 size-8 rounded-xl transition-colors ${isActive ? 'bg-primary-500 text-white shadow-lg shadow-primary-100' :
-                        isCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                      <div className={`flex items-center justify-center shrink-0 size-8 rounded-lg transition-colors ${isActive ? 'bg-blue-600 dark:bg-blue-600 text-white' :
+                        isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                         }`}>
                         {isCompleted && !isActive ? <CheckCircle2 size={16} /> : React.cloneElement(step.icon as React.ReactElement, { size: 16 })}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[11px] font-black uppercase tracking-widest truncate ${isActive ? 'text-primary-500' : 'text-slate-400'}`}>
+                        <p className={`text-[11px] font-bold uppercase tracking-tight ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                           {step.title}
                         </p>
-                        <p className="text-[9px] font-medium leading-tight mt-1 opacity-60">
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-medium italic">
                           {step.description}
                         </p>
                       </div>
-                      {isActive && <ChevronRight size={12} className="mt-1 text-slate-300" />}
+                      {isActive && <ChevronRight size={12} className="mt-1 text-gray-400 dark:text-gray-500" />}
                     </button>
                   );
                 })}
@@ -1273,13 +1281,16 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                 <div ref={stepContentRef} className="max-w-3xl mx-auto w-full min-w-0 pb-12">
                   {/* Driver Selection Option - Moved inside scrollable area */}
                   {activeTab === 'drivers' && mode === 'create' && currentStep === 1 && (
-                    <div className="mb-8 p-4 bg-slate-50/50 rounded-[32px] border border-slate-100">
-                      <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-4">Select Option</h3>
+                    <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors duration-200">
+                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-6 flex items-center gap-2">
+                        <Users size={14} className="text-blue-600 dark:text-blue-500" />
+                        Onboarding Channel
+                      </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label
-                          className={`p-6 rounded-[24px] border-2 cursor-pointer transition-all flex flex-col gap-2 ${driverCreationMode === 'new'
-                            ? 'bg-white border-primary-500 shadow-xl shadow-primary-50'
-                            : 'bg-white/50 border-slate-100 hover:border-primary-100 text-slate-400'
+                          className={`p-6 rounded-lg border-2 cursor-pointer transition-all flex flex-col gap-3 shadow-none ${driverCreationMode === 'new'
+                            ? 'bg-white dark:bg-gray-800 border-blue-600 dark:border-blue-500'
+                            : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-600'
                             }`}
                         >
                           <input
@@ -1295,20 +1306,22 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                             }}
                             className="sr-only"
                           />
-                          <div className="flex items-center justify-between">
-                            <div className={`p-2 rounded-xl transition-colors ${driverCreationMode === 'new' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                              <User size={18} />
+                          <div className="flex items-center justify-between mb-1">
+                            <div className={`p-2.5 rounded-lg transition-colors ${driverCreationMode === 'new' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}`}>
+                              <User size={20} />
                             </div>
-                            {driverCreationMode === 'new' && <CheckCircle2 size={18} className="text-primary-500" />}
+                            {driverCreationMode === 'new' && <CheckCircle2 size={20} className="text-blue-600 dark:text-blue-500" />}
                           </div>
-                          <span className={`text-sm font-black tracking-tight ${driverCreationMode === 'new' ? 'text-primary-500' : 'text-slate-400'}`}>Create New Driver</span>
-                          <p className="text-[10px] font-medium leading-relaxed">Enter detailed information for a new driver.</p>
+                          <div>
+                            <span className={`text-xs font-bold uppercase tracking-wide ${driverCreationMode === 'new' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>New Registration</span>
+                            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">Initialize a new driver profile with complete documentation and credentials.</p>
+                          </div>
                         </label>
 
                         <label
-                          className={`p-6 rounded-[24px] border-2 cursor-pointer transition-all flex flex-col gap-2 ${driverCreationMode === 'existing'
-                            ? 'bg-white border-primary-500 shadow-xl shadow-primary-50'
-                            : 'bg-white/50 border-slate-100 hover:border-primary-100 text-slate-400'
+                          className={`p-6 rounded-lg border-2 cursor-pointer transition-all flex flex-col gap-3 shadow-none ${driverCreationMode === 'existing'
+                            ? 'bg-white dark:bg-gray-800 border-blue-600 dark:border-blue-500'
+                            : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-600'
                             }`}
                         >
                           <input
@@ -1322,14 +1335,16 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                             }}
                             className="sr-only"
                           />
-                          <div className="flex items-center justify-between">
-                            <div className={`p-2 rounded-xl transition-colors ${driverCreationMode === 'existing' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                              <Users size={18} />
+                          <div className="flex items-center justify-between mb-1">
+                            <div className={`p-2.5 rounded-lg transition-colors ${driverCreationMode === 'existing' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}`}>
+                              <Search size={20} />
                             </div>
-                            {driverCreationMode === 'existing' && <CheckCircle2 size={18} className="text-primary-500" />}
+                            {driverCreationMode === 'existing' && <CheckCircle2 size={20} className="text-blue-600 dark:text-blue-500" />}
                           </div>
-                          <span className={`text-sm font-black tracking-tight ${driverCreationMode === 'existing' ? 'text-primary-500' : 'text-slate-400'}`}>Add Existing Driver</span>
-                          <p className="text-[10px] font-medium leading-relaxed">Search for a driver already in your system.</p>
+                          <div>
+                            <span className={`text-xs font-bold uppercase tracking-wide ${driverCreationMode === 'existing' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Registry Import</span>
+                            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">Cross-reference and import established driver profiles from the central database.</p>
+                          </div>
                         </label>
                       </div>
                     </div>
@@ -1337,34 +1352,30 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
                   {/* Existing Driver Selection UI */}
                   {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
-                    <div className="space-y-4">
-                      <div>
-                        <div>
-                          <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" size={18} />
-                            <input
-                              type="text"
-                              value={existingDriverSearch}
-                              onChange={(e) => setExistingDriverSearch(e.target.value)}
-                              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-[24px] text-xs font-black uppercase tracking-widest focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
-                              placeholder="SCAN REGISTRY (NAME, EMAIL, MATRIX-ID)..."
-                            />
-                          </div>
-                        </div>
+                    <div className="space-y-6">
+                      <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-500 transition-colors" size={18} />
+                        <input
+                          type="text"
+                          value={existingDriverSearch}
+                          onChange={(e) => setExistingDriverSearch(e.target.value)}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-bold uppercase tracking-widest focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 shadow-none"
+                          placeholder="SCAN PERSONNEL REGISTRY..."
+                        />
                       </div>
 
                       {/* Driver Results */}
                       {existingDriverSearch.length > 0 && (
-                        <div className="bg-white border border-slate-100 rounded-[24px] max-h-80 overflow-y-auto shadow-sm">
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg max-h-80 overflow-y-auto transition-colors duration-200 shadow-none">
                           {allAvailableDrivers.length === 0 ? (
-                            <div className="p-8 text-center flex flex-col items-center">
-                              <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-4 shadow-inner">
-                                <Search size={24} />
+                            <div className="p-12 text-center flex flex-col items-center">
+                              <div className="size-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center text-gray-300 dark:text-gray-600 mb-4">
+                                <Search size={32} />
                               </div>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registry Mismatch</p>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">No Personnel Records Found</p>
                             </div>
                           ) : (
-                            <div className="divide-y divide-slate-50">
+                            <div className="divide-y divide-gray-100 dark:divide-gray-700">
                               {allAvailableDrivers.map((driver) => (
                                 <div
                                   key={driver.id}
@@ -1377,30 +1388,32 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                                     } as any);
                                     setExistingDriverSearch(`${driver.firstName} ${driver.lastName} - ${driver.email}`);
                                   }}
-                                  className={`p-5 cursor-pointer transition-all flex items-center justify-between group hover:bg-slate-50 ${selectedExistingDriver?.id === driver.id ? 'bg-slate-50' : ''
+                                  className={`p-6 cursor-pointer transition-all flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedExistingDriver?.id === driver.id ? 'bg-gray-50 dark:bg-gray-700' : ''
                                     }`}
                                 >
                                   <div className="flex items-center gap-4">
-                                    <div className={`size-12 rounded-2xl flex items-center justify-center font-black transition-colors ${selectedExistingDriver?.id === driver.id ? 'bg-primary-500 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'
+                                    <div className={`size-14 rounded-lg flex items-center justify-center text-lg font-bold transition-colors ${selectedExistingDriver?.id === driver.id ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-500 group-hover:bg-gray-200 dark:group-hover:bg-gray-700'
                                       }`}>
                                       {driver.firstName[0]}{driver.lastName[0]}
                                     </div>
                                     <div>
-                                      <div className="text-sm font-black text-slate-900">
+                                      <div className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">
                                         {driver.firstName} {driver.lastName}
                                       </div>
-                                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 mt-1">
+                                      <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-widest">
                                         <span>{driver.email}</span>
-                                        <div className="size-1 bg-slate-200 rounded-full" />
+                                        <div className="size-1 bg-gray-200 dark:bg-gray-600 rounded-full" />
                                         <span>{driver.phone}</span>
                                       </div>
-                                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-300 mt-1">
+                                      <div className="text-[9px] font-bold uppercase tracking-tighter text-blue-600 dark:text-blue-500 mt-2 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded inline-block">
                                         LICENSE: {driver.licenseNumber}
                                       </div>
                                     </div>
                                   </div>
                                   {selectedExistingDriver?.id === driver.id && (
-                                    <CheckCircle2 size={24} className="text-emerald-500 bg-white rounded-full p-1 shadow-sm" />
+                                    <div className="size-8 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-none">
+                                      <CheckCircle2 size={18} />
+                                    </div>
                                   )}
                                 </div>
                               ))}
@@ -1410,19 +1423,19 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                       )}
 
                       {selectedExistingDriver && (
-                        <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[24px] flex items-center justify-between shadow-sm shadow-emerald-100/50">
+                        <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-lg flex items-center justify-between shadow-none">
                           <div className="flex items-center gap-4">
-                            <div className="size-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
+                            <div className="size-12 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-none">
                               <CheckCircle2 size={24} />
                             </div>
                             <div>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Driver Selected</p>
-                              <h4 className="text-sm font-black text-slate-900">{selectedExistingDriver.firstName} {selectedExistingDriver.lastName}</h4>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-500">Personnel Integrated</p>
+                              <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">{selectedExistingDriver.firstName} {selectedExistingDriver.lastName}</h4>
                             </div>
                           </div>
                           <button
                             onClick={() => setSelectedExistingDriver(null)}
-                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+                            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-gray-800 rounded-lg transition-all"
                           >
                             <X size={18} />
                           </button>
@@ -1430,12 +1443,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                       )}
 
                       {!selectedExistingDriver && existingDriverSearch.length === 0 && (
-                        <div className="p-8 bg-slate-50/50 border border-slate-100 rounded-[28px] border-dashed text-center flex flex-col items-center">
-                          <div className="size-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 mb-4">
-                            <Search size={24} />
+                        <div className="p-12 bg-gray-50 dark:bg-gray-800/30 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-lg text-center flex flex-col items-center">
+                          <div className="size-16 bg-white dark:bg-gray-800 rounded-full shadow-none border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-300 dark:text-gray-600 mb-6">
+                            <Search size={32} />
                           </div>
-                          <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Search Registry</p>
-                          <p className="text-[10px] font-medium text-slate-400 max-w-[240px]">Search for an existing driver by name, email, or license number to add them.</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Personnel Lookup Active</p>
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 max-w-[280px] uppercase leading-relaxed">Search by name, email, or license credentials to import existing personnel records.</p>
                         </div>
                       )}
                     </div>
@@ -1448,28 +1461,28 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
           </div>
         </div>
 
-        {/* Premium Footer */}
-        <DialogFooter className="flex-shrink-0 bg-white px-8 py-6 border-t border-slate-50 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+        {/* Footer */}
+        <DialogFooter className="flex-shrink-0 bg-white dark:bg-gray-900 px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 transition-colors duration-200 shadow-none">
           <button
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
-            className={`flex items-center justify-center px-6 py-3 rounded-[16px] border text-[10px] font-black uppercase tracking-widest transition-all ${currentStep === 1
-              ? 'border-slate-100 text-slate-300 cursor-not-allowed'
-              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            className={`flex items-center justify-center px-6 py-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all shadow-none ${currentStep === 1
+              ? 'border-gray-50 dark:border-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-transparent'
+              : 'border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               }`}
           >
             <ArrowLeft size={14} className="mr-2" />
-            <span>Previous</span>
+            <span>Operational Stage: Back</span>
           </button>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 text-slate-400 hover:text-slate-600 text-[10px] font-black uppercase tracking-widest transition-all"
+              className="px-6 py-3 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
             >
-              Cancel
+              Abort Mission
             </button>
 
             {activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' ? (
@@ -1480,18 +1493,18 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   e.preventDefault();
                   handleSubmit(e);
                 }}
-                className="px-8 py-3 bg-primary-500 text-white rounded-[16px] hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest flex items-center justify-center shadow-xl shadow-primary-500/20 transition-all"
+                className="px-8 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold uppercase tracking-widest flex items-center justify-center transition-all shadow-none"
               >
                 {loading ? <Loader2 size={14} className="animate-spin mr-2" /> : <Plus size={14} className="mr-2" />}
-                Add Driver
+                Integrate Personnel
               </button>
             ) : currentStep < steps.length ? (
               <button
                 type="button"
                 onClick={nextStep}
-                className="px-8 py-3 bg-primary-500 text-white rounded-[16px] hover:bg-primary-600 text-[10px] font-black uppercase tracking-widest flex items-center justify-center shadow-xl shadow-primary-500/20 transition-all group"
+                className="px-8 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center transition-all group shadow-none"
               >
-                <span>Next</span>
+                <span>Proceed to Next Phase</span>
                 <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </button>
             ) : (
@@ -1507,10 +1520,13 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                   }
                   handleManualSubmit();
                 }}
-                className="px-8 py-3 bg-primary-500 text-white rounded-[16px] hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-widest flex items-center justify-center shadow-xl shadow-primary-500/20 transition-all"
+                className="px-8 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold uppercase tracking-widest flex items-center justify-center transition-all shadow-none"
               >
                 {loading ? <Loader2 size={14} className="animate-spin mr-2" /> : <CheckCircle2 size={14} className="mr-2" />}
-                Submit {activeTab === 'drivers' ? 'Driver' : 'Truck'}
+                {mode === 'edit' 
+                  ? `Commit Operational Changes` 
+                  : `Finalize Onboarding`
+                }
               </button>
             )}
           </div>

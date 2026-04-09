@@ -25,12 +25,14 @@ interface IncidentReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   driverId: string;
+  editingIncident?: any;
 }
 
 export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({ 
   isOpen, 
   onClose, 
-  driverId 
+  driverId,
+  editingIncident 
 }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -38,16 +40,16 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
-    type: '',
-    severity: 'moderate',
-    description: '',
-    location: '',
-    policeReport: false,
-    reportNumber: '',
-    insuranceClaim: false,
-    claimNumber: '',
-    amount: '',
-    date: new Date().toISOString()
+    type: editingIncident?.type || '',
+    severity: editingIncident?.severity || 'moderate',
+    description: editingIncident?.description || '',
+    location: editingIncident?.location || '',
+    policeReport: editingIncident?.policeReport || false,
+    reportNumber: editingIncident?.reportNumber || '',
+    insuranceClaim: editingIncident?.insuranceClaim || false,
+    claimNumber: editingIncident?.claimNumber || '',
+    amount: editingIncident?.cost || '',
+    date: editingIncident?.date || new Date().toISOString()
   });
 
   const incidentTypes = [
@@ -86,14 +88,22 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
       // If a file is selected, upload it as a supporting document
       if (selectedFile) {
         try {
+          // Map severity to priority
+          const priorityMap: Record<string, string> = {
+            'minor': 'LOW',
+            'moderate': 'NORMAL',
+            'major': 'HIGH',
+            'critical': 'URGENT',
+          };
+
           await documentApi.createDocument({
             entityType: 'DRIVER',
             entityId: driverId,
-            documentType: formData.type === 'expense' ? 'EXPENSE_RECEIPT' : 'INCIDENT_PHOTO',
-            category: formData.type === 'expense' ? 'FINANCIAL' : 'SAFETY',
+            documentType: formData.type === 'expense' ? 'EXPENSE_RECEIPT' : 'OTHER',
+            category: formData.type === 'expense' ? 'FINANCIAL' : 'DRIVER',
             title: `${formData.type === 'expense' ? 'Receipt' : 'Incident Proof'} - ${new Date().toLocaleDateString()}`,
             description: formData.description,
-            priority: formData.severity.toUpperCase() as any,
+            priority: priorityMap[formData.severity] || 'NORMAL',
           }, selectedFile);
         } catch (uploadError) {
           console.error('Failed to upload document:', uploadError);

@@ -34,7 +34,7 @@ import { DriverEarningsChart } from '../../components/DriverDashboard/DriverEarn
 import { DriverPerformanceChart } from '../../components/DriverDashboard/DriverPerformanceChart';
 import { CurrentTrip } from '../../components/DriverDashboard/CurrentTrip';
 import { EarningsOverview } from '../../components/DriverDashboard/EarningsOverview';
-import { SafetyMetrics } from '../../components/DriverDashboard/SafetyMetrics';
+import { SafetyRecords } from '../../components/DriverDashboard/SafetyRecords';
 import { UpcomingTrips } from '../../components/DriverDashboard/UpcomingTrips';
 import { QuickActions } from '../../components/DriverDashboard/QuickActions';
 import { NotificationsPanel } from '../../components/DriverDashboard/NotificationsPanel';
@@ -68,7 +68,6 @@ const DriverDashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showRelayModal, setShowRelayModal] = useState(false);
   const [showPostTripModal, setShowPostTripModal] = useState(false);
@@ -293,7 +292,6 @@ const DriverDashboard: React.FC = () => {
         lastUpdated={lastUpdated}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
-        onToggleNotifications={() => setShowNotifications(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabs={tabs}
@@ -493,7 +491,7 @@ const DriverDashboard: React.FC = () => {
         {(activeTab === 'finance' || activeTab === 'earnings') && <EarningsOverview driverId={driverId} />}
         {activeTab === 'wallet' && <WalletAdvances driverId={driverId} />}
         {activeTab === 'fuel' && <FuelManagement driverId={driverId} />}
-        {activeTab === 'safety' && <SafetyMetrics driverId={driverId} onReportIncident={() => setShowIncidentModal(true)} />}
+        {activeTab === 'safety' && <SafetyRecords driverId={driverId} onReportIncident={() => setShowIncidentModal(true)} />}
         {activeTab === 'documents' && <DriverDocuments driverId={driverId} />}
         {activeTab === 'truck_details' && <MyTruck driverId={driverId} />}
         {activeTab === 'profile' && <DriverProfile driver={driver || currentDriverProfile} loading={driverLoading} />}
@@ -515,15 +513,6 @@ const DriverDashboard: React.FC = () => {
         )}
         {activeTab === 'settings' && <DriverSettings />}
       </div>
-
-      {showNotifications && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowNotifications(false)} />
-          <div className="relative z-10 w-full max-w-md animate-in zoom-in-95 duration-200">
-            <NotificationsPanel notifications={notifications} loading={notificationsLoading} onClose={() => setShowNotifications(false)} />
-          </div>
-        </div>
-      )}
 
       {showIncidentModal && (
         <IncidentReportModal
@@ -547,6 +536,10 @@ const DriverDashboard: React.FC = () => {
         isOpen={showPostTripModal}
         onClose={() => setShowPostTripModal(false)}
         onComplete={confirmTripCompletion}
+        truckId={currentTrip?.truck?.id}
+        truckPlate={currentTrip?.truck?.plateNumber}
+        driverId={driverId}
+        driverName={driver ? `${driver.firstName} ${driver.lastName}` : undefined}
       />
     </div>
   );

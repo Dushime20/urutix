@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -20,6 +21,8 @@ import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
@@ -68,9 +71,6 @@ export class NotificationsService {
     notifications: CreateNotificationDto[],
     tenantId: string,
   ): Promise<Notification[]> {
-    const fs = require('fs');
-    const logPath = 'C:\\Users\\HP\\Desktop\\urutix\\debug.log';
-    
     try {
       const createdNotifications: Notification[] = notifications.map(
         (notification) =>
@@ -106,8 +106,6 @@ export class NotificationsService {
       const savedNotifications =
         await this.notificationRepository.save(createdNotifications);
       
-      fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] Saved ${savedNotifications.length} notifications for tenant ${tenantId}`);
-      
       await Promise.all(
         savedNotifications.map((notification) => {
           // Emit real-time update to the recipient
@@ -117,9 +115,45 @@ export class NotificationsService {
       );
       return savedNotifications;
     } catch (e) {
-      fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] ERROR: ${e.stack}`);
+      this.logger.error(`[createBulkNotifications] ERROR: ${e.message}`, e.stack);
       throw e;
     }
+  }
+
+  async getBroadcastHistory(tenantId: string): Promise<any[]> {
+    // Fetch all broadcast notifications for this tenant, then group by sentBy+subject+timestamp bucket
+    const rows = await this.notificationRepository
+      .createQueryBuilder('n')
+      .where('n.tenantId = :tenantId', { tenantId })
+      .andWhere(`n.metadata->>'broadcast' = 'true'`)
+      .orderBy('n.createdAt', 'DESC')
+      .take(500)
+      .getMany();
+
+    // Group by sentBy + title + minute-bucket to collapse per-recipient rows into one campaign row
+    const campaigns = new Map<string, any>();
+    for (const n of rows) {
+      const sentBy = n.metadata?.sentBy || 'unknown';
+      const minute = new Date(n.createdAt).toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+      const key = `${sentBy}||${n.title}||${minute}`;
+
+      if (!campaigns.has(key)) {
+        campaigns.set(key, {
+          id: n.id,
+          subject: n.title,
+          message: n.message,
+          channels: n.channels || ['IN_APP'],
+          sentBy,
+          recipientsCount: 0,
+          status: 'sent',
+          createdAt: n.createdAt,
+          metadata: n.metadata,
+        });
+      }
+      campaigns.get(key).recipientsCount++;
+    }
+
+    return Array.from(campaigns.values());
   }
 
   async findAllNotifications(

@@ -98,6 +98,70 @@ export interface Trip {
   };
 }
 
+// Normalize a raw backend trip to the frontend Trip interface
+function normalizeTrip(raw: any): Trip {
+  const load = raw.load || {};
+
+  // Location data lives in load.locations array
+  const locations: any[] = load.locations || [];
+  const pickupLoc = locations.find((l: any) => l.type === 'PICKUP')?.locationData || {};
+  const deliveryLoc = locations.find((l: any) => l.type === 'DELIVERY')?.locationData || {};
+
+  // Fallback to direct trip relations if present
+  const pickup = Object.keys(pickupLoc).length ? pickupLoc : (raw.pickupLocation || {});
+  const delivery = Object.keys(deliveryLoc).length ? deliveryLoc : (raw.deliveryLocation || {});
+
+  return {
+    id: raw.id,
+    tripNumber: raw.tripNumber,
+    status: raw.status,
+    origin: {
+      address: pickup.address || pickup.name || 'N/A',
+      city: pickup.city || '',
+      state: pickup.state || pickup.country || '',
+      coordinates: pickup.coordinates
+        ? [pickup.coordinates.latitude ?? pickup.coordinates[0], pickup.coordinates.longitude ?? pickup.coordinates[1]]
+        : [0, 0],
+    },
+    destination: {
+      address: delivery.address || delivery.name || 'N/A',
+      city: delivery.city || '',
+      state: delivery.state || delivery.country || '',
+      coordinates: delivery.coordinates
+        ? [delivery.coordinates.latitude ?? delivery.coordinates[0], delivery.coordinates.longitude ?? delivery.coordinates[1]]
+        : [0, 0],
+    },
+    scheduledDeparture: raw.plannedStartTime || raw.scheduledDeparture || '',
+    estimatedDeparture: raw.plannedStartTime || raw.estimatedDeparture || '',
+    estimatedArrival: raw.estimatedArrival || raw.plannedEndTime || '',
+    actualDeparture: raw.actualStartTime,
+    actualArrival: raw.actualEndTime,
+    distance: Number(raw.totalDistance || raw.distance || 0),
+    estimatedDuration: Number(raw.duration || raw.estimatedDuration || 0),
+    progress: Number(raw.progress || 0),
+    currentLocation: raw.currentLocation,
+    cargo: {
+      description: load.title || load.description || 'N/A',
+      weight: Number(load.weight || 0),
+      type: load.cargoType || 'General',
+      specialInstructions: load.specialHandlingInstructions || undefined,
+    },
+    customer: {
+      name: load.cargoOwner?.profile
+        ? `${load.cargoOwner.profile.firstName} ${load.cargoOwner.profile.lastName}`
+        : (load.customerName || 'N/A'),
+      phone: load.cargoOwner?.phone || '',
+      email: load.cargoOwner?.email || '',
+    },
+    truck: raw.truck
+      ? { id: raw.truck.id, plateNumber: raw.truck.plateNumber, model: `${raw.truck.make || ''} ${raw.truck.model || ''}`.trim() }
+      : { id: raw.truckId, plateNumber: '', model: '' },
+    earnings: Number(raw.agreedPrice || 0),
+    notes: raw.notes,
+    pod: load.metadata?.pod,
+  };
+}
+
 export interface EarningsData {
   period: string;
   trips: number;
@@ -274,79 +338,41 @@ class DriverApiService {
   // Trip Management
   async getCurrentTrip(driverId: string): Promise<Trip | null> {
     try {
-      // Try fetching trips - if endpoint doesn't exist, return null gracefully
-      const response = await tripsAPI.getAll({ limit: 100 });
-      const data = response?.data?.data || response?.data?.items || response?.data || response;
-      const trips = Array.isArray(data) ? data : [];
-      // Filter by driverId and status on client side
-      const driverTrip = trips.find(
-        (trip: any) => 
-          trip.driverId === driverId && 
-          (trip.status === 'IN_PROGRESS' || trip.status === 'ACTIVE')
-      );
-      return driverTrip || null;
+      const response = await api.get('/trips/my-trips');
+      const raw = response.data?.data?.current;
+      return raw ? normalizeTrip(raw) : null;
     } catch (error: any) {
-      // Silently handle 404 - endpoint may not be implemented yet
-      if (error.response?.status === 404) {
-        return null;
-      }
-      // Only log non-404 errors
-      if (error.response?.status !== 404) {
-        console.error('Error fetching current trip:', error);
-      }
+      if (error.response?.status === 404) return null;
+      console.error('Error fetching current trip:', error);
       return null;
     }
   }
 
   async getUpcomingTrips(driverId: string): Promise<Trip[]> {
     try {
-      // Try fetching trips - if endpoint doesn't exist, return empty array gracefully
-      const response = await tripsAPI.getAll({ limit: 100 });
-      const data = response?.data?.data || response?.data?.items || response?.data || response;
-      const trips = Array.isArray(data) ? data : [];
-      // Filter by driverId and status on client side
-      return trips.filter(
-        (trip: any) => 
-          trip.driverId === driverId && 
-          (trip.status === 'PLANNED' || trip.status === 'SCHEDULED')
-      );
+      const response = await api.get('/trips/my-trips');
+      const raw: any[] = response.data?.data?.upcoming || [];
+      return raw.map(normalizeTrip);
     } catch (error: any) {
-      // Silently handle 404 - endpoint may not be implemented yet
-      if (error.response?.status === 404) {
-        return [];
-      }
-      // Only log non-404 errors
-      if (error.response?.status !== 404) {
-        console.error('Error fetching upcoming trips:', error);
-      }
+      if (error.response?.status === 404) return [];
+      console.error('Error fetching upcoming trips:', error);
       return [];
     }
   }
 
   async getTripHistory(driverId: string, _period: string): Promise<Trip[]> {
     try {
-      // Try fetching trips - if endpoint doesn't exist, return empty array gracefully
-      const response = await tripsAPI.getAll({ limit: 100 });
-      const data = response?.data?.data || response?.data?.items || response?.data || response;
-      const trips = Array.isArray(data) ? data : [];
-      // Filter by driverId and status on client side
-      return trips.filter(
-        (trip: any) => 
-          trip.driverId === driverId && 
-          (trip.status === 'COMPLETED' || trip.status === 'DELIVERED')
-      ).map((trip: any) => ({
-        ...trip,
-        pod: trip.load?.metadata?.pod || undefined
-      }));
+      const response = await api.get('/trips', {
+        params: {
+          userId: driverId,
+          limit: 20,
+        }
+      });
+      const raw: any[] = response.data?.data || [];
+      return raw.map(normalizeTrip);
     } catch (error: any) {
-      // Silently handle 404 - endpoint may not be implemented yet
-      if (error.response?.status === 404) {
-        return [];
-      }
-      // Only log non-404 errors
-      if (error.response?.status !== 404) {
-        console.error('Error fetching trip history:', error);
-      }
+      if (error.response?.status === 404) return [];
+      console.error('Error fetching trip history:', error);
       return [];
     }
   }
@@ -578,6 +604,20 @@ class DriverApiService {
 
   async endBreak(driverId: string): Promise<void> {
     await api.post(`/drivers/${driverId}/break/end`);
+  }
+
+  async getBreaks(driverId: string, filters?: { startDate?: string; endDate?: string; limit?: number }): Promise<{ breaks: any[]; total: number }> {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    const response = await api.get(`/drivers/${driverId}/breaks?${params.toString()}`);
+    return response.data;
+  }
+
+  async deleteBreak(driverId: string, breakId: string): Promise<void> {
+    await api.delete(`/drivers/${driverId}/breaks/${breakId}`);
   }
 
   // Documents and Files

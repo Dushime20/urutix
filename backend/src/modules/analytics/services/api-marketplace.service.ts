@@ -1,7 +1,4 @@
 import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CargoOwnerAnalytics } from '../../../entities/cargo-owner-analytics.entity';
 import * as crypto from 'crypto';
 
 interface ApiKey {
@@ -33,10 +30,7 @@ export class ApiMarketplaceService {
   private readonly usageLogs: ApiUsageLog[] = [];
   private readonly rateLimitCache = new Map<string, { count: number; resetTime: number }>();
 
-  constructor(
-    @InjectRepository(CargoOwnerAnalytics)
-    private analyticsRepository: Repository<CargoOwnerAnalytics>,
-  ) {
+  constructor() {
     this.initializeApiMarketplace();
   }
 
@@ -430,63 +424,18 @@ export class ApiMarketplaceService {
     return permissionMap[endpoint] || [];
   }
 
-  private async getPublicCostTrends(tenantId: string, filters: any) {
-    // Get anonymized cost trend data
-    const trends = await this.analyticsRepository
-      .createQueryBuilder('analytics')
-      .select([
-        "DATE_TRUNC('day', analytics.bookingDate) as date",
-        'AVG(analytics.totalCost) as avgCost',
-        'COUNT(*) as shipmentCount'
-      ])
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .groupBy("DATE_TRUNC('day', analytics.bookingDate)")
-      .orderBy('date', 'DESC')
-      .limit(30)
-      .getRawMany();
-
-    return trends.map(trend => ({
-      date: trend.date,
-      avgCost: parseFloat(trend.avgCost),
-      shipmentCount: parseInt(trend.shipmentCount)
-    }));
+  private async getPublicCostTrends(_tenantId: string, _filters: any) {
+    // cargo_owner_analytics table not yet migrated
+    return [];
   }
 
-  private async getPublicMarketBenchmarks(filters: any) {
-    // Return anonymized market benchmark data
-    return {
-      avgCostPerKm: 150,
-      avgTransitTime: 24,
-      onTimeRate: 0.85,
-      marketTrend: 'stable',
-      dataPoints: 1000,
-      lastUpdated: new Date().toISOString()
-    };
+  private async getPublicMarketBenchmarks(_filters: any) {
+    return { avgCostPerKm: 150, avgTransitTime: 24, onTimeRate: 0.85, marketTrend: 'stable', dataPoints: 0, lastUpdated: new Date().toISOString() };
   }
 
-  private async getPublicRoutePerformance(tenantId: string, filters: any) {
-    // Get route performance data
-    const routes = await this.analyticsRepository
-      .createQueryBuilder('analytics')
-      .select([
-        'analytics.routeHash',
-        'AVG(analytics.totalCost) as avgCost',
-        'AVG(analytics.actualTransitHours) as avgTransitTime',
-        'COUNT(*) as shipmentCount'
-      ])
-      .where('analytics.tenantId = :tenantId', { tenantId })
-      .groupBy('analytics.routeHash')
-      .having('COUNT(*) >= 5')
-      .orderBy('shipmentCount', 'DESC')
-      .limit(filters.limit || 20)
-      .getRawMany();
-
-    return routes.map(route => ({
-      routeHash: route.routeHash,
-      avgCost: parseFloat(route.avgCost),
-      avgTransitTime: parseFloat(route.avgTransitTime),
-      shipmentCount: parseInt(route.shipmentCount)
-    }));
+  private async getPublicRoutePerformance(_tenantId: string, _filters: any) {
+    // cargo_owner_analytics table not yet migrated
+    return [];
   }
 
   private async getPublicDemandForecast(tenantId: string, filters: any) {

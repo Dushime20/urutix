@@ -33,6 +33,7 @@ import {
 } from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoadsService } from './loads.service';
 import { CreateLoadDto } from './dto/create-load.dto';
 import { UpdateLoadDto } from './dto/update-load.dto';
@@ -73,7 +74,10 @@ import { CargoOwnerGuard } from '../../guards/cargo-owner.guard';
 @UseGuards(JwtAuthGuard, TenantGuard)
 @ApiBearerAuth('JWT-auth')
 export class LoadsController {
-  constructor(private readonly loadsService: LoadsService) { }
+  constructor(
+    private readonly loadsService: LoadsService,
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   @Post()
   @UseGuards(ThrottlerGuard, RolesGuard)
@@ -197,6 +201,30 @@ export class LoadsController {
 
       if (!load) {
         throw new InternalServerErrorException('Load was created but returned null');
+      }
+
+      // Emit cargo.created event for notifications
+      try {
+        const pickupLocation = load.locations?.find(loc => loc.type === 'PICKUP');
+        const deliveryLocation = load.locations?.find(loc => loc.type === 'DELIVERY');
+        
+        this.eventEmitter.emit('cargo.created', {
+          cargoId: load.id,
+          cargoOwnerId: req.user.userId,
+          tenantId: req.user.tenantId,
+          cargoDetails: {
+            title: load.title || 'Cargo',
+            origin: pickupLocation?.locationData?.address || pickupLocation?.locationData?.city || 'Unknown',
+            destination: deliveryLocation?.locationData?.address || deliveryLocation?.locationData?.city || 'Unknown',
+            weight: load.weight || 0,
+            pickupDate: load.pickupDate || new Date(),
+            deliveryDate: load.deliveryDate || new Date(),
+            price: load.loadValue || 0,
+          },
+        });
+        console.log('✅ Cargo created event emitted');
+      } catch (eventError) {
+        console.warn('⚠️ Failed to emit cargo.created event (non-critical):', eventError.message);
       }
 
       // Get enriched locations for the response (optional, don't fail if it errors)

@@ -43,7 +43,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-  const { DialogComponent, confirmAction } = useConfirmDialog();
+  const { DialogComponent, confirm } = useConfirmDialog();
 
   // Load trucks and routes
   const loadData = async () => {
@@ -234,23 +234,54 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
   };
 
   const handleDeleteRoute = async (route: Route) => {
-    const confirmed = await confirmAction({
-      title: 'Delete Route',
-      message: `Are you sure you want to delete the route "${route.name}"? This action cannot be undone.`,
-      confirmText: 'Delete Route',
-      cancelText: 'Cancel',
-      type: 'danger'
-    });
+    console.log('🗑️ handleDeleteRoute called with route:', route);
+    console.log('🗑️ Route ID:', route.id);
+    console.log('🗑️ Route name:', route.name);
+    
+    try {
+      const confirmed = await confirm({
+        title: 'Delete Route',
+        message: `Are you sure you want to delete the route "${route.name}"?\n\nRoute Details:\n• Origin: ${route.origin}\n• Destination: ${route.destination}\n• Distance: ${route.distance} km\n\nThis action cannot be undone and will remove all assignments.`,
+        confirmText: 'Delete Route',
+        cancelText: 'Cancel',
+        variant: 'danger'
+      });
 
-    if (confirmed) {
-      try {
-        await fleetApi.deleteRoute(route.id);
-        toast.success('Route deleted successfully!');
-        await loadData();
-      } catch (error) {
-        console.error('Error deleting route:', error);
-        toast.error('Failed to delete route');
+      console.log('🗑️ User confirmation result:', confirmed);
+
+      if (confirmed) {
+        console.log('✅ User confirmed deletion, proceeding...');
+        const loadingToast = toast.loading('Deleting route...');
+        
+        try {
+          console.log('🌐 Calling fleetApi.deleteRoute with ID:', route.id);
+          await fleetApi.deleteRoute(route.id);
+          toast.dismiss(loadingToast);
+          toast.success(`Route "${route.name}" deleted successfully!`);
+          console.log('🎉 Route deleted successfully, reloading data...');
+          await loadData();
+        } catch (error: any) {
+          console.error('❌ Error deleting route:', error);
+          toast.dismiss(loadingToast);
+          
+          // Enhanced error handling
+          let errorMessage = 'Failed to delete route';
+          if (error.response?.status === 404) {
+            errorMessage = 'Route not found or already deleted';
+          } else if (error.response?.status === 403) {
+            errorMessage = 'You do not have permission to delete this route';
+          } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          }
+          
+          toast.error(errorMessage);
+        }
+      } else {
+        console.log('❌ User cancelled deletion');
       }
+    } catch (error) {
+      console.error('❌ Error in handleDeleteRoute:', error);
+      toast.error('An error occurred while trying to delete the route');
     }
   };
 
@@ -277,35 +308,35 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
   return (
     <div className={`space-y-8 p-6 ${className}`}>
       {/* Header Matrix */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-5">
-          <div className="size-14 bg-indigo-50 rounded-[20px] flex items-center justify-center text-indigo-600 shadow-inner">
+          <div className="size-14 bg-blue-50 dark:bg-blue-950/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
             <Navigation size={28} />
           </div>
           <div>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-600 mb-1">Logistics Matrix</h2>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Route Management</h1>
+            <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">Logistics Matrix</h2>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">Route Management</h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={loadData}
-            className="h-12 w-12 bg-white text-slate-400 hover:text-indigo-600 rounded-[18px] transition-all flex items-center justify-center shadow-sm"
+            className="h-12 w-12 bg-white dark:bg-gray-900 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all flex items-center justify-center border border-gray-200 dark:border-gray-700"
           >
             <RefreshCw size={18} />
           </button>
           <button
             onClick={handleCreateRoute}
-            className="h-12 px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg"
+            className="h-12 px-6 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg text-xs font-medium uppercase tracking-wider transition-all flex items-center gap-2"
           >
             <Plus size={14} />
             Create Route
           </button>
           <button
             onClick={() => setAssignMode(!assignMode)}
-            className={`h-12 px-6 rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg ${assignMode
-                ? 'bg-rose-500 text-white hover:bg-rose-600'
-                : 'bg-slate-700 text-white hover:bg-slate-800'
+            className={`h-12 px-6 rounded-lg text-xs font-medium uppercase tracking-wider transition-all flex items-center gap-2 ${assignMode
+                ? 'bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700'
+                : 'bg-gray-700 dark:bg-gray-600 text-white hover:bg-gray-800 dark:hover:bg-gray-700'
               }`}
           >
             {assignMode ? <X size={14} /> : <Settings size={14} />}
@@ -316,31 +347,31 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
 
       {/* Geospatial Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center gap-4 shadow-sm">
-          <div className="size-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+        <motion.div whileHover={{ y: -2 }} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-5 flex items-center gap-4 transition-colors">
+          <div className="size-10 bg-blue-50 dark:bg-blue-950/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
             <Truck size={20} />
           </div>
           <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Units</p>
-            <p className="text-xl font-black text-slate-900">{trucks.length}</p>
+            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Active Units</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">{trucks.length}</p>
           </div>
         </motion.div>
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center gap-4 shadow-sm">
-          <div className="size-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+        <motion.div whileHover={{ y: -2 }} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-5 flex items-center gap-4 transition-colors">
+          <div className="size-10 bg-blue-50 dark:bg-blue-950/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
             <Navigation size={20} />
           </div>
           <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Routes</p>
-            <p className="text-xl font-black text-slate-900">{routes.length}</p>
+            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Total Routes</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">{routes.length}</p>
           </div>
         </motion.div>
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-[24px] border border-slate-100 p-5 flex items-center gap-4 shadow-sm">
-          <div className="size-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+        <motion.div whileHover={{ y: -2 }} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-5 flex items-center gap-4 transition-colors">
+          <div className="size-10 bg-green-50 dark:bg-green-950/20 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400">
             <CheckCircle2 size={20} />
           </div>
           <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Links</p>
-            <p className="text-xl font-black text-slate-900">
+            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Active Links</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">
               {trucks.reduce((sum, truck) => sum + (truck.assignedRouteDetails?.length || 0), 0)}
             </p>
           </div>
@@ -385,16 +416,28 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                           {route.origin} → {route.destination}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 relative z-10">
                         <button
-                          onClick={() => handleEditRoute(route)}
-                          className="size-7 bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('🔧 Edit button clicked for route:', route.name);
+                            handleEditRoute(route);
+                          }}
+                          className="size-7 bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:shadow-md relative z-20"
+                          title={`Edit route "${route.name}"`}
                         >
                           <Edit3 size={12} />
                         </button>
                         <button
-                          onClick={() => handleDeleteRoute(route)}
-                          className="size-7 bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('🗑️ Delete button clicked for route:', route.name);
+                            handleDeleteRoute(route);
+                          }}
+                          className="size-7 bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:shadow-md relative z-20"
+                          title={`Delete route "${route.name}"`}
                         >
                           <Trash2 size={12} />
                         </button>

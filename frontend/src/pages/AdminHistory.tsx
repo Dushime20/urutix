@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   FaHistory,
   FaUser,
@@ -27,176 +28,43 @@ import {
   FaClock
 } from 'react-icons/fa';
 import { TranslatedText } from '@/components/translated-text';
-
-interface ActivityLog {
-  id: string;
-  timestamp: string;
-  user: string;
-  userRole: string;
-  action: string;
-  category: 'user' | 'cargo' | 'payment' | 'system' | 'security' | 'tenant' | 'document';
-  description: string;
-  status: 'success' | 'warning' | 'error' | 'info';
-  ipAddress?: string;
-  details?: any;
-}
+import { activityLogsApi, type ActivityLog } from '@/services/activityLogsApi';
 
 const AdminHistory: React.FC = () => {
-  const [activityLogs] = useState<ActivityLog[]>([
-    {
-      id: 'LOG-001',
-      timestamp: '2024-02-12T14:30:00',
-      user: 'John Smith',
-      userRole: 'Cargo Owner',
-      action: 'Cargo Created',
-      category: 'cargo',
-      description: 'Created new cargo shipment #CRG-1234 from Nairobi to Mombasa',
-      status: 'success',
-      ipAddress: '192.168.1.100'
-    },
-    {
-      id: 'LOG-002',
-      timestamp: '2024-02-12T14:25:00',
-      user: 'Sarah Johnson',
-      userRole: 'Truck Owner',
-      action: 'Bid Placed',
-      category: 'cargo',
-      description: 'Placed bid of $450 on cargo #CRG-1234',
-      status: 'success',
-      ipAddress: '192.168.1.101'
-    },
-    {
-      id: 'LOG-003',
-      timestamp: '2024-02-12T14:20:00',
-      user: 'Admin User',
-      userRole: 'Super Admin',
-      action: 'User Suspended',
-      category: 'user',
-      description: 'Suspended user account: mike.wilson@example.com',
-      status: 'warning',
-      ipAddress: '192.168.1.1'
-    },
-    {
-      id: 'LOG-004',
-      timestamp: '2024-02-12T14:15:00',
-      user: 'Michael Brown',
-      userRole: 'Cargo Owner',
-      action: 'Payment Completed',
-      category: 'payment',
-      description: 'Payment of $450 completed for cargo #CRG-1230',
-      status: 'success',
-      ipAddress: '192.168.1.102'
-    },
-    {
-      id: 'LOG-005',
-      timestamp: '2024-02-12T14:10:00',
-      user: 'System',
-      userRole: 'System',
-      action: 'Backup Completed',
-      category: 'system',
-      description: 'Daily database backup completed successfully',
-      status: 'success',
-      ipAddress: 'localhost'
-    },
-    {
-      id: 'LOG-006',
-      timestamp: '2024-02-12T14:05:00',
-      user: 'Unknown',
-      userRole: 'Guest',
-      action: 'Failed Login',
-      category: 'security',
-      description: 'Failed login attempt for admin@example.com',
-      status: 'error',
-      ipAddress: '203.0.113.45'
-    },
-    {
-      id: 'LOG-007',
-      timestamp: '2024-02-12T14:00:00',
-      user: 'Admin User',
-      userRole: 'Super Admin',
-      action: 'Tenant Approved',
-      category: 'tenant',
-      description: 'Approved tenant: ABC Logistics Ltd',
-      status: 'success',
-      ipAddress: '192.168.1.1'
-    },
-    {
-      id: 'LOG-008',
-      timestamp: '2024-02-12T13:55:00',
-      user: 'David Lee',
-      userRole: 'Driver',
-      action: 'Document Uploaded',
-      category: 'document',
-      description: 'Uploaded driving license document',
-      status: 'success',
-      ipAddress: '192.168.1.103'
-    },
-    {
-      id: 'LOG-009',
-      timestamp: '2024-02-12T13:50:00',
-      user: 'Admin User',
-      userRole: 'Super Admin',
-      action: 'Permission Updated',
-      category: 'security',
-      description: 'Updated role permissions for Cargo Owner role',
-      status: 'info',
-      ipAddress: '192.168.1.1'
-    },
-    {
-      id: 'LOG-010',
-      timestamp: '2024-02-12T13:45:00',
-      user: 'Emma Wilson',
-      userRole: 'Cargo Owner',
-      action: 'Cargo Cancelled',
-      category: 'cargo',
-      description: 'Cancelled cargo shipment #CRG-1229',
-      status: 'warning',
-      ipAddress: '192.168.1.104'
-    },
-    {
-      id: 'LOG-011',
-      timestamp: '2024-02-12T13:40:00',
-      user: 'System',
-      userRole: 'System',
-      action: 'Email Sent',
-      category: 'system',
-      description: 'Sent 45 notification emails to users',
-      status: 'success',
-      ipAddress: 'localhost'
-    },
-    {
-      id: 'LOG-012',
-      timestamp: '2024-02-12T13:35:00',
-      user: 'Admin User',
-      userRole: 'Super Admin',
-      action: 'User Created',
-      category: 'user',
-      description: 'Created new user account: jane.doe@example.com',
-      status: 'success',
-      ipAddress: '192.168.1.1'
-    }
-  ]);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<string>('today');
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
 
-  // Filter logs
+  // Fetch activity logs
+  const { data: logsData, isLoading: logsLoading } = useQuery({
+    queryKey: ['activity-logs', categoryFilter, statusFilter, searchTerm],
+    queryFn: () => activityLogsApi.getActivityLogs({
+      category: categoryFilter !== 'all' ? categoryFilter : undefined,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: searchTerm || undefined,
+      limit: 100,
+    }),
+  });
+
+  // Fetch activity stats
+  const { data: statsData } = useQuery({
+    queryKey: ['activity-stats'],
+    queryFn: () => activityLogsApi.getActivityStats(),
+  });
+
+  const activityLogs = logsData?.logs || [];
+  const stats = statsData || {
+    totalActivities: 0,
+    userActions: 0,
+    securityEvents: 0,
+    systemEvents: 0,
+  };
+
+  // Filter logs (client-side filtering for additional refinement)
   const filteredLogs = useMemo(() => {
-    return activityLogs.filter(log => {
-      const matchesSearch =
-        log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
-      const matchesStatus = statusFilter === 'all' || log.status === statusFilter;
-
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [activityLogs, searchTerm, categoryFilter, statusFilter]);
+    return activityLogs;
+  }, [activityLogs]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -263,10 +131,10 @@ const AdminHistory: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Activities', value: activityLogs.length, sub: 'Last 24 hours', icon: FaHistory, color: 'bg-[#345E85]' },
-          { label: 'User Actions', value: activityLogs.filter(l => l.category === 'user').length, sub: '+12% from yesterday', icon: FaUser, color: 'bg-emerald-500' },
-          { label: 'Security Events', value: activityLogs.filter(l => l.category === 'security').length, sub: '1 failed login', icon: FaShieldAlt, color: 'bg-rose-500' },
-          { label: 'System Events', value: activityLogs.filter(l => l.category === 'system').length, sub: 'All systems normal', icon: FaCog, color: 'bg-amber-500' },
+          { label: 'Total Activities', value: stats.totalActivities, sub: 'Last 24 hours', icon: FaHistory, color: 'bg-[#345E85]' },
+          { label: 'User Actions', value: stats.userActions, sub: 'User operations', icon: FaUser, color: 'bg-emerald-500' },
+          { label: 'Security Events', value: stats.securityEvents, sub: 'Auth & security', icon: FaShieldAlt, color: 'bg-rose-500' },
+          { label: 'System Events', value: stats.systemEvents, sub: 'System operations', icon: FaCog, color: 'bg-amber-500' },
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all group">
             <div className="flex items-center justify-between mb-3">
@@ -355,7 +223,12 @@ const AdminHistory: React.FC = () => {
         </div>
 
         <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-          {filteredLogs.length === 0 ? (
+          {logsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-[#345E85] mx-auto"></div>
+              <p className="mt-4 text-sm text-gray-500">Loading activity logs...</p>
+            </div>
+          ) : filteredLogs.length === 0 ? (
             <div className="text-center py-12">
               <FaHistory className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No activities found</h3>

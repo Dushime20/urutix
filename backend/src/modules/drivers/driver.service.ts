@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Repository,
   Like,
@@ -47,6 +48,10 @@ import {
 import { LoadsService } from '../loads/loads.service';
 import { TripsService } from '../trips/trips.service';
 import { CompleteDeliveryDto } from './dto/driver.dto';
+import {
+  DriverBreakStartedEvent,
+  DriverBreakEndedEvent,
+} from '../notifications/events/cargo-events';
 
 @Injectable()
 export class DriverService {
@@ -67,6 +72,7 @@ export class DriverService {
     private readonly notificationService: NotificationService,
     private readonly loadsService: LoadsService,
     private readonly tripsService: TripsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createDriver(createDto: CreateDriverDto): Promise<Driver> {
@@ -138,7 +144,6 @@ export class DriverService {
   async getDriverByUserId(userId: string): Promise<Driver> {
     const driver = await this.driverRepository.findOne({
       where: { userId },
-      relations: ['truck', 'tenant'],
     });
 
     if (!driver) {
@@ -1070,9 +1075,9 @@ export class DriverService {
 
       const savedIncident = await this.safetyIncidentRepository.save(incident);
 
-      // Trigger notification to fleet managers
+      // Notify truck owner (fleet manager)
       await this.notificationService.createNotification({
-        recipientId: driver.employerId, // Notify the fleet owner/manager
+        recipientId: driver.employerId,
         tenantId,
         title: `🚨 Incident Reported: ${incident.type.toUpperCase()}`,
         message: `Driver ${driver.firstName} ${driver.lastName} reported a ${incident.severity} severity ${incident.type} at ${incident.location}.`,
@@ -1085,6 +1090,42 @@ export class DriverService {
         actionUrl: `/dashboard/fleet/safety/${savedIncident.id}`,
         actionText: 'View Incident',
       });
+      this.logger.log(`✅ Notified truck owner: ${driver.employerId}`);
+
+      // Check if driver is on an active trip and notify cargo owner
+      const activeTrip = await this.tripRepository.findOne({
+        where: {
+          driverId,
+          tenantId,
+          status: TripStatus.IN_PROGRESS,
+        },
+        relations: ['load'],
+      });
+
+      if (activeTrip?.load?.cargoOwnerId) {
+        await this.notificationService.createNotification({
+          recipientId: activeTrip.load.cargoOwnerId,
+          tenantId,
+          title: `🚨 Incident During Delivery`,
+          message: `An incident occurred during delivery of your shipment "${activeTrip.load.title}". Severity: ${incident.severity}. Type: ${incident.type}.`,
+          notificationType: NotificationType.ALERT,
+          category: NotificationCategory.SAFETY,
+          priority: NotificationPriority.HIGH,
+          entityId: savedIncident.id,
+          entityType: EntityType.CARGO,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
+          actionUrl: `/cargo-owner/shipments/${activeTrip.load.id}`,
+          actionText: 'View Shipment',
+          metadata: {
+            incidentId: savedIncident.id,
+            loadId: activeTrip.load.id,
+            loadTitle: activeTrip.load.title,
+            incidentType: incident.type,
+            severity: incident.severity,
+          },
+        });
+        this.logger.log(`✅ Notified cargo owner: ${activeTrip.load.cargoOwnerId}`);
+      }
 
       return savedIncident;
     } catch (error) {
@@ -1158,4 +1199,304 @@ export class DriverService {
       pod: load?.metadata?.pod
     };
   }
+
+  /**
+   * Start a break for the driver
+   */
+  async startBreak(
+    driverId: string,
+    breakData: { breakType?: string; notes?: string },
+    tenantId: string,
+  ): Promise<{ message: string; breakId: string; startTime: Date }> {
+    try {
+      this.logger.log(`Starting break for driver ${driverId}`);
+
+      const driver = await this.driverRepository.findOne({
+        where: { id: driverId, tenantId },
+      });
+
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      // Check if there's already an active break
+      const activeBreak = driver.hoursOfService?.breaks?.find(
+        (b: any) => !b.endTime,
+      );
+
+      if (activeBreak) {
+        throw new BadRequestException('Driver already has an active break');
+      }
+
+      const breakId = `break-${Date.now()}`;
+      const startTime = new Date();
+
+      // Initialize hoursOfService if not exists
+      if (!driver.hoursOfService) {
+        driver.hoursOfService = {
+          breaks: [],
+          drivingHours: 0,
+          onDutyHours: 0,
+          offDutyHours: 0,
+        };
+      }
+
+      // Initialize breaks array if not exists
+      if (!driver.hoursOfService.breaks) {
+        driver.hoursOfService.breaks = [];
+      }
+
+      // Add new break
+      driver.hoursOfService.breaks.push({
+        id: breakId,
+        breakType: breakData.breakType || 'REST',
+        startTime: startTime.toISOString(),
+        endTime: null,
+        duration: null,
+        notes: breakData.notes || '',
+      });
+
+      await this.driverRepository.save(driver);
+
+      this.logger.log(`Break started successfully for driver ${driverId}`);
+
+      // Get active trip and load details if driver is on a trip
+      let currentLoadId: string | undefined;
+      if (driver.currentTripId) {
+        const activeTrip = await this.tripRepository.findOne({
+          where: { id: driver.currentTripId, tenantId },
+          relations: ['load'],
+        });
+        
+        if (activeTrip && activeTrip.load) {
+          currentLoadId = activeTrip.load.id;
+        }
+      }
+
+      // Emit event for notifications
+      const driverName = `${driver.firstName} ${driver.lastName}`;
+      this.eventEmitter.emit(
+        'driver.break.started',
+        new DriverBreakStartedEvent(
+          driverId,
+          breakId,
+          tenantId,
+          {
+            breakType: breakData.breakType || 'REST',
+            startTime,
+            driverName,
+            currentTripId: driver.currentTripId || undefined,
+            currentLoadId,
+            estimatedDuration: 30, // Default 30 minutes
+            notes: breakData.notes,
+          },
+        ),
+      );
+
+      return {
+        message: 'Break started successfully',
+        breakId,
+        startTime,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to start break: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * End the current break for the driver
+   */
+  async endBreak(
+    driverId: string,
+    breakData: { notes?: string },
+    tenantId: string,
+  ): Promise<{ message: string; breakId: string; duration: number }> {
+    try {
+      this.logger.log(`Ending break for driver ${driverId}`);
+
+      const driver = await this.driverRepository.findOne({
+        where: { id: driverId, tenantId },
+      });
+
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      // Find active break
+      const activeBreak = driver.hoursOfService?.breaks?.find(
+        (b: any) => !b.endTime,
+      );
+
+      if (!activeBreak) {
+        throw new BadRequestException('No active break found');
+      }
+
+      const endTime = new Date();
+      const startTime = new Date(activeBreak.startTime);
+      const duration = Math.round((endTime.getTime() - startTime.getTime()) / 60000); // Duration in minutes
+
+      // Update break
+      activeBreak.endTime = endTime.toISOString();
+      activeBreak.duration = duration;
+      if (breakData.notes) {
+        activeBreak.notes = breakData.notes;
+      }
+
+      await this.driverRepository.save(driver);
+
+      this.logger.log(
+        `Break ended successfully for driver ${driverId}. Duration: ${duration} minutes`,
+      );
+
+      // Get active trip and load details if driver is on a trip
+      let currentLoadId: string | undefined;
+      if (driver.currentTripId) {
+        const activeTrip = await this.tripRepository.findOne({
+          where: { id: driver.currentTripId, tenantId },
+          relations: ['load'],
+        });
+        
+        if (activeTrip && activeTrip.load) {
+          currentLoadId = activeTrip.load.id;
+        }
+      }
+
+      // Emit event for notifications
+      const driverName = `${driver.firstName} ${driver.lastName}`;
+      this.eventEmitter.emit(
+        'driver.break.ended',
+        new DriverBreakEndedEvent(
+          driverId,
+          activeBreak.id,
+          tenantId,
+          {
+            breakType: activeBreak.breakType,
+            startTime,
+            endTime,
+            duration,
+            driverName,
+            currentTripId: driver.currentTripId || undefined,
+            currentLoadId,
+          },
+        ),
+      );
+
+      return {
+        message: 'Break ended successfully',
+        breakId: activeBreak.id,
+        duration,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to end break: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get break history for the driver
+   */
+  async getBreaks(
+    driverId: string,
+    filters: { startDate?: string; endDate?: string; limit?: number },
+    tenantId: string,
+  ): Promise<{ breaks: any[]; total: number }> {
+    try {
+      this.logger.log(`Getting breaks for driver ${driverId}`);
+
+      const driver = await this.driverRepository.findOne({
+        where: { id: driverId, tenantId },
+      });
+
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      let breaks = driver.hoursOfService?.breaks || [];
+
+      // Apply date filters
+      if (filters.startDate) {
+        const startDate = new Date(filters.startDate);
+        breaks = breaks.filter(
+          (b: any) => new Date(b.startTime) >= startDate,
+        );
+      }
+
+      if (filters.endDate) {
+        const endDate = new Date(filters.endDate);
+        breaks = breaks.filter((b: any) => new Date(b.startTime) <= endDate);
+      }
+
+      // Sort by start time (most recent first)
+      breaks.sort(
+        (a: any, b: any) =>
+          new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+      );
+
+      // Apply limit
+      const limit = filters.limit || 50;
+      const limitedBreaks = breaks.slice(0, limit);
+
+      return {
+        breaks: limitedBreaks,
+        total: breaks.length,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get breaks: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async deleteBreak(
+    driverId: string,
+    breakId: string,
+    tenantId: string,
+  ): Promise<{ message: string }> {
+    try {
+      this.logger.log(`Deleting break ${breakId} for driver ${driverId}`);
+
+      const driver = await this.driverRepository.findOne({
+        where: { id: driverId, tenantId },
+      });
+
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      const hoursOfService = driver.hoursOfService || {
+        breaks: [],
+        drivingHours: 0,
+        onDutyHours: 0,
+        offDutyHours: 0,
+      };
+
+      // Find and remove the break
+      const breakIndex = hoursOfService.breaks.findIndex(
+        (b: any) => b.id === breakId,
+      );
+
+      if (breakIndex === -1) {
+        throw new NotFoundException('Break not found');
+      }
+
+      const deletedBreak = hoursOfService.breaks[breakIndex];
+      hoursOfService.breaks.splice(breakIndex, 1);
+
+      // Update driver
+      driver.hoursOfService = hoursOfService;
+      await this.driverRepository.save(driver);
+
+      this.logger.log(
+        `Break ${breakId} deleted successfully for driver ${driverId}`,
+      );
+
+      return {
+        message: 'Break deleted successfully',
+      };
+    } catch (error) {
+      this.logger.error(`Failed to delete break: ${error.message}`);
+      throw error;
+    }
+  }
+
 }

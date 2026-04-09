@@ -9,10 +9,9 @@ import { HeroMapMockup } from "./hero-map-mockup";
 export function Hero() {
   return (
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-white">
-      {/* Background Gradients */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-primary-100/40 rounded-full blur-[100px] opacity-70" />
-        <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-indigo-50/60 rounded-full blur-[120px] opacity-60" />
+      {/* Background */}
+      <div className="absolute inset-0 -z-10 overflow-hidden bg-slate-50">
+        <div className="absolute top-0 right-0 w-[60%] h-full bg-slate-100 transform skew-x-[-12deg] translate-x-1/4" />
       </div>
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
@@ -55,7 +54,7 @@ export function Hero() {
               <Button
                 asChild
                 size="lg"
-                className="bg-primary-600 hover:bg-primary-700 text-white px-8 h-12 text-base shadow-lg shadow-primary-200/50 rounded-full"
+                className="bg-primary-600 hover:bg-primary-700 text-white px-8 h-12 text-base rounded-full transition-all hover:scale-105"
               >
                 <Link to="/auth">
                   <TranslatedText text="Start Free Trial" />
@@ -90,8 +89,8 @@ export function Hero() {
             className="relative lg:h-[600px] flex items-center justify-center lg:justify-end"
           >
             {/* Main Dashboard Card */}
-            <div className="relative w-full max-w-[600px] aspect-[4/3] rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-700 group">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-white/50" />
+            <div className="relative w-full max-w-[600px] aspect-[4/3] rounded-2xl bg-white border border-slate-200 overflow-hidden transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-700 group">
+              <div className="absolute inset-0 bg-slate-50" />
 
               {/* Mockup Header */}
               <div className="absolute top-0 left-0 right-0 h-12 bg-white border-b border-slate-100 flex items-center px-4 justify-between z-20">
@@ -123,7 +122,7 @@ export function Hero() {
                   {/* Top Stats */}
                   <div className="grid grid-cols-3 gap-3">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                      <div key={i} className="bg-white p-3 rounded-xl border border-slate-100">
                         <div className="h-1.5 w-8 bg-slate-200 rounded mb-2" />
                         <div className="h-3 w-12 bg-slate-900 rounded" />
                       </div>
@@ -131,7 +130,7 @@ export function Hero() {
                   </div>
 
                   {/* Main Map Area */}
-                  <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden p-1 relative">
+                  <div className="flex-1 bg-white rounded-xl border border-slate-100 overflow-hidden p-1 relative">
                     <HeroMapMockup />
                   </div>
                 </div>
@@ -145,10 +144,10 @@ export function Hero() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="absolute -bottom-6 -left-6 lg:-left-12 bg-white/90 backdrop-blur p-4 rounded-xl shadow-2xl border border-slate-100 max-w-[220px] z-40 hidden sm:block"
+              className="absolute -bottom-6 -left-6 lg:-left-12 bg-white p-4 rounded-2xl border border-slate-200 max-w-[220px] z-40 hidden sm:block"
             >
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200">
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping absolute" />
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full relative" />
                 </div>

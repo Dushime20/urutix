@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   CreditCard, 
@@ -9,9 +9,12 @@ import {
   AlertCircle,
   TrendingUp,
   DollarSign,
-  Briefcase
+  ChevronDown,
+  Eye,
+  X
 } from 'lucide-react';
 import { fuelApi } from '../../services/fuelApi';
+import { driverApi } from '../../services/driverApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -22,6 +25,8 @@ interface WalletAdvancesProps {
 export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
   const queryClient = useQueryClient();
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedAdvance, setSelectedAdvance] = useState<any>(null);
   
   // State for advance request
   const [advanceAmount, setAdvanceAmount] = useState<number>(0);
@@ -42,12 +47,39 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
     enabled: !!driverId,
   });
 
+  // Fetch current active trip
+  const { data: currentTrip } = useQuery({
+    queryKey: ['driver-current-trip', driverId],
+    queryFn: () => driverApi.getCurrentTrip(driverId),
+    enabled: !!driverId,
+  });
+
+  // Fetch upcoming trips for the dropdown
+  const { data: upcomingTrips } = useQuery({
+    queryKey: ['driver-upcoming-trips', driverId],
+    queryFn: () => driverApi.getUpcomingTrips(driverId),
+    enabled: !!driverId,
+  });
+
+  // Combine current and upcoming trips
+  const allAvailableTrips = useMemo(() => {
+    const trips = [];
+    if (currentTrip) trips.push(currentTrip);
+    if (upcomingTrips) trips.push(...upcomingTrips);
+    
+    // Remove duplicates if any (though unlikely)
+    return Array.from(new Map(trips.map(item => [item.id, item])).values());
+  }, [currentTrip, upcomingTrips]);
+
   const requestAdvanceMutation = useMutation({
-    mutationFn: (data: { tripId: string, amount: number, notes: string }) => 
-      fuelApi.requestAdvance(data.tripId, data.amount, data.notes),
+    mutationFn: (data: { tripId?: string, amount: number, notes: string }) => 
+      fuelApi.requestAdvance(data.tripId || '', data.amount, data.notes),
     onSuccess: () => {
       toast.success('Advance request submitted successfully!');
       setShowAdvanceForm(false);
+      setAdvanceAmount(0);
+      setAdvanceNotes('');
+      setTripId('');
       queryClient.invalidateQueries({ queryKey: ['driver-advances'] });
     },
     onError: () => {
@@ -57,22 +89,19 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tripId) {
-      toast.error('Please specify a Trip ID');
-      return;
-    }
     if (advanceAmount <= 0) {
       toast.error('Amount must be greater than 0');
       return;
     }
-    requestAdvanceMutation.mutate({ tripId, amount: advanceAmount, notes: advanceNotes });
+    requestAdvanceMutation.mutate({ tripId: tripId || undefined, amount: advanceAmount, notes: advanceNotes });
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(numericAmount || 0);
   };
 
   return (
@@ -179,86 +208,92 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
       {/* Advance Request Modal */}
       <AnimatePresence>
         {showAdvanceForm && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
               onClick={() => setShowAdvanceForm(false)}
-              className="absolute inset-0 bg-[#0f172a]/40 backdrop-blur-sm" 
+              className="absolute inset-0 bg-[#0f172a]/60 backdrop-blur-sm" 
             />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-xl bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
             >
-              <div className="bg-[#345E85] p-10 text-white">
-                <h3 className="text-2xl font-black uppercase tracking-tight">Request Cash Advance</h3>
-                <p className="text-blue-100/70 text-sm font-medium mt-1">Get an advance against your active load</p>
+              <div className="bg-[#345E85] p-6 md:p-10 text-white shrink-0">
+                <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight">Request Cash Advance</h3>
+                <p className="text-blue-100/70 text-xs md:text-sm font-medium mt-1">Get an advance against your active load</p>
               </div>
               
-              <form onSubmit={handleSubmit} className="p-10 space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Trip Reference ID</label>
-                    <div className="relative">
-                      <Briefcase className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <input 
-                        type="text" 
-                        required
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                        placeholder="Enter active Trip ID"
-                        value={tripId}
-                        onChange={(e) => setTripId(e.target.value)}
+              <div className="overflow-y-auto custom-scrollbar p-6 md:p-10">
+                <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Link to Trip (Optional)</label>
+                      <div className="relative">
+                        <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <select
+                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-6 pr-12 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
+                          value={tripId}
+                          onChange={(e) => setTripId(e.target.value)}
+                        >
+                          <option value="">No trip linked</option>
+                          {(allAvailableTrips || []).map((trip: any) => (
+                            <option key={trip.id} value={trip.id}>
+                              {trip.tripNumber} — {trip.origin?.city || ''} → {trip.destination?.city || ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Advance Amount ($)</label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <input 
+                          type="number" 
+                          required
+                          className="w-full h-16 md:h-20 bg-slate-50 border border-slate-100 rounded-[1.5rem] md:rounded-[2rem] pl-14 pr-6 text-2xl md:text-3xl font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          placeholder="0.00"
+                          value={advanceAmount || ''}
+                          onChange={(e) => setAdvanceAmount(parseFloat(e.target.value))}
+                        />
+                      </div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[#345E85] px-2 text-right">Maximum Limit: $500.00</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Justification / Notes</label>
+                      <textarea 
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-6 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all min-h-[100px]"
+                        placeholder="Why do you need this advance?"
+                        value={advanceNotes}
+                        onChange={(e) => setAdvanceNotes(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Advance Amount ($)</label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <input 
-                        type="number" 
-                        required
-                        className="w-full h-20 bg-slate-50 border border-slate-100 rounded-[2rem] pl-14 pr-6 text-3xl font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                        placeholder="0.00"
-                        value={advanceAmount || ''}
-                        onChange={(e) => setAdvanceAmount(parseFloat(e.target.value))}
-                      />
-                    </div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-[#345E85] px-2 text-right">Maximum Limit: $500.00</p>
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100">
+                    <button 
+                      type="button" 
+                      onClick={() => setShowAdvanceForm(false)}
+                      className="order-2 sm:order-1 flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all font-black"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={requestAdvanceMutation.isPending}
+                      className="order-1 sm:order-2 flex-[2] h-16 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {requestAdvanceMutation.isPending ? 'Submitting...' : 'Submit Request'}
+                    </button>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Justification / Notes</label>
-                    <textarea 
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-6 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all min-h-[100px]"
-                      placeholder="Why do you need this advance?"
-                      value={advanceNotes}
-                      onChange={(e) => setAdvanceNotes(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-6 border-t border-slate-100">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowAdvanceForm(false)}
-                    className="flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all font-black"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    disabled={requestAdvanceMutation.isPending}
-                    className="flex-[2] h-16 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    {requestAdvanceMutation.isPending ? 'Submitting...' : 'Submit Request'}
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}
@@ -299,35 +334,45 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                     </div>
                   </div>
 
-                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-12 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-50">
-                      <div className="text-left sm:text-right">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center sm:justify-end gap-1.5">
-                          <Clock size={10} />
-                          Timestamp
-                        </p>
-                        <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{new Date(advance.createdAt).toLocaleDateString()}</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-1">{new Date(advance.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                      </div>
- 
-                      <div className="text-left sm:text-right w-full sm:w-auto">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Amount</p>
-                        <p className={`text-xl font-black tracking-tight ${advance.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                          {advance.type === 'DEBIT' ? '-' : '+'}{formatCurrency(advance.amount)}
-                        </p>
-                        <div className="mt-2 flex sm:justify-end">
-                          <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border flex items-center gap-1.5 ${
-                            advance.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            advance.status === 'REJECTED' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                            'bg-amber-50 text-amber-600 border-amber-100'
-                          }`}>
-                            {advance.status === 'APPROVED' ? <CheckCircle size={10} /> : 
-                             advance.status === 'REJECTED' ? <AlertCircle size={10} /> : 
-                             <Clock size={10} />}
-                            {advance.status}
+                      <div className="flex items-center gap-4 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-50 justify-between sm:justify-end">
+                        <div className="text-left sm:text-right">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center sm:justify-end gap-1.5">
+                            <Clock size={10} />
+                            Timestamp
+                          </p>
+                          <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{new Date(advance.createdAt).toLocaleDateString()}</p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1">{new Date(advance.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+  
+                        <div className="text-left sm:text-right">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Amount</p>
+                          <p className={`text-xl font-black tracking-tight ${advance.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                            {advance.type === 'DEBIT' ? '-' : '+'}{formatCurrency(advance.amount || advance.advanceAmount)}
+                          </p>
+                          <div className="mt-2 flex sm:justify-end items-center gap-3">
+                            <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border flex items-center gap-1.5 ${
+                              advance.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              advance.status === 'REJECTED' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                              'bg-amber-50 text-amber-600 border-amber-100'
+                            }`}>
+                              {advance.status === 'APPROVED' ? <CheckCircle size={10} /> : 
+                               advance.status === 'REJECTED' ? <AlertCircle size={10} /> : 
+                               <Clock size={10} />}
+                              {advance.status}
+                            </div>
+                            <button 
+                              onClick={() => {
+                                setSelectedAdvance(advance);
+                                setShowDetailsModal(true);
+                              }}
+                              className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:bg-white hover:border-[#345E85]/30 transition-all shadow-sm"
+                              title="View Details"
+                            >
+                              <Eye size={14} />
+                            </button>
                           </div>
                         </div>
                       </div>
-                   </div>
 
                 </div>
               </div>
@@ -343,6 +388,95 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
           </div>
         )}
       </section>
+
+      {/* Advance Details Modal */}
+      <AnimatePresence>
+        {showDetailsModal && selectedAdvance && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDetailsModal(false)}
+              className="absolute inset-0 bg-[#0f172a]/60 backdrop-blur-sm" 
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+            >
+              <div className="bg-slate-50 p-6 md:p-10 flex items-center justify-between border-b border-slate-100 shrink-0">
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black text-[#0f172a] uppercase tracking-tight">Request Details</h3>
+                  <p className="text-slate-400 text-xs font-black uppercase tracking-widest mt-1">Ref: {selectedAdvance.id}</p>
+                </div>
+                <button 
+                  onClick={() => setShowDetailsModal(false)}
+                  className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-rose-600 transition-all hover:shadow-lg"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-8">
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-1">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Status</p>
+                      <div className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border items-center gap-1.5 ${
+                        selectedAdvance.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                        selectedAdvance.status === 'REJECTED' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                        'bg-amber-50 text-amber-600 border-amber-100'
+                      }`}>
+                         {selectedAdvance.status}
+                      </div>
+                   </div>
+                   <div className="space-y-1">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Type</p>
+                      <p className="text-xs font-black text-[#0f172a] uppercase">{selectedAdvance.type}</p>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-dashed border-slate-100">
+                   <div className="space-y-1">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Date & Time</p>
+                      <p className="text-xs font-bold text-slate-700">
+                        {new Date(selectedAdvance.createdAt).toLocaleDateString()} at {new Date(selectedAdvance.createdAt).toLocaleTimeString()}
+                      </p>
+                   </div>
+                   {selectedAdvance.tripId && (
+                     <div className="space-y-1">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Linked Trip</p>
+                        <p className="text-xs font-bold text-blue-600 hover:underline cursor-pointer">Ref: {selectedAdvance.tripId.slice(0, 8)}</p>
+                     </div>
+                   )}
+                </div>
+
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">Amount Requested</p>
+                   <p className="text-3xl font-black text-[#0f172a] tracking-tight">{formatCurrency(selectedAdvance.amount || selectedAdvance.advanceAmount)}</p>
+                </div>
+
+                <div className="space-y-3">
+                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Reasoning / Justification</p>
+                   <div className="p-5 bg-white border border-slate-100 rounded-2xl text-xs font-medium text-slate-600 italic leading-relaxed">
+                      "{selectedAdvance.notes || 'No justification provided.'}"
+                   </div>
+                </div>
+              </div>
+
+              <div className="p-6 md:p-10 pt-0 shrink-0">
+                <button 
+                  onClick={() => setShowDetailsModal(false)}
+                  className="w-full h-16 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-[0.98]"
+                >
+                  Close Record
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

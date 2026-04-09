@@ -799,4 +799,185 @@ export class DriverController {
       req.user.id,
     );
   }
+
+  @Post(':id/break/start')
+  @Roles(
+    UserRole.DRIVER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  @ApiOperation({
+    summary: 'Start driver break',
+    description: 'Start a break period for the driver to track hours of service compliance',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        breakType: {
+          type: 'string',
+          enum: ['REST', 'MEAL', 'SLEEP', 'OTHER'],
+          description: 'Type of break',
+        },
+        notes: {
+          type: 'string',
+          description: 'Optional notes about the break',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Break started successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        breakId: { type: 'string' },
+        startTime: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async startBreak(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { breakType?: string; notes?: string },
+    @Request() req,
+  ): Promise<{ message: string; breakId: string; startTime: Date }> {
+    return this.driverService.startBreak(id, body, req.user.tenantId);
+  }
+
+  @Post(':id/break/end')
+  @Roles(
+    UserRole.DRIVER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  @ApiOperation({
+    summary: 'End driver break',
+    description: 'End the current break period for the driver',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        notes: {
+          type: 'string',
+          description: 'Optional notes about the break completion',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Break ended successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        breakId: { type: 'string' },
+        duration: { type: 'number', description: 'Break duration in minutes' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'No active break found' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async endBreak(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { notes?: string },
+    @Request() req,
+  ): Promise<{ message: string; breakId: string; duration: number }> {
+    return this.driverService.endBreak(id, body, req.user.tenantId);
+  }
+
+  @Get(':id/breaks')
+  @Roles(
+    UserRole.DRIVER,
+    UserRole.FLEET_MANAGER,
+    UserRole.FLEET_DISPATCHER,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  @ApiOperation({
+    summary: 'Get driver break history',
+    description: 'Retrieve break history for the driver with optional date filtering',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date for filtering (ISO 8601 format)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'End date for filtering (ISO 8601 format)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Maximum number of breaks to return',
+  })
+  @ApiOkResponse({
+    description: 'Break history retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        breaks: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              breakType: { type: 'string' },
+              startTime: { type: 'string', format: 'date-time' },
+              endTime: { type: 'string', format: 'date-time' },
+              duration: { type: 'number' },
+              notes: { type: 'string' },
+            },
+          },
+        },
+        total: { type: 'number' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async getBreaks(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('limit') limit?: number,
+    @Request() req?,
+  ): Promise<{ breaks: any[]; total: number }> {
+    return this.driverService.getBreaks(
+      id,
+      { startDate, endDate, limit },
+      req.user.tenantId,
+    );
+  }
+
+  @Delete(':id/breaks/:breakId')
+  @ApiOperation({ summary: 'Delete/revert a driver break' })
+  @ApiParam({ name: 'id', description: 'Driver ID' })
+  @ApiParam({ name: 'breakId', description: 'Break ID to delete' })
+  @ApiOkResponse({ description: 'Break deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Driver or break not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  async deleteBreak(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('breakId') breakId: string,
+    @Request() req,
+  ): Promise<{ message: string }> {
+    return this.driverService.deleteBreak(id, breakId, req.user.tenantId);
+  }
 }

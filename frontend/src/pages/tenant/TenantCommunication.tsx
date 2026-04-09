@@ -29,9 +29,12 @@ interface GroupedPartners {
 interface CampaignLog {
   id: string;
   subject: string;
+  message?: string;
+  channels: string[];
+  sentBy?: string;
   recipientsCount: number;
-  sentCount: number;
-  failedCount: number;
+  sentCount?: number;
+  failedCount?: number;
   status: string;
   createdAt: string;
   metadata?: any;
@@ -83,7 +86,7 @@ const ChannelPill: React.FC<{ ch: Channel }> = ({ ch }) => {
   const c = CHANNELS.find(x => x.id === ch)!;
   const Icon = c.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${c.bg} ${c.border} border`} style={{ color: c.color }}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${c.bg} dark:bg-opacity-20 ${c.border} dark:border-opacity-30 border`} style={{ color: c.color }}>
       <Icon size={10} />
       {c.label}
     </span>
@@ -135,7 +138,10 @@ const TenantCommunication: React.FC = () => {
     try {
       const res = await api.get('/tenant-dashboard/communicate/logs');
       if (res.data.success) setLogs(res.data.data);
-    } catch { /* silent */ } finally { setLogsLoading(false); }
+      else toast.error(res.data.message || 'Failed to load history');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to load communication history');
+    } finally { setLogsLoading(false); }
   };
 
   const toggleChannel = (ch: Channel) => {
@@ -247,16 +253,16 @@ const TenantCommunication: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* ── Page Header ── */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 transition-colors duration-200">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-slate-100 rounded-xl">
-                <Users className="w-5 h-5 text-slate-600" />
+              <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                <Users className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Partner Communication</h1>
-                <p className="text-slate-500 text-sm font-medium">Communicate with your partners across multiple channels</p>
+                <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Partner Communication</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Communicate with your partners across multiple channels</p>
               </div>
             </div>
           </div>
@@ -264,9 +270,9 @@ const TenantCommunication: React.FC = () => {
             {CHANNELS.map(ch => {
               const Icon = ch.icon;
               return (
-                <div key={ch.id} className="flex flex-col items-center gap-1 px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <Icon className="w-4 h-4 text-slate-600" />
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{ch.label}</span>
+                <div key={ch.id} className="flex flex-col items-center gap-1 px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <Icon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-wider">{ch.label}</span>
                 </div>
               );
             })}
@@ -275,7 +281,7 @@ const TenantCommunication: React.FC = () => {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-1.5 inline-flex gap-1.5">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-1.5 inline-flex gap-1.5 transition-colors duration-200">
         {tabs.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
           return (
@@ -285,7 +291,7 @@ const TenantCommunication: React.FC = () => {
                 ? { background: '#1e293b', color: '#fff', boxShadow: '0 4px 14px rgba(30,41,59,0.3)' }
                 : { color: '#64748b' }}>
               <Icon size={14} strokeWidth={active ? 2.5 : 2} />
-              {label}
+              <span className={!active ? "dark:text-slate-400" : ""}>{label}</span>
             </button>
           );
         })}
@@ -299,25 +305,31 @@ const TenantCommunication: React.FC = () => {
           <div className="space-y-4">
 
             {/* Channel picker */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">1. Channels</p>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5">
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">1. Channels</p>
               <div className="space-y-2">
                   {CHANNELS.map(ch => {
                     const Icon = ch.icon;
                     const active = selectedChannels.includes(ch.id);
                     return (
                       <button key={ch.id} onClick={() => toggleChannel(ch.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left"
-                        style={{ borderColor: active ? ch.color : '#e2e8f0', background: active ? `${ch.color}0d` : '#fff' }}>
-                        <div className="p-2 rounded-xl" style={{ background: active ? `${ch.color}20` : '#f1f5f9', color: active ? ch.color : '#94a3b8' }}>
-                          <Icon size={15} />
+                        style={{ 
+                          borderColor: active ? ch.color : undefined, 
+                          background: active ? `${ch.color}0d` : undefined
+                        }}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                          active ? '' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                        }`}>
+                        <div className={`p-2 rounded-xl ${active ? '' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`} 
+                          style={{ background: active ? `${ch.color}40` : undefined }}>
+                          <Icon size={15} style={active ? { color: ch.color } : {}} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-slate-800">{ch.label}</p>
-                          <p className="text-[10px] text-slate-400 font-medium truncate">{ch.desc}</p>
+                          <p className="text-sm font-bold text-slate-800 dark:text-white">{ch.label}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">{ch.desc}</p>
                         </div>
-                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                          style={{ borderColor: active ? ch.color : '#cbd5e1', background: active ? ch.color : 'transparent' }}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${active ? '' : 'border-slate-300 dark:border-slate-600'}`}
+                          style={{ borderColor: active ? ch.color : undefined, background: active ? ch.color : 'transparent' }}>
                           {active && <CheckCircle size={11} className="text-white" />}
                         </div>
                       </button>
@@ -330,24 +342,24 @@ const TenantCommunication: React.FC = () => {
               </div>
 
               {/* Partner Selection */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
                 <button className="w-full flex items-center justify-between px-5 py-4" onClick={() => setShowPartnerFilters(v => !v)}>
                   <div className="flex items-center gap-2">
-                    <Users size={13} className="text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Select Partners</span>
+                    <Users size={13} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">2. Select Partners</span>
                     {getSelectedPartnersCount() > 0 && (
-                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white bg-slate-800">
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white bg-slate-800 dark:bg-slate-700">
                         {getSelectedPartnersCount()}
                       </span>
                     )}
                   </div>
-                  {showPartnerFilters ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+                  {showPartnerFilters ? <ChevronUp size={13} className="text-slate-400 dark:text-slate-500" /> : <ChevronDown size={13} className="text-slate-400 dark:text-slate-500" />}
                 </button>
 
                 {showPartnerFilters && (
-                  <div className="px-5 pb-5 space-y-5 border-t border-slate-100">
+                  <div className="px-5 pb-5 space-y-5 border-t border-slate-100 dark:border-slate-800">
                     <div className="pt-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Select by Role</p>
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Select by Role</p>
                       <div className="space-y-2">
                         {Object.entries(partners).map(([role, rolePartners]) => {
                           const roleColor = ROLE_COLORS[role] || { bg: 'bg-gray-50', text: 'text-gray-700', icon: '👤' };
@@ -355,24 +367,24 @@ const TenantCommunication: React.FC = () => {
                           const selectedInRole = rolePartners.filter(p => selectedPartnerIds.includes(p.id)).length;
                           
                           return (
-                            <div key={role} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                             <div key={role} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-200">
                               <label className="flex items-center gap-3 cursor-pointer flex-1">
                                 <input 
                                   type="checkbox" 
-                                  className="w-4 h-4 rounded accent-slate-800"
+                                  className="w-4 h-4 rounded accent-slate-800 dark:accent-blue-600"
                                   checked={isRoleSelected}
                                   onChange={() => toggleRole(role)}
                                 />
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm">{roleColor.icon}</span>
-                                  <span className="text-sm font-bold text-slate-800">{ROLE_LABELS[role] || role}</span>
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${roleColor.bg} ${roleColor.text}`}>
+                                  <span className="text-sm font-bold text-slate-800 dark:text-white">{ROLE_LABELS[role] || role}</span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${roleColor.bg} dark:bg-opacity-20 ${roleColor.text} dark:opacity-80`}>
                                     {rolePartners.length}
                                   </span>
                                 </div>
                               </label>
                               {selectedInRole > 0 && (
-                                <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                                   {selectedInRole} selected
                                 </span>
                               )}
@@ -385,7 +397,7 @@ const TenantCommunication: React.FC = () => {
                     {/* Individual Partner Selection */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specific Partners</p>
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Specific Partners</p>
                         <div className="flex items-center gap-2">
                           {selectedPartnerIds.length > 0 && (
                             <button onClick={() => setSelectedPartnerIds([])}
@@ -421,31 +433,31 @@ const TenantCommunication: React.FC = () => {
                       {/* Partner picker dropdown */}
                       <button
                         onClick={() => setPartnerPickerOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-all">
+                        className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
                         <span className="flex items-center gap-2">
-                          <User size={13} className="text-slate-400" />
+                          <User size={13} className="text-slate-400 dark:text-slate-500" />
                           {selectedPartnerIds.length === 0
                             ? 'Select individual partners…'
                             : `${selectedPartnerIds.length} partners selected`}
                         </span>
-                        {partnerPickerOpen ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+                        {partnerPickerOpen ? <ChevronUp size={13} className="text-slate-400 dark:text-slate-500" /> : <ChevronDown size={13} className="text-slate-400 dark:text-slate-500" />}
                       </button>
                       {/* Partner dropdown list */}
                       {partnerPickerOpen && (
-                        <div className="mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                        <div className="mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg overflow-hidden transition-colors duration-200">
                           {/* Search input */}
-                          <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
-                            <Search size={13} className="text-slate-400 flex-shrink-0" />
+                          <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                            <Search size={13} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
                             <input
                               autoFocus
                               type="text"
                               value={partnerSearch}
                               onChange={e => setPartnerSearch(e.target.value)}
                               placeholder="Search partners…"
-                              className="flex-1 text-xs font-medium text-slate-700 outline-none bg-transparent placeholder-slate-400"
+                              className="flex-1 text-xs font-medium text-slate-700 dark:text-white outline-none bg-transparent placeholder-slate-400 dark:placeholder-slate-600"
                             />
                             {partnerSearch && (
-                              <button onClick={() => setPartnerSearch('')} className="text-slate-400 hover:text-slate-600">
+                              <button onClick={() => setPartnerSearch('')} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                                 <X size={12} />
                               </button>
                             )}
@@ -471,11 +483,11 @@ const TenantCommunication: React.FC = () => {
                               return (
                                 <div key={role}>
                                   {/* Role header */}
-                                  <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                                  <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       <span className="text-sm">{roleColor.icon}</span>
-                                      <span className="text-xs font-bold text-slate-700">{ROLE_LABELS[role] || role}</span>
-                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${roleColor.bg} ${roleColor.text}`}>
+                                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{ROLE_LABELS[role] || role}</span>
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${roleColor.bg} ${roleColor.text} dark:opacity-80`}>
                                         {filteredPartners.length}
                                       </span>
                                     </div>
@@ -483,14 +495,14 @@ const TenantCommunication: React.FC = () => {
                                       {someSelected && !allSelected && (
                                         <button 
                                           onClick={() => selectAllPartnersInRole(role)}
-                                          className="text-[9px] font-black text-slate-500 hover:text-slate-800 uppercase tracking-widest">
+                                          className="text-[9px] font-black text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white uppercase tracking-widest">
                                           All
                                         </button>
                                       )}
                                       {someSelected && (
                                         <button 
                                           onClick={() => deselectAllPartnersInRole(role)}
-                                          className="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest">
+                                          className="text-[9px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest">
                                           None
                                         </button>
                                       )}
@@ -498,7 +510,7 @@ const TenantCommunication: React.FC = () => {
                                   </div>
 
                                   {/* Partners in role */}
-                                  <div className="divide-y divide-slate-50">
+                                  <div className="divide-y divide-slate-50 dark:divide-slate-800">
                                     {filteredPartners.map(partner => {
                                       const selected = selectedPartnerIds.includes(partner.id);
                                       const statusColor = partner.status === 'ACTIVE'
@@ -508,22 +520,22 @@ const TenantCommunication: React.FC = () => {
                                       return (
                                         <button key={partner.id}
                                           onClick={() => togglePartner(partner.id)}
-                                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left">
+                                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left">
                                           {/* Checkbox */}
-                                          <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                            style={{ borderColor: selected ? '#1e293b' : '#cbd5e1', background: selected ? '#1e293b' : 'transparent' }}>
+                                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'bg-slate-800 dark:bg-blue-600 border-slate-800 dark:border-blue-600' : 'border-slate-300 dark:border-slate-700'}`}
+                                            style={{ borderColor: selected ? (activeTab === 'compose' ? '#1e293b' : '#3b82f6') : undefined }}>
                                             {selected && <CheckCircle size={10} className="text-white" />}
                                           </div>
                                           {/* Info */}
                                           <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-slate-800 truncate">{partner.name}</p>
-                                            <p className="text-[10px] text-slate-400 truncate">{partner.email}</p>
+                                            <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{partner.name}</p>
+                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{partner.email}</p>
                                             {partner.companyName && (
-                                              <p className="text-[10px] text-slate-400 truncate">{partner.companyName}</p>
+                                              <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{partner.companyName}</p>
                                             )}
                                           </div>
                                           {/* Status badge */}
-                                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0 ${statusColor.bg} ${statusColor.text}`}>
+                                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0 ${statusColor.bg} dark:bg-opacity-20 ${statusColor.text} dark:opacity-80`}>
                                             {partner.status}
                                           </span>
                                         </button>
@@ -536,12 +548,12 @@ const TenantCommunication: React.FC = () => {
                           </div>
 
                           {/* Footer */}
-                          <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-                            <p className="text-[10px] text-slate-400 font-medium">
+                          <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                               {selectedPartnerIds.length} selected · {getAllPartners().length} total
                             </p>
                             <button onClick={() => setPartnerPickerOpen(false)}
-                              className="text-[10px] font-black text-slate-800 uppercase tracking-widest hover:underline">
+                              className="text-[10px] font-black text-slate-800 dark:text-white uppercase tracking-widest hover:underline">
                               Done
                             </button>
                           </div>
@@ -558,8 +570,8 @@ const TenantCommunication: React.FC = () => {
                     )}
                     
                     {selectedPartnerIds.length === 0 && selectedRoles.length === 0 && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                        <p className="text-xs text-red-600 font-medium text-center">⚠️ Please select partners by role or individually to send messages</p>
+                      <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-xl">
+                        <p className="text-xs text-red-600 dark:text-red-400 font-medium text-center">⚠️ Please select partners by role or individually to send messages</p>
                       </div>
                     )}
                   </div>
@@ -569,33 +581,33 @@ const TenantCommunication: React.FC = () => {
 
             {/* Right: Composer */}
             <div className="xl:col-span-2 space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5">3. Compose Message</p>
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-5">3. Compose Message</p>
 
                 <div className="space-y-4">
                   {/* Subject */}
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Subject / Title</label>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Subject / Title</label>
                     <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
                       placeholder="E.g. Important Update for Partners"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all" />
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-white outline-none focus:border-slate-400 dark:focus:border-slate-600 focus:ring-2 focus:ring-slate-100 dark:focus:ring-slate-900 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                   </div>
 
                   {/* Plain message (SMS / WhatsApp / In-App) */}
                   {needsMessage && (
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
                         Message Content
-                        <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 normal-case text-[9px] font-bold">
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 normal-case text-[9px] font-bold">
                           {selectedChannels.includes('email') ? 'Email Plain-Text & Fallback' : 'SMS · WhatsApp · In-App'}
                         </span>
                       </label>
                       <textarea rows={4} value={message} onChange={e => setMessage(e.target.value)}
                         placeholder="Keep under 160 characters for SMS. Plain text — no HTML."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none resize-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all" />
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-white outline-none resize-none focus:border-slate-400 dark:focus:border-slate-600 focus:ring-2 focus:ring-slate-100 dark:focus:ring-slate-900 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                       <div className="flex justify-between mt-1">
-                        <p className="text-[10px] text-slate-400 font-medium">Recommended: ≤ 160 chars for SMS</p>
-                        <p className={`text-[10px] font-bold tabular-nums ${message.length > 160 ? 'text-amber-500' : 'text-slate-400'}`}>{message.length} chars</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Recommended: ≤ 160 chars for SMS</p>
+                        <p className={`text-[10px] font-bold tabular-nums ${message.length > 160 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>{message.length} chars</p>
                       </div>
                     </div>
                   )}
@@ -604,16 +616,16 @@ const TenantCommunication: React.FC = () => {
               </div>
 
               {/* Send bar */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Sending via</p>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Sending via</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedChannels.length === 0
                       ? <span className="text-xs text-red-400 font-medium">No channels selected</span>
                       : selectedChannels.map(ch => <ChannelPill key={ch} ch={ch} />)
                     }
                   </div>
-                  <p className={`text-[10px] mt-2 font-medium ${getSelectedPartnersCount() === 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                  <p className={`text-[10px] mt-2 font-medium ${getSelectedPartnersCount() === 0 ? 'text-red-400' : 'text-slate-400 dark:text-slate-500'}`}>
                     Recipients: {getSelectedPartnersCount()} partners {getSelectedPartnersCount() === 0 ? '⚠️' : ''}
                   </p>
                 </div>
@@ -636,63 +648,72 @@ const TenantCommunication: React.FC = () => {
 
       {/* ════════════════════ HISTORY ════════════════════ */}
       {activeTab === 'logs' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-black text-slate-800">Communication History</h3>
-              <p className="text-xs text-slate-400 mt-0.5">{logs.length} campaign{logs.length !== 1 ? 's' : ''}</p>
+              <h3 className="text-lg font-black text-slate-800 dark:text-white">Communication History</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{logs.length} campaign{logs.length !== 1 ? 's' : ''}</p>
             </div>
             <button onClick={fetchLogs} disabled={logsLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition-all">
+              className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-all">
               <RefreshCw size={13} className={logsLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
           </div>
 
-          {logs.length === 0 ? (
+          {logsLoading ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : logs.length === 0 ? (
             <div className="py-20 text-center">
-              <div className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center mx-auto mb-4">
-                <Clock className="text-slate-300" size={32} />
+              <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4">
+                <Clock className="text-slate-300 dark:text-slate-600" size={32} />
               </div>
-              <p className="font-bold text-slate-500">No communications yet</p>
-              <p className="text-xs text-slate-400 mt-1">Start communicating with your partners using the compose tab.</p>
+              <p className="font-bold text-slate-500 dark:text-slate-400">No communications yet</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Start communicating with your partners using the compose tab.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-100">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 transition-colors duration-200">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-100">
+                <thead className="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Recipients</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Sent</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Failed</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Subject</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Channels</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sent By</th>
+                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Recipients</th>
+                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-700 text-sm max-w-xs truncate">{log.subject}</td>
-                      <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600">{log.recipientsCount}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{log.sentCount}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="font-bold text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{log.failedCount}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                          log.status === 'sent' || log.status === 'sending' ? 'bg-emerald-50 text-emerald-600'
-                          : log.status === 'failed' ? 'bg-red-50 text-red-600'
-                          : 'bg-amber-50 text-amber-600'
-                        }`}>{log.status}</span>
-                      </td>
-                      <td className="px-6 py-4 text-right text-xs text-slate-400 font-medium tabular-nums">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                  {logs.map(log => {
+                    const channels = (log.channels || ['email']).map((c: string) => c.toLowerCase()) as Channel[];
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300 text-sm max-w-[180px] truncate">{log.subject}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {channels.map(ch => <ChannelPill key={ch} ch={ch} />)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 max-w-[140px] truncate">{log.sentBy || '—'}</td>
+                        <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600 dark:text-slate-400">{log.recipientsCount}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                            log.status === 'sent' || log.status === 'sending' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                            : log.status === 'failed' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
+                          }`}>{log.status}</span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums whitespace-nowrap">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

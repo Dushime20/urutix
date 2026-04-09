@@ -1,9 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
+// Fallback role → permissions map used when the permissions tables don't exist in DB
+const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
+    SUPER_ADMIN: ['*'],
+    ADMIN: ['*'],
+    TENANT_ADMIN: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+    TRUCK_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+    FLEET_MANAGER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+    FLEET_ACCOUNTANT: ['analytics:view_own', 'analytics:view_tenant', 'analytics:financial', 'analytics:cost_trends'],
+    FLEET_DISPATCHER: ['analytics:view_own', 'analytics:view_tenant'],
+    FLEET_SAFETY_OFFICER: ['analytics:view_own', 'analytics:view_tenant'],
+    CARGO_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+    DRIVER: ['analytics:view_own'],
+    BROKER: ['analytics:view_own', 'analytics:view_tenant'],
+};
+
 /**
  * Permission Helper Utility
- * Provides database-driven permission checks with caching
+ * Provides database-driven permission checks with caching.
+ * Falls back to a built-in role map when the permissions tables don't exist.
  */
 @Injectable()
 export class PermissionHelper {
@@ -11,17 +27,41 @@ export class PermissionHelper {
     private permissionCache: Map<string, string[]> = new Map();
     private cacheExpiry: Map<string, number> = new Map();
     private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    private tablesExist: boolean | null = null; // null = not yet checked
 
     constructor(private dataSource: DataSource) {}
 
     /**
-     * Get all permissions for a role from database with caching
+     * Check once whether the permissions tables exist in the DB.
+     */
+    private async checkTablesExist(): Promise<boolean> {
+        if (this.tablesExist !== null) return this.tablesExist;
+        try {
+            const result = await this.dataSource.query(
+                `SELECT COUNT(*) as count FROM information_schema.tables
+                 WHERE table_schema = 'public' AND table_name = 'permissions'`
+            );
+            this.tablesExist = parseInt(result[0].count) > 0;
+        } catch {
+            this.tablesExist = false;
+        }
+        return this.tablesExist;
+    }
+
+    /**
+     * Get all permissions for a role from database with caching.
+     * Falls back to ROLE_PERMISSION_DEFAULTS if tables don't exist.
      */
     async getRolePermissions(roleName: string): Promise<string[]> {
-        // Check cache first
         const cached = this.getCachedPermissions(roleName);
-        if (cached) {
-            return cached;
+        if (cached) return cached;
+
+        const tablesExist = await this.checkTablesExist();
+
+        if (!tablesExist) {
+            const permissions = ROLE_PERMISSION_DEFAULTS[roleName] || [];
+            this.setCachedPermissions(roleName, permissions);
+            return permissions;
         }
 
         try {
@@ -33,16 +73,14 @@ export class PermissionHelper {
                  ORDER BY p.resource, p.action`,
                 [roleName]
             );
-            
             const permissions = result.map((r: any) => r.permission);
-            
-            // Cache the result
             this.setCachedPermissions(roleName, permissions);
-            
             return permissions;
         } catch (error) {
-            this.logger.error(`Error fetching permissions for role ${roleName}:`, error);
-            return [];
+            this.logger.warn(`DB permission lookup failed for ${roleName}, using defaults`);
+            const permissions = ROLE_PERMISSION_DEFAULTS[roleName] || [];
+            this.setCachedPermissions(roleName, permissions);
+            return permissions;
         }
     }
 

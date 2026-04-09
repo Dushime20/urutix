@@ -40,77 +40,67 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200 pb-4">
-        <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-          <FaTools className="w-5 h-5 text-gray-600" />
-          Loading Equipment Configuration
-        </h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Configure the loading and unloading equipment available on this truck.
-        </p>
+      <div className="flex items-center gap-2 mb-6">
+        <FaTools className="w-4 h-4 text-blue-600 dark:text-blue-500" />
+        <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Hydraulic & Loading Systems</h3>
       </div>
 
       {/* Equipment Selection */}
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center">
-            Available Equipment
-            <span className="ml-2 text-xs text-primary-500 font-normal">(Some items used in matching)</span>
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center mb-4">Hardware Inventory</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {equipmentOptions.map(({ key, label, icon, description }) => (
-              <div key={key} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-                <label className="flex items-start space-x-3 cursor-pointer">
+              <label key={key} className="group flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">
+                <div className="pt-1">
                   <input
                     type="checkbox"
                     checked={formData.loadingCapabilities?.[key] || false}
                     onChange={() => handleEquipmentToggle(key)}
-                    className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-primary-500"
+                    className="w-4 h-4 rounded border-gray-200 dark:border-gray-600 text-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:ring-offset-0 bg-white dark:bg-gray-700 transition-all"
                   />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{icon}</span>
-                      <span className="font-medium text-gray-900 flex items-center">
-                        {label}
-                        {(key === 'hasTailLift' || key === 'hasLoadingDock') && (
-                          <span className="ml-2 text-xs text-primary-500 font-normal">(Used in matching)</span>
-                        )}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                      {icon} {label}
+                    </span>
+                    {(key === 'hasTailLift' || key === 'hasLoadingDock') && (
+                      <span className="text-[9px] text-blue-600 dark:text-blue-500 font-bold italic uppercase tracking-tighter">Match Critical</span>
+                    )}
                   </div>
-                </label>
-              </div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
+                    {description}
+                  </p>
+                </div>
+              </label>
             ))}
           </div>
         </div>
 
         {/* Loading/Unloading Time Estimates */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <FaClock className="w-4 h-4 text-gray-500" />
-            <label className="block text-sm font-medium text-gray-700">
-              Loading/Unloading Time Estimates
-            </label>
-          </div>
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center">
+            <FaClock className="w-3.5 h-3.5 mr-2 text-blue-600 dark:text-blue-500" />
+            Operational Time Matrix
+          </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Max Loading Time (minutes)</label>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Loading Latency (MIN)</label>
               <input
                 type="number"
                 value={formData.loadingCapabilities?.maxLoadingTime || ''}
                 onChange={(e) => handleTimeChange('maxLoadingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
                 placeholder="30"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Max Unloading Time (minutes)</label>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Unloading Latency (MIN)</label>
               <input
                 type="number"
                 value={formData.loadingCapabilities?.maxUnloadingTime || ''}
                 onChange={(e) => handleTimeChange('maxUnloadingTime', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
                 placeholder="30"
               />
             </div>
@@ -118,23 +108,22 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
         </div>
 
         {/* Equipment Summary */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Selected Equipment Summary</h4>
+        <div className="bg-blue-600/5 dark:bg-blue-600/10 rounded-lg p-4 border border-blue-600/10">
+          <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-3">Manifest Summary</h4>
           <div className="flex flex-wrap gap-2">
             {equipmentOptions
               .filter(({ key }) => formData.loadingCapabilities?.[key])
               .map(({ key, label, icon }) => (
-                <span key={key} className="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full flex items-center gap-1">
-                  <span>{icon}</span>
+                <span key={key} className="px-2.5 py-1 bg-white dark:bg-gray-800 text-[10px] font-bold text-gray-900 dark:text-white rounded-md border border-gray-100 dark:border-gray-700 uppercase tracking-wider shadow-none transition-all">
+                  <span className="mr-1.5 opacity-70">{icon}</span>
                   {label}
                 </span>
               ))}
             {equipmentOptions.filter(({ key }) => formData.loadingCapabilities?.[key]).length === 0 && (
-              <span className="text-gray-500 text-sm">No equipment selected</span>
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest italic">NO ASSETS REGISTERED</span>
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 };

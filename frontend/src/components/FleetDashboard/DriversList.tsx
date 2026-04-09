@@ -28,7 +28,8 @@ import {
 	Activity,
 	MapPin,
 	Heart,
-	StickyNote
+	StickyNote,
+	Edit3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fleetApi } from '../../services/fleetApi';
@@ -37,16 +38,18 @@ import type { Driver } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import DocumentUploadModal from '../documents/DocumentUploadModal';
 import { cn } from '../../utils/cn';
+import { DriverBreakManagement } from './DriverBreakManagement';
 
 type StatusOption = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ON_LEAVE' | 'TERMINATED' | '';
 type AvailabilityOption = 'AVAILABLE' | 'UNAVAILABLE' | 'IN_TRANSIT' | '';
 
 interface DriversListProps {
 	onAddDriver?: () => void;
+	onEditDriver?: (driver: Driver) => void;
 	refreshTrigger?: number;
 }
 
-export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTrigger }) => {
+export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDriver, refreshTrigger }) => {
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
@@ -60,6 +63,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 	const [driverDocuments, setDriverDocuments] = useState<Document[]>([]);
 	const [loadingDocs, setLoadingDocs] = useState(false);
 	const [uploadingDocFor, setUploadingDocFor] = useState<Driver | null>(null);
+	const [deleteConfirmDriver, setDeleteConfirmDriver] = useState<Driver | null>(null);
+	const [deletingDriver, setDeletingDriver] = useState(false);
 
 	const loadData = useCallback(async () => {
 		setLoading(true);
@@ -100,23 +105,32 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 		fetchDocuments();
 	}, [viewingDocsFor]);
 
-	const handleDelete = async (driverId: string) => {
-		if (!confirm('Delete this driver from the fleet registry?')) return;
+	const handleDelete = async (driver: Driver) => {
+		setDeleteConfirmDriver(driver);
+	};
+
+	const confirmDelete = async () => {
+		if (!deleteConfirmDriver) return;
+		
+		setDeletingDriver(true);
 		try {
-			await fleetApi.deleteDriver(driverId);
+			await fleetApi.deleteDriver(deleteConfirmDriver.id);
 			setRefreshKey((k) => k + 1);
-			toast.success('Driver deleted');
+			toast.success(`Driver ${deleteConfirmDriver.firstName} ${deleteConfirmDriver.lastName} deleted successfully`);
+			setDeleteConfirmDriver(null);
 		} catch (e) {
 			toast.error('Failed to delete driver');
+		} finally {
+			setDeletingDriver(false);
 		}
 	};
 
 	const getStatusColor = (status: string) => {
 		switch (status?.toUpperCase()) {
-			case 'ACTIVE': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-			case 'SUSPENDED': return 'bg-rose-50 text-rose-600 border-rose-100';
-			case 'ON_LEAVE': return 'bg-amber-50 text-amber-600 border-amber-100';
-			default: return 'bg-slate-50 text-slate-600 border-slate-100';
+			case 'ACTIVE': return 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800';
+			case 'SUSPENDED': return 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800';
+			case 'ON_LEAVE': return 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
+			default: return 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700';
 		}
 	};
 
@@ -144,7 +158,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 	const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
 		return (
 			<div className="flex flex-col items-center group">
-				<div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+				<div className="relative w-40 h-40 rounded-full bg-white dark:bg-gray-900 border-[8px] border-gray-50 dark:border-gray-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-gray-100 dark:hover:border-gray-700">
 					<svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
 						<circle
 							cx="80"
@@ -159,21 +173,21 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 						/>
 					</svg>
 
-					<div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
+					<div className={cn("p-2 rounded-2xl mb-2 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:text-inherit transition-all duration-500", colorClass)}>
 						<Icon size={18} />
 					</div>
 
 					<div className="flex flex-col items-center px-4 w-full overflow-hidden">
-						<span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+						<span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
 							{value}
 						</span>
 					</div>
 
-					<div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+					<div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
 				</div>
 
 				<div className="mt-4 text-center px-2">
-					<p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+					<p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">
 						{title}
 					</p>
 				</div>
@@ -190,54 +204,54 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 				</div>
 			)}
 			{/* Stats Matrix */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
 				<CircularStatsCard
 					title="Total Drivers"
 					value={drivers.length}
 					icon={Users}
-					colorClass="bg-blue-50 text-[#345E85]"
-					secondaryColor="text-[#345E85]"
+					colorClass="bg-blue-50 dark:bg-blue-950/20 text-[#345E85] dark:text-blue-400"
+					secondaryColor="text-[#345E85] dark:text-blue-400"
 				/>
 				<CircularStatsCard
 					title="Active Duty"
 					value={drivers.filter(d => d.status === 'ACTIVE').length}
 					icon={CheckCircle2}
-					colorClass="bg-emerald-50 text-emerald-600"
-					secondaryColor="text-emerald-600"
+					colorClass="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400"
+					secondaryColor="text-emerald-600 dark:text-emerald-400"
 				/>
 				<CircularStatsCard
 					title="Ready / Available"
 					value={drivers.filter(d => d.availabilityStatus === 'AVAILABLE').length}
 					icon={Clock}
-					colorClass="bg-primary-50 text-primary-500"
-					secondaryColor="text-primary-500"
+					colorClass="bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400"
+					secondaryColor="text-primary-500 dark:text-primary-400"
 				/>
 				<CircularStatsCard
 					title="Compliance Alerts"
 					value={drivers.filter(d => d.status === 'SUSPENDED').length}
 					icon={AlertTriangle}
-					colorClass="bg-rose-50 text-rose-600"
-					secondaryColor="text-rose-600"
+					colorClass="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400"
+					secondaryColor="text-rose-600 dark:text-rose-400"
 				/>
 			</div>
 
 			{/* Control Surface */}
-			<div className="bg-white rounded-[32px] border border-slate-100 p-4 flex flex-col md:flex-row gap-4">
+			<div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex flex-col md:flex-row gap-4 transition-colors duration-200">
 				<div className="flex-1 relative group">
-					<Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+					<Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
 					<input
 						type="text"
 						placeholder="Search driver..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-[24px] text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all"
+						className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-900 dark:text-white focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
 					/>
 				</div>
 				<div className="flex items-center gap-3">
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value as StatusOption)}
-						className="px-4 py-3 bg-slate-50 border border-slate-50 rounded-[20px] text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none focus:bg-white focus:border-primary-500 transition-all"
+						className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 outline-none focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
 					>
 						<option value="">Status</option>
 						<option value="ACTIVE">Active</option>
@@ -246,7 +260,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 					</select>
 					<button
 						onClick={onAddDriver}
-						className="px-6 py-3 bg-primary-500 text-white rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
+						className="px-6 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-blue-700 dark:hover:bg-blue-700 transition-all"
 					>
 						<Plus size={14} /> Add Driver
 					</button>
@@ -264,32 +278,32 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 							animate={{ opacity: 1, scale: 1 }}
 							exit={{ opacity: 0, scale: 0.9 }}
 							whileHover={{ y: -5 }}
-							className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
+							className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-600 transition-all relative overflow-hidden group"
 						>
 							<div className="flex items-start justify-between mb-6">
-								<div className="size-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
+								<div className="size-14 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
 									<Users size={28} />
 								</div>
-								<div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(driver.status)}`}>
+								<div className={`px-3 py-1 rounded-full border text-xs font-medium ${getStatusColor(driver.status)}`}>
 									{driver.status}
 								</div>
 							</div>
 							<div className="mb-6">
-								<h3 className="text-lg font-black text-slate-900 tracking-tight mb-1">{driver.firstName} {driver.lastName}</h3>
-								<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{driver.licenseNumber || 'License N/A'}</p>
+								<h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{driver.firstName} {driver.lastName}</h3>
+								<p className="text-xs font-medium text-gray-500 dark:text-gray-400">{driver.licenseNumber || 'License N/A'}</p>
 							</div>
 							<div className="space-y-3 mb-8">
-								<div className="flex items-center gap-3 text-slate-500">
-									<Mail size={14} className="text-primary-400" />
-									<span className="text-xs font-medium truncate">{driver.email}</span>
+								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+									<Mail size={14} className="text-blue-500 dark:text-blue-400" />
+									<span className="text-sm font-medium truncate">{driver.email}</span>
 								</div>
-								<div className="flex items-center gap-3 text-slate-500">
-									<Phone size={14} className="text-primary-400" />
-									<span className="text-xs font-medium">{driver.phone || 'No Phone Data'}</span>
+								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+									<Phone size={14} className="text-blue-500 dark:text-blue-400" />
+									<span className="text-sm font-medium">{driver.phone || 'No Phone Data'}</span>
 								</div>
-								<div className="flex items-center gap-3 text-slate-500">
-									<Truck size={14} className="text-primary-400" />
-									<span className="text-xs font-medium truncate">{driver.currentTruckId ? `Truck ID: ${driver.currentTruckId.slice(0, 8)}` : 'Unassigned'}</span>
+								<div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+									<Truck size={14} className="text-blue-500 dark:text-blue-400" />
+									<span className="text-sm font-medium truncate">{driver.currentTruckId ? `Truck ID: ${driver.currentTruckId.slice(0, 8)}` : 'Unassigned'}</span>
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
@@ -300,20 +314,29 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 										console.log('View button clicked for driver:', driver.id, driver.firstName, driver.lastName);
 										setSelectedDriver(driver);
 									}}
-									className="flex-1 h-10 bg-slate-50 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-100 transition-all"
+									className="flex-1 h-10 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
 								>
 									View
 								</button>
 								<div className="flex gap-1">
 									<button
 										onClick={() => setViewingDocsFor(driver)}
-										className="size-10 bg-slate-50 text-slate-400 hover:text-primary-500 rounded-xl flex items-center justify-center transition-all"
+										className="size-10 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg flex items-center justify-center transition-all"
+										title="View Documents"
 									>
 										<FileText size={16} />
 									</button>
 									<button
-										onClick={() => handleDelete(driver.id)}
-										className="size-10 bg-slate-50 text-slate-400 hover:text-rose-600 rounded-xl flex items-center justify-center transition-all"
+										onClick={() => onEditDriver?.(driver)}
+										className="size-10 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg flex items-center justify-center transition-all"
+										title="Edit Driver"
+									>
+										<Edit3 size={16} />
+									</button>
+									<button
+										onClick={() => handleDelete(driver)}
+										className="size-10 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg flex items-center justify-center transition-all"
+										title="Delete Driver"
 									>
 										<Trash2 size={16} />
 									</button>
@@ -325,59 +348,59 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 			</div>
 
 			{loading && (
-				<div className="flex flex-col items-center justify-center py-20 text-slate-300">
+				<div className="flex flex-col items-center justify-center py-20 text-slate-300 dark:text-slate-700">
 					<Loader2 className="size-8 animate-spin mb-4" />
-					<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Drivers...</p>
+					<p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Loading Drivers...</p>
 				</div>
 			)}
 
 			{!loading && drivers.length === 0 && (
-				<div className="py-24 text-center flex flex-col items-center bg-slate-50/50 rounded-[40px] border-2 border-dashed border-slate-200">
-					<h3 className="text-xl font-black text-slate-900 tracking-tight">No Drivers Found</h3>
-					<p className="text-sm font-medium text-slate-400 mt-2 max-w-xs">Add your first driver to get started.</p>
+				<div className="py-24 text-center flex flex-col items-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700">
+					<h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">No Drivers Found</h3>
+					<p className="text-sm font-medium text-gray-400 dark:text-gray-500 mt-2 max-w-xs">Add your first driver to get started.</p>
 				</div>
 			)}
 
 			{/* Details Portal - Comprehensive Driver Information */}
 			{selectedDriver && (
-				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001] p-4">
-					<div className="bg-white rounded-[40px] shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[10001] p-4 animate-in fade-in duration-300">
+					<div className="bg-white dark:bg-gray-900 rounded-lg max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800 transition-colors duration-300">
 						{/* Header Section */}
-						<div className="p-8 bg-white border-b border-slate-100 relative overflow-hidden shrink-0">
+						<div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 relative overflow-hidden shrink-0">
 							<div className="absolute top-0 right-0 p-8 opacity-5">
 								<Users size={140} className="text-slate-400" />
 							</div>
 							<div className="flex items-center gap-6 relative z-10">
-								<div className="size-20 bg-primary-50 rounded-[32px] flex items-center justify-center border border-primary-100">
-									<Users size={40} className="text-primary-500" />
+								<div className="size-20 bg-primary-50 dark:bg-primary-950/30 rounded-[32px] flex items-center justify-center border border-primary-100 dark:border-primary-900/50">
+									<Users size={40} className="text-primary-500 dark:text-primary-400" />
 								</div>
 								<div className="flex-1">
 									<div className="flex items-center gap-3 mb-2">
-										<h2 className="text-3xl font-black tracking-tight text-slate-900">{selectedDriver.firstName} {selectedDriver.lastName}</h2>
-										<div className={`px-3 py-1 rounded-full border border-primary-200 bg-primary-50 text-[9px] font-black uppercase tracking-widest text-primary-600`}>
+										<h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{selectedDriver.firstName} {selectedDriver.lastName}</h2>
+										<div className={`px-3 py-1 rounded-full border border-primary-200 dark:border-primary-900/50 bg-primary-50 dark:bg-primary-950/20 text-[9px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400`}>
 											{selectedDriver.status}
 										</div>
-										<div className={`px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[9px] font-black uppercase tracking-widest text-emerald-600`}>
+										<div className={`px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/20 text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400`}>
 											{selectedDriver.availabilityStatus}
 										</div>
 									</div>
-									<p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-4">
+									<p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-4">
 										<span className="flex items-center gap-1">
-											<Mail size={12} /> {selectedDriver.email}
+											<Mail size={12} className="text-primary-400" /> {selectedDriver.email}
 										</span>
 										{selectedDriver.phone && (
 											<span className="flex items-center gap-1">
-												<Phone size={12} /> {selectedDriver.phone}
+												<Phone size={12} className="text-primary-400" /> {selectedDriver.phone}
 											</span>
 										)}
 										<span className="flex items-center gap-1">
-											<CreditCard size={12} /> {selectedDriver.licenseNumber}
+											<CreditCard size={12} className="text-primary-400" /> {selectedDriver.licenseNumber}
 										</span>
 									</p>
 								</div>
 								<button 
 									onClick={() => setSelectedDriver(null)} 
-									className="size-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shrink-0"
+									className="size-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300 transition-all shrink-0"
 								>
 									<X size={20} />
 								</button>
@@ -388,33 +411,33 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 						<div className="flex-1 overflow-y-auto p-8">
 							{/* Key Performance Metrics */}
 							<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-								<div className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-[24px] border border-emerald-200">
+								<div className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/10 rounded-[24px] border border-emerald-200 dark:border-emerald-900/50 transition-colors">
 									<div className="flex items-center gap-3 mb-2">
-										<Star size={16} className="text-emerald-600" />
-										<span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Rating</span>
+										<Star size={16} className="text-emerald-600 dark:text-emerald-400" />
+										<span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Rating</span>
 									</div>
-									<p className="text-2xl font-black text-emerald-800">{selectedDriver.rating ? Number(selectedDriver.rating).toFixed(1) : '0.0'}</p>
+									<p className="text-2xl font-black text-emerald-800 dark:text-emerald-100">{selectedDriver.rating ? Number(selectedDriver.rating).toFixed(1) : '0.0'}</p>
 								</div>
-								<div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-[24px] border border-blue-200">
+								<div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10 rounded-[24px] border border-blue-200 dark:border-blue-900/50 transition-colors">
 									<div className="flex items-center gap-3 mb-2">
-										<Truck size={16} className="text-blue-600" />
-										<span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Total Trips</span>
+										<Truck size={16} className="text-blue-600 dark:text-blue-400" />
+										<span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Total Trips</span>
 									</div>
-									<p className="text-2xl font-black text-blue-800">{selectedDriver.totalTrips || 0}</p>
+									<p className="text-2xl font-black text-blue-800 dark:text-blue-100">{selectedDriver.totalTrips || 0}</p>
 								</div>
-								<div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-[24px] border border-purple-200">
+								<div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/10 rounded-[24px] border border-purple-200 dark:border-purple-900/50 transition-colors">
 									<div className="flex items-center gap-3 mb-2">
-										<Target size={16} className="text-purple-600" />
-										<span className="text-[9px] font-black text-purple-600 uppercase tracking-widest">Safety Score</span>
+										<Target size={16} className="text-purple-600 dark:text-purple-400" />
+										<span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest">Safety Score</span>
 									</div>
-									<p className="text-2xl font-black text-purple-800">{selectedDriver.safetyScore ? `${Number(selectedDriver.safetyScore).toFixed(0)}%` : '100%'}</p>
+									<p className="text-2xl font-black text-purple-800 dark:text-purple-100">{selectedDriver.safetyScore ? `${Number(selectedDriver.safetyScore).toFixed(0)}%` : '100%'}</p>
 								</div>
-								<div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-[24px] border border-amber-200">
+								<div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/10 rounded-[24px] border border-amber-200 dark:border-amber-900/50 transition-colors">
 									<div className="flex items-center gap-3 mb-2">
-										<Clock size={16} className="text-amber-600" />
-										<span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">On-Time Rate</span>
+										<Clock size={16} className="text-amber-600 dark:text-amber-400" />
+										<span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">On-Time Rate</span>
 									</div>
-									<p className="text-2xl font-black text-amber-800">{selectedDriver.onTimeDeliveryRate ? `${Number(selectedDriver.onTimeDeliveryRate).toFixed(0)}%` : '0%'}</p>
+									<p className="text-2xl font-black text-amber-800 dark:text-amber-100">{selectedDriver.onTimeDeliveryRate ? `${Number(selectedDriver.onTimeDeliveryRate).toFixed(0)}%` : '0%'}</p>
 								</div>
 							</div>
 
@@ -422,8 +445,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 							<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 								{/* Personal Information */}
 								<div className="space-y-6">
-									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
+									<div className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 dark:text-primary-400 mb-4">
 											<User size={14} /> Personal Information
 										</h4>
 										<div className="space-y-4">
@@ -436,8 +459,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 									</div>
 
 									{/* Emergency Contact */}
-									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-rose-500 mb-4">
+									<div className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-rose-500 dark:text-rose-400 mb-4">
 											<Heart size={14} /> Emergency Contact
 										</h4>
 										<div className="space-y-4">
@@ -448,16 +471,19 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 													<InfoRow label="Relationship" value={selectedDriver.emergencyContact.relationship || 'N/A'} />
 												</>
 											) : (
-												<p className="text-sm text-slate-400 italic">No emergency contact information</p>
+												<p className="text-sm text-slate-400 dark:text-slate-500 italic">No emergency contact information</p>
 											)}
 										</div>
 									</div>
+
+									{/* Safety & Break Management */}
+									<DriverBreakManagement driverId={selectedDriver.id} />
 								</div>
 
 								{/* License & Employment */}
 								<div className="space-y-6">
-									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
+									<div className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 dark:text-primary-400 mb-4">
 											<CreditCard size={14} /> License Information
 										</h4>
 										<div className="space-y-4">
@@ -467,23 +493,23 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 											<InfoRow label="State" value={selectedDriver.licenseState || 'N/A'} />
 											<InfoRow label="Country" value={selectedDriver.licenseCountry || 'N/A'} />
 											<div>
-												<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Classes</span>
+												<span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Classes</span>
 												<div className="flex flex-wrap gap-1 mt-1">
 													{selectedDriver.licenseClasses && selectedDriver.licenseClasses.length > 0 ? 
 														selectedDriver.licenseClasses.map((cls, idx) => (
-															<span key={idx} className="px-2 py-0.5 bg-primary-50 text-primary-600 rounded-md text-[8px] font-black uppercase">
+															<span key={idx} className="px-2 py-0.5 bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 rounded-md text-[8px] font-black uppercase transition-colors">
 																{cls}
 															</span>
 														)) : 
-														<span className="text-[11px] text-slate-400">No classes specified</span>
+														<span className="text-[11px] text-slate-400 dark:text-slate-500">No classes specified</span>
 													}
 												</div>
 											</div>
 										</div>
 									</div>
 
-									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 mb-4">
+									<div className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary-500 dark:text-primary-400 mb-4">
 											<Briefcase size={14} /> Employment Details
 										</h4>
 										<div className="space-y-4">
@@ -499,8 +525,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 
 								{/* Performance & Compliance */}
 								<div className="space-y-6">
-									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-500 mb-4">
+									<div className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400 mb-4">
 											<Activity size={14} /> Performance Metrics
 										</h4>
 										<div className="space-y-4">
@@ -512,8 +538,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 										</div>
 									</div>
 
-									<div className="bg-white rounded-[28px] border border-slate-100 p-6 shadow-sm">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-500 mb-4">
+									<div className="bg-white dark:bg-slate-900/50 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-4">
 											<ShieldCheck size={14} /> Compliance Status
 										</h4>
 										<div className="space-y-4">
@@ -525,8 +551,8 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 									</div>
 
 									{/* Current Status */}
-									<div className="bg-slate-900 rounded-[28px] p-6 text-white">
-										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-300 mb-4">
+									<div className="bg-slate-900 dark:bg-black rounded-[28px] p-6 text-white border border-slate-800 transition-colors">
+										<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-400 mb-4">
 											<MapPin size={14} /> Current Status
 										</h4>
 										<div className="space-y-3">
@@ -549,20 +575,20 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 
 							{/* Driver Notes */}
 							{selectedDriver.driverNotes && (
-								<div className="mt-8 bg-amber-50 rounded-[28px] border border-amber-200 p-6">
-									<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-600 mb-4">
+								<div className="mt-8 bg-amber-50 dark:bg-amber-950/20 rounded-[28px] border border-amber-200 dark:border-amber-900/50 p-6 transition-colors font-inter">
+									<h4 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-4">
 										<StickyNote size={14} /> Driver Notes
 									</h4>
-									<p className="text-sm text-amber-800 leading-relaxed">{selectedDriver.driverNotes}</p>
+									<p className="text-sm text-amber-800 dark:text-amber-100/80 leading-relaxed">{selectedDriver.driverNotes}</p>
 								</div>
 							)}
 						</div>
 
 						{/* Footer */}
-						<div className="p-8 border-t border-slate-50 shrink-0 flex gap-4">
+						<div className="p-8 border-t border-slate-50 dark:border-slate-800 shrink-0 flex gap-4 bg-white dark:bg-slate-900 transition-colors">
 							<button
 								onClick={() => setViewingDocsFor(selectedDriver)}
-								className="flex-1 py-4 bg-slate-100 text-slate-700 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all"
+								className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-inter"
 							>
 								View Documents
 							</button>
@@ -583,13 +609,13 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						className="bg-white rounded-[40px] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col relative overflow-hidden"
+						className="bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col relative overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<div className="p-8 border-b border-slate-50 flex items-center justify-between">
+						<div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between transition-colors">
 							<div>
-								<h2 className="text-2xl font-black text-primary-500 tracking-tight">Driver Documents</h2>
-								<p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
+								<h2 className="text-2xl font-black text-primary-500 dark:text-primary-400 tracking-tight">Driver Documents</h2>
+								<p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">
 									Documents for {viewingDocsFor.firstName} {viewingDocsFor.lastName}
 								</p>
 							</div>
@@ -600,7 +626,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 								>
 									<Plus size={14} /> Add Document
 								</button>
-								<button onClick={() => setViewingDocsFor(null)} className="size-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors">
+								<button onClick={() => setViewingDocsFor(null)} className="size-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
 									<X size={20} />
 								</button>
 							</div>
@@ -609,31 +635,31 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 						<div className="flex-1 overflow-y-auto p-8">
 							{loadingDocs ? (
 								<div className="flex flex-col items-center justify-center py-20">
-									<div className="size-12 border-4 border-slate-100 border-t-primary-500 rounded-full animate-spin mb-4" />
-									<p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading documents...</p>
+									<div className="size-12 border-4 border-slate-100 dark:border-slate-800 border-t-primary-500 rounded-full animate-spin mb-4" />
+									<p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Loading documents...</p>
 								</div>
 							) : driverDocuments.length === 0 ? (
 								<div className="py-20 text-center flex flex-col items-center">
-									<div className="size-16 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mb-6"><FileText size={32} /></div>
-									<h3 className="text-xl font-black text-primary-500 tracking-tight">No Documents</h3>
-									<p className="text-sm font-medium text-slate-400 mt-2">No documents found for this driver.</p>
+									<div className="size-16 bg-slate-50 dark:bg-slate-800 rounded-[28px] flex items-center justify-center text-slate-200 dark:text-slate-700 mb-6 transition-colors"><FileText size={32} /></div>
+									<h3 className="text-xl font-black text-primary-500 dark:text-primary-400 tracking-tight">No Documents</h3>
+									<p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-2">No documents found for this driver.</p>
 								</div>
 							) : (
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 									{driverDocuments.map(doc => (
-										<div key={doc.id} className="p-5 rounded-[24px] bg-slate-50 border border-slate-50 hover:bg-white hover:border-slate-100 hover:shadow-lg transition-all group">
+										<div key={doc.id} className="p-5 rounded-[24px] bg-slate-50 dark:bg-slate-800/50 border border-slate-50 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-lg transition-all group">
 											<div className="flex items-start justify-between mb-4">
-												<div className="size-10 bg-white rounded-xl flex items-center justify-center text-primary-500 shadow-sm"><FileText size={20} /></div>
+												<div className="size-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-primary-500 dark:text-primary-400 shadow-sm transition-colors cursor-pointer"><FileText size={20} /></div>
 												<div className="flex gap-1">
-													<button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors shadow-sm"><Download size={14} /></button>
-													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white rounded-lg flex items-center justify-center text-slate-400 hover:text-primary-500 transition-colors shadow-sm"><ExternalLink size={14} /></button>
+													<button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shadow-sm"><Download size={14} /></button>
+													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm"><ExternalLink size={14} /></button>
 												</div>
 											</div>
-											<h4 className="font-black text-slate-900 text-sm tracking-tight mb-1 truncate">{doc.title}</h4>
-											<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{doc.originalFileName}</p>
+											<h4 className="font-black text-slate-900 dark:text-white text-sm tracking-tight mb-1 truncate transition-colors">{doc.title}</h4>
+											<p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">{doc.originalFileName}</p>
 											<div className="mt-4 flex items-center justify-between">
-												<span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{documentApi.formatFileSize(doc.fileSize)}</span>
-												<span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-white border border-slate-100 ${doc.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>{doc.status}</span>
+												<span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{documentApi.formatFileSize(doc.fileSize)}</span>
+												<span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 transition-colors ${doc.status === 'VERIFIED' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'}`}>{doc.status}</span>
 											</div>
 										</div>
 									))}
@@ -661,16 +687,73 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, refreshTr
 					lockEntity={true}
 				/>
 			)}
+
+			{/* Delete Confirmation Modal */}
+			{deleteConfirmDriver && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10002] p-4">
+					<motion.div
+						initial={{ opacity: 0, scale: 0.95 }}
+						animate={{ opacity: 1, scale: 1 }}
+						className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl max-w-md w-full p-8 border border-slate-100 dark:border-slate-800 transition-colors"
+					>
+						<div className="text-center">
+							<div className="size-16 bg-rose-50 dark:bg-rose-950/20 rounded-full flex items-center justify-center mx-auto mb-6">
+								<AlertTriangle size={32} className="text-rose-500 dark:text-rose-400" />
+							</div>
+							
+							<h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+								Delete Driver
+							</h3>
+							
+							<p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+								Are you sure you want to delete{' '}
+								<span className="font-bold text-slate-900 dark:text-white">
+									{deleteConfirmDriver.firstName} {deleteConfirmDriver.lastName}
+								</span>{' '}
+								from the fleet registry?
+							</p>
+							
+							<p className="text-xs text-slate-400 dark:text-slate-500 mb-8">
+								This action cannot be undone. All driver data, documents, and history will be permanently removed.
+							</p>
+							
+							<div className="flex gap-3">
+								<button
+									onClick={() => setDeleteConfirmDriver(null)}
+									disabled={deletingDriver}
+									className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all disabled:opacity-50 font-inter"
+								>
+									Cancel
+								</button>
+								<button
+									onClick={confirmDelete}
+									disabled={deletingDriver}
+									className="flex-1 py-3 bg-rose-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-rose-600 transition-all shadow-xl shadow-rose-500/20 disabled:opacity-50 flex items-center justify-center gap-2 font-inter"
+								>
+									{deletingDriver ? (
+										<>
+											<Loader2 size={14} className="animate-spin" />
+											Deleting...
+										</>
+									) : (
+										'Delete Driver'
+									)}
+								</button>
+							</div>
+						</div>
+					</motion.div>
+				</div>
+			)}
 		</div>
 	);
 };
 
+export default DriversList;
+
 // Helper component for displaying information rows
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
 	<div className="flex justify-between items-start">
-		<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-shrink-0 w-24">{label}</span>
-		<span className="text-[11px] font-black text-slate-900 text-right flex-1">{value}</span>
+		<span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex-shrink-0 w-24">{label}</span>
+		<span className="text-[11px] font-black text-slate-900 dark:text-white text-right flex-1">{value}</span>
 	</div>
 );
-
-export default DriversList;

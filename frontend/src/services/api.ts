@@ -197,7 +197,7 @@ export const locationsAPI = {
 
 // Notifications API
 export const notificationsAPI = {
-  getAll: (params?: any) => api.get('/notifications', { params }),
+  getAll: (params?: any) => api.get('/notifications/my', { params }),
   getById: (id: string) => api.get(`/notifications/${id}`),
   create: (data: any) => api.post('/notifications', data),
   update: (id: string, data: any) => api.patch(`/notifications/${id}`, data),
@@ -205,7 +205,7 @@ export const notificationsAPI = {
   markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
   markAllAsRead: () => api.patch('/notifications/read/all'),
   archive: (id: string) => api.patch(`/notifications/${id}/archive`),
-  getUnreadCount: () => api.get('/notifications/unread/count'),
+  getUnreadCount: () => api.get('/notifications/my/unread-count'),
   getStats: () => api.get('/notifications/stats'),
 };
 

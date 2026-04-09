@@ -109,11 +109,11 @@ const FleetHelpSupport: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-6 md:p-10 animate-in fade-in duration-700 transition-colors">
       <div className="max-w-7xl mx-auto space-y-10">
 
         {/* Command Center Support Header */}
-        <div className="bg-[#345E85] rounded-[48px] p-12 md:p-16 relative overflow-hidden shadow-2xl shadow-blue-100">
+        <div className="bg-[#345E85] dark:bg-blue-950/40 rounded-[48px] p-12 md:p-16 relative overflow-hidden shadow-2xl shadow-blue-100 dark:shadow-none border border-transparent dark:border-blue-900/30">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/10 to-transparent flex items-center justify-center">
             <Rocket className="text-white opacity-10 scale-[4.0] animate-pulse" />
           </div>
@@ -156,12 +156,12 @@ const FleetHelpSupport: React.FC = () => {
             { icon: ShieldCheck, title: 'Compliance Grid', color: 'rose', desc: 'Safety standards' },
             { icon: TrendingUp, title: 'Performance Lab', color: 'amber', desc: 'KPI optimization' }
           ].map((grid, idx) => (
-            <div key={idx} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group cursor-pointer text-center">
-              <div className="h-14 w-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 group-hover:bg-blue-50 group-hover:text-[#345E85] transition-all">
+            <div key={idx} className="bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md dark:shadow-none transition-all group cursor-pointer text-center">
+              <div className="h-14 w-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-all">
                 <grid.icon size={28} />
               </div>
-              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-900 mb-1">{grid.title}</h4>
-              <p className="text-[10px] font-bold text-slate-400">{grid.desc}</p>
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white mb-1">{grid.title}</h4>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{grid.desc}</p>
             </div>
           ))}
         </div>
@@ -170,21 +170,21 @@ const FleetHelpSupport: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-8">Support Links</h3>
+            <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-8">Support Links</h3>
               <div className="space-y-4">
                 {[
                   { icon: Mail, label: 'Data Hub', detail: 'support@urutix.com' },
                   { icon: Phone, label: 'Voice Link', detail: '+254 700 000 000' },
                   { icon: MessageSquare, label: 'Pulse Chat', detail: 'Real-time Linkage' }
                 ].map((link, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-5 bg-slate-50 rounded-3xl hover:bg-white border border-transparent hover:border-slate-100 transition-all cursor-pointer">
-                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm">
+                  <div key={idx} className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all cursor-pointer">
+                    <div className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm">
                       <link.icon size={18} />
                     </div>
                     <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[#345E85]">{link.label}</p>
-                      <p className="text-xs font-bold text-slate-900">{link.detail}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[#345E85] dark:text-blue-400">{link.label}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{link.detail}</p>
                     </div>
                   </div>
                 ))}
@@ -201,20 +201,20 @@ const FleetHelpSupport: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-2 bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight leading-none mb-2">Knowledge Synchronization</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Protocol-specific intelligence repository</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none mb-2">Knowledge Synchronization</h3>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">Protocol-specific intelligence repository</p>
               </div>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" size={16} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Logic Query..."
-                  className="bg-slate-50 border border-slate-100 rounded-2xl py-3 pl-12 pr-6 text-xs font-bold outline-none focus:bg-white focus:border-[#345E85] transition-all"
+                  className="bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl py-3 pl-12 pr-6 text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#345E85] dark:focus:border-blue-500 text-slate-900 dark:text-white transition-all"
                 />
               </div>
             </div>
@@ -224,7 +224,7 @@ const FleetHelpSupport: React.FC = () => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat.id ? 'bg-[#345E85] text-white' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                  className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat.id ? 'bg-[#345E85] dark:bg-blue-600 text-white' : 'bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   {cat.name}
@@ -234,13 +234,13 @@ const FleetHelpSupport: React.FC = () => {
 
             <div className="space-y-4">
               {filteredFAQs.map(faq => (
-                <div key={faq.id} className={`border rounded-[32px] overflow-hidden transition-all ${expandedFAQ === faq.id ? 'border-[#345E85] shadow-lg shadow-blue-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                <div key={faq.id} className={`border rounded-[32px] overflow-hidden transition-all ${expandedFAQ === faq.id ? 'border-[#345E85] dark:border-blue-500 shadow-lg shadow-blue-50 dark:shadow-none' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}>
                   <button
                     onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
                     className="w-full px-8 py-6 text-left flex items-center justify-between"
                   >
-                    <span className="text-sm font-black text-slate-800">{faq.question}</span>
-                    {expandedFAQ === faq.id ? <ChevronUp size={18} className="text-[#345E85]" /> : <ChevronDown size={18} className="text-slate-400" />}
+                    <span className="text-sm font-black text-slate-800 dark:text-slate-100">{faq.question}</span>
+                    {expandedFAQ === faq.id ? <ChevronUp size={18} className="text-[#345E85] dark:text-blue-400" /> : <ChevronDown size={18} className="text-slate-400 dark:text-slate-600" />}
                   </button>
                   <AnimatePresence>
                     {expandedFAQ === faq.id && (
@@ -250,9 +250,9 @@ const FleetHelpSupport: React.FC = () => {
                         exit={{ height: 0, opacity: 0 }}
                       >
                         <div className="px-8 pb-8 pt-2">
-                          <p className="text-xs text-slate-600 leading-relaxed italic border-l-4 border-blue-100 pl-6">{faq.answer}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic border-l-4 border-blue-100 dark:border-blue-900/50 pl-6">{faq.answer}</p>
                           <div className="flex gap-4 mt-8 pt-6 border-t border-slate-50">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#345E85] flex items-center gap-1.5 hover:translate-x-1 transition-transform cursor-pointer">
+                             <span className="text-[9px] font-black uppercase tracking-widest text-[#345E85] dark:text-blue-400 flex items-center gap-1.5 hover:translate-x-1 transition-transform cursor-pointer">
                               Explore Logic <ArrowRight size={12} />
                             </span>
                           </div>
@@ -267,24 +267,24 @@ const FleetHelpSupport: React.FC = () => {
         </div>
 
         {/* Global Footer Hub */}
-        <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-center gap-6 mb-8 md:mb-0">
-            <div className="h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+            <div className="h-14 w-14 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 size={32} />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Infrastructure Integrity</p>
-              <h4 className="text-xl font-black text-slate-800 uppercase">System Ready</h4>
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Infrastructure Integrity</p>
+              <h4 className="text-xl font-black text-slate-800 dark:text-white uppercase">System Ready</h4>
             </div>
           </div>
           <div className="flex gap-16">
             <div className="text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Latency</p>
-              <p className="text-2xl font-black text-slate-900">14ms</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Latency</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">14ms</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Uptime</p>
-              <p className="text-2xl font-black text-slate-900">99.9%</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Uptime</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">99.9%</p>
             </div>
           </div>
         </div>

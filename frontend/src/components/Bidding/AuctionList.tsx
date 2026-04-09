@@ -235,9 +235,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     }
     setLoadingDrivers(true);
     try {
-      const allDrivers = await fleetApi.getDrivers({ status: 'ACTIVE' });
-      const available = allDrivers.filter((driver: any) => !driver.currentTripId);
-      setAvailableDrivers(available || []);
+      // Find the selected truck and use its assignedDrivers array
+      const selectedTruck = trucks.find((t: any) => t.id === selectedTruckId);
+      const assigned: { driverId: string; driverName: string }[] = selectedTruck?.assignedDrivers || [];
+
+      if (assigned.length === 0) {
+        setAvailableDrivers([]);
+        setLoadingDrivers(false);
+        return;
+      }
+
+      // Map to the shape the dropdown expects
+      const drivers = assigned.map((d: any) => ({
+        id: d.driverId,
+        firstName: d.driverName?.split(' ')[0] || d.driverName || '',
+        lastName: d.driverName?.split(' ').slice(1).join(' ') || '',
+      }));
+      setAvailableDrivers(drivers);
     } catch (error) {
       console.error('Error loading available drivers:', error);
       setAvailableDrivers([]);
@@ -351,16 +365,16 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const getStatusBadge = (status: string) => {
     const variants: { [key: string]: string } = {
-      ACTIVE: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      SCHEDULED: 'bg-amber-50 text-amber-600 border-amber-100',
-      CLOSED: 'bg-slate-50 text-slate-500 border-slate-100',
-      CANCELLED: 'bg-red-50 text-red-600 border-red-100',
-      PAUSED: 'bg-blue-50 text-blue-600 border-blue-100',
+      ACTIVE: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800',
+      SCHEDULED: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800',
+      CLOSED: 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-800',
+      CANCELLED: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800',
+      PAUSED: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800',
     };
     return (
       <span className={cn(
         "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm flex items-center gap-1.5",
-        variants[status] || 'bg-slate-50 text-slate-500 border-slate-100'
+        variants[status] || 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-800'
       )}>
         <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
         {status}
@@ -370,7 +384,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const getAuctionTypeBadge = (type: string) => {
     return (
-      <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-slate-900/10">
+      <span className="px-3 py-1 bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-slate-900/10">
         {type}
       </span>
     );
@@ -389,19 +403,19 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   };
 
   const renderFilters = () => (
-    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 mb-8 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 mb-8 shadow-sm">
       <div className="flex flex-col lg:flex-row gap-6 items-center">
         <div className="relative flex-1 w-full group">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#345E85] transition-colors" />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600 group-focus-within:text-[#345E85] dark:group-focus-within:text-blue-400 transition-colors" />
           <input
             type="text"
             placeholder="SEARCH MARKETPLACE: ID, LOCATION, TYPE..."
-            className="w-full h-16 pl-14 pr-32 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white transition-all placeholder:text-slate-300"
+            className="w-full h-16 pl-14 pr-32 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-900 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
           />
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <div className="h-6 w-px bg-slate-200 mr-2" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total:</span>
-            <span className="text-sm font-black text-[#345E85]">{auctions.length}</span>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mr-2" />
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total:</span>
+            <span className="text-sm font-black text-[#345E85] dark:text-blue-400">{auctions.length}</span>
           </div>
         </div>
 
@@ -409,7 +423,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="h-16 pl-8 pr-12 bg-slate-50 border border-slate-100 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer hover:bg-white transition-all min-w-[160px]"
+            className="h-16 pl-8 pr-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all min-w-[160px]"
           >
             <option value="all">Any Status</option>
             <option value="ACTIVE">Active</option>
@@ -422,8 +436,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             className={cn(
               "w-16 h-16 rounded-3xl border transition-all flex items-center justify-center shadow-sm",
               filters.showWatchedOnly
-                ? 'bg-amber-50 border-amber-200 text-amber-500 shadow-amber-900/5'
-                : 'bg-white border-slate-100 text-slate-300 hover:text-amber-400'
+                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-500 dark:text-amber-400 shadow-amber-900/5'
+                : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 hover:text-amber-400 dark:hover:text-amber-300'
             )}
           >
             <Star size={20} className={filters.showWatchedOnly ? 'fill-current' : ''} />
@@ -431,7 +445,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
           <button
             onClick={handleExport}
-            className="h-16 w-16 bg-white border border-slate-100 text-slate-300 rounded-3xl hover:bg-slate-50 hover:text-[#345E85] transition-all shadow-sm flex items-center justify-center"
+            className="h-16 w-16 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#345E85] dark:hover:text-blue-400 transition-all shadow-sm flex items-center justify-center"
           >
             <Download size={20} />
           </button>
@@ -441,7 +455,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   );
 
   const renderAuctionCard = (auction: Auction) => (
-    <div key={auction.id} className="relative group bg-white rounded-[3rem] p-1 border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-100 transition-all duration-500 overflow-hidden flex flex-col">
+    <div key={auction.id} className="relative group bg-white dark:bg-slate-900 rounded-[3rem] p-1 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:border-blue-100 dark:hover:border-blue-900 transition-all duration-500 overflow-hidden flex flex-col">
       <div className="p-8 pb-4 flex-1">
         <div className="flex justify-between items-start mb-6">
           <div className="flex flex-wrap gap-2">
@@ -453,8 +467,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             className={cn(
               "w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm",
               watchedAuctions.has(auction.id)
-                ? 'bg-amber-50 text-amber-500 border border-amber-100'
-                : 'bg-slate-50 border border-slate-100 text-slate-300 hover:text-amber-500 hover:border-amber-100 hover:bg-white'
+                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-amber-800'
+                : 'bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400 hover:border-amber-100 dark:hover:border-amber-800 hover:bg-white dark:hover:bg-slate-900'
             )}
           >
             <Star size={20} className={watchedAuctions.has(auction.id) ? 'fill-current' : ''} />
@@ -463,35 +477,35 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
         <div className="space-y-4">
           <div>
-            <h3 className="text-xl font-black text-slate-900 group-hover:text-[#345E85] transition-colors line-clamp-1">
+            <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors line-clamp-1">
               {auction.load?.title || 'Unknown Cargo'}
             </h3>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2 bg-slate-50 w-fit px-2 py-1 rounded">LOG ID: {auction.id?.slice(0, 8) || 'N/A'}</p>
+            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-2 bg-slate-50 dark:bg-slate-950 w-fit px-2 py-1 rounded">LOG ID: {auction.id?.slice(0, 8) || 'N/A'}</p>
           </div>
 
-          <div className="py-6 border-y border-slate-50 space-y-4">
+          <div className="py-6 border-y border-slate-50 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col items-start gap-1">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pricing</span>
-                <span className="text-2xl font-black text-emerald-600 italic">
+                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pricing</span>
+                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 italic">
                   {auction.currentHighestBid ? formatCurrency(auction.currentHighestBid) : '$-.--'}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Payload</span>
-                <span className="text-sm font-black text-slate-900">{auction.load?.weight?.toLocaleString() || '0'} KG</span>
+                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Payload</span>
+                <span className="text-sm font-black text-slate-900 dark:text-slate-100">{auction.load?.weight?.toLocaleString() || '0'} KG</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 py-4 px-5 bg-slate-50/80 rounded-2xl">
+            <div className="flex items-center gap-4 py-4 px-5 bg-slate-50/80 dark:bg-slate-950/80 rounded-2xl">
               <div className="flex-1 min-w-0">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Route Vector</p>
+                <p className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Route Vector</p>
                 <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-black text-slate-900 truncate uppercase">
+                  <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">
                     {(auction.load?.pickupLocation || 'N/A').split(',')[0]}
                   </span>
-                  <ArrowRight size={10} className="text-slate-300 shrink-0" />
-                  <span className="text-[11px] font-black text-slate-900 truncate uppercase">
+                  <ArrowRight size={10} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                  <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">
                     {(auction.load?.deliveryLocation || 'N/A').split(',')[0]}
                   </span>
                 </div>
@@ -501,14 +515,14 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         </div>
       </div>
 
-      <div className="px-8 pb-8 pt-4 bg-slate-50/30">
+      <div className="px-8 pb-8 pt-4 bg-slate-50/30 dark:bg-slate-950/30">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
             <Clock size={12} />
             <span className="text-[10px] font-black uppercase tracking-widest">{formatDate(auction.auctionEnd)}</span>
           </div>
           <div className="text-right">
-            <span className="text-[10px] font-black text-slate-900 tracking-tighter">{auction.totalBids} ACTIVE OFFERS</span>
+            <span className="text-[10px] font-black text-slate-900 dark:text-slate-100 tracking-tighter">{auction.totalBids} ACTIVE OFFERS</span>
           </div>
         </div>
 
@@ -521,13 +535,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </button>
           <button
             onClick={() => openBidModal(auction)}
-            className="py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-slate-50 hover:border-slate-200 transition-all active:scale-95"
+            className="py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-all active:scale-95"
           >
             Custom
           </button>
           <button
             onClick={() => openDetailsModal(auction)}
-            className="py-4 bg-slate-50 border border-slate-100 text-[#345E85] rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-blue-50 hover:border-blue-100 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            className="py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-[#345E85] dark:text-blue-400 rounded-2xl text-[9px] font-black uppercase tracking-[0.15em] hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-100 dark:hover:border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-1.5"
           >
             <Eye size={12} /> View
           </button>
@@ -559,12 +573,12 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           Export Data
         </button>
 
-        <div className="flex items-center gap-1 bg-gray-50/50 p-1 rounded-xl border border-gray-100 shadow-inner">
+        <div className="flex items-center gap-1 bg-gray-50/50 dark:bg-slate-950/50 p-1 rounded-xl border border-gray-100 dark:border-slate-800 shadow-inner">
           <button
             onClick={() => setViewMode('card')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'card'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-              : 'text-gray-500 hover:text-gray-900'
+              ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-black/5 dark:ring-blue-500/20'
+              : 'text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300'
               }`}
           >
             <Grid size={14} />
@@ -573,8 +587,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           <button
             onClick={() => setViewMode('table')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'table'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
-              : 'text-gray-500 hover:text-gray-900'
+              ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-black/5 dark:ring-blue-500/20'
+              : 'text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300'
               }`}
           >
             <Table size={14} />
@@ -627,56 +641,56 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               {auctions.map(renderAuctionCard)}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-gray-50/50 border-b border-gray-100">
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Auction / Load</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Route</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Type / weight</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Current Bid</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Time Left</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-gray-500 uppercase tracking-widest">Action</th>
+                    <tr className="bg-gray-50/50 dark:bg-slate-950/50 border-b border-gray-100 dark:border-slate-800">
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Auction / Load</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Route</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Type / weight</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Current Bid</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Time Left</th>
+                      <th className="px-6 py-4 text-right text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
                     {auctions.map((auction) => (
-                      <tr key={auction.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <tr key={auction.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <div className="w-10 h-10 bg-gray-900 dark:bg-slate-950 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                               <Gavel size={18} className="text-white" />
                             </div>
                             <div>
-                              <p className="text-sm font-black text-gray-900 leading-tight">{auction.load?.title || 'Unknown Cargo'}</p>
+                              <p className="text-sm font-black text-gray-900 dark:text-slate-100 leading-tight">{auction.load?.title || 'Unknown Cargo'}</p>
                               <div className="mt-1">{getStatusBadge(auction.status)}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-xs font-black text-gray-900">{auction.load?.pickupLocation || 'N/A'}</span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight italic">to</span>
-                            <span className="text-xs font-black text-gray-900">{auction.load?.deliveryLocation || 'N/A'}</span>
+                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.pickupLocation || 'N/A'}</span>
+                            <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight italic">to</span>
+                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.deliveryLocation || 'N/A'}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs font-black text-gray-900">{auction.load?.weight?.toLocaleString() || '0'} kg</span>
+                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.weight?.toLocaleString() || '0'} kg</span>
                             <div>{getAuctionTypeBadge(auction.auctionType)}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           {auction.currentHighestBid ? (
-                            <div className="text-sm font-black text-emerald-600">{formatCurrency(auction.currentHighestBid)}</div>
+                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
                           ) : (
-                            <div className="text-xs font-bold text-gray-300 italic uppercase">No bids</div>
+                            <div className="text-xs font-bold text-gray-300 dark:text-slate-700 italic uppercase">No bids</div>
                           )}
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
+                          <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-gray-500">
+                          <div className="flex items-center gap-2 text-gray-500 dark:text-slate-500">
                             <Clock size={12} />
                             <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(auction.auctionEnd)}</span>
                           </div>
@@ -697,7 +711,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                             </button>
                             <button
                               onClick={() => openDetailsModal(auction)}
-                              className="p-2 rounded-xl bg-blue-50 text-[#345E85] hover:bg-blue-100 transition-all"
+                              className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
                             >
                               <Eye size={16} />
                             </button>
@@ -713,24 +727,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         </>
       )}
 
-      {/* Quick Bid Modal */}
       {showQuickBidModal && selectedAuction && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form
             onSubmit={submitQuickBid}
-            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
+            className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-slate-800"
           >
             {/* Header */}
-            <div className="px-10 py-8 border-b border-gray-100 relative">
-              <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Quick Bid</h2>
+            <div className="px-10 py-8 border-b border-gray-100 dark:border-slate-800 relative">
+              <h2 className="text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">Quick Bid</h2>
               <div className="mt-2 space-y-1">
-                <p className="text-lg font-medium text-gray-600">{selectedAuction?.load?.title || 'Untitled Load'}</p>
-                <p className="text-sm text-gray-400 font-medium italic">
+                <p className="text-lg font-medium text-gray-600 dark:text-slate-400">{selectedAuction?.load?.title || 'Untitled Load'}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 font-medium italic">
                   Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
                 </p>
               </div>
               {selectedAuction.status !== 'ACTIVE' && (
-                <div className="absolute top-8 right-10 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100">
+                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800">
                   Status: {selectedAuction.status}
                 </div>
               )}
@@ -740,17 +753,17 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
               {/* Bid Amount Input */}
               <div className="space-y-3">
-                <label className="block text-base font-bold text-gray-700">Bid Amount (USD) *</label>
+                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Bid Amount (USD) *</label>
                 <div className="relative group">
                   <input
                     type="number"
                     value={quickBidAmount}
                     onChange={(e) => setQuickBidAmount(e.target.value)}
-                    className="w-full h-16 px-6 bg-white border-2 border-gray-200 rounded-2xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all"
+                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
                     placeholder="0.00"
                   />
                 </div>
-                <div className="text-sm font-medium text-gray-400">
+                <div className="text-sm font-medium text-gray-400 dark:text-slate-500">
                   Reserve price: {selectedAuction.reservePrice ? formatCurrency(selectedAuction.reservePrice) : '$0.00'}
                 </div>
               </div>
@@ -766,26 +779,26 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         setQuickRequireAdvancePayment(e.target.checked);
                         if (!e.target.checked) setQuickAdvancePaymentPercentage('');
                       }}
-                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 dark:border-slate-700 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
                     />
                     <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                       <path d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-base font-bold text-gray-700">Require advance payment before trip</span>
+                  <span className="text-base font-bold text-gray-700 dark:text-slate-300">Require advance payment before trip</span>
                 </label>
 
                 {quickRequireAdvancePayment && (
                   <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-                    <label className="block text-base font-bold text-gray-700">Advance Payment % (Optional)</label>
+                    <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Advance Payment % (Optional)</label>
                     <input
                       type="number"
                       value={quickAdvancePaymentPercentage}
                       onChange={(e) => setQuickAdvancePaymentPercentage(e.target.value)}
-                      className="w-full h-14 px-6 bg-white border-2 border-gray-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full h-14 px-6 bg-white dark:bg-slate-950 border-2 border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-all"
                       placeholder="e.g., 70"
                     />
-                    <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                    <p className="text-sm text-gray-400 dark:text-slate-500 leading-relaxed font-medium">
                       Percentage of transportation fee to be paid upfront.
                     </p>
                   </div>
@@ -801,23 +814,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   <h4 className="text-lg font-extrabold text-[#0369a1]">Delivery Schedule</h4>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Pickup Date *</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Pickup Date *</label>
                     <input
                       type="datetime-local"
                       value={proposedPickupDate}
                       onChange={(e) => setProposedPickupDate(e.target.value)}
-                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 transition-all"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Delivery Date *</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Delivery Date *</label>
                     <input
                       type="datetime-local"
                       value={proposedDeliveryDate}
                       onChange={(e) => setProposedDeliveryDate(e.target.value)}
-                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 transition-all"
                     />
                   </div>
                 </div>
@@ -827,17 +840,18 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             {/* Footer Actions */}
             <div className="p-10 pt-0 flex flex-col gap-4">
               {selectedAuction.status !== 'ACTIVE' && (
-                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 border border-amber-100 rounded-xl py-3 w-full">
+                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full">
                   Bidding available on ACTIVE auctions only.
                 </p>
               )}
               <div className="flex items-center justify-end gap-4 w-full">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowQuickBidModal(false);
                     setSelectedAuction(null);
                   }}
-                  className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
+                  className="px-10 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl text-base font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95"
                 >
                   Cancel
                 </button>
@@ -857,22 +871,22 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
       {/* Custom Bid Modal */}
       {showBidModal && selectedAuction && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form
             onSubmit={placeBid}
-            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
+            className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-slate-800"
           >
             {/* Header */}
-            <div className="px-10 py-8 border-b border-gray-100 relative">
-              <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Custom Bid</h2>
+            <div className="px-10 py-8 border-b border-gray-100 dark:border-slate-800 relative">
+              <h2 className="text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">Custom Bid</h2>
               <div className="mt-2 space-y-1">
-                <p className="text-lg font-medium text-gray-600">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
-                <p className="text-sm text-gray-400 font-medium italic">
+                <p className="text-lg font-medium text-gray-600 dark:text-slate-400">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 font-medium italic">
                   Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
                 </p>
               </div>
               {selectedAuction.status !== 'ACTIVE' && (
-                <div className="absolute top-8 right-10 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100">
+                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800">
                   Status: {selectedAuction.status}
                 </div>
               )}
@@ -882,42 +896,42 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
               {/* Bid Amount */}
               <div className="space-y-3">
-                <label className="block text-base font-bold text-gray-700">Bid Amount (USD) *</label>
+                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Bid Amount (USD) *</label>
                 <div className="relative group">
                   <input
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    className="w-full h-16 px-6 bg-white border-2 border-gray-200 rounded-2xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all"
+                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
                     placeholder="0.00"
                   />
                 </div>
                 <div className="flex items-center gap-4 text-xs font-medium">
-                  <span className="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 font-bold">
+                  <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 font-bold">
                     Floor: {selectedAuction.currentHighestBid ? formatCurrency(selectedAuction.currentHighestBid) : formatCurrency(selectedAuction.reservePrice || 0)}
                   </span>
                   {selectedAuction.minimumBidIncrement && (
-                    <span className="text-gray-400">Min. Increment: {formatCurrency(selectedAuction.minimumBidIncrement)}</span>
+                    <span className="text-gray-400 dark:text-slate-500">Min. Increment: {formatCurrency(selectedAuction.minimumBidIncrement)}</span>
                   )}
                 </div>
               </div>
 
               {/* Asset Allocation */}
-              <div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
+              <div className="bg-[#f0f9ff]/80 dark:bg-blue-900/10 p-8 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30 space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1] dark:text-blue-400">
                     <Truck size={18} />
                   </div>
-                  <h4 className="text-lg font-extrabold text-[#0369a1]">Asset Selection</h4>
+                  <h4 className="text-lg font-extrabold text-[#0369a1] dark:text-blue-400">Asset Selection</h4>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Select Truck *</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Select Truck *</label>
                     <select
                       value={selectedTruckId}
                       onChange={(e) => setSelectedTruckId(e.target.value)}
-                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-slate-400 transition-all cursor-pointer"
+                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-blue-500 transition-all cursor-pointer appearance-none"
                     >
                       <option value="">Select Unit</option>
                       {trucks.map((t) => (
@@ -926,14 +940,14 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Select Driver</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Select Driver</label>
                     <select
                       value={selectedDriverId}
                       onChange={(e) => setSelectedDriverId(e.target.value)}
                       disabled={!selectedTruckId || loadingDrivers}
-                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-slate-400 transition-all cursor-pointer disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-blue-500 transition-all cursor-pointer disabled:bg-gray-50 dark:disabled:bg-slate-900 disabled:text-gray-400 dark:disabled:text-slate-600 appearance-none"
                     >
-                      <option value="">{loadingDrivers ? 'Loading...' : 'Select Driver'}</option>
+                      <option value="">{!selectedTruckId ? 'Select a truck first' : loadingDrivers ? 'Loading...' : availableDrivers.length === 0 ? 'No drivers assigned' : 'Select Driver'}</option>
                       {availableDrivers.map((d) => (
                         <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
                       ))}
@@ -943,30 +957,30 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               </div>
 
               {/* Schedule Delivery Block */}
-              <div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
+              <div className="bg-[#f0f9ff]/80 dark:bg-blue-900/10 p-8 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30 space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1] dark:text-blue-400">
                     <Clock size={18} />
                   </div>
-                  <h4 className="text-lg font-extrabold text-[#0369a1]">Delivery Schedule</h4>
+                  <h4 className="text-lg font-extrabold text-[#0369a1] dark:text-blue-400">Delivery Schedule</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Pickup Date *</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Pickup Date *</label>
                     <input
                       type="datetime-local"
                       value={proposedPickupDate}
                       onChange={(e) => setProposedPickupDate(e.target.value)}
-                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 transition-all"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Delivery Date *</label>
+                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Delivery Date *</label>
                     <input
                       type="datetime-local"
                       value={proposedDeliveryDate}
                       onChange={(e) => setProposedDeliveryDate(e.target.value)}
-                      className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 transition-all"
                     />
                   </div>
                 </div>
@@ -983,26 +997,26 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         setRequireAdvancePayment(e.target.checked);
                         if (!e.target.checked) setAdvancePaymentPercentage('');
                       }}
-                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 dark:border-slate-700 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
                     />
                     <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                       <path d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-base font-bold text-gray-700">Require advance payment before trip</span>
+                  <span className="text-base font-bold text-gray-700 dark:text-slate-300">Require advance payment before trip</span>
                 </label>
 
                 {requireAdvancePayment && (
                   <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-                    <label className="block text-base font-bold text-gray-700">Advance Payment % (Optional)</label>
+                    <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Advance Payment % (Optional)</label>
                     <input
                       type="number"
                       value={advancePaymentPercentage}
                       onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
-                      className="w-full h-14 px-6 bg-white border-2 border-gray-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full h-14 px-6 bg-white dark:bg-slate-950 border-2 border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-all"
                       placeholder="e.g., 70"
                     />
-                    <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                    <p className="text-sm text-gray-400 dark:text-slate-500 leading-relaxed font-medium">
                       Percentage of transportation fee to be paid upfront.
                     </p>
                   </div>
@@ -1011,11 +1025,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
               {/* Notes */}
               <div className="space-y-3">
-                <label className="block text-base font-bold text-gray-700">Notes</label>
+                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Notes</label>
                 <textarea
                   value={bidNotes}
                   onChange={(e) => setBidNotes(e.target.value)}
-                  className="w-full p-5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#345E85] transition-all min-h-[120px] resize-none"
+                  className="w-full p-5 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:outline-none focus:border-[#345E85] dark:focus:border-blue-500 transition-all min-h-[120px] resize-none"
                   placeholder="Add any additional notes..."
                 />
               </div>
@@ -1024,14 +1038,15 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             {/* Footer Actions */}
             <div className="p-10 pt-0 flex flex-col gap-4">
               {selectedAuction.status !== 'ACTIVE' && (
-                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 border border-amber-100 rounded-xl py-3 w-full">
+                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full">
                   Bidding available on ACTIVE auctions only.
                 </p>
               )}
               <div className="flex items-center justify-end gap-4 w-full">
                 <button
+                  type="button"
                   onClick={() => setShowBidModal(false)}
-                  className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
+                  className="px-10 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl text-base font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95"
                 >
                   Cancel
                 </button>
@@ -1051,71 +1066,71 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
       {/* Bid Details Modal */}
       {showDetailsModal && detailsAuction && createPortal(
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-                  <Gavel className="text-[#345E85]" size={22} />
+                <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center">
+                  <Gavel className="text-[#345E85] dark:text-blue-400" size={22} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">{detailsAuction.load?.title || 'Auction Details'}</h2>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Ref: {detailsAuction.id?.slice(0, 12)}</p>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{detailsAuction.load?.title || 'Auction Details'}</h2>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Ref: {detailsAuction.id?.slice(0, 12)}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailsModal(false)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 transition-colors">
+              <button onClick={() => setShowDetailsModal(false)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">
                 <X size={18} />
               </button>
             </div>
 
             {/* Status Banner */}
-            <div className="px-8 py-4 border-b border-slate-50 flex items-center justify-between shrink-0 bg-slate-50/50">
+            <div className="px-8 py-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
               <div className="flex items-center gap-3">
                 {getStatusBadge(detailsAuction.status)}
                 {getAuctionTypeBadge(detailsAuction.auctionType)}
               </div>
               <div className="flex items-center gap-6">
                 <div className="text-right">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Current Bid</p>
-                  <p className="text-xl font-black text-[#345E85]">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Current Bid</p>
+                  <p className="text-xl font-black text-[#345E85] dark:text-blue-400">
                     {detailsAuction.currentHighestBid ? formatCurrency(detailsAuction.currentHighestBid) : '—'}
                   </p>
                 </div>
-                <div className="h-10 w-px bg-slate-200" />
+                <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
                 <div className="text-right">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Bids</p>
-                  <p className="text-xl font-black text-slate-900">{detailsAuction.totalBids}</p>
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total Bids</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{detailsAuction.totalBids}</p>
                 </div>
-                <div className="h-10 w-px bg-slate-200" />
+                <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
                 <div className="text-right">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bidders</p>
-                  <p className="text-xl font-black text-slate-900">{detailsAuction.uniqueBidders}</p>
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Bidders</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{detailsAuction.uniqueBidders}</p>
                 </div>
               </div>
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
               {/* Route */}
-              <div className="relative pl-6 space-y-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+              <div className="relative pl-6 space-y-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
                 <h3 className="absolute -left-2 -top-1 hidden">Route</h3>
                 <div className="relative">
-                  <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white border-[3px] border-[#345E85] rounded-full" />
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Pickup</p>
-                    <p className="text-sm font-bold text-slate-900">{detailsAuction.load?.pickupLocation || 'N/A'}</p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-1">
+                  <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white dark:bg-slate-950 border-[3px] border-[#345E85] dark:border-blue-400 rounded-full" />
+                  <div className="bg-slate-50 dark:bg-slate-950/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
+                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Pickup</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{detailsAuction.load?.pickupLocation || 'N/A'}</p>
+                    <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                       <Clock size={10} /> {formatDate(detailsAuction.load?.pickupDate)}
                     </p>
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white border-[3px] border-rose-500 rounded-full" />
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Delivery</p>
-                    <p className="text-sm font-bold text-slate-900">{detailsAuction.load?.deliveryLocation || 'N/A'}</p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-1">
+                  <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white dark:bg-slate-950 border-[3px] border-rose-500 rounded-full" />
+                  <div className="bg-slate-50 dark:bg-slate-950/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
+                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Delivery</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{detailsAuction.load?.deliveryLocation || 'N/A'}</p>
+                    <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                       <Clock size={10} /> {formatDate(detailsAuction.load?.deliveryDate)}
                     </p>
                   </div>
@@ -1124,45 +1139,45 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
               {/* Cargo & Pricing Grid */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Payload</p>
-                  <p className="text-xl font-black text-slate-900">{detailsAuction.load?.weight?.toLocaleString() || '0'} <span className="text-sm font-medium text-slate-400">kg</span></p>
+                <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-1">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Payload</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{detailsAuction.load?.weight?.toLocaleString() || '0'} <span className="text-sm font-medium text-slate-400 dark:text-slate-600">kg</span></p>
                 </div>
-                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cargo Value</p>
-                  <p className="text-xl font-black text-slate-900">{detailsAuction.load?.loadValue ? formatCurrency(detailsAuction.load.loadValue) : '—'}</p>
+                <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-1">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cargo Value</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{detailsAuction.load?.loadValue ? formatCurrency(detailsAuction.load.loadValue) : '—'}</p>
                 </div>
-                <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-1">
-                  <p className="text-[9px] font-black text-[#345E85]/60 uppercase tracking-wider">Reserve Price</p>
-                  <p className="text-xl font-black text-[#345E85]">{detailsAuction.reservePrice ? formatCurrency(detailsAuction.reservePrice) : '—'}</p>
+                <div className="p-5 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl space-y-1">
+                  <p className="text-[9px] font-black text-[#345E85]/60 dark:text-blue-400/60 uppercase tracking-wider">Reserve Price</p>
+                  <p className="text-xl font-black text-[#345E85] dark:text-blue-400">{detailsAuction.reservePrice ? formatCurrency(detailsAuction.reservePrice) : '—'}</p>
                 </div>
-                <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Min. Increment</p>
-                  <p className="text-xl font-black text-slate-900">{detailsAuction.minimumBidIncrement ? formatCurrency(detailsAuction.minimumBidIncrement) : '—'}</p>
+                <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-1">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Min. Increment</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-slate-100">{detailsAuction.minimumBidIncrement ? formatCurrency(detailsAuction.minimumBidIncrement) : '—'}</p>
                 </div>
               </div>
 
               {/* Auction Window */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Auction Opens</p>
-                  <p className="text-sm font-bold text-slate-900">{formatDate(detailsAuction.auctionStart)}</p>
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Auction Opens</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatDate(detailsAuction.auctionStart)}</p>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Auction Closes</p>
-                  <p className="text-sm font-bold text-slate-900">{formatDate(detailsAuction.auctionEnd)}</p>
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Auction Closes</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatDate(detailsAuction.auctionEnd)}</p>
                 </div>
               </div>
 
               {/* Owner */}
               {detailsAuction.load?.cargoOwner && (
-                <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 font-black text-sm shadow-sm">
+                <div className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 font-black text-sm shadow-sm">
                     {(detailsAuction.load.cargoOwner.profile?.firstName?.[0] || 'C')}
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Cargo Owner</p>
-                    <p className="text-sm font-black text-slate-900">
+                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Cargo Owner</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                       {detailsAuction.load.cargoOwner.profile?.firstName} {detailsAuction.load.cargoOwner.profile?.lastName || 'Owner'}
                     </p>
                   </div>
@@ -1171,15 +1186,16 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             </div>
 
             {/* Footer Actions */}
-            <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-3 shrink-0">
+            <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col gap-3 shrink-0">
               {detailsAuction.status !== 'ACTIVE' && (
-                <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 border border-amber-100 rounded-xl py-2">
+                <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-2">
                   Bidding available on ACTIVE auctions only — this auction is {detailsAuction.status}
                 </p>
               )}
               {(userRole === 'TRUCK_OWNER' || userRole === 'BROKER') && (
                 <div className="flex items-center gap-3">
                   <button
+                    type="button"
                     onClick={() => { setShowDetailsModal(false); openQuickBidModal(detailsAuction); }}
                     disabled={detailsAuction.status !== 'ACTIVE'}
                     className="flex-1 py-4 bg-[#345E85] text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#2a4d6d] transition-all shadow-lg shadow-blue-900/10 active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
@@ -1187,22 +1203,28 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     <ZapIcon size={14} className="text-yellow-300" /> Quick Bid
                   </button>
                   <button
+                    type="button"
                     onClick={() => { setShowDetailsModal(false); openBidModal(detailsAuction); }}
                     disabled={detailsAuction.status !== 'ACTIVE'}
-                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black dark:hover:bg-slate-700 transition-all shadow-lg active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
                   >
                     <Gavel size={14} /> Custom Bid
                   </button>
                   <button
+                    type="button"
                     onClick={() => setShowDetailsModal(false)}
-                    className="px-6 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                    className="px-6 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
                   >
                     Close
                   </button>
                 </div>
               )}
               {(userRole !== 'TRUCK_OWNER' && userRole !== 'BROKER') && (
-                <button onClick={() => setShowDetailsModal(false)} className="py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
+                <button
+                  type="button"
+                  onClick={() => setShowDetailsModal(false)}
+                  className="py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+                >
                   Close
                 </button>
               )}

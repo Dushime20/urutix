@@ -164,80 +164,80 @@ const CreateAuction: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-              <PlusCircle className="w-6 h-6 text-[#345E85]" />
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/10 flex items-center justify-center">
+              <PlusCircle className="w-6 h-6 text-[#345E85] dark:text-blue-400" />
             </div>
-            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Auction Setup</h1>
+            <h1 className="text-4xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Auction Setup</h1>
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xl">
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest max-w-xl">
             Configure high-velocity auctions and attract elite transportation partners
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-6 flex items-center gap-3 animate-in slide-in-from-top-2">
-          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-            <AlertCircle className="text-red-600" size={18} />
+        <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 p-4 rounded-xl mb-6 flex items-center gap-3 animate-in slide-in-from-top-2">
+          <div className="w-8 h-8 bg-red-100 dark:bg-red-950 rounded-lg flex items-center justify-center shrink-0">
+            <AlertCircle className="text-red-600 dark:text-red-500" size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic leading-tight">{error}</h3>
+            <h3 className="text-xs font-black text-red-900 dark:text-red-400 uppercase tracking-tight italic leading-tight">{error}</h3>
           </div>
-          <button onClick={() => setError(null)} className="p-1 text-red-400 hover:text-red-600 transition-colors">
+          <button onClick={() => setError(null)} className="p-1 text-red-400 dark:text-red-600 hover:text-red-600 dark:hover:text-red-500 transition-colors">
             <X size={16} />
           </button>
         </div>
       )}
 
       {success && (
-        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl mb-6 flex items-center gap-3 animate-in slide-in-from-top-2">
-          <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
-            <CheckCircle2 className="text-emerald-600" size={18} />
+        <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-xl mb-6 flex items-center gap-3 animate-in slide-in-from-top-2">
+          <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-950 rounded-lg flex items-center justify-center shrink-0">
+            <CheckCircle2 className="text-emerald-600 dark:text-emerald-500" size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-black text-emerald-900 uppercase tracking-tight italic leading-tight">{success}</h3>
+            <h3 className="text-xs font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-tight italic leading-tight">{success}</h3>
           </div>
-          <button onClick={() => setSuccess(null)} className="p-1 text-emerald-400 hover:text-emerald-600 transition-colors">
+          <button onClick={() => setSuccess(null)} className="p-1 text-emerald-400 dark:text-emerald-600 hover:text-emerald-600 dark:hover:text-emerald-500 transition-colors">
             <X size={16} />
           </button>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="md:col-span-2 space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Cargo Selection</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Cargo Selection</label>
               {loadingCargos ? (
-                <div className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4">
-                  <Loader2 className="animate-spin text-[#345E85]" size={18} />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scanning manifests...</span>
+                <div className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center gap-4">
+                  <Loader2 className="animate-spin text-[#345E85] dark:text-blue-400" size={18} />
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Scanning manifests...</span>
                 </div>
               ) : (
                 <div className="relative group">
-                  <select
+                   <select
                     value={formData.loadId}
                     onChange={(e) => handleInputChange('loadId', e.target.value)}
                     required
-                    className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
+                    className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
                   >
-                    <option value="">-- Choose Cargo --</option>
+                    <option value="" className="dark:bg-slate-900">-- Choose Cargo --</option>
                     {cargos.map((cargo) => (
-                      <option key={cargo.id} value={cargo.id}>
+                      <option key={cargo.id} value={cargo.id} className="dark:bg-slate-900">
                         {cargo.title || cargo.description || `CARGO - ${cargo.id.slice(0, 8)} `}
                         {cargo.origin && cargo.destination && ` [${cargo.origin} >> ${cargo.destination}]`}
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-[#345E85] transition-colors">
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors">
                     <Truck size={20} />
                   </div>
                 </div>
               )}
-              {cargos.length === 0 && !loadingCargos && (
+               {cargos.length === 0 && !loadingCargos && (
                 <div className="flex items-center gap-2 px-2">
-                  <Info size={14} className="text-amber-500" />
-                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                  <Info size={14} className="text-amber-500 dark:text-amber-400" />
+                  <p className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">
                     No eligible cargos found. Register cargo before setup.
                   </p>
                 </div>
@@ -245,20 +245,20 @@ const CreateAuction: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Auction Strategy</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Auction Strategy</label>
               <div className="relative group">
                 <select
                   value={formData.auctionType}
                   onChange={(e) => handleInputChange('auctionType', e.target.value)}
                   required
-                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
                 >
-                  <option value="REVERSE">Reverse Auction (Descending)</option>
-                  <option value="FORWARD">Forward Auction (Ascending)</option>
-                  <option value="DUTCH">Dutch Auction (Fast-Drop)</option>
-                  <option value="SEALED">Sealed Bid (Confidential)</option>
+                  <option value="REVERSE" className="dark:bg-slate-900">Reverse Auction (Descending)</option>
+                  <option value="FORWARD" className="dark:bg-slate-900">Forward Auction (Ascending)</option>
+                  <option value="DUTCH" className="dark:bg-slate-900">Dutch Auction (Fast-Drop)</option>
+                  <option value="SEALED" className="dark:bg-slate-900">Sealed Bid (Confidential)</option>
                 </select>
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-[#345E85] transition-colors">
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors">
                   <Settings size={20} />
                 </div>
               </div>
@@ -273,48 +273,48 @@ const CreateAuction: React.FC = () => {
                   value={formData.reservePrice}
                   onChange={(e) => handleInputChange('reservePrice', e.target.value)}
                   placeholder="ENTER PRICE"
-                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all uppercase italic h-[60px] pl-14"
+                   className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
                 />
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
                   <DollarSign size={20} />
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Timing: Start Bound</label>
+             <div className="space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Timing: Start Bound</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
                   value={formData.auctionStart}
                   onChange={(e) => handleInputChange('auctionStart', e.target.value)}
                   required
-                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all uppercase italic h-[60px] pl-14"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14"
                 />
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
                   <Calendar size={20} />
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Timing: End Bound</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Timing: End Bound</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
                   value={formData.auctionEnd}
                   onChange={(e) => handleInputChange('auctionEnd', e.target.value)}
                   required
-                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] transition-all uppercase italic h-[60px] pl-14"
+                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14"
                 />
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
                   <Calendar size={20} />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-16 pt-10 border-t border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-6">
+          <div className="mt-16 pt-10 border-t border-slate-50 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-6">
             <button
               type="button"
               onClick={() => {
@@ -328,7 +328,7 @@ const CreateAuction: React.FC = () => {
                 setError(null);
                 setSuccess(null);
               }}
-              className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#0f172a] transition-colors"
+              className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] hover:text-[#0f172a] dark:hover:text-slate-100 transition-colors"
             >
               Reset parameters
             </button>
@@ -336,7 +336,7 @@ const CreateAuction: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="px-12 py-5 bg-slate-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#345E85] transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50 flex items-center gap-3"
+              className="px-12 py-5 bg-slate-900 dark:bg-blue-600 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#345E85] dark:hover:bg-blue-700 transition-all shadow-xl shadow-slate-900/10 dark:shadow-blue-500/20 disabled:opacity-50 flex items-center gap-3"
             >
               {loading ? (
                 <>

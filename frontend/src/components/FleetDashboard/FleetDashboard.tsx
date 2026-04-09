@@ -48,6 +48,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { TrucksList } from './TrucksList';
 import { TruckMatches } from './TruckMatches';
 import { TruckOwnerRecentActivities } from './TruckOwnerRecentActivities';
+import toast from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -106,6 +107,7 @@ export const FleetDashboard: React.FC = () => {
   const [userProfileName, setUserProfileName] = useState<string | null>(null);
 
   const [analytics, setAnalytics] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // ── Role Based Access Control ──────────────────────────────────────────────
   const rolePermissions: Record<string, string[]> = {
@@ -139,6 +141,8 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/safety')) setActiveTab('safety');
     else if (path.includes('/fleet/loan-requests')) setActiveTab('loans');
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
+    else if (path.includes('/fleet/financial-info')) setActiveTab('financial');
+    else if (path.includes('/fleet/cost-analysis')) setActiveTab('financial');
     else if (path.includes('/fleet/expenses')) setActiveTab('expenses');
     else if (path.includes('/fleet/routes')) setActiveTab('routes');
     else if (path.includes('/fleet/assignments')) setActiveTab('assignments');
@@ -332,9 +336,11 @@ export const FleetDashboard: React.FC = () => {
       if (formType === 'trucks') {
         const updated = await fleetApi.updateTruck(editingFleetItem.id, fleetData as any);
         updatedFleetItem = normalizeTruck(updated);
+        toast.success('Truck updated successfully');
       } else if (formType === 'drivers') {
         const updated = await fleetApi.updateDriver(editingFleetItem.id, fleetData);
         updatedFleetItem = normalizeDriver(updated);
+        toast.success('Driver updated successfully');
       } else {
         throw new Error('Unsupported fleet type');
       }
@@ -369,13 +375,114 @@ export const FleetDashboard: React.FC = () => {
     setShowForm(true);
   }, []);
 
+  const handleEditDriver = useCallback((driver: ServiceDriver) => {
+    console.log('🔧 Editing driver:', driver);
+    console.log('📋 Driver fields available:', Object.keys(driver));
+    
+    // Helper function to format dates for HTML date inputs (YYYY-MM-DD)
+    const formatDateForInput = (dateValue: any): string => {
+      if (!dateValue) return '';
+      
+      try {
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return '';
+        
+        // Format as YYYY-MM-DD for HTML date input
+        const formatted = date.toISOString().split('T')[0];
+        console.log(`📅 Formatted date ${dateValue} -> ${formatted}`);
+        return formatted;
+      } catch (error) {
+        console.warn('Error formatting date:', dateValue, error);
+        return '';
+      }
+    };
+
+    setActiveTab('drivers');
+    setFormType('drivers');
+    
+    // Pass the complete driver data with all fields needed for form prefilling
+    const editData = {
+      id: driver.id,
+      type: 'driver' as const,
+      name: `${driver.firstName} ${driver.lastName}`.trim(),
+      status: driver.status || 'ACTIVE' as FleetStatus,
+      createdAt: new Date(driver.createdAt),
+      updatedAt: new Date(driver.updatedAt),
+      
+      // Personal Information
+      firstName: driver.firstName || '',
+      lastName: driver.lastName || '',
+      email: driver.email || '',
+      phone: driver.phone || '',
+      dateOfBirth: formatDateForInput(driver.dateOfBirth),
+      address: driver.address || '',
+      
+      // License Information
+      licenseNumber: driver.licenseNumber || '',
+      licenseType: driver.licenseClasses?.[0] || 'CDL_A', // Use first class or default
+      licenseClasses: driver.licenseClasses || [],
+      licenseIssueDate: formatDateForInput(driver.licenseIssueDate),
+      licenseExpiry: formatDateForInput(driver.licenseExpiry),
+      licenseState: driver.licenseState || '',
+      licenseCountry: driver.licenseCountry || '',
+      
+      // Employment Information
+      employmentType: driver.employmentType || 'FULL_TIME',
+      hireDate: formatDateForInput(driver.hireDate),
+      terminationDate: formatDateForInput(driver.terminationDate),
+      availabilityStatus: driver.availabilityStatus || 'AVAILABLE',
+      
+      // Experience and Performance
+      experience: driver.experience || 0,
+      
+      // Rates and Compensation
+      hourlyRate: driver.hourlyRate ? Number(driver.hourlyRate) : undefined,
+      mileageRate: driver.mileageRate ? Number(driver.mileageRate) : undefined,
+      
+      // Compliance and Certifications
+      medicalCertExpiry: formatDateForInput(driver.medicalCertExpiry),
+      drugTestDate: formatDateForInput(driver.drugTestDate),
+      backgroundCheckDate: formatDateForInput(driver.backgroundCheckDate),
+      trainingCompletionDate: formatDateForInput(driver.trainingCompletionDate),
+      
+      // Notes and Additional Info
+      driverNotes: driver.driverNotes || '',
+      emergencyContact: driver.emergencyContact || {},
+      
+      // Contact Information (for form compatibility)
+      contactInfo: { 
+        phone: driver.phone || '', 
+        email: driver.email || '' 
+      }
+    } as LocalFleetItem;
+    
+    console.log('📝 Edit data prepared:', editData);
+    console.log('🎯 Key form fields:', {
+      firstName: editData.firstName,
+      lastName: editData.lastName,
+      email: editData.contactInfo?.email,
+      phone: editData.contactInfo?.phone,
+      licenseNumber: editData.licenseNumber,
+      dateOfBirth: editData.dateOfBirth,
+      hireDate: editData.hireDate
+    });
+    
+    setEditingFleetItem(editData);
+    setFormMode('edit');
+    setShowForm(true);
+  }, []);
+
   const handleCloseForm = useCallback(() => {
     setShowForm(false);
     setEditingFleetItem(null);
+    // Trigger refresh when closing form (especially after edit)
+    if (formMode === 'edit') {
+      setRefreshTrigger(prev => prev + 1);
+    }
     if (location.pathname.includes('/create')) {
       navigate('/dashboard/fleet');
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, formMode]);
 
   useEffect(() => {
     if (selectedFleetItem) {
@@ -394,28 +501,33 @@ export const FleetDashboard: React.FC = () => {
 
   return (
     <DetailedErrorBoundary>
-      <div className="min-h-screen bg-[#F8FAFC]">
-        <DashboardHeader />
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-slate-800 transition-colors">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <DashboardHeader />
+          </div>
+        </div>
 
         {/* Intelligence Header Context */}
-        <div className="bg-white border-b border-slate-100 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-20 opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
-            <Layers size={140} className="text-primary-500" />
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200">
+          <div className="absolute top-0 right-0 p-20 opacity-[0.02] dark:opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
+            <Layers size={140} className="text-blue-500 dark:text-blue-400" />
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-500 shadow-inner">
+                  <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
                     <Truck size={20} />
                   </div>
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-500">
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400">
                     <TranslatedText text="Fleet Dashboard" />
                   </h2>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-1">
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
                   {(() => {
                     const hour = new Date().getHours();
                     const greeting = hour < 12 ? tSync('Good morning') : hour < 18 ? tSync('Good afternoon') : tSync('Good evening');
@@ -425,10 +537,10 @@ export const FleetDashboard: React.FC = () => {
                         ? `${(user as any).profile.firstName} ${(user as any).profile.lastName || ''}`.trim()
                         : user?.email?.split('@')[0] || 'Fleet Manager');
 
-                    return <>{greeting}, <span className="text-primary-500">{displayName}</span></>;
+                    return <>{greeting}, <span className="text-blue-600 dark:text-blue-400">{displayName}</span></>;
                   })()}
                 </h1>
-                <p className="text-lg text-slate-500 font-medium max-w-xl">
+                <p className="text-lg text-gray-600 dark:text-gray-400 font-medium max-w-xl">
                   <TranslatedText text="Manage your trucks, drivers and fleet performance." />
                 </p>
               </div>
@@ -436,21 +548,21 @@ export const FleetDashboard: React.FC = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleCreateTruck}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-primary-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary-500/20 hover:bg-primary-600 active:scale-95 transition-all group"
+                  className="flex items-center gap-2.5 px-6 py-4 bg-blue-600 dark:bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-700 active:scale-95 transition-all group"
                 >
                   <Plus size={18} className="group-hover:rotate-90 transition-transform" />
                   <TranslatedText text="Add New Truck" />
                 </button>
                 <button
                   onClick={handleCreateDriver}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-white text-slate-700 border border-slate-100 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:border-primary-500 hover:text-primary-500 active:scale-95 transition-all"
+                  className="flex items-center gap-2.5 px-6 py-4 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-lg font-semibold text-sm hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 active:scale-95 transition-all shadow-sm"
                 >
                   <User size={18} />
                   <TranslatedText text="Add New Driver" />
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/fleet/fuel')}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-primary-50 text-primary-500 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-primary-100 active:scale-95 transition-all"
+                  className="flex items-center gap-2.5 px-6 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg font-semibold text-sm hover:bg-gray-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
                 >
                   <Fuel size={18} />
                   <TranslatedText text="Log Fuel" />
@@ -501,8 +613,8 @@ export const FleetDashboard: React.FC = () => {
                      }
                    }}
                   className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
-                    ? 'bg-primary-50 text-primary-500 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-600'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'
                     }`}
                 >
                   <tab.icon size={16} />
@@ -512,6 +624,7 @@ export const FleetDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {activeTab === 'overview' ? (
@@ -570,34 +683,34 @@ export const FleetDashboard: React.FC = () => {
               {/* Operations Matrix */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Deployment Visualization */}
-                <div className="lg:col-span-2 bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[560px]">
-                  <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between shrink-0">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col h-[560px] transition-colors duration-300 shadow-sm">
+                  <div className="px-8 py-6 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between shrink-0">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <MapIcon size={16} className="text-primary-500" />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">
+                        <MapIcon size={16} className="text-blue-600 dark:text-blue-400" />
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
                           <TranslatedText text="Live Tracking" />
                         </h3>
                       </div>
-                      <h4 className="text-xl font-black text-slate-900 tracking-tight">
+                      <h4 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
                         <TranslatedText text="Fleet Map" />
                       </h4>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex -space-x-2">
                         {[1, 2, 3].map(i => (
-                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
+                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500 dark:text-slate-400">
                             TR
                           </div>
                         ))}
                       </div>
-                      <button className="flex items-center gap-2 px-5 py-2.5 bg-primary-50 text-primary-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all">
+                      <button className="flex items-center gap-2 px-5 py-2.5 bg-primary-50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all">
                         <Zap size={14} /> <TranslatedText text="Refresh Map" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex-1 relative bg-slate-50 z-0">
+                  <div className="flex-1 relative bg-slate-50 dark:bg-slate-950 z-0">
                     <MapContainer
                       center={[-1.2921, 36.8219]}
                       zoom={13}
@@ -627,7 +740,7 @@ export const FleetDashboard: React.FC = () => {
                             <Popup>
                               <div className="p-3">
                                 <p className="font-black text-primary-500 uppercase text-[10px] mb-1">Truck ID: {item.plateNumber}</p>
-                                <p className="font-bold text-slate-900">{item.name}</p>
+                                <p className="font-bold text-slate-900 dark:text-white">{item.name}</p>
                                 <div className="flex items-center gap-2 mt-2">
                                   <div className={`h-1.5 w-1.5 rounded-full ${item.status === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.status}</span>
@@ -640,10 +753,10 @@ export const FleetDashboard: React.FC = () => {
 
                     {/* Layered Controls */}
                     <div className="absolute bottom-8 left-8 z-[400] flex flex-col gap-2">
-                      <div className="bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-white/50 space-y-2">
-                        <div className="flex items-center gap-3 px-3 py-2 bg-white rounded-xl shadow-inner border border-slate-100">
+                      <div className="bg-white dark:bg-gray-800 backdrop-blur-md p-2 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-2">
+                        <div className="flex items-center gap-3 px-3 py-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
                           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Live Updates</span>
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 dark:text-gray-300">Live Updates</span>
                         </div>
                       </div>
                     </div>
@@ -653,42 +766,42 @@ export const FleetDashboard: React.FC = () => {
                 {/* Performance Hub */}
                 <div className="flex flex-col gap-8">
                   {/* Elite Personnel Card */}
-                  <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 flex flex-col relative overflow-hidden h-[300px]">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-8 flex flex-col relative overflow-hidden h-[300px] transition-colors duration-300 shadow-sm">
                     <div className="absolute top-0 right-0 p-8 opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
                       <Shield size={100} className="text-amber-400" />
                     </div>
 
                     <div className="flex items-center gap-3 mb-8">
-                      <div className="h-8 w-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
+                      <div className="h-8 w-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center text-amber-500 dark:text-amber-400">
                         <Star size={16} fill="currentColor" />
                       </div>
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400">
                         <TranslatedText text="Top Driver" />
                       </h3>
                     </div>
 
                     <div className="flex items-center gap-6 mb-8">
-                      <div className="h-24 w-24 rounded-[32px] bg-slate-50 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                        <User size={40} className="text-slate-300" />
+                      <div className="h-24 w-24 rounded-lg bg-gray-50 dark:bg-gray-800 border-4 border-white dark:border-gray-700 overflow-hidden flex items-center justify-center">
+                        <User size={40} className="text-gray-300 dark:text-gray-600" />
                       </div>
                       <div>
 
-                        <h4 className="text-2xl font-black text-slate-900 tracking-tight">Samuel Karanja</h4>
+                        <h4 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Samuel Karanja</h4>
                         <div className="flex items-center gap-2 mt-1">
                           <Star size={14} className="fill-amber-400 text-amber-400" />
-                          <span className="text-lg font-black text-slate-900">4.96</span>
-                          <span className="text-sm font-bold text-slate-400">Rating</span>
+                          <span className="text-lg font-black text-gray-900 dark:text-white">4.96</span>
+                          <span className="text-sm font-bold text-gray-400 dark:text-gray-500">Rating</span>
                         </div>
                       </div>
                     </div>
 
-                    <button className="mt-auto w-full py-4 bg-slate-50 hover:bg-primary-500 hover:text-white text-primary-500 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all">
+                    <button className="mt-auto w-full py-4 bg-gray-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                       View Driver Profile
                     </button>
                   </div>
 
                   {/* Operational Metrics Sub-Matrix */}
-                  <div className="bg-primary-500 rounded-[40px] p-8 text-white relative overflow-hidden flex-1 shadow-xl shadow-primary-100">
+                  <div className="bg-blue-500 dark:bg-blue-600 rounded-lg p-8 text-white relative overflow-hidden flex-1">
                     <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
                       <Activity size={180} />
                     </div>
@@ -732,12 +845,12 @@ export const FleetDashboard: React.FC = () => {
               <div className="space-y-6 mt-12">
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500">
+                    <div className="h-8 w-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-500 dark:text-blue-400">
                       <Clock size={16} />
                     </div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Recent Activities</h3>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400">Recent Activities</h3>
                   </div>
-                  <button className="text-[10px] font-black uppercase tracking-widest text-primary-500 hover:underline decoration-2 underline-offset-4">
+                  <button className="text-[10px] font-black uppercase tracking-widest text-blue-500 dark:text-blue-400 hover:underline decoration-2 underline-offset-4">
                     View All
                   </button>
                 </div>
@@ -753,9 +866,9 @@ export const FleetDashboard: React.FC = () => {
             >
               {/* Specialized View Header (Hidden for tabs that implement their own complete control surfaces) */}
               {!['trucks', 'drivers', 'assignments'].includes(activeTab) && (
-                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="bg-white dark:bg-gray-900 p-8 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-6">
-                    <div className="h-16 w-16 bg-primary-50 rounded-[24px] flex items-center justify-center text-primary-500 shadow-inner">
+                    <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-500 dark:text-blue-400">
                       {activeTab === 'trucks' ? <Truck size={28} /> :
                         activeTab === 'analytics' ? <Activity size={28} /> :
                           activeTab === 'safety' ? <Shield size={28} /> :
@@ -767,7 +880,7 @@ export const FleetDashboard: React.FC = () => {
                                       activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                      <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
                         {activeTab === 'trucks' ? <TranslatedText text="Trucks" /> :
                           activeTab === 'analytics' ? <TranslatedText text="Analytics" /> :
                             activeTab === 'safety' ? <TranslatedText text="Safety" /> :
@@ -780,8 +893,8 @@ export const FleetDashboard: React.FC = () => {
                                           <TranslatedText text="Drivers" />}
                       </h2>
                       {activeTab !== 'fuel' && activeTab !== 'routes' && (
-                        <p className="text-sm font-medium text-slate-500">
-                          <TranslatedText text="Status" />: <span className="text-emerald-500 font-black"><TranslatedText text="Active" /></span>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          <TranslatedText text="Status" />: <span className="text-green-500 dark:text-green-400 font-black"><TranslatedText text="Active" /></span>
                         </p>
                       )}
                     </div>
@@ -789,24 +902,24 @@ export const FleetDashboard: React.FC = () => {
 
                   <div className="flex items-center gap-3">
                     <div className="relative group hidden sm:block">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" size={16} />
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" size={16} />
                       <input
                         type="text"
                         placeholder="Search fleet entities..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-12 pr-6 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all w-64"
+                        className="pl-12 pr-6 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg text-[11px] font-bold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-700 focus:ring-4 focus:ring-blue-50 dark:focus:ring-blue-900/20 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all w-64"
                       />
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="bg-white p-2 sm:p-4 rounded-[40px] border border-slate-100 shadow-xl overflow-hidden min-h-[500px]">
+              <div className="bg-white dark:bg-gray-900 p-2 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[500px]">
                 {error && (
-                  <div className="bg-rose-50 border border-rose-100 text-rose-600 p-6 rounded-[32px] flex items-center gap-3 m-4" role="alert">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-6 rounded-lg flex items-center gap-3 m-4" role="alert">
                     <AlertTriangle size={20} />
-                    <span className="text-sm font-black uppercase tracking-widest">{error}</span>
+                    <span className="text-sm font-semibold">{error}</span>
                   </div>
                 )}
                 {activeTab === 'analytics' ? (
@@ -824,7 +937,11 @@ export const FleetDashboard: React.FC = () => {
                 ) : activeTab === 'assignments' ? (
                   <FleetAssignmentManager />
                 ) : activeTab === 'drivers' ? (
-                  <DriversList onAddDriver={handleCreateDriver} />
+                  <DriversList 
+                    onAddDriver={handleCreateDriver} 
+                    onEditDriver={handleEditDriver} 
+                    refreshTrigger={refreshTrigger}
+                  />
                 ) : activeTab === 'trucks' ? (
                   <TrucksList onAddTruck={handleCreateTruck} />
                 ) : activeTab === 'matches' ? (

@@ -17,7 +17,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@n
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../../../guards/permission.guard';
 import { RequirePermissions } from '../../auth/decorators/require-permissions.decorator';
-import { MLPipelineService } from './../services/ml-pipeline.service';
+import { MlPipelineService } from './../services/ml-pipeline.service';
 import { RealTimeProcessorService } from './../services/real-time-processor.service';
 import { ApiMarketplaceService } from './../services/api-marketplace.service';
 
@@ -27,7 +27,7 @@ import { ApiMarketplaceService } from './../services/api-marketplace.service';
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AdvancedAnalyticsController {
   constructor(
-    private readonly mlPipelineService: MLPipelineService,
+    private readonly mlPipelineService: MlPipelineService,
     private readonly realTimeProcessor: RealTimeProcessorService,
     private readonly apiMarketplaceService: ApiMarketplaceService,
   ) {}
@@ -94,11 +94,7 @@ export class AdvancedAnalyticsController {
     @Body() streamData: { streamType: string; eventData: any }
   ) {
     const { tenantId } = req.user;
-    return this.realTimeProcessor.processAnalyticsStream(
-      tenantId,
-      streamData.streamType,
-      streamData.eventData
-    );
+    return this.realTimeProcessor.processAnalyticsStream(tenantId, streamData);
   }
 
   @Get('realtime/dashboard')

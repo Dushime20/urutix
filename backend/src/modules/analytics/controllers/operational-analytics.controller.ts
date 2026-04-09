@@ -64,12 +64,9 @@ export class OperationalAnalyticsController {
   ) {
     const { tenantId, userId } = req.user;
     
-    const period = startDate && endDate ? {
-      start: new Date(startDate),
-      end: new Date(endDate),
-    } : undefined;
+    const periodStr = startDate && endDate ? `${startDate}_${endDate}` : 'last_30_days';
 
-    return this.carrierIntelligenceService.analyzeCarrierPerformance(tenantId, userId, period);
+    return this.carrierIntelligenceService.analyzeCarrierPerformance(tenantId, userId, periodStr);
   }
 
   @Get('carriers/:carrierId/scorecard')
@@ -120,13 +117,8 @@ export class OperationalAnalyticsController {
     @Query('cargoType') cargoType?: string,
     @Query('timeframe') timeframe: 'monthly' | 'quarterly' = 'monthly',
   ) {
-    const { tenantId } = req.user;
-    return this.marketIntelligenceService.getMarketTrends(
-      tenantId, 
-      routeHash, 
-      cargoType, 
-      timeframe
-    );
+    const { tenantId, userId } = req.user;
+    return this.marketIntelligenceService.getMarketTrends(tenantId, userId, routeHash, cargoType);
   }
 
   @Get('market/positioning')
@@ -138,10 +130,6 @@ export class OperationalAnalyticsController {
     @Query('cargoType') cargoType?: string,
   ) {
     const { tenantId, userId } = req.user;
-    return this.marketIntelligenceService.getCompetitivePositioning(
-      tenantId, 
-      userId, 
-      cargoType
-    );
+    return this.marketIntelligenceService.getCompetitivePositioning(tenantId, userId);
   }
 }

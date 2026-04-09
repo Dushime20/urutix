@@ -46,7 +46,7 @@ export function CoreFeatures() {
           <h2 className="text-base font-semibold leading-7 text-primary-600 uppercase tracking-wide">
             <TranslatedText text="The UrutiX Advantage" />
           </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-900 sm:text-4xl">
             <TranslatedText text="A Seamless Logistics Engine" />
           </p>
           <p className="mt-6 text-lg leading-8 text-slate-600">
@@ -56,7 +56,7 @@ export function CoreFeatures() {
 
         <div className="relative">
           {/* Connector Line (Desktop) */}
-          <div className="hidden lg:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-indigo-200 via-emerald-200 to-blue-200 z-0" />
+          <div className="hidden lg:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-slate-200 z-0" />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative z-10">
             {steps.map((step, index) => (
@@ -66,11 +66,11 @@ export function CoreFeatures() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.2 }}
-                className="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 group hover:-translate-y-1 transition-transform duration-300"
+                className="relative bg-white rounded-2xl p-8 border border-slate-100 group hover:-translate-y-1 transition-transform duration-300"
               >
                 {/* Step Number Badge */}
-                <div className="absolute -top-6 left-8 bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-                  <div className={`w-12 h-12 rounded-lg ${step.color} flex items-center justify-center text-white shadow-lg`}>
+                <div className="absolute -top-6 left-8 bg-white p-2 rounded-xl border border-slate-100">
+                  <div className={`w-12 h-12 rounded-lg ${step.color} flex items-center justify-center text-white`}>
                     <step.icon className="w-6 h-6" />
                   </div>
                 </div>
@@ -79,7 +79,7 @@ export function CoreFeatures() {
                   <h3 className={`text-sm font-bold uppercase tracking-wider ${step.textColor} mb-2`}>
                     <TranslatedText text={step.title} />
                   </h3>
-                  <h4 className="text-xl font-bold text-slate-900 mb-4">
+                  <h4 className="text-xl font-bold text-slate-900 dark:text-slate-900 mb-4">
                     <TranslatedText text={step.headline} />
                   </h4>
                   <p className="text-slate-600 leading-relaxed">

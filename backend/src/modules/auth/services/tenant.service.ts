@@ -514,7 +514,7 @@ export class TenantService {
     if (kycData.registrationNumber) tenant.businessLicense = kycData.registrationNumber;
     if (kycData.taxId) tenant.taxId = kycData.taxId;
 
-    this.logger.log(`=��� KYC submitted for tenant ${id}`);
+    this.logger.log(`=🔐 KYC submitted for tenant ${id}`);
     return this.tenantRepository.save(tenant);
   }
 
@@ -532,7 +532,7 @@ export class TenantService {
     tenant.kycNotes = notes;
 
     if (status === 'APPROVED') {
-      // tenant.kycVerifiedAt = new Date();
+      tenant.kycVerifiedAt = new Date();
       // Optionally activate tenant if they were pending activation
       if (tenant.status === TenantStatus.PENDING_ACTIVATION) {
         tenant.status = TenantStatus.ACTIVE;
@@ -541,7 +541,7 @@ export class TenantService {
       }
     }
 
-    this.logger.log(`=��� KYC status updated for tenant ${id} to ${status}`);
+    this.logger.log(`=🔐 KYC status updated for tenant ${id} to ${status}`);
     return this.tenantRepository.save(tenant);
   }
 
@@ -560,6 +560,7 @@ export class TenantService {
       order: { kycSubmittedAt: 'DESC' }
     });
   }
+
 
   async updateOnboardingStep(id: string, step: number): Promise<Tenant> {
     const tenant = await this.findTenantById(id);

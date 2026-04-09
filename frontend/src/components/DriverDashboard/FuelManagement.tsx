@@ -13,7 +13,9 @@ import {
   Truck,
   Sparkles,
   CloudRain,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  Camera
 } from 'lucide-react';
 import { fuelApi } from '../../services/fuelApi';
 import type { CreateFuelLogData } from '../../services/fuelApi';
@@ -40,6 +42,8 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
     location: '',
     odometer: 0,
     paymentMethod: 'CASH',
+    receiptFile: undefined,
+    odometerVerificationFile: undefined,
   });
 
   // Fetch driver profile to get assigned truck
@@ -91,6 +95,17 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
     onSuccess: () => {
       toast.success('Fuel log recorded successfully!');
       setShowLogForm(false);
+      setFormData({
+        fuelDate: new Date().toISOString().split('T')[0],
+        gallons: 0,
+        pricePerGallon: 0,
+        location: '',
+        odometer: 0,
+        paymentMethod: 'CASH',
+        truckId: driverProfile?.currentTruckId,
+        receiptFile: undefined,
+        odometerVerificationFile: undefined,
+      });
       queryClient.invalidateQueries({ queryKey: ['driver-fuel-logs'] });
     },
     onError: () => {
@@ -116,11 +131,11 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
     enabled: !!driverId,
   });
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(Number(amount));
   };
 
   return (
@@ -192,7 +207,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
             <Droplets size={24} />
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Gallons</p>
-          <h3 className="text-3xl font-black text-[#0f172a] tracking-tight">{stats.totalVolume.toFixed(1)} GAL</h3>
+          <h3 className="text-3xl font-black text-[#0f172a] tracking-tight">{Number(stats.totalVolume).toFixed(1)} GAL</h3>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Volume Yield</p>
         </div>
 
@@ -273,12 +288,12 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">CO2 Saved</p>
-                    <p className="text-2xl font-black text-emerald-600 tracking-tighter italic">{stats.co2Saved.toFixed(1)} KG</p>
+                    <p className="text-2xl font-black text-emerald-600 tracking-tighter italic">{Number(stats.co2Saved).toFixed(1)} KG</p>
                     <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none">Safe Planet Contribution</p>
                 </div>
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Efficiency Rating</p>
-                    <p className="text-2xl font-black text-[#0f172a] tracking-tighter italic">{stats.efficiencyMpg.toFixed(1)} MPG</p>
+                    <p className="text-2xl font-black text-[#0f172a] tracking-tighter italic">{Number(stats.efficiencyMpg).toFixed(1)} MPG</p>
                     <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none">Real-time Performance</p>
                 </div>
             </div>
@@ -304,147 +319,214 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
       {/* Form Modal */}
       <AnimatePresence>
         {showLogForm && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
               onClick={() => setShowLogForm(false)}
-              className="absolute inset-0 bg-[#0f172a]/40 backdrop-blur-sm" 
+              className="absolute inset-0 bg-[#0f172a]/60 backdrop-blur-sm" 
             />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
             >
-              <div className="bg-[#345E85] p-10 text-white">
-                <h3 className="text-2xl font-black uppercase tracking-tight">Record Fuel Purchase</h3>
-                <p className="text-blue-100/70 text-sm font-medium mt-1">Submit your fuel receipt data for verification</p>
+              <div className="bg-[#345E85] p-6 md:p-10 text-white shrink-0">
+                <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight">Record Fuel Purchase</h3>
+                <p className="text-blue-100/70 text-xs md:text-sm font-medium mt-1">Submit your fuel receipt data for verification</p>
               </div>
               
-              <form onSubmit={handleSubmit} className="p-10 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Current Assigned Truck</label>
-                    <div className="relative">
-                      <Truck className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <input 
-                        type="text" 
-                        readOnly
-                        className="w-full h-14 bg-slate-100 border border-slate-200 rounded-2xl pl-14 pr-6 font-bold text-slate-500 cursor-not-allowed transition-all"
-                        value={assignedTruck ? `${assignedTruck.plateNumber} (${assignedTruck.make} ${assignedTruck.model})` : (driverProfile?.currentTruckId || 'No Assigned Truck')}
-                      />
+              <div className="overflow-y-auto custom-scrollbar p-6 md:p-10">
+                <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Current Assigned Truck</label>
+                      <div className="relative">
+                        <Truck className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <input 
+                          type="text" 
+                          readOnly
+                          className="w-full h-14 bg-slate-100 border border-slate-200 rounded-2xl pl-14 pr-6 font-bold text-slate-500 cursor-not-allowed transition-all"
+                          value={assignedTruck ? `${assignedTruck.plateNumber} (${assignedTruck.make} ${assignedTruck.model})` : (driverProfile?.currentTruckId || 'No Assigned Truck')}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Fuel Date</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <input 
-                        type="date" 
-                        required
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                        value={formData.fuelDate}
-                        onChange={(e) => setFormData({...formData, fuelDate: e.target.value})}
-                      />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Fuel Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <input 
+                          type="date" 
+                          required
+                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          value={formData.fuelDate}
+                          onChange={(e) => setFormData({...formData, fuelDate: e.target.value})}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Volume (Gallons)</label>
-                    <div className="relative">
-                      <Droplets className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Volume (Gallons)</label>
+                      <div className="relative">
+                        <Droplets className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          required
+                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          placeholder="0.00"
+                          value={formData.gallons || ''}
+                          onChange={(e) => setFormData({...formData, gallons: parseFloat(e.target.value)})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Price Per Gallon</label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <input 
+                          type="number" 
+                          step="0.001" 
+                          required
+                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          placeholder="0.000"
+                          value={formData.pricePerGallon || ''}
+                          onChange={(e) => setFormData({...formData, pricePerGallon: parseFloat(e.target.value)})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Purchase Location</label>
+                      <div className="relative">
+                        <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <input 
+                          type="text" 
+                          required
+                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          placeholder="Enter City, State or Gas Station Name"
+                          value={formData.location || ''}
+                          onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Odometer Reading</label>
                       <input 
                         type="number" 
-                        step="0.01" 
-                        required
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                        placeholder="0.00"
-                        value={formData.gallons || ''}
-                        onChange={(e) => setFormData({...formData, gallons: parseFloat(e.target.value)})}
+                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                        placeholder="Current Odometer"
+                        value={formData.odometer || ''}
+                        onChange={(e) => setFormData({...formData, odometer: parseInt(e.target.value)})}
                       />
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Price Per Gallon</label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <input 
-                        type="number" 
-                        step="0.001" 
-                        required
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                        placeholder="0.000"
-                        value={formData.pricePerGallon || ''}
-                        onChange={(e) => setFormData({...formData, pricePerGallon: parseFloat(e.target.value)})}
-                      />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Payment Method</label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
+                        <select 
+                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
+                          value={formData.paymentMethod}
+                          onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
+                        >
+                          <option value="CASH">Cash</option>
+                          <option value="FUEL_CARD">Fuel Card</option>
+                          <option value="CREDIT_CARD">Credit Card</option>
+                          <option value="ADVANCE">From Advance</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* File Verification Section */}
+                    <div className="space-y-4 md:col-span-2 pt-4">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Verification Documents</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {/* Fuel Receipt Upload */}
+                        <div className="relative">
+                          <input 
+                            type="file" 
+                            id="receiptFile"
+                            accept="image/*,.pdf"
+                            className="hidden" 
+                            onChange={(e) => setFormData({...formData, receiptFile: e.target.files?.[0] || undefined})}
+                          />
+                          <label 
+                            htmlFor="receiptFile"
+                            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all cursor-pointer group ${
+                              formData.receiptFile 
+                                ? 'border-emerald-500 bg-emerald-50/30' 
+                                : 'border-slate-200 hover:border-[#345E85] hover:bg-slate-50'
+                            }`}
+                          >
+                            <FileText className={`w-8 h-8 mb-2 transition-colors ${
+                              formData.receiptFile ? 'text-emerald-500' : 'text-slate-300 group-hover:text-[#345E85]'
+                            }`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest text-center truncate max-w-full px-2 ${
+                              formData.receiptFile ? 'text-emerald-600' : 'text-slate-400 group-hover:text-[#345E85]'
+                            }`}>
+                              {formData.receiptFile ? formData.receiptFile.name : 'Upload Fuel Receipt'}
+                            </span>
+                          </label>
+                        </div>
+
+                        {/* Odometer Verification Upload */}
+                        <div className="relative">
+                          <input 
+                            type="file" 
+                            id="odometerFile"
+                            accept="image/*"
+                            className="hidden" 
+                            onChange={(e) => setFormData({...formData, odometerVerificationFile: e.target.files?.[0] || undefined})}
+                          />
+                          <label 
+                            htmlFor="odometerFile"
+                            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all cursor-pointer group ${
+                              formData.odometerVerificationFile 
+                                ? 'border-emerald-500 bg-emerald-50/30' 
+                                : 'border-slate-200 hover:border-[#345E85] hover:bg-slate-50'
+                            }`}
+                          >
+                            <Camera className={`w-8 h-8 mb-2 transition-colors ${
+                              formData.odometerVerificationFile ? 'text-emerald-500' : 'text-slate-300 group-hover:text-[#345E85]'
+                            }`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest text-center truncate max-w-full px-2 ${
+                              formData.odometerVerificationFile ? 'text-emerald-600' : 'text-slate-400 group-hover:text-[#345E85]'
+                            }`}>
+                              {formData.odometerVerificationFile ? formData.odometerVerificationFile.name : 'Odometer Reading Photo'}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-medium text-slate-400 italic px-1">
+                        * High-quality photos are required for verification to avoid flagging.
+                      </p>
                     </div>
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Purchase Location</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <input 
-                        type="text" 
-                        required
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                        placeholder="Enter City, State or Gas Station Name"
-                        value={formData.location || ''}
-                        onChange={(e) => setFormData({...formData, location: e.target.value})}
-                      />
-                    </div>
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100">
+                    <button 
+                      type="button" 
+                      onClick={() => setShowLogForm(false)}
+                      className="order-2 sm:order-1 flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={createLogMutation.isPending}
+                      className="order-1 sm:order-2 flex-[2] h-16 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {createLogMutation.isPending ? 'Recording...' : 'Submit Log'}
+                    </button>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Odometer Reading</label>
-                    <input 
-                      type="number" 
-                      className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
-                      placeholder="Current Odometer"
-                      value={formData.odometer || ''}
-                      onChange={(e) => setFormData({...formData, odometer: parseInt(e.target.value)})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Payment Method</label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
-                      <select 
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
-                        value={formData.paymentMethod}
-                        onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                      >
-                        <option value="CASH">Cash</option>
-                        <option value="FUEL_CARD">Fuel Card</option>
-                        <option value="CREDIT_CARD">Credit Card</option>
-                        <option value="ADVANCE">From Advance</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-6 border-t border-slate-100">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowLogForm(false)}
-                    className="flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    disabled={createLogMutation.isPending}
-                    className="flex-[2] h-16 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-slate-900 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    {createLogMutation.isPending ? 'Recording...' : 'Submit Log'}
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}
@@ -498,8 +580,8 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                           <Droplets size={10} />
                           Volume
                         </p>
-                        <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{log.gallons.toFixed(2)} GAL</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-1">${log.pricePerGallon.toFixed(3)} / GAL</p>
+                        <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{Number(log.gallons).toFixed(2)} GAL</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1">${Number(log.pricePerGallon).toFixed(3)} / GAL</p>
                       </div>
 
                       <div className="col-span-1">

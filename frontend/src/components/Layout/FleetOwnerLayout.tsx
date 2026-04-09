@@ -71,13 +71,18 @@ const FleetOwnerLayout: React.FC = () => {
     location.pathname === '/dashboard/fleet/routes' ||
     location.pathname === '/dashboard/fleet/trucks' ||
     location.pathname === '/dashboard/fleet/drivers' ||
-    location.pathname === '/dashboard/fleet/assignments';
+    location.pathname === '/dashboard/fleet/assignments' ||
+    location.pathname === '/dashboard/fleet/cost-analysis' ||
+    location.pathname === '/dashboard/fleet/financial/cost-analysis' ||
+    location.pathname === '/dashboard/fleet/financial/expenses' ||
+    location.pathname === '/dashboard/fleet/financial/overview' ||
+    location.pathname === '/dashboard/fleet/financial/reports';
 
   return (
     <>
       {isSelfAndLayout ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col">
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>

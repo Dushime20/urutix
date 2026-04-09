@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { TranslatedText } from "@/components/translated-text";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -18,6 +19,8 @@ const navigation = [
 ];
 
 export function Header() {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
@@ -64,7 +67,7 @@ export function Header() {
       <header
         className={`fixed left-0 right-0 z-50 transition-all duration-300 ${showBanner ? "top-[40px]" : "top-0"
           } ${isScrolled
-            ? "bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-md py-3"
+            ? "bg-white/95 backdrop-blur-md border-b border-slate-200 py-3"
             : "bg-transparent py-8"
           }`}
       >
@@ -96,23 +99,37 @@ export function Header() {
           <div className="hidden lg:flex lg:items-center lg:gap-4">
             <LanguageSwitcher variant="default" />
 
-            <Link
-              to="/auth"
-              className={`text-sm font-semibold px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors ${isScrolled ? "text-slate-700" : "text-slate-700"
-                }`}
-            >
-              <TranslatedText text="Log in" />
-            </Link>
+            {isAuthenticated ? (
+              <Button
+                asChild
+                className="rounded-full bg-primary-600 hover:bg-primary-700 text-white transition-all hover:scale-105"
+              >
+                <Link to="/dashboard">
+                  <TranslatedText text="Go to Dashboard" />
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  className={`text-sm font-semibold px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors ${isScrolled ? "text-slate-700" : "text-slate-700"
+                    }`}
+                >
+                  <TranslatedText text="Log in" />
+                </Link>
 
-            <Button
-              asChild
-              className="rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 transition-all hover:scale-105"
-            >
-              <Link to="/auth">
-                <TranslatedText text="Get Started" />
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
+                <Button
+                  asChild
+                  className="rounded-full bg-slate-900 hover:bg-slate-800 text-white transition-all hover:scale-105"
+                >
+                  <Link to="/auth">
+                    <TranslatedText text="Get Started" />
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Toggle */}
@@ -168,20 +185,30 @@ export function Header() {
                       <span className="text-sm font-medium text-slate-500">Language</span>
                       <LanguageSwitcher />
                     </div>
-                    <Button asChild className="w-full justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-12 text-base shadow-lg">
-                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                        <TranslatedText text="Get Started" />
-                      </Link>
-                    </Button>
-                    <div className="text-center">
-                      <Link
-                        to="/auth"
-                        className="text-sm font-semibold text-slate-500 hover:text-slate-900"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <TranslatedText text="Already have an account? Log in" />
-                      </Link>
-                    </div>
+                    {isAuthenticated ? (
+                      <Button asChild className="w-full justify-center bg-primary-600 hover:bg-primary-700 text-white rounded-xl h-12 text-base transition-all">
+                        <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                          <TranslatedText text="Go to Dashboard" />
+                        </Link>
+                      </Button>
+                    ) : (
+                      <>
+                        <Button asChild className="w-full justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-12 text-base transition-all">
+                          <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                            <TranslatedText text="Get Started" />
+                          </Link>
+                        </Button>
+                        <div className="text-center">
+                          <Link
+                            to="/auth"
+                            className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <TranslatedText text="Already have an account? Log in" />
+                          </Link>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,127 +1,146 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import toast from 'react-hot-toast';
-
-interface Notification {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  message: string;
-  title?: string;
-  duration?: number;
-}
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { notificationApi } from '../services/notifications/notificationApi';
+import type { Notification } from '../services/notifications/notificationApi';
+import { useAuth } from './AuthContext';
 
 interface NotificationContextType {
   notifications: Notification[];
-  showNotification: (notification: Omit<Notification, 'id'>) => void;
-  showSuccess: (message: string, title?: string) => void;
-  showError: (message: string, title?: string) => void;
-  showInfo: (message: string, title?: string) => void;
-  showWarning: (message: string, title?: string) => void;
-  clearNotification: (id: string) => void;
-  clearAll: () => void;
+  unreadCount: number;
+  loading: boolean;
+  error: string | null;
+  fetchNotifications: () => Promise<void>;
+  fetchUnreadCount: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotification must be used within a NotificationProvider');
-  }
-  return context;
-};
-
-interface NotificationProviderProps {
-  children: ReactNode;
-}
-
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const showNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const id = `notification-${Date.now()}-${Math.random()}`;
-    const newNotification: Notification = {
-      ...notification,
-      id,
-      duration: notification.duration || 4000,
-    };
-
-    setNotifications((prev) => [...prev, newNotification]);
-
-    // Use react-hot-toast for visual notifications
-    const toastMessage = notification.title 
-      ? `${notification.title}: ${notification.message}`
-      : notification.message;
-
-    switch (notification.type) {
-      case 'success':
-        toast.success(toastMessage, { duration: newNotification.duration });
-        break;
-      case 'error':
-        toast.error(toastMessage, { duration: newNotification.duration });
-        break;
-      case 'warning':
-        toast(toastMessage, { 
-          icon: '⚠️',
-          duration: newNotification.duration 
-        });
-        break;
-      case 'info':
-      default:
-        toast(toastMessage, { 
-          icon: 'ℹ️',
-          duration: newNotification.duration 
-        });
-        break;
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await notificationApi.getMyNotifications(50);
+      setNotifications(data);
+    } catch (err: any) {
+      console.error('Error fetching notifications:', err);
+      setError(err.message || 'Failed to fetch notifications');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
     }
+  }, [user]);
 
-    // Auto-remove notification after duration
-    setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    }, newNotification.duration);
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const data = await notificationApi.getUnreadCount();
+      setUnreadCount(data.count);
+    } catch (err: any) {
+      console.error('Error fetching unread count:', err);
+      setUnreadCount(0);
+    }
+  }, [user]);
 
-    return id;
+  const markAsRead = useCallback(async (id: string) => {
+    try {
+      await notificationApi.markAsRead(id);
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString(), status: 'READ' } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err: any) {
+      console.error('Error marking notification as read:', err);
+    }
   }, []);
 
-  const showSuccess = useCallback((message: string, title?: string) => {
-    showNotification({ type: 'success', message, title });
-  }, [showNotification]);
+  const markAllAsRead = useCallback(async () => {
+    try {
+      const unreadIds = notifications.filter(n => !n.readAt).map(n => n.id);
+      if (unreadIds.length === 0) return;
 
-  const showError = useCallback((message: string, title?: string) => {
-    showNotification({ type: 'error', message, title });
-  }, [showNotification]);
+      await notificationApi.bulkMarkAsRead(unreadIds);
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, readAt: new Date().toISOString(), status: 'READ' }))
+      );
+      setUnreadCount(0);
+    } catch (err: any) {
+      console.error('Error marking all as read:', err);
+    }
+  }, [notifications]);
 
-  const showInfo = useCallback((message: string, title?: string) => {
-    showNotification({ type: 'info', message, title });
-  }, [showNotification]);
+  const deleteNotification = useCallback(async (id: string) => {
+    try {
+      await notificationApi.deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      // Update unread count if the deleted notification was unread
+      const notification = notifications.find(n => n.id === id);
+      if (notification && !notification.readAt) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err: any) {
+      console.error('Error deleting notification:', err);
+    }
+  }, [notifications]);
 
-  const showWarning = useCallback((message: string, title?: string) => {
-    showNotification({ type: 'warning', message, title });
-  }, [showNotification]);
+  const refreshNotifications = useCallback(async () => {
+    await Promise.all([fetchNotifications(), fetchUnreadCount()]);
+  }, [fetchNotifications, fetchUnreadCount]);
 
-  const clearNotification = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }, []);
+  // Initial fetch
+  useEffect(() => {
+    if (user) {
+      refreshNotifications();
+    }
+  }, [user, refreshNotifications]);
 
-  const clearAll = useCallback(() => {
-    setNotifications([]);
-  }, []);
+  // Poll for new notifications every 30 seconds
+  useEffect(() => {
+    if (!user) return;
 
-  const value: NotificationContextType = {
-    notifications,
-    showNotification,
-    showSuccess,
-    showError,
-    showInfo,
-    showWarning,
-    clearNotification,
-    clearAll,
-  };
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, fetchUnreadCount]);
 
   return (
-    <NotificationContext.Provider value={value}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        loading,
+        error,
+        fetchNotifications,
+        fetchUnreadCount,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        refreshNotifications,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );
 };
 
-export default NotificationContext;
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (context === undefined) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
+};

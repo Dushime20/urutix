@@ -9,6 +9,7 @@ import {
   IsArray,
   ValidateNested,
   IsUrl,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
@@ -113,6 +114,10 @@ export class CreateNotificationRequestDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  @IsObject()
+  @IsOptional()
+  metadata?: Record<string, any>;
 
   @IsArray()
   @ValidateNested({ each: true })

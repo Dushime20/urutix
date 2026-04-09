@@ -53,40 +53,7 @@ interface UpcomingTripsProps {
 export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) => {
   const [showAll, setShowAll] = useState(false);
 
-  const mockTrips: Trip[] = [
-    {
-      id: '1',
-      tripNumber: 'MN-ORD-2024-002',
-      status: 'SCHEDULED',
-      origin: { address: 'Logistics Hub A', city: 'Chicago', state: 'IL', coordinates: [41.8781, -87.6298] },
-      destination: { address: 'Terminal B', city: 'Detroit', state: 'MI', coordinates: [42.3314, -83.0458] },
-      scheduledDeparture: new Date(Date.now() + 86400000).toISOString(),
-      estimatedArrival: new Date(Date.now() + 115200000).toISOString(),
-      distance: 450,
-      estimatedDuration: 480,
-      cargo: { description: 'Precision Components', weight: 2500, type: 'Tech' },
-      customer: { name: 'TechCorp Industries', phone: '+1-555-0123', email: 'dispatch@techcorp.com' },
-      earnings: 850,
-      priority: 'HIGH'
-    },
-    {
-      id: '2',
-      tripNumber: 'MN-ORD-2024-003',
-      status: 'ASSIGNED',
-      origin: { address: 'Supply Node X', city: 'Detroit', state: 'MI', coordinates: [42.3314, -83.0458] },
-      destination: { address: 'Distribution Center Y', city: 'Cleveland', state: 'OH', coordinates: [41.4993, -81.6944] },
-      scheduledDeparture: new Date(Date.now() + 172800000).toISOString(),
-      estimatedArrival: new Date(Date.now() + 201600000).toISOString(),
-      distance: 320,
-      estimatedDuration: 360,
-      cargo: { description: 'Engine Modules', weight: 1800, type: 'Auto' },
-      customer: { name: 'AutoParts Plus', phone: '+1-555-0456', email: 'shipping@autoparts.com' },
-      earnings: 650,
-      priority: 'MEDIUM'
-    }
-  ];
-
-  const currentTrips = trips || mockTrips;
+  const currentTrips = trips || [];
   const displayedTrips = showAll ? currentTrips : currentTrips.slice(0, 2);
 
   const formatDateTime = (dateTimeString: string) => {

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity } from 'lucide-react';
@@ -310,6 +311,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   const handleLogout = () => {
     setShowUserMenu(false);
+    setShowMobileMenu(false);
     logout?.();
     navigate('/auth');
   };
@@ -318,6 +320,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
     navigate(path);
     setShowMobileMenu(false);
     setOpenDropdown(null);
+    // Also close any open dropdowns
+    setShowUserMenu(false);
   };
 
   const getActiveNavItem = () => {
@@ -340,11 +344,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
         setShowMobileMenu(false);
       }
 
-      Object.keys(dropdownRefs.current).forEach(key => {
-        if (dropdownRefs.current[key] && !dropdownRefs.current[key]?.contains(event.target as Node)) {
-          setOpenDropdown(prev => prev === key ? null : prev);
-        }
-      });
+      if (!showMobileMenu) {
+        Object.keys(dropdownRefs.current).forEach(key => {
+          if (dropdownRefs.current[key] && !dropdownRefs.current[key]?.contains(event.target as Node)) {
+            setOpenDropdown(prev => prev === key ? null : prev);
+          }
+        });
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -352,17 +358,28 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (showMobileMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showMobileMenu]);
+
+  useEffect(() => {
     // Scroll state is no longer managed via JS as the header uses fluid flex density
   }, []);
 
   return (
-    <div data-header="dashboard-header" className="bg-white/95 backdrop-blur-xl border-b border-gray-50 text-gray-900 px-3 py-1.5 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100]">
+    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-1.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 border border-slate-100"
+              className="lg:hidden p-1.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -374,7 +391,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
               {/* Intelligent Nav Items with Density Management */}
               <div
                 ref={navRef}
-                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 text-sm font-medium flex-nowrap w-full"
+                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap w-full"
               >
                 {navItems.map(item => {
                   const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -393,8 +410,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         }}
                         className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
                                             ${isActive
-                            ? 'bg-primary-50 text-primary-500'
-                            : 'text-slate-500 hover:text-primary-500 hover:bg-slate-50'}
+                            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
                                         `}
                       >
                         <div className="absolute inset-0 bg-primary-100/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
@@ -407,9 +424,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                       </button>
 
                       {hasSubItems && openDropdown === item.label && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
-                          <div className="px-3 py-2 border-b border-slate-50 mb-1">
-                             <div className="text-[10px] font-black tracking-widest text-slate-400 uppercase"><TranslatedText text="Quick Actions" /></div>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                          <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                             <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase"><TranslatedText text="Quick Actions" /></div>
                           </div>
                           <div className="py-1">
                             {item.subItems?.map(subItem => (
@@ -417,8 +434,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                 key={subItem.path}
                                 onClick={() => handleNavClick(subItem.path)}
                                 className={`w-full text-left px-4 py-3 text-xs xl:text-sm transition-all flex items-center gap-3 group/item ${location.pathname === subItem.path
-                                  ? 'bg-primary-50/50 text-primary-500 font-bold'
-                                  : 'text-slate-600 hover:bg-slate-50 hover:text-primary-500'}`}
+                                  ? 'bg-primary-50/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 font-bold'
+                                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-500 dark:hover:text-primary-400'}`}
                               >
                                 <div className={`w-1 h-4 rounded-full transition-all ${location.pathname === subItem.path ? 'bg-primary-500 scale-y-100' : 'bg-transparent scale-y-0 grpup-hover/item:scale-y-75 group-hover/item:bg-primary-200'}`} />
                                 <TranslatedText text={subItem.label} />
@@ -454,15 +471,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="h-10 w-10 rounded-full bg-[#0f172a] text-white flex items-center justify-center hover:bg-slate-900 transition-all shadow-lg shadow-slate-200/50 relative overflow-hidden group border-2 border-white"
+                className="h-10 w-10 rounded-full bg-[#0f172a] dark:bg-slate-800 text-white flex items-center justify-center hover:bg-slate-900 dark:hover:bg-slate-700 transition-all shadow-lg shadow-slate-200/50 dark:shadow-none relative overflow-hidden group border-2 border-white dark:border-slate-700"
               >
                 <User size={20} className="transition-transform group-hover:scale-110" />
               </button>
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[100] p-2">
-                  <div className="px-3 py-2 border-b border-gray-100 mb-2">
-                    <p className="text-sm font-semibold truncate">{user?.firstName || user?.email || 'User'}</p>
-                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-800 z-[100] p-2">
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-800 mb-2">
+                    <p className="text-sm font-semibold truncate text-slate-900 dark:text-white">{user?.firstName || user?.email || 'User'}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user?.email}</p>
                   </div>
                   <div className="py-1">
                     <button
@@ -476,9 +493,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                   '/dashboard/settings';
                         navigate(profilePath);
                       }}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
                     >
-                      <User size={14} className="text-slate-400" />
+                      <User size={14} className="text-slate-400 dark:text-slate-500" />
                       <TranslatedText text="Profile Settings" />
                     </button>
 
@@ -489,9 +506,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             setShowUserMenu(false);
                             navigate('/dashboard/fleet/settings');
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
                         >
-                          <Settings size={14} className="text-slate-400" />
+                          <Settings size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Fleet Settings" />
                         </button>
                         <button
@@ -499,9 +516,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             setShowUserMenu(false);
                             navigate('/dashboard/fleet/settings');
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg"
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
                         >
-                          <Users size={14} className="text-slate-400" />
+                          <Users size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Team Management" />
                         </button>
                         <button
@@ -509,16 +526,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             setShowUserMenu(false);
                             navigate('/dashboard/fleet/support');
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors rounded-lg mb-1"
+                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg mb-1"
                         >
-                          <HelpCircle size={14} className="text-slate-400" />
+                          <HelpCircle size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Support & Help" />
                         </button>
                       </>
                     )}
                   </div>
-                  <div className="border-t border-slate-100 my-1 pt-1">
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-3">
+                  <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors flex items-center gap-3">
                       <LogOut size={14} /> <TranslatedText text="Sign Out" />
                     </button>
                   </div>
@@ -528,147 +545,168 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           </div>
         </div>
 
-      {/* Mobile Menu Drawer */}
-      <AnimatePresence>
-        {showMobileMenu && (
-          <>
-            {/* Backdrop */}
+      {/* Full-Screen Mobile Menu Drawer */}
+      {createPortal(
+        <AnimatePresence>
+          {showMobileMenu && (
             <motion.div
+              ref={mobileMenuRef}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowMobileMenu(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] lg:hidden"
-            />
-            
-            {/* Side Drawer */}
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] sm:w-[320px] bg-white dark:bg-slate-900 z-[120] shadow-2xl lg:hidden flex flex-col"
+              className="fixed inset-0 w-full h-full lg:hidden z-[999999] flex flex-col"
+              style={{ height: '100dvh' }}
             >
-              {/* Drawer Header */}
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto" />
-                <button
-                  onClick={() => setShowMobileMenu(false)}
-                  className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                </button>
-              </div>
+              {/* Backdrop Blur Layer */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl"
+              />
 
-              {/* Drawer Content */}
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                {/* User Info Section */}
-                <div className="mb-6 p-4 bg-primary-50 dark:bg-primary-900/10 rounded-2xl flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg">
-                    {user?.firstName?.[0] || user?.email?.[0] || 'U'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900 dark:text-white truncate">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {user?.email}
-                    </p>
-                  </div>
+              {/* Main Content Container */}
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                className="relative flex flex-col h-full w-full"
+              >
+                {/* Drawer Header */}
+                <div className="flex-shrink-0 p-4 md:p-6 border-b border-slate-100/50 dark:border-slate-800/50 flex items-center justify-between">
+                  <img src={logoUrutiX} alt="UrutiX" className="h-8 md:h-10 w-auto" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMobileMenu(false);
+                      setOpenDropdown(null);
+                    }}
+                    className="p-3 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-90 shadow-sm"
+                  >
+                    <X className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                  </button>
                 </div>
 
-                <div className="space-y-1">
-                  {navItems.map(item => {
-                    const hasSubItems = item.subItems && item.subItems.length > 0;
-                    const isDropdownOpen = openDropdown === item.label;
-                    const isActive = activeNavItem === item.label;
-
-                    return (
-                      <div key={item.label}>
-                        <button
-                          onClick={() => {
-                            if (hasSubItems) {
-                              setOpenDropdown(isDropdownOpen ? null : item.label);
-                            } else {
-                              handleNavClick(item.path);
-                            }
-                          }}
-                          className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between transition-all group
-                            ${isActive 
-                              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-bold' 
-                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-primary-100 dark:bg-primary-800/30' : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-700'}`}>
-                              {item.icon && <item.icon className="w-4 h-4" />}
-                            </div>
-                            <span className="text-sm"><TranslatedText text={item.label} /></span>
-                          </div>
-                          {hasSubItems && (
-                            <ChevronDown 
-                              size={16} 
-                              className={`transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-primary-500' : 'text-slate-400'}`} 
-                            />
-                          )}
-                        </button>
-
-                        <AnimatePresence>
-                          {hasSubItems && isDropdownOpen && (
-                            <motion.div 
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden bg-slate-50 dark:bg-slate-800/50 rounded-xl mt-1 ml-4 border-l-2 border-primary-100 dark:border-primary-900/30"
-                            >
-                              <div className="py-2 space-y-1">
-                                {item.subItems?.map(sub => (
-                                  <button 
-                                    key={sub.path} 
-                                    onClick={() => handleNavClick(sub.path)} 
-                                    className={`w-full text-left px-5 py-3 text-sm transition-all flex items-center gap-3
-                                      ${location.pathname === sub.path 
-                                        ? 'text-primary-600 dark:text-primary-400 font-bold' 
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'}`}
-                                  >
-                                    <div className={`w-1 h-3 rounded-full ${location.pathname === sub.path ? 'bg-primary-500' : 'bg-transparent'}`} />
-                                    <TranslatedText text={sub.label} />
-                                  </button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                {/* Drawer Content */}
+                <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar overscroll-contain">
+                  <div className="max-w-md mx-auto pb-8">
+                    {/* User Info Section */}
+                    <div className="mb-6 p-5 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-slate-800 rounded-3xl border border-primary-100 dark:border-primary-900/30 flex items-center gap-4 shadow-sm">
+                      <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0">
+                        {user?.firstName?.[0] || user?.email?.[0] || 'U'}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-bold text-slate-900 dark:text-white truncate">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
 
-              {/* Drawer Footer */}
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4 bg-slate-50 dark:bg-slate-800/30">
-                <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-2">
-                    <ThemeToggle />
-                    <span className="text-xs font-medium text-slate-500"><TranslatedText text="Theme" /></span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500"><TranslatedText text="Language" /></span>
-                    <LanguageSwitcher />
+                    <div className="space-y-2">
+                      {navItems.map((item) => {
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
+                        const isDropdownOpen = openDropdown === item.label;
+                        const isActive = activeNavItem === item.label;
+
+                        return (
+                          <div key={item.label}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (hasSubItems) {
+                                  setOpenDropdown(isDropdownOpen ? null : item.label);
+                                } else {
+                                  handleNavClick(item.path);
+                                }
+                              }}
+                              className={`w-full text-left p-4 rounded-2xl flex items-center justify-between transition-all group
+                                ${isActive 
+                                  ? 'bg-primary-50 dark:bg-primary-900/20 shadow-sm' 
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className={`p-2.5 rounded-xl ${isActive ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 shadow-sm'}`}>
+                                  {item.icon && <item.icon className="w-5 h-5" />}
+                                </div>
+                                <span className={`text-sm font-bold ${isActive ? 'text-primary-700 dark:text-primary-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                  <TranslatedText text={item.label} />
+                                </span>
+                              </div>
+                              {hasSubItems && (
+                                <ChevronDown 
+                                  size={20} 
+                                  className={`transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-primary-500' : 'text-slate-400'}`} 
+                                />
+                              )}
+                            </button>
+
+                            <AnimatePresence>
+                              {hasSubItems && isDropdownOpen && (
+                                <motion.div 
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl mt-1 ml-2 border-l-2 border-primary-200 dark:border-primary-800"
+                                >
+                                  <div className="py-2 space-y-1">
+                                    {item.subItems?.map(sub => (
+                                      <button 
+                                        key={sub.path} 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleNavClick(sub.path);
+                                        }} 
+                                        className={`w-full text-left px-5 py-3 text-[13px] font-medium transition-all flex items-center gap-3
+                                          ${location.pathname === sub.path 
+                                            ? 'text-primary-600 dark:text-primary-400 font-bold' 
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                                      >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${location.pathname === sub.path ? 'bg-primary-500' : 'bg-slate-300'}`} />
+                                        <TranslatedText text={sub.label} />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-                
-                <button
-                  onClick={handleLogout}
-                  className="w-full py-3 px-4 bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <TranslatedText text="Sign Out" />
-                </button>
-              </div>
+
+                {/* Drawer Footer - Sticky to bottom of menu */}
+                <div className="flex-shrink-0 p-4 border-t border-slate-100/50 dark:border-slate-800/50 bg-white dark:bg-slate-900 safe-area-bottom">
+                  <div className="max-w-md mx-auto space-y-3">
+                    <div className="flex items-center justify-between px-3 py-2.5 bg-slate-100/50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-2">
+                        <ThemeToggle />
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest"><TranslatedText text="Theme" /></span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest"><TranslatedText text="Language" /></span>
+                        <LanguageSwitcher />
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="w-full py-4 px-6 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-xl text-sm font-black uppercase tracking-[0.15em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-red-500/20"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <TranslatedText text="Sign Out" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   </div>
 );

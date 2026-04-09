@@ -7,12 +7,20 @@ interface PostTripChecklistModalProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (data: { odometer: string; location: string }) => void;
+  truckId?: string;
+  truckPlate?: string;
+  driverId?: string;
+  driverName?: string;
 }
 
 export const PostTripChecklistModal: React.FC<PostTripChecklistModalProps> = ({
   isOpen,
   onClose,
-  onComplete
+  onComplete,
+  truckId,
+  truckPlate,
+  driverId,
+  driverName,
 }) => {
   if (!isOpen) return null;
 
@@ -44,7 +52,13 @@ export const PostTripChecklistModal: React.FC<PostTripChecklistModalProps> = ({
 
         {/* Form Content - Scrolling Checklist */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-           <PostTripChecklist onComplete={onComplete} />
+           <PostTripChecklist
+              onComplete={onComplete}
+              truckId={truckId}
+              truckPlate={truckPlate}
+              driverId={driverId}
+              driverName={driverName}
+            />
         </div>
 
         {/* Footer info/close hint */}
