@@ -48,17 +48,23 @@ export class PermissionService {
      * Get all permissions for a user (role-based + user-specific overrides)
      */
     async getUserPermissions(userId: string): Promise<string[]> {
+        console.log('[PermissionService] getUserPermissions called for userId:', userId);
+        
         // First get the user's role
         const userResult = await this.dataSource.query(
             'SELECT role FROM users WHERE id = $1',
             [userId]
         );
 
+        console.log('[PermissionService] User query result:', userResult);
+
         if (userResult.length === 0) {
+            console.error('[PermissionService] User not found:', userId);
             throw new Error('User not found');
         }
 
         const userRole: UserRole = userResult[0].role;
+        console.log('[PermissionService] User role:', userRole);
 
         // SUPER_ADMIN gets all permissions
         if (userRole === 'SUPER_ADMIN') {
@@ -70,12 +76,17 @@ export class PermissionService {
 
         // Get role-based permissions
         const rolePerms = await this.getRolePermissions(userRole);
+        console.log('[PermissionService] Role permissions:', rolePerms);
 
         // Get user-specific permission overrides
         const userPerms = await this.getUserSpecificPermissions(userId);
+        console.log('[PermissionService] User-specific permissions:', userPerms);
 
         // Merge permissions (user-specific overrides role)
-        return this.mergePermissions(rolePerms, userPerms);
+        const merged = this.mergePermissions(rolePerms, userPerms);
+        console.log('[PermissionService] Merged permissions:', merged);
+        
+        return merged;
     }
 
     /**
