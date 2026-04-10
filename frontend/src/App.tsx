@@ -74,6 +74,7 @@ const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
 const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory'));
 const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
 const SubscriptionPlansMgmt = lazy(() => import('./pages/admin/SubscriptionPlansMgmt'));
+const PartnerPlans = lazy(() => import('./pages/tenant-admin/PartnerPlans'));
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
 const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
@@ -456,6 +457,7 @@ function App() {
                       <Route path="purchase-credits" element={<TenantDashboardPage defaultView="purchase-credits" />} />
                       <Route path="billing" element={<TenantDashboardPage defaultView="billing" />} />
                       <Route path="subscription-plans" element={<SubscriptionPlans />} />
+                      <Route path="partner-plans" element={<PartnerPlans />} />
                       <Route path="truck-owners" element={<TenantDashboardPage defaultView="truck-owners" />} />
                       <Route path="partner-billing" element={<PartnerBillingManager />} />
                        <Route path="communication" element={<TenantDashboardPage defaultView="communicate" />} />

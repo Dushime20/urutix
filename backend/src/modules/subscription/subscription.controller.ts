@@ -76,9 +76,21 @@ export class SubscriptionController {
     const tenantId = req.user.tenantId;
     const userId = req.user.id;
     const subscriptions = await this.subscriptionService.getSubscriptionHistory(tenantId, userId);
+    
+    // Enrich with available credits for each subscription
+    const enrichedSubscriptions = await Promise.all(
+      subscriptions.map(async (sub) => {
+        const availableCredits = await this.subscriptionService.getParentSubscriptionAvailableCredits(sub.id, tenantId);
+        return {
+          ...sub,
+          availableCredits,
+        };
+      })
+    );
+    
     return {
       success: true,
-      data: subscriptions,
+      data: enrichedSubscriptions,
     };
   }
 
@@ -259,6 +271,129 @@ export class SubscriptionController {
     return {
       success: true,
       message: 'Pricing rule deleted successfully',
+    };
+  }
+
+  // Partner Plans Endpoints
+  @Get('partner-plans')
+  @ApiOperation({ summary: 'Get partner plans created by tenant admin' })
+  @ApiResponse({ status: 200, description: 'Returns list of partner plans' })
+  async getPartnerPlans(@Request() req) {
+    const tenantId = req.user.tenantId;
+    const plans = await this.subscriptionService.getPartnerPlans(tenantId);
+    return {
+      success: true,
+      data: plans,
+    };
+  }
+
+  @Post('partner-plans')
+  @ApiOperation({ summary: 'Create a partner plan for truck owners' })
+  @ApiResponse({ status: 201, description: 'Partner plan created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async createPartnerPlan(
+    @Request() req,
+    @Body() body: {
+      parentSubscriptionId: string;
+      name: string;
+      slug: string;
+      description: string;
+      creditCostPerPartner: number;
+      availableSlots: number;
+      totalCredits: number;
+      isActive: boolean;
+    },
+  ) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+
+    const plan = await this.subscriptionService.createPartnerPlan({
+      tenantId,
+      userId,
+      ...body,
+    });
+
+    return {
+      success: true,
+      message: 'Partner plan created successfully',
+      data: plan,
+    };
+  }  @Put('partner-plans/:id')
+  @ApiOperation({ summary: 'Update a partner plan' })
+  @ApiResponse({ status: 200, description: 'Partner plan updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async updatePartnerPlan(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      creditCostPerPartner?: number;
+      availableSlots?: number;
+      totalCredits?: number;
+      isActive?: boolean;
+    },
+  ) {
+    const tenantId = req.user.tenantId;
+
+    const plan = await this.subscriptionService.updatePartnerPlan(id, tenantId, body);
+
+    return {
+      success: true,
+      message: 'Partner plan updated successfully',
+      data: plan,
+    };
+  }
+
+  @Delete('partner-plans/:id')
+  @ApiOperation({ summary: 'Delete a partner plan' })
+  @ApiResponse({ status: 200, description: 'Partner plan deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot delete plan with active subscriptions' })
+  async deletePartnerPlan(@Request() req, @Param('id') id: string) {
+    const tenantId = req.user.tenantId;
+
+    await this.subscriptionService.deletePartnerPlan(id, tenantId);
+
+    return {
+      success: true,
+      message: 'Partner plan deleted successfully',
+    };
+  }
+
+  @Get('available-plans')
+  @ApiOperation({ summary: 'Get available plans for truck owners (includes partner plans)' })
+  @ApiResponse({ status: 200, description: 'Returns list of available plans' })
+  async getAvailablePlansForTruckOwners(@Request() req) {
+    const tenantId = req.user.tenantId;
+
+    // Get system admin plans (no parent subscription)
+    const systemPlans = await this.subscriptionService.getAvailablePlans();
+
+    // Get partner plans created by tenant admin
+    const partnerPlans = await this.subscriptionService.getPartnerPlans(tenantId);
+
+    // Combine both
+    const allPlans = [
+      ...systemPlans.filter(p => !p.parentSubscriptionId),
+      ...partnerPlans.filter(p => p.isActive),
+    ];
+
+    return {
+      success: true,
+      data: allPlans,
+    };
+  }
+
+  @Get('partner-subscribers')
+  @ApiOperation({ summary: 'Get truck owners who purchased partner plans' })
+  @ApiResponse({ status: 200, description: 'Returns list of truck owner subscriptions' })
+  async getPartnerSubscribers(@Request() req) {
+    const tenantId = req.user.tenantId;
+    const subscribers = await this.subscriptionService.getPartnerSubscribers(tenantId);
+    return {
+      success: true,
+      data: subscribers,
     };
   }
 }

@@ -51,6 +51,9 @@ export class SubscriptionPlan {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
+  @Column({ type: 'uuid', nullable: true, name: 'parent_subscription_id' })
+  parentSubscriptionId?: string;
+
   // Legacy pricing columns (kept for backward compatibility, can be removed later)
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'price_monthly', nullable: true })
   priceMonthly?: number;
@@ -73,6 +76,13 @@ export class SubscriptionPlan {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 5.0, name: 'credits_per_ton_truck_owner' })
   creditsPerTonTruckOwner: number;
+
+  // Partner Plan slot-based allocation
+  @Column({ type: 'int', default: 0, name: 'credit_cost_per_partner' })
+  creditCostPerPartner: number;
+
+  @Column({ type: 'int', default: 0, name: 'available_slots' })
+  availableSlots: number;
 
   @Column({ type: 'jsonb', default: {} })
   features: PlanFeatures;

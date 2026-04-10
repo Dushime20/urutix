@@ -1,3 +1,4 @@
+
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -192,12 +193,19 @@ export class SubscriptionService {
 
     const enrichedSubscriptions = await Promise.all(
       subscriptions.map(async (sub) => {
-        const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId, sub.userId);
+        let creditBalance = 0;
+        try {
+          const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId, sub.userId);
+          creditBalance = creditAccount?.currentBalance || 0;
+        } catch (error) {
+          // If credit account creation fails (e.g., duplicate key), just use 0 balance
+          console.warn(`Could not get credit account for subscription ${sub.id}:`, error.message);
+        }
 
         return {
           ...sub,
           tenantName: sub.tenant?.name || 'Unknown',
-          creditBalance: creditAccount?.currentBalance || 0,
+          creditBalance,
           totalRevenue: 0,
         };
       })
@@ -207,7 +215,7 @@ export class SubscriptionService {
   }
 
   /**
-   * Create a new subscription for a tenant or user
+   * Create a new subscription
    */
   async createSubscription(dto: CreateSubscriptionDto): Promise<TenantSubscription> {
     // Check for existing subscription and cancel it if found (allow upgrades/replacements)
@@ -615,5 +623,302 @@ export class SubscriptionService {
 
   async deletePricingRule(id: string) {
     return this.pricingService.deleteRule(id);
+  }
+
+  /**
+   * Get partner plans created by tenant admin
+   */
+  async getPartnerPlans(tenantId: string): Promise<any[]> {
+    // Get all subscriptions purchased by this tenant
+    const tenantSubscriptions = await this.tenantSubscriptionRepository.find({
+      where: { tenantId },
+      relations: ['plan'],
+    });
+
+    const subscriptionIds = tenantSubscriptions.map(sub => sub.id);
+
+    if (subscriptionIds.length === 0) {
+      return [];
+    }
+
+    // Get all partner plans created from these subscriptions
+    const partnerPlans = await this.subscriptionPlanRepository
+      .createQueryBuilder('plan')
+      .where('plan.parent_subscription_id IN (:...subscriptionIds)', { subscriptionIds })
+      .getMany();
+
+    return partnerPlans;
+  }
+
+  /**
+   * Create a partner plan for truck owners
+   */
+  async createPartnerPlan(data: {
+    tenantId: string;
+    userId: string;
+    parentSubscriptionId: string;
+    name: string;
+    slug: string;
+    description: string;
+    creditCostPerPartner: number;
+    availableSlots: number;
+    totalCredits: number;
+    isActive: boolean;
+  }): Promise<SubscriptionPlan> {
+    // Verify parent subscription exists and belongs to tenant
+    const parentSubscription = await this.tenantSubscriptionRepository.findOne({
+      where: { id: data.parentSubscriptionId, tenantId: data.tenantId },
+      relations: ['plan'],
+    });
+
+    if (!parentSubscription) {
+      throw new NotFoundException('Parent subscription not found');
+    }
+
+    // Calculate available credits
+    const existingPartnerPlans = await this.subscriptionPlanRepository.find({
+      where: { parentSubscriptionId: data.parentSubscriptionId },
+    });
+
+    const allocatedCredits = existingPartnerPlans.reduce((sum, plan) => sum + plan.totalCredits, 0);
+    const availableCredits = parentSubscription.plan.totalCredits - allocatedCredits;
+
+    if (data.totalCredits > availableCredits) {
+      throw new BadRequestException(
+        `Cannot allocate ${data.totalCredits} credits. Only ${availableCredits} credits available from parent subscription.`
+      );
+    }
+
+    // Check if slug already exists
+    const existing = await this.subscriptionPlanRepository.findOne({ where: { slug: data.slug } });
+    if (existing) {
+      throw new BadRequestException(`Plan with slug ${data.slug} already exists`);
+    }
+
+    // Create partner plan with inherited values
+    const partnerPlan = this.subscriptionPlanRepository.create({
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      parentSubscriptionId: data.parentSubscriptionId,
+      pricePerCredit: parentSubscription.plan.pricePerCredit,
+      creditCostPerPartner: data.creditCostPerPartner,
+      availableSlots: data.availableSlots,
+      totalCredits: data.totalCredits, // creditCostPerPartner × availableSlots
+      creditsPerTonTenant: 0, // Not used for partner plans
+      creditsPerTonTruckOwner: parentSubscription.plan.creditsPerTonTruckOwner,
+      isActive: data.isActive,
+      features: {},
+      limits: {},
+      displayOrder: 0,
+    });
+
+    return this.subscriptionPlanRepository.save(partnerPlan);
+  }
+
+  /**
+   * Update a partner plan
+   */
+  async updatePartnerPlan(
+    planId: string,
+    tenantId: string,
+    data: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      creditCostPerPartner?: number;
+      availableSlots?: number;
+      totalCredits?: number;
+      isActive?: boolean;
+    }
+  ): Promise<SubscriptionPlan> {
+    const plan = await this.subscriptionPlanRepository.findOne({
+      where: { id: planId },
+    });
+
+    if (!plan || !plan.parentSubscriptionId) {
+      throw new NotFoundException('Partner plan not found');
+    }
+
+    // Verify parent subscription belongs to tenant
+    const parentSubscription = await this.tenantSubscriptionRepository.findOne({
+      where: { id: plan.parentSubscriptionId, tenantId },
+      relations: ['plan'],
+    });
+
+    if (!parentSubscription) {
+      throw new NotFoundException('Parent subscription not found');
+    }
+
+    // If updating total credits, validate available credits
+    if (data.totalCredits !== undefined && data.totalCredits !== plan.totalCredits) {
+      const existingPartnerPlans = await this.subscriptionPlanRepository.find({
+        where: { parentSubscriptionId: plan.parentSubscriptionId },
+      });
+
+      const allocatedCredits = existingPartnerPlans
+        .filter(p => p.id !== planId)
+        .reduce((sum, p) => sum + p.totalCredits, 0);
+
+      const availableCredits = parentSubscription.plan.totalCredits - allocatedCredits;
+
+      if (data.totalCredits > availableCredits) {
+        throw new BadRequestException(
+          `Cannot allocate ${data.totalCredits} credits. Only ${availableCredits} credits available.`
+        );
+      }
+    }
+
+    // Check slug uniqueness if changing
+    if (data.slug && data.slug !== plan.slug) {
+      const existing = await this.subscriptionPlanRepository.findOne({ where: { slug: data.slug } });
+      if (existing) {
+        throw new BadRequestException(`Plan with slug ${data.slug} already exists`);
+      }
+    }
+
+    // Update plan
+    Object.assign(plan, data);
+    return this.subscriptionPlanRepository.save(plan);
+  }
+
+  /**
+   * Delete a partner plan
+   */
+  async deletePartnerPlan(planId: string, tenantId: string): Promise<void> {
+    const plan = await this.subscriptionPlanRepository.findOne({
+      where: { id: planId },
+    });
+
+    if (!plan || !plan.parentSubscriptionId) {
+      throw new NotFoundException('Partner plan not found');
+    }
+
+    // Verify parent subscription belongs to tenant
+    const parentSubscription = await this.tenantSubscriptionRepository.findOne({
+      where: { id: plan.parentSubscriptionId, tenantId },
+    });
+
+    if (!parentSubscription) {
+      throw new NotFoundException('Parent subscription not found');
+    }
+
+    // Check if there are active subscriptions using this plan
+    const activeSubscriptions = await this.tenantSubscriptionRepository.count({
+      where: { planId: plan.id, status: SubscriptionStatus.ACTIVE }
+    });
+
+    if (activeSubscriptions > 0) {
+      throw new BadRequestException(
+        `Cannot delete partner plan. ${activeSubscriptions} truck owner(s) are currently using this plan.`
+      );
+    }
+
+    await this.subscriptionPlanRepository.remove(plan);
+  }
+
+  /**
+   * Get available credits for a parent subscription
+   */
+  async getParentSubscriptionAvailableCredits(subscriptionId: string, tenantId: string): Promise<number> {
+    const parentSubscription = await this.tenantSubscriptionRepository.findOne({
+      where: { id: subscriptionId, tenantId },
+      relations: ['plan'],
+    });
+
+    if (!parentSubscription) {
+      throw new NotFoundException('Parent subscription not found');
+    }
+
+    const partnerPlans = await this.subscriptionPlanRepository.find({
+      where: { parentSubscriptionId: subscriptionId },
+    });
+
+    const allocatedCredits = partnerPlans.reduce((sum, plan) => sum + plan.totalCredits, 0);
+    return parentSubscription.plan.totalCredits - allocatedCredits;
+  }
+
+  /**
+   * Get truck owners who purchased partner plans created by tenant admin
+   */
+  async getPartnerSubscribers(tenantId: string): Promise<any[]> {
+    // Get all partner plans created by this tenant
+    const tenantSubscriptions = await this.tenantSubscriptionRepository.find({
+      where: { tenantId },
+      relations: ['plan'],
+    });
+
+    const subscriptionIds = tenantSubscriptions.map(sub => sub.id);
+
+    if (subscriptionIds.length === 0) {
+      return [];
+    }
+
+    // Get all partner plans created from these subscriptions
+    const partnerPlans = await this.subscriptionPlanRepository
+      .createQueryBuilder('plan')
+      .where('plan.parent_subscription_id IN (:...subscriptionIds)', { subscriptionIds })
+      .getMany();
+
+    const partnerPlanIds = partnerPlans.map(plan => plan.id);
+
+    if (partnerPlanIds.length === 0) {
+      return [];
+    }
+
+    // Get all subscriptions purchased by truck owners for these partner plans
+    const partnerSubscriptions = await this.tenantSubscriptionRepository
+      .createQueryBuilder('subscription')
+      .leftJoinAndSelect('subscription.plan', 'plan')
+      .leftJoinAndSelect('subscription.tenant', 'tenant')
+      .where('subscription.planId IN (:...partnerPlanIds)', { partnerPlanIds })
+      .andWhere('subscription.userId IS NOT NULL') // Only subscriptions purchased by users (truck owners)
+      .orderBy('subscription.createdAt', 'DESC')
+      .getMany();
+
+    // Enrich with credit information
+    const enrichedSubscriptions = await Promise.all(
+      partnerSubscriptions.map(async (sub) => {
+        let creditBalance = 0;
+        let lifetimeSpent = 0;
+        try {
+          const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId, sub.userId);
+          creditBalance = creditAccount?.currentBalance || 0;
+          lifetimeSpent = creditAccount?.lifetimeSpent || 0;
+        } catch (error) {
+          console.warn(`Could not get credit account for subscription ${sub.id}:`, error.message);
+        }
+
+        // Calculate days until expiry
+        const now = new Date();
+        const expiryDate = new Date(sub.currentPeriodEnd);
+        const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Determine status
+        let status = 'active';
+        if (sub.status === SubscriptionStatus.CANCELLED || sub.status === SubscriptionStatus.SUSPENDED) {
+          status = 'expired';
+        } else if (daysLeft <= 7) {
+          status = 'expiring';
+        }
+
+        return {
+          id: sub.id,
+          truckOwnerName: sub.tenant?.name || 'Unknown',
+          email: sub.tenant?.contactEmail || 'N/A',
+          planName: sub.plan?.name || 'Unknown Plan',
+          planSlug: sub.plan?.slug || '',
+          status,
+          creditsRemaining: creditBalance,
+          creditsTotal: sub.plan?.totalCredits || 0,
+          purchaseDate: sub.createdAt,
+          expiryDate: sub.currentPeriodEnd,
+          daysLeft,
+          lifetimeSpent,
+        };
+      })
+    );
+
+    return enrichedSubscriptions;
   }
 }

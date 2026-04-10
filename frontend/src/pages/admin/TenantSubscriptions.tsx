@@ -39,6 +39,10 @@ interface TenantSubscription {
     priceMonthly: number;
     priceYearly: number;
     includedCredits: number;
+    pricePerCredit: number;
+    totalCredits: number;
+    creditCostPerPartner?: number;
+    availableSlots?: number;
   };
   creditBalance: number;
   totalRevenue: number;
@@ -380,7 +384,12 @@ const TenantSubscriptions: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="font-medium text-slate-900">{subscription.plan.name}</div>
                         <div className="text-xs text-slate-500">
-                          {subscription.plan.includedCredits.toLocaleString()} credits/mo
+                          {subscription.plan.totalCredits && subscription.plan.totalCredits > 0 
+                            ? `${subscription.plan.totalCredits.toLocaleString()} credits total`
+                            : subscription.plan.includedCredits && subscription.plan.includedCredits > 0
+                              ? `${subscription.plan.includedCredits.toLocaleString()} credits/mo`
+                              : 'No credits'
+                          }
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -394,10 +403,14 @@ const TenantSubscriptions: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="font-medium text-slate-900 capitalize">{subscription.billingCycle}</div>
                         <div className="text-xs text-slate-500">
-                          ${subscription.billingCycle === 'monthly'
-                            ? subscription.plan.priceMonthly
-                            : subscription.plan.priceYearly}/
-                          {subscription.billingCycle === 'monthly' ? 'mo' : 'yr'}
+                          {subscription.plan.pricePerCredit && Number(subscription.plan.pricePerCredit) > 0
+                            ? `$${Number(subscription.plan.pricePerCredit).toFixed(4)}/credit`
+                            : subscription.billingCycle === 'monthly' && subscription.plan.priceMonthly
+                              ? `$${Number(subscription.plan.priceMonthly).toFixed(2)}/mo`
+                              : subscription.plan.priceYearly
+                                ? `$${Number(subscription.plan.priceYearly).toFixed(2)}/yr`
+                                : 'N/A'
+                          }
                         </div>
                       </td>
                       <td className="px-6 py-4">
