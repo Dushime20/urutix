@@ -102,6 +102,55 @@
 - **Role**: TRUCK_OWNER
 - **Status**: ⚠️ Email Not Verified
 
+---
+
+## Demo Tenant Truck Owners (Under tenantadmin@demo.com)
+
+### Truck Owner 1 - John Logistics Ltd
+- **Email**: `truckowner1@demo.com`
+- **Password**: `TruckOwner@123`
+- **Role**: TRUCK_OWNER
+- **Company**: John Logistics Ltd
+- **Name**: John Logistics
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
+### Truck Owner 2 - East African Movers
+- **Email**: `truckowner2@demo.com`
+- **Password**: `TruckOwner@123`
+- **Role**: TRUCK_OWNER
+- **Company**: East African Movers
+- **Name**: Sarah Transport
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
+### Truck Owner 3 - Mombasa Road Transporters
+- **Email**: `truckowner3@demo.com`
+- **Password**: `TruckOwner@123`
+- **Role**: TRUCK_OWNER
+- **Company**: Mombasa Road Transporters
+- **Name**: Michael Freight
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
+### Truck Owner 4 - Swift Cargo Services
+- **Email**: `truckowner4@demo.com`
+- **Password**: `TruckOwner@123`
+- **Role**: TRUCK_OWNER
+- **Company**: Swift Cargo Services
+- **Name**: David Cargo
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
+### Truck Owner 5 - Grace Haulage Co
+- **Email**: `truckowner5@demo.com`
+- **Password**: `TruckOwner@123`
+- **Role**: TRUCK_OWNER
+- **Company**: Grace Haulage Co
+- **Name**: Grace Haulage
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
 ### Drivers
 - **Email**: `driver1@test.com`
 - **Password**: `test123`
@@ -148,6 +197,13 @@
 ### For Truck Owner Testing:
 1. Use `truck.owner@test.com` / `test123`
 2. Use `truck.owner2@test.com` / `test123`
+
+### For Demo Tenant Truck Owners:
+1. Use `truckowner1@demo.com` / `TruckOwner@123` (John Logistics Ltd)
+2. Use `truckowner2@demo.com` / `TruckOwner@123` (East African Movers)
+3. Use `truckowner3@demo.com` / `TruckOwner@123` (Mombasa Road Transporters)
+4. Use `truckowner4@demo.com` / `TruckOwner@123` (Swift Cargo Services)
+5. Use `truckowner5@demo.com` / `TruckOwner@123` (Grace Haulage Co)
 
 ### For Driver Testing:
 1. Use `driver1@test.com` / `test123`
