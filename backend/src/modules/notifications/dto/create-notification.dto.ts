@@ -16,6 +16,7 @@ import {
   NotificationPriority,
   NotificationCategory,
   NotificationType,
+  EntityType,
 } from '../../../entities/notification.entity';
 
 export class CreateNotificationDto {
@@ -26,6 +27,24 @@ export class CreateNotificationDto {
   })
   @IsEnum(NotificationType)
   type: NotificationType;
+
+  @ApiProperty({
+    description: 'Entity type this notification is related to',
+    enum: EntityType,
+    example: EntityType.TRIP,
+  })
+  @IsEnum(EntityType)
+  entityType: EntityType;
+
+  @ApiProperty({
+    description: 'Entity ID this notification is related to',
+    example: '550e8400-e29b-41d4-a716-446655440002',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  entityId?: string;
+
   @IsOptional()
   @IsString()
   relatedEntityId?: string;

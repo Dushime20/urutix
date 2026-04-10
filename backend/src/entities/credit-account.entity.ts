@@ -46,6 +46,16 @@ export class CreditAccount {
   @Column({ type: 'int', default: 0, name: 'lifetime_spent' })
   lifetimeSpent: number;
 
+  // Revenue tracking fields for tenant admins
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'revenue_from_partner_sales' })
+  revenueFromPartnerSales: number;
+
+  @Column({ type: 'int', default: 0, name: 'total_partners_sold' })
+  totalPartnersSold: number;
+
+  @Column({ type: 'int', default: 0, name: 'credits_allocated_to_partners' })
+  creditsAllocatedToPartners: number;
+
   @Column({ type: 'timestamp', nullable: true, name: 'last_refresh_date' })
   lastRefreshDate?: Date;
 

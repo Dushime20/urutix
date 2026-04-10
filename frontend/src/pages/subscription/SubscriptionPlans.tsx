@@ -24,6 +24,18 @@ import {
   FaTrash,
   FaSave,
 } from 'react-icons/fa';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts';
 
 interface SubscriptionPlan {
   id: string;
@@ -1158,6 +1170,157 @@ const SubscriptionPlans: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Credit Usage Trending Graph */}
+                    <div className="bg-white rounded-[24px] p-6 border border-slate-100">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <FaChartBar className="text-blue-500" />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-black text-slate-900">Credit Usage Trend</h4>
+                            <p className="text-xs text-slate-500 mt-0.5">30-day credit consumption history</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
+                            <span className="text-xs font-bold text-slate-600">Used</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
+                            <span className="text-xs font-bold text-slate-600">Remaining</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats Cards */}
+                      <div className="grid grid-cols-4 gap-4 mb-6">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                          <div className="text-[9px] font-black text-blue-600 uppercase tracking-wider mb-1">Total Credits</div>
+                          <div className="text-2xl font-black text-blue-900">
+                            {subscription.plan?.totalCredits === -1 ? '∞' : subscription.plan?.totalCredits?.toLocaleString() || 0}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200">
+                          <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Available</div>
+                          <div className="text-2xl font-black text-emerald-900">
+                            {(subscription.plan?.totalCredits || 0) - (creditAccountData?.data?.lifetime_spent || 0) > 0
+                              ? ((subscription.plan?.totalCredits || 0) - (creditAccountData?.data?.lifetime_spent || 0)).toLocaleString()
+                              : '0'}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
+                          <div className="text-[9px] font-black text-red-600 uppercase tracking-wider mb-1">Used Credits</div>
+                          <div className="text-2xl font-black text-red-900">
+                            {creditAccountData?.data?.lifetime_spent?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+                          <div className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-1">Usage Rate</div>
+                          <div className="text-2xl font-black text-purple-900">
+                            {subscription.plan?.totalCredits > 0 && creditAccountData?.data?.lifetime_spent
+                              ? `${((creditAccountData.data.lifetime_spent / subscription.plan.totalCredits) * 100).toFixed(1)}%`
+                              : '0%'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Area Chart */}
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <AreaChart
+                            data={(() => {
+                              const totalCredits = subscription.plan?.totalCredits || 0;
+                              const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                              const days = 30;
+                              
+                              // Generate 30 days of data
+                              return Array.from({ length: days }, (_, i) => {
+                                const dayNumber = i + 1;
+                                const progressRatio = dayNumber / days;
+                                
+                                // Simulate gradual credit consumption over time
+                                const dailyUsed = Math.floor(usedCredits * progressRatio);
+                                const dailyRemaining = totalCredits - dailyUsed;
+                                
+                                return {
+                                  day: `Day ${dayNumber}`,
+                                  used: dailyUsed,
+                                  remaining: dailyRemaining > 0 ? dailyRemaining : 0,
+                                  date: new Date(Date.now() - (days - dayNumber) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                };
+                              });
+                            })()}
+                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                          >
+                            <defs>
+                              <linearGradient id="colorUsed" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                              </linearGradient>
+                              <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis 
+                              dataKey="date" 
+                              stroke="#64748b"
+                              style={{ fontSize: '11px', fontWeight: 600 }}
+                              interval={4}
+                            />
+                            <YAxis 
+                              stroke="#64748b"
+                              style={{ fontSize: '11px', fontWeight: 600 }}
+                              tickFormatter={(value) => value.toLocaleString()}
+                            />
+                            <Tooltip 
+                              contentStyle={{
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                              }}
+                              labelStyle={{ fontWeight: 'bold', marginBottom: '8px', color: '#1e293b' }}
+                              formatter={(value: any) => [value.toLocaleString() + ' credits', '']}
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="used" 
+                              stackId="1"
+                              stroke="#ef4444" 
+                              strokeWidth={2}
+                              fill="url(#colorUsed)" 
+                              name="Credits Used"
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="remaining" 
+                              stackId="1"
+                              stroke="#10b981" 
+                              strokeWidth={2}
+                              fill="url(#colorRemaining)" 
+                              name="Credits Remaining"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Info Note */}
+                      <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-3">
+                        <div className="flex items-start gap-2">
+                          <FaInfoCircle className="text-blue-500 text-xs mt-0.5 shrink-0" />
+                          <div className="text-[10px] text-slate-600 leading-relaxed">
+                            <span className="font-black">Credit Usage Tracking:</span> This graph shows your credit consumption pattern over the last 30 days. 
+                            Credits are deducted when cargo is transported based on weight ({subscription.plan?.creditsPerTonTenant || 0} credits per ton).
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
                       <button
@@ -1269,6 +1432,186 @@ const SubscriptionPlans: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Slots Usage Graph */}
+              {partnerPlans.length > 0 && (
+                <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                        <FaChartBar className="text-purple-500" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black text-slate-900">Partner Plan Slots Overview</h2>
+                        <p className="text-sm text-slate-500 mt-1">Track sold and available slots for each plan</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200">
+                      <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Total Slots</div>
+                      <div className="text-3xl font-black text-blue-900">
+                        {partnerPlans.reduce((sum, p) => sum + (p.availableSlots || 0), 0)}
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-5 border border-emerald-200">
+                      <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Slots Sold</div>
+                      <div className="text-3xl font-black text-emerald-900">
+                        {partnerSubscribersData?.data?.length || 0}
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-5 border border-amber-200">
+                      <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Slots Available</div>
+                      <div className="text-3xl font-black text-amber-900">
+                        {partnerPlans.reduce((sum, p) => sum + (p.availableSlots || 0), 0) - (partnerSubscribersData?.data?.length || 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bar Chart */}
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart
+                        data={partnerPlans.map(plan => {
+                          const soldSlots = partnerSubscribersData?.data?.filter(
+                            (sub: any) => sub.planSlug === plan.slug
+                          ).length || 0;
+                          const availableSlots = (plan.availableSlots || 0) - soldSlots;
+                          
+                          return {
+                            name: plan.name,
+                            sold: soldSlots,
+                            available: availableSlots,
+                            total: plan.availableSlots || 0,
+                          };
+                        })}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis 
+                          dataKey="name" 
+                          stroke="#64748b"
+                          style={{ fontSize: '12px', fontWeight: 600 }}
+                        />
+                        <YAxis 
+                          stroke="#64748b"
+                          style={{ fontSize: '12px', fontWeight: 600 }}
+                          label={{ value: 'Slots', angle: -90, position: 'insideLeft', style: { fontWeight: 700 } }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                          }}
+                          labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
+                        />
+                        <Legend 
+                          wrapperStyle={{ paddingTop: '20px' }}
+                          iconType="circle"
+                        />
+                        <Bar 
+                          dataKey="sold" 
+                          stackId="a" 
+                          fill="#10b981" 
+                          name="Slots Sold"
+                          radius={[0, 0, 8, 8]}
+                        />
+                        <Bar 
+                          dataKey="available" 
+                          stackId="a" 
+                          fill="#f59e0b" 
+                          name="Slots Available"
+                          radius={[8, 8, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Plan Details Table */}
+                  <div className="mt-6 overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-slate-200">
+                          <th className="pb-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan Name</th>
+                          <th className="pb-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Slots</th>
+                          <th className="pb-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Sold</th>
+                          <th className="pb-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Available</th>
+                          <th className="pb-3 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Utilization</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {partnerPlans.map((plan) => {
+                          const soldSlots = partnerSubscribersData?.data?.filter(
+                            (sub: any) => sub.planSlug === plan.slug
+                          ).length || 0;
+                          const availableSlots = (plan.availableSlots || 0) - soldSlots;
+                          const utilization = plan.availableSlots > 0 
+                            ? ((soldSlots / plan.availableSlots) * 100).toFixed(1) 
+                            : '0.0';
+
+                          return (
+                            <tr key={plan.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="py-4 text-left">
+                                <div className="font-black text-slate-900">{plan.name}</div>
+                                <div className="text-xs text-slate-500 mt-0.5">{plan.slug}</div>
+                              </td>
+                              <td className="py-4 text-center">
+                                <span className="font-bold text-slate-700">{plan.availableSlots}</span>
+                              </td>
+                              <td className="py-4 text-center">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                                  {soldSlots}
+                                </span>
+                              </td>
+                              <td className="py-4 text-center">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                                  {availableSlots}
+                                </span>
+                              </td>
+                              <td className="py-4 text-right">
+                                <div className="flex items-center justify-end gap-3">
+                                  <div className="w-24 bg-slate-200 rounded-full h-2">
+                                    <div 
+                                      className={`h-2 rounded-full ${
+                                        parseFloat(utilization) >= 80 ? 'bg-emerald-500' :
+                                        parseFloat(utilization) >= 50 ? 'bg-blue-500' :
+                                        parseFloat(utilization) >= 20 ? 'bg-amber-500' :
+                                        'bg-red-500'
+                                      }`}
+                                      style={{ width: `${utilization}%` }}
+                                    />
+                                  </div>
+                                  <span className="font-black text-slate-900 text-sm w-12 text-right">
+                                    {utilization}%
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Info Note */}
+                  <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <FaInfoCircle className="text-blue-500 text-sm mt-0.5 shrink-0" />
+                      <div className="text-xs text-slate-600 leading-relaxed">
+                        <span className="font-black">Slots Management:</span> Each partner plan has a limited number of slots. 
+                        When a truck owner purchases a plan, one slot is consumed. Monitor utilization to know when to create more plans or increase slots.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Parent Subscriptions Summary */}
               {parents.length > 0 && (

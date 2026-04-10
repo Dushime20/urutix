@@ -8,6 +8,7 @@ import { User } from '../../entities/user.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
+import { CreditAccount } from '../../entities/credit-account.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -21,7 +22,7 @@ import { Tenant } from '../../entities/tenant.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid, EmailTemplate, BulkEmailLog, Tenant]),
+    TypeOrmModule.forFeature([Load, Truck, User, Trip, Payment, Bid, CreditAccount, EmailTemplate, BulkEmailLog, Tenant]),
     EnhancedAuthModule,
     SubscriptionModule,
     NotificationsModule,

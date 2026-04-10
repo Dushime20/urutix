@@ -18,6 +18,11 @@ export interface CreditBalanceResponse {
   lifetimeSpent: number;
   lastRefreshDate: Date | null;
   nextRefreshDate: Date | null;
+  // Revenue tracking for tenant admins
+  revenueFromPartnerSales?: number;
+  totalPartnersSold?: number;
+  creditsAllocatedToPartners?: number;
+  creditsAvailableForAllocation?: number;
 }
 
 export interface ConsumeCreditsDto {
@@ -57,17 +62,19 @@ export class CreditService {
    * Get or create credit account for tenant or user
    */
   async getOrCreateCreditAccount(tenantId: string, userId?: string): Promise<CreditAccount> {
-    const where: any = { tenantId };
+    console.log('[CreditService] Searching for account with tenantId:', tenantId, 'userId:', userId);
+    
+    // Use QueryBuilder for proper NULL handling
+    const queryBuilder = this.creditAccountRepository.createQueryBuilder('account')
+      .where('account.tenantId = :tenantId', { tenantId });
+    
     if (userId) {
-      where.userId = userId;
+      queryBuilder.andWhere('account.userId = :userId', { userId });
     } else {
-      where.userId = null; // Important for tenant-level account
+      queryBuilder.andWhere('account.userId IS NULL');
     }
-
-    console.log('[CreditService] Searching for account with:', where);
-    let account = await this.creditAccountRepository.findOne({
-      where,
-    });
+    
+    let account = await queryBuilder.getOne();
     console.log('[CreditService] Found account:', account?.id);
 
     if (!account) {
@@ -93,7 +100,7 @@ export class CreditService {
   async getCreditBalance(tenantId: string, userId?: string): Promise<CreditBalanceResponse> {
     const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
-    return {
+    const response: CreditBalanceResponse = {
       currentBalance: account.currentBalance,
       subscriptionCredits: account.subscriptionCredits,
       purchasedCredits: account.purchasedCredits,
@@ -103,6 +110,16 @@ export class CreditService {
       lastRefreshDate: account.lastRefreshDate || null,
       nextRefreshDate: account.nextRefreshDate || null,
     };
+
+    // Include revenue data for tenant-level accounts (tenant admins)
+    if (!userId) {
+      response.revenueFromPartnerSales = Number(account.revenueFromPartnerSales) || 0;
+      response.totalPartnersSold = account.totalPartnersSold || 0;
+      response.creditsAllocatedToPartners = account.creditsAllocatedToPartners || 0;
+      response.creditsAvailableForAllocation = account.currentBalance - (account.creditsAllocatedToPartners || 0);
+    }
+
+    return response;
   }
 
   /**
@@ -261,6 +278,28 @@ export class CreditService {
       console.error('Failed to save log:', e);
       return transaction;
     }
+  }
+
+  /**
+   * Track revenue from partner plan sales
+   * Called when a truck owner purchases a partner plan from tenant admin
+   */
+  async trackPartnerPlanRevenue(
+    tenantId: string,
+    revenueAmount: number,
+    creditsAllocated: number,
+  ): Promise<void> {
+    // Get tenant-level credit account (not user-level)
+    const account = await this.getOrCreateCreditAccount(tenantId);
+
+    // Update revenue tracking fields
+    account.revenueFromPartnerSales = Number(account.revenueFromPartnerSales) + revenueAmount;
+    account.totalPartnersSold += 1;
+    account.creditsAllocatedToPartners += creditsAllocated;
+
+    await this.creditAccountRepository.save(account);
+
+    console.log(`[CreditService] Tracked partner plan revenue: $${revenueAmount}, Credits: ${creditsAllocated}, Total Partners: ${account.totalPartnersSold}`);
   }
 
   /**
@@ -498,10 +537,14 @@ export class CreditService {
       .leftJoinAndSelect('creditAccount.tenant', 'tenant')
       .where('transaction.tenantId = :tenantId', { tenantId });
 
-    if (filters?.userId) {
-      query.andWhere('transaction.userId = :userId', { userId: filters.userId });
-    } else if (filters?.userId === null) {
-      query.andWhere('transaction.userId IS NULL');
+    // Add userId to select if we need to filter by it (since it has select: false in entity)
+    if (filters?.userId !== undefined) {
+      query.addSelect('transaction.userId');
+      if (filters.userId) {
+        query.andWhere('transaction.userId = :userId', { userId: filters.userId });
+      } else {
+        query.andWhere('transaction.userId IS NULL');
+      }
     }
 
     query.orderBy('transaction.createdAt', 'DESC');

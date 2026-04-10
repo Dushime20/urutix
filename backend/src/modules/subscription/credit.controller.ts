@@ -41,13 +41,39 @@ export class CreditController {
       const userId = req.user.id;
       const userRole = req.user.role;
 
-      // For TRUCK_OWNER role, fetch their personal credit account
-      // For TENANT_ADMIN and others, fetch tenant-level account (master balance)
+      // For TENANT_ADMIN: Get user account (operational credits) + tenant-level account (revenue data)
+      // For TRUCK_OWNER: Get user account only
+      // For others: Get tenant-level account
+      if (userRole === 'TENANT_ADMIN') {
+        // Get tenant admin's user account for operational credits
+        const userBalance = await this.creditService.getCreditBalance(tenantId, userId);
+        
+        // Get tenant-level account for revenue tracking
+        const tenantBalance = await this.creditService.getCreditBalance(tenantId, undefined);
+        
+        // Merge both: operational credits from user account + revenue data from tenant account
+        const balance = {
+          ...userBalance,
+          revenueFromPartnerSales: tenantBalance.revenueFromPartnerSales,
+          totalPartnersSold: tenantBalance.totalPartnersSold,
+          creditsAllocatedToPartners: tenantBalance.creditsAllocatedToPartners,
+          creditsAvailableForAllocation: userBalance.currentBalance - (tenantBalance.creditsAllocatedToPartners || 0),
+        };
+        
+        console.log(`[CreditController] Balance for TENANT_ADMIN ${userId}:`, balance.currentBalance, 'Revenue:', balance.revenueFromPartnerSales);
+        
+        return {
+          success: true,
+          data: balance,
+        };
+      }
+      
+      // For TRUCK_OWNER and others
       const shouldFetchUserAccount = userRole === 'TRUCK_OWNER';
       
       const balance = await this.creditService.getCreditBalance(
         tenantId,
-        shouldFetchUserAccount ? userId : undefined  // undefined = tenant-level account
+        shouldFetchUserAccount ? userId : undefined
       );
       
       console.log(`[CreditController] Balance for ${shouldFetchUserAccount ? 'user' : 'tenant'} ${shouldFetchUserAccount ? userId : tenantId}:`, balance.currentBalance);
@@ -98,6 +124,58 @@ export class CreditController {
         total: result.total,
         limit: filters.limit || 50,
         offset: filters.offset || 0,
+      },
+    };
+  }
+
+  @Get('transactions/summary')
+  @ApiOperation({ summary: 'Get tenant admin transaction summary with credit allocation' })
+  @ApiResponse({ status: 200, description: 'Returns transaction summary for tenant admin' })
+  async getTransactionSummary(@Request() req) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    console.log('[getTransactionSummary] tenantId:', tenantId, 'userId:', userId, 'role:', userRole);
+
+    // Only for TENANT_ADMIN
+    if (userRole !== 'TENANT_ADMIN') {
+      // For other roles, return their own transactions
+      const result = await this.creditService.getTransactionHistory(tenantId, { userId });
+      return {
+        success: true,
+        data: {
+          transactions: result.transactions,
+          summary: null,
+        },
+      };
+    }
+
+    // Get ALL transactions in the tenant (don't filter by userId)
+    const result = await this.creditService.getTransactionHistory(tenantId, {});
+
+    // Get credit balance with revenue data
+    const userBalance = await this.creditService.getCreditBalance(tenantId, userId);
+    console.log('[getTransactionSummary] userBalance:', JSON.stringify(userBalance, null, 2));
+    
+    const tenantBalance = await this.creditService.getCreditBalance(tenantId, null);
+    console.log('[getTransactionSummary] tenantBalance:', JSON.stringify(tenantBalance, null, 2));
+
+    // Create summary
+    const summary = {
+      totalPurchased: userBalance.currentBalance || 0,
+      creditsSold: tenantBalance.creditsAllocatedToPartners || 0,
+      partnersSold: tenantBalance.totalPartnersSold || 0,
+      revenue: Number(tenantBalance.revenueFromPartnerSales) || 0,
+    };
+
+    console.log('[getTransactionSummary] summary:', JSON.stringify(summary, null, 2));
+
+    return {
+      success: true,
+      data: {
+        transactions: result.transactions,
+        summary,
       },
     };
   }

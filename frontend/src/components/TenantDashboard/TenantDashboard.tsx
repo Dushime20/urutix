@@ -54,7 +54,7 @@ import Profile from '../../pages/Profile';
 import TenantLenderManagementPage from '../../pages/TenantLenderManagementPage';
 import TenantCommunication from '../../pages/tenant/TenantCommunication';
 import { EnhancedKycVerificationCenter as KycManagementPage } from '../UserKYC';
-import { tenantApi, mockTenantData } from '../../services/tenantApi';
+import { tenantApi } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { TripTracker } from '../TripTracker/TripTracker';
@@ -166,46 +166,51 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
       };
     }
     return {
-      id: mockTenantData.id,
-      name: mockTenantData.name,
-      status: mockTenantData.status as 'active' | 'inactive' | 'suspended',
-      type: mockTenantData.type
+      id: 'default-tenant',
+      name: 'Default Tenant',
+      status: 'active' as const,
+      type: 'fleet-operator'
     };
   }, [user]);
 
-  // Use React Query for data fetching with fallback to mock data
+  // Use React Query for data fetching
   const { data: tenantData, isLoading, error, refetch } = useQuery({
     queryKey: ['tenant', tenantId, timeRange],
     queryFn: async () => {
-      try {
-        const summary = await tenantApi.getTenantDashboardSummary(tenantId || 'default-tenant', timeRange);
-        return {
-          metrics: summary.metrics,
-          trends: summary.trends,
-          activity: summary.recentActivity,
-          lowCreditPartners: summary.lowCreditPartners || []
-        };
-      } catch (error) {
-        console.warn('Using mock data due to API error:', error);
-        return {
-          metrics: mockTenantData.metrics,
-          trends: mockTenantData.trends,
-          activity: mockTenantData.recentActivity,
-          lowCreditPartners: (mockTenantData as any).lowCreditPartners || []
-        };
-      }
+      const summary = await tenantApi.getTenantDashboardSummary(tenantId || 'default-tenant', timeRange);
+      return {
+        metrics: summary.metrics,
+        trends: summary.trends,
+        activity: summary.recentActivity,
+        lowCreditPartners: summary.lowCreditPartners || []
+      };
     },
     enabled: !!tenantId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
-  // Fallback to mock data if API fails
+  // Use real data from API
   const data = tenantData || {
-    metrics: mockTenantData.metrics,
-    trends: mockTenantData.trends,
-    activity: mockTenantData.recentActivity,
-    lowCreditPartners: (mockTenantData as any).lowCreditPartners || []
+    metrics: {
+      totalRevenue: 0,
+      totalShipments: 0,
+      activeFleet: 0,
+      onTimeDelivery: 0,
+      customerSatisfaction: 0,
+      fuelEfficiency: 0,
+      averageLoadUtilization: 0,
+      disputeRate: 0,
+    },
+    trends: {
+      revenue: [],
+      shipments: [],
+      fleetUtilization: [],
+      fuelEfficiency: [],
+    },
+    activity: [],
+    lowCreditPartners: []
   };
 
   const handleNotifyLowCredit = async () => {

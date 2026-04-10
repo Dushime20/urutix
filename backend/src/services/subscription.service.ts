@@ -301,8 +301,13 @@ export class SubscriptionService {
     // Get the plan
     const plan = await this.getPlan(data.planId);
 
-    // Calculate total amount
-    const totalAmount = plan.totalCredits === -1 ? 0 : Number(plan.pricePerCredit) * plan.totalCredits;
+    // Determine credits to grant based on plan type
+    // For partner plans (with creditCostPerPartner), grant per-partner credits
+    // For regular plans, grant totalCredits
+    const creditsToGrant = plan.creditCostPerPartner || plan.totalCredits;
+    
+    // Calculate total amount based on credits to grant
+    const totalAmount = creditsToGrant === -1 ? 0 : Number(plan.pricePerCredit) * creditsToGrant;
 
     // TODO: Process payment with payment gateway
     // For now, we'll simulate successful payment
@@ -327,25 +332,35 @@ export class SubscriptionService {
       startTrial: false,
     });
 
-    // Grant credits based on plan
-    if (plan.totalCredits > 0) {
+    // Grant credits based on plan type
+    if (creditsToGrant > 0) {
       await this.creditService.grantSubscriptionCredits(
         data.tenantId,
-        plan.totalCredits,
+        creditsToGrant,
         subscription.id,
         subscription.currentPeriodEnd,
         data.userId,
       );
     }
 
+    // Track revenue for tenant admin if this is a partner plan purchase
+    if (plan.parentSubscriptionId && plan.creditCostPerPartner) {
+      // This is a partner plan - track revenue for the tenant admin who created it
+      await this.creditService.trackPartnerPlanRevenue(
+        data.tenantId,
+        totalAmount,
+        creditsToGrant,
+      );
+    }
+
     return {
       subscription,
       payment: paymentResult,
-      creditsAdded: plan.totalCredits,
+      creditsAdded: creditsToGrant,
       plan: {
         name: plan.name,
         pricePerCredit: plan.pricePerCredit,
-        totalCredits: plan.totalCredits,
+        totalCredits: creditsToGrant,
       },
     };
   }

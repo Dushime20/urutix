@@ -7,6 +7,7 @@ import { User, UserRole } from '../../entities/user.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Payment, PaymentStatus } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
+import { CreditAccount } from '../../entities/credit-account.entity';
 import { CreditService } from '../../services/credit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../../entities/notification.entity';
@@ -60,6 +61,8 @@ export class TenantDashboardService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Bid)
     private readonly bidRepository: Repository<Bid>,
+    @InjectRepository(CreditAccount)
+    private readonly creditAccountRepository: Repository<CreditAccount>,
     private readonly creditService: CreditService,
     private readonly notificationsService: NotificationsService,
   ) { }
@@ -79,6 +82,8 @@ export class TenantDashboardService {
         channel: 'IN_APP' as any,
         priority: 'HIGH' as any,
         category: 'FINANCIAL' as any,
+        entityType: 'USER' as any, // Required field - specifying the entity type
+        entityId: partner.user.id, // The user ID this notification is about
         templateId: 'low-credit-alert',
         content: `Your credit balance is low (${partner.currentBalance} TRX). Please top up to avoid service interruption.`,
         metadata: {
@@ -133,11 +138,23 @@ export class TenantDashboardService {
       },
     });
 
+    // Get tenant-level credit account for partner sales revenue
+    const tenantCreditAccount = await this.creditAccountRepository.findOne({
+      where: {
+        tenantId,
+        userId: null, // Tenant-level account
+      },
+    });
+
     // Calculate metrics
-    const totalRevenue = payments.reduce(
+    const operationalRevenue = payments.reduce(
       (sum, payment) => sum + (payment.amount || 0),
       0,
     );
+    const partnerSalesRevenue = tenantCreditAccount 
+      ? Number(tenantCreditAccount.revenueFromPartnerSales) 
+      : 0;
+    const totalRevenue = operationalRevenue + partnerSalesRevenue;
     const totalShipments = loads.length;
     const activeTrucks = trucks.filter(
       (truck) => truck.status === VehicleStatus.AVAILABLE,

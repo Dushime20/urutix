@@ -406,6 +406,21 @@ export const tenantApi = {
     return response.data.data;
   },
 
+  getCreditTransactionHistory: async (): Promise<any[]> => {
+    const response = await api.get('/credits/transactions');
+    return response.data.data || [];
+  },
+
+  getCreditTransactionSummary: async (): Promise<any> => {
+    const response = await api.get('/credits/transactions/summary');
+    return response.data.data || { transactions: [], summary: null };
+  },
+
+  getPartnerPlansSummary: async (): Promise<any> => {
+    const response = await api.get('/subscriptions/partner-plans');
+    return response.data.data || [];
+  },
+
   // Bidding Management
   getTenantBids: async (tenantId: string, status?: string): Promise<Bid[]> => {
     // Determine status filter query

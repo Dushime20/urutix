@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'; // Import useQuery
 import {
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
   Landmark, Calendar, Filter, Download, Eye,
-  Wallet // Import Wallet icon
+  Wallet, Activity, Package, Users, CheckCircle // Import icons
 } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,16 +52,103 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
   const { data: creditBalance } = useQuery({
     queryKey: ['creditBalance'],
     queryFn: () => tenantApi.getCreditBalance(),
-    // Fallback/Placeholder if API fails or is not ready
-    initialData: {
-      currentBalance: 2500,
-      subscriptionCredits: 1000,
-      purchasedCredits: 1500,
-      bonusCredits: 0,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 2500
-    } as any
   });
+
+  // Fetch Financial Metrics (real data from backend)
+  const { data: financialMetrics } = useQuery({
+    queryKey: ['financialMetrics', timeRange],
+    queryFn: async () => {
+      // This will be implemented in the backend
+      // For now, return empty structure
+      return {
+        summary: {
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netProfit: 0,
+          profitMargin: 0,
+          averageRevenuePerLoad: 0,
+          averageCostPerLoad: 0,
+          totalLoads: 0,
+          activeContracts: 0,
+        },
+        trends: [],
+        breakdown: {
+          revenue: [],
+          expenses: []
+        }
+      };
+    },
+  });
+
+  // Fetch Credit Transactions Summary (for Tenant Admin)
+  const { data: transactionData } = useQuery({
+    queryKey: ['creditTransactionSummary'],
+    queryFn: async () => {
+      try {
+        const response = await tenantApi.getCreditTransactionSummary();
+        return response || { transactions: [], summary: null };
+      } catch (error) {
+        console.error('Failed to fetch transaction summary:', error);
+        return { transactions: [], summary: null };
+      }
+    },
+  });
+
+  const transactions = transactionData?.transactions || [];
+  const transactionSummary = transactionData?.summary;
+
+  // Fetch Partner Plans Summary for allocation calculation
+  const { data: partnerPlans } = useQuery({
+    queryKey: ['partnerPlansSummary'],
+    queryFn: async () => {
+      try {
+        const response = await tenantApi.getPartnerPlansSummary();
+        return response || [];
+      } catch (error) {
+        console.error('Failed to fetch partner plans:', error);
+        return [];
+      }
+    },
+  });
+
+  // Calculate total allocation and sold credits
+  const creditAllocation = useMemo(() => {
+    // If we have transaction summary (for Tenant Admin), use it
+    if (transactionSummary) {
+      // Calculate total allocated from partner plans
+      const totalAllocated = partnerPlans?.reduce((sum: number, plan: any) => {
+        return sum + ((plan.creditCostPerPartner || 0) * (plan.availableSlots || 0));
+      }, 0) || 0;
+
+      return {
+        totalAllocated,
+        totalSold: transactionSummary.creditsSold || 0,
+        unallocated: (transactionSummary.totalPurchased || 0) - totalAllocated,
+      };
+    }
+
+    // Fallback to credit balance data
+    if (!partnerPlans || !creditBalance) {
+      return {
+        totalAllocated: 0,
+        totalSold: 0,
+        unallocated: 0,
+      };
+    }
+
+    const totalAllocated = partnerPlans.reduce((sum: number, plan: any) => {
+      return sum + ((plan.creditCostPerPartner || 0) * (plan.availableSlots || 0));
+    }, 0);
+
+    const totalSold = creditBalance.creditsAllocatedToPartners || 0;
+    const unallocated = (creditBalance.currentBalance || 0) - totalAllocated;
+
+    return {
+      totalAllocated,
+      totalSold,
+      unallocated,
+    };
+  }, [partnerPlans, creditBalance, transactionSummary]);
 
   // Enlite Prime Theme Colors (Indigo focus)
   const colors = {
@@ -82,49 +169,29 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
     infoLight: '#E3F2FD'
   };
 
-  // Mock financial data
-  const financialData = useMemo(() => ({
-    summary: {
-      totalRevenue: 12500000,
-      totalExpenses: 8900000,
-      netProfit: 3600000,
-      profitMargin: 28.8,
-      averageRevenuePerLoad: 10032,
-      averageCostPerLoad: 7140,
-      totalLoads: 1247,
-      activeContracts: 23,
-    },
-    trends: [
-      { month: 'Jan', revenue: 1250000, expenses: 890000, profit: 360000 },
-      { month: 'Feb', revenue: 1890000, expenses: 1340000, profit: 550000 },
-      { month: 'Mar', revenue: 1500000, expenses: 1060000, profit: 440000 },
-      { month: 'Apr', revenue: 2500000, expenses: 1780000, profit: 720000 },
-      { month: 'May', revenue: 2200000, expenses: 1560000, profit: 640000 },
-      { month: 'Jun', revenue: 3000000, expenses: 2130000, profit: 870000 },
-      { month: 'Jul', revenue: 2800000, expenses: 1990000, profit: 810000 },
-      { month: 'Aug', revenue: 3200000, expenses: 2270000, profit: 930000 },
-      { month: 'Sep', revenue: 2900000, expenses: 2060000, profit: 840000 },
-      { month: 'Oct', revenue: 3500000, expenses: 2480000, profit: 1020000 },
-      { month: 'Nov', revenue: 3100000, expenses: 2200000, profit: 900000 },
-      { month: 'Dec', revenue: 3800000, expenses: 2700000, profit: 1100000 },
-    ],
-    breakdown: {
-      revenue: [
-        { label: 'Freight Charges', value: 8500000, color: '#3F51B5' },
-        { label: 'Additional Services', value: 2800000, color: '#2196F3' },
-        { label: 'Storage Fees', value: 800000, color: '#4CAF50' },
-        { label: 'Insurance', value: 400000, color: '#FF9800' },
-      ],
-      expenses: [
-        { label: 'Fuel Costs', value: 3200000, color: '#F44336' },
-        { label: 'Driver Salaries', value: 2100000, color: '#3F51B5' },
-        { label: 'Maintenance', value: 1800000, color: '#FF9800' },
-        { label: 'Insurance', value: 800000, color: '#2196F3' },
-        { label: 'Administrative', value: 600000, color: '#607D8B' },
-        { label: 'Other', value: 400000, color: '#9E9E9E' },
-      ]
+  // Use real financial data from API
+  const financialData = useMemo(() => {
+    if (!financialMetrics) {
+      return {
+        summary: {
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netProfit: 0,
+          profitMargin: 0,
+          averageRevenuePerLoad: 0,
+          averageCostPerLoad: 0,
+          totalLoads: 0,
+          activeContracts: 0,
+        },
+        trends: [],
+        breakdown: {
+          revenue: [],
+          expenses: []
+        }
+      };
     }
-  }), []);
+    return financialMetrics;
+  }, [financialMetrics]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-RW', {
@@ -292,10 +359,35 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               {/* Core KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { label: tSync('Total Earnings'), value: financialData.summary.totalRevenue, trend: 12.5, icon: DollarSign, color: 'primary' },
-                  { label: tSync('Net Profit'), value: financialData.summary.netProfit, trend: 18.7, icon: TrendingUp, color: 'emerald' },
-                  { label: tSync('Average Trip Income'), value: financialData.summary.averageRevenuePerLoad, trend: 4.2, icon: Landmark, color: 'blue' },
-                  { label: tSync('Remaining Credits'), value: creditBalance?.currentBalance ?? 0, trend: 0, icon: Wallet, color: 'violet', isCredit: true } // Add Credit Card
+                  { 
+                    label: tSync('Total Earnings'), 
+                    value: (creditBalance?.revenueFromPartnerSales || 0) + (financialData.summary.totalRevenue || 0), 
+                    trend: 0, 
+                    icon: DollarSign, 
+                    color: 'primary' 
+                  },
+                  { 
+                    label: tSync('Net Profit'), 
+                    value: financialData.summary.netProfit || 0, 
+                    trend: 0, 
+                    icon: TrendingUp, 
+                    color: 'emerald' 
+                  },
+                  { 
+                    label: tSync('Average Trip Income'), 
+                    value: financialData.summary.averageRevenuePerLoad || 0, 
+                    trend: 0, 
+                    icon: Landmark, 
+                    color: 'blue' 
+                  },
+                  { 
+                    label: tSync('Remaining Credits'), 
+                    value: creditBalance?.currentBalance ?? 0, 
+                    trend: 0, 
+                    icon: Wallet, 
+                    color: 'violet', 
+                    isCredit: true 
+                  }
                 ].map((kpi, i) => {
                   const isCredit = (kpi as any).isCredit;
                   const isPercent = (kpi as any).isPercent;
@@ -309,13 +401,25 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                       className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] group hover:border-primary-100 dark:hover:border-primary-800 transition-all"
                     >
                       <div className="flex justify-between items-start mb-6">
-                        <div className={`p-4 rounded-[18px] bg-${kpi.color}-50 dark:bg-${kpi.color}-900/20`}>
-                          <kpi.icon className={`w-6 h-6 text-${kpi.color}-600 dark:text-${kpi.color}-400`} />
+                        <div className={`p-4 rounded-[18px] ${
+                          kpi.color === 'primary' ? 'bg-indigo-50 dark:bg-indigo-900/20' :
+                          kpi.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20' :
+                          kpi.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20' :
+                          'bg-violet-50 dark:bg-violet-900/20'
+                        }`}>
+                          <kpi.icon className={`w-6 h-6 ${
+                            kpi.color === 'primary' ? 'text-indigo-600 dark:text-indigo-400' :
+                            kpi.color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
+                            kpi.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                            'text-violet-600 dark:text-violet-400'
+                          }`} />
                         </div>
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                          {getTrendIcon(kpi.trend)}
-                          <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{kpi.trend}%</span>
-                        </div>
+                        {kpi.trend !== 0 && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            {getTrendIcon(kpi.trend)}
+                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{kpi.trend}%</span>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
@@ -329,80 +433,103 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               </div>
 
               {/* Main Chart Section */}
-               <div className="bg-white dark:bg-slate-900 p-10 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center justify-between mb-10">
-                  <div>
-                    <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Earnings Overview" /></h4>
-                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest italic"><TranslatedText text="Income vs Spend (12 Month History)" /></p>
-                  </div>
-                  <div className="flex gap-4">
-                    <button className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 transition-all">
-                      <Filter className="w-5 h-5" />
-                    </button>
-                    <button className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 transition-all">
-                      <Calendar className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="h-80 relative">
-                  <Line data={revenueChartData} options={chartOptions} />
-                </div>
-              </div>
-
-              {/* Detail Metrics Row */}
-               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6"><TranslatedText text="Revenue Segments" /></h4>
-                  <div className="h-48 mb-6">
-                    <Doughnut data={doughnutData} options={{ ...chartOptions, plugins: { legend: { display: false } } }} />
-                  </div>
-                  <div className="space-y-3">
-                    {financialData.breakdown.revenue.map(item => (
-                      <div key={item.label} className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                          <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{tSync(item.label)}</span>
-                        </div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white">{formatCurrency(item.value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Expense Hierarchy" /></h4>
-                    <button className="text-[10px] font-black text-primary-600 dark:text-primary-400 hover:underline"><TranslatedText text="View All Costs" /></button>
-                  </div>
-                  <div className="space-y-6">
-                    {financialData.breakdown.expenses.slice(0, 4).map(item => (
-                      <div key={item.label} className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">
-                          <span>{tSync(item.label)}</span>
-                          <span className="text-slate-900 dark:text-slate-100">{formatCurrency(item.value)}</span>
-                        </div>
-                        <div className="h-2 w-full bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(item.value / financialData.summary.totalExpenses) * 100}%` }}
-                            className="h-full bg-primary-500 rounded-full"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    <div className="mt-8 pt-8 border-t border-slate-50 dark:border-slate-800 grid grid-cols-2 gap-8">
-                      <div>
-                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Operating Ratio" /></p>
-                        <p className="text-xl font-black text-slate-900 dark:text-white">71.2%</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Burn Rate" /> (<TranslatedText text="Monthly" />)</p>
-                        <p className="text-xl font-black text-rose-500">{formatCurrency(741000)}</p>
-                      </div>
+              {financialData.trends.length > 0 ? (
+                <div className="bg-white dark:bg-slate-900 p-10 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center justify-between mb-10">
+                    <div>
+                      <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Earnings Overview" /></h4>
+                      <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest italic"><TranslatedText text="Income vs Spend (12 Month History)" /></p>
+                    </div>
+                    <div className="flex gap-4">
+                      <button className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 transition-all">
+                        <Filter className="w-5 h-5" />
+                      </button>
+                      <button className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 transition-all">
+                        <Calendar className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
+                  <div className="h-80 relative">
+                    <Line data={revenueChartData} options={chartOptions} />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white dark:bg-slate-900 p-10 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] text-center">
+                  <div className="py-12">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <TrendingUp className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2"><TranslatedText text="No Financial Data Yet" /></h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400"><TranslatedText text="Start completing trips to see your earnings trends" /></p>
+                  </div>
+                </div>
+              )}
+
+              {/* Detail Metrics Row */}
+              {financialData.breakdown.revenue.length > 0 || financialData.breakdown.expenses.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {financialData.breakdown.revenue.length > 0 && (
+                    <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                      <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6"><TranslatedText text="Revenue Segments" /></h4>
+                      <div className="h-48 mb-6">
+                        <Doughnut data={doughnutData} options={{ ...chartOptions, plugins: { legend: { display: false } } }} />
+                      </div>
+                      <div className="space-y-3">
+                        {financialData.breakdown.revenue.map(item => (
+                          <div key={item.label} className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                              <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{tSync(item.label)}</span>
+                            </div>
+                            <span className="text-xs font-black text-slate-900 dark:text-white">{formatCurrency(item.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {financialData.breakdown.expenses.length > 0 && (
+                    <div className={`${financialData.breakdown.revenue.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]`}>
+                      <div className="flex items-center justify-between mb-8">
+                        <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Expense Hierarchy" /></h4>
+                      </div>
+                      <div className="space-y-6">
+                        {financialData.breakdown.expenses.slice(0, 4).map(item => (
+                          <div key={item.label} className="space-y-2">
+                            <div className="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+                              <span>{tSync(item.label)}</span>
+                              <span className="text-slate-900 dark:text-slate-100">{formatCurrency(item.value)}</span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${financialData.summary.totalExpenses > 0 ? (item.value / financialData.summary.totalExpenses) * 100 : 0}%` }}
+                                className="h-full bg-primary-500 rounded-full"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        {financialData.summary.totalExpenses > 0 && (
+                          <div className="mt-8 pt-8 border-t border-slate-50 dark:border-slate-800 grid grid-cols-2 gap-8">
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Operating Ratio" /></p>
+                              <p className="text-xl font-black text-slate-900 dark:text-white">
+                                {financialData.summary.totalRevenue > 0 
+                                  ? ((financialData.summary.totalExpenses / financialData.summary.totalRevenue) * 100).toFixed(1) 
+                                  : 0}%
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Net Profit" /></p>
+                              <p className="text-xl font-black text-emerald-500">{formatCurrency(financialData.summary.netProfit)}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </motion.div>
           )}
 
@@ -432,41 +559,158 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden"
+              className="space-y-8"
             >
-              <table className="w-full text-left">
-                <thead className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800">
-                  <tr>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Details" /></th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Category" /></th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Amount" /></th>
-                    <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right"><TranslatedText text="Actions" /></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-all">
-                      <td className="px-10 py-6">
-                        <div>
-                          <p className="text-sm font-black text-slate-900 dark:text-slate-100"><TranslatedText text="Freight Segment" />-00{i}</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">Oct 2{i}, 2023 · #482910</p>
-                        </div>
-                      </td>
-                      <td className="px-10 py-6">
-                        <span className="px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-full text-[9px] font-black uppercase tracking-widest"><TranslatedText text="Operational Revenue" /></span>
-                      </td>
-                      <td className="px-10 py-6 text-sm font-black text-slate-900 dark:text-slate-100">
-                        {formatCurrency(125000 * i)}
-                      </td>
-                      <td className="px-10 py-6 text-right">
-                        <button className="p-2 text-slate-400 dark:text-slate-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
-                          <Eye className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Credit Allocation Summary for Tenant Admin */}
+              {creditBalance && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Total Credits Purchased */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-[18px]">
+                        <Package className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Total Credits Purchased" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {(creditBalance.currentBalance || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="From subscription" />
+                    </p>
+                  </div>
+
+                  {/* Credits Allocated (Reserved for Partner Plans) */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-[18px]">
+                        <Wallet className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Credits Allocated" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {creditAllocation.totalAllocated.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="Reserved for partner plans" />
+                    </p>
+                  </div>
+
+                  {/* Credits Sold (Actually Purchased by Truck Owners) */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-[18px]">
+                        <Users className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Credits Sold" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {creditAllocation.totalSold.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="To" /> {transactionSummary?.partnersSold || creditBalance?.totalPartnersSold || 0} <TranslatedText text="truck owners" />
+                    </p>
+                  </div>
+
+                  {/* Unallocated Credits */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-[18px]">
+                        <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Unallocated Credits" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {creditAllocation.unallocated.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="Available for new plans" />
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Transaction History Table */}
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
+                {transactions && transactions.length > 0 ? (
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800">
+                      <tr>
+                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Details" /></th>
+                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Type" /></th>
+                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Amount" /></th>
+                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Balance" /></th>
+                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right"><TranslatedText text="Date" /></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                      {transactions.map((txn: any) => (
+                        <tr key={txn.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-all">
+                          <td className="px-10 py-6">
+                            <div>
+                              <p className="text-sm font-black text-slate-900 dark:text-slate-100">{txn.description || 'Transaction'}</p>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">
+                                {txn.id.substring(0, 8)}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-10 py-6">
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              txn.type === 'SUBSCRIPTION_GRANT' || txn.type === 'PURCHASE' || txn.type === 'BONUS' 
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
+                            }`}>
+                              <TranslatedText text={txn.type.replace(/_/g, ' ')} />
+                            </span>
+                          </td>
+                          <td className="px-10 py-6">
+                            <span className={`text-sm font-black ${
+                              txn.type === 'SUBSCRIPTION_GRANT' || txn.type === 'PURCHASE' || txn.type === 'BONUS'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {txn.type === 'SUBSCRIPTION_GRANT' || txn.type === 'PURCHASE' || txn.type === 'BONUS' ? '+' : '-'}
+                              {txn.amount.toLocaleString()} credits
+                            </span>
+                          </td>
+                          <td className="px-10 py-6 text-sm font-black text-slate-900 dark:text-slate-100">
+                            {txn.balanceAfter.toLocaleString()} credits
+                          </td>
+                          <td className="px-10 py-6 text-right">
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                              {new Date(txn.createdAt).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                              })}
+                            </p>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="py-20 text-center">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Activity className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2">
+                      <TranslatedText text="No Transactions Yet" />
+                    </h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <TranslatedText text="Your credit transaction history will appear here" />
+                    </p>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

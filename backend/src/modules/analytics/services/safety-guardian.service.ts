@@ -74,6 +74,8 @@ export class SafetyGuardianService {
         type: NotificationType.DRIVER_FATIGUE_WARNING,
         category: NotificationCategory.SAFETY,
         priority: NotificationPriority.URGENT,
+        entityType: 'TRIP' as any,
+        entityId: trip.id,
         channel: NotificationChannel.IN_APP, // Changed from channels array to single channel
         templateId: 'safety-advisory', // Added required templateId
         actionUrl: `/dashboard/driver/safety`,

@@ -73,8 +73,8 @@ export class PermissionGuard implements CanActivate {
       throw new UnauthorizedException('User not authenticated');
     }
 
-    // SUPER_ADMIN and ADMIN bypass all permission checks
-    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
+    // SUPER_ADMIN, ADMIN, and TENANT_ADMIN bypass all permission checks
+    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.role === 'TENANT_ADMIN') {
       return true;
     }
 

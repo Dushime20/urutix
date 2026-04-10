@@ -145,6 +145,7 @@ export class NotificationService {
           channel,
           priority: priority || NotificationPriority.NORMAL,
           category,
+          entityType: 'SYSTEM' as any,
           templateId,
           subject: this.processTemplate(template.subject, data),
           content: this.processTemplate(template.content, data),
