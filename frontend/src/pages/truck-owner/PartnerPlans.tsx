@@ -181,13 +181,24 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600">Credits Remaining:</span>
                     <span className="font-black text-blue-600">
-                      {creditAccountData?.data?.current_balance?.toLocaleString() || 0}
+                      {(() => {
+                        const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0;
+                        const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                        const remaining = totalCredits - usedCredits;
+                        return remaining.toLocaleString();
+                      })()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600">Credits Used:</span>
                     <span className="font-black text-slate-700">
                       {creditAccountData?.data?.lifetime_spent?.toLocaleString() || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Total Credits:</span>
+                    <span className="font-black text-slate-900">
+                      {(sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -199,19 +210,27 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                 </div>
 
                 {/* Progress Bar */}
-                {sub.plan?.totalCredits > 0 && creditAccountData?.data && (
+                {(sub.plan?.creditCostPerPartner || sub.plan?.totalCredits) > 0 && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Usage</span>
                       <span className="text-[9px] font-bold text-blue-600">
-                        {((creditAccountData.data.lifetime_spent / sub.plan.totalCredits) * 100).toFixed(1)}%
+                        {(() => {
+                          const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
+                          const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                          return ((usedCredits / totalCredits) * 100).toFixed(1);
+                        })()}%
                       </span>
                     </div>
                     <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
                         style={{ 
-                          width: `${Math.min(100, (creditAccountData.data.lifetime_spent / sub.plan.totalCredits) * 100)}%` 
+                          width: `${(() => {
+                            const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
+                            const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                            return Math.min(100, (usedCredits / totalCredits) * 100);
+                          })()}%` 
                         }}
                       />
                     </div>
