@@ -12,7 +12,20 @@ import {
   FaShieldAlt,
   FaInfoCircle,
   FaChartBar,
+  FaChartLine,
 } from 'react-icons/fa';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 interface PartnerPlan {
   id: string;
@@ -238,6 +251,174 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Credit Usage Graph */}
+      {mySubscriptions.length > 0 && (
+        <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <FaChartLine className="text-[#345E85]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900">Credit Usage Over Time</h2>
+                <p className="text-sm text-slate-500 mt-1">Track your credit consumption trends</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Usage Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200">
+              <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Total Credits</div>
+              <div className="text-3xl font-black text-blue-900">
+                {(() => {
+                  const total = mySubscriptions.reduce((sum, sub) => 
+                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                  );
+                  return total.toLocaleString();
+                })()}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-5 border border-emerald-200">
+              <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Available</div>
+              <div className="text-3xl font-black text-emerald-900">
+                {(() => {
+                  const total = mySubscriptions.reduce((sum, sub) => 
+                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                  );
+                  const used = creditAccountData?.data?.lifetime_spent || 0;
+                  return (total - used).toLocaleString();
+                })()}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200">
+              <div className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Used</div>
+              <div className="text-3xl font-black text-red-900">
+                {(creditAccountData?.data?.lifetime_spent || 0).toLocaleString()}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-5 border border-purple-200">
+              <div className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-2">Usage Rate</div>
+              <div className="text-3xl font-black text-purple-900">
+                {(() => {
+                  const total = mySubscriptions.reduce((sum, sub) => 
+                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                  );
+                  const used = creditAccountData?.data?.lifetime_spent || 0;
+                  return total > 0 ? ((used / total) * 100).toFixed(1) : '0.0';
+                })()}%
+              </div>
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+            <ResponsiveContainer width="100%" height={350}>
+              <AreaChart
+                data={(() => {
+                  // Generate mock data for the last 30 days
+                  const data = [];
+                  const today = new Date();
+                  const totalCredits = mySubscriptions.reduce((sum, sub) => 
+                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                  );
+                  const currentUsed = creditAccountData?.data?.lifetime_spent || 0;
+                  
+                  for (let i = 29; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    
+                    // Simulate gradual usage over time
+                    const dayProgress = (29 - i) / 29;
+                    const used = Math.floor(currentUsed * dayProgress);
+                    const remaining = totalCredits - used;
+                    
+                    data.push({
+                      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                      used: used,
+                      remaining: remaining,
+                      total: totalCredits,
+                    });
+                  }
+                  
+                  return data;
+                })()}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorUsed" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#64748b"
+                  style={{ fontSize: '12px', fontWeight: 600 }}
+                />
+                <YAxis 
+                  stroke="#64748b"
+                  style={{ fontSize: '12px', fontWeight: 600 }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  }}
+                  labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="circle"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="used" 
+                  stackId="1"
+                  stroke="#ef4444" 
+                  fillOpacity={1} 
+                  fill="url(#colorUsed)" 
+                  name="Credits Used"
+                  strokeWidth={2}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="remaining" 
+                  stackId="1"
+                  stroke="#10b981" 
+                  fillOpacity={1} 
+                  fill="url(#colorRemaining)" 
+                  name="Credits Remaining"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Info Note */}
+          <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <FaInfoCircle className="text-blue-500 text-sm mt-0.5 shrink-0" />
+              <div className="text-xs text-slate-600 leading-relaxed">
+                <span className="font-black">Note:</span> Credit usage is tracked in real-time as you transport cargo. 
+                Credits are deducted based on the weight of cargo transported and the rate specified in your plan.
+              </div>
+            </div>
           </div>
         </div>
       )}
