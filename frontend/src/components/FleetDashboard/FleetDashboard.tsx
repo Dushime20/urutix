@@ -56,6 +56,7 @@ import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 
 // Lazy load Credits component
 const TruckOwnerCredits = lazy(() => import('../../pages/truck-owner/TruckOwnerCredits'));
+const TruckOwnerPartnerPlans = lazy(() => import('../../pages/truck-owner/PartnerPlans'));
 const FuelManagement = lazy(() => import('../../pages/FuelPage'));
 const RoutesPage = lazy(() => import('../../pages/Routes'));
 
@@ -97,7 +98,7 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans' | 'partner-plans'>('overview');
 
 
   const [showForm, setShowForm] = useState(false);
@@ -111,11 +112,11 @@ export const FleetDashboard: React.FC = () => {
 
   // ── Role Based Access Control ──────────────────────────────────────────────
   const rolePermissions: Record<string, string[]> = {
-    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
-    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'partner-plans'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'partner-plans'],
     'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
-    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
-    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'partner-plans'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'partner-plans'],
     'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'assignments', 'matches', 'analytics', 'communicate'],
     'FLEET_ACCOUNTANT': ['overview', 'financial', 'expenses', 'credits', 'fuel', 'analytics'],
     'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
@@ -148,6 +149,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/assignments')) setActiveTab('assignments');
     else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
     else if (path.includes('/fleet/credits')) setActiveTab('credits');
+    else if (path.includes('/fleet/partner-plans')) setActiveTab('partner-plans');
     else if (path.includes('/fleet/communicate') || path.includes('/fleet/communication')) setActiveTab('communicate');
     else if (path.includes('/dashboard/fleet/overview')) setActiveTab('financial');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
@@ -584,6 +586,7 @@ export const FleetDashboard: React.FC = () => {
                  { id: 'loans', icon: DollarSign, label: 'Loans' },
                  { id: 'expenses', icon: Calculator, label: 'Expenses' },
                  { id: 'credits', icon: CreditCard, label: 'Credits' },
+                 { id: 'partner-plans', icon: Star, label: 'Partner Plans' },
                  { id: 'analytics', icon: Activity, label: 'Analytics' },
                  { id: 'communicate', icon: MessageSquare, label: 'Comms' }
                ].filter(t => allowedTabs.includes(t.id)).map((tab) => (
@@ -596,6 +599,8 @@ export const FleetDashboard: React.FC = () => {
                        navigate('/dashboard/fleet/fuel');
                      } else if (tab.id === 'credits') {
                        navigate('/dashboard/fleet/credits');
+                     } else if (tab.id === 'partner-plans') {
+                       navigate('/dashboard/fleet/partner-plans');
                      } else if (tab.id === 'financial') {
                        navigate('/dashboard/fleet/overview');
                      } else if (tab.id === 'loans') {
@@ -949,6 +954,10 @@ export const FleetDashboard: React.FC = () => {
                 ) : activeTab === 'credits' ? (
                   <Suspense fallback={<FleetSkeleton />}>
                     <TruckOwnerCredits />
+                  </Suspense>
+                ) : activeTab === 'partner-plans' ? (
+                  <Suspense fallback={<FleetSkeleton />}>
+                    <TruckOwnerPartnerPlans />
                   </Suspense>
                 ) : activeTab === 'fuel' ? (
                   <Suspense fallback={<FleetSkeleton />}>
