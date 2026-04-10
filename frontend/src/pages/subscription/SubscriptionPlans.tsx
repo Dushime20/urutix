@@ -1520,19 +1520,10 @@ div>
                               </td>
                               <td className="py-4 px-4 text-right">
                                 <div className="text-sm font-black text-slate-900">
-                                  {subscriber.creditsRemaining.toLocaleString()} / {subscriber.creditsTotal.toLocaleString()}
+                                  {subscriber.creditsTotal.toLocaleString()}
                                 </div>
-                                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
-                                  <div 
-                                    className={`h-1.5 rounded-full ${
-                                      (subscriber.creditsRemaining / subscriber.creditsTotal) > 0.5 
-                                        ? 'bg-emerald-500' 
-                                        : (subscriber.creditsRemaining / subscriber.creditsTotal) > 0.2
-                                        ? 'bg-yellow-500'
-                                        : 'bg-red-500'
-                                    }`}
-                                    style={{ width: `${(subscriber.creditsRemaining / subscriber.creditsTotal) * 100}%` }}
-                                  />
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                  Credits Purchased
                                 </div>
                               </td>
                               <td className="py-4 px-4 text-right">
