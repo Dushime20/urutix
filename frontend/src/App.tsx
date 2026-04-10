@@ -54,6 +54,7 @@ const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPl
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
 const FleetPaymentManagement = lazy(() => import('./pages/FleetPaymentManagement'));
 const TruckOwnerCredits = lazy(() => import('./pages/truck-owner/TruckOwnerCredits'));
+const TruckOwnerPartnerPlans = lazy(() => import('./pages/truck-owner/PartnerPlans'));
 
 const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
 const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
@@ -344,6 +345,7 @@ function App() {
                       <Route path="overview" element={<FleetDashboard />} />
                       <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="credits" element={<TruckOwnerCredits />} />
+                      <Route path="partner-plans" element={<TruckOwnerPartnerPlans />} />
                       <Route path="bids" element={<UnifiedBiddingManagement />} />
                       <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="bidding-analytics" element={<UnifiedBiddingManagement />} />
