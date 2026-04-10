@@ -11,11 +11,17 @@ import { Trip } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 import { LoadContract } from '../../entities/load-contract.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { TenantSubscription } from '../../entities/tenant-subscription.entity';
+import { CreditAccount } from '../../entities/credit-account.entity';
+import { CreditTransaction } from '../../entities/credit-transaction.entity';
+import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { BiddingService } from './bidding.service';
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
 import { BiddingController } from './bidding.controller';
 import { NotificationModule } from '../notifications/notification.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { CreditService } from '../../services/credit.service';
 
 @Module({
   imports: [
@@ -31,11 +37,16 @@ import { AnalyticsModule } from '../analytics/analytics.module';
       AuctionWatch,
       AuctionView,
       LoadContract,
+      SubscriptionPlan,
+      TenantSubscription,
+      CreditAccount,
+      CreditTransaction,
+      FeatureCreditCost,
     ]),
     NotificationModule,
     AnalyticsModule,
   ],
-  providers: [BiddingService, BiddingIntelligenceService],
+  providers: [BiddingService, BiddingIntelligenceService, CreditService],
   controllers: [BiddingController],
   exports: [BiddingService, BiddingIntelligenceService],
 })

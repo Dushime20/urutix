@@ -112,13 +112,14 @@ const SubscriptionPlans: React.FC = () => {
     },
   });
 
-  // Fetch credit account for usage data
-  const { data: creditAccountData } = useQuery({
-    queryKey: ['credit-account'],
+  // Fetch credit balance for usage data
+  const { data: creditAccountData, refetch: refetchCreditBalance } = useQuery({
+    queryKey: ['credit-balance'],
     queryFn: async () => {
-      const response = await api.get('/credits/account');
+      const response = await api.get('/credits/balance');
       return response.data;
     },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Fetch partner plans created by tenant
@@ -1033,7 +1034,7 @@ const SubscriptionPlans: React.FC = () => {
                         </h4>
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                           {subscription.plan?.totalCredits > 0 && creditAccountData?.data ? 
-                            `${((creditAccountData.data.lifetime_spent / subscription.plan.totalCredits) * 100).toFixed(1)}% Consumed` 
+                            `${((creditAccountData.data.lifetimeSpent / subscription.plan.totalCredits) * 100).toFixed(1)}% Consumed` 
                             : 'Pay as you go'}
                         </div>
                       </div>
@@ -1073,7 +1074,7 @@ const SubscriptionPlans: React.FC = () => {
                             Used (Consumed)
                           </div>
                           <div className="text-2xl font-black text-red-600">
-                            {creditAccountData?.data?.lifetime_spent?.toLocaleString() || '0'}
+                            {creditAccountData?.data?.lifetimeSpent?.toLocaleString() || '0'}
                           </div>
                           <div className="text-[9px] font-bold text-red-500 mt-1">
                             From Cargo Ops
@@ -1100,13 +1101,13 @@ const SubscriptionPlans: React.FC = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-slate-600 font-semibold">Current Balance:</span>
                             <span className="font-black text-blue-600">
-                              {creditAccountData?.data?.current_balance?.toLocaleString() || '0'} credits
+                              {creditAccountData?.data?.currentBalance?.toLocaleString() || '0'} credits
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-slate-600 font-semibold">Lifetime Earned:</span>
                             <span className="font-black text-slate-700">
-                              {creditAccountData?.data?.lifetime_earned?.toLocaleString() || '0'} credits
+                              {creditAccountData?.data?.lifetimeEarned?.toLocaleString() || '0'} credits
                             </span>
                           </div>
                         </div>
@@ -1138,8 +1139,8 @@ const SubscriptionPlans: React.FC = () => {
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Consumption</span>
                               <span className="text-[9px] font-bold text-red-600">
-                                {creditAccountData?.data?.lifetime_spent 
-                                  ? ((creditAccountData.data.lifetime_spent / subscription.plan.totalCredits) * 100).toFixed(1)
+                                {creditAccountData?.data?.lifetimeSpent 
+                                  ? ((creditAccountData.data.lifetimeSpent / subscription.plan.totalCredits) * 100).toFixed(1)
                                   : '0'}%
                               </span>
                             </div>
@@ -1147,8 +1148,8 @@ const SubscriptionPlans: React.FC = () => {
                               <div 
                                 className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all duration-500"
                                 style={{ 
-                                  width: `${Math.min(100, creditAccountData?.data?.lifetime_spent 
-                                    ? ((creditAccountData.data.lifetime_spent / subscription.plan.totalCredits) * 100)
+                                  width: `${Math.min(100, creditAccountData?.data?.lifetimeSpent 
+                                    ? ((creditAccountData.data.lifetimeSpent / subscription.plan.totalCredits) * 100)
                                     : 0)}%` 
                                 }}
                               />
@@ -1205,22 +1206,22 @@ const SubscriptionPlans: React.FC = () => {
                         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200">
                           <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Available</div>
                           <div className="text-2xl font-black text-emerald-900">
-                            {(subscription.plan?.totalCredits || 0) - (creditAccountData?.data?.lifetime_spent || 0) > 0
-                              ? ((subscription.plan?.totalCredits || 0) - (creditAccountData?.data?.lifetime_spent || 0)).toLocaleString()
+                            {(subscription.plan?.totalCredits || 0) - (creditAccountData?.data?.lifetimeSpent || 0) > 0
+                              ? ((subscription.plan?.totalCredits || 0) - (creditAccountData?.data?.lifetimeSpent || 0)).toLocaleString()
                               : '0'}
                           </div>
                         </div>
                         <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
                           <div className="text-[9px] font-black text-red-600 uppercase tracking-wider mb-1">Used Credits</div>
                           <div className="text-2xl font-black text-red-900">
-                            {creditAccountData?.data?.lifetime_spent?.toLocaleString() || '0'}
+                            {creditAccountData?.data?.lifetimeSpent?.toLocaleString() || '0'}
                           </div>
                         </div>
                         <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
                           <div className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-1">Usage Rate</div>
                           <div className="text-2xl font-black text-purple-900">
-                            {subscription.plan?.totalCredits > 0 && creditAccountData?.data?.lifetime_spent
-                              ? `${((creditAccountData.data.lifetime_spent / subscription.plan.totalCredits) * 100).toFixed(1)}%`
+                            {subscription.plan?.totalCredits > 0 && creditAccountData?.data?.lifetimeSpent
+                              ? `${((creditAccountData.data.lifetimeSpent / subscription.plan.totalCredits) * 100).toFixed(1)}%`
                               : '0%'}
                           </div>
                         </div>
@@ -1232,7 +1233,7 @@ const SubscriptionPlans: React.FC = () => {
                           <AreaChart
                             data={(() => {
                               const totalCredits = subscription.plan?.totalCredits || 0;
-                              const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                              const usedCredits = creditAccountData?.data?.lifetimeSpent || 0;
                               const days = 30;
                               
                               // Generate 30 days of data

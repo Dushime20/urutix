@@ -940,4 +940,79 @@ export class CreditService {
 
     return query.getMany();
   }
+
+  /**
+   * Consume credits for bid acceptance (dual deduction)
+   * Deducts credits from both tenant admin and truck owner when bid is accepted
+   */
+  async consumeCreditsForBid(dto: {
+    tenantId: string;
+    tenantAdminUserId: string;
+    truckOwnerUserId: string;
+    cargoWeightTons: number;
+    creditsPerTonTenant: number;
+    creditsPerTonTruckOwner: number;
+    bidId: string;
+    loadId: string;
+    loadTitle: string;
+  }): Promise<{ tenantTransaction: CreditTransaction; truckOwnerTransaction: CreditTransaction }> {
+    // Calculate credits needed
+    const tenantCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTenant);
+    const truckOwnerCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTruckOwner);
+
+    // Get both accounts
+    const tenantAdminAccount = await this.getOrCreateCreditAccount(dto.tenantId, dto.tenantAdminUserId);
+    const truckOwnerAccount = await this.getOrCreateCreditAccount(dto.tenantId, dto.truckOwnerUserId);
+
+    // Validate both have sufficient credits
+    if (tenantAdminAccount.currentBalance < tenantCreditsNeeded) {
+      throw new BadRequestException(
+        `Tenant admin has insufficient credits. Required: ${tenantCreditsNeeded}, Available: ${tenantAdminAccount.currentBalance}`,
+      );
+    }
+
+    if (truckOwnerAccount.currentBalance < truckOwnerCreditsNeeded) {
+      throw new BadRequestException(
+        `Truck owner has insufficient credits. Required: ${truckOwnerCreditsNeeded}, Available: ${truckOwnerAccount.currentBalance}`,
+      );
+    }
+
+    // Deduct from tenant admin
+    const tenantTransaction = await this.deductCredits({
+      tenantId: dto.tenantId,
+      userId: dto.tenantAdminUserId,
+      amount: tenantCreditsNeeded,
+      description: `Bid accepted for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTenant} credits/ton)`,
+      referenceType: 'BID',
+      referenceId: dto.bidId,
+      calculationDetails: {
+        loadId: dto.loadId,
+        cargoWeightTons: dto.cargoWeightTons,
+        creditsPerTon: dto.creditsPerTonTenant,
+        role: 'TENANT_ADMIN',
+      },
+    });
+
+    // Deduct from truck owner
+    const truckOwnerTransaction = await this.deductCredits({
+      tenantId: dto.tenantId,
+      userId: dto.truckOwnerUserId,
+      amount: truckOwnerCreditsNeeded,
+      description: `Bid accepted for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
+      referenceType: 'BID',
+      referenceId: dto.bidId,
+      calculationDetails: {
+        loadId: dto.loadId,
+        cargoWeightTons: dto.cargoWeightTons,
+        creditsPerTon: dto.creditsPerTonTruckOwner,
+        role: 'TRUCK_OWNER',
+      },
+    });
+
+    console.log(`[CreditService] Dual deduction completed for bid ${dto.bidId}:`);
+    console.log(`  - Tenant Admin: ${tenantCreditsNeeded} credits deducted`);
+    console.log(`  - Truck Owner: ${truckOwnerCreditsNeeded} credits deducted`);
+
+    return { tenantTransaction, truckOwnerTransaction };
+  }
 }

@@ -151,6 +151,33 @@
 - **Tenant**: Demo Tenant
 - **Status**: ✅ Email Verified (ACTIVE)
 
+---
+
+## Demo Tenant Cargo Owners (Under tenantadmin@demo.com)
+
+### Cargo Owner 1 - Kigali Exports Ltd
+- **Email**: `cargoowner1@demo.com`
+- **Password**: `CargoOwner123!`
+- **Role**: CARGO_OWNER
+- **Company**: Kigali Exports Ltd
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
+### Cargo Owner 2 - East Africa Trade Co
+- **Email**: `cargoowner2@demo.com`
+- **Password**: `CargoOwner123!`
+- **Role**: CARGO_OWNER
+- **Company**: East Africa Trade Co
+- **Tenant**: Demo Tenant
+- **Status**: ✅ Email Verified (ACTIVE)
+
+---
+
+## Default Tenant Drivers
+
+email:dushimecoder@gmail.com
+password:Driver123@
+
 ### Drivers
 - **Email**: `driver1@test.com`
 - **Password**: `test123`
@@ -205,6 +232,10 @@
 4. Use `truckowner4@demo.com` / `TruckOwner@123` (Swift Cargo Services)
 5. Use `truckowner5@demo.com` / `TruckOwner@123` (Grace Haulage Co)
 
+### For Demo Tenant Cargo Owners:
+1. Use `cargoowner1@demo.com` / `CargoOwner123!` (Kigali Exports Ltd)
+2. Use `cargoowner2@demo.com` / `CargoOwner123!` (East Africa Trade Co)
+
 ### For Driver Testing:
 1. Use `driver1@test.com` / `test123`
 2. Use `driver2@test.com` / `test123`
@@ -232,4 +263,4 @@
 
 ---
 
-*Last Updated: March 23, 2026*
+*Last Updated: April 10, 2026*

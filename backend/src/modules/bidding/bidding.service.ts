@@ -24,6 +24,9 @@ import { LoadContract, ContractStatus } from '../../entities/load-contract.entit
 import { NotificationService } from '../notifications/notification.service';
 import { NotificationType, EntityType, NotificationCategory, NotificationChannel } from '../../entities/notification.entity';
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
+import { CreditService } from '../../services/credit.service';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 
 export interface CreateBidDto {
   loadId: string;
@@ -120,8 +123,13 @@ export class BiddingService {
     private readonly viewRepository: Repository<AuctionView>,
     @InjectRepository(LoadContract)
     private readonly contractRepository: Repository<LoadContract>,
+    @InjectRepository(SubscriptionPlan)
+    private readonly subscriptionPlanRepository: Repository<SubscriptionPlan>,
+    @InjectRepository(TenantSubscription)
+    private readonly tenantSubscriptionRepository: Repository<TenantSubscription>,
     private readonly notificationService: NotificationService,
     private readonly biddingIntelligence: BiddingIntelligenceService,
+    private readonly creditService: CreditService,
   ) { }
 
   async createBid(
@@ -238,6 +246,43 @@ export class BiddingService {
         'Cannot specify advance payment percentage when advance payment is not required',
       );
     }
+
+    // CREDIT VALIDATION: Check if truck owner has sufficient credits for this bid
+    // Get truck owner's subscription plan to determine credit rates
+    const truckOwnerSubscription = await this.tenantSubscriptionRepository.findOne({
+      where: { userId: truckOwnerId, tenantId, status: SubscriptionStatus.ACTIVE },
+      relations: ['plan'],
+    });
+
+    if (!truckOwnerSubscription || !truckOwnerSubscription.plan) {
+      throw new BadRequestException(
+        'Truck owner must have an active subscription plan to place bids',
+      );
+    }
+
+    // Calculate credits needed for truck owner (weight in tons × creditsPerTonTruckOwner)
+    const cargoWeightTons = load.weight / 1000; // Convert kg to tons
+    const creditsPerTonTruckOwner = Number(truckOwnerSubscription.plan.creditsPerTonTruckOwner);
+    const truckOwnerCreditsNeeded = Math.ceil(cargoWeightTons * creditsPerTonTruckOwner);
+
+    // Check if truck owner has sufficient credits
+    const truckOwnerHasSufficientCredits = await this.creditService.hasSufficientCredits(
+      tenantId,
+      truckOwnerCreditsNeeded,
+      truckOwnerId,
+    );
+
+    if (!truckOwnerHasSufficientCredits) {
+      const truckOwnerBalance = await this.creditService.getCreditBalance(tenantId, truckOwnerId);
+      throw new BadRequestException(
+        `Insufficient credits to place bid. Required: ${truckOwnerCreditsNeeded} credits (${cargoWeightTons.toFixed(2)} tons × ${creditsPerTonTruckOwner} credits/ton). Available: ${truckOwnerBalance.currentBalance} credits. Please purchase more credits to continue.`,
+      );
+    }
+
+    console.log(`[BiddingService] Credit validation passed for truck owner ${truckOwnerId}:`);
+    console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
+    console.log(`  - Rate: ${creditsPerTonTruckOwner} credits/ton`);
+    console.log(`  - Credits needed: ${truckOwnerCreditsNeeded}`);
 
     // Create bid
     const bid = this.bidRepository.create({
@@ -441,6 +486,64 @@ export class BiddingService {
 
     if (bid.status !== BidStatus.PENDING && bid.status !== BidStatus.ACCEPTED) {
       throw new BadRequestException('Cannot accept bid that is in its current status');
+    }
+
+    // CREDIT DEDUCTION: Deduct credits from both tenant admin and truck owner
+    try {
+      // Get tenant admin user (the one who controls the truck owner)
+      const tenantAdminUser = await this.userRepository.findOne({
+        where: { tenantId, role: UserRole.TENANT_ADMIN },
+      });
+
+      if (!tenantAdminUser) {
+        throw new NotFoundException('Tenant admin not found for this tenant');
+      }
+
+      // Get truck owner's subscription plan (partner plan)
+      const truckOwnerSubscription = await this.tenantSubscriptionRepository.findOne({
+        where: { userId: bid.truckOwnerId, tenantId, status: SubscriptionStatus.ACTIVE },
+        relations: ['plan'],
+      });
+
+      if (!truckOwnerSubscription || !truckOwnerSubscription.plan) {
+        throw new BadRequestException(
+          'Truck owner must have an active subscription plan',
+        );
+      }
+
+      // Calculate cargo weight in tons
+      const cargoWeightTons = bid.load.weight / 1000; // Convert kg to tons
+
+      // IMPORTANT: Both rates come from the truck owner's partner plan
+      // This ensures consistent pricing based on the plan the truck owner purchased
+      const creditsPerTonTenant = Number(truckOwnerSubscription.plan.creditsPerTonTenant);
+      const creditsPerTonTruckOwner = Number(truckOwnerSubscription.plan.creditsPerTonTruckOwner);
+
+      console.log(`[BiddingService] Accepting bid ${bidId} - Credit deduction details:`);
+      console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
+      console.log(`  - Using rates from truck owner's plan: ${truckOwnerSubscription.plan.name}`);
+      console.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
+      console.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
+
+      // Perform dual credit deduction
+      await this.creditService.consumeCreditsForBid({
+        tenantId,
+        tenantAdminUserId: tenantAdminUser.id,
+        truckOwnerUserId: bid.truckOwnerId,
+        cargoWeightTons,
+        creditsPerTonTenant,
+        creditsPerTonTruckOwner,
+        bidId: bid.id,
+        loadId: bid.loadId,
+        loadTitle: bid.load.title,
+      });
+
+      console.log(`[BiddingService] Credit deduction successful for bid ${bidId}`);
+    } catch (error) {
+      console.error(`[BiddingService] Credit deduction failed for bid ${bidId}:`, error);
+      throw new BadRequestException(
+        `Failed to process credit deduction: ${error.message}`,
+      );
     }
 
     // Only update status if it's still pending

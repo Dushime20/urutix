@@ -74,13 +74,14 @@ const TruckOwnerPartnerPlans: React.FC = () => {
     },
   });
 
-  // Fetch credit account
+  // Fetch credit balance
   const { data: creditAccountData } = useQuery({
-    queryKey: ['credit-account'],
+    queryKey: ['credit-balance'],
     queryFn: async () => {
-      const response = await api.get('/credits/account');
+      const response = await api.get('/credits/balance');
       return response.data;
     },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Purchase subscription mutation
@@ -340,7 +341,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                         <span className="font-black text-blue-600">
                           {(() => {
                             const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0;
-                            const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                            const usedCredits = creditAccountData?.data?.lifetimeSpent || 0;
                             const remaining = totalCredits - usedCredits;
                             return remaining.toLocaleString();
                           })()}
@@ -349,7 +350,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-600">Credits Used:</span>
                         <span className="font-black text-slate-700">
-                          {creditAccountData?.data?.lifetime_spent?.toLocaleString() || 0}
+                          {creditAccountData?.data?.lifetimeSpent?.toLocaleString() || 0}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -374,7 +375,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                           <span className="text-[9px] font-bold text-blue-600">
                             {(() => {
                               const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
-                              const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                              const usedCredits = creditAccountData?.data?.lifetimeSpent || 0;
                               return ((usedCredits / totalCredits) * 100).toFixed(1);
                             })()}%
                           </span>
@@ -385,7 +386,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                             style={{ 
                               width: `${(() => {
                                 const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
-                                const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                                const usedCredits = creditAccountData?.data?.lifetimeSpent || 0;
                                 return Math.min(100, (usedCredits / totalCredits) * 100);
                               })()}%` 
                             }}
@@ -453,7 +454,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                       const total = mySubscriptions.reduce((sum, sub) => 
                         sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
                       );
-                      const used = creditAccountData?.data?.lifetime_spent || 0;
+                      const used = creditAccountData?.data?.lifetimeSpent || 0;
                       return (total - used).toLocaleString();
                     })()}
                   </div>
@@ -462,7 +463,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                 <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200">
                   <div className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Used</div>
                   <div className="text-3xl font-black text-red-900">
-                    {(creditAccountData?.data?.lifetime_spent || 0).toLocaleString()}
+                    {(creditAccountData?.data?.lifetimeSpent || 0).toLocaleString()}
                   </div>
                 </div>
 
@@ -473,7 +474,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                       const total = mySubscriptions.reduce((sum, sub) => 
                         sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
                       );
-                      const used = creditAccountData?.data?.lifetime_spent || 0;
+                      const used = creditAccountData?.data?.lifetimeSpent || 0;
                       return total > 0 ? ((used / total) * 100).toFixed(1) : '0.0';
                     })()}%
                   </div>
@@ -491,7 +492,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                       const totalCredits = mySubscriptions.reduce((sum, sub) => 
                         sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
                       );
-                      const currentUsed = creditAccountData?.data?.lifetime_spent || 0;
+                      const currentUsed = creditAccountData?.data?.lifetimeSpent || 0;
                       
                       for (let i = 29; i >= 0; i--) {
                         const date = new Date(today);
