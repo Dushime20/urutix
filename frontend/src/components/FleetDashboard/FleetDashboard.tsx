@@ -882,7 +882,9 @@ export const FleetDashboard: React.FC = () => {
                                 activeTab === 'assignments' ? <Link size={28} /> :
                                   activeTab === 'matches' ? <Zap size={28} /> :
                                     activeTab === 'fuel' ? <Fuel size={28} /> :
-                                      activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
+                                      activeTab === 'credits' ? <CreditCard size={28} /> :
+                                        activeTab === 'partner-plans' ? <Star size={28} /> :
+                                          activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
                     </div>
                     <div>
                       <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
@@ -893,9 +895,11 @@ export const FleetDashboard: React.FC = () => {
                                 activeTab === 'routes' ? <TranslatedText text="Route Management" /> : 
                                   activeTab === 'assignments' ? <TranslatedText text="Assignments" /> :
                                     activeTab === 'matches' ? <TranslatedText text="Matches" /> :
-                                      activeTab === 'communicate' ? <TranslatedText text="Communication" /> : 
-                                        activeTab === 'fuel' ? <TranslatedText text="Fuel Management" /> : 
-                                          <TranslatedText text="Drivers" />}
+                                      activeTab === 'credits' ? <TranslatedText text="Credits" /> :
+                                        activeTab === 'partner-plans' ? <TranslatedText text="Partner Plans" /> :
+                                          activeTab === 'communicate' ? <TranslatedText text="Communication" /> : 
+                                            activeTab === 'fuel' ? <TranslatedText text="Fuel Management" /> : 
+                                              <TranslatedText text="Drivers" />}
                       </h2>
                       {activeTab !== 'fuel' && activeTab !== 'routes' && (
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">

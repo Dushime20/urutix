@@ -842,51 +842,68 @@ export class SubscriptionService {
    * Get truck owners who purchased partner plans created by tenant admin
    */
   async getPartnerSubscribers(tenantId: string): Promise<any[]> {
-    // Get all partner plans created by this tenant
-    const tenantSubscriptions = await this.tenantSubscriptionRepository.find({
-      where: { tenantId },
-      relations: ['plan'],
-    });
-
-    const subscriptionIds = tenantSubscriptions.map(sub => sub.id);
-
-    if (subscriptionIds.length === 0) {
-      return [];
-    }
-
-    // Get all partner plans created from these subscriptions
+    // Step 1: Find all partner plans where parent subscription belongs to this tenant
     const partnerPlans = await this.subscriptionPlanRepository
       .createQueryBuilder('plan')
-      .where('plan.parent_subscription_id IN (:...subscriptionIds)', { subscriptionIds })
+      .innerJoin('tenant_subscriptions', 'parent_sub', 'plan.parent_subscription_id = parent_sub.id')
+      .where('parent_sub.tenantId = :tenantId', { tenantId })
+      .andWhere('plan.parent_subscription_id IS NOT NULL')
       .getMany();
+
+    if (partnerPlans.length === 0) {
+      return [];
+    }
 
     const partnerPlanIds = partnerPlans.map(plan => plan.id);
 
-    if (partnerPlanIds.length === 0) {
-      return [];
-    }
-
-    // Get all subscriptions purchased by truck owners for these partner plans
-    const partnerSubscriptions = await this.tenantSubscriptionRepository
-      .createQueryBuilder('subscription')
-      .leftJoinAndSelect('subscription.plan', 'plan')
-      .leftJoinAndSelect('subscription.tenant', 'tenant')
-      .where('subscription.planId IN (:...partnerPlanIds)', { partnerPlanIds })
-      .andWhere('subscription.userId IS NOT NULL') // Only subscriptions purchased by users (truck owners)
-      .orderBy('subscription.createdAt', 'DESC')
+    // Step 2: Find all subscriptions for these partner plans
+    const subscribers = await this.tenantSubscriptionRepository
+      .createQueryBuilder('sub')
+      .leftJoinAndSelect('sub.plan', 'plan')
+      .where('sub.planId IN (:...partnerPlanIds)', { partnerPlanIds })
+      .andWhere('sub.userId IS NOT NULL')
+      .orderBy('sub.createdAt', 'DESC')
       .getMany();
 
-    // Enrich with credit information
+    // Step 3: Enrich with user and credit information
     const enrichedSubscriptions = await Promise.all(
-      partnerSubscriptions.map(async (sub) => {
+      subscribers.map(async (sub: any) => {
         let creditBalance = 0;
         let lifetimeSpent = 0;
-        try {
-          const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId, sub.userId);
-          creditBalance = creditAccount?.currentBalance || 0;
-          lifetimeSpent = creditAccount?.lifetimeSpent || 0;
-        } catch (error) {
-          console.warn(`Could not get credit account for subscription ${sub.id}:`, error.message);
+        let userEmail = 'N/A';
+        let truckOwnerName = 'Unknown';
+
+        // Fetch user information
+        if (sub.userId) {
+          try {
+            const user = await this.tenantSubscriptionRepository.manager
+              .createQueryBuilder()
+              .select(['user.id', 'user.email', 'profile.firstName', 'profile.lastName', 'profile.companyName'])
+              .from('users', 'user')
+              .leftJoin('user_profiles', 'profile', 'user.id = profile.userId')
+              .where('user.id = :userId', { userId: sub.userId })
+              .getRawOne();
+
+            if (user) {
+              userEmail = user.user_email || 'N/A';
+              truckOwnerName = user.profile_companyName || 
+                              (user.profile_firstName && user.profile_lastName 
+                                ? `${user.profile_firstName} ${user.profile_lastName}` 
+                                : userEmail.split('@')[0]) || 
+                              'Unknown';
+            }
+          } catch (error) {
+            console.warn(`Could not fetch user info for userId ${sub.userId}:`, error.message);
+          }
+
+          // Fetch credit account
+          try {
+            const creditAccount = await this.creditService.getOrCreateCreditAccount(sub.tenantId, sub.userId);
+            creditBalance = creditAccount?.currentBalance || 0;
+            lifetimeSpent = creditAccount?.lifetimeSpent || 0;
+          } catch (error) {
+            console.warn(`Could not get credit account for subscription ${sub.id}:`, error.message);
+          }
         }
 
         // Calculate days until expiry
@@ -904,13 +921,14 @@ export class SubscriptionService {
 
         return {
           id: sub.id,
-          truckOwnerName: sub.tenant?.name || 'Unknown',
-          email: sub.tenant?.contactEmail || 'N/A',
+          userId: sub.userId,
+          truckOwnerName,
+          email: userEmail,
           planName: sub.plan?.name || 'Unknown Plan',
           planSlug: sub.plan?.slug || '',
           status,
           creditsRemaining: creditBalance,
-          creditsTotal: sub.plan?.totalCredits || 0,
+          creditsTotal: sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0,
           purchaseDate: sub.createdAt,
           expiryDate: sub.currentPeriodEnd,
           daysLeft,

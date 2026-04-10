@@ -53,6 +53,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
     phoneNumber: '',
     mobileProvider: 'mtn'
   });
+  const [activeTab, setActiveTab] = useState<'available' | 'active'>('available');
 
   // Fetch available partner plans
   const { data: plansData, isLoading } = useQuery({
@@ -160,377 +161,429 @@ const TruckOwnerPartnerPlans: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-[32px] shadow-sm p-8 border border-slate-100">
-        <div className="flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100/50 shadow-sm">
-            <FaCrown className="w-6 h-6 text-[#345E85]" />
-          </div>
-          <div>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Partner Plans</h3>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Available Subscription Plans</h1>
+      {/* Top Navigation & Actions Bar */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white rounded-[24px] p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] sticky top-[72px] z-30 transition-all duration-300">
+        {/* Nav Tabs */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveTab('available')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              activeTab === 'available'
+                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-900/10'
+                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-500'
+            }`}
+          >
+            Available Plans
+          </button>
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              activeTab === 'active'
+                ? 'bg-[#345E85] text-white shadow-lg shadow-blue-900/10'
+                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-500'
+            }`}
+          >
+            My Subscriptions
+          </button>
+        </div>
+
+        {/* Action Items (Pill) */}
+        <div className="flex items-center gap-4">
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#345E85] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+            <FaRocket className="text-blue-500" />
+            🚀 Instant Activation
           </div>
         </div>
       </div>
 
-      {/* My Active Subscriptions */}
-      {mySubscriptions.length > 0 && (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[32px] p-8 border border-blue-100">
-          <h2 className="text-xl font-black text-slate-900 mb-6">My Active Subscriptions</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {mySubscriptions.map((sub: any) => (
-              <div key={sub.id} className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">{sub.plan?.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1">{sub.plan?.description}</p>
-                  </div>
-                  <div className="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">
-                    {sub.status}
-                  </div>
-                </div>
+      {activeTab === 'available' ? (
+        /* Available Plans Tab */
+        <div className="space-y-8">
+          {partnerPlans.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-8">
+              {partnerPlans.map((plan) => {
+                const totalAmount = getTotalAmount(plan);
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Credits Remaining:</span>
-                    <span className="font-black text-blue-600">
-                      {(() => {
-                        const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0;
-                        const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
-                        const remaining = totalCredits - usedCredits;
-                        return remaining.toLocaleString();
-                      })()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Credits Used:</span>
-                    <span className="font-black text-slate-700">
-                      {creditAccountData?.data?.lifetime_spent?.toLocaleString() || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Total Credits:</span>
-                    <span className="font-black text-slate-900">
-                      {(sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Expires:</span>
-                    <span className="font-bold text-slate-700">
-                      {new Date(sub.currentPeriodEnd).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                {(sub.plan?.creditCostPerPartner || sub.plan?.totalCredits) > 0 && (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Usage</span>
-                      <span className="text-[9px] font-bold text-blue-600">
-                        {(() => {
-                          const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
-                          const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
-                          return ((usedCredits / totalCredits) * 100).toFixed(1);
-                        })()}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
-                        style={{ 
-                          width: `${(() => {
-                            const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
-                            const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
-                            return Math.min(100, (usedCredits / totalCredits) * 100);
-                          })()}%` 
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Credit Usage Graph */}
-      {mySubscriptions.length > 0 && (
-        <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <FaChartLine className="text-[#345E85]" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-slate-900">Credit Usage Over Time</h2>
-                <p className="text-sm text-slate-500 mt-1">Track your credit consumption trends</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Usage Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200">
-              <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Total Credits</div>
-              <div className="text-3xl font-black text-blue-900">
-                {(() => {
-                  const total = mySubscriptions.reduce((sum, sub) => 
-                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
-                  );
-                  return total.toLocaleString();
-                })()}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-5 border border-emerald-200">
-              <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Available</div>
-              <div className="text-3xl font-black text-emerald-900">
-                {(() => {
-                  const total = mySubscriptions.reduce((sum, sub) => 
-                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
-                  );
-                  const used = creditAccountData?.data?.lifetime_spent || 0;
-                  return (total - used).toLocaleString();
-                })()}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200">
-              <div className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Used</div>
-              <div className="text-3xl font-black text-red-900">
-                {(creditAccountData?.data?.lifetime_spent || 0).toLocaleString()}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-5 border border-purple-200">
-              <div className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-2">Usage Rate</div>
-              <div className="text-3xl font-black text-purple-900">
-                {(() => {
-                  const total = mySubscriptions.reduce((sum, sub) => 
-                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
-                  );
-                  const used = creditAccountData?.data?.lifetime_spent || 0;
-                  return total > 0 ? ((used / total) * 100).toFixed(1) : '0.0';
-                })()}%
-              </div>
-            </div>
-          </div>
-
-          {/* Chart */}
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart
-                data={(() => {
-                  // Generate mock data for the last 30 days
-                  const data = [];
-                  const today = new Date();
-                  const totalCredits = mySubscriptions.reduce((sum, sub) => 
-                    sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
-                  );
-                  const currentUsed = creditAccountData?.data?.lifetime_spent || 0;
-                  
-                  for (let i = 29; i >= 0; i--) {
-                    const date = new Date(today);
-                    date.setDate(date.getDate() - i);
-                    
-                    // Simulate gradual usage over time
-                    const dayProgress = (29 - i) / 29;
-                    const used = Math.floor(currentUsed * dayProgress);
-                    const remaining = totalCredits - used;
-                    
-                    data.push({
-                      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                      used: used,
-                      remaining: remaining,
-                      total: totalCredits,
-                    });
-                  }
-                  
-                  return data;
-                })()}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorUsed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#64748b"
-                  style={{ fontSize: '12px', fontWeight: 600 }}
-                />
-                <YAxis 
-                  stroke="#64748b"
-                  style={{ fontSize: '12px', fontWeight: 600 }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  }}
-                  labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
-                />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  iconType="circle"
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="used" 
-                  stackId="1"
-                  stroke="#ef4444" 
-                  fillOpacity={1} 
-                  fill="url(#colorUsed)" 
-                  name="Credits Used"
-                  strokeWidth={2}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="remaining" 
-                  stackId="1"
-                  stroke="#10b981" 
-                  fillOpacity={1} 
-                  fill="url(#colorRemaining)" 
-                  name="Credits Remaining"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Info Note */}
-          <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <FaInfoCircle className="text-blue-500 text-sm mt-0.5 shrink-0" />
-              <div className="text-xs text-slate-600 leading-relaxed">
-                <span className="font-black">Note:</span> Credit usage is tracked in real-time as you transport cargo. 
-                Credits are deducted based on the weight of cargo transported and the rate specified in your plan.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Available Partner Plans */}
-      {partnerPlans.length > 0 ? (
-        <div className="grid md:grid-cols-3 gap-8">
-          {partnerPlans.map((plan) => {
-            const totalAmount = getTotalAmount(plan);
-
-            return (
-              <div
-                key={plan.id}
-                className="relative bg-white rounded-[32px] p-8 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
-              >
-                {/* Plan Header */}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
-                    <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-blue-50 text-[#345E85]">
-                      <FaRocket className="text-xl" />
-                    </div>
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 min-h-[48px]">{plan.description}</p>
-
-                  {/* Pricing */}
-                  <div className="mb-8">
-                    <div className="flex items-baseline mb-2">
-                      <span className="text-5xl font-black text-[#345E85] tracking-tight">
-                        ${Number(plan.pricePerCredit).toFixed(2)}
-                      </span>
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">/ credit</span>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                        Total: {plan.creditCostPerPartner.toLocaleString()} credits
-                      </p>
-                      <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-                        <FaStar className="text-emerald-500 w-3 h-3" />
-                        Package: ${totalAmount.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Credit Consumption */}
-                  <div className="bg-slate-50/50 rounded-[24px] p-6 mb-8 border border-slate-100">
-                    <div className="space-y-3">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Credit Consumption</div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600 font-semibold">Per Ton:</span>
-                        <span className="font-black text-indigo-600">{Number(plan.creditsPerTonTruckOwner).toFixed(1)} credits</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* CTA Button */}
-                  <button
-                    onClick={() => handleSelectPlan(plan)}
-                    className="w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-[#345E85] text-white hover:bg-[#2a4d6d] hover:shadow-lg hover:shadow-blue-900/20"
+                return (
+                  <div
+                    key={plan.id}
+                    className="relative bg-white rounded-[32px] p-8 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
                   >
-                    Buy Now
-                  </button>
-                  <p className="text-center text-[9px] font-black text-slate-400 uppercase tracking-widest mt-4">
-                    Secure payment • Instant activation
-                  </p>
-                </div>
+                    {/* Plan Header */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
+                        <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-blue-50 text-[#345E85]">
+                          <FaRocket className="text-xl" />
+                        </div>
+                      </div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 min-h-[48px]">{plan.description}</p>
 
-                {/* Features List */}
-                <div className="mt-8 pt-8 border-t border-slate-100">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">What's included</h4>
-                  <ul className="space-y-4">
-                    <li className="flex items-start gap-3 group">
-                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
-                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                      {/* Pricing */}
+                      <div className="mb-8">
+                        <div className="flex items-baseline mb-2">
+                          <span className="text-5xl font-black text-[#345E85] tracking-tight">
+                            ${Number(plan.pricePerCredit).toFixed(2)}
+                          </span>
+                          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">/ credit</span>
+                        </div>
+                        <div className="mt-4 space-y-2">
+                          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                            Total: {plan.creditCostPerPartner.toLocaleString()} credits
+                          </p>
+                          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                            <FaStar className="text-emerald-500 w-3 h-3" />
+                            Package: ${totalAmount.toFixed(2)}
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold text-slate-700">
-                        {plan.creditCostPerPartner.toLocaleString()} credits included
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3 group">
-                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
-                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+
+                      {/* Credit Consumption */}
+                      <div className="bg-slate-50/50 rounded-[24px] p-6 mb-8 border border-slate-100">
+                        <div className="space-y-3">
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Credit Consumption</div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-600 font-semibold">Per Ton:</span>
+                            <span className="font-black text-indigo-600">{Number(plan.creditsPerTonTruckOwner).toFixed(1)} credits</span>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold text-slate-700">
-                        Track credit usage in real-time
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3 group">
-                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
-                        <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
-                      </div>
-                      <span className="text-xs font-bold text-slate-700">
-                        Access to cargo matching system
-                      </span>
-                    </li>
-                  </ul>
-                </div>
+                      
+                      {/* CTA Button */}
+                      <button
+                        onClick={() => handleSelectPlan(plan)}
+                        className="w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-[#345E85] text-white hover:bg-[#2a4d6d] hover:shadow-lg hover:shadow-blue-900/20"
+                      >
+                        Buy Now
+                      </button>
+                      <p className="text-center text-[9px] font-black text-slate-400 uppercase tracking-widest mt-4">
+                        Secure payment • Instant activation
+                      </p>
+                    </div>
+
+                    {/* Features List */}
+                    <div className="mt-8 pt-8 border-t border-slate-100">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">What's included</h4>
+                      <ul className="space-y-4">
+                        <li className="flex items-start gap-3 group">
+                          <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                            <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                          </div>
+                          <span className="text-xs font-bold text-slate-700">
+                            {plan.creditCostPerPartner.toLocaleString()} credits included
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3 group">
+                          <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                            <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                          </div>
+                          <span className="text-xs font-bold text-slate-700">
+                            Track credit usage in real-time
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3 group">
+                          <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-100 transition-colors">
+                            <FaCheck className="w-2.5 h-2.5 text-emerald-500" />
+                          </div>
+                          <span className="text-xs font-bold text-slate-700">
+                            Access to cargo matching system
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white rounded-[32px] p-12 text-center border border-slate-100 shadow-sm">
+              <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                <FaCrown className="text-4xl text-slate-300" />
               </div>
-            );
-          })}
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
+                No Partner Plans Available
+              </h3>
+              <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                Your tenant admin hasn't created any partner plans yet. Contact them to set up subscription plans for truck owners.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="bg-white rounded-[32px] p-12 text-center border border-slate-100 shadow-sm">
-          <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
-            <FaCrown className="text-4xl text-slate-300" />
-          </div>
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
-            No Partner Plans Available
-          </h3>
-          <p className="text-slate-600 mb-8 max-w-md mx-auto">
-            Your tenant admin hasn't created any partner plans yet. Contact them to set up subscription plans for truck owners.
-          </p>
+        /* My Subscriptions Tab */
+        <div className="space-y-8">
+          {/* My Active Subscriptions Grid */}
+          {mySubscriptions.length > 0 ? (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[32px] p-8 border border-blue-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-blue-100 shadow-sm">
+                  <FaStar className="text-[#345E85]" />
+                </div>
+                <h2 className="text-xl font-black text-slate-900">Active Subscriptions</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                {mySubscriptions.map((sub: any) => (
+                  <div key={sub.id} className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900">{sub.plan?.name}</h3>
+                        <p className="text-xs text-slate-500 mt-1">{sub.plan?.description}</p>
+                      </div>
+                      <div className="px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        {sub.status}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Credits Remaining:</span>
+                        <span className="font-black text-blue-600">
+                          {(() => {
+                            const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0;
+                            const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                            const remaining = totalCredits - usedCredits;
+                            return remaining.toLocaleString();
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Credits Used:</span>
+                        <span className="font-black text-slate-700">
+                          {creditAccountData?.data?.lifetime_spent?.toLocaleString() || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Total Credits:</span>
+                        <span className="font-black text-slate-900">
+                          {(sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Expires:</span>
+                        <span className="font-bold text-slate-700">
+                          {new Date(sub.currentPeriodEnd).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {(sub.plan?.creditCostPerPartner || sub.plan?.totalCredits) > 0 && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Usage</span>
+                          <span className="text-[9px] font-bold text-blue-600">
+                            {(() => {
+                              const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
+                              const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                              return ((usedCredits / totalCredits) * 100).toFixed(1);
+                            })()}%
+                          </span>
+                        </div>
+                        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${(() => {
+                                const totalCredits = sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 1;
+                                const usedCredits = creditAccountData?.data?.lifetime_spent || 0;
+                                return Math.min(100, (usedCredits / totalCredits) * 100);
+                              })()}%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-[32px] p-12 text-center border border-slate-100 shadow-sm">
+              <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                <FaStar className="text-4xl text-slate-300" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
+                No Active Subscriptions
+              </h3>
+              <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                You don't have any active subscriptions yet.
+              </p>
+              <button
+                onClick={() => setActiveTab('available')}
+                className="px-8 py-3 bg-[#345E85] text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-[#2a4d6d] transition-all"
+              >
+                View Available Plans
+              </button>
+            </div>
+          )}
+
+          {/* Credit Usage Graph */}
+          {mySubscriptions.length > 0 && (
+            <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <FaChartLine className="text-[#345E85]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900">Credit Usage Over Time</h2>
+                    <p className="text-sm text-slate-500 mt-1">Track your credit consumption trends</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Usage Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200">
+                  <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Total Credits</div>
+                  <div className="text-3xl font-black text-blue-900">
+                    {(() => {
+                      const total = mySubscriptions.reduce((sum, sub) => 
+                        sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                      );
+                      return total.toLocaleString();
+                    })()}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-5 border border-emerald-200">
+                  <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Available</div>
+                  <div className="text-3xl font-black text-emerald-900">
+                    {(() => {
+                      const total = mySubscriptions.reduce((sum, sub) => 
+                        sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                      );
+                      const used = creditAccountData?.data?.lifetime_spent || 0;
+                      return (total - used).toLocaleString();
+                    })()}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200">
+                  <div className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Used</div>
+                  <div className="text-3xl font-black text-red-900">
+                    {(creditAccountData?.data?.lifetime_spent || 0).toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-5 border border-purple-200">
+                  <div className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-2">Usage Rate</div>
+                  <div className="text-3xl font-black text-purple-900">
+                    {(() => {
+                      const total = mySubscriptions.reduce((sum, sub) => 
+                        sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                      );
+                      const used = creditAccountData?.data?.lifetime_spent || 0;
+                      return total > 0 ? ((used / total) * 100).toFixed(1) : '0.0';
+                    })()}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                <ResponsiveContainer width="100%" height={350}>
+                  <AreaChart
+                    data={(() => {
+                      // Generate mock data for the last 30 days
+                      const data = [];
+                      const today = new Date();
+                      const totalCredits = mySubscriptions.reduce((sum, sub) => 
+                        sum + (sub.plan?.creditCostPerPartner || sub.plan?.totalCredits || 0), 0
+                      );
+                      const currentUsed = creditAccountData?.data?.lifetime_spent || 0;
+                      
+                      for (let i = 29; i >= 0; i--) {
+                        const date = new Date(today);
+                        date.setDate(date.getDate() - i);
+                        
+                        // Simulate gradual usage over time
+                        const dayProgress = (29 - i) / 29;
+                        const used = Math.floor(currentUsed * dayProgress);
+                        const remaining = totalCredits - used;
+                        
+                        data.push({
+                          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                          used: used,
+                          remaining: remaining,
+                          total: totalCredits,
+                        });
+                      }
+                      
+                      return data;
+                    })()}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorUsed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#64748b"
+                      style={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <YAxis 
+                      stroke="#64748b"
+                      style={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      }}
+                      labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '20px' }}
+                      iconType="circle"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="used" 
+                      stackId="1"
+                      stroke="#ef4444" 
+                      fillOpacity={1} 
+                      fill="url(#colorUsed)" 
+                      name="Credits Used"
+                      strokeWidth={2}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="remaining" 
+                      stackId="1"
+                      stroke="#10b981" 
+                      fillOpacity={1} 
+                      fill="url(#colorRemaining)" 
+                      name="Credits Remaining"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Info Note */}
+              <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <FaInfoCircle className="text-blue-500 text-sm mt-0.5 shrink-0" />
+                  <div className="text-xs text-slate-600 leading-relaxed">
+                    <span className="font-black">Note:</span> Credit usage is tracked in real-time as you transport cargo. 
+                    Credits are deducted based on the weight of cargo transported and the rate specified in your plan.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
