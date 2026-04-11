@@ -367,21 +367,12 @@ export class SubscriptionController {
   async getAvailablePlansForTruckOwners(@Request() req) {
     const tenantId = req.user.tenantId;
 
-    // Get system admin plans (no parent subscription)
-    const systemPlans = await this.subscriptionService.getAvailablePlans();
-
-    // Get partner plans created by tenant admin
-    const partnerPlans = await this.subscriptionService.getPartnerPlans(tenantId);
-
-    // Combine both
-    const allPlans = [
-      ...systemPlans.filter(p => !p.parentSubscriptionId),
-      ...partnerPlans.filter(p => p.isActive),
-    ];
+    // Get plans with slot information from service
+    const plansWithSlotInfo = await this.subscriptionService.getAvailablePlansWithSlotInfo(tenantId);
 
     return {
       success: true,
-      data: allPlans,
+      data: plansWithSlotInfo,
     };
   }
 

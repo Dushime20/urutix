@@ -301,6 +301,25 @@ export class SubscriptionService {
     // Get the plan
     const plan = await this.getPlan(data.planId);
 
+    // Check if this is a partner plan and validate available slots
+    if (plan.parentSubscriptionId && plan.creditCostPerPartner) {
+      // This is a partner plan - check available slots
+      const purchasedCount = await this.tenantSubscriptionRepository.count({
+        where: {
+          planId: data.planId,
+          status: SubscriptionStatus.ACTIVE,
+        },
+      });
+
+      if (purchasedCount >= plan.availableSlots) {
+        throw new BadRequestException(
+          `This partner plan has no available slots. All ${plan.availableSlots} slots have been purchased.`,
+        );
+      }
+
+      console.log(`[SubscriptionService] Partner plan slot check: ${purchasedCount}/${plan.availableSlots} slots used`);
+    }
+
     // Determine credits to grant based on plan type
     // For partner plans (with creditCostPerPartner), grant per-partner credits
     // For regular plans, grant totalCredits
@@ -953,5 +972,47 @@ export class SubscriptionService {
     );
 
     return enrichedSubscriptions;
+  }
+
+  /**
+   * Get available plans with slot information for truck owners
+   */
+  async getAvailablePlansWithSlotInfo(tenantId: string): Promise<any[]> {
+    // Get system admin plans (no parent subscription)
+    const systemPlans = await this.getAvailablePlans();
+
+    // Get partner plans created by tenant admin
+    const partnerPlans = await this.getPartnerPlans(tenantId);
+
+    // Combine both
+    const allPlans = [
+      ...systemPlans.filter(p => !p.parentSubscriptionId),
+      ...partnerPlans.filter(p => p.isActive),
+    ];
+
+    // Add purchased count and slots remaining for partner plans
+    const plansWithSlotInfo = await Promise.all(
+      allPlans.map(async (plan) => {
+        if (plan.parentSubscriptionId && plan.creditCostPerPartner) {
+          // This is a partner plan - get purchased count
+          const purchasedCount = await this.tenantSubscriptionRepository.count({
+            where: {
+              planId: plan.id,
+              status: SubscriptionStatus.ACTIVE,
+            },
+          });
+
+          return {
+            ...plan,
+            purchasedCount,
+            slotsRemaining: plan.availableSlots - purchasedCount,
+            isFull: purchasedCount >= plan.availableSlots,
+          };
+        }
+        return plan;
+      })
+    );
+
+    return plansWithSlotInfo;
   }
 }

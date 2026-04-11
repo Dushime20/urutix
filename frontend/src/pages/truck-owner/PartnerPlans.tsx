@@ -38,6 +38,9 @@ interface PartnerPlan {
   creditsPerTonTruckOwner: number;
   isActive: boolean;
   parentSubscriptionId: string;
+  purchasedCount?: number;
+  slotsRemaining?: number;
+  isFull?: boolean;
 }
 
 const TruckOwnerPartnerPlans: React.FC = () => {
@@ -240,7 +243,7 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                       </div>
 
                       {/* Credit Consumption */}
-                      <div className="bg-slate-50/50 rounded-[24px] p-6 mb-8 border border-slate-100">
+                      <div className="bg-slate-50/50 rounded-[24px] p-6 mb-6 border border-slate-100">
                         <div className="space-y-3">
                           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Credit Consumption</div>
                           <div className="flex items-center justify-between text-sm">
@@ -249,16 +252,57 @@ const TruckOwnerPartnerPlans: React.FC = () => {
                           </div>
                         </div>
                       </div>
+
+                      {/* Slot Availability */}
+                      {plan.parentSubscriptionId && (
+                        <div className={`rounded-[20px] p-4 mb-6 border ${
+                          plan.isFull 
+                            ? 'bg-red-50 border-red-200' 
+                            : plan.slotsRemaining && plan.slotsRemaining <= 2
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-emerald-50 border-emerald-200'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                              Available Slots
+                            </span>
+                            <span className={`text-sm font-black ${
+                              plan.isFull 
+                                ? 'text-red-600' 
+                                : plan.slotsRemaining && plan.slotsRemaining <= 2
+                                ? 'text-amber-600'
+                                : 'text-emerald-600'
+                            }`}>
+                              {plan.slotsRemaining || 0} / {plan.availableSlots}
+                            </span>
+                          </div>
+                          {plan.isFull && (
+                            <p className="text-[9px] font-bold text-red-600 mt-2">
+                              All slots have been purchased
+                            </p>
+                          )}
+                          {!plan.isFull && plan.slotsRemaining && plan.slotsRemaining <= 2 && (
+                            <p className="text-[9px] font-bold text-amber-600 mt-2">
+                              Only {plan.slotsRemaining} slot{plan.slotsRemaining > 1 ? 's' : ''} remaining!
+                            </p>
+                          )}
+                        </div>
+                      )}
                       
                       {/* CTA Button */}
                       <button
                         onClick={() => handleSelectPlan(plan)}
-                        className="w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-[#345E85] text-white hover:bg-[#2a4d6d] hover:shadow-lg hover:shadow-blue-900/20"
+                        disabled={plan.isFull}
+                        className={`w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                          plan.isFull
+                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                            : 'bg-[#345E85] text-white hover:bg-[#2a4d6d] hover:shadow-lg hover:shadow-blue-900/20'
+                        }`}
                       >
-                        Buy Now
+                        {plan.isFull ? 'Sold Out' : 'Buy Now'}
                       </button>
                       <p className="text-center text-[9px] font-black text-slate-400 uppercase tracking-widest mt-4">
-                        Secure payment • Instant activation
+                        {plan.isFull ? 'No slots available' : 'Secure payment • Instant activation'}
                       </p>
                     </div>
 
