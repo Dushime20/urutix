@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { Load } from '../../entities/load.entity';
+import { Location } from '../../entities/location.entity';
 import { User } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
@@ -29,6 +30,7 @@ import { CreditService } from '../../services/credit.service';
       Bid,
       Auction,
       Load,
+      Location,
       User,
       UserProfile,
       Truck,

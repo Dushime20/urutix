@@ -1,266 +1,65 @@
-# Urutix Logistics Platform - Test Credentials
+# Test Account Credentials
 
-## System Access Information
+## Fresh Database - Seeded Users
 
-### Frontend URL
-- **Development**: http://localhost:5175/
-- **Backend API**: http://localhost:3005/
+All users belong to **Test Company** tenant.
 
-### Database Connection
-- **Host**: 127.0.0.1
-- **Port**: 5433
-- **Database**: urutix
-- **Username**: postgres
-- **Password**: 1234
+### 👑 Super Admin
+- **Email**: superadmin@test.com
+- **Password**: SuperAdmin@123
+- **Role**: System administrator
+- **Purpose**: Create subscription plans, manage system
 
----
+### 👤 Tenant Admin
+- **Email**: admin@test.com
+- **Password**: Admin@123
+- **Role**: Tenant administrator
+- **Tenant**: Test Company
+- **Purpose**: Purchase subscriptions, configure marketplace, manage tenant
 
-## User Accounts
+### 🚛 Truck Owner
+- **Email**: truckowner@test.com
+- **Password**: TruckOwner@123
+- **Role**: Truck owner
+- **Tenant**: Test Company
+- **Purpose**: Buy credits from marketplace, place bids
 
-### 🔑 **Default Password for All Users**: `test123`
-
----
-
-## Admin Users
-
-### System Administrator
-- **Email**: `admin@urutix.com`
-- **Password**: `Admin@123456`
-- **Role**: ADMIN
-- **Tenant**: Admin Global
-- **Status**: ✅ Email Verified (ACTIVE)
-- **Access**: Full system administration
-
-### Super Admin
-- **Email**: `urutixv@gmail.com`
-- **Password**: `test123`
-- **Role**: ADMIN
-- **Tenant**: Admin Global
-- **Status**: ✅ Email Verified
-- **Access**: Full system administration
-
-### Admin Cargo Owner
-- **Email**: `test@gmail.com`
-- **Password**: `test123`
-- **Role**: CARGO_OWNER
-- **Tenant**: Admin Global
-- **Status**: ✅ Email Verified
+### 📦 Cargo Owner
+- **Email**: cargoowner@test.com
+- **Password**: CargoOwner@123
+- **Role**: Cargo owner
+- **Tenant**: Test Company
+- **Purpose**: Create cargo, accept bids
 
 ---
 
-## Default Tenant Users (Uruti-X Default)
+## Testing Workflow
 
-### Tenant Administrator
-- **Email**: `tenant.admin@test.com`
-- **Password**: `test123`
-- **Role**: TENANT_ADMIN
-- **Status**: ✅ Email Verified
-- **Access**: Tenant-level administration
+1. **Login as Super Admin** → Create subscription plans (e.g., 5000 credits for $100)
+2. **Login as Tenant Admin** → Purchase 2 subscriptions (10,000 credits total) ⚠️ **REQUIRED BEFORE BIDDING**
+3. **Login as Tenant Admin** → Configure credit marketplace (min purchase, price per credit)
+4. **Login as Truck Owner** → Buy credits from marketplace
+5. **Login as Cargo Owner** → Create cargo
+6. **Login as Truck Owner** → Place bid on cargo
+7. **Login as Tenant Admin** → Accept bid (credits deducted from both tenant admin and truck owner)
 
-### Demo Tenant Administrator
-- **Email**: `tenantadmin@demo.com`
-- **Password**: `TenantAdmin@123`
-- **Role**: TENANT_ADMIN
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-- **Access**: Full tenant administration for Demo Tenant
-
-### Verified Cargo Owners
-- **Email**: `tenant@gmail.com`
-- **Password**: `test123`
-- **Role**: CARGO_OWNER
-- **Status**: ✅ Email Verified
-
-- **Email**: `cargownertest@gmail.com`
-- **Password**: `test123`
-- **Role**: CARGO_OWNER
-- **Status**: ✅ Email Verified
+⚠️ **IMPORTANT**: Tenant admin MUST purchase at least one subscription before truck owners can place bids. The subscription provides the credit rates (creditsPerTonTenant and creditsPerTonTruckOwner) used for all bidding calculations.
 
 ---
 
-## Test Users (Uruti-X Default Tenant)
+## Database Scripts
 
-### Cargo Owners
-- **Email**: `cargo.owner@test.com`
-- **Password**: `test123`
-- **Role**: CARGO_OWNER
-- **Status**: ⚠️ Email Not Verified
-
-- **Email**: `cargo.owner2@test.com`
-- **Password**: `test123`
-- **Role**: CARGO_OWNER
-- **Status**: ⚠️ Email Not Verified
-
-### Truck Owners
-- **Email**: `truck.owner@test.com`
-- **Password**: `test123`
-- **Role**: TRUCK_OWNER
-- **Status**: ⚠️ Email Not Verified
-
-- **Email**: `truck.owner2@test.com`
-- **Password**: `test123`
-- **Role**: TRUCK_OWNER
-- **Status**: ⚠️ Email Not Verified
-
----
-
-## Demo Tenant Truck Owners (Under tenantadmin@demo.com)
-
-### Truck Owner 1 - John Logistics Ltd
-- **Email**: `truckowner1@demo.com`
-- **Password**: `TruckOwner@123`
-- **Role**: TRUCK_OWNER
-- **Company**: John Logistics Ltd
-- **Name**: John Logistics
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
-### Truck Owner 2 - East African Movers
-- **Email**: `truckowner2@demo.com`
-- **Password**: `TruckOwner@123`
-- **Role**: TRUCK_OWNER
-- **Company**: East African Movers
-- **Name**: Sarah Transport
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
-### Truck Owner 3 - Mombasa Road Transporters
-- **Email**: `truckowner3@demo.com`
-- **Password**: `TruckOwner@123`
-- **Role**: TRUCK_OWNER
-- **Company**: Mombasa Road Transporters
-- **Name**: Michael Freight
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
-### Truck Owner 4 - Swift Cargo Services
-- **Email**: `truckowner4@demo.com`
-- **Password**: `TruckOwner@123`
-- **Role**: TRUCK_OWNER
-- **Company**: Swift Cargo Services
-- **Name**: David Cargo
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
-### Truck Owner 5 - Grace Haulage Co
-- **Email**: `truckowner5@demo.com`
-- **Password**: `TruckOwner@123`
-- **Role**: TRUCK_OWNER
-- **Company**: Grace Haulage Co
-- **Name**: Grace Haulage
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
----
-
-## Demo Tenant Cargo Owners (Under tenantadmin@demo.com)
-
-### Cargo Owner 1 - Kigali Exports Ltd
-- **Email**: `cargoowner1@demo.com`
-- **Password**: `CargoOwner123!`
-- **Role**: CARGO_OWNER
-- **Company**: Kigali Exports Ltd
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
-### Cargo Owner 2 - East Africa Trade Co
-- **Email**: `cargoowner2@demo.com`
-- **Password**: `CargoOwner123!`
-- **Role**: CARGO_OWNER
-- **Company**: East Africa Trade Co
-- **Tenant**: Demo Tenant
-- **Status**: ✅ Email Verified (ACTIVE)
-
----
-
-## Default Tenant Drivers
-
-email:dushimecoder@gmail.com
-password:Driver123@
-
-### Drivers
-- **Email**: `driver1@test.com`
-- **Password**: `test123`
-- **Role**: DRIVER
-- **Status**: ⚠️ Email Not Verified
-
-- **Email**: `driver2@test.com`
-- **Password**: `test123`
-- **Role**: DRIVER
-- **Status**: ⚠️ Email Not Verified
-
----
-
-## Available Tenants
-
-### 1. Admin Global
-- **Name**: Admin Global
-- **Subdomain**: admin
-- **Type**: ENTERPRISE
-- **Status**: ACTIVE
-- **Users**: Super admin and admin cargo owner
-
-### 2. Uruti-X Default
-- **Name**: Uruti-X Default
-- **Subdomain**: default
-- **Type**: ENTERPRISE
-- **Status**: ACTIVE
-- **Users**: All other test users
-
----
-
-## Quick Start Testing
-
-### For Admin Testing:
-1. Use `admin@urutix.com` / `Admin@123456` for full system admin access
-2. Use `urutixv@gmail.com` / `test123` for super admin access
-3. Use `tenant.admin@test.com` / `test123` for tenant admin features
-4. Use `tenantadmin@demo.com` / `TenantAdmin@123` for Demo Tenant admin
-
-### For Cargo Owner Testing:
-1. Use `tenant@gmail.com` / `test123` (verified account)
-2. Use `cargownertest@gmail.com` / `test123` (verified account)
-
-### For Truck Owner Testing:
-1. Use `truck.owner@test.com` / `test123`
-2. Use `truck.owner2@test.com` / `test123`
-
-### For Demo Tenant Truck Owners:
-1. Use `truckowner1@demo.com` / `TruckOwner@123` (John Logistics Ltd)
-2. Use `truckowner2@demo.com` / `TruckOwner@123` (East African Movers)
-3. Use `truckowner3@demo.com` / `TruckOwner@123` (Mombasa Road Transporters)
-4. Use `truckowner4@demo.com` / `TruckOwner@123` (Swift Cargo Services)
-5. Use `truckowner5@demo.com` / `TruckOwner@123` (Grace Haulage Co)
-
-### For Demo Tenant Cargo Owners:
-1. Use `cargoowner1@demo.com` / `CargoOwner123!` (Kigali Exports Ltd)
-2. Use `cargoowner2@demo.com` / `CargoOwner123!` (East Africa Trade Co)
-
-### For Driver Testing:
-1. Use `driver1@test.com` / `test123`
-2. Use `driver2@test.com` / `test123`
-
----
-
-## System Status
-
-✅ **Backend**: Running on port 3005  
-✅ **Frontend**: Running on port 5175  
-✅ **Database**: Connected and migrated  
-✅ **Users**: Seeded with test data  
-✅ **System Settings**: Configured  
-✅ **Health Monitoring**: Active  
+- **Complete Reset (ALL 105 tables)**: `node backend/reset-database-complete.js`
+- **Seed Users**: `node backend/seed-users-only.js`
+- **Both**: `node backend/reset-database-complete.js; node backend/seed-users-only.js`
+- **List All Tables**: `node backend/list-all-tables.js`
 
 ---
 
 ## Notes
 
-- All passwords are set to `test123` for development/testing
-- Email verification status affects some features
-- Use verified accounts for full feature testing
-- Admin accounts have access to all tenants
-- Regular users are scoped to their specific tenant
-
----
-
-*Last Updated: April 10, 2026*
+- Database has been completely reset
+- No subscriptions created yet (you'll create them manually via UI)
+- No credit accounts exist yet (created automatically when subscriptions are purchased)
+- All users are ACTIVE status
+- Tenant is ACTIVE status

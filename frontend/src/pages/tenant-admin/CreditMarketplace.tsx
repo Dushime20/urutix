@@ -36,7 +36,7 @@ const CreditMarketplace: React.FC = () => {
   const [formData, setFormData] = useState({
     minPurchaseAmount: 500,
     maxPurchaseAmount: '',
-    pricePerCredit: 1.0,
+    pricePerCredit: 1, // Fixed to 1
     isEnabled: true,
   });
 
@@ -100,7 +100,7 @@ const CreditMarketplace: React.FC = () => {
       setFormData({
         minPurchaseAmount: settings.minPurchaseAmount,
         maxPurchaseAmount: settings.maxPurchaseAmount?.toString() || '',
-        pricePerCredit: Number(settings.pricePerCredit),
+        pricePerCredit: 1, // Fixed to 1
         isEnabled: settings.isEnabled,
       });
     }
@@ -112,7 +112,7 @@ const CreditMarketplace: React.FC = () => {
     const data = {
       minPurchaseAmount: Number(formData.minPurchaseAmount),
       maxPurchaseAmount: formData.maxPurchaseAmount ? Number(formData.maxPurchaseAmount) : undefined,
-      pricePerCredit: Number(formData.pricePerCredit),
+      pricePerCredit: 1, // Enforce 1 on submission
       isEnabled: formData.isEnabled,
     };
 
@@ -124,11 +124,6 @@ const CreditMarketplace: React.FC = () => {
 
     if (data.maxPurchaseAmount && data.maxPurchaseAmount < data.minPurchaseAmount) {
       toast.error('Maximum purchase amount must be greater than minimum');
-      return;
-    }
-
-    if (data.pricePerCredit <= 0) {
-      toast.error('Price per credit must be greater than 0');
       return;
     }
 
@@ -327,19 +322,17 @@ const CreditMarketplace: React.FC = () => {
                   Price per Credit
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#345E85]">$</span>
                   <input
                     type="number"
-                    step="0.01"
-                    value={formData.pricePerCredit}
-                    onChange={(e) => setFormData({ ...formData, pricePerCredit: Number(e.target.value) })}
-                    className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={1}
+                    readOnly
+                    className="w-full pl-8 pr-4 py-3 bg-slate-100 border-2 border-slate-100 rounded-xl text-sm font-black text-slate-900 cursor-not-allowed"
                     placeholder="1.00"
-                    min="0.01"
-                    required
                   />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">Fixed</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Price per credit in your currency</p>
+                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">Marketplace price is fixed at $1.00 per credit</p>
               </div>
 
               <div>

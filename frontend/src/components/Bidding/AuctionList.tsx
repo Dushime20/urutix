@@ -22,6 +22,25 @@ import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/formatNumber';
 
+interface LoadLocation {
+  id: string;
+  type: 'PICKUP' | 'DELIVERY' | 'STOP' | 'REFUEL' | 'REST';
+  sequence: number;
+  locationData: {
+    name: string;
+    address: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  scheduledDate: string;
+}
+
 interface Auction {
   id: string;
   loadId: string;
@@ -41,8 +60,21 @@ interface Auction {
     loadValue: number;
     pickupDate: string;
     deliveryDate: string;
-    pickupLocation: string;
-    deliveryLocation: string;
+    pickupLocation?: string; // Legacy field
+    deliveryLocation?: string; // Legacy field
+    locations?: LoadLocation[]; // New structure
+    origin?: {
+      address: string;
+      city: string;
+      state?: string;
+      country: string;
+    };
+    destination?: {
+      address: string;
+      city: string;
+      state?: string;
+      country: string;
+    };
     cargoOwner?: {
       profile?: {
         firstName?: string;
@@ -74,6 +106,34 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsAuction, setDetailsAuction] = useState<Auction | null>(null);
+
+  // Helper function to get location string from load data
+  const getLocationString = (load: Auction['load'], type: 'pickup' | 'delivery'): string => {
+    // Try new structure first (locations array)
+    if (load.locations && load.locations.length > 0) {
+      const location = load.locations.find(loc => 
+        loc.type === (type === 'pickup' ? 'PICKUP' : 'DELIVERY')
+      );
+      if (location?.locationData) {
+        const parts = [
+          location.locationData.name,
+          location.locationData.city,
+          location.locationData.state
+        ].filter(Boolean);
+        return parts.join(', ') || location.locationData.address || 'N/A';
+      }
+    }
+    
+    // Try origin/destination structure
+    const addressObj = type === 'pickup' ? load.origin : load.destination;
+    if (addressObj) {
+      const parts = [addressObj.city, addressObj.state, addressObj.country].filter(Boolean);
+      return parts.join(', ') || addressObj.address || 'N/A';
+    }
+    
+    // Fallback to legacy fields
+    return type === 'pickup' ? (load.pickupLocation || 'N/A') : (load.deliveryLocation || 'N/A');
+  };
 
   const openDetailsModal = (auction: Auction) => {
     setDetailsAuction(auction);
@@ -502,11 +562,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                 <p className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Route Vector</p>
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">
-                    {(auction.load?.pickupLocation || 'N/A').split(',')[0]}
+                    {getLocationString(auction.load, 'pickup').split(',')[0]}
                   </span>
                   <ArrowRight size={10} className="text-slate-300 dark:text-slate-600 shrink-0" />
                   <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">
-                    {(auction.load?.deliveryLocation || 'N/A').split(',')[0]}
+                    {getLocationString(auction.load, 'delivery').split(',')[0]}
                   </span>
                 </div>
               </div>
@@ -670,9 +730,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.pickupLocation || 'N/A'}</span>
+                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'pickup')}</span>
                             <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight italic">to</span>
-                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.deliveryLocation || 'N/A'}</span>
+                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'delivery')}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -1119,7 +1179,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white dark:bg-slate-950 border-[3px] border-[#345E85] dark:border-blue-400 rounded-full" />
                   <div className="bg-slate-50 dark:bg-slate-950/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                     <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Pickup</p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{detailsAuction.load?.pickupLocation || 'N/A'}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{getLocationString(detailsAuction.load, 'pickup')}</p>
                     <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                       <Clock size={10} /> {formatDate(detailsAuction.load?.pickupDate)}
                     </p>
@@ -1129,7 +1189,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   <div className="absolute -left-6 top-1.5 h-3.5 w-3.5 bg-white dark:bg-slate-950 border-[3px] border-rose-500 rounded-full" />
                   <div className="bg-slate-50 dark:bg-slate-950/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                     <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Delivery</p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{detailsAuction.load?.deliveryLocation || 'N/A'}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{getLocationString(detailsAuction.load, 'delivery')}</p>
                     <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                       <Clock size={10} /> {formatDate(detailsAuction.load?.deliveryDate)}
                     </p>

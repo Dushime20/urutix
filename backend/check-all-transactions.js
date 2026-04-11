@@ -17,79 +17,98 @@ async function checkAllTransactions() {
     await AppDataSource.initialize();
     console.log('✅ Database connected\n');
 
-    const tenantId = '3174d68f-cb7d-4428-b578-e931d1a3f464';
-    const adminUserId = '007eb9d5-a71b-42be-8c9e-1c968dd97c71';
+    // Get tenant admin
+    const adminResult = await AppDataSource.query(`
+      SELECT id, email
+      FROM users 
+      WHERE role = 'TENANT_ADMIN'
+      LIMIT 1
+    `);
 
-    // Get ALL transactions for this credit account
-    const allTransactions = await AppDataSource.query(`
-      SELECT 
-        ct.id,
-        ct.type,
-        ct.amount,
-        ct.balance_after,
-        ct.description,
-        ct.user_id,
-        ct.credit_account_id,
-        ct.created_at
-      FROM credit_transactions ct
-      JOIN credit_accounts ca ON ct.credit_account_id = ca.id
-      WHERE ca.tenant_id = $1 AND ca.user_id = $2
-      ORDER BY ct.created_at ASC
-    `, [tenantId, adminUserId]);
-
-    console.log(`📜 ALL Transactions for Tenant Admin's Account:`);
-    console.log(`================================================\n`);
-    
-    let totalEarned = 0;
-    let totalSpent = 0;
-
-    for (const tx of allTransactions) {
-      console.log(`${tx.created_at.toISOString()}`);
-      console.log(`  ID: ${tx.id}`);
-      console.log(`  Type: ${tx.type}`);
-      console.log(`  Amount: ${tx.amount}`);
-      console.log(`  Balance After: ${tx.balance_after}`);
-      console.log(`  User ID: ${tx.user_id || 'NULL'}`);
-      console.log(`  Description: ${tx.description}`);
-      console.log('');
-
-      if (tx.amount > 0) {
-        totalEarned += Number(tx.amount);
-      } else {
-        totalSpent += Math.abs(Number(tx.amount));
-      }
-    }
-
-    console.log(`\n📊 Summary:`);
-    console.log(`===========`);
-    console.log(`Total Transactions: ${allTransactions.length}`);
-    console.log(`Total Earned: ${totalEarned}`);
-    console.log(`Total Spent: ${totalSpent}`);
-    console.log(`Expected Balance: ${totalEarned - totalSpent}`);
+    const admin = adminResult[0];
+    console.log('👤 Tenant Admin:', admin.email);
+    console.log('═'.repeat(70));
     console.log('');
 
-    // Check credit account
-    const account = await AppDataSource.query(`
-      SELECT * FROM credit_accounts
-      WHERE tenant_id = $1 AND user_id = $2
-    `, [tenantId, adminUserId]);
+    // Get ALL transactions for tenant admin
+    const allTransactions = await AppDataSource.query(`
+      SELECT 
+        type,
+        amount,
+        balance_after,
+        description,
+        reference_type,
+        created_at
+      FROM credit_transactions
+      WHERE user_id = $1
+      ORDER BY created_at ASC
+    `, [admin.id]);
 
-    if (account.length) {
-      const acc = account[0];
-      console.log(`💰 Credit Account:`);
-      console.log(`==================`);
-      console.log(`Lifetime Earned (DB): ${acc.lifetime_earned}`);
-      console.log(`Lifetime Spent (DB): ${acc.lifetime_spent}`);
-      console.log(`Current Balance (DB): ${acc.current_balance}`);
+    console.log(`📋 ALL Transactions (${allTransactions.length} total):\n`);
+    
+    let runningTotal = 0;
+    allTransactions.forEach((tx, index) => {
+      runningTotal += tx.amount;
+      const sign = tx.amount > 0 ? '+' : '';
+      console.log(`${index + 1}. ${tx.type}: ${sign}${tx.amount} credits`);
+      console.log(`   Description: ${tx.description}`);
+      console.log(`   Balance after transaction: ${tx.balance_after}`);
+      console.log(`   Running total (calculated): ${runningTotal}`);
+      if (tx.reference_type) {
+        console.log(`   Reference: ${tx.reference_type}`);
+      }
+      console.log(`   Date: ${new Date(tx.created_at).toLocaleString()}`);
       console.log('');
-      console.log(`🔍 Discrepancy Check:`);
-      console.log(`Lifetime Earned: DB=${acc.lifetime_earned}, Calculated=${totalEarned}, Diff=${acc.lifetime_earned - totalEarned}`);
-      console.log(`Lifetime Spent: DB=${acc.lifetime_spent}, Calculated=${totalSpent}, Diff=${acc.lifetime_spent - totalSpent}`);
+    });
+
+    // Calculate totals
+    const totalEarned = allTransactions
+      .filter(tx => tx.amount > 0)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const totalSpent = allTransactions
+      .filter(tx => tx.amount < 0)
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+    console.log('═'.repeat(70));
+    console.log('📊 Summary:');
+    console.log(`   Total Earned: +${totalEarned} credits`);
+    console.log(`   Total Spent: -${totalSpent} credits`);
+    console.log(`   Expected Balance: ${totalEarned - totalSpent} credits`);
+    console.log('');
+
+    // Get current account state
+    const accountResult = await AppDataSource.query(`
+      SELECT current_balance, lifetime_earned, lifetime_spent
+      FROM credit_accounts
+      WHERE user_id = $1
+    `, [admin.id]);
+
+    console.log('💰 Actual Account State:');
+    console.log(`   Current Balance: ${accountResult[0].current_balance} credits`);
+    console.log(`   Lifetime Earned: ${accountResult[0].lifetime_earned} credits`);
+    console.log(`   Lifetime Spent: ${accountResult[0].lifetime_spent} credits`);
+    console.log(`   Calculated Balance: ${accountResult[0].lifetime_earned - accountResult[0].lifetime_spent} credits`);
+    console.log('');
+
+    // Check if there's a mismatch
+    const expectedBalance = totalEarned - totalSpent;
+    const actualBalance = accountResult[0].current_balance;
+    
+    if (expectedBalance !== actualBalance) {
+      console.log('⚠️  WARNING: Balance mismatch detected!');
+      console.log(`   Expected: ${expectedBalance} credits`);
+      console.log(`   Actual: ${actualBalance} credits`);
+      console.log(`   Difference: ${actualBalance - expectedBalance} credits`);
+    } else {
+      console.log('✅ Balance is correct!');
     }
 
+    console.log('');
     await AppDataSource.destroy();
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('❌ Error:', error.message);
+    console.error(error);
     process.exit(1);
   }
 }

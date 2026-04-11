@@ -234,12 +234,13 @@ export class CreditMarketplaceService {
       amount: creditAmount,
       description: `Marketplace sale: ${creditAmount} credits sold to truck owner`,
       referenceType: 'MARKETPLACE_SALE',
-      referenceId: paymentTransactionId,
+      referenceId: null, // Marketplace transactions don't have UUID reference
       calculationDetails: {
         creditAmount,
         totalAmount,
         pricePerCredit: totalAmount / creditAmount,
         buyerUserId: toUserId,
+        paymentTransactionId, // Store in metadata instead
       },
     });
 

@@ -12,43 +12,42 @@ const AppDataSource = new DataSource({
   logging: false,
 });
 
-async function resetDatabase() {
+async function resetDatabaseComplete() {
   try {
     await AppDataSource.initialize();
     console.log('✅ Database connected\n');
 
-    console.log('⚠️  WARNING: This will delete ALL data from the database!');
+    console.log('⚠️  WARNING: This will delete ALL data from ALL tables in the database!');
     console.log('');
 
-    // Delete data in correct order (respecting foreign keys)
-    const tables = [
-      'credit_transactions',
-      'credit_accounts',
-      'credit_marketplace_settings',
-      'tenant_subscriptions',
-      'subscription_payments',
-      'subscription_plans',
-      'partner_plans',
-      'bids',
-      'load_auctions',
-      'cargo',
-      'trucks',
-      'user_profiles',
-      'users',
-      'tenants',
-    ];
+    // Get all tables
+    const result = await AppDataSource.query(`
+      SELECT tablename 
+      FROM pg_tables 
+      WHERE schemaname = 'public' 
+        AND tablename != 'migrations'
+        AND tablename != 'spatial_ref_sys'
+      ORDER BY tablename;
+    `);
 
-    console.log('🗑️  Deleting data from tables...\n');
+    const tables = result.map(row => row.tablename);
+
+    console.log(`🗑️  Deleting data from ${tables.length} tables...\n`);
 
     // Disable foreign key checks temporarily
     await AppDataSource.query('SET session_replication_role = replica;');
 
+    let successCount = 0;
+    let skipCount = 0;
+
     for (const table of tables) {
       try {
-        const result = await AppDataSource.query(`DELETE FROM ${table}`);
+        await AppDataSource.query(`DELETE FROM ${table}`);
         console.log(`   ✓ Cleared ${table}`);
+        successCount++;
       } catch (error) {
         console.log(`   ⚠️  Skipped ${table} (${error.message})`);
+        skipCount++;
       }
     }
 
@@ -56,16 +55,22 @@ async function resetDatabase() {
     await AppDataSource.query('SET session_replication_role = DEFAULT;');
 
     console.log('');
-    console.log('✅ Database reset complete!');
+    console.log('═'.repeat(70));
+    console.log(`✅ Database reset complete!`);
+    console.log(`   Tables cleared: ${successCount}`);
+    console.log(`   Tables skipped: ${skipCount}`);
+    console.log('═'.repeat(70));
     console.log('');
     console.log('Next step: Run the seed script');
-    console.log('   node seed-database.js');
+    console.log('   node seed-users-only.js');
+    console.log('');
 
     await AppDataSource.destroy();
   } catch (error) {
     console.error('❌ Error:', error.message);
+    console.error(error);
     process.exit(1);
   }
 }
 
-resetDatabase();
+resetDatabaseComplete();

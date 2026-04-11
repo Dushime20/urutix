@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, IsNull } from 'typeorm';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import {
   Auction,
@@ -13,6 +13,7 @@ import {
   AuctionType,
 } from '../../entities/auction.entity';
 import { Load, LoadStatus } from '../../entities/load.entity';
+import { Location } from '../../entities/location.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Truck } from '../../entities/truck.entity';
@@ -107,6 +108,8 @@ export class BiddingService {
     private readonly auctionRepository: Repository<Auction>,
     @InjectRepository(Load)
     private readonly loadRepository: Repository<Load>,
+    @InjectRepository(Location)
+    private readonly locationRepository: Repository<Location>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserProfile)
@@ -248,24 +251,49 @@ export class BiddingService {
     }
 
     // CREDIT VALIDATION: Check if truck owner has sufficient credits for this bid
-    // Get truck owner's subscription plan to determine credit rates
-    const truckOwnerSubscription = await this.tenantSubscriptionRepository.findOne({
-      where: { userId: truckOwnerId, tenantId, status: SubscriptionStatus.ACTIVE },
+    // Get credit rate from TENANT ADMIN's subscription plan (not truck owner's plan)
+    // First try to find tenant-level subscription (userId IS NULL)
+    let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+      where: { 
+        tenantId, 
+        userId: IsNull(), // Tenant-level subscription (tenant admin)
+        status: SubscriptionStatus.ACTIVE 
+      },
       relations: ['plan'],
+      order: { createdAt: 'DESC' }, // Get most recent if multiple
     });
 
-    if (!truckOwnerSubscription || !truckOwnerSubscription.plan) {
+    // If no tenant-level subscription, try to find tenant admin's user-level subscription
+    if (!tenantAdminSubscription) {
+      const tenantAdminUser = await this.userRepository.findOne({
+        where: { tenantId, role: UserRole.TENANT_ADMIN },
+      });
+
+      if (tenantAdminUser) {
+        tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+          where: { 
+            tenantId, 
+            userId: tenantAdminUser.id,
+            status: SubscriptionStatus.ACTIVE 
+          },
+          relations: ['plan'],
+          order: { createdAt: 'DESC' },
+        });
+      }
+    }
+
+    if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
       throw new BadRequestException(
-        'Truck owner must have an active subscription plan to place bids',
+        'Tenant admin must have an active subscription plan to enable bidding',
       );
     }
 
     // Calculate credits needed for truck owner (weight in tons × creditsPerTonTruckOwner)
     const cargoWeightTons = load.weight / 1000; // Convert kg to tons
-    const creditsPerTonTruckOwner = Number(truckOwnerSubscription.plan.creditsPerTonTruckOwner);
+    const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
     const truckOwnerCreditsNeeded = Math.ceil(cargoWeightTons * creditsPerTonTruckOwner);
 
-    // Check if truck owner has sufficient credits
+    // Check if truck owner has sufficient credits (from marketplace purchase or any source)
     const truckOwnerHasSufficientCredits = await this.creditService.hasSufficientCredits(
       tenantId,
       truckOwnerCreditsNeeded,
@@ -275,13 +303,13 @@ export class BiddingService {
     if (!truckOwnerHasSufficientCredits) {
       const truckOwnerBalance = await this.creditService.getCreditBalance(tenantId, truckOwnerId);
       throw new BadRequestException(
-        `Insufficient credits to place bid. Required: ${truckOwnerCreditsNeeded} credits (${cargoWeightTons.toFixed(2)} tons × ${creditsPerTonTruckOwner} credits/ton). Available: ${truckOwnerBalance.currentBalance} credits. Please purchase more credits to continue.`,
+        `Insufficient credits to place bid. Required: ${truckOwnerCreditsNeeded} credits (${cargoWeightTons.toFixed(2)} tons × ${creditsPerTonTruckOwner} credits/ton). Available: ${truckOwnerBalance.currentBalance} credits. Please purchase more credits from the marketplace to continue.`,
       );
     }
 
     console.log(`[BiddingService] Credit validation passed for truck owner ${truckOwnerId}:`);
     console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
-    console.log(`  - Rate: ${creditsPerTonTruckOwner} credits/ton`);
+    console.log(`  - Rate: ${creditsPerTonTruckOwner} credits/ton (from tenant admin's plan)`);
     console.log(`  - Credits needed: ${truckOwnerCreditsNeeded}`);
 
     // Create bid
@@ -499,45 +527,54 @@ export class BiddingService {
         throw new NotFoundException('Tenant admin not found for this tenant');
       }
 
-      // Verify truck owner has an active subscription (marketplace purchase or partner plan)
-      const truckOwnerSubscription = await this.tenantSubscriptionRepository.findOne({
-        where: { userId: bid.truckOwnerId, tenantId, status: SubscriptionStatus.ACTIVE },
-        relations: ['plan'],
-      });
-
-      if (!truckOwnerSubscription || !truckOwnerSubscription.plan) {
-        throw new BadRequestException(
-          'Truck owner must have an active subscription to accept bids',
-        );
-      }
-
-      // IMPORTANT: Get credit rates from TENANT ADMIN's parent subscription plan
-      // This ensures rates come from the original subscription, not from marketplace purchases
-      const tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+      // Verify truck owner has sufficient credits (from marketplace or any source)
+      // Get credit rate from TENANT ADMIN's subscription plan (not truck owner's plan)
+      // First try to find tenant-level subscription (userId IS NULL)
+      let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
         where: { 
           tenantId, 
-          status: SubscriptionStatus.ACTIVE,
-          userId: tenantAdminUser.id, // Tenant admin's subscription
+          userId: IsNull(), // Tenant-level subscription (tenant admin)
+          status: SubscriptionStatus.ACTIVE 
         },
         relations: ['plan'],
+        order: { createdAt: 'DESC' }, // Get most recent if multiple
       });
+
+      // If no tenant-level subscription, try to find tenant admin's user-level subscription
+      if (!tenantAdminSubscription) {
+        const tenantAdminUser = await this.userRepository.findOne({
+          where: { tenantId, role: UserRole.TENANT_ADMIN },
+        });
+
+        if (tenantAdminUser) {
+          tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+            where: { 
+              tenantId, 
+              userId: tenantAdminUser.id,
+              status: SubscriptionStatus.ACTIVE 
+            },
+            relations: ['plan'],
+            order: { createdAt: 'DESC' },
+          });
+        }
+      }
 
       if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
         throw new BadRequestException(
-          'Tenant admin must have an active subscription plan',
+          'Tenant admin must have an active subscription plan to enable bidding',
         );
       }
 
       // Calculate cargo weight in tons
       const cargoWeightTons = bid.load.weight / 1000; // Convert kg to tons
 
-      // Use rates from tenant admin's parent subscription plan
+      // Use rates from tenant admin's subscription plan
       const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
       const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
 
       console.log(`[BiddingService] Accepting bid ${bidId} - Credit deduction details:`);
       console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
-      console.log(`  - Using rates from TENANT ADMIN's parent subscription: ${tenantAdminSubscription.plan.name}`);
+      console.log(`  - Using rates from TENANT ADMIN's subscription: ${tenantAdminSubscription.plan.name}`);
       console.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
       console.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
 
@@ -957,6 +994,58 @@ export class BiddingService {
     queryBuilder.orderBy('auction.createdAt', 'DESC');
 
     const auctions = await queryBuilder.getMany();
+
+    // Enrich loads with location data from Location entities if locations array is empty
+    for (const auction of auctions) {
+      if (auction.load && (!auction.load.locations || auction.load.locations.length === 0)) {
+        // Try to populate origin/destination from Location entities
+        const loadEntity = auction.load as any;
+        
+        // Get pickup location if pickupLocationId exists
+        if (loadEntity.pickupLocationId) {
+          try {
+            const pickupLoc = await this.locationRepository.findOne({
+              where: { id: loadEntity.pickupLocationId },
+            });
+            if (pickupLoc) {
+              auction.load.origin = {
+                address: pickupLoc.address || '',
+                city: pickupLoc.city || '',
+                state: pickupLoc.state,
+                postalCode: pickupLoc.postalCode,
+                country: pickupLoc.country || '',
+                lat: pickupLoc.latitude,
+                lng: pickupLoc.longitude,
+              };
+            }
+          } catch (err) {
+            console.warn('Failed to load pickup location:', err);
+          }
+        }
+        
+        // Get delivery location if deliveryLocationId exists
+        if (loadEntity.deliveryLocationId) {
+          try {
+            const deliveryLoc = await this.locationRepository.findOne({
+              where: { id: loadEntity.deliveryLocationId },
+            });
+            if (deliveryLoc) {
+              auction.load.destination = {
+                address: deliveryLoc.address || '',
+                city: deliveryLoc.city || '',
+                state: deliveryLoc.state,
+                postalCode: deliveryLoc.postalCode,
+                country: deliveryLoc.country || '',
+                lat: deliveryLoc.latitude,
+                lng: deliveryLoc.longitude,
+              };
+            }
+          } catch (err) {
+            console.warn('Failed to load delivery location:', err);
+          }
+        }
+      }
+    }
 
     // Log for debugging - check if profile data is loaded
     if (auctions.length > 0 && auctions[0].load) {

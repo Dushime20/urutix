@@ -22,13 +22,14 @@ async function seedUsersOnly() {
     // 1. Create Tenant
     console.log('1️⃣  Creating tenant...');
     const tenantResult = await AppDataSource.query(`
-      INSERT INTO tenants (id, name, subdomain, type, status, "createdAt", "updatedAt")
+      INSERT INTO tenants (id, name, subdomain, type, status, "isActive", "createdAt", "updatedAt")
       VALUES (
         gen_random_uuid(),
         'Test Company',
         'test-company',
-        'STANDARD',
+        'SMALL_BUSINESS',
         'ACTIVE',
+        true,
         NOW(),
         NOW()
       )
@@ -42,52 +43,53 @@ async function seedUsersOnly() {
     const superAdminPassword = await bcrypt.hash('SuperAdmin@123', 10);
     const superAdminResult = await AppDataSource.query(`
       INSERT INTO users (
-        id, email, password, role, is_active, created_at, updated_at
+        id, email, "passwordHash", role, status, "tenantId", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         'superadmin@test.com',
         $1,
         'SUPER_ADMIN',
-        true,
+        'ACTIVE',
+        $2,
         NOW(),
         NOW()
       )
       RETURNING id
-    `, [superAdminPassword]);
+    `, [superAdminPassword, tenantId]);
     const superAdminId = superAdminResult[0].id;
     console.log(`   ✓ Super Admin created: superadmin@test.com / SuperAdmin@123\n`);
 
     // Create Super Admin Profile
     await AppDataSource.query(`
       INSERT INTO user_profiles (
-        id, user_id, first_name, last_name, phone, created_at, updated_at
+        id, "userId", "tenantId", "firstName", "lastName", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         $1,
+        $2,
         'Super',
         'Admin',
-        '+250788000000',
         NOW(),
         NOW()
       )
-    `, [superAdminId]);
+    `, [superAdminId, tenantId]);
 
     // 3. Create Tenant Admin User
     console.log('3️⃣  Creating tenant admin user...');
     const adminPassword = await bcrypt.hash('Admin@123', 10);
     const adminResult = await AppDataSource.query(`
       INSERT INTO users (
-        id, email, password, role, tenant_id, is_active, created_at, updated_at
+        id, email, "passwordHash", role, status, "tenantId", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         'admin@test.com',
         $1,
         'TENANT_ADMIN',
+        'ACTIVE',
         $2,
-        true,
         NOW(),
         NOW()
       )
@@ -99,33 +101,33 @@ async function seedUsersOnly() {
     // Create Tenant Admin Profile
     await AppDataSource.query(`
       INSERT INTO user_profiles (
-        id, user_id, first_name, last_name, phone, created_at, updated_at
+        id, "userId", "tenantId", "firstName", "lastName", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         $1,
+        $2,
         'Admin',
         'User',
-        '+250788000001',
         NOW(),
         NOW()
       )
-    `, [adminId]);
+    `, [adminId, tenantId]);
 
     // 4. Create Truck Owner User
     console.log('4️⃣  Creating truck owner user...');
     const truckOwnerPassword = await bcrypt.hash('TruckOwner@123', 10);
     const truckOwnerResult = await AppDataSource.query(`
       INSERT INTO users (
-        id, email, password, role, tenant_id, is_active, created_at, updated_at
+        id, email, "passwordHash", role, status, "tenantId", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         'truckowner@test.com',
         $1,
         'TRUCK_OWNER',
+        'ACTIVE',
         $2,
-        true,
         NOW(),
         NOW()
       )
@@ -137,33 +139,33 @@ async function seedUsersOnly() {
     // Create Truck Owner Profile
     await AppDataSource.query(`
       INSERT INTO user_profiles (
-        id, user_id, first_name, last_name, phone, created_at, updated_at
+        id, "userId", "tenantId", "firstName", "lastName", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         $1,
+        $2,
         'Truck',
         'Owner',
-        '+250788000002',
         NOW(),
         NOW()
       )
-    `, [truckOwnerId]);
+    `, [truckOwnerId, tenantId]);
 
     // 5. Create Cargo Owner User
     console.log('5️⃣  Creating cargo owner user...');
     const cargoOwnerPassword = await bcrypt.hash('CargoOwner@123', 10);
     const cargoOwnerResult = await AppDataSource.query(`
       INSERT INTO users (
-        id, email, password, role, tenant_id, is_active, created_at, updated_at
+        id, email, "passwordHash", role, status, "tenantId", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         'cargoowner@test.com',
         $1,
         'CARGO_OWNER',
+        'ACTIVE',
         $2,
-        true,
         NOW(),
         NOW()
       )
@@ -175,18 +177,18 @@ async function seedUsersOnly() {
     // Create Cargo Owner Profile
     await AppDataSource.query(`
       INSERT INTO user_profiles (
-        id, user_id, first_name, last_name, phone, created_at, updated_at
+        id, "userId", "tenantId", "firstName", "lastName", "createdAt", "updatedAt"
       )
       VALUES (
         gen_random_uuid(),
         $1,
+        $2,
         'Cargo',
         'Owner',
-        '+250788000003',
         NOW(),
         NOW()
       )
-    `, [cargoOwnerId]);
+    `, [cargoOwnerId, tenantId]);
 
     console.log('✅ Users seeded successfully!\n');
     console.log('═'.repeat(70));

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, IsNull } from 'typeorm';
 import { CreditAccount } from './../entities/credit-account.entity';
 import {
   CreditTransaction,
@@ -23,6 +23,11 @@ export interface CreditBalanceResponse {
   totalPartnersSold?: number;
   creditsAllocatedToPartners?: number;
   creditsAvailableForAllocation?: number;
+  // Earning statistics
+  revenueFromMarketplaceSales?: number; // Credits earned from selling to truck owners
+  revenueFromBidTransactions?: number; // Credits earned from bid acceptances
+  totalRevenue?: number; // Total credits earned (marketplace + bids)
+  totalProfit?: number; // Net profit (revenue - operational costs)
 }
 
 export interface ConsumeCreditsDto {
@@ -119,6 +124,37 @@ export class CreditService {
       response.creditsAvailableForAllocation = account.currentBalance - (account.creditsAllocatedToPartners || 0);
     }
 
+    // Calculate earning statistics from transactions
+    const transactions = await this.creditTransactionRepository.find({
+      where: { tenantId, userId: userId || IsNull() },
+      select: ['type', 'amount', 'description', 'referenceType'],
+    });
+
+    // Revenue from marketplace sales (CONSUMPTION with MARKETPLACE_SALE reference)
+    const marketplaceSales = transactions
+      .filter(tx => tx.type === CreditTransactionType.CONSUMPTION && tx.referenceType === 'MARKETPLACE_SALE')
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+    // Revenue from bid transactions (BONUS with description containing "Bid revenue")
+    const bidRevenue = transactions
+      .filter(tx => tx.type === CreditTransactionType.BONUS && tx.description?.includes('Bid revenue'))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Operational costs from bids (CONSUMPTION with description containing "operational cost")
+    const bidOperationalCosts = transactions
+      .filter(tx => tx.type === CreditTransactionType.CONSUMPTION && tx.description?.includes('operational cost'))
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+    // Calculate totals
+    const totalRevenue = marketplaceSales + bidRevenue;
+    const totalProfit = totalRevenue - bidOperationalCosts;
+
+    // Add earning statistics to response
+    response.revenueFromMarketplaceSales = marketplaceSales;
+    response.revenueFromBidTransactions = bidRevenue;
+    response.totalRevenue = totalRevenue;
+    response.totalProfit = totalProfit;
+
     return response;
   }
 
@@ -173,7 +209,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      // userId: userId || null,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.SUBSCRIPTION_GRANT,
       amount,
@@ -960,7 +996,7 @@ export class CreditService {
     bidId: string;
     loadId: string;
     loadTitle: string;
-  }): Promise<{ tenantTransaction: CreditTransaction; truckOwnerTransaction: CreditTransaction }> {
+  }): Promise<{ tenantTransaction: CreditTransaction; truckOwnerTransaction: CreditTransaction; tenantEarningTransaction: CreditTransaction }> {
     // Calculate credits needed
     const tenantCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTenant);
     const truckOwnerCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTruckOwner);
@@ -982,12 +1018,12 @@ export class CreditService {
       );
     }
 
-    // Deduct from tenant admin
+    // 1. Deduct from tenant admin (operational cost)
     const tenantTransaction = await this.deductCredits({
       tenantId: dto.tenantId,
       userId: dto.tenantAdminUserId,
       amount: tenantCreditsNeeded,
-      description: `Bid accepted for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTenant} credits/ton)`,
+      description: `Bid accepted - operational cost for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTenant} credits/ton)`,
       referenceType: 'BID',
       referenceId: dto.bidId,
       calculationDetails: {
@@ -995,15 +1031,16 @@ export class CreditService {
         cargoWeightTons: dto.cargoWeightTons,
         creditsPerTon: dto.creditsPerTonTenant,
         role: 'TENANT_ADMIN',
+        transactionType: 'OPERATIONAL_COST',
       },
     });
 
-    // Deduct from truck owner
+    // 2. Deduct from truck owner (payment for the job)
     const truckOwnerTransaction = await this.deductCredits({
       tenantId: dto.tenantId,
       userId: dto.truckOwnerUserId,
       amount: truckOwnerCreditsNeeded,
-      description: `Bid accepted for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
+      description: `Bid accepted - payment for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
       referenceType: 'BID',
       referenceId: dto.bidId,
       calculationDetails: {
@@ -1011,13 +1048,28 @@ export class CreditService {
         cargoWeightTons: dto.cargoWeightTons,
         creditsPerTon: dto.creditsPerTonTruckOwner,
         role: 'TRUCK_OWNER',
+        transactionType: 'JOB_PAYMENT',
       },
     });
 
-    console.log(`[CreditService] Dual deduction completed for bid ${dto.bidId}:`);
-    console.log(`  - Tenant Admin: ${tenantCreditsNeeded} credits deducted`);
-    console.log(`  - Truck Owner: ${truckOwnerCreditsNeeded} credits deducted`);
+    // 3. Grant tenant admin the credits that truck owner paid (revenue/earning)
+    const tenantEarningTransaction = await this.grantBonusCredits(
+      dto.tenantId,
+      truckOwnerCreditsNeeded,
+      `Bid revenue from "${dto.loadTitle}" - earned from truck owner payment (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
+      null, // No expiry
+      dto.tenantAdminUserId,
+    );
 
-    return { tenantTransaction, truckOwnerTransaction };
+    // Calculate net result for tenant admin
+    const tenantNetGain = truckOwnerCreditsNeeded - tenantCreditsNeeded;
+
+    console.log(`[CreditService] Bid credit flow completed for bid ${dto.bidId}:`);
+    console.log(`  - Tenant Admin operational cost: -${tenantCreditsNeeded} credits`);
+    console.log(`  - Truck Owner payment: -${truckOwnerCreditsNeeded} credits`);
+    console.log(`  - Tenant Admin revenue earned: +${truckOwnerCreditsNeeded} credits`);
+    console.log(`  - Tenant Admin net profit: ${tenantNetGain > 0 ? '+' : ''}${tenantNetGain} credits`);
+
+    return { tenantTransaction, truckOwnerTransaction, tenantEarningTransaction };
   }
 }
