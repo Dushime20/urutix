@@ -46,7 +46,7 @@ export class CreditAccount {
   @Column({ type: 'int', default: 0, name: 'lifetime_spent' })
   lifetimeSpent: number;
 
-  // Revenue tracking fields for tenant admins
+  // Revenue tracking fields for tenant admins (old partner plan system)
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'revenue_from_partner_sales' })
   revenueFromPartnerSales: number;
 
@@ -55,6 +55,16 @@ export class CreditAccount {
 
   @Column({ type: 'int', default: 0, name: 'credits_allocated_to_partners' })
   creditsAllocatedToPartners: number;
+
+  // Marketplace tracking fields (new marketplace system)
+  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'revenue_from_marketplace_sales' })
+  revenueFromMarketplaceSales: number;
+
+  @Column({ type: 'int', default: 0, name: 'total_credits_sold_marketplace' })
+  totalCreditsSoldMarketplace: number;
+
+  @Column({ type: 'int', default: 0, name: 'total_marketplace_transactions' })
+  totalMarketplaceTransactions: number;
 
   @Column({ type: 'timestamp', nullable: true, name: 'last_refresh_date' })
   lastRefreshDate?: Date;

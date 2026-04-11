@@ -87,6 +87,8 @@ import { CreditTransaction } from './../entities/credit-transaction.entity';
 import { TenantSubscription } from './../entities/tenant-subscription.entity';
 import { SubscriptionPlan } from './../entities/subscription-plan.entity';
 import { SubscriptionPayment } from './../entities/subscription-payment.entity';
+import { CreditMarketplaceSettings } from './../entities/credit-marketplace-settings.entity';
+import { FeatureCreditCost } from './../entities/feature-credit-cost.entity';
 
 // RBAC entities
 import { Role } from './../entities/role.entity';
@@ -223,6 +225,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     TenantSubscription,
     SubscriptionPlan,
     SubscriptionPayment,
+    CreditMarketplaceSettings,
+    FeatureCreditCost,
     // RBAC entities
     Role,
     Permission,
@@ -355,6 +359,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     TenantSubscription,
     SubscriptionPlan,
     SubscriptionPayment,
+    CreditMarketplaceSettings,
+    FeatureCreditCost,
     // RBAC entities
     Role,
     Permission,

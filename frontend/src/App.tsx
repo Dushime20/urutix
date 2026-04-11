@@ -54,7 +54,10 @@ const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPl
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
 const FleetPaymentManagement = lazy(() => import('./pages/FleetPaymentManagement'));
 const TruckOwnerCredits = lazy(() => import('./pages/truck-owner/TruckOwnerCredits'));
-const TruckOwnerPartnerPlans = lazy(() => import('./pages/truck-owner/PartnerPlans'));
+
+// NEW: Credit Marketplace Pages (replacing old partner plans)
+const CreditMarketplace = lazy(() => import('./pages/tenant-admin/CreditMarketplace'));
+const BuyCredits = lazy(() => import('./pages/truck-owner/BuyCredits'));
 
 const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
 const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
@@ -75,7 +78,7 @@ const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
 const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory'));
 const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
 const SubscriptionPlansMgmt = lazy(() => import('./pages/admin/SubscriptionPlansMgmt'));
-const PartnerPlans = lazy(() => import('./pages/tenant-admin/PartnerPlans'));
+// OLD: const PartnerPlans = lazy(() => import('./pages/tenant-admin/PartnerPlans')); // Replaced by CreditMarketplace
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
 const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
@@ -345,7 +348,8 @@ function App() {
                       <Route path="overview" element={<FleetDashboard />} />
                       <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="credits" element={<TruckOwnerCredits />} />
-                      <Route path="partner-plans" element={<TruckOwnerPartnerPlans />} />
+                      {/* NEW: Credit Marketplace - Buy Credits */}
+                      <Route path="buy-credits" element={<BuyCredits />} />
                       <Route path="bids" element={<UnifiedBiddingManagement />} />
                       <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="bidding-analytics" element={<UnifiedBiddingManagement />} />
@@ -459,7 +463,8 @@ function App() {
                       <Route path="purchase-credits" element={<TenantDashboardPage defaultView="purchase-credits" />} />
                       <Route path="billing" element={<TenantDashboardPage defaultView="billing" />} />
                       <Route path="subscription-plans" element={<SubscriptionPlans />} />
-                      <Route path="partner-plans" element={<PartnerPlans />} />
+                      {/* NEW: Credit Marketplace - Configure and Manage */}
+                      <Route path="credit-marketplace" element={<CreditMarketplace />} />
                       <Route path="truck-owners" element={<TenantDashboardPage defaultView="truck-owners" />} />
                       <Route path="partner-billing" element={<PartnerBillingManager />} />
                        <Route path="communication" element={<TenantDashboardPage defaultView="communicate" />} />

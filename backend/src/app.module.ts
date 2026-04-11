@@ -33,6 +33,7 @@ import { ReceiversModule } from './modules/receivers/receivers.module';
 import { BrokersModule } from './modules/brokers/brokers.module';
 import { FuelModule } from './modules/fuel/fuel.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { CreditMarketplaceModule } from './modules/credit-marketplace/credit-marketplace.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
 import { MessengerModule } from './modules/messenger/messenger.module';
@@ -81,6 +82,7 @@ import { UserSession } from './entities/user-session.entity';
     BrokersModule,
     FuelModule,
     SubscriptionModule,
+    CreditMarketplaceModule,
     AnalyticsModule,
     ActivityLogsModule,
     MessengerModule,

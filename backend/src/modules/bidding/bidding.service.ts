@@ -499,7 +499,7 @@ export class BiddingService {
         throw new NotFoundException('Tenant admin not found for this tenant');
       }
 
-      // Get truck owner's subscription plan (partner plan)
+      // Verify truck owner has an active subscription (marketplace purchase or partner plan)
       const truckOwnerSubscription = await this.tenantSubscriptionRepository.findOne({
         where: { userId: bid.truckOwnerId, tenantId, status: SubscriptionStatus.ACTIVE },
         relations: ['plan'],
@@ -507,21 +507,37 @@ export class BiddingService {
 
       if (!truckOwnerSubscription || !truckOwnerSubscription.plan) {
         throw new BadRequestException(
-          'Truck owner must have an active subscription plan',
+          'Truck owner must have an active subscription to accept bids',
+        );
+      }
+
+      // IMPORTANT: Get credit rates from TENANT ADMIN's parent subscription plan
+      // This ensures rates come from the original subscription, not from marketplace purchases
+      const tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+        where: { 
+          tenantId, 
+          status: SubscriptionStatus.ACTIVE,
+          userId: tenantAdminUser.id, // Tenant admin's subscription
+        },
+        relations: ['plan'],
+      });
+
+      if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
+        throw new BadRequestException(
+          'Tenant admin must have an active subscription plan',
         );
       }
 
       // Calculate cargo weight in tons
       const cargoWeightTons = bid.load.weight / 1000; // Convert kg to tons
 
-      // IMPORTANT: Both rates come from the truck owner's partner plan
-      // Partner plans inherit these rates from the parent subscription plan
-      const creditsPerTonTenant = Number(truckOwnerSubscription.plan.creditsPerTonTenant);
-      const creditsPerTonTruckOwner = Number(truckOwnerSubscription.plan.creditsPerTonTruckOwner);
+      // Use rates from tenant admin's parent subscription plan
+      const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
+      const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
 
       console.log(`[BiddingService] Accepting bid ${bidId} - Credit deduction details:`);
       console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
-      console.log(`  - Using rates from truck owner's partner plan: ${truckOwnerSubscription.plan.name}`);
+      console.log(`  - Using rates from TENANT ADMIN's parent subscription: ${tenantAdminSubscription.plan.name}`);
       console.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
       console.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
 

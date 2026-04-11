@@ -731,10 +731,15 @@ export class CreditService {
       );
     }
 
-    // Deduct credits
-    account.currentBalance -= dto.amount;
-    account.lifetimeSpent += dto.amount;
-    await this.creditAccountRepository.save(account);
+    // Calculate new values
+    const newBalance = account.currentBalance - dto.amount;
+    const newLifetimeSpent = account.lifetimeSpent + dto.amount;
+
+    // Use update() instead of save() to only update specific fields
+    await this.creditAccountRepository.update(account.id, {
+      currentBalance: newBalance,
+      lifetimeSpent: newLifetimeSpent,
+    });
 
     // Record transaction
     const transaction = this.creditTransactionRepository.create({
@@ -743,7 +748,7 @@ export class CreditService {
       creditAccountId: account.id,
       type: CreditTransactionType.CONSUMPTION,
       amount: -dto.amount, // Negative for deduction
-      balanceAfter: account.currentBalance,
+      balanceAfter: newBalance,
       description: dto.description,
       referenceType: dto.referenceType,
       referenceId: dto.referenceId,
