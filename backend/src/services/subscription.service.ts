@@ -729,7 +729,7 @@ export class SubscriptionService {
       throw new BadRequestException(`Plan with slug ${data.slug} already exists`);
     }
 
-    // Create partner plan with inherited values
+    // Create partner plan with inherited values from parent subscription
     const partnerPlan = this.subscriptionPlanRepository.create({
       name: data.name,
       slug: data.slug,
@@ -739,8 +739,8 @@ export class SubscriptionService {
       creditCostPerPartner: data.creditCostPerPartner,
       availableSlots: data.availableSlots,
       totalCredits: data.totalCredits, // creditCostPerPartner × availableSlots
-      creditsPerTonTenant: 0, // Not used for partner plans
-      creditsPerTonTruckOwner: parentSubscription.plan.creditsPerTonTruckOwner,
+      creditsPerTonTenant: parentSubscription.plan.creditsPerTonTenant, // Inherit from parent
+      creditsPerTonTruckOwner: parentSubscription.plan.creditsPerTonTruckOwner, // Inherit from parent
       isActive: data.isActive,
       features: {},
       limits: {},

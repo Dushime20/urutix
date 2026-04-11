@@ -515,13 +515,13 @@ export class BiddingService {
       const cargoWeightTons = bid.load.weight / 1000; // Convert kg to tons
 
       // IMPORTANT: Both rates come from the truck owner's partner plan
-      // This ensures consistent pricing based on the plan the truck owner purchased
+      // Partner plans inherit these rates from the parent subscription plan
       const creditsPerTonTenant = Number(truckOwnerSubscription.plan.creditsPerTonTenant);
       const creditsPerTonTruckOwner = Number(truckOwnerSubscription.plan.creditsPerTonTruckOwner);
 
       console.log(`[BiddingService] Accepting bid ${bidId} - Credit deduction details:`);
       console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
-      console.log(`  - Using rates from truck owner's plan: ${truckOwnerSubscription.plan.name}`);
+      console.log(`  - Using rates from truck owner's partner plan: ${truckOwnerSubscription.plan.name}`);
       console.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
       console.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
 
