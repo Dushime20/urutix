@@ -68,13 +68,21 @@ const ForgotPassword = () => {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Header */}
           <div className="px-8 pt-8 pb-4">
-            <button
-              onClick={() => navigate('/auth')}
-              className="flex items-center text-[10px] text-indigo-600 hover:text-indigo-500 font-black uppercase tracking-widest mb-6 transition-colors group"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 mr-1 group-hover:-translate-x-0.5 transition-transform" />
-              <TranslatedText text="Back to login" />
-            </button>
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={() => navigate('/auth')}
+                className="flex items-center text-[10px] text-indigo-600 hover:text-indigo-500 font-black uppercase tracking-widest transition-colors group"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 mr-1 group-hover:-translate-x-0.5 transition-transform" />
+                <TranslatedText text="Back to login" />
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center text-[10px] text-primary-600 hover:text-primary-500 font-black uppercase tracking-widest transition-colors group"
+              >
+                <TranslatedText text="Back to home" />
+              </button>
+            </div>
             <h2 className="text-2xl font-black text-slate-900 mb-1 font-manrope tracking-tight">
               <TranslatedText text="Reset your password" />
             </h2>

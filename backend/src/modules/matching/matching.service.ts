@@ -500,6 +500,46 @@ export class MatchingService {
   /**
    * Get all persisted matches for a truck owner's fleet
    */
+  async getMatchesForCargoOwner(cargoOwnerId: string, tenantId: string): Promise<any[]> {
+    try {
+      // Find all loads belonging to this cargo owner
+      const loads = await this.loadRepository.find({
+        where: { cargoOwnerId, tenantId },
+        select: ['id'],
+      });
+      if (loads.length === 0) return [];
+
+      const loadIds = loads.map(l => l.id);
+
+      // Find ACCEPTED and REQUESTED matches for these loads
+      const matches = await this.loadMatchRepository.find({
+        where: [
+          { loadId: In(loadIds), status: MatchStatus.ACCEPTED },
+          { loadId: In(loadIds), status: MatchStatus.REQUESTED },
+        ],
+        order: { createdAt: 'DESC' },
+        take: 50,
+      });
+
+      // Enrich with load and truck details
+      const enriched = await Promise.all(matches.map(async (match) => {
+        const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
+        const truck = await this.truckRepository.findOne({
+          where: { id: match.truckId },
+          relations: ['owner', 'owner.profile'],
+        });
+        const tripRepo = this.loadRepository.manager.getRepository(Trip);
+        const trip = await tripRepo.findOne({ where: { loadId: match.loadId } });
+        return { ...match, load: load || null, truck: truck || null, trip: trip || null };
+      }));
+
+      return enriched;
+    } catch (error) {
+      this.logger.error(`Error finding matches for cargo owner ${cargoOwnerId}`, error);
+      throw error;
+    }
+  }
+
   async getMatchesForOwner(ownerId: string): Promise<any[]> {
     try {
       // 1. Find all trucks for this owner
@@ -514,14 +554,14 @@ export class MatchingService {
 
       const truckIds = trucks.map((t) => t.id);
 
-      // 2. Find matches for these trucks
+      // 2. Find matches for these trucks — only REQUESTED (cargo owner picked this truck) and ACCEPTED
       const matches = await this.loadMatchRepository.find({
-        where: {
-          truckId: In(truckIds),
-          status: Not(MatchStatus.POTENTIAL)
-        },
+        where: [
+          { truckId: In(truckIds), status: MatchStatus.REQUESTED },
+          { truckId: In(truckIds), status: MatchStatus.ACCEPTED },
+        ],
         order: { createdAt: 'DESC', score: 'DESC' },
-        take: 50, // Limit to recent matches
+        take: 50,
       });
 
       // 3. Manually fetch and attach load and truck details for each match
@@ -1186,11 +1226,12 @@ export class MatchingService {
             if (distance > criteria.maxDistance) return false;
           }
 
-          // Rating filter
+          // Rating filter — averageRating is 0-5 scale, minRating is also 0-5
+          // Only filter if truck has an established rating (> 0) and it's below minimum
           if (
             criteria.minRating &&
-            truck.averageRating &&
-            truck.averageRating < criteria.minRating * 5
+            truck.averageRating > 0 &&
+            truck.averageRating < criteria.minRating
           ) {
             return false;
           }
@@ -1483,13 +1524,19 @@ export class MatchingService {
         gpsTrackingScore * weights.gpsTracking +
         availabilityScore * weights.availability;
 
-      // Calculate supporting metrics
-      const estimatedCost = this.estimateCost(distanceKm, loadWeight, truck);
-      const estimatedRevenue = this.estimateRevenue(distanceKm, loadWeight);
+      // Calculate supporting metrics using ROUTE distance (pickup → delivery), not truck-to-pickup
+      const pickup = load.pickupLocation?.locationData?.coordinates;
+      const delivery = load.deliveryLocation?.locationData?.coordinates;
+      const routeDistanceKm = (pickup && delivery)
+        ? this.calculateHaversineDistance(pickup.latitude, pickup.longitude, delivery.latitude, delivery.longitude)
+        : distanceKm; // fallback to truck-to-pickup if no route coords
+
+      const estimatedCost = this.estimateCost(routeDistanceKm, loadWeight, truck);
+      const estimatedRevenue = this.estimateRevenue(routeDistanceKm, loadWeight);
       const profitMargin = estimatedRevenue > 0
         ? ((estimatedRevenue - estimatedCost) / estimatedRevenue)
         : 0;
-      const estimatedDeliveryTime = this.estimateDeliveryTime(distanceKm, load);
+      const estimatedDeliveryTime = this.estimateDeliveryTime(routeDistanceKm, load);
       const riskScore = Math.max(0, 1 - overallScore);
       const marketAverage = this.getMarketAverageCost(load);
       const recommendedPrice = marketAverage * 1.1;
@@ -2268,34 +2315,42 @@ export class MatchingService {
     weightKg: number,
     truck: Truck,
   ): number {
-    // Enhanced cost estimation
-    const fuelCost = distanceKm * 0.15; // $0.15 per km
-    const laborCost = distanceKm * 0.1; // $0.10 per km
-    const maintenanceCost = distanceKm * 0.05; // $0.05 per km
-    const weightFactor = weightKg / 1000; // cost increases with weight
+    // Use a realistic per-tonne-km rate for African freight market
+    // Base rate: ~$0.08 per tonne-km (typical East Africa road freight)
+    const tonneKm = (weightKg / 1000) * distanceKm;
+    const baseRate = 0.08; // $0.08 per tonne-km
 
-    // Truck-specific adjustments
-    let truckFactor = 1.0;
-    if (truck.hasRefrigeration) truckFactor += 0.2;
-    if (truck.hasHazmatPermit) truckFactor += 0.1;
-    if (truck.fuelType === FuelType.ELECTRIC) truckFactor -= 0.1;
+    // Minimum floor: $50 regardless of distance (short haul minimum)
+    const baseCost = Math.max(tonneKm * baseRate, 50);
 
-    return (
-      (fuelCost + laborCost + maintenanceCost) * weightFactor * truckFactor
-    );
+    // Truck-specific surcharges
+    let surcharge = 1.0;
+    if (truck.hasRefrigeration) surcharge += 0.25; // 25% for reefer
+    if (truck.hasHazmatPermit) surcharge += 0.15;  // 15% for hazmat
+    if (truck.fuelType === FuelType.ELECTRIC) surcharge -= 0.05; // 5% discount for EV
+
+    return Math.round(baseCost * surcharge * 100) / 100;
   }
 
   private estimateRevenue(distanceKm: number, weightKg: number): number {
-    // Enhanced revenue estimation
-    const baseRate = 2.5; // $2.50 per km
-    const weightFactor = weightKg / 1000;
-    return distanceKm * baseRate * weightFactor;
+    // Market rate slightly above cost — $0.10 per tonne-km
+    const tonneKm = (weightKg / 1000) * distanceKm;
+    return Math.max(tonneKm * 0.10, 60);
   }
 
   private getMarketAverageCost(load: Load): number {
-    // This would typically come from historical data or market APIs
-    const distance = this.calculateDistance(load, {} as Truck);
-    return distance * 3.0; // Simplified market average
+    // Estimate route distance from load locations
+    const pickup = load.pickupLocation?.locationData?.coordinates;
+    const delivery = load.deliveryLocation?.locationData?.coordinates;
+    let routeKm = 200; // default 200 km if no coordinates
+    if (pickup && delivery) {
+      routeKm = this.calculateHaversineDistance(
+        pickup.latitude, pickup.longitude,
+        delivery.latitude, delivery.longitude,
+      ) || 200;
+    }
+    const tonneKm = (Number(load.weight) / 1000) * routeKm;
+    return Math.max(tonneKm * 0.09, 50); // $0.09/tonne-km market average
   }
 
   private calculateDimensionalCompatibility(truck: Truck, load: Load): number {
@@ -2455,7 +2510,8 @@ export class MatchingService {
         return false;
       }
 
-      if (criteria.minRating && match.truckRating < criteria.minRating * 5) {
+      // Rating filter — only exclude if truck has an established rating below minimum
+      if (criteria.minRating && match.truckRating > 0 && match.truckRating < criteria.minRating) {
         return false;
       }
 

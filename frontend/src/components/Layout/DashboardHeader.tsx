@@ -60,6 +60,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Create Payload', path: `${basePath}/cargos/create` },
             { label: 'Cargo Inventory', path: `${basePath}/cargos/list` },
+            { label: 'Smart Matching', path: `${basePath}/smart-matching` },
+            { label: 'Accepted Matches', path: `${basePath}/accepted-matches` },
             { label: 'Freight Bidding', path: `${basePath}/bidding` },
             { label: 'Live Tracking', path: `${basePath}/tracking` },
             { label: 'Multi-Modal Flow', path: `${basePath}/multi-modal` },

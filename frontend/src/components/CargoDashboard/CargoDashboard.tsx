@@ -20,7 +20,6 @@ import { AssignBrokerModal } from "./AssignBrokerModal";
 import { AssignReceiverModal } from "./AssignReceiverModal";
 import { RequestFinancingModal } from "./RequestFinancingModal";
 import { useCargoOwnerLayout } from "../../contexts/CargoOwnerLayoutContext";
-import DashboardHeader from "../Dashboard/Layout/DashboardHeader";
 import StatCard from "../EnliteUI/Cards/StatCard";
 
 
@@ -1139,18 +1138,16 @@ export const CargoDashboard: React.FC = () => {
   }, [selectedCargo]);
 
 
-  // Hide default header on mount
+  // Let the global CargoOwnerLayout header show normally
   useEffect(() => {
     if (setHideHeader) {
-      setHideHeader(true);
-      return () => setHideHeader(false);
+      setHideHeader(false);
     }
   }, [setHideHeader]);
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-slate-50 font-['Manrope',sans-serif] antialiased">
-        <DashboardHeader onCreateClick={handleCreateNew} />
 
         {/* Main Content */}
         <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12">

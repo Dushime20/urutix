@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import logoUrutiXNew from '../assets/urutiX Logistics Logo (1).svg';
 import logoUrutiXBackground from '../assets/logo-urutix.svg';
-import { Package, ArrowRight, CheckCircle, Truck } from 'lucide-react';
+import { Package, ArrowRight, CheckCircle, Truck, ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -346,6 +346,13 @@ const Auth = () => {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Form Header */}
           <div className="px-8 pt-6 pb-2">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center text-[10px] text-primary-600 hover:text-primary-500 font-black uppercase tracking-widest mb-4 transition-colors group"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 mr-1 group-hover:-translate-x-0.5 transition-transform" />
+              <TranslatedText text="Back to home" />
+            </button>
             <h2 className="text-xl font-black text-slate-900 mb-1 tracking-tight uppercase">
               {isLogin ? <TranslatedText text="Welcome back" /> : <TranslatedText text="Create your account" />}
             </h2>

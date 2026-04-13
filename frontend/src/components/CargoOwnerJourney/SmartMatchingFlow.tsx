@@ -81,7 +81,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       const [matchesResponse, insightsResponse] = await Promise.all([
         cargoOwnerAPI.findMatches(cargoDetails.id!, {
           maxDistance: 500,
-          minRating: 4.0,
+          minRating: 0,
           maxCost: cargoDetails.loadValue * 0.3,
           requiresRefrigeration: cargoDetails.requiresRefrigeration,
           requiresHazmat: cargoDetails.isHazardous,
@@ -93,7 +93,15 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       ]);
 
       if (matchesResponse.data) {
-        setMatchedTrucks(matchesResponse.data);
+        const body = matchesResponse.data;
+        const trucks = Array.isArray(body)
+          ? body
+          : Array.isArray(body?.data)
+            ? body.data
+            : Array.isArray(body?.matches)
+              ? body.matches
+              : [];
+        setMatchedTrucks(trucks);
       } else {
         setError('No matches found');
       }

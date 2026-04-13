@@ -12,7 +12,14 @@ import {
     ArrowRight,
     Package,
     Truck,
-    MapPin
+    MapPin,
+    ChevronDown,
+    ChevronUp,
+    DollarSign,
+    Weight,
+    Shield,
+    Thermometer,
+    AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +32,7 @@ export const TruckMatches: React.FC = () => {
     const [processingMatchId, setProcessingMatchId] = useState<string | null>(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [acceptedMatchDetails, setAcceptedMatchDetails] = useState<any>(null);
+    const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
     const loadMatches = async () => {
         setLoading(true);
@@ -143,10 +151,11 @@ export const TruckMatches: React.FC = () => {
                                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
                                     <div className="flex-1">
                                         <div className="flex flex-wrap items-center gap-3 mb-6">
-                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${match.status === 'REQUESTED' ? 'bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400 border-primary-100 dark:border-primary-900/50' :
+                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                match.status === 'REQUESTED' ? 'bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400 border-primary-100 dark:border-primary-900/50' :
                                                 match.status === 'ACCEPTED' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50' :
-                                                    'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700'
-                                                }`}>
+                                                'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700'
+                                            }`}>
                                                 {match.status}
                                             </span>
                                             <div className="flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400 rounded-full border border-primary-100 dark:border-primary-900/50">
@@ -179,6 +188,94 @@ export const TruckMatches: React.FC = () => {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* View Details toggle */}
+                                        <button
+                                            onClick={() => setExpandedMatchId(expandedMatchId === match.id ? null : match.id)}
+                                            className="mt-5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary-400 hover:text-primary-600 transition-colors"
+                                        >
+                                            {expandedMatchId === match.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                            {expandedMatchId === match.id ? 'Hide Details' : 'View Details'}
+                                        </button>
+
+                                        {/* Expanded detail panel */}
+                                        <AnimatePresence>
+                                            {expandedMatchId === match.id && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                        {/* Cargo Details */}
+                                                        <div className="space-y-3">
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Cargo Details</p>
+                                                            <DetailRow icon={<Package size={12} />} label="Type" value={match.load?.cargoType || '—'} />
+                                                            <DetailRow icon={<Weight size={12} />} label="Weight" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
+                                                            <DetailRow icon={<DollarSign size={12} />} label="Value" value={match.load?.loadValue ? `$${Number(match.load.loadValue).toLocaleString()}` : '—'} />
+                                                            <DetailRow icon={<MapPin size={12} />} label="Pickup" value={
+                                                                match.load?.origin?.city
+                                                                    ? `${match.load.origin.city}${match.load.origin.country ? ', ' + match.load.origin.country : ''}`
+                                                                    : match.load?.pickupLocation?.name || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city || '—'
+                                                            } />
+                                                            <DetailRow icon={<MapPin size={12} />} label="Delivery" value={
+                                                                match.load?.destination?.city
+                                                                    ? `${match.load.destination.city}${match.load.destination.country ? ', ' + match.load.destination.country : ''}`
+                                                                    : match.load?.deliveryLocation?.name || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city || '—'
+                                                            } />
+                                                            <DetailRow icon={<Clock size={12} />} label="Pickup Date" value={match.load?.pickupDate ? new Date(match.load.pickupDate).toLocaleDateString() : '—'} />
+                                                            <DetailRow icon={<Clock size={12} />} label="Delivery Date" value={match.load?.deliveryDate ? new Date(match.load.deliveryDate).toLocaleDateString() : '—'} />
+                                                            {(match.load?.offeredPrice || match.matchDetails?.recommendedPrice) && (
+                                                                <DetailRow icon={<DollarSign size={12} />} label="Offered Price" value={`$${Number(match.load?.offeredPrice || match.matchDetails?.recommendedPrice).toLocaleString()}`} />
+                                                            )}
+                                                            {match.matchDetails?.estimatedCost && (
+                                                                <DetailRow icon={<DollarSign size={12} />} label="Suggested Price" value={`$${Number(match.matchDetails.estimatedCost).toLocaleString()}`} />
+                                                            )}
+                                                            {match.load?.isFragile && <DetailRow icon={<AlertTriangle size={12} />} label="Fragile" value="Yes" warn />}
+                                                            {match.load?.isHazardous && <DetailRow icon={<AlertTriangle size={12} />} label="Hazardous" value="Yes" warn />}
+                                                            {match.load?.requiresRefrigeration && <DetailRow icon={<Thermometer size={12} />} label="Refrigeration" value="Required" />}
+                                                        </div>
+
+                                                        {/* Match Scores */}
+                                                        <div className="space-y-3">
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Match Scores</p>
+                                                            {match.matchDetails && <>
+                                                                <ScoreBar label="Overall" value={match.score} />
+                                                                <ScoreBar label="Capacity" value={match.matchDetails.capacityScore} />
+                                                                <ScoreBar label="Equipment" value={match.matchDetails.equipmentScore} />
+                                                                <ScoreBar label="Distance" value={match.matchDetails.distanceScore} />
+                                                                <ScoreBar label="GPS" value={match.matchDetails.gpsTrackingScore} />
+                                                                <ScoreBar label="Availability" value={match.matchDetails.availabilityScore} />
+                                                            </>}
+                                                            {match.matchDetails?.estimatedCost && (
+                                                                <DetailRow icon={<DollarSign size={12} />} label="Est. Cost" value={`$${Number(match.matchDetails.estimatedCost).toLocaleString()}`} />
+                                                            )}
+                                                            {match.matchDetails?.distanceKm && (
+                                                                <DetailRow icon={<MapPin size={12} />} label="Distance" value={`${match.matchDetails.distanceKm} km`} />
+                                                            )}
+                                                        </div>
+
+                                                        {/* Truck Details */}
+                                                        <div className="space-y-3">
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Truck Details</p>
+                                                            <DetailRow icon={<Truck size={12} />} label="Make / Model" value={`${match.truck?.make || ''} ${match.truck?.model || ''}`.trim() || '—'} />
+                                                            <DetailRow icon={<Truck size={12} />} label="Type" value={match.truck?.truckType || '—'} />
+                                                            <DetailRow icon={<Weight size={12} />} label="Capacity" value={`${Number(match.truck?.capacityWeight || 0).toLocaleString()} kg`} />
+                                                            <DetailRow icon={<Shield size={12} />} label="GPS" value={match.truck?.hasGps ? '✅ Yes' : '❌ No'} />
+                                                            <DetailRow icon={<Thermometer size={12} />} label="Refrigeration" value={match.truck?.hasRefrigeration ? '✅ Yes' : '❌ No'} />
+                                                            <DetailRow icon={<Shield size={12} />} label="Hazmat" value={match.truck?.hasHazmatPermit ? '✅ Yes' : '❌ No'} />
+                                                            {match.matchDetails?.matchReason && (
+                                                                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Match Reason</p>
+                                                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">{match.matchDetails.matchReason}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row gap-3 pt-6 lg:pt-0 border-t lg:border-t-0 border-slate-50 dark:border-slate-800">
@@ -288,5 +385,30 @@ export const TruckMatches: React.FC = () => {
                 )}
             </AnimatePresence>
         </>
+    );
+};
+
+// Helper components
+const DetailRow = ({ icon, label, value, warn }: { icon: React.ReactNode; label: string; value: string; warn?: boolean }) => (
+    <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 shrink-0">
+            {icon}
+            <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+        </div>
+        <span className={`text-[10px] font-bold truncate ${warn ? 'text-amber-500' : 'text-slate-700 dark:text-slate-300'}`}>{value}</span>
+    </div>
+);
+
+const ScoreBar = ({ label, value }: { label: string; value: number }) => {
+    const pct = Math.round((value || 0) * 100);
+    const color = pct >= 80 ? 'bg-emerald-400' : pct >= 60 ? 'bg-primary-400' : 'bg-amber-400';
+    return (
+        <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 w-20 shrink-0">{label}</span>
+            <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 w-8 text-right">{pct}%</span>
+        </div>
     );
 };

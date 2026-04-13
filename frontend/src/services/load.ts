@@ -215,6 +215,12 @@ export const loadsAPI = {
   },
   deleteDraft: (id: string) => api.delete(`/loads/${id}`),
   publishDraft: (id: string) => api.post(`/loads/${id}/publish`),
+  initiateSmartMatching: (id: string) => api.post('/matching/find-matches', {
+    loadId: id,
+    algorithm: 'WEIGHTED_SCORE',
+    limit: 15,
+    includeDrivers: true,
+  }),
 
   // Enriched locations from OSM
   getLoadsWithEnrichedLocations: () => api.get("/loads/enriched-locations"),

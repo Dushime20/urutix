@@ -399,7 +399,7 @@ const CreditMarketplace: React.FC = () => {
               )}
             </div>
           </form>
-        ) : (
+        ) : settings ? (
           <div className="space-y-4">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-100">
@@ -424,7 +424,7 @@ const CreditMarketplace: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

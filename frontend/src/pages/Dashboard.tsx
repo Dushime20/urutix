@@ -27,6 +27,10 @@ import {
 import {
   LineChart,
   Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
@@ -93,6 +97,7 @@ const CargoOwnerDashboard = () => {
   }, []);
 
   const [activeTab, setActiveTab] = useState('Overview');
+  const [chartPeriod, setChartPeriod] = useState<'7' | '30'>('7');
   const [cargos, setCargos] = useState<any[]>([]);
   const [dashboardAnalytics, setDashboardAnalytics] = useState<any>(null);
   const [, setLoading] = useState(true);
@@ -145,6 +150,12 @@ const CargoOwnerDashboard = () => {
     loading: false,
   });
 
+  // Credit balance for Financial Overview
+  const [creditBalance, setCreditBalance] = useState<{ currentBalance: number; loading: boolean }>({
+    currentBalance: 0,
+    loading: true,
+  });
+
   // Receiver-specific stats (for CARGO_RECEIVER role)
   const [, setReceiverStats] = useState({
     totalReceived: 0,    // Cargos with completed inspection
@@ -177,7 +188,7 @@ const CargoOwnerDashboard = () => {
           });
           setCargos(cargosArray);
         } else {
-          const data = await fetchCargos(1, '', {});
+          const data = await fetchCargos(1, '', { limit: 50 });
           setCargos(Array.isArray(data) ? data : []);
         }
       } catch (error) {
@@ -227,8 +238,8 @@ const CargoOwnerDashboard = () => {
           console.error('Failed to fetch analytics', e);
         }
 
-        // Fetch cargos for cargo owners
-        const cargoData = await fetchCargos(1, '', {});
+        // Fetch cargos for cargo owners (fetch more for recent activity)
+        const cargoData = await fetchCargos(1, '', { limit: 50 });
         setCargos(Array.isArray(cargoData) ? cargoData : []);
 
         // Calculate bidding data from cargos
@@ -377,6 +388,18 @@ const CargoOwnerDashboard = () => {
     };
 
     fetchLoadedCargos();
+
+    // Fetch credit balance for Financial Overview
+    const fetchCreditBalance = async () => {
+      try {
+        const res = await api.get('/credits/balance');
+        const balance = res.data?.data ?? res.data;
+        setCreditBalance({ currentBalance: Number(balance?.currentBalance) || 0, loading: false });
+      } catch {
+        setCreditBalance(prev => ({ ...prev, loading: false }));
+      }
+    };
+    fetchCreditBalance();
   }, [user]);
 
   // Calculate cargo statistics with competitive metrics
@@ -479,24 +502,26 @@ const CargoOwnerDashboard = () => {
         });
     }
 
-    // For other roles: filter for CREATED and DRAFT only
-    return cargos
-      .filter(c => c.status === 'CREATED' || c.status === 'DRAFT')
+    // For other roles: show all recent cargos sorted by latest update
+    const statusColors: Record<string, string> = {
+      'DELIVERED': 'bg-green-100 text-green-700',
+      'IN_TRANSIT': 'bg-blue-100 text-blue-700',
+      'ASSIGNED': 'bg-purple-100 text-purple-700',
+      'PUBLISHED': 'bg-yellow-100 text-yellow-700',
+      'CREATED': 'bg-blue-100 text-blue-700',
+      'DRAFT': 'bg-gray-100 text-gray-700',
+      'CANCELLED': 'bg-red-100 text-red-700',
+      'COMPLETED': 'bg-green-100 text-green-700',
+    };
+
+    return [...cargos]
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
-      .slice(0, 5)
+      .slice(0, 10)
       .map((cargo) => {
         const date = new Date(cargo.updatedAt || cargo.createdAt);
-        const statusColors: Record<string, string> = {
-          'DELIVERED': 'bg-green-100 text-green-700',
-          'IN_TRANSIT': 'bg-blue-100 text-blue-700',
-          'ASSIGNED': 'bg-purple-100 text-purple-700',
-          'PUBLISHED': 'bg-yellow-100 text-yellow-700',
-          'CREATED': 'bg-blue-100 text-blue-700',
-          'DRAFT': 'bg-gray-100 text-gray-700',
-        };
         return {
           id: cargo.id,
-          name: cargo.title || `Cargo ${cargo.id.slice(0, 8)} `,
+          name: cargo.title || `Cargo ${cargo.id.slice(0, 8)}`,
           type: cargo.cargoType || 'General',
           date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -504,29 +529,33 @@ const CargoOwnerDashboard = () => {
           status: cargo.status || 'DRAFT',
           logo: cargo.title?.[0]?.toUpperCase() || 'C',
           statusColor: statusColors[cargo.status] || 'bg-gray-100 text-gray-700',
-          fullCargo: cargo, // Store full cargo data for click handlers
+          fullCargo: cargo,
         };
       });
   }, [cargos, user]);
 
-  // Cargo activity data for chart (last 7 days)
+  // Cargo activity data for chart (dynamic period)
   const cargoActivityData = useMemo(() => {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const days = Number(chartPeriod);
     const now = new Date();
-    return days.map((day, index) => {
+    return Array.from({ length: days }, (_, i) => {
       const dayDate = new Date(now);
-      dayDate.setDate(now.getDate() - (6 - index));
-      const dayStart = new Date(dayDate.setHours(0, 0, 0, 0));
-      const dayEnd = new Date(dayDate.setHours(23, 59, 59, 999));
+      dayDate.setDate(now.getDate() - (days - 1 - i));
+      const dayStart = new Date(dayDate); dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayDate); dayEnd.setHours(23, 59, 59, 999);
 
-      const cargosOnDay = cargos.filter(c => {
-        const cargoDate = new Date(c.createdAt || c.updatedAt);
-        return cargoDate >= dayStart && cargoDate <= dayEnd;
+      const count = cargos.filter(c => {
+        const d = new Date(c.updatedAt || c.createdAt);
+        return d >= dayStart && d <= dayEnd;
       }).length;
 
-      return { name: day, value: cargosOnDay };
+      const label = days <= 7
+        ? dayDate.toLocaleDateString('en-US', { weekday: 'short' })
+        : dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      return { name: label, value: count };
     });
-  }, [cargos]);
+  }, [cargos, chartPeriod]);
 
   // Sync horizontal menu with tabs (currently unused)
   // const handleNavClick = (tabName: string) => {
@@ -735,7 +764,7 @@ const CargoOwnerDashboard = () => {
                       <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center">
                         <Package className="w-5 h-5 text-slate-300" />
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No drafts or created cargos yet</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No cargo activity yet</p>
                     </div>
                   </td>
                 </tr>
@@ -961,15 +990,41 @@ const CargoOwnerDashboard = () => {
                     <div className="p-3 rounded-2xl bg-blue-50 text-[#345E85]">
                       <BarChart3 className="w-6 h-6" />
                     </div>
-                    <select className="text-[10px] font-black uppercase tracking-widest border-none bg-slate-50 rounded-xl px-4 py-2 outline-none hover:bg-slate-100 transition-colors">
-                      <option>Last 7 Days</option>
-                      <option>Last 30 Days</option>
+                    <select
+                      value={chartPeriod}
+                      onChange={e => setChartPeriod(e.target.value as '7' | '30')}
+                      className="text-[10px] font-black uppercase tracking-widest border-none bg-slate-50 rounded-xl px-4 py-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <option value="7">Last 7 Days</option>
+                      <option value="30">Last 30 Days</option>
                     </select>
                   </div>
                 </div>
                 <div className="h-72 w-full mt-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={cargoActivityData}>
+                    <LineChart data={cargoActivityData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8', textTransform: 'uppercase' }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval={chartPeriod === '30' ? 4 : 0}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={30}
+                      />
+                      <Tooltip
+                        contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '12px', padding: '8px 14px' }}
+                        labelStyle={{ color: '#94a3b8', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}
+                        itemStyle={{ color: '#fff', fontSize: 12, fontWeight: 900 }}
+                        formatter={(value: number) => [value, 'Cargos']}
+                        cursor={{ stroke: '#345E85', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      />
                       <defs>
                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#345E85" stopOpacity={0.1} />
@@ -981,8 +1036,8 @@ const CargoOwnerDashboard = () => {
                         dataKey="value"
                         stroke="#345E85"
                         strokeWidth={4}
-                        dot={{ r: 6, fill: '#345E85', strokeWidth: 2, stroke: '#fff' }}
-                        activeDot={{ r: 8, strokeWidth: 0 }}
+                        dot={{ r: 5, fill: '#345E85', strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 7, fill: '#345E85', stroke: '#fff', strokeWidth: 2 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -1055,7 +1110,7 @@ const CargoOwnerDashboard = () => {
                 <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
                   {[
                     { icon: Gavel, label: 'Global Bidding', value: biddingData.activeAuctions, sub: `Pending: ${biddingData.pendingBids}`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/bidding') },
-                    { icon: Zap, label: 'Smart Matching', value: matchingData.matchRecommendations, sub: `Success: ${formatNumber(matchingData.matchSuccessRate)}%`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos?filter=matching') },
+                    { icon: Zap, label: 'Smart Matching', value: matchingData.matchRecommendations, sub: `Success: ${formatNumber(matchingData.matchSuccessRate)}%`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/smart-matching') },
                   ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
                     <div
                       key={label}
@@ -1107,7 +1162,7 @@ const CargoOwnerDashboard = () => {
                 {/* Circular cards row */}
                 <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
                   {[
-                    { icon: CreditCard, label: 'Available Balance', value: formatCurrency((Number(stats.totalValue) || 0) * 0.15), sub: '75% utilization', colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: undefined },
+                    { icon: CreditCard, label: 'Available Balance', value: creditBalance.loading ? '...' : `${creditBalance.currentBalance.toLocaleString()} TRX`, sub: `Total cargo value: ${formatCurrency(stats.totalValue)}`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/credits') },
                     { icon: AlertCircle, label: 'Accounts Payable', value: paymentData.pendingPayments, sub: `Value: ${formatCurrency(paymentData.totalAmount)}`, colorClass: 'bg-amber-50 text-amber-500', secondaryColor: 'text-amber-500', onClick: () => navigate('/dashboard/financial') },
                   ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
                     <div
@@ -1240,7 +1295,7 @@ const CargoOwnerDashboard = () => {
           // Refresh cargo data
           const refreshData = async () => {
             try {
-              const cargoData = await fetchCargos(1, '', {});
+              const cargoData = await fetchCargos(1, '', { limit: 50 });
               setCargos(Array.isArray(cargoData) ? cargoData : []);
             } catch (error) {
               console.error('Error refreshing cargos:', error);
@@ -1259,7 +1314,7 @@ const CargoOwnerDashboard = () => {
           // Refresh cargo data
           const refreshData = async () => {
             try {
-              const cargoData = await fetchCargos(1, '', {});
+              const cargoData = await fetchCargos(1, '', { limit: 50 });
               setCargos(Array.isArray(cargoData) ? cargoData : []);
             } catch (error) {
               console.error('Error refreshing cargos:', error);
@@ -1288,7 +1343,7 @@ const CargoOwnerDashboard = () => {
           // Refresh cargo data and optionally navigate to matches/bids
           const refreshData = async () => {
             try {
-              const cargoData = await fetchCargos(1, '', {});
+              const cargoData = await fetchCargos(1, '', { limit: 50 });
               setCargos(Array.isArray(cargoData) ? cargoData : []);
             } catch (error) {
               console.error('Error refreshing cargos:', error);

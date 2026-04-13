@@ -35,6 +35,8 @@ const PredictiveLogistics = lazy(() => import('./components/Analytics/Predictive
 
 // Lazy load all page components to reduce initial bundle size
 const CargoList = lazy(() => import('./pages/dashboard/cargos/list'));
+const CargoSmartMatching = lazy(() => import('./pages/dashboard/CargoSmartMatching'));
+const AcceptedMatches = lazy(() => import('./pages/dashboard/AcceptedMatches'));
 const CargoOwnerContracts = lazy(() => import('./pages/cargo-owner/Contracts'));
 const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
@@ -225,6 +227,8 @@ function App() {
                       <Route path="bidding" element={<UnifiedBiddingManagement />} />
                       <Route path="my-bids" element={<UnifiedBiddingManagement />} />
                       <Route path="contracts" element={<CargoOwnerContracts />} />
+                      <Route path="smart-matching" element={<CargoSmartMatching />} />
+                      <Route path="accepted-matches" element={<AcceptedMatches />} />
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
                       <Route path="analytics" element={<MasterNeuralOverview />} />

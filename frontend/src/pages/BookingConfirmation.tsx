@@ -1,246 +1,203 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaCheckCircle, FaTimesCircle, FaShieldAlt, FaDollarSign, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
-import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
+import { FaCheckCircle, FaTimesCircle, FaShieldAlt, FaDollarSign, FaClock, FaMapMarkerAlt, FaTruck, FaUser } from 'react-icons/fa';
+import { Package, ArrowLeft, ArrowRight } from 'lucide-react';
+import api from '../services/api';
 import toast from 'react-hot-toast';
-
-interface BookingData {
-  matchId: string;
-  loadId: string;
-  truckId: string;
-  driverId: string;
-  agreedPrice: number;
-  terms: any;
-  status: 'PENDING' | 'CONFIRMED' | 'REJECTED';
-}
 
 const BookingConfirmation: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
-  const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching booking data
-    setTimeout(() => {
-      setBookingData({
-        matchId: matchId || '',
-        loadId: 'load-123',
-        truckId: 'truck-456',
-        driverId: 'driver-789',
-        agreedPrice: 2500,
-        terms: {
-          paymentTerms: 'escrow',
-          deliveryTime: '48 hours',
-          insuranceRequired: true,
-          specialHandling: ['fragile', 'temperature-controlled']
-        },
-        status: 'PENDING'
-      });
-      setLoading(false);
-    }, 1000);
+    if (!matchId) return;
+    const fetchMatch = async () => {
+      try {
+        // Fetch the LoadMatch record with load + truck details
+        const res = await api.get(`/matching/truck-owner/matches`);
+        const body = res.data;
+        const all: any[] = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        const found = all.find((m: any) => m.id === matchId);
+        if (found) {
+          setMatch(found);
+        } else {
+          // Try fetching directly if not in list
+          const direct = await api.get(`/matching/${matchId}`).catch(() => null);
+          setMatch(direct?.data?.data || direct?.data || null);
+        }
+      } catch {
+        toast.error('Failed to load booking details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMatch();
   }, [matchId]);
 
-  const handleConfirmBooking = async () => {
+  const handleConfirm = async () => {
     setConfirming(true);
     try {
-      if (!matchId) throw new Error('No match ID found');
-
-      await cargoOwnerAPI.confirmBooking(matchId, {
-        status: 'CONFIRMED',
-        agreedPrice: bookingData?.agreedPrice,
-        paymentTerms: bookingData?.terms?.paymentTerms,
-        confirmedAt: new Date().toISOString()
-      });
-
-      toast.success('Booking confirmed successfully');
-
-      // Navigate to contract negotiation
-      navigate(`/dashboard/contract-negotiation/booking-${matchId}`);
-    } catch (error: any) {
-      console.error('Error confirming booking:', error);
-      toast.error(error.message || 'Failed to confirm booking');
+      await api.post(`/matching/${matchId}/create-trip`);
+      toast.success('Booking confirmed — trip created');
+      navigate('/dashboard/tracking');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to confirm booking');
     } finally {
       setConfirming(false);
     }
   };
 
-  const handleRejectBooking = () => {
-    navigate('/dashboard/match-results');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading booking details...</p>
-        </div>
+  if (loading) return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-4 border-[#345E85]/20 border-t-[#345E85] rounded-full animate-spin" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading booking details...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!bookingData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FaTimesCircle className="text-red-500 text-4xl mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Booking Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested booking could not be found.</p>
-          <button
-            onClick={() => navigate('/dashboard/match-results')}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
-          >
-            Back to Matches
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!match) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <FaTimesCircle className="text-red-400 text-4xl" />
+      <p className="text-sm font-black text-slate-700">Booking not found</p>
+      <button onClick={() => navigate('/dashboard/smart-matching')}
+        className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
+        Back to Matching
+      </button>
+    </div>
+  );
+
+  const load = match.load;
+  const truck = match.truck;
+  const matchDetails = match.matchDetails || {};
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
-            <h1 className="text-2xl font-bold text-white">Booking Confirmation</h1>
-            <p className="text-primary-100 mt-1">Review and confirm your booking details</p>
+    <div className="space-y-6 pb-16">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate('/dashboard/smart-matching')}
+          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Booking Confirmation</h1>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Review and confirm your booking details</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Cargo Details */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-4 h-4 text-[#345E85]" />
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Cargo Details</h2>
           </div>
-
-          <div className="p-6">
-            {/* Booking Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <FaCheckCircle className="text-green-500" />
-                  Booking Summary
-                </h2>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Match ID:</span>
-                    <span className="font-medium">{bookingData.matchId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Agreed Price:</span>
-                    <span className="font-medium text-green-600">${bookingData.agreedPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${bookingData.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                      bookingData.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                      {bookingData.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <FaShieldAlt className="text-blue-500" />
-                  Payment & Security
-                </h2>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Method:</span>
-                    <span className="font-medium">Escrow</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Insurance:</span>
-                    <span className="font-medium text-green-600">Required</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery Time:</span>
-                    <span className="font-medium">48 hours</span>
-                  </div>
-                </div>
-              </div>
+          {load ? (
+            <div className="space-y-3">
+              <Row label="Title" value={load.title || `Cargo ${load.id?.slice(0, 8)}`} />
+              <Row label="Weight" value={`${Number(load.weight).toLocaleString()} kg`} />
+              <Row label="Type" value={load.cargoType || 'General'} />
+              <Row label="Value" value={load.loadValue ? `$${Number(load.loadValue).toLocaleString()}` : '—'} />
+              <Row label="Pickup" value={load.origin?.city || load.pickupLocation?.name || '—'} />
+              <Row label="Delivery" value={load.destination?.city || load.deliveryLocation?.name || '—'} />
+              <Row label="Pickup Date" value={load.pickupDate ? new Date(load.pickupDate).toLocaleDateString() : '—'} />
             </div>
+          ) : (
+            <p className="text-xs text-slate-400">Load details unavailable</p>
+          )}
+        </div>
 
-            {/* Terms & Conditions */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms & Conditions</h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <FaClock className="text-blue-500 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Delivery Timeline</h4>
-                    <p className="text-sm text-gray-600">Delivery must be completed within 48 hours of pickup</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <FaDollarSign className="text-green-500 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Payment Terms</h4>
-                    <p className="text-sm text-gray-600">Payment will be held in escrow until delivery confirmation</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <FaShieldAlt className="text-purple-500 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Insurance Coverage</h4>
-                    <p className="text-sm text-gray-600">Full insurance coverage required for this shipment</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <FaMapMarkerAlt className="text-red-500 mt-1" />
-                  <div>
-                    <h4 className="font-medium text-gray-900">Special Handling</h4>
-                    <p className="text-sm text-gray-600">Fragile cargo with temperature-controlled requirements</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={handleConfirmBooking}
-                disabled={confirming}
-                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {confirming ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Confirming...
-                  </>
-                ) : (
-                  <>
-                    <FaCheckCircle />
-                    Confirm Booking
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={handleRejectBooking}
-                className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700 flex items-center justify-center gap-2"
-              >
-                <FaTimesCircle />
-                Reject Booking
-              </button>
-            </div>
-
-            {/* Additional Info */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Contract negotiation will begin</li>
-                <li>• Escrow account will be set up</li>
-                <li>• Payment processing will be initiated</li>
-                <li>• Trip planning and scheduling</li>
-              </ul>
-            </div>
+        {/* Truck Details */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FaTruck className="text-[#345E85]" />
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Truck Details</h2>
           </div>
+          {truck ? (
+            <div className="space-y-3">
+              <Row label="Plate" value={truck.plateNumber || '—'} />
+              <Row label="Make / Model" value={`${truck.make || ''} ${truck.model || ''}`.trim() || '—'} />
+              <Row label="Type" value={truck.truckType || '—'} />
+              <Row label="Capacity" value={`${Number(truck.capacityWeight).toLocaleString()} kg`} />
+              <Row label="GPS" value={truck.hasGps ? '✅ Yes' : '❌ No'} />
+              <Row label="Refrigeration" value={truck.hasRefrigeration ? '✅ Yes' : '❌ No'} />
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Truck details unavailable</p>
+          )}
+        </div>
+
+        {/* Match Summary */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FaCheckCircle className="text-green-500" />
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Match Summary</h2>
+          </div>
+          <div className="space-y-3">
+            <Row label="Match Score" value={`${Math.round((match.score || 0) * 100)}%`} highlight />
+            <Row label="Estimated Cost" value={matchDetails.estimatedCost ? `$${Number(matchDetails.estimatedCost).toLocaleString()}` : '—'} />
+            <Row label="Distance" value={matchDetails.distanceKm ? `${matchDetails.distanceKm} km` : '—'} />
+            <Row label="Match Reason" value={matchDetails.matchReason || '—'} />
+            <Row label="Status" value={match.status} />
+          </div>
+        </div>
+
+        {/* Payment & Terms */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FaShieldAlt className="text-[#345E85]" />
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Payment & Terms</h2>
+          </div>
+          <div className="space-y-4">
+            {[
+              { icon: FaDollarSign, color: 'text-green-500', title: 'Payment Method', desc: 'Payment held in escrow until delivery confirmation' },
+              { icon: FaClock, color: 'text-blue-500', title: 'Delivery Timeline', desc: 'Delivery must be completed within the agreed schedule' },
+              { icon: FaShieldAlt, color: 'text-purple-500', title: 'Insurance', desc: 'Full insurance coverage required for this shipment' },
+              { icon: FaMapMarkerAlt, color: 'text-red-500', title: 'Tracking', desc: 'Real-time GPS tracking throughout the journey' },
+            ].map(({ icon: Icon, color, title, desc }) => (
+              <div key={title} className="flex items-start gap-3">
+                <Icon className={`${color} mt-0.5 shrink-0`} />
+                <div>
+                  <p className="text-xs font-black text-slate-700">{title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+          Confirming will create a trip and notify the truck owner
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => navigate('/dashboard/smart-matching')}
+            className="px-5 py-3 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors flex items-center gap-2">
+            <FaTimesCircle /> Cancel
+          </button>
+          <button onClick={handleConfirm} disabled={confirming}
+            className="px-6 py-3 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2">
+            {confirming
+              ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Confirming...</>
+              : <><FaCheckCircle /> Confirm Booking <ArrowRight className="w-3.5 h-3.5" /></>
+            }
+          </button>
         </div>
       </div>
     </div>
   );
 };
+
+const Row = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <div className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+    <span className={`text-xs font-black ${highlight ? 'text-[#345E85]' : 'text-slate-700'}`}>{value}</span>
+  </div>
+);
 
 export default BookingConfirmation;

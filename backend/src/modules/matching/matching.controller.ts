@@ -317,6 +317,25 @@ export class MatchingController {
     }
   }
 
+  @Get('cargo-owner/matches')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get accepted matches for cargo owner',
+    description: 'Returns matches that truck owners have accepted for the cargo owner\'s loads.',
+  })
+  async getMatchesForCargoOwner(@Request() req) {
+    try {
+      const userId = req.user.id || req.user.sub || req.user.userId;
+      const tenantId = req.user.tenantId;
+      if (!userId) throw new BadRequestException('User ID not found in token');
+      const matches = await this.matchingService.getMatchesForCargoOwner(userId, tenantId);
+      return { message: 'Matches retrieved successfully', data: matches, count: matches.length };
+    } catch (error) {
+      this.logger.error('Error in getMatchesForCargoOwner', error);
+      throw new InternalServerErrorException('Failed to retrieve matches');
+    }
+  }
+
   @Post('request')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Request a specific truck match (Cargo Owner)' })

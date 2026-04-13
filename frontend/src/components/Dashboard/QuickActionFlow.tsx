@@ -57,7 +57,7 @@ const QuickActionFlow: React.FC<QuickActionFlowProps> = ({ isOpen, onClose, onCo
 
   const handleViewResults = () => {
     if (selectedJourney === 'smart') {
-      navigate(`/dashboard/cargo/${createdCargoId}/smart-matching`);
+      navigate(`/dashboard/smart-matching?cargoId=${createdCargoId}`);
     } else {
       navigate(`/dashboard/cargo/${createdCargoId}/bidding`);
     }
