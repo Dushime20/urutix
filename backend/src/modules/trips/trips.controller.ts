@@ -234,6 +234,17 @@ export class TripsController {
     };
   }
 
+  @Patch(':id/assign-driver')
+  @ApiOperation({ summary: 'Assign a driver to a trip' })
+  async assignDriverToTrip(
+    @Param('id') id: string,
+    @Body() body: { driverId: string },
+    @Request() req,
+  ) {
+    const updated = await this.tripsService.assignDriver(id, body.driverId, req.user.tenantId);
+    return { success: true, message: 'Driver assigned successfully', data: updated };
+  }
+
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Update trip status',

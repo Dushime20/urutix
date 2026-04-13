@@ -298,6 +298,86 @@ const Tracking: React.FC = () => {
           }));
 
           setShipments(mappedShipments);
+        } else if (user?.role === 'CARGO_OWNER') {
+          // Fetch real trips for cargo owner from /trips endpoint
+          try {
+            const { default: api } = await import('../services/api');
+            const res = await api.get('/trips', { params: { limit: 50, page: 1 } });
+            const body = res.data;
+            const allTrips: any[] = Array.isArray(body?.data?.trips)
+              ? body.data.trips
+              : Array.isArray(body?.trips)
+                ? body.trips
+                : Array.isArray(body?.data)
+                  ? body.data
+                  : [];
+
+            // Filter to active trips only
+            const activeTrips = allTrips.filter((t: any) =>
+              ['PLANNED', 'IN_PROGRESS', 'DELAYED'].includes(t.status)
+            );
+
+            const mapped: Shipment[] = activeTrips.map((trip: any) => {
+              const load = trip.load || {};
+              const truck = trip.truck || {};
+              const driver = trip.driver || {};
+              const pickup = load.origin || load.pickupLocation || {};
+              const delivery = load.destination || load.deliveryLocation || {};
+
+              // Calculate progress based on status
+              const progress = trip.status === 'IN_PROGRESS' ? 50
+                : trip.status === 'COMPLETED' ? 100
+                : trip.status === 'PLANNED' ? 0 : 30;
+
+              return {
+                id: trip.id,
+                cargoId: trip.tripNumber || trip.id.slice(0, 8).toUpperCase(),
+                cargoTitle: load.title || `Trip ${trip.tripNumber || trip.id.slice(0, 8)}`,
+                status: trip.status === 'IN_PROGRESS' ? 'IN_TRANSIT'
+                  : trip.status === 'PLANNED' ? 'PICKED_UP'
+                  : trip.status as any,
+                pickupLocation: {
+                  name: pickup.city || pickup.name || pickup.address || 'Pickup',
+                  address: pickup.address || pickup.city || '',
+                  latitude: pickup.lat || pickup.latitude || -1.2921,
+                  longitude: pickup.lng || pickup.longitude || 36.8219,
+                },
+                deliveryLocation: {
+                  name: delivery.city || delivery.name || delivery.address || 'Delivery',
+                  address: delivery.address || delivery.city || '',
+                  latitude: delivery.lat || delivery.latitude || -4.0435,
+                  longitude: delivery.lng || delivery.longitude || 39.6682,
+                },
+                currentLocation: {
+                  latitude: -2.5,
+                  longitude: 38.0,
+                  timestamp: trip.updatedAt || new Date().toISOString(),
+                },
+                driver: {
+                  name: driver.firstName ? `${driver.firstName} ${driver.lastName || ''}`.trim() : 'Assigned Driver',
+                  phone: driver.phone || driver.phoneNumber || '',
+                },
+                vehicle: {
+                  plateNumber: truck.plateNumber || '—',
+                  type: truck.truckType || truck.model || 'Truck',
+                },
+                estimatedDelivery: trip.plannedEndTime || trip.estimatedEndTime || new Date().toISOString(),
+                actualPickup: trip.actualStartTime,
+                progress,
+                milestones: [
+                  { type: 'PICKUP' as const, location: pickup.city || 'Pickup', timestamp: trip.actualStartTime, status: trip.actualStartTime ? 'COMPLETED' as const : 'PENDING' as const },
+                  { type: 'IN_TRANSIT' as const, location: 'En Route', timestamp: undefined, status: trip.status === 'IN_PROGRESS' ? 'CURRENT' as const : trip.status === 'COMPLETED' ? 'COMPLETED' as const : 'PENDING' as const },
+                  { type: 'DELIVERY' as const, location: delivery.city || 'Delivery', timestamp: trip.actualEndTime, status: trip.actualEndTime ? 'COMPLETED' as const : 'PENDING' as const },
+                ],
+                etaConfidence: 85,
+                distanceRemaining: trip.distance ? Math.round(Number(trip.distance) * 0.4) : undefined,
+              };
+            });
+
+            setShipments(mapped);
+          } catch {
+            setShipments([]);
+          }
         } else {
           // Default dummy data for non-receivers
           setShipments([
@@ -542,7 +622,15 @@ const Tracking: React.FC = () => {
           </div>
 
           <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
-            {shipments.map((shipment) => (
+            {shipments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+                <div className="size-14 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4">
+                  <Truck className="w-6 h-6 text-slate-300" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">No active shipments</p>
+                <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Trips will appear here once started</p>
+              </div>
+            ) : shipments.map((shipment) => (
               <div
                 key={shipment.id}
                 className={cn(

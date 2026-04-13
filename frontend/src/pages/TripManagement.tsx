@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Truck,
   User,
@@ -14,8 +14,10 @@ import {
   ArrowUpDown,
   LayoutGrid,
   List,
+  UserPlus,
 } from 'lucide-react';
 import { tripsAPI } from '../services/api';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { cn } from '../utils/cn';
@@ -51,8 +53,14 @@ interface SortConfig {
 }
 
 const TripManagement: React.FC = () => {
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'planned' | 'in_progress' | 'completed' | 'cancelled'>('all');
   const [search, setSearch] = useState('');
+  const [assigningDriver, setAssigningDriver] = useState(false);
+  const [truckDrivers, setTruckDrivers] = useState<any[]>([]);
+  const [selectedDriverId, setSelectedDriverId] = useState('');
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [showAssignPanel, setShowAssignPanel] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
@@ -165,6 +173,58 @@ const TripManagement: React.FC = () => {
   });
 
   // Helper Functions
+  const loadTruckDrivers = async (truckId: string) => {
+    if (!truckId) return;
+    setLoadingDrivers(true);
+    try {
+      // Fetch all drivers in tenant — response shape: { drivers: [...] }
+      const driversRes = await api.get('/fleet/drivers');
+      const body = driversRes.data;
+      const allDrivers: any[] = Array.isArray(body?.drivers)
+        ? body.drivers
+        : Array.isArray(body?.data)
+          ? body.data
+          : Array.isArray(body)
+            ? body
+            : [];
+
+      // Try to get drivers specifically assigned to this truck
+      let filtered = allDrivers;
+      try {
+        const truckRes = await api.get(`/fleet/trucks/${truckId}`);
+        const truck = truckRes.data?.data || truckRes.data;
+        const assignedIds: string[] = (truck?.assignedDrivers || []).map((d: any) => d.driverId);
+        if (assignedIds.length > 0) {
+          filtered = allDrivers.filter((d: any) => assignedIds.includes(d.id));
+        }
+      } catch {
+        // fallback to all active drivers
+        filtered = allDrivers.filter((d: any) => d.status === 'ACTIVE' || d.availabilityStatus === 'AVAILABLE');
+      }
+
+      setTruckDrivers(filtered);
+    } catch {
+      toast.error('Failed to load drivers');
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
+
+  const handleAssignDriver = async () => {
+    if (!selectedTrip || !selectedDriverId) return;
+    setAssigningDriver(true);
+    try {
+      await api.patch(`/trips/${selectedTrip.id}/assign-driver`, { driverId: selectedDriverId });
+      toast.success('Driver assigned successfully');
+      setSelectedDriverId('');
+      queryClient.invalidateQueries({ queryKey: ['trips'] });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to assign driver');
+    } finally {
+      setAssigningDriver(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'COMPLETED': return 'bg-emerald-100 text-emerald-700';
@@ -659,9 +719,98 @@ const TripManagement: React.FC = () => {
                       <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm border border-slate-50 dark:border-slate-800">
                         <User size={18} />
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Driver</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.driverName}</p>
+                        {selectedTrip.driverName && selectedTrip.driverName !== 'Unassigned' ? (
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.driverName}</p>
+                        ) : (
+                          <div className="mt-1 space-y-3">
+                            <p className="text-xs font-bold text-amber-500">No driver assigned</p>
+
+                            {/* Toggle assign panel */}
+                            {!showAssignPanel && (
+                              <button
+                                onClick={async () => {
+                                  setShowAssignPanel(true);
+                                  await loadTruckDrivers(selectedTrip.truckId);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#345E85] hover:bg-slate-800 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors"
+                              >
+                                <UserPlus size={11} /> Assign Driver
+                              </button>
+                            )}
+
+                            {/* Assignment panel */}
+                            {showAssignPanel && (
+                              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                  Select a driver for this trip
+                                </p>
+
+                                {loadingDrivers ? (
+                                  <div className="flex items-center gap-2 py-2">
+                                    <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#345E85] rounded-full animate-spin" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Loading drivers...</span>
+                                  </div>
+                                ) : truckDrivers.length === 0 ? (
+                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest py-1">
+                                    No drivers found for this truck
+                                  </p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {truckDrivers.map((d: any) => (
+                                      <label
+                                        key={d.id}
+                                        className={cn(
+                                          'flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all',
+                                          selectedDriverId === d.id
+                                            ? 'border-[#345E85] bg-[#345E85]/5 dark:bg-blue-900/10'
+                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800'
+                                        )}
+                                      >
+                                        <input
+                                          type="radio"
+                                          name="driver"
+                                          value={d.id}
+                                          checked={selectedDriverId === d.id}
+                                          onChange={() => setSelectedDriverId(d.id)}
+                                          className="accent-[#345E85]"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
+                                            {d.firstName} {d.lastName}
+                                          </p>
+                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                            {d.status || d.availabilityStatus || 'Available'}
+                                          </p>
+                                        </div>
+                                      </label>
+                                    ))}
+                                  </div>
+                                )}
+
+                                <div className="flex gap-2 pt-1">
+                                  <button
+                                    onClick={handleAssignDriver}
+                                    disabled={!selectedDriverId || assigningDriver || loadingDrivers}
+                                    className="flex-1 py-2 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 disabled:cursor-not-allowed text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
+                                  >
+                                    {assigningDriver
+                                      ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Assigning...</>
+                                      : <><CheckCircle size={11} /> Confirm</>
+                                    }
+                                  </button>
+                                  <button
+                                    onClick={() => { setShowAssignPanel(false); setSelectedDriverId(''); setTruckDrivers([]); }}
+                                    className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="p-4 bg-[#345E85]/5 dark:bg-blue-900/10 rounded-2xl border border-[#345E85]/10 dark:border-blue-800/20">
@@ -733,7 +882,7 @@ const TripManagement: React.FC = () => {
               {/* Footer Actions */}
               <div className="flex justify-end pt-6 border-t border-slate-50">
                 <button
-                  onClick={() => setSelectedTrip(null)}
+                  onClick={() => { setSelectedTrip(null); setTruckDrivers([]); setSelectedDriverId(''); setShowAssignPanel(false); }}
                   className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors"
                 >
                   Close Details

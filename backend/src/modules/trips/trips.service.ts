@@ -106,6 +106,12 @@ export class TripsService {
     return trip;
   }
 
+  async assignDriver(id: string, driverId: string, tenantId: string): Promise<Trip> {
+    const trip = await this.findOne(id, tenantId);
+    trip.driverId = driverId;
+    return this.tripRepository.save(trip);
+  }
+
   async getActiveTrips(tenantId: string): Promise<Trip[]> {
     return this.tripRepository.find({
       where: {
