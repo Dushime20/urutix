@@ -15,6 +15,7 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreditService } from '../../services/credit.service';
 import { CreditAccount } from '../../entities/credit-account.entity';
 import { CreditTransaction } from '../../entities/credit-transaction.entity';
+import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { MatchingService } from './matching.service';
 import { MatchingController } from './matching.controller';
 import { AIMatchingEngineService } from './services/ai-matching-engine.service';
@@ -35,6 +36,7 @@ import { NotificationModule } from '../notifications/notification.module';
     TypeOrmModule.forFeature([
       Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch,
       User, TenantSubscription, SubscriptionPlan, CreditAccount, CreditTransaction,
+      FeatureCreditCost,
     ]),
     EventEmitterModule.forRoot(),
     ConfigModule,
