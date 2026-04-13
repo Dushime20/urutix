@@ -9,6 +9,12 @@ import { Location } from '../../entities/location.entity';
 import { Trip } from '../../entities/trip.entity';
 import { LoadMatch } from '../../entities/load-match.entity';
 import { RateLimit } from './entities/rate-limit.entity';
+import { User } from '../../entities/user.entity';
+import { TenantSubscription } from '../../entities/tenant-subscription.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { CreditService } from '../../services/credit.service';
+import { CreditAccount } from '../../entities/credit-account.entity';
+import { CreditTransaction } from '../../entities/credit-transaction.entity';
 import { MatchingService } from './matching.service';
 import { MatchingController } from './matching.controller';
 import { AIMatchingEngineService } from './services/ai-matching-engine.service';
@@ -26,13 +32,17 @@ import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch]),
+    TypeOrmModule.forFeature([
+      Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch,
+      User, TenantSubscription, SubscriptionPlan, CreditAccount, CreditTransaction,
+    ]),
     EventEmitterModule.forRoot(),
     ConfigModule,
     NotificationModule,
   ],
   providers: [
     MatchingService,
+    CreditService,
     AIMatchingEngineService,
     EnhancedTruckMatchingService,
     PerformanceScoringService,

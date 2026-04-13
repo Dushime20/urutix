@@ -8,7 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not } from 'typeorm';
+import { Repository, In, Not, IsNull } from 'typeorm';
 import {
   Load,
   LoadStatus,
@@ -28,6 +28,10 @@ import { LoadMatch, MatchStatus } from '../../entities/load-match.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
+import { User, UserRole } from '../../entities/user.entity';
+import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
+import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { CreditService } from '../../services/credit.service';
 
 // Enhanced matching algorithms
 import { HungarianAlgorithm } from './algorithms/hungarian.algorithm';
@@ -46,7 +50,6 @@ import {
   NotificationChannel,
   EntityType,
 } from '../../entities/notification.entity';
-import { User } from '../../entities/user.entity';
 
 // =====================================================
 // CONSOLIDATED MATCHING INTERFACES
@@ -175,11 +178,18 @@ export class MatchingService {
     private readonly locationRepository: Repository<Location>,
     @InjectRepository(LoadMatch)
     private readonly loadMatchRepository: Repository<LoadMatch>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(TenantSubscription)
+    private readonly tenantSubscriptionRepository: Repository<TenantSubscription>,
+    @InjectRepository(SubscriptionPlan)
+    private readonly subscriptionPlanRepository: Repository<SubscriptionPlan>,
     // Enhanced services for consolidated matching
     private readonly cacheService: CacheService,
     private readonly marketIntelligence: MarketIntelligenceService,
     private readonly mlPrediction: MLPredictionService,
     private readonly notificationService: NotificationService,
+    private readonly creditService: CreditService,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
@@ -644,6 +654,85 @@ export class MatchingService {
   async requestMatch(loadId: string, truckId: string, tenantId: string): Promise<LoadMatch> {
     this.logger.log(`📥 requestMatch called: loadId=${loadId}, truckId=${truckId}, tenantId=${tenantId}`);
 
+    // Get load and truck details for credit validation
+    const load = await this.loadRepository.findOne({
+      where: { id: loadId },
+    });
+
+    const truck = await this.truckRepository.findOne({
+      where: { id: truckId },
+      relations: ['owner', 'owner.profile'],
+    });
+
+    if (!load) {
+      throw new NotFoundException('Load not found');
+    }
+
+    if (!truck) {
+      throw new NotFoundException('Truck not found');
+    }
+
+    // CREDIT VALIDATION: Check if truck owner has enough credits before sending match request
+    try {
+      // Get tenant admin user
+      const tenantAdminUser = await this.userRepository.findOne({
+        where: { tenantId, role: UserRole.TENANT_ADMIN },
+      });
+
+      if (!tenantAdminUser) {
+        throw new NotFoundException('Tenant admin not found for this tenant');
+      }
+
+      // Get tenant admin's subscription plan to determine credit rates
+      let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+        where: { 
+          tenantId, 
+          userId: IsNull(), // Tenant-level subscription
+          status: SubscriptionStatus.ACTIVE 
+        },
+        relations: ['plan'],
+        order: { createdAt: 'DESC' },
+      });
+
+      // If no tenant-level subscription, try user-level subscription
+      if (!tenantAdminSubscription) {
+        tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+          where: { 
+            tenantId, 
+            userId: tenantAdminUser.id,
+            status: SubscriptionStatus.ACTIVE 
+          },
+          relations: ['plan'],
+          order: { createdAt: 'DESC' },
+        });
+      }
+
+      if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
+        throw new BadRequestException(
+          'Tenant admin must have an active subscription plan to enable AI matching',
+        );
+      }
+
+      // Calculate required credits
+      const cargoWeightTons = load.weight / 1000; // Convert kg to tons
+      const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
+      const truckOwnerCreditsNeeded = Math.ceil(cargoWeightTons * creditsPerTonTruckOwner);
+
+      // Check truck owner's credit balance
+      const truckOwnerAccount = await this.creditService.getOrCreateCreditAccount(tenantId, truck.ownerId);
+
+      if (truckOwnerAccount.currentBalance < truckOwnerCreditsNeeded) {
+        throw new BadRequestException(
+          `Truck owner has insufficient credits to accept this cargo. Required: ${truckOwnerCreditsNeeded}, Available: ${truckOwnerAccount.currentBalance}`,
+        );
+      }
+
+      this.logger.log(`✅ Credit validation passed - Truck owner has sufficient credits (${truckOwnerAccount.currentBalance} >= ${truckOwnerCreditsNeeded})`);
+    } catch (error) {
+      this.logger.error(`❌ Credit validation failed: ${error.message}`);
+      throw error;
+    }
+
     // Check if match already exists
     let match = await this.loadMatchRepository.findOne({
       where: { loadId, truckId },
@@ -668,17 +757,6 @@ export class MatchingService {
 
     // Send notification to truck owner
     try {
-      // Get the load details to find the cargo owner
-      const load = await this.loadRepository.findOne({
-        where: { id: loadId },
-      });
-
-      // Get the truck details with owner
-      const truck = await this.truckRepository.findOne({
-        where: { id: truckId },
-        relations: ['owner', 'owner.profile'],
-      });
-
       if (load && truck && truck.owner) {
         // Get cargo owner's profile information directly
         const userProfileRepo = this.loadRepository.manager.getRepository(UserProfile);
@@ -727,7 +805,7 @@ export class MatchingService {
 
   /**
    * Handle truck owner's response to a match request
-   * When ACCEPTED: Creates trip, updates load/truck status, sends notifications
+   * When ACCEPTED: Validates and deducts credits, creates trip, updates load/truck status, sends notifications
    */
   async respondToMatch(matchId: string, status: MatchStatus): Promise<LoadMatch> {
     const match = await this.loadMatchRepository.findOne({
@@ -737,6 +815,98 @@ export class MatchingService {
 
     if (!match) {
       throw new NotFoundException(`Match ${matchId} not found`);
+    }
+
+    // If accepting, perform credit deduction BEFORE updating match status
+    if (status === MatchStatus.ACCEPTED) {
+      this.logger.log(`🎉 Match ${matchId} being ACCEPTED - Validating and deducting credits`);
+      
+      try {
+        // Get load and truck details
+        const load = await this.loadRepository.findOne({
+          where: { id: match.loadId }
+        });
+
+        const truck = await this.truckRepository.findOne({
+          where: { id: match.truckId }
+        });
+
+        if (!load || !truck) {
+          throw new NotFoundException('Load or Truck not found for match acceptance');
+        }
+
+        // Get tenant admin user
+        const tenantAdminUser = await this.userRepository.findOne({
+          where: { tenantId: match.tenantId, role: UserRole.TENANT_ADMIN },
+        });
+
+        if (!tenantAdminUser) {
+          throw new NotFoundException('Tenant admin not found for this tenant');
+        }
+
+        // Get tenant admin's subscription plan
+        let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+          where: { 
+            tenantId: match.tenantId, 
+            userId: IsNull(), // Tenant-level subscription
+            status: SubscriptionStatus.ACTIVE 
+          },
+          relations: ['plan'],
+          order: { createdAt: 'DESC' },
+        });
+
+        // If no tenant-level subscription, try user-level subscription
+        if (!tenantAdminSubscription) {
+          tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+            where: { 
+              tenantId: match.tenantId, 
+              userId: tenantAdminUser.id,
+              status: SubscriptionStatus.ACTIVE 
+            },
+            relations: ['plan'],
+            order: { createdAt: 'DESC' },
+          });
+        }
+
+        if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
+          throw new BadRequestException(
+            'Tenant admin must have an active subscription plan to enable AI matching',
+          );
+        }
+
+        // Calculate cargo weight in tons
+        const cargoWeightTons = load.weight / 1000; // Convert kg to tons
+
+        // Use rates from tenant admin's subscription plan
+        const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
+        const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
+
+        this.logger.log(`[MatchingService] Accepting match ${matchId} - Credit deduction details:`);
+        this.logger.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
+        this.logger.log(`  - Using rates from TENANT ADMIN's subscription: ${tenantAdminSubscription.plan.name}`);
+        this.logger.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
+        this.logger.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
+
+        // Perform dual credit deduction (same as bidding system)
+        await this.creditService.consumeCreditsForBid({
+          tenantId: match.tenantId,
+          tenantAdminUserId: tenantAdminUser.id,
+          truckOwnerUserId: truck.ownerId,
+          cargoWeightTons,
+          creditsPerTonTenant,
+          creditsPerTonTruckOwner,
+          bidId: matchId, // Using matchId as reference
+          loadId: load.id,
+          loadTitle: load.title,
+        });
+
+        this.logger.log(`[MatchingService] Credit deduction successful for match ${matchId}`);
+      } catch (error) {
+        this.logger.error(`[MatchingService] Credit deduction failed for match ${matchId}:`, error);
+        throw new BadRequestException(
+          `Failed to process credit deduction: ${error.message}`,
+        );
+      }
     }
 
     // Update match status
