@@ -463,33 +463,61 @@ export class FleetService {
 
     // Safely update only provided fields
     const allowedFields = [
-      'plateNumber',
-      'vin',
-      'make',
-      'model',
-      'year',
-      'color',
-      'fuelType',
-      'capacityWeight',
-      'capacityVolume',
-      'maxLength',
-      'maxWidth',
-      'maxHeight',
-      'truckType',
-      'trailerType',
-      'registrationNumber',
-      'registrationExpiry',
-      'insurancePolicy',
-      'insuranceExpiry',
-      'roadworthyCertExpiry',
-      'status',
-      'hasRefrigeration',
-      'hasLiftGate',
-      'hasGps',
-      'hasHazmatPermit',
-      'mileage',
-      'fuelEfficiency',
-      'isActive',
+      // Basic info
+      'plateNumber', 'vin', 'make', 'model', 'year', 'color', 'fuelType',
+      'truckType', 'trailerType', 'status', 'isActive',
+      // Capacity & dimensions
+      'capacityWeight', 'capacityVolume', 'maxLength', 'maxWidth', 'maxHeight',
+      'mileage', 'fuelEfficiency',
+      // Registration & compliance
+      'registrationNumber', 'registrationExpiry', 'insurancePolicy',
+      'insuranceExpiry', 'roadworthyCertExpiry',
+      'lastMaintenanceDate', 'nextMaintenanceDate',
+      // Core capability flags
+      'hasRefrigeration', 'hasLiftGate', 'hasGps', 'hasHazmatPermit',
+      // Loading equipment (flat booleans)
+      'hasSideRails', 'hasTarps', 'hasStraps', 'hasChains', 'hasWinch',
+      'hasRam', 'hasTailLift', 'hasSideLift', 'hasRollerBed', 'hasDropDeck',
+      'hasExtendable', 'hasLowbed', 'hasStepDeck', 'hasPowerOnly',
+      'hasContainerChassis',
+      // Cargo type capabilities
+      'hasTanker', 'hasBulk', 'hasRefrigerated', 'hasHeated', 'hasVentilated',
+      'hasCurtainSide', 'hasBox', 'hasVan', 'hasPlatform', 'hasCarCarrier',
+      'hasHeavyHaul', 'hasOversized', 'hasHazmat', 'hasDangerousGoods',
+      'hasFoodGrade', 'hasPharmaceutical', 'hasLiquid', 'hasDryBulk', 'hasGas',
+      'hasChemical', 'hasWaste',
+      // Temperature control
+      'hasReefer', 'hasFrozen', 'hasChilled', 'hasAmbient',
+      'hasControlledAtmosphere', 'hasHumidityControl', 'hasTemperatureMonitoring',
+      'hasInsulated',
+      // Technology & tracking
+      'hasGPS', 'hasTracking', 'hasTelematics', 'hasELD', 'hasDashCam',
+      'hasSafetyCameras',
+      // Safety features
+      'hasCollisionAvoidance', 'hasLaneDeparture', 'hasAdaptiveCruise',
+      'hasBlindSpot', 'hasBackupCamera',
+      // Monitoring systems
+      'hasTirePressureMonitoring', 'hasEngineMonitoring', 'hasFuelMonitoring',
+      'hasMaintenanceAlerts', 'hasDriverMonitoring', 'hasFatigueMonitoring',
+      'hasSpeedMonitoring', 'hasIdleMonitoring',
+      // Route & tracking
+      'hasRouteOptimization', 'hasRealTimeTracking', 'hasGeofencing',
+      // Cargo monitoring
+      'hasTemperatureAlerts', 'hasHumidityAlerts', 'hasShockMonitoring',
+      'hasTiltMonitoring', 'hasDoorMonitoring', 'hasCargoMonitoring',
+      'hasWeightMonitoring', 'hasVolumeMonitoring',
+      // Specialized monitoring
+      'hasPressureMonitoring', 'hasFlowMonitoring', 'hasLevelMonitoring',
+      'hasQualityMonitoring', 'hasContaminationMonitoring',
+      // Safety systems
+      'hasLeakDetection', 'hasOverfillProtection', 'hasEmergencyShutdown',
+      'hasFireSuppression', 'hasExplosionProof',
+      // Material specs
+      'hasCorrosionResistant', 'hasStainlessSteel', 'hasAluminum',
+      'hasCarbonSteel', 'hasFiberglass', 'hasPlastic', 'hasComposite',
+      // JSONB nested objects
+      'equipmentList', 'cargoCapabilities', 'loadingCapabilities',
+      'securityFeatures', 'certifications', 'routeCapabilities', 'costStructure',
     ];
 
     // Only update fields that are provided and allowed
@@ -504,6 +532,8 @@ export class FleetService {
             'registrationExpiry',
             'insuranceExpiry',
             'roadworthyCertExpiry',
+            'lastMaintenanceDate',
+            'nextMaintenanceDate',
           ].includes(field)
         ) {
           truck[field] = updateTruckDto[field]

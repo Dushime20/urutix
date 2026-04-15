@@ -849,11 +849,56 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     if (d.nextMaintenanceDate) converted.nextMaintenanceDate = formatDate(d.nextMaintenanceDate);
     if (d.truckType) converted.truckType = d.truckType;
     if (d.trailerType) converted.trailerType = d.trailerType;
-    if (d.hasSideRails !== undefined) converted.hasSideRails = toBoolean(d.hasSideRails);
-    if (d.hasTarps !== undefined) converted.hasTarps = toBoolean(d.hasTarps);
-    if (d.hasStraps !== undefined) converted.hasStraps = toBoolean(d.hasStraps);
-    if (d.hasChains !== undefined) converted.hasChains = toBoolean(d.hasChains);
-    if (d.hasWinch !== undefined) converted.hasWinch = toBoolean(d.hasWinch);
+
+    // ── Loading Equipment (all fields from LoadingEquipmentStep) ──────────────
+    const loadingBooleans = [
+      'hasSideRails','hasTarps','hasStraps','hasChains','hasWinch','hasRam',
+      'hasTailLift','hasSideLift','hasRollerBed','hasDropDeck','hasExtendable',
+      'hasLowbed','hasStepDeck','hasPowerOnly','hasContainerChassis',
+    ];
+    loadingBooleans.forEach(key => {
+      if (d[key] !== undefined) converted[key] = toBoolean(d[key]);
+    });
+
+    // ── Cargo Type Capabilities (all fields from CargoCapabilitiesStep) ───────
+    // CargoCapabilitiesStep writes to formData.cargoCapabilities (nested object)
+    // We pass the full nested object AND also sync flat top-level booleans for backend compatibility
+    const cargoBooleans = [
+      'hasTanker','hasBulk','hasRefrigerated','hasHeated','hasVentilated',
+      'hasCurtainSide','hasBox','hasVan','hasPlatform','hasCarCarrier',
+      'hasHeavyHaul','hasOversized','hasHazmat','hasDangerousGoods',
+      'hasFoodGrade','hasPharmaceutical','hasLiquid','hasDryBulk','hasGas',
+      'hasChemical','hasWaste','hasReefer','hasFrozen','hasChilled','hasAmbient',
+      'hasControlledAtmosphere','hasHumidityControl','hasTemperatureMonitoring',
+      'hasInsulated',
+    ];
+    cargoBooleans.forEach(key => {
+      if (d[key] !== undefined) converted[key] = toBoolean(d[key]);
+    });
+
+    // ── Nested objects (pass through as-is) ───────────────────────────────────
+    if (d.loadingCapabilities && Object.keys(d.loadingCapabilities).length > 0) {
+      converted.loadingCapabilities = d.loadingCapabilities;
+    }
+    if (d.cargoCapabilities && Object.keys(d.cargoCapabilities).length > 0) {
+      converted.cargoCapabilities = d.cargoCapabilities;
+    }
+    if (d.certifications && Object.keys(d.certifications).length > 0) {
+      converted.certifications = d.certifications;
+    }
+    if (d.routeCapabilities && Object.keys(d.routeCapabilities).length > 0) {
+      converted.routeCapabilities = d.routeCapabilities;
+    }
+    if (d.costStructure && Object.keys(d.costStructure).length > 0) {
+      // Normalize cost field name mismatches between UI and DTO
+      const cs = { ...d.costStructure };
+      // UI uses 'hazmatSurcharge', DTO uses 'hazardousSurcharge'
+      if (cs.hazmatSurcharge !== undefined && cs.hazardousSurcharge === undefined) {
+        cs.hazardousSurcharge = cs.hazmatSurcharge;
+        delete cs.hazmatSurcharge;
+      }
+      converted.costStructure = cs;
+    }
 
     // Remove undefined values
     Object.keys(converted).forEach(key => {

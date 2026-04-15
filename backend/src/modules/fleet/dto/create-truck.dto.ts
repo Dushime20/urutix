@@ -660,6 +660,24 @@ export class CreateTruckDto {
     supportsDesertRoutes?: boolean;
     supportsCoastalRoutes?: boolean;
     supportsInternationalRoutes?: boolean;
+    // Additional route types from UI
+    supportsBorderCrossing?: boolean;
+    supportsPortAccess?: boolean;
+    supportsSnowRoutes?: boolean;
+    supportsOffRoad?: boolean;
+    supportsTunnelRoutes?: boolean;
+    supportsBridgeRoutes?: boolean;
+    supportsFerryTransport?: boolean;
+    supportsRailTransport?: boolean;
+    supportsAirFreight?: boolean;
+    supportsIntermodal?: boolean;
+    supportsContainerTransport?: boolean;
+    supportsBulkTransport?: boolean;
+    // Restriction flags from UI
+    hasWeightRestrictions?: boolean;
+    hasHeightRestrictions?: boolean;
+    hasWidthRestrictions?: boolean;
+    hasLengthRestrictions?: boolean;
     maxTerrainDifficulty?: number;
     maxWeatherConditions?: string[];
     maxTrafficConditions?: string[];
@@ -688,13 +706,23 @@ export class CreateTruckDto {
     baseRate?: number;
     perKmRate?: number;
     perHourRate?: number;
+    // Additional rate types from UI
+    perMileRate?: number;
+    dailyRate?: number;
+    weeklyRate?: number;
+    monthlyRate?: number;
+    idleTimeRate?: number;
+    waitingTimeRate?: number;
+    parkingSurcharge?: number;
     fuelSurcharge?: number;
     tollSurcharge?: number;
     hazardousSurcharge?: number;
+    hazmatSurcharge?: number; // alias for hazardousSurcharge from UI
     refrigeratedSurcharge?: number;
     oversizedSurcharge?: number;
     valuableSurcharge?: number;
     fragileSurcharge?: number;
+    urgentSurcharge?: number;
     liquidSurcharge?: number;
     insuranceSurcharge?: number;
     trackingSurcharge?: number;
@@ -710,6 +738,7 @@ export class CreateTruckDto {
     unloadingSurcharge?: number;
     waitingSurcharge?: number;
     detentionSurcharge?: number;
+    detentionRate?: number; // alias from UI
     demurrageSurcharge?: number;
     layoverSurcharge?: number;
     deadheadSurcharge?: number;
@@ -723,6 +752,7 @@ export class CreateTruckDto {
     theftSurcharge?: number;
     contaminationSurcharge?: number;
     temperatureDeviationSurcharge?: number;
+    temperatureMonitoringSurcharge?: number; // from UI
     humidityDeviationSurcharge?: number;
     shockSurcharge?: number;
     tiltSurcharge?: number;
@@ -743,5 +773,10 @@ export class CreateTruckDto {
     plasticSurcharge?: number;
     compositeSurcharge?: number;
     insulatedSurcharge?: number;
+    // Equipment surcharges from UI
+    forkliftSurcharge?: number;
+    craneSurcharge?: number;
+    loadingDockSurcharge?: number;
+    gpsTrackingSurcharge?: number;
   };
 }

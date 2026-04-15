@@ -196,17 +196,149 @@ export interface FuelEntry {
 }
 
 export interface UpdateTruckDto {
+  // Basic info
   plateNumber?: string;
-  status?: string;
-  truckType?: string;
+  vin?: string;
   make?: string;
   model?: string;
   year?: number;
-  mileage?: number;
+  color?: string;
+  fuelType?: string;
+  status?: string;
+  truckType?: string;
+  trailerType?: string;
+  // Capacity & dimensions
   capacityWeight?: number;
   capacityVolume?: number;
-  fuelType?: string;
+  maxLength?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  mileage?: number;
+  // Registration & compliance
+  registrationNumber?: string;
+  registrationExpiry?: string;
+  insurancePolicy?: string;
+  insuranceExpiry?: string;
+  roadworthyCertExpiry?: string;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  // Location
   currentAddress?: string;
+  currentLocation?: any;
+  // Core capability flags
+  hasRefrigeration?: boolean;
+  hasLiftGate?: boolean;
+  hasGps?: boolean;
+  hasHazmatPermit?: boolean;
+  isActive?: boolean;
+  // Loading equipment
+  hasSideRails?: boolean;
+  hasTarps?: boolean;
+  hasStraps?: boolean;
+  hasChains?: boolean;
+  hasWinch?: boolean;
+  hasRam?: boolean;
+  hasTailLift?: boolean;
+  hasSideLift?: boolean;
+  hasRollerBed?: boolean;
+  hasDropDeck?: boolean;
+  hasExtendable?: boolean;
+  hasLowbed?: boolean;
+  hasStepDeck?: boolean;
+  hasPowerOnly?: boolean;
+  hasContainerChassis?: boolean;
+  // Cargo type capabilities
+  hasTanker?: boolean;
+  hasBulk?: boolean;
+  hasRefrigerated?: boolean;
+  hasHeated?: boolean;
+  hasVentilated?: boolean;
+  hasCurtainSide?: boolean;
+  hasBox?: boolean;
+  hasVan?: boolean;
+  hasPlatform?: boolean;
+  hasCarCarrier?: boolean;
+  hasHeavyHaul?: boolean;
+  hasOversized?: boolean;
+  hasHazmat?: boolean;
+  hasDangerousGoods?: boolean;
+  hasFoodGrade?: boolean;
+  hasPharmaceutical?: boolean;
+  hasLiquid?: boolean;
+  hasDryBulk?: boolean;
+  hasGas?: boolean;
+  hasChemical?: boolean;
+  hasWaste?: boolean;
+  // Temperature control
+  hasReefer?: boolean;
+  hasFrozen?: boolean;
+  hasChilled?: boolean;
+  hasAmbient?: boolean;
+  hasControlledAtmosphere?: boolean;
+  hasHumidityControl?: boolean;
+  hasTemperatureMonitoring?: boolean;
+  hasInsulated?: boolean;
+  // Technology & tracking
+  hasGPS?: boolean;
+  hasTracking?: boolean;
+  hasTelematics?: boolean;
+  hasELD?: boolean;
+  hasDashCam?: boolean;
+  hasSafetyCameras?: boolean;
+  // Safety features
+  hasCollisionAvoidance?: boolean;
+  hasLaneDeparture?: boolean;
+  hasAdaptiveCruise?: boolean;
+  hasBlindSpot?: boolean;
+  hasBackupCamera?: boolean;
+  // Monitoring systems
+  hasTirePressureMonitoring?: boolean;
+  hasEngineMonitoring?: boolean;
+  hasFuelMonitoring?: boolean;
+  hasMaintenanceAlerts?: boolean;
+  hasDriverMonitoring?: boolean;
+  hasFatigueMonitoring?: boolean;
+  hasSpeedMonitoring?: boolean;
+  hasIdleMonitoring?: boolean;
+  hasRouteOptimization?: boolean;
+  hasRealTimeTracking?: boolean;
+  hasGeofencing?: boolean;
+  // Cargo monitoring
+  hasTemperatureAlerts?: boolean;
+  hasHumidityAlerts?: boolean;
+  hasShockMonitoring?: boolean;
+  hasTiltMonitoring?: boolean;
+  hasDoorMonitoring?: boolean;
+  hasCargoMonitoring?: boolean;
+  hasWeightMonitoring?: boolean;
+  hasVolumeMonitoring?: boolean;
+  hasPressureMonitoring?: boolean;
+  hasFlowMonitoring?: boolean;
+  hasLevelMonitoring?: boolean;
+  hasQualityMonitoring?: boolean;
+  hasContaminationMonitoring?: boolean;
+  // Safety systems
+  hasLeakDetection?: boolean;
+  hasOverfillProtection?: boolean;
+  hasEmergencyShutdown?: boolean;
+  hasFireSuppression?: boolean;
+  hasExplosionProof?: boolean;
+  // Material specs
+  hasCorrosionResistant?: boolean;
+  hasStainlessSteel?: boolean;
+  hasAluminum?: boolean;
+  hasCarbonSteel?: boolean;
+  hasFiberglass?: boolean;
+  hasPlastic?: boolean;
+  hasComposite?: boolean;
+  // Nested objects
+  equipmentList?: string[];
+  securityFeatures?: Record<string, any>;
+  certifications?: Record<string, any>;
+  routeCapabilities?: Record<string, any>;
+  costStructure?: Record<string, any>;
+  loadingCapabilities?: Record<string, any>;
+  cargoCapabilities?: Record<string, any>;
 }
 
 export interface CreateDriverDto {
