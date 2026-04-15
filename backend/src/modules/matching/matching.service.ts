@@ -1390,11 +1390,12 @@ export class MatchingService {
       // Apply additional filters
       const filteredTrucks = trucks.filter((truck) => {
         try {
-          // Distance filter
-          if (criteria.maxDistance) {
+          // Distance filter - only apply if truck has a known location
+          if (criteria.maxDistance && truck.currentLocation) {
             const distance = this.calculateDistance(load, truck);
             if (distance > criteria.maxDistance) return false;
           }
+          // If truck has no location, skip distance filter (don't penalize missing GPS)
 
           // Rating filter — averageRating is 0-5 scale, minRating is also 0-5
           // Only filter if truck has an established rating (> 0) and it's below minimum
