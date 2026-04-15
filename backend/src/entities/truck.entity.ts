@@ -560,6 +560,24 @@ export class Truck {
     supportsDesertRoutes?: boolean;
     supportsCoastalRoutes?: boolean;
     supportsInternationalRoutes?: boolean;
+    // Additional route types
+    supportsBorderCrossing?: boolean;
+    supportsPortAccess?: boolean;
+    supportsSnowRoutes?: boolean;
+    supportsOffRoad?: boolean;
+    supportsTunnelRoutes?: boolean;
+    supportsBridgeRoutes?: boolean;
+    supportsFerryTransport?: boolean;
+    supportsRailTransport?: boolean;
+    supportsAirFreight?: boolean;
+    supportsIntermodal?: boolean;
+    supportsContainerTransport?: boolean;
+    supportsBulkTransport?: boolean;
+    // Restriction flags
+    hasWeightRestrictions?: boolean;
+    hasHeightRestrictions?: boolean;
+    hasWidthRestrictions?: boolean;
+    hasLengthRestrictions?: boolean;
     maxTerrainDifficulty?: number;
     maxWeatherConditions?: string[];
     maxTrafficConditions?: string[];
@@ -588,13 +606,23 @@ export class Truck {
     baseRate?: number;
     perKmRate?: number;
     perHourRate?: number;
+    // Additional rate types from UI
+    perMileRate?: number;
+    dailyRate?: number;
+    weeklyRate?: number;
+    monthlyRate?: number;
+    idleTimeRate?: number;
+    waitingTimeRate?: number;
+    parkingSurcharge?: number;
     fuelSurcharge?: number;
     tollSurcharge?: number;
     hazardousSurcharge?: number;
+    hazmatSurcharge?: number;
     refrigeratedSurcharge?: number;
     oversizedSurcharge?: number;
     valuableSurcharge?: number;
     fragileSurcharge?: number;
+    urgentSurcharge?: number;
     liquidSurcharge?: number;
     insuranceSurcharge?: number;
     trackingSurcharge?: number;
@@ -610,6 +638,7 @@ export class Truck {
     unloadingSurcharge?: number;
     waitingSurcharge?: number;
     detentionSurcharge?: number;
+    detentionRate?: number;
     demurrageSurcharge?: number;
     layoverSurcharge?: number;
     deadheadSurcharge?: number;
@@ -623,6 +652,7 @@ export class Truck {
     theftSurcharge?: number;
     contaminationSurcharge?: number;
     temperatureDeviationSurcharge?: number;
+    temperatureMonitoringSurcharge?: number;
     humidityDeviationSurcharge?: number;
     shockSurcharge?: number;
     tiltSurcharge?: number;
@@ -643,6 +673,11 @@ export class Truck {
     plasticSurcharge?: number;
     compositeSurcharge?: number;
     insulatedSurcharge?: number;
+    // Equipment surcharges from UI
+    forkliftSurcharge?: number;
+    craneSurcharge?: number;
+    loadingDockSurcharge?: number;
+    gpsTrackingSurcharge?: number;
   };
 
   @Column({
