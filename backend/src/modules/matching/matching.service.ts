@@ -1390,27 +1390,28 @@ export class MatchingService {
       // Apply additional filters
       const filteredTrucks = trucks.filter((truck) => {
         try {
-          // Distance filter - only apply if truck has a known location
-          if (criteria.maxDistance && truck.currentLocation) {
-            const distance = this.calculateDistance(load, truck);
-            if (distance > criteria.maxDistance) return false;
-          }
-          // If truck has no location, skip distance filter (don't penalize missing GPS)
+          // NOTE: Distance is NOT a hard filter — trucks far away still get matched,
+          // they just score lower on the distance factor.
+          // maxDistance from the frontend is used only in scoring, not filtering.
+          // This ensures trucks are never excluded purely because they are far from
+          // the pickup point (they may be en route or repositioning).
 
-          // Rating filter — averageRating is 0-5 scale, minRating is also 0-5
+          // Rating filter — averageRating is 0-5 scale, minRating from DTO is 0-1 scale
           // Only filter if truck has an established rating (> 0) and it's below minimum
-          if (
-            criteria.minRating &&
-            truck.averageRating > 0 &&
-            truck.averageRating < criteria.minRating
-          ) {
-            return false;
+          if (criteria.minRating && Number(truck.averageRating) > 0) {
+            // minRating is 0-1, averageRating is 0-5, so convert: minRating * 5
+            const minRatingOn5Scale = criteria.minRating * 5;
+            if (Number(truck.averageRating) < minRatingOn5Scale) {
+              console.log(`❌ Truck ${truck.plateNumber} filtered out by rating: ${truck.averageRating}/5 < ${minRatingOn5Scale}/5`);
+              return false;
+            }
           }
 
+          console.log(`✅ Truck ${truck.plateNumber} passed all filters`);
           return true;
         } catch (error) {
           console.error(`Error filtering truck ${truck?.id}:`, error);
-          return false; // Exclude truck if filtering fails
+          return false;
         }
       });
 
@@ -1433,12 +1434,22 @@ export class MatchingService {
     console.log(
       `🎯 applyWeightedScoring: Processing ${trucks.length} trucks for load ${load.id}`,
     );
+
+    // Pre-calculate distances for ALL trucks so we can do relative scoring
+    // Closest truck = highest distance score, furthest = lowest (but never excluded)
+    const truckDistances = new Map<string, number>();
+    for (const truck of trucks) {
+      const dist = this.calculateDistance(load, truck);
+      truckDistances.set(truck.id, dist);
+      console.log(`📍 Truck ${truck.plateNumber} distance from pickup: ${dist === 10000 ? 'no GPS' : dist.toFixed(1) + 'km'}`);
+    }
+
     const matches: MatchResultDto[] = [];
 
     for (const truck of trucks) {
       try {
         console.log(`🔍 Scoring truck ${truck.plateNumber} (${truck.id})...`);
-        const match = await this.scoreTruck(truck, load, criteria);
+        const match = await this.scoreTruck(truck, load, criteria, truckDistances);
         if (match) {
           console.log(
             `✅ Truck ${truck.plateNumber} scored: ${match.overallScore}`,
@@ -1603,6 +1614,7 @@ export class MatchingService {
     truck: Truck,
     load: Load,
     criteria: MatchRequestDto,
+    allTruckDistances?: Map<string, number>,
   ): Promise<MatchResultDto | null> {
     try {
       // =====================================================
@@ -1675,8 +1687,8 @@ export class MatchingService {
       const equipmentScore = this.calculateEquipmentScore(truck, load);
 
       // 3. DISTANCE SCORE - Proximity to pickup location (20%)
-      // distanceKm is already calculated above in constraints check
-      const distanceScore = this.calculateDistanceScore(load, truck, criteria);
+      // Uses relative scoring: closest truck among all candidates gets highest score
+      const distanceScore = this.calculateDistanceScore(load, truck, criteria, allTruckDistances);
 
       // 4. GPS TRACKING SCORE - GPS availability for monitoring (10%)
       const gpsTrackingScore = this.calculateGpsTrackingScore(truck, load);
@@ -1822,19 +1834,37 @@ export class MatchingService {
     load: Load,
     truck: Truck,
     criteria: MatchRequestDto,
+    allTruckDistances?: Map<string, number>, // optional: relative scoring across all trucks
   ): number {
     const distance = this.calculateDistance(load, truck);
-    const maxDistance = criteria.maxDistance || 200;
 
-    if (distance > maxDistance) return 0;
+    // If we have all truck distances, use relative scoring
+    // The closest truck gets 1.0, furthest gets 0.1 — no truck is excluded
+    if (allTruckDistances && allTruckDistances.size > 0) {
+      const distances = Array.from(allTruckDistances.values());
+      const minDist = Math.min(...distances);
+      const maxDist = Math.max(...distances);
 
-    // Aggressive scoring for "same city" / nearby matching
-    if (distance <= 10) return 1.0;  // Extremely close / same neighborhood
-    if (distance <= 25) return 0.9;  // Same city/area
-    if (distance <= 50) return 0.7;  // Surrounding area
-    if (distance <= 100) return 0.4; // Regional
-    if (distance <= 150) return 0.2; // Further away
-    return 0.1; // Barely within max distance
+      // All trucks are at the same distance — give everyone full score
+      if (maxDist === minDist) return 1.0;
+
+      // Linear scale: closest = 1.0, furthest = 0.1
+      const normalized = (distance - minDist) / (maxDist - minDist);
+      return Math.max(0.1, 1.0 - normalized * 0.9);
+    }
+
+    // Fallback: absolute distance scoring (no hard cutoff — just diminishing returns)
+    // Trucks with no GPS location get a neutral score of 0.5
+    if (distance >= 10000) return 0.5; // No location data
+
+    if (distance <= 10) return 1.0;   // Same neighborhood
+    if (distance <= 25) return 0.95;  // Same city
+    if (distance <= 50) return 0.85;  // Nearby city
+    if (distance <= 100) return 0.70; // Regional
+    if (distance <= 200) return 0.55; // Same country area
+    if (distance <= 500) return 0.40; // Long distance
+    if (distance <= 1000) return 0.25; // Very long distance
+    return 0.10; // Extreme distance — still valid, just lowest priority
   }
 
   private calculateCapacityScore(truck: Truck, load: Load): number {
@@ -2677,9 +2707,8 @@ export class MatchingService {
     criteria: MatchRequestDto,
   ): MatchResultDto[] {
     return matches.filter((match) => {
-      if (criteria.maxDistance && match.distanceKm > criteria.maxDistance) {
-        return false;
-      }
+      // NOTE: maxDistance is NOT a hard filter — distance affects scoring only.
+      // Trucks far away score lower but are never excluded entirely.
 
       // Rating filter — only exclude if truck has an established rating below minimum
       if (criteria.minRating && match.truckRating > 0 && match.truckRating < criteria.minRating) {

@@ -67,7 +67,6 @@ const CargoSmartMatching: React.FC = () => {
       const cargo = cargos.find((c: any) => c.id === id);
       const [matchesRes, insightsRes] = await Promise.all([
         cargoOwnerAPI.findMatches(id, {
-          maxDistance: 500,
           minRating: 0,
           maxCost: cargo ? (Number(cargo.loadValue) || 0) * 0.3 : undefined,
           requiresRefrigeration: cargo?.requiresRefrigeration,

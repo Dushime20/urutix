@@ -80,7 +80,6 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       // Call both APIs in parallel
       const [matchesResponse, insightsResponse] = await Promise.all([
         cargoOwnerAPI.findMatches(cargoDetails.id!, {
-          maxDistance: 500,
           minRating: 0,
           maxCost: cargoDetails.loadValue * 0.3,
           requiresRefrigeration: cargoDetails.requiresRefrigeration,

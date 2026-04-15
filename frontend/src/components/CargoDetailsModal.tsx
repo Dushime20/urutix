@@ -125,7 +125,6 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
         const res = await matchingAPI.findMatches({
           loadId: cargoId,
           algorithm: 'WEIGHTED_SCORE',
-          maxDistance: 1000,
           minRating: 0.0,
           limit: 20,
           includeDrivers: true,

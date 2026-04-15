@@ -87,7 +87,6 @@ const TruckSelectionModal: React.FC<TruckSelectionModalProps> = ({
       const matchRequest = {
         loadId,
         algorithm: selectedAlgorithm,
-        maxDistance: 500, // 500km max distance
         minRating: 0.7, // Minimum 70% rating
         limit: 10, // Top 10 matches
         includeDrivers: true,
