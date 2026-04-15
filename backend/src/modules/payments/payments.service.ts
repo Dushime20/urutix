@@ -35,6 +35,7 @@ import { ProviderIntegrationService } from './services/provider-integration.serv
 import { IdempotencyService } from './services/idempotency.service';
 import { ReconciliationService } from './services/reconciliation.service';
 import { InvoiceReceiptService } from './services/invoice-receipt.service';
+import { TripsService } from '../trips/trips.service';
 
 @Injectable()
 export class PaymentsService {
@@ -80,6 +81,7 @@ export class PaymentsService {
     private readonly idempotencyService: IdempotencyService,
     private readonly reconciliationService: ReconciliationService,
     private readonly invoiceReceiptService?: InvoiceReceiptService,
+    private readonly tripsService?: TripsService,
   ) {}
 
   async createPayment(
@@ -418,10 +420,19 @@ export class PaymentsService {
         order: { processedAt: 'DESC' },
       });
 
-      // Update trip status to IN_PROGRESS
-      trip.status = TripStatus.IN_PROGRESS;
-      trip.actualStartTime = new Date();
-      await this.tripRepository.save(trip);
+      // Update trip status to IN_PROGRESS via TripsService so credit deduction is triggered
+      if (this.tripsService) {
+        await this.tripsService.updateTripStatus(
+          tripId,
+          { status: TripStatus.IN_PROGRESS, actualStartTime: new Date() },
+          tenantId,
+        );
+      } else {
+        // Fallback: direct save (credit deduction will not fire in this path)
+        trip.status = TripStatus.IN_PROGRESS;
+        trip.actualStartTime = new Date();
+        await this.tripRepository.save(trip);
+      }
 
       this.logger.log(
         `Trip ${tripId} status updated to IN_PROGRESS`,

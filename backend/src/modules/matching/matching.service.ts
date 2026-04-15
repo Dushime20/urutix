@@ -817,96 +817,11 @@ export class MatchingService {
       throw new NotFoundException(`Match ${matchId} not found`);
     }
 
-    // If accepting, perform credit deduction BEFORE updating match status
+    // If accepting, skip credit deduction here.
+    // Credits are now deducted when the driver starts the trip (status → IN_PROGRESS).
+    // See TripsService.updateTripStatus() for the credit deduction logic.
     if (status === MatchStatus.ACCEPTED) {
-      this.logger.log(`🎉 Match ${matchId} being ACCEPTED - Validating and deducting credits`);
-      
-      try {
-        // Get load and truck details
-        const load = await this.loadRepository.findOne({
-          where: { id: match.loadId }
-        });
-
-        const truck = await this.truckRepository.findOne({
-          where: { id: match.truckId }
-        });
-
-        if (!load || !truck) {
-          throw new NotFoundException('Load or Truck not found for match acceptance');
-        }
-
-        // Get tenant admin user
-        const tenantAdminUser = await this.userRepository.findOne({
-          where: { tenantId: match.tenantId, role: UserRole.TENANT_ADMIN },
-        });
-
-        if (!tenantAdminUser) {
-          throw new NotFoundException('Tenant admin not found for this tenant');
-        }
-
-        // Get tenant admin's subscription plan
-        let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-          where: { 
-            tenantId: match.tenantId, 
-            userId: IsNull(), // Tenant-level subscription
-            status: SubscriptionStatus.ACTIVE 
-          },
-          relations: ['plan'],
-          order: { createdAt: 'DESC' },
-        });
-
-        // If no tenant-level subscription, try user-level subscription
-        if (!tenantAdminSubscription) {
-          tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-            where: { 
-              tenantId: match.tenantId, 
-              userId: tenantAdminUser.id,
-              status: SubscriptionStatus.ACTIVE 
-            },
-            relations: ['plan'],
-            order: { createdAt: 'DESC' },
-          });
-        }
-
-        if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
-          throw new BadRequestException(
-            'Tenant admin must have an active subscription plan to enable AI matching',
-          );
-        }
-
-        // Calculate cargo weight in tons
-        const cargoWeightTons = load.weight / 1000; // Convert kg to tons
-
-        // Use rates from tenant admin's subscription plan
-        const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
-        const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
-
-        this.logger.log(`[MatchingService] Accepting match ${matchId} - Credit deduction details:`);
-        this.logger.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
-        this.logger.log(`  - Using rates from TENANT ADMIN's subscription: ${tenantAdminSubscription.plan.name}`);
-        this.logger.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
-        this.logger.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
-
-        // Perform dual credit deduction (same as bidding system)
-        await this.creditService.consumeCreditsForBid({
-          tenantId: match.tenantId,
-          tenantAdminUserId: tenantAdminUser.id,
-          truckOwnerUserId: truck.ownerId,
-          cargoWeightTons,
-          creditsPerTonTenant,
-          creditsPerTonTruckOwner,
-          bidId: matchId, // Using matchId as reference
-          loadId: load.id,
-          loadTitle: load.title,
-        });
-
-        this.logger.log(`[MatchingService] Credit deduction successful for match ${matchId}`);
-      } catch (error) {
-        this.logger.error(`[MatchingService] Credit deduction failed for match ${matchId}:`, error);
-        throw new BadRequestException(
-          `Failed to process credit deduction: ${error.message}`,
-        );
-      }
+      this.logger.log(`🎉 Match ${matchId} being ACCEPTED - credit deduction deferred to trip start`);
     }
 
     // Update match status
@@ -1670,10 +1585,16 @@ export class MatchingService {
       // Calculate distance between load pickup and truck current location
       const distanceKm = this.calculateDistance(load, truck);
 
-      // If truck has max distance constraint
-      if (truck.routeCapabilities?.maxDistance && distanceKm > truck.routeCapabilities.maxDistance) {
-        this.logger.debug(`❌ Rejected: Outside max operating distance`);
-        return null;
+      // If truck has max distance constraint, compare against the ROUTE distance
+      // (pickup → delivery), NOT the truck's current position distance.
+      // A truck far away can still travel to pick up cargo — maxDistance is about
+      // how far the truck is willing to haul, not where it currently is.
+      if (truck.routeCapabilities?.maxDistance) {
+        const routeDistance = this.calculateRouteDistance(load);
+        if (routeDistance > 0 && routeDistance > truck.routeCapabilities.maxDistance) {
+          this.logger.debug(`❌ Rejected: Route distance ${routeDistance}km exceeds truck max ${truck.routeCapabilities.maxDistance}km`);
+          return null;
+        }
       }
 
       // =====================================================
@@ -2440,6 +2361,35 @@ export class MatchingService {
     if (distanceKm > 800) duration += 8; // Mandatory rest
 
     return Math.round(duration);
+  }
+
+  /**
+   * Calculate the route distance (pickup → delivery) for a load.
+   * This is used to check if the load's route fits within a truck's max operating distance.
+   * Returns 0 if coordinates are not available (no rejection in that case).
+   */
+  private calculateRouteDistance(load: Load): number {
+    try {
+      const pickup = load.pickupLocation;
+      const delivery = load.deliveryLocation;
+
+      if (!pickup?.locationData?.coordinates || !delivery?.locationData?.coordinates) {
+        return 0; // Can't calculate — don't reject
+      }
+
+      const pickupLat = pickup.locationData.coordinates.latitude;
+      const pickupLon = pickup.locationData.coordinates.longitude;
+      const deliveryLat = delivery.locationData.coordinates.latitude;
+      const deliveryLon = delivery.locationData.coordinates.longitude;
+
+      if (!pickupLat || !pickupLon || !deliveryLat || !deliveryLon) {
+        return 0;
+      }
+
+      return this.calculateHaversineDistance(pickupLat, pickupLon, deliveryLat, deliveryLon);
+    } catch {
+      return 0; // On error, don't reject
+    }
   }
 
   private calculateDistance(load: Load, truck: Truck): number {

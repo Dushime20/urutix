@@ -516,88 +516,9 @@ export class BiddingService {
       throw new BadRequestException('Cannot accept bid that is in its current status');
     }
 
-    // CREDIT DEDUCTION: Deduct credits from both tenant admin and truck owner
-    try {
-      // Get tenant admin user (the one who controls the truck owner)
-      const tenantAdminUser = await this.userRepository.findOne({
-        where: { tenantId, role: UserRole.TENANT_ADMIN },
-      });
-
-      if (!tenantAdminUser) {
-        throw new NotFoundException('Tenant admin not found for this tenant');
-      }
-
-      // Verify truck owner has sufficient credits (from marketplace or any source)
-      // Get credit rate from TENANT ADMIN's subscription plan (not truck owner's plan)
-      // First try to find tenant-level subscription (userId IS NULL)
-      let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-        where: { 
-          tenantId, 
-          userId: IsNull(), // Tenant-level subscription (tenant admin)
-          status: SubscriptionStatus.ACTIVE 
-        },
-        relations: ['plan'],
-        order: { createdAt: 'DESC' }, // Get most recent if multiple
-      });
-
-      // If no tenant-level subscription, try to find tenant admin's user-level subscription
-      if (!tenantAdminSubscription) {
-        const tenantAdminUser = await this.userRepository.findOne({
-          where: { tenantId, role: UserRole.TENANT_ADMIN },
-        });
-
-        if (tenantAdminUser) {
-          tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-            where: { 
-              tenantId, 
-              userId: tenantAdminUser.id,
-              status: SubscriptionStatus.ACTIVE 
-            },
-            relations: ['plan'],
-            order: { createdAt: 'DESC' },
-          });
-        }
-      }
-
-      if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
-        throw new BadRequestException(
-          'Tenant admin must have an active subscription plan to enable bidding',
-        );
-      }
-
-      // Calculate cargo weight in tons
-      const cargoWeightTons = bid.load.weight / 1000; // Convert kg to tons
-
-      // Use rates from tenant admin's subscription plan
-      const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
-      const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
-
-      console.log(`[BiddingService] Accepting bid ${bidId} - Credit deduction details:`);
-      console.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
-      console.log(`  - Using rates from TENANT ADMIN's subscription: ${tenantAdminSubscription.plan.name}`);
-      console.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
-      console.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
-
-      // Perform dual credit deduction
-      await this.creditService.consumeCreditsForBid({
-        tenantId,
-        tenantAdminUserId: tenantAdminUser.id,
-        truckOwnerUserId: bid.truckOwnerId,
-        cargoWeightTons,
-        creditsPerTonTenant,
-        creditsPerTonTruckOwner,
-        bidId: bid.id,
-        loadId: bid.loadId,
-        loadTitle: bid.load.title,
-      });
-
-      console.log(`[BiddingService] Credit deduction successful for bid ${bidId}`);
-    } catch (error) {
-      console.error(`[BiddingService] Credit deduction failed for bid ${bidId}:`, error);
-      throw new BadRequestException(
-        `Failed to process credit deduction: ${error.message}`,
-      );
-    }
+    // NOTE: Credit deduction is no longer applied here.
+    // Credits are deducted when the driver starts the trip (status → IN_PROGRESS).
+    // See TripsService.updateTripStatus() for the credit deduction logic.
 
     // Only update status if it's still pending
     if (bid.status === BidStatus.PENDING) {

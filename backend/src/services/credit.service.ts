@@ -983,6 +983,22 @@ export class CreditService {
   }
 
   /**
+   * Check if credits have already been deducted for a given trip.
+   * Used to prevent double-charging on the same trip.
+   */
+  async isTripAlreadyCharged(tripId: string, tenantId: string): Promise<boolean> {
+    const existing = await this.creditTransactionRepository.findOne({
+      where: {
+        tenantId,
+        referenceType: 'TRIP',
+        referenceId: tripId,
+        type: CreditTransactionType.CONSUMPTION,
+      },
+    });
+    return !!existing;
+  }
+
+  /**
    * Consume credits for bid acceptance (dual deduction)
    * Deducts credits from both tenant admin and truck owner when bid is accepted
    */
@@ -996,6 +1012,7 @@ export class CreditService {
     bidId: string;
     loadId: string;
     loadTitle: string;
+    referenceType?: string; // defaults to 'BID'; pass 'TRIP' for trip-start deductions
   }): Promise<{ tenantTransaction: CreditTransaction; truckOwnerTransaction: CreditTransaction; tenantEarningTransaction: CreditTransaction }> {
     // Calculate credits needed
     const tenantCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTenant);
@@ -1024,7 +1041,7 @@ export class CreditService {
       userId: dto.tenantAdminUserId,
       amount: tenantCreditsNeeded,
       description: `Bid accepted - operational cost for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTenant} credits/ton)`,
-      referenceType: 'BID',
+      referenceType: dto.referenceType ?? 'BID',
       referenceId: dto.bidId,
       calculationDetails: {
         loadId: dto.loadId,
@@ -1041,7 +1058,7 @@ export class CreditService {
       userId: dto.truckOwnerUserId,
       amount: truckOwnerCreditsNeeded,
       description: `Bid accepted - payment for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
-      referenceType: 'BID',
+      referenceType: dto.referenceType ?? 'BID',
       referenceId: dto.bidId,
       calculationDetails: {
         loadId: dto.loadId,

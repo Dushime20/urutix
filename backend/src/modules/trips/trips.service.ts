@@ -1,21 +1,39 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets } from 'typeorm';
+import { Repository, Brackets, IsNull } from 'typeorm';
 import { Trip, TripStatus } from '../../entities/trip.entity';
+import { Load } from '../../entities/load.entity';
+import { Truck } from '../../entities/truck.entity';
+import { User } from '../../entities/user.entity';
+import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationCategory, NotificationChannel, EntityType } from '../../entities/notification.entity';
+import { CreditService } from '../../services/credit.service';
+import { UserRole } from '../../entities/user.entity';
+import { SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 
 @Injectable()
 export class TripsService {
+  private readonly logger = new Logger(TripsService.name);
+
   constructor(
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(Load)
+    private readonly loadRepository: Repository<Load>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(TenantSubscription)
+    private readonly tenantSubscriptionRepository: Repository<TenantSubscription>,
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
     private readonly notificationService: NotificationService,
+    private readonly creditService: CreditService,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -171,6 +189,17 @@ export class TripsService {
 
     const savedTrip = await this.tripRepository.save(trip);
 
+    // CREDIT DEDUCTION: Deduct credits only on the very first start (PLANNED → IN_PROGRESS).
+    // DELAYED → IN_PROGRESS (resume) must NOT re-deduct.
+    if (
+      updateTripStatusDto.status === TripStatus.IN_PROGRESS &&
+      oldStatus === TripStatus.PLANNED
+    ) {
+      this.deductCreditsForTripStart(savedTrip.id, tenantId).catch(err =>
+        this.logger.error(`Credit deduction failed for trip ${savedTrip.id}: ${err.message}`, err.stack),
+      );
+    }
+
     // Send notification if status changed to IN_PROGRESS (Loaded)
     if (updateTripStatusDto.status === TripStatus.IN_PROGRESS && oldStatus !== TripStatus.IN_PROGRESS) {
       this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
@@ -218,6 +247,96 @@ export class TripsService {
       plannedTrips,
       completionRate: totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0,
     };
+  }
+
+  private async deductCreditsForTripStart(tripId: string, tenantId: string): Promise<void> {
+    try {
+      // IDEMPOTENCY GUARD: bail out if credits were already deducted for this trip
+      const alreadyCharged = await this.creditService.isTripAlreadyCharged(tripId, tenantId);
+      if (alreadyCharged) {
+        this.logger.warn(`[TripsService] Credits already deducted for trip ${tripId} — skipping duplicate deduction`);
+        return;
+      }
+
+      // Load trip with related load and truck
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId },
+        relations: ['load', 'truck'],
+      });
+
+      if (!trip || !trip.load || !trip.truck) {
+        this.logger.warn(`[TripsService] Cannot deduct credits for trip ${tripId}: missing load or truck`);
+        return;
+      }
+
+      // Get tenant admin user
+      const tenantAdminUser = await this.userRepository.findOne({
+        where: { tenantId, role: UserRole.TENANT_ADMIN },
+      });
+
+      if (!tenantAdminUser) {
+        this.logger.warn(`[TripsService] Tenant admin not found for tenant ${tenantId}, skipping credit deduction`);
+        return;
+      }
+
+      // Get tenant admin's active subscription plan
+      let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+        where: {
+          tenantId,
+          userId: IsNull(), // Tenant-level subscription
+          status: SubscriptionStatus.ACTIVE,
+        },
+        relations: ['plan'],
+        order: { createdAt: 'DESC' },
+      });
+
+      // Fallback: try user-level subscription for tenant admin
+      if (!tenantAdminSubscription) {
+        tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+          where: {
+            tenantId,
+            userId: tenantAdminUser.id,
+            status: SubscriptionStatus.ACTIVE,
+          },
+          relations: ['plan'],
+          order: { createdAt: 'DESC' },
+        });
+      }
+
+      if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
+        this.logger.warn(`[TripsService] No active subscription plan for tenant ${tenantId}, skipping credit deduction`);
+        return;
+      }
+
+      const cargoWeightTons = trip.load.weight / 1000; // kg → tons
+      const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
+      const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
+
+      this.logger.log(`[TripsService] Trip ${tripId} started - deducting credits:`);
+      this.logger.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
+      this.logger.log(`  - Subscription plan: ${tenantAdminSubscription.plan.name}`);
+      this.logger.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
+      this.logger.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
+
+      await this.creditService.consumeCreditsForBid({
+        tenantId,
+        tenantAdminUserId: tenantAdminUser.id,
+        truckOwnerUserId: trip.truck.ownerId,
+        cargoWeightTons,
+        creditsPerTonTenant,
+        creditsPerTonTruckOwner,
+        bidId: tripId,
+        loadId: trip.loadId,
+        loadTitle: trip.load.title,
+        referenceType: 'TRIP', // stored as referenceType in credit_transactions for idempotency lookup
+      });
+
+      this.logger.log(`[TripsService] Credit deduction successful for trip ${tripId}`);
+    } catch (error) {
+      this.logger.error(`[TripsService] Credit deduction failed for trip ${tripId}: ${error.message}`, error.stack);
+      // We do NOT re-throw here — the trip status has already been saved.
+      // A failed credit deduction should be logged and handled separately (e.g. retry queue).
+    }
   }
 
   private async sendLoadedNotification(tripId: string, tenantId: string): Promise<void> {

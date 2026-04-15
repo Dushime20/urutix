@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Payment } from '../../entities/payment.entity';
@@ -30,6 +30,7 @@ import { PaymentCalculationService } from './services/payment-calculation.servic
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { HttpModule } from '@nestjs/axios';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { TripsModule } from '../trips/trips.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     EventEmitterModule.forRoot(),
     HttpModule,
     NotificationsModule,
+    TripsModule,
   ],
   providers: [
     PaymentsService,
