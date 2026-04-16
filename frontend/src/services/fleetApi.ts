@@ -381,6 +381,18 @@ export interface FleetFilters {
   limit?: number;
 }
 
+export interface ComplianceRecord {
+  id?: string;
+  regulation: string;
+  requirement: string;
+  dueDate: string;
+  lastChecked: string;
+  nextCheck: string;
+  status: 'COMPLIANT' | 'NON_COMPLIANT' | 'EXPIRED' | 'PENDING';
+  responsibleParty?: string;
+  documentation?: string[];
+}
+
 export interface FleetApiResponse<T> {
   message: string;
   trucks?: T;
@@ -412,6 +424,11 @@ export interface TCOAnalysis {
     totalCost: number;
     topExpenseCategory: string;
   }>;
+}
+
+export interface UpdateDriverDto extends Partial<CreateDriverDto> {
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ON_LEAVE' | 'TERMINATED' | 'IN_TRANSIT';
+  availabilityStatus?: string;
 }
 
 // Fleet API Service
@@ -490,7 +507,7 @@ export const fleetApi = {
     return driver as Driver;
   },
 
-  updateDriver: async (id: string, data: Partial<CreateDriverDto>): Promise<Driver> => {
+  updateDriver: async (id: string, data: UpdateDriverDto): Promise<Driver> => {
     const response = await api.patch<FleetApiResponse<Driver>>(`/fleet/drivers/${id}`, data);
     const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
@@ -639,6 +656,16 @@ export const fleetApi = {
 
   unassignRouteFromTruck: async (truckId: string, routeId: string): Promise<void> => {
     await api.delete(`/fleet/trucks/${truckId}/routes/${routeId}`);
+  },
+
+  // ===== COMPLIANCE =====
+  addComplianceRecord: async (truckId: string, data: ComplianceRecord): Promise<ComplianceRecord> => {
+    const response = await api.post<FleetApiResponse<ComplianceRecord>>(`/fleet/trucks/${truckId}/compliance`, data);
+    const compliance = response.data.data || (response.data as any).compliance;
+    if (!compliance) {
+      throw new Error('Failed to add compliance record');
+    }
+    return compliance;
   },
 
   // ===== MAINTENANCE =====

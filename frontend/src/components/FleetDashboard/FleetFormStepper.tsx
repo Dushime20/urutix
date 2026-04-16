@@ -141,6 +141,23 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     enabled: activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' && existingDriverSearch.length > 0,
   });
 
+  // Helper to format date strings for HTML5 date inputs (YYYY-MM-DD)
+  const formatDateForInput = (dateStr: any) => {
+    if (!dateStr) return '';
+    try {
+      // Check if it's already in YYYY-MM-DD format
+      if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+      }
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch (err) {
+      console.error('Date formatting error:', err);
+      return '';
+    }
+  };
+
   // Define steps based on activeTab
   const getSteps = () => {
     if (activeTab === 'drivers') {
@@ -181,10 +198,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         capacityWeight: initialData.capacityWeight?.toString() || '',
         capacityVolume: initialData.capacityVolume?.toString() || '',
         registrationNumber: initialData.registrationNumber || '',
-        registrationExpiry: initialData.registrationExpiry || '',
+        registrationExpiry: formatDateForInput(initialData.registrationExpiry),
         insurancePolicy: initialData.insurancePolicy || '',
-        insuranceExpiry: initialData.insuranceExpiry || '',
-        roadworthyCertExpiry: initialData.roadworthyCertExpiry || '',
+        insuranceExpiry: formatDateForInput(initialData.insuranceExpiry),
+        roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry),
         mileage: initialData.mileage?.toString() || '',
         truckType: initialData.truckType || '',
         trailerType: initialData.trailerType || '',
@@ -299,6 +316,50 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         equipmentList: initialData.equipmentList || [],
         // Nested objects
         loadingCapabilities: loadingCapabilities,
+        // cargoCapabilities: merge flat top-level fields with the nested object
+        cargoCapabilities: {
+          ...(initialData.cargoCapabilities || {}),
+          hasTanker: initialData.hasTanker ?? initialData.cargoCapabilities?.hasTanker ?? false,
+          hasBulk: initialData.hasBulk ?? initialData.cargoCapabilities?.hasBulk ?? false,
+          hasRefrigerated: initialData.hasRefrigerated ?? initialData.cargoCapabilities?.hasRefrigerated ?? false,
+          hasHeated: initialData.hasHeated ?? initialData.cargoCapabilities?.hasHeated ?? false,
+          hasVentilated: initialData.hasVentilated ?? initialData.cargoCapabilities?.hasVentilated ?? false,
+          hasCurtainSide: initialData.hasCurtainSide ?? initialData.cargoCapabilities?.hasCurtainSide ?? false,
+          hasBox: initialData.hasBox ?? initialData.cargoCapabilities?.hasBox ?? false,
+          hasVan: initialData.hasVan ?? initialData.cargoCapabilities?.hasVan ?? false,
+          hasPlatform: initialData.hasPlatform ?? initialData.cargoCapabilities?.hasPlatform ?? false,
+          hasCarCarrier: initialData.hasCarCarrier ?? initialData.cargoCapabilities?.hasCarCarrier ?? false,
+          hasHeavyHaul: initialData.hasHeavyHaul ?? initialData.cargoCapabilities?.hasHeavyHaul ?? false,
+          hasOversized: initialData.hasOversized ?? initialData.cargoCapabilities?.hasOversized ?? false,
+          hasHazmat: initialData.hasHazmat ?? initialData.cargoCapabilities?.hasHazmat ?? false,
+          hasDangerousGoods: initialData.hasDangerousGoods ?? initialData.cargoCapabilities?.hasDangerousGoods ?? false,
+          hasFoodGrade: initialData.hasFoodGrade ?? initialData.cargoCapabilities?.hasFoodGrade ?? false,
+          hasPharmaceutical: initialData.hasPharmaceutical ?? initialData.cargoCapabilities?.hasPharmaceutical ?? false,
+          hasLiquid: initialData.hasLiquid ?? initialData.cargoCapabilities?.hasLiquid ?? false,
+          hasDryBulk: initialData.hasDryBulk ?? initialData.cargoCapabilities?.hasDryBulk ?? false,
+          hasGas: initialData.hasGas ?? initialData.cargoCapabilities?.hasGas ?? false,
+          hasChemical: initialData.hasChemical ?? initialData.cargoCapabilities?.hasChemical ?? false,
+          hasWaste: initialData.hasWaste ?? initialData.cargoCapabilities?.hasWaste ?? false,
+          hasReefer: initialData.hasReefer ?? initialData.cargoCapabilities?.hasReefer ?? false,
+          hasFrozen: initialData.hasFrozen ?? initialData.cargoCapabilities?.hasFrozen ?? false,
+          hasChilled: initialData.hasChilled ?? initialData.cargoCapabilities?.hasChilled ?? false,
+          hasAmbient: initialData.hasAmbient ?? initialData.cargoCapabilities?.hasAmbient ?? false,
+          hasControlledAtmosphere: initialData.hasControlledAtmosphere ?? initialData.cargoCapabilities?.hasControlledAtmosphere ?? false,
+          hasHumidityControl: initialData.hasHumidityControl ?? initialData.cargoCapabilities?.hasHumidityControl ?? false,
+          hasTemperatureMonitoring: initialData.hasTemperatureMonitoring ?? initialData.cargoCapabilities?.hasTemperatureMonitoring ?? false,
+        },
+        // certifications: ensure nested object is initialized and merged with flat fields
+        certifications: {
+          ...(initialData.certifications || {}),
+          hazmatCertified: initialData.hasHazmatPermit ?? initialData.hasHazmat ?? initialData.certifications?.hazmatCertified ?? false,
+          dangerousGoodsCertified: initialData.hasDangerousGoods ?? initialData.certifications?.dangerousGoodsCertified ?? false,
+          foodGradeCertified: initialData.hasFoodGrade ?? initialData.certifications?.foodGradeCertified ?? false,
+          pharmaceuticalCertified: initialData.hasPharmaceutical ?? initialData.certifications?.pharmaceuticalCertified ?? false,
+        },
+        // routeCapabilities: ensure nested object is initialized
+        routeCapabilities: initialData.routeCapabilities || {},
+        // costStructure: ensure nested object is initialized
+        costStructure: initialData.costStructure || {},
         // securityFeatures: merge flat top-level fields with the nested object
         // so SecurityMonitoringStep checkboxes pre-fill correctly on edit
         securityFeatures: {
@@ -344,8 +405,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         // Driver fields
         firstName: initialData.firstName || '',
         lastName: initialData.lastName || '',
+        dateOfBirth: formatDateForInput(initialData.dateOfBirth),
         licenseNumber: initialData.licenseNumber || '',
         licenseType: initialData.licenseType || '',
+        licenseIssueDate: formatDateForInput(initialData.licenseIssueDate),
+        licenseExpiry: formatDateForInput(initialData.licenseExpiry),
+        hireDate: formatDateForInput(initialData.hireDate),
         experience: initialData.experience?.toString() || '',
         contactInfo: {
           phone: initialData.contactInfo?.phone || '',
@@ -484,6 +549,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         // Nested objects - initialize empty
         loadingCapabilities: {},
         securityFeatures: {},
+        cargoCapabilities: {},
+        certifications: {},
+        routeCapabilities: {},
+        costStructure: {},
         // Driver fields
         firstName: '',
         lastName: '',

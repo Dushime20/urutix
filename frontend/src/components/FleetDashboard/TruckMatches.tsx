@@ -343,42 +343,42 @@ export const TruckMatches: React.FC = () => {
                             className="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors duration-200"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-10 bg-blue-500 text-white text-center relative overflow-hidden transition-colors duration-200">
-                                <div className="absolute top-0 right-0 p-8 opacity-10"><Zap size={100} /></div>
-                                <div className="size-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <CheckCircle2 size={40} />
+                            <div className="p-4 sm:p-5 bg-blue-500 text-white text-center relative overflow-hidden transition-colors duration-200">
+                                <div className="absolute top-0 right-0 p-4 opacity-10"><Zap size={64} /></div>
+                                <div className="size-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <CheckCircle2 size={24} />
                                 </div>
-                                <h2 className="text-3xl font-black tracking-tight mb-2">Protocol Active</h2>
-                                <p className="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-200">Match Synchronized & Active</p>
+                                <h2 className="text-xl font-black tracking-tight mb-0.5">Protocol Active</h2>
+                                <p className="text-blue-100 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-200">Match Synchronized & Active</p>
                             </div>
 
-                            <div className="p-10 space-y-8">
-                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 space-y-4 transition-colors duration-200">
+                            <div className="p-4 sm:p-6 space-y-4">
+                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4 space-y-2 transition-colors duration-200 flex flex-col md:flex-row md:space-y-0 gap-2 md:gap-4 justify-between">
                                     {[
                                         { l: 'Load Asset', v: acceptedMatchDetails.match.load?.title, i: Package },
                                         { l: 'Fleet Unit', v: acceptedMatchDetails.match.truck?.plateNumber, i: Truck },
                                         { l: 'Route Matrix', v: `${acceptedMatchDetails.match.load?.origin?.city} → ${acceptedMatchDetails.match.load?.destination?.city}`, i: MapPin }
                                     ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-4">
-                                            <div className="size-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-blue-400 dark:text-blue-500 transition-colors duration-200"><item.i size={14} /></div>
-                                            <div>
+                                        <div key={i} className="flex items-center gap-3 flex-1 min-w-0">
+                                            <div className="size-6 bg-white dark:bg-gray-900 rounded flex items-center justify-center text-blue-400 dark:text-blue-500 transition-colors duration-200 shrink-0"><item.i size={12} /></div>
+                                            <div className="min-w-0 flex-1 w-full">
                                                 <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 transition-colors duration-200">{item.l}</p>
-                                                <p className="text-xs font-bold text-gray-900 dark:text-white transition-colors duration-200">{item.v}</p>
+                                                <p className="text-xs font-bold text-gray-900 dark:text-white transition-colors duration-200 truncate">{item.v}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="p-6 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100/50 dark:border-blue-900/50 transition-colors duration-200">
-                                    <p className="text-[10px] font-bold text-gray-800 dark:text-gray-200 leading-relaxed uppercase tracking-wider transition-colors duration-200">
-                                        <strong className="text-blue-500 dark:text-blue-400 transition-colors duration-200">Next Vector:</strong> The trip has been initialized. Advance to the Trips Matrix to begin operational tracking and asset monitoring.
+                                <div className="p-3 sm:p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100/50 dark:border-blue-900/50 transition-colors duration-200">
+                                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-800 dark:text-gray-200 leading-relaxed uppercase tracking-wider transition-colors duration-200">
+                                        <strong className="text-blue-500 dark:text-blue-400 transition-colors duration-200">Next Vector:</strong> Trip initialized. Advance to Trips Matrix for operational tracking.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="p-10 bg-gray-50/50 dark:bg-gray-800/50 flex gap-3 transition-colors duration-200">
-                                <button onClick={() => setShowSuccessModal(false)} className="flex-1 h-14 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">Close Portal</button>
-                                <button onClick={handleViewTrip} className="flex-1 h-14 bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all duration-200">Trips Dashboard</button>
+                            <div className="p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-3 transition-colors duration-200 pt-0 border-t-0">
+                                <button onClick={() => setShowSuccessModal(false)} className="flex-1 h-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">Close Portal</button>
+                                <button onClick={handleViewTrip} className="flex-1 h-10 bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all duration-200">Trips Dashboard</button>
                             </div>
                         </motion.div>
                     </div>

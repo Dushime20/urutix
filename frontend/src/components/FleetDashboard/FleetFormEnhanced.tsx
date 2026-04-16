@@ -42,6 +42,23 @@ const FleetFormEnhanced: React.FC<FleetFormProps> = ({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const initializedRef = useRef(false);
 
+    // Helper to format date strings for HTML5 date inputs (YYYY-MM-DD)
+    const formatDateForInput = (dateStr: any) => {
+        if (!dateStr) return '';
+        try {
+            // Check if it's already in YYYY-MM-DD format
+            if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                return dateStr;
+            }
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString().split('T')[0];
+        } catch (err) {
+            console.error('Date formatting error:', err);
+            return '';
+        }
+    };
+
     // Initialize form data
     useEffect(() => {
         if (!isOpen) {
@@ -66,13 +83,13 @@ const FleetFormEnhanced: React.FC<FleetFormProps> = ({
             maxLoadingTime: '', maxUnloadingTime: '',
         };
 
-        if (initialData) {
+        if (initialData && mode === 'edit') {
             // Cast to any to handle properties that may exist at runtime but not in type
             const data = initialData as any;
             setFormData({
                 ...defaultFormData, // Start with defaults
-                plateNumber: data.plateNumber || '',
-                vin: data.vin || '',
+                plateNumber: data.plateNumber || data.licensePlate || '',
+                vin: data.vin || data.vinNumber || '',
                 make: data.make || '',
                 model: data.model || '',
                 year: data.year || '',
@@ -81,20 +98,20 @@ const FleetFormEnhanced: React.FC<FleetFormProps> = ({
                 capacityWeight: data.capacityWeight || '',
                 capacityVolume: data.capacityVolume || '',
                 registrationNumber: data.registrationNumber || '',
-                registrationExpiry: data.registrationExpiry || '',
+                registrationExpiry: formatDateForInput(data.registrationExpiry),
                 insurancePolicy: data.insurancePolicy || '',
-                insuranceExpiry: data.insuranceExpiry || '',
-                roadworthyCertExpiry: data.roadworthyCertExpiry || '',
+                insuranceExpiry: formatDateForInput(data.insuranceExpiry),
+                roadworthyCertExpiry: formatDateForInput(data.roadworthyCertExpiry),
                 mileage: data.mileage || '',
                 truckType: data.truckType || '',
                 trailerType: data.trailerType || '',
                 maxLength: data.maxLength || '',
                 maxWidth: data.maxWidth || '',
                 maxHeight: data.maxHeight || '',
-                hasRefrigeration: data.hasRefrigeration || false,
-                hasLiftGate: data.hasLiftGate || false,
-                hasGPS: data.hasGPS || data.hasGps || false,
-                hasHazmatPermit: data.hasHazmatPermit || false,
+                hasRefrigeration: data.hasRefrigeration || data.cargoCapabilities?.hasRefrigerated || data.hasRefrigerated || false,
+                hasLiftGate: data.hasLiftGate || data.loadingCapabilities?.hasTailLift || false,
+                hasGPS: data.hasGPS || data.hasGps || data.securityFeatures?.hasGps || false,
+                hasHazmatPermit: data.hasHazmatPermit || data.cargoCapabilities?.hasHazmat || data.certifications?.hazmatCertified || false,
                 isActive: data.isActive !== undefined ? data.isActive : true,
                 status: data.status || 'AVAILABLE',
                 hasSideRails: data.hasSideRails || false,
@@ -102,9 +119,9 @@ const FleetFormEnhanced: React.FC<FleetFormProps> = ({
                 hasStraps: data.hasStraps || false,
                 hasChains: data.hasChains || false,
                 hasWinch: data.hasWinch || false,
-                hasTailLift: data.hasTailLift || false,
-                hasSideLift: data.hasSideLift || false,
-                hasRollerBed: data.hasRollerBed || false,
+                hasTailLift: data.hasTailLift || data.loadingCapabilities?.hasTailLift || false,
+                hasSideLift: data.hasSideLift || data.loadingCapabilities?.hasSideLift || false,
+                hasRollerBed: data.hasRollerBed || data.loadingCapabilities?.hasRollerBed || false,
                 hasForklift: data.loadingCapabilities?.hasForklift || data.hasForklift || false,
                 hasCrane: data.loadingCapabilities?.hasCrane || data.hasCrane || false,
                 hasLoadingDock: data.loadingCapabilities?.hasLoadingDock || data.hasLoadingDock || false,
@@ -112,11 +129,11 @@ const FleetFormEnhanced: React.FC<FleetFormProps> = ({
                 maxUnloadingTime: data.loadingCapabilities?.maxUnloadingTime || data.maxUnloadingTime || '',
             });
             initializedRef.current = true;
-        } else {
+        } else if (mode === 'create') {
             setFormData(defaultFormData);
             initializedRef.current = true;
         }
-    }, [initialData, isOpen]);
+    }, [initialData, isOpen, mode]);
 
     const handleInputChange = (field: string, value: any) => {
         setFormData((prev: any) => ({ ...prev, [field]: value }));
@@ -780,6 +797,10 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     <ToggleCard label="Crane" field="hasCrane" description="Built-in crane for heavy items" />
                     <ToggleCard label="Tail Lift" field="hasTailLift" description="Rear loading lift platform" />
                     <ToggleCard label="Side Rails" field="hasSideRails" description="Cargo protection and tie-down rails" />
+                    <ToggleCard label="Tarps" field="hasTarps" description="Weather protection covers" />
+                    <ToggleCard label="Straps" field="hasStraps" description="Load securing straps" />
+                    <ToggleCard label="Chains" field="hasChains" description="Heavy-duty securing chains" />
+                    <ToggleCard label="Winch" field="hasWinch" description="Mechanical towing/pulling device" />
                 </div>
             </div>
         </div>

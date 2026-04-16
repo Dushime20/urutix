@@ -369,6 +369,42 @@ export interface FleetItem {
       width: number;
       height: number;
     };
+    hasTanker?: boolean;
+    hasBulk?: boolean;
+    hasRefrigerated?: boolean;
+    hasHeated?: boolean;
+    hasVentilated?: boolean;
+    hasCurtainSide?: boolean;
+    hasBox?: boolean;
+    hasVan?: boolean;
+    hasPlatform?: boolean;
+    hasCarCarrier?: boolean;
+    hasHeavyHaul?: boolean;
+    hasOversized?: boolean;
+    hasHazmat?: boolean;
+    hasDangerousGoods?: boolean;
+    hasFoodGrade?: boolean;
+    hasPharmaceutical?: boolean;
+    hasLiquid?: boolean;
+    hasDryBulk?: boolean;
+    hasGas?: boolean;
+    hasChemical?: boolean;
+    hasWaste?: boolean;
+    hasReefer?: boolean;
+    hasFrozen?: boolean;
+    hasChilled?: boolean;
+    hasAmbient?: boolean;
+    hasControlledAtmosphere?: boolean;
+    hasHumidityControl?: boolean;
+    hasTemperatureMonitoring?: boolean;
+    // Dimension capacities
+    maxLengthCapacity?: number;
+    maxWidthCapacity?: number;
+    maxHeightCapacity?: number;
+    maxStackableHeight?: number;
+    maxVolumeCapacity?: number;
+    maxWeightPerAxle?: number;
+    maxClearanceHeight?: number;
   };
 
   hasSideRails?: boolean;
@@ -475,17 +511,7 @@ export interface FleetItem {
   };
   assignedRoutes?: RouteAssignment[];
 
-  // Capabilities (Added for FleetTable compatibility)
-  cargoCapabilities?: {
-    supportedCargoTypes?: string[];
-    temperatureRange?: { min: number; max: number };
-    maxFragileHandling?: boolean;
-    maxHazardousHandling?: boolean;
-    maxRefrigeratedHandling?: boolean;
-    maxLiquidHandling?: boolean;
-    maxOversizedHandling?: boolean;
-    maxValuableHandling?: boolean;
-  };
+
   loadingCapabilities?: {
     hasForklift?: boolean;
     hasCrane?: boolean;
@@ -495,8 +521,118 @@ export interface FleetItem {
   securityFeatures?: {
     hasGps?: boolean;
     hasTracking?: boolean;
-    hasTemperatureAlerts?: boolean;
+    hasTelematics?: boolean;
+    hasRouteOptimization?: boolean;
+    hasRealTimeTracking?: boolean;
+    hasGeofencing?: boolean;
+    hasDashCam?: boolean;
+    hasSafetyCameras?: boolean;
+    hasCollisionAvoidance?: boolean;
+    hasLaneDeparture?: boolean;
+    hasAdaptiveCruise?: boolean;
+    hasBlindSpot?: boolean;
+    hasBackupCamera?: boolean;
     hasCargoMonitoring?: boolean;
+    hasWeightMonitoring?: boolean;
+    hasVolumeMonitoring?: boolean;
+    hasDoorMonitoring?: boolean;
+    hasShockMonitoring?: boolean;
+    hasTiltMonitoring?: boolean;
+    hasTemperatureAlerts?: boolean;
+    hasHumidityAlerts?: boolean;
+    hasPressureMonitoring?: boolean;
+    hasFlowMonitoring?: boolean;
+    hasLevelMonitoring?: boolean;
+    hasQualityMonitoring?: boolean;
+    hasContaminationMonitoring?: boolean;
+    hasELD?: boolean;
+    hasDriverMonitoring?: boolean;
+    hasFatigueMonitoring?: boolean;
+    hasSpeedMonitoring?: boolean;
+    hasIdleMonitoring?: boolean;
+    hasTirePressureMonitoring?: boolean;
+    hasEngineMonitoring?: boolean;
+    hasFuelMonitoring?: boolean;
+    hasMaintenanceAlerts?: boolean;
+  };
+
+  certifications?: {
+    hazmatCertified?: boolean;
+    dangerousGoodsCertified?: boolean;
+    foodGradeCertified?: boolean;
+    pharmaceuticalCertified?: boolean;
+    explosivesCertified?: boolean;
+    radioactiveCertified?: boolean;
+    cdlCertified?: boolean;
+    hazmatEndorsement?: boolean;
+    tankerEndorsement?: boolean;
+    doublesTriplesEndorsement?: boolean;
+    passengerEndorsement?: boolean;
+    schoolBusEndorsement?: boolean;
+    dotCertified?: boolean;
+    epaCertified?: boolean;
+    carbCertified?: boolean;
+    csaCertified?: boolean;
+    smartwayCertified?: boolean;
+    isoCertified?: boolean;
+    maxInsuranceCoverage?: number;
+    maxDriverExperience?: number;
+    requiredCertifications?: string[];
+  };
+
+  routeCapabilities?: {
+    supportsUrbanRoutes?: boolean;
+    supportsRuralRoutes?: boolean;
+    supportsHighwayRoutes?: boolean;
+    supportsTollRoads?: boolean;
+    supportsBorderCrossing?: boolean;
+    supportsPortAccess?: boolean;
+    supportsMountainRoutes?: boolean;
+    supportsDesertRoutes?: boolean;
+    supportsSnowRoutes?: boolean;
+    supportsOffRoad?: boolean;
+    supportsTunnelRoutes?: boolean;
+    supportsBridgeRoutes?: boolean;
+    supportsFerryTransport?: boolean;
+    supportsRailTransport?: boolean;
+    supportsAirFreight?: boolean;
+    supportsIntermodal?: boolean;
+    supportsContainerTransport?: boolean;
+    supportsBulkTransport?: boolean;
+    maxDistance?: number;
+    maxHoursToAvailability?: number;
+    maxFerryLength?: number;
+    hasWeightRestrictions?: boolean;
+    hasHeightRestrictions?: boolean;
+    hasWidthRestrictions?: boolean;
+    hasLengthRestrictions?: boolean;
+  };
+
+  costStructure?: {
+    baseRate?: number;
+    perKmRate?: number;
+    perMileRate?: number;
+    dailyRate?: number;
+    weeklyRate?: number;
+    monthlyRate?: number;
+    fuelSurcharge?: number;
+    idleTimeRate?: number;
+    waitingTimeRate?: number;
+    detentionRate?: number;
+    tollSurcharge?: number;
+    parkingSurcharge?: number;
+    hazmatSurcharge?: number;
+    refrigeratedSurcharge?: number;
+    oversizedSurcharge?: number;
+    fragileSurcharge?: number;
+    valuableSurcharge?: number;
+    urgentSurcharge?: number;
+    forkliftSurcharge?: number;
+    craneSurcharge?: number;
+    loadingDockSurcharge?: number;
+    temperatureMonitoringSurcharge?: number;
+    gpsTrackingSurcharge?: number;
+    insuranceSurcharge?: number;
   };
 
   // Comprehensive records
@@ -553,7 +689,6 @@ export interface FleetItem {
     phone?: string;
     relationship?: string;
   };
-  documents?: any[];
 }
 
 export interface FleetFilters {

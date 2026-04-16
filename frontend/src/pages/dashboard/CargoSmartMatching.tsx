@@ -562,7 +562,7 @@ const CargoSmartMatching: React.FC = () => {
                     // res.data = { success, message, data: LoadMatch }
                     const matchId = res?.data?.data?.id || res?.data?.id || res?.id;
                     if (matchId) {
-                      navigate(`/dashboard/booking-confirmation/${matchId}`);
+                      navigate(`/dashboard/accepted-matches`);
                     } else {
                       toast.error('Could not get match ID from server');
                     }
