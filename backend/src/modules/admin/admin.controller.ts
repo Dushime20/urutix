@@ -64,7 +64,9 @@ export class AdminController {
   @Get('analytics/cargo')
   @ApiOperation({ summary: 'Get cargo ecosystem analytics' })
   getCargoAnalytics(@Request() req) {
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    const tenantId = (req.user.role === 'SUPER_ADMIN' || !req.user.tenantId)
+      ? undefined
+      : req.user.tenantId;
     return this.adminService.getCargoAnalytics(tenantId);
   }
 

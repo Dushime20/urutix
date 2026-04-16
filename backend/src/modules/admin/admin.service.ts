@@ -392,51 +392,76 @@ export class AdminService {
   }
 
   async getCargoAnalytics(tenantId?: string) {
+    // Treat null/undefined/'null'/'undefined' as no filter (show all data)
+    const safeTenantId = tenantId && tenantId !== 'null' && tenantId !== 'undefined' ? tenantId : undefined;
     try {
-      const where = tenantId ? `WHERE "tenantId" = '${tenantId}'` : '';
+      const tenantFilter = safeTenantId ? `WHERE "tenantId" = '${safeTenantId}'` : '';
+      const tenantAnd = safeTenantId ? `AND "tenantId" = '${safeTenantId}'` : '';
 
       const [
-        totalLoads, activeLoads, completedLoads, cancelledLoads,
-        cargoTypeBreakdown, monthlyLoads, avgLoadValue,
+        totalLoads,
+        statusBreakdown,
+        cargoTypeBreakdown,
+        monthlyLoads,
+        avgValues,
       ] = await Promise.all([
-        tenantId ? this.loadRepo.count({ where: { tenantId } as any }) : this.loadRepo.count(),
-        tenantId
-          ? this.loadRepo.count({ where: { tenantId, status: 'ACTIVE' } as any })
-          : this.loadRepo.count({ where: { status: 'ACTIVE' } as any }),
-        tenantId
-          ? this.loadRepo.count({ where: { tenantId, status: 'COMPLETED' } as any })
-          : this.loadRepo.count({ where: { status: 'COMPLETED' } as any }),
-        tenantId
-          ? this.loadRepo.count({ where: { tenantId, status: 'CANCELLED' } as any })
-          : this.loadRepo.count({ where: { status: 'CANCELLED' } as any }),
-        this.loadRepo.manager.query(`
-          SELECT "cargoType", COUNT(*) AS count
-          FROM loads ${where}
-          GROUP BY "cargoType" ORDER BY count DESC LIMIT 8
-        `),
-        this.loadRepo.manager.query(`
-          SELECT DATE_TRUNC('month', "createdAt") AS month, COUNT(*) AS count,
-                 COALESCE(SUM("offeredPrice"), 0) AS revenue
-          FROM loads ${where}
-          GROUP BY month ORDER BY month DESC LIMIT 6
-        `),
-        this.loadRepo.manager.query(`
-          SELECT COALESCE(AVG("loadValue"), 0) AS avg FROM loads ${where}
-        `),
+        // Total count
+        this.loadRepo.manager.query(
+          `SELECT COUNT(*) AS count FROM loads ${tenantFilter}`
+        ),
+        // Status breakdown
+        this.loadRepo.manager.query(
+          `SELECT status, COUNT(*) AS count FROM loads ${tenantFilter} GROUP BY status ORDER BY count DESC`
+        ),
+        // Cargo type breakdown
+        this.loadRepo.manager.query(
+          `SELECT "cargoType", COUNT(*) AS count FROM loads ${tenantFilter} GROUP BY "cargoType" ORDER BY count DESC LIMIT 10`
+        ),
+        // Monthly loads + revenue (last 6 months)
+        this.loadRepo.manager.query(
+          `SELECT DATE_TRUNC('month', "createdAt") AS month,
+                  COUNT(*) AS count,
+                  COALESCE(SUM("offeredPrice"), 0) AS revenue,
+                  COALESCE(SUM("loadValue"), 0) AS load_value
+           FROM loads ${tenantFilter}
+           GROUP BY month ORDER BY month DESC LIMIT 6`
+        ),
+        // Avg values
+        this.loadRepo.manager.query(
+          `SELECT COALESCE(AVG("loadValue"), 0) AS avg_load_value,
+                  COALESCE(AVG("offeredPrice"), 0) AS avg_offered_price
+           FROM loads ${tenantFilter}`
+        ),
       ]);
 
-      const bookingSuccessRate = totalLoads > 0
-        ? Math.round((completedLoads / totalLoads) * 100)
+      const total = parseInt(totalLoads[0]?.count || '0');
+
+      // Build status map from real data
+      const statusMap: Record<string, number> = {};
+      (statusBreakdown as any[]).forEach(r => {
+        statusMap[r.status] = parseInt(r.count);
+      });
+
+      // "Active" = loads in progress (ASSIGNED, LOADED, IN_TRANSIT, PUBLISHED)
+      const activeStatuses = ['ASSIGNED', 'LOADED', 'IN_TRANSIT', 'PUBLISHED', 'PENDING_CONFIRMATION'];
+      const activeLoads = activeStatuses.reduce((sum, s) => sum + (statusMap[s] || 0), 0);
+      const completedLoads = (statusMap['COMPLETED'] || 0) + (statusMap['DELIVERED'] || 0) + (statusMap['CLOSED'] || 0);
+      const cancelledLoads = statusMap['CANCELLED'] || 0;
+
+      const bookingSuccessRate = total > 0
+        ? Math.round((completedLoads / total) * 100)
         : 0;
 
       return {
         stats: {
-          totalLoads,
+          totalLoads: total,
           activeLoads,
           completedLoads,
           cancelledLoads,
           bookingSuccessRate,
-          avgLoadValue: Number(avgLoadValue?.[0]?.avg || 0),
+          avgLoadValue: Number(avgValues[0]?.avg_load_value || 0),
+          avgOfferedPrice: Number(avgValues[0]?.avg_offered_price || 0),
+          statusBreakdown: statusMap,
         },
         cargoTypeBreakdown: (cargoTypeBreakdown as any[]).map(r => ({
           label: r.cargoType || 'UNKNOWN',
@@ -446,66 +471,84 @@ export class AdminService {
           label: new Date(r.month).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
           count: parseInt(r.count),
           revenue: Number(r.revenue),
+          loadValue: Number(r.load_value),
         })),
       };
     } catch (error) {
-      this.logger.error('Error in getCargoAnalytics:', error);
+      this.logger.error('Error in getCargoAnalytics:', error.message, error.stack);
       return { stats: {}, cargoTypeBreakdown: [], monthlyLoads: [] };
     }
   }
 
   async getFleetAnalytics(tenantId?: string) {
     try {
-      const where = tenantId ? `WHERE "tenantId" = '${tenantId}'` : '';
+      const tenantFilter = tenantId ? `WHERE "tenantId" = '${tenantId}'` : '';
 
       const [
-        totalTrucks, availableTrucks, inTransitTrucks, maintenanceTrucks,
-        totalTrips, completedTrips, truckTypeBreakdown, monthlyTrips,
+        totalTrucks, statusBreakdown,
+        totalTrips, tripStatusBreakdown,
+        truckTypeBreakdown, monthlyTrips,
       ] = await Promise.all([
-        tenantId ? this.truckRepo.count({ where: { tenantId } as any }) : this.truckRepo.count(),
-        tenantId
-          ? this.truckRepo.count({ where: { tenantId, status: 'AVAILABLE' } as any })
-          : this.truckRepo.count({ where: { status: 'AVAILABLE' } as any }),
-        tenantId
-          ? this.truckRepo.count({ where: { tenantId, status: 'IN_TRANSIT' } as any })
-          : this.truckRepo.count({ where: { status: 'IN_TRANSIT' } as any }),
-        tenantId
-          ? this.truckRepo.count({ where: { tenantId, status: 'MAINTENANCE' } as any })
-          : this.truckRepo.count({ where: { status: 'MAINTENANCE' } as any }),
-        tenantId ? this.tripRepo.count({ where: { tenantId } as any }) : this.tripRepo.count(),
-        tenantId
-          ? this.tripRepo.count({ where: { tenantId, status: 'COMPLETED' } as any })
-          : this.tripRepo.count({ where: { status: 'COMPLETED' } as any }),
-        this.truckRepo.manager.query(`
-          SELECT "truckType", COUNT(*) AS count FROM trucks ${where}
-          GROUP BY "truckType" ORDER BY count DESC LIMIT 8
-        `),
-        this.tripRepo.manager.query(`
-          SELECT DATE_TRUNC('month', "createdAt") AS month,
-                 COUNT(*) AS count,
-                 COALESCE(SUM("agreedPrice"), 0) AS revenue
-          FROM trips ${where}
-          GROUP BY month ORDER BY month DESC LIMIT 6
-        `),
+        this.truckRepo.manager.query(
+          `SELECT COUNT(*) AS count FROM trucks ${tenantFilter}`
+        ),
+        this.truckRepo.manager.query(
+          `SELECT status, COUNT(*) AS count FROM trucks ${tenantFilter} GROUP BY status`
+        ),
+        this.tripRepo.manager.query(
+          `SELECT COUNT(*) AS count FROM trips ${tenantFilter}`
+        ),
+        this.tripRepo.manager.query(
+          `SELECT status, COUNT(*) AS count FROM trips ${tenantFilter} GROUP BY status`
+        ),
+        this.truckRepo.manager.query(
+          `SELECT "truckType", COUNT(*) AS count FROM trucks ${tenantFilter}
+           GROUP BY "truckType" ORDER BY count DESC LIMIT 8`
+        ),
+        this.tripRepo.manager.query(
+          `SELECT DATE_TRUNC('month', "createdAt") AS month,
+                  COUNT(*) AS count,
+                  COALESCE(SUM("agreedPrice"), 0) AS revenue
+           FROM trips ${tenantFilter}
+           GROUP BY month ORDER BY month DESC LIMIT 6`
+        ),
       ]);
 
-      const utilizationRate = totalTrucks > 0
-        ? Math.round(((inTransitTrucks) / totalTrucks) * 100)
+      const truckTotal = parseInt(totalTrucks[0]?.count || '0');
+      const tripTotal = parseInt(totalTrips[0]?.count || '0');
+
+      // Build status maps
+      const truckStatusMap: Record<string, number> = {};
+      (statusBreakdown as any[]).forEach(r => { truckStatusMap[r.status] = parseInt(r.count); });
+
+      const tripStatusMap: Record<string, number> = {};
+      (tripStatusBreakdown as any[]).forEach(r => { tripStatusMap[r.status] = parseInt(r.count); });
+
+      const availableTrucks = truckStatusMap['AVAILABLE'] || 0;
+      const inTransitTrucks = truckStatusMap['IN_TRANSIT'] || 0;
+      const maintenanceTrucks = truckStatusMap['MAINTENANCE'] || 0;
+
+      const completedTrips = (tripStatusMap['COMPLETED'] || 0) + (tripStatusMap['DELIVERED'] || 0);
+
+      const utilizationRate = truckTotal > 0
+        ? Math.round((inTransitTrucks / truckTotal) * 100)
         : 0;
-      const tripSuccessRate = totalTrips > 0
-        ? Math.round((completedTrips / totalTrips) * 100)
+      const tripSuccessRate = tripTotal > 0
+        ? Math.round((completedTrips / tripTotal) * 100)
         : 0;
 
       return {
         stats: {
-          totalTrucks,
+          totalTrucks: truckTotal,
           availableTrucks,
           inTransitTrucks,
           maintenanceTrucks,
           utilizationRate,
-          totalTrips,
+          totalTrips: tripTotal,
           completedTrips,
           tripSuccessRate,
+          truckStatusBreakdown: truckStatusMap,
+          tripStatusBreakdown: tripStatusMap,
         },
         truckTypeBreakdown: (truckTypeBreakdown as any[]).map(r => ({
           label: r.truckType || 'UNKNOWN',
@@ -518,7 +561,7 @@ export class AdminService {
         })),
       };
     } catch (error) {
-      this.logger.error('Error in getFleetAnalytics:', error);
+      this.logger.error('Error in getFleetAnalytics:', error.message);
       return { stats: {}, truckTypeBreakdown: [], monthlyTrips: [] };
     }
   }
