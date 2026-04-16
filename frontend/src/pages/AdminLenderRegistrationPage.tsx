@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
@@ -40,75 +40,6 @@ interface LenderAnalytics {
   monthlyGrowth: number;
   topPerformers: Lender[];
 }
-
-const mockFetchLenders = async (): Promise<Lender[]> => {
-  return [
-    {
-      id: '1',
-      name: 'CargoAI Bank',
-      email: 'bank@cargoai.com',
-      phone: '+250788123456',
-      api_key: 'APIKEY123456789',
-      status: 'active',
-      createdAt: '2024-01-15',
-      totalLoans: 145,
-      totalAmount: 2450000,
-      approvalRate: 87.5,
-      avgProcessingTime: 2.3,
-      riskRating: 'low',
-      lastActivity: '2024-02-10',
-      interestRate: 12.5,
-      maxLoanAmount: 50000
-    },
-    {
-      id: '2',
-      name: 'Swift Finance',
-      email: 'swift@finance.com',
-      phone: '+250788654321',
-      api_key: 'APIKEY987654321',
-      status: 'active',
-      createdAt: '2024-02-01',
-      totalLoans: 89,
-      totalAmount: 1680000,
-      approvalRate: 92.1,
-      avgProcessingTime: 1.8,
-      riskRating: 'low',
-      lastActivity: '2024-02-09',
-      interestRate: 11.8,
-      maxLoanAmount: 75000
-    },
-    {
-      id: '3',
-      name: 'Micro Credit Plus',
-      email: 'micro@creditplus.rw',
-      phone: '+250788111222',
-      api_key: 'APIKEY555666777',
-      status: 'pending',
-      createdAt: '2024-02-08',
-      totalLoans: 23,
-      totalAmount: 345000,
-      approvalRate: 76.3,
-      avgProcessingTime: 3.1,
-      riskRating: 'medium',
-      lastActivity: '2024-02-07',
-      interestRate: 15.2,
-      maxLoanAmount: 25000
-    },
-  ];
-};
-
-const mockFetchAnalytics = async (): Promise<LenderAnalytics> => {
-  return {
-    totalLenders: 3,
-    activeLenders: 2,
-    totalLoansIssued: 257,
-    totalAmountDisbursed: 4475000,
-    avgApprovalRate: 85.3,
-    avgProcessingTime: 2.4,
-    monthlyGrowth: 12.8,
-    topPerformers: []
-  };
-};
 
 const AdminLenderRegistrationPage: React.FC = () => {
   const [form, setForm] = useState({
@@ -160,23 +91,34 @@ const AdminLenderRegistrationPage: React.FC = () => {
         }));
 
         setLenders(transformedLenders);
-        const analyticsData = await mockFetchAnalytics();
-        setAnalytics(analyticsData);
+        
+        // Compute analytics from real data
+        const activeLenders = transformedLenders.filter(l => l.status === 'active').length;
+        const totalLoans = transformedLenders.reduce((sum, l) => sum + (l.totalLoans || 0), 0);
+        const totalAmount = transformedLenders.reduce((sum, l) => sum + (l.totalAmount || 0), 0);
+        const avgApproval = transformedLenders.length > 0 
+          ? transformedLenders.reduce((sum, l) => sum + (l.approvalRate || 0), 0) / transformedLenders.length 
+          : 0;
+        const avgProcessing = transformedLenders.length > 0
+          ? transformedLenders.reduce((sum, l) => sum + (l.avgProcessingTime || 0), 0) / transformedLenders.length
+          : 0;
+
+        setAnalytics({
+          totalLenders: transformedLenders.length,
+          activeLenders,
+          totalLoansIssued: totalLoans,
+          totalAmountDisbursed: totalAmount,
+          avgApprovalRate: avgApproval,
+          avgProcessingTime: avgProcessing,
+          monthlyGrowth: 12.8, // TODO: compute from historical data
+          topPerformers: []
+        });
 
       } catch (err) {
-        console.error('Error fetching lenders from API, falling back to mock data:', err);
-
-        try {
-          const [lendersData, analyticsData] = await Promise.all([
-            mockFetchLenders(),
-            mockFetchAnalytics()
-          ]);
-          setLenders(lendersData);
-          setAnalytics(analyticsData);
-        } catch {
-          setLenders([]);
-          setAnalytics(null);
-        }
+        console.error('Error fetching lenders from API:', err);
+        toast.error('Failed to load lenders');
+        setLenders([]);
+        setAnalytics(null);
       } finally {
         setFetching(false);
       }
@@ -236,8 +178,31 @@ const AdminLenderRegistrationPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    setLenders(prev => prev.filter(l => l.id !== id));
-    toast.success('Lender removed');
+    if (!confirm('Are you sure you want to remove this lender? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await lendingApi.updateLenderStatus(id, 'suspended');
+      setLenders(prev => prev.filter(l => l.id !== id));
+      toast.success('Lender suspended successfully');
+    } catch (err: any) {
+      console.error('Error suspending lender:', err);
+      toast.error(err.response?.data?.message || 'Failed to suspend lender');
+    }
+  };
+
+  const handleStatusToggle = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+    
+    try {
+      await lendingApi.updateLenderStatus(id, newStatus as 'active' | 'paused' | 'suspended');
+      setLenders(prev => prev.map(l => l.id === id ? { ...l, status: newStatus as any } : l));
+      toast.success(`Lender ${newStatus === 'active' ? 'activated' : 'paused'} successfully`);
+    } catch (err: any) {
+      console.error('Error updating lender status:', err);
+      toast.error(err.response?.data?.message || 'Failed to update status');
+    }
   };
 
   const toggleSort = (field: 'name' | 'createdAt' | 'totalLoans' | 'approvalRate') => {
@@ -779,6 +744,15 @@ const AdminLenderRegistrationPage: React.FC = () => {
                                 >
                                   <Eye className="text-slate-400 group-hover/item:text-indigo-600 transition-colors" size={14} />
                                   <span className="text-[10px] font-black uppercase tracking-widest">Analyze Agent</span>
+                                </button>
+                                <button
+                                  onClick={() => { handleStatusToggle(l.id, l.status || 'active'); setOpenActionRow(null); }}
+                                  className="w-full text-left px-4 py-2.5 hover:bg-[#fafafa] text-gray-900 flex items-center gap-3 group/item"
+                                >
+                                  <ShieldCheck className="text-slate-400 group-hover/item:text-amber-600 transition-colors" size={14} />
+                                  <span className="text-[10px] font-black uppercase tracking-widest">
+                                    {l.status === 'active' ? 'Pause Agent' : 'Activate Agent'}
+                                  </span>
                                 </button>
                                 <button
                                   className="w-full text-left px-4 py-2.5 hover:bg-[#fafafa] text-gray-900 flex items-center gap-3 group/item"
