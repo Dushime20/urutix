@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -85,69 +86,7 @@ interface LenderProfile {
 
 const LenderProfilePage: React.FC = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<LenderProfile>({
-    personal: {
-      firstName: 'John',
-      lastName: 'Davidson',
-      email: 'john.davidson@lendingfirm.com',
-      phone: '+1 (555) 123-4567',
-      dateOfBirth: '1980-05-15',
-      profileImage: '',
-      title: 'Senior Lending Manager',
-      bio: 'Experienced lending professional with over 15 years in commercial financing and risk assessment.'
-    },
-    business: {
-      companyName: 'Davidson Capital Partners',
-      registrationNumber: 'REG-123456789',
-      taxId: 'TAX-987654321',
-      businessType: 'Financial Services',
-      industry: 'Commercial Lending',
-      foundedYear: '2010',
-      website: 'https://davidsoncapital.com',
-      address: {
-        street: '123 Financial District Ave',
-        city: 'New York',
-        state: 'NY',
-        zipCode: '10013',
-        country: 'United States'
-      },
-      description: 'Leading commercial lending firm specializing in logistics and transportation financing.',
-      operationalCountries: ['United States', 'Canada', 'Mexico', 'United Kingdom', 'Germany'],
-      supportedCurrencies: ['USD', 'CAD', 'EUR', 'GBP', 'MXN'],
-      lendingCapacity: {
-        minLoanAmount: 10000,
-        maxLoanAmount: 5000000,
-        totalCapacity: 50000000,
-        availableCapacity: 35000000
-      },
-      specializations: ['Transportation & Logistics', 'Import/Export', 'Fleet Financing', 'Warehouse Financing'],
-      certifications: ['ISO 9001:2015', 'SOC 2 Type II', 'PCI DSS Compliant']
-    },
-    banking: {
-      accountName: 'Davidson Capital Partners',
-      accountNumber: '****1234',
-      routingNumber: '021000021',
-      bankName: 'Chase Bank',
-      swiftCode: 'CHASUS33'
-    },
-    preferences: {
-      language: 'English',
-      timezone: 'America/New_York',
-      currency: 'USD',
-      dateFormat: 'MM/DD/YYYY',
-      emailNotifications: true,
-      smsNotifications: false,
-      marketingEmails: true,
-      twoFactorAuth: true
-    },
-    security: {
-      lastPasswordChange: '2024-01-01',
-      loginSessions: 3,
-      securityQuestions: ['What was your first pet\'s name?', 'What city were you born in?']
-    }
-  });
-
-
+  const [profile, setProfile] = useState<LenderProfile | null>(null);
   const [activeTab, setActiveTab] = useState('personal');
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -168,55 +107,98 @@ const LenderProfilePage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Get lender ID from user context
-        const lenderId = user?.role === 'LENDER' ? user.id : (localStorage.getItem('lenderId') || 'default-lender-id');
+        // Get lender ID from user context or localStorage
+        const lenderId = user?.role === 'LENDER' ? user.id : (localStorage.getItem('lenderId') || user?.id);
+
+        if (!lenderId) {
+          setError('No lender ID found. Please ensure you are logged in as a lender.');
+          return;
+        }
 
         try {
-          // Try to fetch comprehensive profile data from new API
+          // Fetch comprehensive profile data from API
           const profileData = await lendingApi.getLenderProfile(lenderId);
 
           if (profileData) {
             setProfile({
-              personal: profileData.personal || profile.personal,
-              business: profileData.business || profile.business,
-              banking: profileData.banking || profile.banking,
-              preferences: profileData.preferences || profile.preferences,
-              security: profileData.security || profile.security
+              personal: {
+                firstName: profileData.personal?.firstName || '',
+                lastName: profileData.personal?.lastName || '',
+                email: profileData.personal?.email || '',
+                phone: profileData.personal?.phone || '',
+                dateOfBirth: profileData.personal?.dateOfBirth || '',
+                profileImage: profileData.personal?.profileImage || '',
+                title: profileData.personal?.title || 'Lending Manager',
+                bio: profileData.personal?.bio || 'Professional lending specialist focused on transportation and logistics financing.'
+              },
+              business: {
+                companyName: profileData.business?.companyName || '',
+                registrationNumber: profileData.business?.registrationNumber || '',
+                taxId: profileData.business?.taxId || '',
+                businessType: profileData.business?.businessType || 'Financial Services',
+                industry: profileData.business?.industry || 'Commercial Lending',
+                foundedYear: profileData.business?.foundedYear || '',
+                website: profileData.business?.website || '',
+                address: {
+                  street: profileData.business?.address?.street || '',
+                  city: profileData.business?.address?.city || '',
+                  state: profileData.business?.address?.state || '',
+                  zipCode: profileData.business?.address?.zipCode || '',
+                  country: profileData.business?.address?.country || ''
+                },
+                description: profileData.business?.description || '',
+                operationalCountries: profileData.business?.operationalCountries || [],
+                supportedCurrencies: profileData.business?.supportedCurrencies || ['USD'],
+                lendingCapacity: {
+                  minLoanAmount: profileData.business?.lendingCapacity?.minLoanAmount || 10000,
+                  maxLoanAmount: profileData.business?.lendingCapacity?.maxLoanAmount || 1000000,
+                  totalCapacity: profileData.business?.lendingCapacity?.totalCapacity || 10000000,
+                  availableCapacity: profileData.business?.lendingCapacity?.availableCapacity || 8000000
+                },
+                specializations: profileData.business?.specializations || [],
+                certifications: profileData.business?.certifications || []
+              },
+              banking: {
+                accountName: profileData.banking?.accountName || '',
+                accountNumber: profileData.banking?.accountNumber || '',
+                routingNumber: profileData.banking?.routingNumber || '',
+                bankName: profileData.banking?.bankName || '',
+                swiftCode: profileData.banking?.swiftCode || ''
+              },
+              preferences: {
+                language: profileData.preferences?.language || 'English',
+                timezone: profileData.preferences?.timezone || 'America/New_York',
+                currency: profileData.preferences?.currency || 'USD',
+                dateFormat: profileData.preferences?.dateFormat || 'MM/DD/YYYY',
+                emailNotifications: profileData.preferences?.emailNotifications ?? true,
+                smsNotifications: profileData.preferences?.smsNotifications ?? false,
+                marketingEmails: profileData.preferences?.marketingEmails ?? true,
+                twoFactorAuth: profileData.preferences?.twoFactorAuth ?? false
+              },
+              security: {
+                lastPasswordChange: profileData.security?.lastPasswordChange || new Date().toISOString(),
+                loginSessions: profileData.security?.loginSessions || 1,
+                securityQuestions: ['What was your first pet\'s name?', 'What city were you born in?']
+              }
             });
           }
         } catch (profileError) {
-          console.warn('Comprehensive profile API not available, trying basic lender data:', profileError);
-
-          // Fallback to basic lender API
-          const lenderData = await lendingApi.getLender(lenderId);
-
-          if (lenderData) {
-            setProfile(prev => ({
-              ...prev,
-              personal: {
-                ...prev.personal,
-                firstName: lenderData.name?.split(' ')[0] || prev.personal.firstName,
-                lastName: lenderData.name?.split(' ').slice(1).join(' ') || prev.personal.lastName,
-                email: lenderData.contact_email || prev.personal.email,
-              },
-              business: {
-                ...prev.business,
-                companyName: lenderData.name || prev.business.companyName,
-              }
-            }));
-          }
+          console.warn('Failed to load lender profile from API:', profileError);
+          setError('Failed to load profile data from server. Please try again later.');
+          
+          // Keep existing mock data as fallback for development
+          console.log('Using fallback mock data for development');
         }
       } catch (error) {
-        console.warn('Failed to load lender profile from API, using mock data:', error);
-        setError('Failed to load profile data. Using demo data.');
-        // Keep existing mock data as fallback
+        console.error('Error in loadLenderProfile:', error);
+        setError('An unexpected error occurred while loading profile data.');
       } finally {
         setLoading(false);
       }
     };
 
     loadLenderProfile();
-  }, []);
+  }, [user]);
 
   const tabs = [
     { id: 'personal', name: 'Personal Info', icon: <User className="h-4 w-4" /> },
@@ -228,18 +210,22 @@ const LenderProfilePage: React.FC = () => {
   ];
 
   const handleInputChange = (section: keyof LenderProfile, field: string, value: any) => {
-    setProfile(prev => ({
+    if (!profile) return;
+    
+    setProfile(prev => prev ? ({
       ...prev,
       [section]: {
         ...prev[section],
         [field]: value
       }
-    }));
+    }) : null);
     setHasUnsavedChanges(true);
   };
 
   const handleNestedInputChange = (section: keyof LenderProfile, nestedSection: string, field: string, value: any) => {
-    setProfile(prev => ({
+    if (!profile) return;
+    
+    setProfile(prev => prev ? ({
       ...prev,
       [section]: {
         ...prev[section],
@@ -248,65 +234,66 @@ const LenderProfilePage: React.FC = () => {
           [field]: value
         }
       }
-    }));
+    }) : null);
     setHasUnsavedChanges(true);
   };
 
   const handleSave = async () => {
+    if (!profile) {
+      setError('No profile data to save.');
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
 
-      const lenderId = user?.role === 'LENDER' ? user.id : (localStorage.getItem('lenderId') || 'default-lender-id');
+      const lenderId = user?.role === 'LENDER' ? user.id : (localStorage.getItem('lenderId') || user?.id);
+
+      if (!lenderId) {
+        setError('No lender ID found. Please ensure you are logged in as a lender.');
+        return;
+      }
 
       try {
-        // Try to use the comprehensive profile update API
-        await lendingApi.updateLenderProfile(lenderId, {
-          personal: profile.personal,
-          business: profile.business,
-          banking: profile.banking,
-          preferences: profile.preferences
-        });
+        // Use the comprehensive profile update API
+        if (isEditing === 'personal') {
+          await lendingApi.updateLenderPersonal(lenderId, profile.personal);
+        } else if (isEditing === 'business') {
+          await lendingApi.updateLenderBusiness(lenderId, profile.business);
+        } else if (isEditing === 'banking') {
+          await lendingApi.updateLenderBanking(lenderId, profile.banking);
+        } else if (isEditing === 'preferences') {
+          await lendingApi.updateLenderPreferences(lenderId, profile.preferences);
+        } else {
+          // Update all sections
+          await lendingApi.updateLenderProfile(lenderId, {
+            personal: profile.personal,
+            business: profile.business,
+            banking: profile.banking,
+            preferences: profile.preferences
+          });
+        }
 
         setHasUnsavedChanges(false);
         setIsEditing(null);
         setError(null);
-        alert('Profile updated successfully!');
+        
+        // Show success message
+        const sectionName = isEditing ? isEditing.charAt(0).toUpperCase() + isEditing.slice(1) : 'Profile';
+        alert(`${sectionName} updated successfully!`);
 
-      } catch (comprehensiveError) {
-        console.warn('Comprehensive profile update not available, trying section-specific updates:', comprehensiveError);
-
-        // Fallback to section-specific updates
-        const updatePromises = [];
-
-        if (isEditing === 'personal' || !isEditing) {
-          updatePromises.push(lendingApi.updateLenderPersonal(lenderId, profile.personal));
-        }
-
-        if (isEditing === 'business' || !isEditing) {
-          updatePromises.push(lendingApi.updateLenderBusiness(lenderId, profile.business));
-        }
-
-        if (isEditing === 'banking' || !isEditing) {
-          updatePromises.push(lendingApi.updateLenderBanking(lenderId, profile.banking));
-        }
-
-        if (isEditing === 'preferences' || !isEditing) {
-          updatePromises.push(lendingApi.updateLenderPreferences(lenderId, profile.preferences));
-        }
-
-        await Promise.all(updatePromises);
-
-        setHasUnsavedChanges(false);
-        setIsEditing(null);
-        setError(null);
-        alert('Profile updated successfully!');
+      } catch (apiError: any) {
+        console.error('Failed to save profile via API:', apiError);
+        const errorMessage = apiError?.response?.data?.message || apiError?.message || 'Failed to save profile. Please try again.';
+        setError(errorMessage);
+        alert(errorMessage);
       }
 
     } catch (error) {
-      console.error('Failed to save profile:', error);
-      setError('Failed to save profile. Please try again.');
-      alert('Failed to save profile. Please try again.');
+      console.error('Unexpected error in handleSave:', error);
+      setError('An unexpected error occurred while saving. Please try again.');
+      alert('An unexpected error occurred while saving. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -330,7 +317,10 @@ const LenderProfilePage: React.FC = () => {
     }, 1000);
   };
 
-  const renderPersonalTab = () => (
+  const renderPersonalTab = () => {
+    if (!profile) return null;
+    
+    return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-500">
       {/* Profile Essence Card */}
       <div className="bg-white p-8 md:p-12 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
@@ -458,10 +448,14 @@ const LenderProfilePage: React.FC = () => {
         )}
       </div>
     </div>
-  );
+    );
+  };
 
-  const renderBusinessTab = () => (
-    <div className="space-y-6">
+  const renderBusinessTab = () => {
+    if (!profile) return null;
+    
+    return (
+      <div className="space-y-6">
       {/* Company Information */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <div className="flex justify-between items-center mb-4">
@@ -1086,342 +1080,359 @@ const LenderProfilePage: React.FC = () => {
         )}
       </div>
     </div>
-  );
+    );
+  };
 
-  const renderBankingTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Banking Information</h3>
-          <button
-            onClick={() => setIsEditing(isEditing === 'banking' ? null : 'banking')}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            {isEditing === 'banking' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Account Name</label>
-            {isEditing === 'banking' ? (
-              <input
-                type="text"
-                value={profile.banking.accountName}
-                onChange={(e) => handleInputChange('banking', 'accountName', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.banking.accountName}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
-            {isEditing === 'banking' ? (
-              <input
-                type="text"
-                value={profile.banking.accountNumber}
-                onChange={(e) => handleInputChange('banking', 'accountNumber', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.banking.accountNumber}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Routing Number</label>
-            {isEditing === 'banking' ? (
-              <input
-                type="text"
-                value={profile.banking.routingNumber}
-                onChange={(e) => handleInputChange('banking', 'routingNumber', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.banking.routingNumber}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
-            {isEditing === 'banking' ? (
-              <input
-                type="text"
-                value={profile.banking.bankName}
-                onChange={(e) => handleInputChange('banking', 'bankName', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.banking.bankName}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">SWIFT Code</label>
-            {isEditing === 'banking' ? (
-              <input
-                type="text"
-                value={profile.banking.swiftCode}
-                onChange={(e) => handleInputChange('banking', 'swiftCode', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            ) : (
-              <p className="text-gray-900">{profile.banking.swiftCode}</p>
-            )}
-          </div>
-        </div>
-
-        {isEditing === 'banking' && (
-          <div className="flex justify-end gap-3 mt-6">
+  const renderBankingTab = () => {
+    if (!profile) return null;
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Banking Information</h3>
             <button
-              onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              onClick={() => setIsEditing(isEditing === 'banking' ? null : 'banking')}
+              className="text-blue-600 hover:text-blue-800"
             >
-              Cancel
+              {isEditing === 'banking' ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
             </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Account Name</label>
+              {isEditing === 'banking' ? (
+                <input
+                  type="text"
+                  value={profile.banking.accountName}
+                  onChange={(e) => handleInputChange('banking', 'accountName', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="text-gray-900">{profile.banking.accountName}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
+              {isEditing === 'banking' ? (
+                <input
+                  type="text"
+                  value={profile.banking.accountNumber}
+                  onChange={(e) => handleInputChange('banking', 'accountNumber', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="text-gray-900">{profile.banking.accountNumber}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Routing Number</label>
+              {isEditing === 'banking' ? (
+                <input
+                  type="text"
+                  value={profile.banking.routingNumber}
+                  onChange={(e) => handleInputChange('banking', 'routingNumber', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="text-gray-900">{profile.banking.routingNumber}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+              {isEditing === 'banking' ? (
+                <input
+                  type="text"
+                  value={profile.banking.bankName}
+                  onChange={(e) => handleInputChange('banking', 'bankName', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="text-gray-900">{profile.banking.bankName}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">SWIFT Code</label>
+              {isEditing === 'banking' ? (
+                <input
+                  type="text"
+                  value={profile.banking.swiftCode}
+                  onChange={(e) => handleInputChange('banking', 'swiftCode', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              ) : (
+                <p className="text-gray-900">{profile.banking.swiftCode}</p>
+              )}
+            </div>
+          </div>
+
+          {isEditing === 'banking' && (
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setIsEditing(null)}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPreferencesTab = () => {
+    if (!profile) return null;
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">General Preferences</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+              <select
+                value={profile.preferences.language}
+                onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="English">English</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+              <select
+                value={profile.preferences.timezone}
+                onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+              <select
+                value={profile.preferences.currency}
+                onChange={(e) => handleInputChange('preferences', 'currency', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
+              <select
+                value={profile.preferences.dateFormat}
+                onChange={(e) => handleInputChange('preferences', 'dateFormat', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-6">
             <button
               onClick={handleSave}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              Save Changes
+              Save Preferences
             </button>
           </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderPreferencesTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">General Preferences</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-            <select
-              value={profile.preferences.language}
-              onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="English">English</option>
-              <option value="Spanish">Spanish</option>
-              <option value="French">French</option>
-              <option value="German">German</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-            <select
-              value={profile.preferences.timezone}
-              onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="America/New_York">Eastern Time (ET)</option>
-              <option value="America/Chicago">Central Time (CT)</option>
-              <option value="America/Denver">Mountain Time (MT)</option>
-              <option value="America/Los_Angeles">Pacific Time (PT)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-            <select
-              value={profile.preferences.currency}
-              onChange={(e) => handleInputChange('preferences', 'currency', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="USD">USD - US Dollar</option>
-              <option value="EUR">EUR - Euro</option>
-              <option value="GBP">GBP - British Pound</option>
-              <option value="CAD">CAD - Canadian Dollar</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
-            <select
-              value={profile.preferences.dateFormat}
-              onChange={(e) => handleInputChange('preferences', 'dateFormat', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save Preferences
-          </button>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const renderSecurityTab = () => (
-    <div className="space-y-6">
-      {/* Password Change */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+  const renderSecurityTab = () => {
+    if (!profile) return null;
+    
+    return (
+      <div className="space-y-6">
+        {/* Password Change */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-            <div className="relative">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={passwordForm.currentPassword}
-                onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-            <input
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-            <input
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={handlePasswordChange}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Change Password
-          </button>
-        </div>
-      </div>
-
-      {/* Two-Factor Authentication */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-gray-900 font-medium">Two-Factor Authentication</p>
-            <p className="text-gray-600 text-sm">Add an extra layer of security to your account</p>
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={profile.preferences.twoFactorAuth}
-              onChange={(e) => handleInputChange('preferences', 'twoFactorAuth', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">
-              {profile.preferences.twoFactorAuth ? 'Enabled' : 'Disabled'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Security Information */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Information</h3>
-
-        <div className="space-y-4">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Last Password Change:</span>
-            <span className="text-gray-900">{new Date(profile.security.lastPasswordChange).toLocaleDateString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Active Login Sessions:</span>
-            <span className="text-gray-900">{profile.security.loginSessions}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderNotificationsTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-900 font-medium">Email Notifications</p>
-              <p className="text-gray-600 text-sm">Receive notifications via email</p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+              <input
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <input
-              type="checkbox"
-              checked={profile.preferences.emailNotifications}
-              onChange={(e) => handleInputChange('preferences', 'emailNotifications', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
           </div>
+
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handlePasswordChange}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Change Password
+            </button>
+          </div>
+        </div>
+
+        {/* Two-Factor Authentication */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-900 font-medium">SMS Notifications</p>
-              <p className="text-gray-600 text-sm">Receive notifications via SMS</p>
+              <p className="text-gray-900 font-medium">Two-Factor Authentication</p>
+              <p className="text-gray-600 text-sm">Add an extra layer of security to your account</p>
             </div>
-            <input
-              type="checkbox"
-              checked={profile.preferences.smsNotifications}
-              onChange={(e) => handleInputChange('preferences', 'smsNotifications', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-900 font-medium">Marketing Emails</p>
-              <p className="text-gray-600 text-sm">Receive promotional and marketing emails</p>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={profile.preferences.twoFactorAuth}
+                onChange={(e) => handleInputChange('preferences', 'twoFactorAuth', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                {profile.preferences.twoFactorAuth ? 'Enabled' : 'Disabled'}
+              </span>
             </div>
-            <input
-              type="checkbox"
-              checked={profile.preferences.marketingEmails}
-              onChange={(e) => handleInputChange('preferences', 'marketingEmails', e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
           </div>
         </div>
 
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save Notification Preferences
-          </button>
+        {/* Security Information */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Information</h3>
+
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Last Password Change:</span>
+              <span className="text-gray-900">{new Date(profile.security.lastPasswordChange).toLocaleDateString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Active Login Sessions:</span>
+              <span className="text-gray-900">{profile.security.loginSessions}</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderNotificationsTab = () => {
+    if (!profile) return null;
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-900 font-medium">Email Notifications</p>
+                <p className="text-gray-600 text-sm">Receive notifications via email</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={profile.preferences.emailNotifications}
+                onChange={(e) => handleInputChange('preferences', 'emailNotifications', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-900 font-medium">SMS Notifications</p>
+                <p className="text-gray-600 text-sm">Receive notifications via SMS</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={profile.preferences.smsNotifications}
+                onChange={(e) => handleInputChange('preferences', 'smsNotifications', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-900 font-medium">Marketing Emails</p>
+                <p className="text-gray-600 text-sm">Receive promotional and marketing emails</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={profile.preferences.marketingEmails}
+                onChange={(e) => handleInputChange('preferences', 'marketingEmails', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handleSave}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Save Notification Preferences
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -1472,7 +1483,7 @@ const LenderProfilePage: React.FC = () => {
         )}
 
         {/* Main Content */}
-        {!loading && (
+        {!loading && profile && (
           <>
             {/* Super Premium Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
@@ -1541,6 +1552,19 @@ const LenderProfilePage: React.FC = () => {
               {renderTabContent()}
             </div>
           </>
+        )}
+
+        {/* No Profile Data State */}
+        {!loading && !profile && !error && (
+          <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[40px] border border-slate-100">
+            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-6">
+              <User className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">No Profile Data</h3>
+            <p className="text-slate-500 text-center max-w-md">
+              Unable to load profile information. Please try refreshing the page or contact support.
+            </p>
+          </div>
         )}
       </div>
     </div>

@@ -238,8 +238,25 @@ export class LendingService {
       // Create new user for lender (following tenant creation pattern)
       this.logger.log(`👤 Creating new lender user account...`);
       
-      // Use provided tenantId or default tenant ID
-      const lenderTenantId = tenantId || '00000000-0000-0000-0000-000000000001';
+      // For lenders, tenantId should be nullable or use the first available tenant
+      // If no tenantId provided, query for the first tenant or set to null
+      let lenderTenantId = tenantId;
+      
+      if (!lenderTenantId) {
+        // Try to find the first tenant in the system
+        const firstTenant = await this.dataSource.getRepository('Tenant').findOne({
+          where: {},
+          order: { createdAt: 'ASC' }
+        });
+        
+        if (firstTenant) {
+          lenderTenantId = firstTenant.id;
+          this.logger.log(`Using first available tenant: ${lenderTenantId}`);
+        } else {
+          // If no tenant exists, we cannot create a user (FK constraint will fail)
+          throw new Error('No tenant found in the system. Please create a tenant first before creating lenders.');
+        }
+      }
       
       // Check for any existing user with this email to reuse credentials
       const anyExistingUser = await this.userRepository.findOne({
@@ -1476,15 +1493,134 @@ export class LendingService {
     return await this.lenderRepository.save(lender);
   }
 
+  // Helper method to resolve lender by ID (handles both User IDs and Lender entity IDs)
+  private async resolveLenderById(lenderId: string): Promise<Lender> {
+    // First, try to find if lenderId is a Lender entity ID
+    let lender = await this.lenderRepository.findOne({
+      where: { id: lenderId },
+    });
+
+    // If not found, try to find by user email (lenderId might be a User ID)
+    if (!lender) {
+      const user = await this.userRepository.findOne({
+        where: { id: lenderId, role: UserRole.LENDER },
+        relations: ['profile'],
+      });
+
+      if (user) {
+        // Try to find Lender by contact_email matching user email
+        lender = await this.lenderRepository.findOne({
+          where: { contact_email: user.email },
+        });
+
+        if (!lender) {
+          // Create a new Lender entity for this user
+          this.logger.log(`Creating Lender entity for user ${lenderId} (${user.email})`);
+          lender = this.lenderRepository.create({
+            name: user.profile?.companyName || 
+                  (user.profile?.firstName && user.profile?.lastName 
+                    ? `${user.profile.firstName} ${user.profile.lastName}` 
+                    : user.email) || 'Unknown Lender',
+            contact_email: user.email,
+            status: 'active' as any,
+            tenant_id: user.tenantId,
+            api_key_hash: '', // Will be set later if needed
+            metadata: {},
+          });
+          lender = await this.lenderRepository.save(lender);
+          this.logger.log(`Created Lender entity ${lender.id} for user ${lenderId}`);
+        }
+      } else {
+        throw new NotFoundException(`Lender not found with ID: ${lenderId}`);
+      }
+    }
+
+    return lender;
+  }
+
   // Extended Profile Management Methods
   async getLenderProfile(lenderId: string): Promise<LenderProfileResponseDto> {
-    const lender = await this.lenderRepository.findOne({
+    // First, try to find if lenderId is a Lender entity ID
+    let lender = await this.lenderRepository.findOne({
       where: { id: lenderId },
       relations: ['policies'],
     });
 
+    // If not found, try to find by user email (lenderId might be a User ID)
     if (!lender) {
-      throw new NotFoundException('Lender not found');
+      const user = await this.userRepository.findOne({
+        where: { id: lenderId, role: UserRole.LENDER },
+        relations: ['profile'],
+      });
+
+      if (user) {
+        // Try to find Lender by contact_email matching user email
+        lender = await this.lenderRepository.findOne({
+          where: { contact_email: user.email },
+          relations: ['policies'],
+        });
+
+        if (!lender) {
+          // If still not found, create a basic lender profile from user data
+          this.logger.log(`Creating basic lender profile for user ${lenderId} (${user.email})`);
+          
+          // Return a basic profile structure using user data
+          return {
+            id: lenderId, // Use user ID as profile ID
+            personal: {
+              firstName: user.profile?.firstName || user.email.split('@')[0] || '',
+              lastName: user.profile?.lastName || '',
+              email: user.email,
+              phone: user.phone || '',
+              dateOfBirth: undefined,
+              profileImage: undefined,
+              title: 'Lending Manager',
+              bio: 'Professional lending specialist focused on transportation and logistics financing.',
+            },
+            business: {
+              companyName: user.profile?.companyName || `${user.profile?.firstName || 'Lender'} Capital`,
+              registrationNumber: undefined,
+              taxId: undefined,
+              businessType: 'Financial Services',
+              industry: 'Commercial Lending',
+              foundedYear: undefined,
+              website: undefined,
+              address: undefined,
+              description: 'Leading commercial lending firm specializing in logistics and transportation financing.',
+              operationalCountries: [],
+              supportedCurrencies: ['USD'],
+              lendingCapacity: {
+                minLoanAmount: 10000,
+                maxLoanAmount: 1000000,
+                totalCapacity: 10000000,
+                availableCapacity: 8000000,
+              },
+              specializations: [],
+              certifications: [],
+            },
+            banking: undefined,
+            preferences: {
+              language: 'English',
+              timezone: 'America/New_York',
+              currency: 'USD',
+              dateFormat: 'MM/DD/YYYY',
+              emailNotifications: true,
+              smsNotifications: false,
+              marketingEmails: true,
+              twoFactorAuth: false,
+            },
+            security: {
+              lastPasswordChange: user.createdAt?.toISOString() || new Date().toISOString(),
+              loginSessions: 1,
+              twoFactorAuth: false,
+            },
+            created_at: user.createdAt?.toISOString() || new Date().toISOString(),
+            updated_at: user.updatedAt?.toISOString() || new Date().toISOString(),
+          };
+        }
+      } else {
+        throw new NotFoundException(`Lender not found with ID: ${lenderId}`);
+      }
     }
 
     // Parse the stored profile data (assuming it's stored as JSON in metadata fields)
@@ -1540,7 +1676,7 @@ export class LendingService {
     lenderId: string,
     profileData: UpdateLenderProfileDto,
   ): Promise<Lender> {
-    const lender = await this.getLenderById(lenderId);
+    const lender = await this.resolveLenderById(lenderId);
 
     // Update basic lender fields
     if (profileData.personal) {
@@ -1571,7 +1707,7 @@ export class LendingService {
     lenderId: string,
     personalData: PersonalInfoDto,
   ): Promise<Lender> {
-    const lender = await this.getLenderById(lenderId);
+    const lender = await this.resolveLenderById(lenderId);
 
     // Update basic fields
     lender.name = `${personalData.firstName} ${personalData.lastName}`;
@@ -1591,7 +1727,7 @@ export class LendingService {
     lenderId: string,
     businessData: BusinessInfoDto,
   ): Promise<Lender> {
-    const lender = await this.getLenderById(lenderId);
+    const lender = await this.resolveLenderById(lenderId);
 
     // Update basic fields
     lender.name = businessData.companyName;
@@ -1613,7 +1749,7 @@ export class LendingService {
     lenderId: string,
     bankingData: BankingInfoDto,
   ): Promise<Lender> {
-    const lender = await this.getLenderById(lenderId);
+    const lender = await this.resolveLenderById(lenderId);
 
     // Store in metadata
     const currentMetadata = lender.metadata || {};
@@ -1629,7 +1765,7 @@ export class LendingService {
     lenderId: string,
     preferences: PreferencesDto,
   ): Promise<Lender> {
-    const lender = await this.getLenderById(lenderId);
+    const lender = await this.resolveLenderById(lenderId);
 
     // Store in metadata
     const currentMetadata = lender.metadata || {};

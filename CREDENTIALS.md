@@ -17,6 +17,12 @@ All users belong to **Test Company** tenant.
 - **Tenant**: Test Company
 - **Purpose**: Purchase subscriptions, configure marketplace, manage tenant
 
+
+### lender
+-**email**:lixome8701@spotshops.com
+
+-**password**:Lender123@
+
 ### 🚛 Truck Owner
 - **Email**: truckowner@test.com
 - **Password**: TruckOwner@123

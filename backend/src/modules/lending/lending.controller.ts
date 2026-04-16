@@ -37,6 +37,13 @@ import { CreateLenderDto } from './dto/create-lender.dto';
 import { CreateLenderPolicyDto } from './dto/create-lender-policy.dto';
 import { CreateLoanRequestDto } from './dto/loan-request.dto';
 import { ConfirmDisbursementDto } from './dto/disbursement.dto';
+import { 
+  UpdateLenderProfileDto, 
+  PersonalInfoDto, 
+  BusinessInfoDto, 
+  BankingInfoDto, 
+  PreferencesDto 
+} from './dto/lender-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -484,6 +491,101 @@ export class LendingController {
   @Get('admin/lenders/:lenderId')
   async getLender(@Param('lenderId', ParseUUIDPipe) lenderId: string) {
     return await this.lendingService.getLenderById(lenderId);
+  }
+
+  // ===== LENDER PROFILE ENDPOINTS =====
+
+  @Get('admin/lenders/:lenderId/profile')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({
+    summary: 'Get lender profile',
+    description: 'Get comprehensive lender profile information including personal, business, banking, and preferences'
+  })
+  @ApiParam({ name: 'lenderId', description: 'Lender ID' })
+  @ApiResponse({ status: 200, description: 'Lender profile retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async getLenderProfile(@Param('lenderId', ParseUUIDPipe) lenderId: string) {
+    return await this.lendingService.getLenderProfile(lenderId);
+  }
+
+  @Put('admin/lenders/:lenderId/profile')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({
+    summary: 'Update lender profile',
+    description: 'Update comprehensive lender profile information'
+  })
+  @ApiParam({ name: 'lenderId', description: 'Lender ID' })
+  @ApiResponse({ status: 200, description: 'Lender profile updated successfully' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async updateLenderProfile(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Body() profileData: UpdateLenderProfileDto
+  ) {
+    return await this.lendingService.updateLenderProfile(lenderId, profileData);
+  }
+
+  @Put('admin/lenders/:lenderId/personal')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({
+    summary: 'Update lender personal information',
+    description: 'Update lender personal details like name, email, phone, etc.'
+  })
+  @ApiParam({ name: 'lenderId', description: 'Lender ID' })
+  @ApiResponse({ status: 200, description: 'Personal information updated successfully' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async updateLenderPersonal(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Body() personalData: PersonalInfoDto
+  ) {
+    return await this.lendingService.updateLenderPersonal(lenderId, personalData);
+  }
+
+  @Put('admin/lenders/:lenderId/business')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({
+    summary: 'Update lender business information',
+    description: 'Update lender business details like company info, address, capacity, etc.'
+  })
+  @ApiParam({ name: 'lenderId', description: 'Lender ID' })
+  @ApiResponse({ status: 200, description: 'Business information updated successfully' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async updateLenderBusiness(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Body() businessData: BusinessInfoDto
+  ) {
+    return await this.lendingService.updateLenderBusiness(lenderId, businessData);
+  }
+
+  @Put('admin/lenders/:lenderId/banking')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({
+    summary: 'Update lender banking information',
+    description: 'Update lender banking details like account info, routing numbers, etc.'
+  })
+  @ApiParam({ name: 'lenderId', description: 'Lender ID' })
+  @ApiResponse({ status: 200, description: 'Banking information updated successfully' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async updateLenderBanking(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Body() bankingData: BankingInfoDto
+  ) {
+    return await this.lendingService.updateLenderBanking(lenderId, bankingData);
+  }
+
+  @Put('admin/lenders/:lenderId/preferences')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({
+    summary: 'Update lender preferences',
+    description: 'Update lender preferences like language, timezone, notifications, etc.'
+  })
+  @ApiParam({ name: 'lenderId', description: 'Lender ID' })
+  @ApiResponse({ status: 200, description: 'Preferences updated successfully' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async updateLenderPreferences(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Body() preferences: PreferencesDto
+  ) {
+    return await this.lendingService.updateLenderPreferences(lenderId, preferences);
   }
 
   // ===== LOAN REQUEST ENDPOINTS =====

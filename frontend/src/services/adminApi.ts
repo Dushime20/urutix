@@ -339,8 +339,8 @@ export const bulkUpdateRouteStatus = (routeIds: string[], status: string) =>
   api.patch<any>('/admin/routes/bulk-update', { routeIds, status })
     .then(res => res.data);
 
-export const fetchEnrichedTenants = () =>
-  api.get<any>('/admin/tenants/enriched')
+export const fetchEnrichedTenants = (filters?: any) =>
+  api.get<any>('/admin/tenants', { params: filters })
     .then(res => res.data?.tenants ?? res.data ?? []);
 
 export const getTenantById = (tenantId: string) =>

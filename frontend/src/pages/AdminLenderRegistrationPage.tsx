@@ -138,7 +138,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
       await lendingApi.createLender({
         name: form.name,
         contact_email: form.email,
-        callback_url: undefined
+        callback_url: undefined,
       });
 
       setSuccess(true);
