@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign, Activity, CreditCard, Wallet, RefreshCw,
   Search, Download, Eye, Calendar,
   Clock, ArrowUpRight, ArrowDownRight, CheckCircle2,
   XCircle, Timer, Wallet2, FileText, Globe,
   Building2, TrendingUp, Receipt, PiggyBank, X,
-  ArrowUp
+  ArrowUp, Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { adminAPI } from '../../services/adminApi';
 
 interface Transaction {
   id: string;
@@ -39,95 +40,20 @@ interface FinancialMetrics {
   averageTransactionValue: number;
   dailyRevenue: number[];
   monthlyGrowth: number;
+  revenueBreakdown?: Record<string, number>;
+}
+
+interface RealFinancialData {
+  totalRevenue: number;
+  revenueBreakdown?: Record<string, number>;
+  error?: string;
 }
 
 const FinancialAdminDashboard: React.FC = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      transactionId: 'TXN-2024-001',
-      type: 'payment',
-      status: 'completed',
-      amount: 1500,
-      currency: 'USD',
-      description: 'Payment for electronics shipment',
-      fromAccount: 'TechCorp Industries',
-      toAccount: 'FastTrans Ltd',
-      paymentMethod: 'credit_card',
-      createdAt: '2024-08-10T09:30:00Z',
-      processedAt: '2024-08-10T09:35:00Z',
-      cargoId: 'CRG-001',
-      tripId: 'TRP-001',
-      fees: 45,
-      netAmount: 1455
-    },
-    {
-      id: '2',
-      transactionId: 'TXN-2024-002',
-      type: 'escrow',
-      status: 'pending',
-      amount: 2200,
-      currency: 'USD',
-      description: 'Escrow for medical supplies delivery',
-      fromAccount: 'MedSupply Corp',
-      toAccount: 'Escrow Account',
-      paymentMethod: 'bank_transfer',
-      createdAt: '2024-08-10T11:15:00Z',
-      cargoId: 'CRG-002',
-      tripId: 'TRP-002',
-      fees: 66,
-      netAmount: 2134
-    },
-    {
-      id: '3',
-      transactionId: 'TXN-2024-003',
-      type: 'fee',
-      status: 'completed',
-      amount: 150,
-      currency: 'USD',
-      description: 'Platform service fee',
-      fromAccount: 'Platform Revenue',
-      toAccount: 'UrutiX Platform',
-      paymentMethod: 'digital_wallet',
-      createdAt: '2024-08-10T14:20:00Z',
-      processedAt: '2024-08-10T14:22:00Z',
-      fees: 0,
-      netAmount: 150
-    },
-    {
-      id: '4',
-      transactionId: 'TXN-2024-004',
-      type: 'refund',
-      status: 'processing',
-      amount: 800,
-      currency: 'USD',
-      description: 'Refund for cancelled shipment',
-      fromAccount: 'Escrow Account',
-      toAccount: 'Global Shipping Co',
-      paymentMethod: 'bank_transfer',
-      createdAt: '2024-08-10T16:45:00Z',
-      cargoId: 'CRG-003',
-      fees: 24,
-      netAmount: 776
-    },
-    {
-      id: '5',
-      transactionId: 'TXN-2024-005',
-      type: 'withdrawal',
-      status: 'completed',
-      amount: 3200,
-      currency: 'USD',
-      description: 'Driver payout for completed deliveries',
-      fromAccount: 'Platform Wallet',
-      toAccount: 'Highway Haulers',
-      paymentMethod: 'bank_transfer',
-      createdAt: '2024-08-09T18:30:00Z',
-      processedAt: '2024-08-10T08:15:00Z',
-      fees: 32,
-      netAmount: 3168
-    }
-  ]);
-
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [realFinancialData, setRealFinancialData] = useState<RealFinancialData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -136,16 +62,88 @@ const FinancialAdminDashboard: React.FC = () => {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  // Mock financial metrics
+  // Fetch real financial data
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [financialResponse, creditTxResponse] = await Promise.all([
+          adminAPI.getFinancials(),
+          adminAPI.getAllCreditTransactions().catch(() => null),
+        ]);
+
+        const financialData = financialResponse.data?.data || financialResponse.data;
+        setRealFinancialData(financialData);
+
+        // Use real credit transactions from the database
+        const rawTxns: any[] = (creditTxResponse as any)?.data?.data
+          || (creditTxResponse as any)?.data
+          || [];
+
+        if (rawTxns.length > 0) {
+          const converted: Transaction[] = rawTxns.map((t: any, i: number) => {
+            const amount = Math.abs(parseFloat(t.amount) || 0);
+            const isDebit = t.type === 'DEBIT' || t.type === 'debit' || amount < 0;
+            return {
+              id: t.id || `txn-${i}`,
+              transactionId: t.id?.slice(0, 8).toUpperCase() || `TXN-${i}`,
+              type: isDebit ? 'withdrawal' : 'deposit',
+              status: 'completed' as const,
+              amount,
+              currency: 'USD',
+              description: t.description || t.type || 'Credit transaction',
+              fromAccount: t.tenantId ? `Tenant ${t.tenantId.slice(0, 8)}` : 'Platform',
+              toAccount: isDebit ? 'Service' : 'Credit Account',
+              paymentMethod: 'digital_wallet' as const,
+              createdAt: t.createdAt || new Date().toISOString(),
+              processedAt: t.createdAt,
+              fees: 0,
+              netAmount: amount,
+            };
+          });
+          setTransactions(converted);
+        } else {
+          setTransactions([]);
+        }
+      } catch (err: any) {
+        console.error('Error fetching financial data:', err);
+        setError(err.response?.data?.message || 'Failed to load financial data');
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFinancialData();
+  }, []);
+
+  // Calculate metrics using real data
   const metrics: FinancialMetrics = {
-    totalRevenue: 847520,
-    totalTransactions: 1247,
-    pendingAmount: 15600,
-    escrowBalance: 89400,
-    platformFees: 42376,
-    averageTransactionValue: 680,
-    dailyRevenue: [12500, 15800, 11200, 18900, 14300, 22100, 16700],
-    monthlyGrowth: 12.5
+    totalRevenue: realFinancialData?.totalRevenue || 0,
+    totalTransactions: transactions.length,
+    pendingAmount: transactions.filter(t => t.status === 'pending').reduce((s, t) => s + t.amount, 0),
+    escrowBalance: transactions.filter(t => t.type === 'escrow').reduce((s, t) => s + t.amount, 0),
+    platformFees: transactions.reduce((s, t) => s + t.fees, 0),
+    averageTransactionValue: transactions.length > 0
+      ? Math.round(transactions.reduce((s, t) => s + t.amount, 0) / transactions.length)
+      : 0,
+    // Build daily revenue from real transactions (last 7 days)
+    dailyRevenue: (() => {
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d.toDateString();
+      });
+      return days.map(day =>
+        transactions
+          .filter(t => new Date(t.createdAt).toDateString() === day)
+          .reduce((s, t) => s + t.amount, 0)
+      );
+    })(),
+    monthlyGrowth: 0,
+    revenueBreakdown: realFinancialData?.revenueBreakdown,
   };
 
   const getStatusColor = (status: string) => {
@@ -269,11 +267,42 @@ const FinancialAdminDashboard: React.FC = () => {
       title={<TranslatedText text="Financial Dashboard" />}
       description={<TranslatedText text="Monitor platform revenue, transactions, and financial health" />}
       actions={
-        <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all">
-          <Download size={14} /> <TranslatedText text="Export Report" />
+        <button 
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all"
+          onClick={() => window.location.reload()}
+        >
+          <RefreshCw size={14} /> <TranslatedText text="Refresh Data" />
         </button>
       }
     >
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-3">
+            <Loader2 className="animate-spin text-4xl text-indigo-600" />
+            <span className="text-lg text-gray-600">Loading financial data...</span>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="text-red-400">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error Loading Financial Data</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="space-y-10">
         {/* Financial Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -778,6 +807,7 @@ const FinancialAdminDashboard: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </AdminPageLayout >
   );
 };

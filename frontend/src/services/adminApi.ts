@@ -1,523 +1,353 @@
 import api from './api';
 
-// KPI metrics
-export const fetchKPI = async () => {
-  const res = await api.get('/admin/kpi');
-  return res.data;
+export interface AdminStats {
+  totalUsers: number;
+  activeTrucks: number;
+  totalLoads: number;
+  revenue: number;
+  userGrowth?: number;
+  truckGrowth?: number;
+  loadGrowth?: number;
+  revenueGrowth?: number;
+}
+
+export interface AdminKPI {
+  users: number;
+  activeTrips: number;
+  revenue: number;
+  engagement: number;
+  alerts: number;
+}
+
+export interface AdminAnalytics {
+  recentTrips: any[];
+  recentPayments: any[];
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+  tenantId: string;
+  createdAt: string;
+  isActive: boolean;
+  profile?: any;
+}
+
+export interface AdminTruck {
+  id: string;
+  licensePlate: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  status: string;
+  isActive: boolean;
+  tenantId: string;
+  tenantName: string;
+  ownerName: string;
+  ownerEmail?: string;
+  currentDriverName?: string;
+  currentDriverId?: string;
+  currentDriverPhone?: string;
+  currentLocationString?: string;
+  coordinates?: { latitude: number; longitude: number };
+  createdAt: string;
+  assignedDrivers?: Array<{
+    driverId: string;
+    driverName: string;
+    status: string;
+    assignmentDate: string;
+    notes?: string;
+  }>;
+}
+
+export interface AdminLoad {
+  id: string;
+  title: string;
+  origin: string;
+  destination: string;
+  status: string;
+  weight?: number;
+  value?: number;
+  tenantId: string;
+  createdAt: string;
+}
+
+export interface AdminTrip {
+  id: string;
+  origin: string;
+  destination: string;
+  status: string;
+  tenantId: string;
+  createdAt: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface AdminTenant {
+  id: string;
+  name: string;
+  subdomain: string;
+  domain: string;
+  status: string;
+  type: string;
+  contactEmail: string;
+  subscriptionPlan: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface AdminRoute {
+  id: string;
+  name: string;
+  origin: string;
+  destination: string;
+  status: string;
+  tenantId: string;
+  createdAt: string;
+}
+
+export interface AdminFinancials {
+  totalRevenue: number;
+  revenueBreakdown?: Record<string, number>;
+  error?: string;
+}
+
+export interface AdminHealth {
+  status: string;
+  uptime: number;
+}
+
+export interface AdminDispute {
+  id: string;
+  title: string;
+  status: string;
+  tenantId: string;
+  createdAt: string;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  action: string;
+  userId: string;
+  tenantId: string;
+  createdAt: string;
+  details?: any;
+}
+
+// Admin API service
+export const adminAPI = {
+  // Dashboard stats and KPIs
+  getKPI: (tenantId?: string) => 
+    api.get<{ data: AdminKPI }>('/admin/kpi', { params: tenantId ? { tenantId } : {} }),
+  
+  getAnalytics: (tenantId?: string) => 
+    api.get<{ data: AdminAnalytics }>('/admin/analytics', { params: tenantId ? { tenantId } : {} }),
+  
+  getFinancials: (tenantId?: string) => 
+    api.get<{ data: AdminFinancials }>('/admin/financials', { params: tenantId ? { tenantId } : {} }),
+  
+  getHealth: () => 
+    api.get<{ data: AdminHealth }>('/admin/health'),
+
+  // Entity listings
+  getAllUsers: (tenantId?: string) => 
+    api.get<{ users: AdminUser[] }>('/admin/all/users', { params: tenantId ? { tenantId } : {} }),
+  
+  getAllTrucks: (tenantId?: string) => 
+    api.get<{ trucks: AdminTruck[] }>('/admin/all/trucks', { params: tenantId ? { tenantId } : {} }),
+  
+  getAllLoads: (tenantId?: string) => 
+    api.get<{ loads: AdminLoad[] }>('/admin/all/loads', { params: tenantId ? { tenantId } : {} }),
+  
+  getAllTrips: (tenantId?: string) => 
+    api.get<{ trips: AdminTrip[] }>('/admin/all/trips', { params: tenantId ? { tenantId } : {} }),
+  
+  getTenants: () => 
+    api.get<{ tenants: AdminTenant[] }>('/admin/tenants'),
+  
+  getRoutes: (filters?: { tenantId?: string; status?: string; search?: string }) => 
+    api.get<{ routes: AdminRoute[] }>('/admin/routes', { params: filters }),
+
+  // Audit and monitoring
+  getDisputes: (tenantId?: string) => 
+    api.get<{ disputes: AdminDispute[] }>('/admin/disputes', { params: tenantId ? { tenantId } : {} }),
+  
+  getAuditLogs: (tenantId?: string) => 
+    api.get<{ logs: AdminAuditLog[] }>('/admin/audit', { params: tenantId ? { tenantId } : {} }),
+
+  // Tenant management
+  createTenant: (data: any) => 
+    api.post('/admin/tenants', data),
+  
+  createRoute: (data: { tenantId: string; route: any }) => 
+    api.post('/admin/routes', data),
+
+  // Subscription management
+  getAllSubscriptionPlans: () => 
+    api.get('/admin/subscription-plans'),
+  
+  createSubscriptionPlan: (data: any) => 
+    api.post('/admin/subscription-plans', data),
+  
+  updateSubscriptionPlan: (id: string, data: any) => 
+    api.patch(`/admin/subscription-plans/${id}`, data),
+  
+  deleteSubscriptionPlan: (id: string) => 
+    api.delete(`/admin/subscription-plans/${id}`),
+  
+  getAllSubscriptions: (filters?: { status?: string; plan?: string }) => 
+    api.get('/admin/subscriptions', { params: filters }),
+  
+  getTenantSubscription: (tenantId: string) => 
+    api.get(`/admin/tenants/${tenantId}/subscription`),
+  
+  cancelTenantSubscription: (subscriptionId: string, data: { reason?: string; immediate?: boolean }) => 
+    api.post(`/admin/subscriptions/${subscriptionId}/cancel`, data),
+  
+  reactivateTenantSubscription: (subscriptionId: string) => 
+    api.post(`/admin/subscriptions/${subscriptionId}/reactivate`),
+
+  // Credit management
+  addBonusCredits: (data: { tenantId: string; amount: number; reason: string; type?: string }) => 
+    api.post('/admin/credits/add', data),
+  
+  getTenantCreditTransactions: (tenantId: string, filters?: any) => 
+    api.get(`/admin/credits/transactions/${tenantId}`, { params: filters }),
+  
+  getAllCreditTransactions: (filters?: any) => 
+    api.get('/admin/credits/transactions', { params: filters }),
 };
 
-// Real-time analytics
-export const fetchAnalytics = async () => {
-  const res = await api.get('/admin/analytics');
-  return res.data;
-};
+export default adminAPI;
 
-// User management
-export const fetchUsers = async () => {
-  const res = await api.get('/admin/users');
-  return res.data.users || res.data;
-};
+// Named exports for direct imports (used by AdminUsers.tsx and other pages)
+export const fetchAllUsers = (tenantId?: string) =>
+  api.get<any>('/admin/all/users', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data?.users ?? res.data ?? []);
 
-export const fetchAllUsers = async (tenantId?: string) => {
-  const res = await api.get('/admin/all/users', { params: tenantId ? { tenantId } : {} });
-  return res.data.users || [];
-};
+export const fetchTenants = () =>
+  api.get<any>('/admin/tenants')
+    .then(res => res.data);
 
-// Create user for tenant
-export const createTenantUser = async (tenantId: string, userData: {
+export const createTenantUser = (tenantId: string, data: {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   role: string;
-  permissions?: string[];
-  paymentPermissions?: any;
-  documentPermissions?: any;
-  workflowPermissions?: any;
-}) => {
-  const res = await api.post(`/users/tenant/${tenantId}/user`, userData);
-  return res.data;
-};
+  phoneNumber?: string;
+  companyName?: string;
+}) =>
+  api.post<any>(`/admin/tenants/${tenantId}/users`, data)
+    .then(res => res.data);
 
-// Update user
-export const updateUser = async (userId: string, userData: {
+export const updateUser = (userId: string, data: {
   firstName?: string;
   lastName?: string;
   phone?: string;
   companyName?: string;
   role?: string;
   status?: string;
-  preferences?: any;
-  notifications?: any;
-  security?: any;
-}) => {
-  const res = await api.patch(`/users/${userId}`, userData);
-  return res.data;
-};
+}) =>
+  api.patch<any>(`/admin/users/${userId}`, data)
+    .then(res => res.data);
 
-// Delete user (soft delete)
-export const deleteUser = async (userId: string) => {
-  const res = await api.delete(`/users/${userId}`);
-  return res.data;
-};
+export const deleteUser = (userId: string) =>
+  api.delete<any>(`/admin/users/${userId}`)
+    .then(res => res.data);
 
-// Activate user
-export const activateUser = async (userId: string) => {
-  const res = await api.post(`/users/${userId}/activate`);
-  return res.data;
-};
+export const activateUser = (userId: string) =>
+  api.patch<any>(`/admin/users/${userId}/activate`)
+    .then(res => res.data);
 
-// Suspend user
-export const suspendUser = async (userId: string, reason?: string) => {
-  const res = await api.post(`/users/${userId}/suspend`, { reason });
-  return res.data;
-};
+export const suspendUser = (userId: string, reason?: string) =>
+  api.patch<any>(`/admin/users/${userId}/suspend`, reason ? { reason } : {})
+    .then(res => res.data);
+// Tenant activation/suspension functions
+export const activateTenant = (tenantId: string) =>
+  api.patch<any>(`/admin/tenants/${tenantId}/activate`)
+    .then(res => res.data);
 
-// Get user by ID
-export const getUserById = async (userId: string) => {
-  const res = await api.get(`/users/${userId}`);
-  return res.data;
-};
+export const suspendTenant = (tenantId: string, reason?: string) =>
+  api.patch<any>(`/admin/tenants/${tenantId}/suspend`, reason ? { reason } : {})
+    .then(res => res.data);
 
-// Financial reporting
-export const fetchFinancials = async () => {
-  const res = await api.get('/admin/financials');
-  return res.data;
-};
+export const deactivateTenant = (tenantId: string) =>
+  api.delete<any>(`/admin/tenants/${tenantId}`)
+    .then(res => res.data);
 
-// System health
-export const fetchHealth = async () => {
-  const res = await api.get('/admin/health');
-  return res.data;
-};
+// Additional missing functions for compatibility
+export const fetchAllTrips = (tenantId?: string) =>
+  api.get<any>('/admin/all/trips', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data?.trips ?? res.data ?? []);
 
-// Dispute resolution
-export const fetchDisputes = async () => {
-  const res = await api.get('/admin/disputes');
-  return res.data;
-};
+export const fetchUsers = (tenantId?: string) =>
+  api.get<any>('/admin/all/users', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data?.users ?? res.data ?? []);
 
-// Audit logs
-export const fetchAuditLogs = async () => {
-  const res = await api.get('/admin/audit');
-  return res.data;
-};
+export const fetchKPI = (tenantId?: string) =>
+  api.get<any>('/admin/kpi', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data);
 
-// Tenants - Enhanced with new tenant management endpoints
-export const fetchTenants = async () => {
-  console.log("🔍 fetchTenants: Making API call to /tenants");
-  try {
-    const res = await api.get('/tenants');
-    console.log("📦 fetchTenants: Full response:", res);
-    console.log("📦 fetchTenants: Response.data:", res.data);
+export const fetchHealth = () =>
+  api.get<any>('/admin/health')
+    .then(res => res.data);
 
-    // Backend returns: { success: true, data: [...tenants], message: "..." }
-    // Check for data.data (nested) or data.tenants or direct array
-    let tenantsArray: any[] = [];
+export const fetchFinancials = (tenantId?: string) =>
+  api.get<any>('/admin/financials', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data);
 
-    if (res.data?.data && Array.isArray(res.data.data)) {
-      tenantsArray = res.data.data;
-      console.log("✅ fetchTenants: Found tenants in res.data.data:", tenantsArray.length);
-    } else if (res.data?.tenants && Array.isArray(res.data.tenants)) {
-      tenantsArray = res.data.tenants;
-      console.log("✅ fetchTenants: Found tenants in res.data.tenants:", tenantsArray.length);
-    } else if (Array.isArray(res.data)) {
-      tenantsArray = res.data;
-      console.log("✅ fetchTenants: Response.data is direct array:", tenantsArray.length);
-    } else {
-      console.warn("⚠️ fetchTenants: No tenants array found in response");
-      console.warn("⚠️ fetchTenants: Response structure:", JSON.stringify(res.data, null, 2));
-    }
+export const fetchDisputes = (tenantId?: string) =>
+  api.get<any>('/admin/disputes', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data?.disputes ?? res.data ?? []);
 
-    if (tenantsArray.length > 0) {
-      console.log("✅ fetchTenants: Successfully fetched", tenantsArray.length, "tenants");
-      console.log("✅ fetchTenants: First tenant:", JSON.stringify(tenantsArray[0], null, 2));
-    }
+export const fetchAuditLogs = (tenantId?: string) =>
+  api.get<any>('/admin/audit', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data?.logs ?? res.data ?? []);
 
-    // Return in a consistent format
-    return {
-      tenants: tenantsArray,
-      data: tenantsArray, // Also include as data for compatibility
-      ...res.data, // Include other response properties
-    };
-  } catch (error: any) {
-    console.error("❌ fetchTenants: Error:", error);
-    console.error("❌ fetchTenants: Error message:", error?.message);
-    console.error("❌ fetchTenants: Error response:", error?.response);
-    console.error("❌ fetchTenants: Error response data:", error?.response?.data);
-    console.error("❌ fetchTenants: Error response status:", error?.response?.status);
-    throw error;
-  }
-};
+export const fetchAnalytics = (tenantId?: string) =>
+  api.get<any>('/admin/analytics', { params: tenantId ? { tenantId } : {} })
+    .then(res => res.data);
 
-// Fetch enriched tenants with subscription, credits, and user data
-export const fetchEnrichedTenants = async (filters?: {
-  status?: string[];
-  search?: string;
-  hasLowBalance?: boolean;
-  hasExpiringSubscription?: boolean;
-}) => {
-  const params = new URLSearchParams();
-  if (filters?.status) {
-    filters.status.forEach(s => params.append('status', s));
-  }
-  if (filters?.search) params.append('search', filters.search);
-  if (filters?.hasLowBalance !== undefined) params.append('hasLowBalance', String(filters.hasLowBalance));
-  if (filters?.hasExpiringSubscription !== undefined) params.append('hasExpiringSubscription', String(filters.hasExpiringSubscription));
+export const fetchAdminRoutes = (filters?: { tenantId?: string; status?: string; search?: string }) =>
+  api.get<any>('/admin/routes', { params: filters })
+    .then(res => res.data?.routes ?? res.data ?? []);
 
-  const res = await api.get(`/admin/tenant-management?${params.toString()}`);
-  return res.data;
-};
+export const fetchRouteAnalytics = () =>
+  api.get<any>('/admin/routes/analytics')
+    .then(res => res.data);
 
-// Get tenant details with full context
-export const getTenantDetailsEnriched = async (tenantId: string) => {
-  const res = await api.get(`/admin/tenant-management/${tenantId}`);
-  return res.data;
-};
+export const bulkUpdateRouteStatus = (routeIds: string[], status: string) =>
+  api.patch<any>('/admin/routes/bulk-update', { routeIds, status })
+    .then(res => res.data);
 
-// Get tenant health score
-export const getTenantHealth = async (tenantId: string) => {
-  const res = await api.get(`/admin/tenant-management/${tenantId}/health`);
-  return res.data;
-};
+export const fetchEnrichedTenants = () =>
+  api.get<any>('/admin/tenants/enriched')
+    .then(res => res.data?.tenants ?? res.data ?? []);
 
-// Get all tenant health scores
-export const getAllTenantHealth = async () => {
-  const res = await api.get('/admin/tenant-management/health/all');
-  return res.data;
-};
+export const getTenantById = (tenantId: string) =>
+  api.get<any>(`/admin/tenants/${tenantId}`)
+    .then(res => res.data);
 
-// Set tenant status (activate/deactivate)
-export const setTenantStatus = async (tenantId: string, active: boolean) => {
-  const res = await api.post(`/admin/tenant-management/${tenantId}/status`, { active });
-  return res.data;
-};
+export const updateTenant = (tenantId: string, data: any) =>
+  api.patch<any>(`/admin/tenants/${tenantId}`, data)
+    .then(res => res.data);
 
-// Bulk update tenants
-export const bulkUpdateTenants = async (tenantIds: string[], updates: any) => {
-  const res = await api.post('/admin/tenant-management/bulk/update', { tenantIds, updates });
-  return res.data;
-};
+export const createTenant = (data: any) =>
+  api.post<any>('/admin/tenants', data)
+    .then(res => res.data);
 
-// Get tenant resource usage
-export const getTenantResources = async (tenantId: string) => {
-  const res = await api.get(`/admin/tenant-management/${tenantId}/resources`);
-  return res.data;
-};
+export const createTenantRoute = (tenantId: string, routeData: any) =>
+  api.post<any>('/admin/routes', { tenantId, route: routeData })
+    .then(res => res.data);
 
-// Admin-wide listings
-export const fetchAllTrucks = async (tenantId?: string) => {
-  const res = await api.get('/admin/all/trucks', { params: tenantId ? { tenantId } : {} });
-  return res.data.trucks || []; // Extract trucks array from response
-};
+export const updateTenantRoute = (routeId: string, data: any) =>
+  api.patch<any>(`/admin/routes/${routeId}`, data)
+    .then(res => res.data);
 
-export const fetchAllLoads = async (tenantId?: string) => {
-  const res = await api.get('/admin/all/loads', { params: tenantId ? { tenantId } : {} });
-  return res.data.loads || []; // Extract loads array from response
-};
-
-export const fetchAllTrips = async (tenantId?: string) => {
-  const res = await api.get('/admin/all/trips', { params: tenantId ? { tenantId } : {} });
-  return res.data.trips || []; // Extract trips array from response
-};
-
-// Create tenant
-export const createTenant = async (payload: any) => {
-  const res = await api.post('/tenants', payload);
-  return res.data;
-};
-
-// Get tenant by ID
-export const getTenantById = async (tenantId: string) => {
-  const res = await api.get(`/tenants/${tenantId}`);
-  return res.data;
-};
-
-// Update tenant
-export const updateTenant = async (tenantId: string, payload: any) => {
-  console.log('🔄 updateTenant API call:', { tenantId, payload });
-  try {
-    const res = await api.put(`/tenants/${tenantId}`, payload);
-    console.log('✅ updateTenant success:', res.data);
-    return res.data;
-  } catch (error: any) {
-    console.error('❌ updateTenant error:', error);
-    console.error('Error response:', error?.response);
-    console.error('Error status:', error?.response?.status);
-    console.error('Error data:', error?.response?.data);
-    console.error('Error headers:', error?.response?.headers);
-    throw error;
-  }
-};
-
-// Activate tenant
-export const activateTenant = async (tenantId: string) => {
-  const res = await api.post(`/tenants/${tenantId}/activate`);
-  return res.data;
-};
-
-// Suspend tenant
-export const suspendTenant = async (tenantId: string, reason?: string) => {
-  const res = await api.post(`/tenants/${tenantId}/suspend`, { reason });
-  return res.data;
-};
-
-// Deactivate tenant (soft delete)
-export const deactivateTenant = async (tenantId: string) => {
-  const res = await api.delete(`/tenants/${tenantId}`);
-  return res.data;
-};
-
-// Create route for tenant
-export const createTenantRoute = async (tenantId: string, route: any) => {
-  try {
-    // Backend expects a nested object: { tenantId, route: { ... } }
-    const payload = {
-      tenantId,
-      route: {
-        name: route.name,
-        origin: route.origin,
-        destination: route.destination,
-        distance: Number(route.distance),
-        estimatedTime: Number(route.estimatedTime),
-        status: route.status || 'active',
-        routeType: route.routeType || 'highway',
-        priority: route.priority || 'medium',
-        trafficLevel: route.trafficLevel || 'moderate',
-        tollCost: route.tollCost ?? null,
-        fuelCost: route.fuelCost ?? null,
-        description: route.description ?? null,
-      },
-    };
-    console.log('🛣️ Creating tenant route with payload:', payload);
-    const res = await api.post('/admin/routes', payload);
-    return res.data;
-  } catch (error: any) {
-    console.error('Error creating tenant route:', {
-      message: error?.message,
-      status: error?.response?.status,
-      data: error?.response?.data,
-    });
-    throw error;
-  }
-};
-
-// ===== ROUTE MANAGEMENT APIs =====
-
-// Fetch all admin routes with optional filters
-export const fetchAdminRoutes = async (filters?: {
-  tenantId?: string;
-  status?: string;
-  priority?: string;
-  routeType?: string;
-  search?: string;
-}) => {
-  try {
-    const params = new URLSearchParams();
-    if (filters?.tenantId) params.append('tenantId', filters.tenantId);
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.priority) params.append('priority', filters.priority);
-    if (filters?.routeType) params.append('routeType', filters.routeType);
-    if (filters?.search) params.append('search', filters.search);
-
-    const res = await api.get(`/admin/routes?${params.toString()}`);
-    return res.data.routes || [];
-  } catch (error) {
-    console.error('Error fetching admin routes:', error);
-    return [];
-  }
-};
-
-// Get route by ID
-export const getRouteById = async (routeId: string) => {
-  try {
-    const res = await api.get(`/admin/routes/${routeId}`);
-    return res.data.route;
-  } catch (error) {
-    console.error('Error fetching route by ID:', error);
-    throw error;
-  }
-};
-
-// Update existing route
-export const updateTenantRoute = async (routeId: string, updateData: any) => {
-  try {
-    const res = await api.patch(`/admin/routes/${routeId}`, updateData);
-    return res.data;
-  } catch (error) {
-    console.error('Error updating route:', error);
-    throw error;
-  }
-};
-
-// Delete route
-export const deleteTenantRoute = async (routeId: string) => {
-  try {
-    const res = await api.delete(`/admin/routes/${routeId}`);
-    return res.data;
-  } catch (error) {
-    console.error('Error deleting route:', error);
-    throw error;
-  }
-};
-
-// Bulk operations for routes
-export const bulkUpdateRouteStatus = async (routeIds: string[], status: string) => {
-  try {
-    const res = await api.patch('/admin/routes/bulk/status', {
-      routeIds,
-      status
-    });
-    return res.data;
-  } catch (error) {
-    console.error('Error bulk updating route status:', error);
-    throw error;
-  }
-};
-
-export const bulkDeleteRoutes = async (routeIds: string[]) => {
-  try {
-    const res = await api.delete('/admin/routes/bulk', {
-      data: { routeIds }
-    });
-    return res.data;
-  } catch (error) {
-    console.error('Error bulk deleting routes:', error);
-    throw error;
-  }
-};
-
-// Route analytics and statistics
-export const fetchRouteAnalytics = async (tenantId?: string) => {
-  try {
-    const params = tenantId ? { tenantId } : {};
-    const res = await api.get('/admin/routes/analytics', { params });
-    return res.data;
-  } catch (error) {
-    console.error('Error fetching route analytics:', error);
-    return {
-      totalRoutes: 0,
-      activeRoutes: 0,
-      totalDistance: 0,
-      averageUtilization: 0,
-      topRoutes: [],
-      recentActivity: []
-    };
-  }
-};
-
-// Route performance metrics
-export const fetchRoutePerformance = async (routeId: string, period: 'day' | 'week' | 'month' | 'year' = 'month') => {
-  try {
-    const res = await api.get(`/admin/routes/${routeId}/performance`, {
-      params: { period }
-    });
-    return res.data;
-  } catch (error) {
-    console.error('Error fetching route performance:', error);
-    return {
-      utilization: 0,
-      completedTrips: 0,
-      averageTime: 0,
-      revenue: 0,
-      costs: 0,
-      profit: 0
-    };
-  }
-};
-
-
-// ============================================================================
-// System Health API Functions (Phase 1)
-// ============================================================================
-
-// Get current system health metrics
-export const fetchCurrentSystemHealth = async () => {
-  const res = await api.get('/admin/system-health/enhanced/current');
-  return res.data;
-};
-
-// Get historical system health metrics
-export const fetchHistoricalSystemHealth = async (params?: {
-  startDate?: string;
-  endDate?: string;
-  category?: string;
-}) => {
-  const res = await api.get('/admin/system-health/enhanced/historical', { params });
-  return res.data;
-};
-
-// Export system health metrics
-export const exportSystemHealthMetrics = async (format: 'csv' | 'json' = 'csv') => {
-  const res = await api.get('/admin/system-health/enhanced/export', {
-    params: { format },
-    responseType: 'blob',
-  });
-  return res.data;
-};
-
-// ============================================================================
-// Security Center API Functions (Phase 1)
-// ============================================================================
-
-// Get security events
-export const fetchSecurityEvents = async (params?: {
-  severity?: string;
-  type?: string;
-  startDate?: string;
-  endDate?: string;
-}) => {
-  const res = await api.get('/admin/security-center/events', { params });
-  return res.data;
-};
-
-// Get failed login attempts
-export const fetchFailedLogins = async (params?: {
-  startDate?: string;
-  endDate?: string;
-  tenantId?: string;
-}) => {
-  const res = await api.get('/admin/security-center/failed-logins', { params });
-  return res.data;
-};
-
-// Get active user sessions
-export const fetchActiveSessions = async () => {
-  const res = await api.get('/admin/security-center/sessions');
-  return res.data;
-};
-
-// Get flagged accounts
-export const fetchFlaggedAccounts = async () => {
-  const res = await api.get('/admin/security-center/flagged-accounts');
-  return res.data;
-};
-
-// Get permission change history
-export const fetchPermissionHistory = async (params?: {
-  userId?: string;
-  startDate?: string;
-  endDate?: string;
-}) => {
-  const res = await api.get('/admin/security-center/permission-history', { params });
-  return res.data;
-};
-
-// Terminate a user session
-export const terminateSession = async (sessionId: string) => {
-  const res = await api.post(`/admin/security-center/sessions/${sessionId}/terminate`);
-  return res.data;
-};
-
-// Export security logs
-export const exportSecurityLogs = async (params?: {
-  startDate?: string;
-  endDate?: string;
-  format?: 'csv' | 'json';
-}) => {
-  const res = await api.get('/admin/security-center/export', {
-    params,
-    responseType: 'blob',
-  });
-  return res.data;
-};
+export const deleteTenantRoute = (routeId: string) =>
+  api.delete<any>(`/admin/routes/${routeId}`)
+    .then(res => res.data);

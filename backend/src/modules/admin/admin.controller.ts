@@ -49,14 +49,18 @@ export class AdminController {
   @ApiOperation({ summary: 'Get platform KPIs' })
   @ApiOkResponse({ description: 'KPI metrics retrieved' })
   getKpi(@Request() req) {
-    return this.adminService.getKpi(req.user.tenantId);
+    // Super admins see all KPIs, tenant admins see only their tenant's KPIs
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getKpi(tenantId);
   }
 
   @Get('analytics')
   @ApiOperation({ summary: 'Get admin analytics overview' })
   @ApiOkResponse({ description: 'Analytics data retrieved' })
   getAnalytics(@Request() req) {
-    return this.adminService.getAnalytics(req.user.tenantId);
+    // Super admins see all analytics, tenant admins see only their tenant's analytics
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getAnalytics(tenantId);
   }
 
   @Get('users')
@@ -70,7 +74,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Financial overview' })
   @ApiOkResponse({ description: 'Financials retrieved' })
   getFinancials(@Request() req) {
-    return this.adminService.getFinancials(req.user.tenantId);
+    // Super admins see all financials, tenant admins see only their tenant's financials
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getFinancials(tenantId);
   }
 
   @Get('health')

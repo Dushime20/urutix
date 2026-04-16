@@ -1,847 +1,466 @@
-import React, { useState, useMemo } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { loadsAPI } from '../services/load';
-import { fetchTenants, fetchAllUsers, fetchAllLoads } from '../services/adminApi';
-import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FaBox, FaMapMarkerAlt, FaCalendarAlt, FaSpinner, FaWeight,
+  FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaTrash, FaDollarSign
+} from 'react-icons/fa';
 import { TranslatedText } from '../components/translated-text';
-
-import {
-  Package, Search, Download,
-  Eye, Check, X, Ban, MapPin,
-  ChevronsUpDown, User, Building2,
-  AlertTriangle, Play, Pause,
-  Trash2, DollarSign, Weight, Box, Calendar
-} from 'lucide-react';
-
-interface Load {
-  id: string;
-  title: string;
-  description?: string;
-  weight: number;
-  volume?: number;
-  cargoType: string;
-  status: string;
-  tenantId?: string;
-  tenantName?: string;
-  cargoOwnerId?: string;
-  cargoOwnerName?: string;
-  cargoOwner?: {
-    id: string;
-    email: string;
-    profile?: {
-      firstName?: string;
-      lastName?: string;
-      companyName?: string;
-    };
-  };
-  pickupDate?: string;
-  deliveryDate?: string;
-  offeredPrice?: number;
-  loadValue?: number;
-  currencyCode?: string;
-  urgencyLevel?: string;
-  pickupLocation?: {
-    name?: string;
-    address?: string;
-  };
-  deliveryLocation?: {
-    name?: string;
-    address?: string;
-  };
-  locations?: any[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Tenant {
-  id: string;
-  name: string;
-  subdomain: string;
-  status: string;
-}
+import { useAuth } from '../contexts/AuthContext';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { adminAPI, type AdminLoad } from '../services/adminApi';
 
 const AdminLoads: React.FC = () => {
-  const qc = useQueryClient();
-
-
-
-  // Fetch data - try admin endpoint first, fallback to regular endpoint
-  const { data: loadsData, isLoading: loadsLoading, error: loadsError } = useQuery({
-    queryKey: ['admin-loads'],
-    queryFn: async () => {
-      try {
-        // Try admin endpoint first
-        try {
-          const adminLoads = await fetchAllLoads();
-          if (adminLoads && Array.isArray(adminLoads) && adminLoads.length > 0) {
-            console.log('Found loads via admin API:', adminLoads.length);
-            return adminLoads;
-          }
-        } catch (adminError) {
-          console.log('Admin loads endpoint failed, trying regular endpoint:', adminError);
-        }
-
-        // Fallback to regular loads endpoint
-        const response = await loadsAPI.getAll();
-        console.log('Loads API Response:', response);
-        console.log('Response data:', response.data);
-
-        // Handle different response structures
-        // Backend returns: { items: [], total, page, ... } or { data: { items: [] } }
-        const data = response.data?.data || response.data;
-
-        // Try items array first (paginated response)
-        if (data?.items && Array.isArray(data.items)) {
-          console.log('Found loads in data.items:', data.items.length);
-          return data.items;
-        }
-
-        // Try loads array
-        if (data?.loads && Array.isArray(data.loads)) {
-          console.log('Found loads in data.loads:', data.loads.length);
-          return data.loads;
-        }
-
-        // Try direct array
-        if (Array.isArray(data)) {
-          console.log('Found loads as direct array:', data.length);
-          return data;
-        }
-
-        // Try response.data as array
-        if (Array.isArray(response.data)) {
-          console.log('Found loads in response.data:', response.data.length);
-          return response.data;
-        }
-
-        console.warn('Unexpected loads response structure:', {
-          responseData: response.data,
-          data: data,
-          keys: data ? Object.keys(data) : 'no data'
-        });
-        return [];
-      } catch (error: any) {
-        console.error('Error fetching loads:', error);
-        console.error('Error response:', error?.response?.data);
-        throw error;
-      }
-    }
-  });
-
-  const { data: tenantsData } = useQuery({
-    queryKey: ['admin-tenants'],
-    queryFn: fetchTenants
-  });
-
-  const { data: usersData } = useQuery({
-    queryKey: ['admin-all-users'],
-    queryFn: () => fetchAllUsers()
-  });
-
-  // UI state
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [loads, setLoads] = useState<AdminLoad[]>([]);
+  const [filteredLoads, setFilteredLoads] = useState<AdminLoad[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [cargoTypeFilter, setCargoTypeFilter] = useState<string>('all');
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
-  const [sortBy, setSortBy] = useState<string>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [selectedLoadIds, setSelectedLoadIds] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [tenantFilter, setTenantFilter] = useState('all');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
-  // Get tenants for mapping
-  const tenants: Tenant[] = tenantsData?.tenants || [];
-  const tenantMap = new Map<string, string>();
-  tenants.forEach((tenant) => {
-    tenantMap.set(tenant.id, tenant.name);
-  });
-
-  // Get users for cargo owner mapping
-  const users: any[] = usersData || [];
-  const ownerMap = new Map<string, string>();
-  users.forEach((user: any) => {
-    if (!user || !user.id) return;
-    if (user.profile?.firstName || user.profile?.lastName) {
-      ownerMap.set(user.id, `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim() || user.profile.companyName || user.email);
-    } else if (user.profile?.companyName) {
-      ownerMap.set(user.id, user.profile.companyName);
-    } else {
-      ownerMap.set(user.id, user.email || 'Unknown');
-    }
-  });
-
-  // Map loads with tenant and owner names
-  const loads: Load[] = useMemo(() => {
-    if (!loadsData || !Array.isArray(loadsData)) return [];
-    return loadsData.map((load: any) => {
-      let ownerName = 'N/A';
-      if (load.cargoOwnerId) {
-        ownerName = ownerMap.get(load.cargoOwnerId) || 'N/A';
-        if (ownerName === 'N/A' && load.cargoOwner) {
-          if (load.cargoOwner.profile?.firstName || load.cargoOwner.profile?.lastName) {
-            ownerName = `${load.cargoOwner.profile.firstName || ''} ${load.cargoOwner.profile.lastName || ''}`.trim() || load.cargoOwner.profile.companyName || load.cargoOwner.email || 'N/A';
-          } else if (load.cargoOwner.profile?.companyName) {
-            ownerName = load.cargoOwner.profile.companyName;
-          } else if (load.cargoOwner.email) {
-            ownerName = load.cargoOwner.email;
-          }
-        }
+  // Fetch loads data
+  useEffect(() => {
+    const fetchLoads = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await adminAPI.getAllLoads();
+        console.log('Loads API Response:', response);
+        
+        // The response should be { data: { loads: [...] } }
+        const loadsData = response.data?.loads || [];
+        
+        setLoads(loadsData);
+        setFilteredLoads(loadsData);
+      } catch (err: any) {
+        console.error('Error fetching loads:', err);
+        setError(err.response?.data?.message || 'Failed to load loads data');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Extract pickup and delivery locations
-      let pickupLocation: any = null;
-      let deliveryLocation: any = null;
-      if (load.locations && Array.isArray(load.locations)) {
-        pickupLocation = load.locations.find((loc: any) => loc.type === 'PICKUP');
-        deliveryLocation = load.locations.find((loc: any) => loc.type === 'DELIVERY');
-      }
+    fetchLoads();
+  }, []);
 
-      return {
-        ...load,
-        tenantId: load.tenantId,
-        tenantName: load.tenantId ? (tenantMap.get(load.tenantId) || 'N/A') : 'N/A',
-        cargoOwnerId: load.cargoOwnerId,
-        cargoOwnerName: ownerName,
-        pickupLocation: pickupLocation?.locationData || load.pickupLocation,
-        deliveryLocation: deliveryLocation?.locationData || load.deliveryLocation
-      };
-    });
-  }, [loadsData, tenantMap, ownerMap]);
+  // Filter loads based on search and filters
+  useEffect(() => {
+    let filtered = loads;
 
-  // Delete mutation
-  const { mutate: deleteLoad } = useMutation({
-    mutationFn: (loadId: string) => loadsAPI.delete(loadId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-loads'] });
-      setShowDetailsModal(false);
-      setSelectedLoad(null);
-      toast.success('Load deleted successfully!');
-    },
-    onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        'Failed to delete load. Please try again.';
-      toast.error(errorMessage);
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(load =>
+        load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.destination?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  });
 
-  const handleDeleteLoad = (loadId: string) => {
-    if (window.confirm('Are you sure you want to delete this load? This action cannot be undone.')) {
-      deleteLoad(loadId);
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(load => load.status === statusFilter);
+    }
+
+    // Tenant filter
+    if (tenantFilter !== 'all') {
+      filtered = filtered.filter(load => load.tenantId === tenantFilter);
+    }
+
+    setFilteredLoads(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [loads, searchTerm, statusFilter, tenantFilter]);
+
+  // Get unique values for filters
+  const uniqueStatuses = [...new Set(loads.map(load => load.status))];
+  const uniqueTenants = [...new Set(loads.map(load => load.tenantId))];
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredLoads.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentLoads = filteredLoads.slice(startIndex, endIndex);
+
+  // Status color helper
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'active':
+      case 'in_transit':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'delivered':
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  // Filter and sort loads
-  const filteredLoads = loads
-    .filter((load: Load) => {
-      const matchesSearch = load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.cargoOwnerName?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || load.status === statusFilter;
-      const matchesCargoType = cargoTypeFilter === 'all' || load.cargoType === cargoTypeFilter;
-      return matchesSearch && matchesStatus && matchesCargoType;
-    })
-    .sort((a: Load, b: Load) => {
-      const aValue = a[sortBy as keyof Load] || '';
-      const bValue = b[sortBy as keyof Load] || '';
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      }
-      return aValue < bValue ? 1 : -1;
-    });
-
-  const total = filteredLoads.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * pageSize;
-  const endIdx = startIdx + pageSize;
-  const pagedLoads = filteredLoads.slice(startIdx, endIdx);
+  // Format status text
+  const formatStatus = (status: string) => {
+    return status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
+  };
 
   // Calculate stats
-  const stats = [
-    {
-      label: <TranslatedText text="Total Loads" />,
-      value: loads.length,
-      description: <TranslatedText text="All registered loads" />,
-      color: 'bg-gray-800',
-      icon: Package
-    },
-    {
-      label: <TranslatedText text="Active" />,
-      value: loads.filter((l: Load) => l.status === 'CREATED' || l.status === 'PUBLISHED' || l.status === 'IN_PROGRESS').length,
-      description: <TranslatedText text="Currently active" />,
-      color: 'bg-gray-800',
-      icon: Play
-    },
-    {
-      label: <TranslatedText text="Draft" />,
-      value: loads.filter((l: Load) => l.status === 'DRAFT').length,
-      description: <TranslatedText text="Draft loads" />,
-      color: 'bg-gray-800',
-      icon: Pause
-    },
-    {
-      label: <TranslatedText text="Completed" />,
-      value: loads.filter((l: Load) => l.status === 'COMPLETED' || l.status === 'DELIVERED').length,
-      description: <TranslatedText text="Completed deliveries" />,
-      color: 'bg-gray-800',
-      icon: Check
-    }
-  ];
+  const totalValue = loads.reduce((sum, load) => sum + (load.value || 0), 0);
+  const totalWeight = loads.reduce((sum, load) => sum + (load.weight || 0), 0);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'CREATED':
-      case 'PUBLISHED':
-      case 'IN_PROGRESS': return 'bg-green-100 text-green-800';
-      case 'DRAFT': return 'bg-yellow-100 text-yellow-800';
-      case 'COMPLETED':
-      case 'DELIVERED': return 'bg-blue-100 text-blue-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'CREATED':
-      case 'PUBLISHED':
-      case 'IN_PROGRESS': return <Play className="text-green-500" size={10} />;
-      case 'DRAFT': return <Pause className="text-yellow-500" size={10} />;
-      case 'COMPLETED':
-      case 'DELIVERED': return <Check className="text-blue-500" size={10} />;
-      case 'CANCELLED': return <Ban className="text-red-500" size={10} />;
-      default: return <Pause className="text-gray-500" size={10} />;
-    }
-  };
-
-  const getCargoTypeColor = (cargoType: string) => {
-    switch (cargoType) {
-      case 'FRAGILE': return 'bg-red-100 text-red-800';
-      case 'HAZARDOUS': return 'bg-orange-100 text-orange-800';
-      case 'REFRIGERATED': return 'bg-blue-100 text-blue-800';
-      case 'GENERAL': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loadsLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
-        <span className="ml-2 text-sm text-gray-600"><TranslatedText text="Loading loads..." /></span>
-      </div>
+      <AdminPageLayout
+        title="Load Management"
+        description="Monitor and manage all cargo loads across the platform"
+      >
+        <div className="flex items-center justify-center h-64">
+          <FaSpinner className="animate-spin text-4xl text-indigo-600" />
+          <span className="ml-3 text-lg text-gray-600">Loading loads data...</span>
+        </div>
+      </AdminPageLayout>
     );
   }
 
-  if (loadsError) {
+  if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-            <AlertTriangle className="text-red-600" size={20} />
+      <AdminPageLayout
+        title="Load Management"
+        description="Monitor and manage all cargo loads across the platform"
+      >
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="text-red-400">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error Loading Loads</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-gray-900"><TranslatedText text="Error Loading Loads" /></h2>
-            <p className="text-sm text-gray-600 mt-0.5"><TranslatedText text="Please try refreshing the page or contact support." /></p>
+          <div className="mt-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Retry
+            </button>
           </div>
         </div>
-      </div>
+      </AdminPageLayout>
     );
   }
 
   return (
     <AdminPageLayout
-      title={<TranslatedText text="Load Management" />}
-      description={<TranslatedText text="Manage cargo loads and shipments" />}
+      title="Load Management"
+      description="Monitor and manage all cargo loads across the platform"
     >
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-black text-gray-900 mb-0.5">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.description}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                    <Icon className="text-white" size={20} />
-                  </div>
-                </div>
+      <div className="space-y-6">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Total Loads</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{loads.length}</p>
               </div>
+              <FaBox className="text-4xl text-blue-500 opacity-50" />
             </div>
-          );
-        })}
-      </div>
-
-      {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search loads..."
-              className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
           </div>
 
-          <select
-            className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all"><TranslatedText text="All Status" /></option>
-            <option value="DRAFT"><TranslatedText text="Draft" /></option>
-            <option value="CREATED"><TranslatedText text="Created" /></option>
-            <option value="PUBLISHED"><TranslatedText text="Published" /></option>
-            <option value="IN_PROGRESS"><TranslatedText text="In Progress" /></option>
-            <option value="COMPLETED"><TranslatedText text="Completed" /></option>
-            <option value="DELIVERED"><TranslatedText text="Delivered" /></option>
-            <option value="CANCELLED"><TranslatedText text="Cancelled" /></option>
-          </select>
-
-          <select
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-            value={cargoTypeFilter}
-            onChange={(e) => setCargoTypeFilter(e.target.value)}
-          >
-            <option value="all"><TranslatedText text="All Types" /></option>
-            <option value="GENERAL"><TranslatedText text="General" /></option>
-            <option value="FRAGILE"><TranslatedText text="Fragile" /></option>
-            <option value="HAZARDOUS"><TranslatedText text="Hazardous" /></option>
-            <option value="REFRIGERATED"><TranslatedText text="Refrigerated" /></option>
-            <option value="LIVESTOCK"><TranslatedText text="Livestock" /></option>
-            <option value="VEHICLES"><TranslatedText text="Vehicles" /></option>
-          </select>
-
-          <button className="px-3 py-2 text-sm border border-gray-200 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-gray-600">
-            <Download size={16} />
-            <span><TranslatedText text="Export" /></span>
-          </button>
-        </div>
-
-        <div className="mt-2 flex items-center justify-between">
-          <div className="text-xs text-gray-600">
-            {selectedLoadIds.length > 0 ? `${selectedLoadIds.length} selected` : `${total} loads`}
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Completed</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {loads.filter(l => ['delivered', 'completed'].includes(l.status?.toLowerCase())).length}
+                </p>
+              </div>
+              <FaBox className="text-4xl text-green-500 opacity-50" />
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <select
-              className="px-1.5 py-0.5 text-xs border border-gray-200 rounded"
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-            >
-              <option value={10}>10 / page</option>
-              <option value={25}>25 / page</option>
-              <option value={50}>50 / page</option>
-              <option value={100}>100 / page</option>
-            </select>
+
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Total Weight</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {totalWeight.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500">lbs</p>
+              </div>
+              <FaWeight className="text-4xl text-yellow-500 opacity-50" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Total Value</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  ${totalValue.toLocaleString()}
+                </p>
+              </div>
+              <FaDollarSign className="text-4xl text-purple-500 opacity-50" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Loads Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-              <tr>
-                <th className="px-2 py-1.5 w-8">
-                  <input
-                    type="checkbox"
-                    checked={selectedLoadIds.length > 0 && selectedLoadIds.length === pagedLoads.length}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedLoadIds(pagedLoads.map((l: Load) => l.id));
-                      } else {
-                        setSelectedLoadIds([]);
-                      }
-                    }}
-                  />
-                </th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <button
-                    className="flex items-center gap-1"
-                    onClick={() => {
-                      setSortBy('title');
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    <span><TranslatedText text="Load" /></span>
-                    <ChevronsUpDown size={14} />
-                  </button>
-                </th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Cargo Details" /></th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Route" /></th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Organization" /></th>
-                <th className="px-3 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Value" /></th>
-                <th className="px-3 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {pagedLoads.length === 0 ? (
+        {/* Filters and Search */}
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+              {/* Search */}
+              <div className="relative w-full md:w-64">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search loads..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                {uniqueStatuses.map(status => (
+                  <option key={status} value={status}>{formatStatus(status)}</option>
+                ))}
+              </select>
+
+              {/* Tenant Filter */}
+              <select
+                value={tenantFilter}
+                onChange={(e) => setTenantFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="all">All Tenants</option>
+                {uniqueTenants.map(tenantId => (
+                  <option key={tenantId} value={tenantId}>Tenant {tenantId}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+                <FaDownload />
+                Export
+              </button>
+              <span className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg font-medium">
+                {filteredLoads.length} loads
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Loads Table */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={9} className="px-2 py-8 text-center text-xs text-gray-500">
-                    <TranslatedText text="No loads found" />
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Load Details
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Route
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Weight
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Value
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : (
-                pagedLoads.map((load: Load) => (
-                  <tr key={load.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-2 py-1.5 w-8">
-                      <input
-                        type="checkbox"
-                        checked={selectedLoadIds.includes(load.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedLoadIds([...selectedLoadIds, load.id]);
-                          } else {
-                            setSelectedLoadIds(selectedLoadIds.filter(id => id !== load.id));
-                          }
-                        }}
-                      />
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
-                          <Package className="text-indigo-600" size={18} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-900 truncate">{load.title}</p>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{load.description || <TranslatedText text="No description" />}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <Weight className="text-gray-400" size={12} />
-                          <span className="text-[11px] font-bold text-gray-900">{(load.weight || 0).toLocaleString()} kg</span>
-                        </div>
-                        {load.volume && (
-                          <div className="flex items-center gap-1.5">
-                            <Box className="text-gray-400" size={12} />
-                            <span className="text-[10px] text-gray-500">{(load.volume || 0).toLocaleString()} m³</span>
-                          </div>
-                        )}
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${getCargoTypeColor(load.cargoType || 'GENERAL')}`}>
-                          {load.cargoType || 'GENERAL'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="space-y-1.5">
-                        {load.pickupLocation && (
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="text-green-500" size={10} />
-                            <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]" title={load.pickupLocation.name || load.pickupLocation.address}>
-                              {load.pickupLocation.name || load.pickupLocation.address || <TranslatedText text="Pickup" />}
-                            </span>
-                          </div>
-                        )}
-                        {load.deliveryLocation && (
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="text-red-500" size={10} />
-                            <span className="text-[10px] text-gray-600 font-medium truncate max-w-[120px]" title={load.deliveryLocation.name || load.deliveryLocation.address}>
-                              {load.deliveryLocation.name || load.deliveryLocation.address || <TranslatedText text="Delivery" />}
-                            </span>
-                          </div>
-                        )}
-                        {load.pickupDate && (
-                          <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-gray-50">
-                            <Calendar className="text-gray-400" size={10} />
-                            <span className="text-[10px] text-gray-500">{new Date(load.pickupDate).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(load.status)}
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getStatusColor(load.status)}`}>
-                          {load.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Building2 className="text-indigo-600" size={12} />
-                          </div>
-                          <span className="text-[11px] text-gray-900 font-bold truncate max-w-[100px]">
-                            {load.tenantName || 'N/A'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <User className="text-gray-600" size={12} />
-                          </div>
-                          <span className="text-[11px] text-gray-900 font-bold truncate max-w-[100px]">
-                            {load.cargoOwnerName || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="space-y-1">
-                        {load.offeredPrice && (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="text-green-600" size={12} />
-                            <span className="text-[11px] font-black text-gray-900">{(load.offeredPrice || 0).toLocaleString()}</span>
-                            <span className="text-[9px] text-gray-500 font-bold">{load.currencyCode || 'RWF'}</span>
-                          </div>
-                        )}
-                        {load.loadValue && (
-                          <div className="text-[10px] text-gray-500 font-medium">
-                            <TranslatedText text="Value" />: {(load.loadValue || 0).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => {
-                            setSelectedLoad(load);
-                            setShowDetailsModal(true);
-                          }}
-                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title={<TranslatedText text="View Details" />}
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLoad(load.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title={<TranslatedText text="Delete" />}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentLoads.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <FaBox className="text-4xl text-gray-400 mb-4" />
+                        <p className="text-gray-500 text-lg font-medium">No loads found</p>
+                        <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        {/* Pagination */}
-        <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
-          <div className="text-[10px] text-gray-600">
-            <TranslatedText text="Showing" /> {Math.min(endIdx, total)} <TranslatedText text="of" /> {total}
+                ) : (
+                  currentLoads.map((load) => (
+                    <tr key={load.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-12 w-12">
+                            <div className="h-12 w-12 rounded-lg bg-orange-100 flex items-center justify-center">
+                              <FaBox className="text-orange-600 text-xl" />
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {load.title || `Load #${load.id.slice(-8)}`}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {load.id}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center text-sm text-gray-900">
+                          <FaMapMarkerAlt className="text-gray-400 mr-2" />
+                          <div>
+                            <div className="font-medium">{load.origin || 'Unknown'}</div>
+                            <div className="text-gray-500">→ {load.destination || 'Unknown'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(load.status)}`}>
+                          {formatStatus(load.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {load.weight ? `${load.weight.toLocaleString()} lbs` : 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {load.value ? `$${load.value.toLocaleString()}` : 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <FaCalendarAlt className="mr-1" />
+                          {new Date(load.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {/* Handle view details */}}
+                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
+                            title="View Details"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => {/* Handle edit */}}
+                            className="text-green-600 hover:text-green-900 p-1 rounded"
+                            title="Edit"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => {/* Handle delete */}}
+                            className="text-red-600 hover:text-red-900 p-1 rounded"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
-              onClick={() => setPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              <TranslatedText text="Previous" />
-            </button>
-            <span className="text-[10px] text-gray-700"><TranslatedText text="Page" /> {currentPage} / {totalPages}</span>
-            <button
-              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
-              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-            >
-              <TranslatedText text="Next" />
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Load Details Modal */}
-      {showDetailsModal && selectedLoad && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
-                    <Package className="text-indigo-600" size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedLoad.title}</h2>
-                    <p className="text-xs text-gray-500">{selectedLoad.description || <TranslatedText text="No description" />}</p>
-                  </div>
-                </div>
+          {/* Pagination */}
+          {filteredLoads.length > itemsPerPage && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
                 <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <X size={18} />
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Next
                 </button>
               </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(endIndex, filteredLoads.length)}</span> of{' '}
+                    <span className="font-medium">{filteredLoads.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
-
-            <div className="p-3 space-y-3">
-              {/* Status */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center space-x-2">
-                  {getStatusIcon(selectedLoad.status)}
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getStatusColor(selectedLoad.status)}`}>
-                    {selectedLoad.status.replace('_', ' ')}
-                  </span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${getCargoTypeColor(selectedLoad.cargoType || 'GENERAL')}`}>
-                    {selectedLoad.cargoType || 'GENERAL'}
-                  </span>
-                  {selectedLoad.urgencyLevel && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-orange-100 text-orange-800">
-                      {selectedLoad.urgencyLevel} <TranslatedText text="Priority" />
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                  <div className="flex items-center space-x-2">
-                    <Weight className="text-indigo-600" size={16} />
-                    <div>
-                      <div className="text-sm font-black text-indigo-900">{(selectedLoad.weight || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-indigo-700"><TranslatedText text="Weight (kg)" /></div>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedLoad.volume && (
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                    <div className="flex items-center space-x-2">
-                      <Box className="text-gray-600" size={16} />
-                      <div>
-                        <div className="text-sm font-black text-gray-900">{(selectedLoad.volume || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-gray-500"><TranslatedText text="Volume (m³)" /></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedLoad.offeredPrice && (
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-100">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="text-green-600" size={16} />
-                      <div>
-                        <div className="text-sm font-black text-green-900">{(selectedLoad.offeredPrice || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-green-700"><TranslatedText text="Offered Price" /></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedLoad.loadValue && (
-                  <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="text-yellow-600" size={16} />
-                      <div>
-                        <div className="text-sm font-black text-yellow-900">{(selectedLoad.loadValue || 0).toLocaleString()}</div>
-                        <div className="text-[10px] text-yellow-700"><TranslatedText text="Load Value" /></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Load Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><TranslatedText text="Load Information" /></h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600"><TranslatedText text="Title" />:</span>
-                      <span className="font-medium">{selectedLoad.title}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600"><TranslatedText text="Cargo Type" />:</span>
-                      <span className="font-medium">{selectedLoad.cargoType || 'GENERAL'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600"><TranslatedText text="Weight" />:</span>
-                      <span className="font-medium">{(selectedLoad.weight || 0).toLocaleString()} kg</span>
-                    </div>
-                    {selectedLoad.volume && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600"><TranslatedText text="Volume" />:</span>
-                        <span className="font-medium">{(selectedLoad.volume || 0).toLocaleString()} m³</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600"><TranslatedText text="Tenant" />:</span>
-                      <span className="font-medium">{selectedLoad.tenantName || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600"><TranslatedText text="Cargo Owner" />:</span>
-                      <span className="font-medium">{selectedLoad.cargoOwnerName || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><TranslatedText text="Route & Dates" /></h3>
-                  <div className="space-y-1.5 text-xs">
-                    {selectedLoad.pickupLocation && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600"><TranslatedText text="Pickup" />:</span>
-                        <span className="font-medium">{selectedLoad.pickupLocation.name || selectedLoad.pickupLocation.address || 'N/A'}</span>
-                      </div>
-                    )}
-                    {selectedLoad.deliveryLocation && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600"><TranslatedText text="Delivery" />:</span>
-                        <span className="font-medium">{selectedLoad.deliveryLocation.name || selectedLoad.deliveryLocation.address || 'N/A'}</span>
-                      </div>
-                    )}
-                    {selectedLoad.pickupDate && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600"><TranslatedText text="Pickup Date" />:</span>
-                        <span className="font-medium">{new Date(selectedLoad.pickupDate).toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedLoad.deliveryDate && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600"><TranslatedText text="Delivery Date" />:</span>
-                        <span className="font-medium">{new Date(selectedLoad.deliveryDate).toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedLoad.offeredPrice && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600"><TranslatedText text="Offered Price" />:</span>
-                        <span className="font-medium">{(selectedLoad.offeredPrice || 0).toLocaleString()} {selectedLoad.currencyCode || 'RWF'}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600"><TranslatedText text="Created" />:</span>
-                      <span className="font-medium">{new Date(selectedLoad.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              {selectedLoad.description && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-gray-900"><TranslatedText text="Description" /></h3>
-                  <p className="text-xs text-gray-700 bg-gray-50 p-2 rounded-lg">{selectedLoad.description}</p>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </AdminPageLayout>
   );
 };

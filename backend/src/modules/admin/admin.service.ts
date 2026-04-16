@@ -116,35 +116,68 @@ export class AdminService {
     }
   }
 
-  async getKpi(tenantId: string) {
-    const [users, trips, payments, alerts] = await Promise.all([
-      this.userRepo.count({ where: { tenantId } }),
-      this.tripRepo.count({ where: { tenantId } as any }),
-      this.paymentRepo.count({ where: { tenantId } as any }),
-      this.notificationRepo.count({ where: { tenantId } as any }),
-    ]);
+  async getKpi(tenantId?: string) {
+    if (tenantId) {
+      // Get KPIs for specific tenant
+      const [users, trips, payments, alerts] = await Promise.all([
+        this.userRepo.count({ where: { tenantId } }),
+        this.tripRepo.count({ where: { tenantId } as any }),
+        this.paymentRepo.count({ where: { tenantId } as any }),
+        this.notificationRepo.count({ where: { tenantId } as any }),
+      ]);
 
-    return {
-      users,
-      activeTrips: trips,
-      revenue: payments,
-      engagement: Math.min(users * 2, 100),
-      alerts,
-    };
+      return {
+        users,
+        activeTrips: trips,
+        revenue: payments,
+        engagement: Math.min(users * 2, 100),
+        alerts,
+      };
+    } else {
+      // Get KPIs for all tenants (super admin view)
+      const [users, trips, payments, alerts] = await Promise.all([
+        this.userRepo.count(),
+        this.tripRepo.count(),
+        this.paymentRepo.count(),
+        this.notificationRepo.count(),
+      ]);
+
+      return {
+        users,
+        activeTrips: trips,
+        revenue: payments,
+        engagement: Math.min(users * 2, 100),
+        alerts,
+      };
+    }
   }
 
-  async getAnalytics(tenantId: string) {
-    const recentTrips = await this.tripRepo.find({
-      where: { tenantId } as any,
-      take: 10,
-      order: { createdAt: 'DESC' } as any,
-    });
-    const recentPayments = await this.paymentRepo.find({
-      where: { tenantId } as any,
-      take: 10,
-      order: { createdAt: 'DESC' } as any,
-    });
-    return { recentTrips, recentPayments };
+  async getAnalytics(tenantId?: string) {
+    if (tenantId) {
+      // Get analytics for specific tenant
+      const recentTrips = await this.tripRepo.find({
+        where: { tenantId } as any,
+        take: 10,
+        order: { createdAt: 'DESC' } as any,
+      });
+      const recentPayments = await this.paymentRepo.find({
+        where: { tenantId } as any,
+        take: 10,
+        order: { createdAt: 'DESC' } as any,
+      });
+      return { recentTrips, recentPayments };
+    } else {
+      // Get analytics for all tenants (super admin view)
+      const recentTrips = await this.tripRepo.find({
+        take: 10,
+        order: { createdAt: 'DESC' } as any,
+      });
+      const recentPayments = await this.paymentRepo.find({
+        take: 10,
+        order: { createdAt: 'DESC' } as any,
+      });
+      return { recentTrips, recentPayments };
+    }
   }
 
   async getUsers(tenantId: string) {
@@ -156,13 +189,127 @@ export class AdminService {
     return { users };
   }
 
-  async getFinancials(tenantId: string) {
-    const total = await this.paymentRepo
-      .createQueryBuilder('p')
-      .select('COALESCE(SUM(p.amount),0)', 'sum')
-      .where('p.tenantId = :tenantId', { tenantId })
-      .getRawOne<{ sum: string }>();
-    return { totalRevenue: Number(total?.sum || 0) };
+  async getFinancials(tenantId?: string) {
+    try {
+      console.log('💰 Calculating financials for tenantId:', tenantId || 'ALL');
+      
+      // Get revenue from multiple sources
+      const revenuePromises = [];
+      
+      // 1. Revenue from payments table
+      let paymentsQuery = this.paymentRepo
+        .createQueryBuilder('p')
+        .select('COALESCE(SUM(p.amount),0)', 'sum');
+      
+      if (tenantId) {
+        paymentsQuery = paymentsQuery.where('p.tenantId = :tenantId', { tenantId });
+      }
+      
+      revenuePromises.push(
+        paymentsQuery.getRawOne<{ sum: string }>().then(result => ({
+          source: 'payments',
+          amount: Number(result?.sum || 0)
+        }))
+      );
+      
+      // 2. Revenue from credit marketplace sales (credit_accounts table)
+      const creditAccountsRepo = this.userRepo.manager.getRepository('credit_accounts');
+      let creditQuery = creditAccountsRepo
+        .createQueryBuilder('ca')
+        .select('COALESCE(SUM(ca.revenue_from_marketplace_sales),0)', 'sum');
+      
+      if (tenantId) {
+        creditQuery = creditQuery.where('ca.tenant_id = :tenantId', { tenantId });
+      }
+      
+      revenuePromises.push(
+        creditQuery.getRawOne<{ sum: string }>().then(result => ({
+          source: 'credit_marketplace',
+          amount: Number(result?.sum || 0)
+        })).catch(err => {
+          console.warn('Could not query credit_accounts:', err.message);
+          return { source: 'credit_marketplace', amount: 0 };
+        })
+      );
+      
+      // 3. Revenue from trips (agreedPrice, totalCost)
+      let tripsQuery = this.tripRepo
+        .createQueryBuilder('t')
+        .select('COALESCE(SUM(t.agreedPrice),0)', 'agreedSum')
+        .addSelect('COALESCE(SUM(t.totalCost),0)', 'costSum');
+      
+      if (tenantId) {
+        tripsQuery = tripsQuery.where('t.tenantId = :tenantId', { tenantId });
+      }
+      
+      revenuePromises.push(
+        tripsQuery.getRawOne<{ agreedSum: string; costSum: string }>().then(result => ({
+          source: 'trips_agreed',
+          amount: Number(result?.agreedSum || 0)
+        })).catch(err => {
+          console.warn('Could not query trips for agreedPrice:', err.message);
+          return { source: 'trips_agreed', amount: 0 };
+        })
+      );
+      
+      // 4. Revenue from loads (offeredPrice, brokerCommissionAmount)
+      let loadsQuery = this.loadRepo
+        .createQueryBuilder('l')
+        .select('COALESCE(SUM(l.offeredPrice),0)', 'offeredSum')
+        .addSelect('COALESCE(SUM(l.brokerCommissionAmount),0)', 'commissionSum');
+      
+      if (tenantId) {
+        loadsQuery = loadsQuery.where('l.tenantId = :tenantId', { tenantId });
+      }
+      
+      revenuePromises.push(
+        loadsQuery.getRawOne<{ offeredSum: string; commissionSum: string }>().then(result => ({
+          source: 'loads_offered',
+          amount: Number(result?.offeredSum || 0)
+        })).catch(err => {
+          console.warn('Could not query loads for offeredPrice:', err.message);
+          return { source: 'loads_offered', amount: 0 };
+        })
+      );
+      
+      revenuePromises.push(
+        loadsQuery.getRawOne<{ offeredSum: string; commissionSum: string }>().then(result => ({
+          source: 'broker_commissions',
+          amount: Number(result?.commissionSum || 0)
+        })).catch(err => {
+          console.warn('Could not query loads for commissions:', err.message);
+          return { source: 'broker_commissions', amount: 0 };
+        })
+      );
+      
+      // Wait for all revenue calculations
+      const revenueResults = await Promise.all(revenuePromises);
+      
+      console.log('💰 Revenue breakdown by source:');
+      revenueResults.forEach(result => {
+        console.log(`  ${result.source}: $${result.amount}`);
+      });
+      
+      // Calculate total revenue
+      const totalRevenue = revenueResults.reduce((sum, result) => sum + result.amount, 0);
+      
+      console.log('💰 Total Revenue:', totalRevenue);
+      
+      return { 
+        totalRevenue,
+        revenueBreakdown: revenueResults.reduce((acc, result) => {
+          acc[result.source] = result.amount;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+      
+    } catch (error) {
+      console.error('❌ Error calculating financials:', error);
+      return { 
+        totalRevenue: 0,
+        error: error.message 
+      };
+    }
   }
 
   async getHealth() {
@@ -274,6 +421,33 @@ export class AdminService {
         const owner = truck.ownerId ? ownerMap.get(truck.ownerId) : null;
         const driver = truck.currentDriverId ? driverMap.get(truck.currentDriverId) : null;
 
+        // Get current driver from assignedDrivers array
+        let currentDriverInfo = null;
+        if (truck.assignedDrivers && Array.isArray(truck.assignedDrivers)) {
+          // Find the active driver assignment
+          const activeAssignment = truck.assignedDrivers.find(
+            (assignment: any) => assignment.status === 'active'
+          );
+          if (activeAssignment) {
+            currentDriverInfo = {
+              id: activeAssignment.driverId,
+              name: activeAssignment.driverName,
+              assignmentDate: activeAssignment.assignmentDate,
+              notes: activeAssignment.notes,
+            };
+          }
+        }
+
+        // Fallback to currentDriver relation if no active assignment found
+        if (!currentDriverInfo && driver) {
+          currentDriverInfo = {
+            id: driver.id,
+            name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.email,
+            assignmentDate: null,
+            notes: null,
+          };
+        }
+
         return {
           ...truck,
           currentLocationString: locationString,
@@ -301,18 +475,13 @@ export class AdminService {
             : 'No Owner',
           ownerEmail: owner?.email || null,
           ownerPhone: owner?.phoneNumber || null,
-          // Driver information
-          driver: driver ? {
-            id: driver.id,
-            email: driver.email,
-            firstName: driver.firstName,
-            lastName: driver.lastName,
-            phoneNumber: driver.phoneNumber,
-          } : null,
-          currentDriverName: driver 
-            ? `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.email
-            : null,
+          // Driver information (updated to use assignedDrivers)
+          driver: currentDriverInfo,
+          currentDriverName: currentDriverInfo?.name || null,
+          currentDriverId: currentDriverInfo?.id || truck.currentDriverId || null,
           currentDriverPhone: driver?.phoneNumber || null,
+          // Include assignedDrivers for additional context
+          assignedDrivers: truck.assignedDrivers || [],
         };
       });
 
