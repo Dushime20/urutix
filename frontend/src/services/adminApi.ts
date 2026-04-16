@@ -152,6 +152,9 @@ export const adminAPI = {
   getHealth: () => 
     api.get<{ data: AdminHealth }>('/admin/health'),
 
+  getEscrow: (tenantId?: string) =>
+    api.get<any>('/admin/escrow', { params: tenantId ? { tenantId } : {} }),
+
   // Entity listings
   getAllUsers: (tenantId?: string) => 
     api.get<{ users: AdminUser[] }>('/admin/all/users', { params: tenantId ? { tenantId } : {} }),

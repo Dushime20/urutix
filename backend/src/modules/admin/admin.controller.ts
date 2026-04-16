@@ -79,6 +79,14 @@ export class AdminController {
     return this.adminService.getFinancials(tenantId);
   }
 
+  @Get('escrow')
+  @ApiOperation({ summary: 'Get escrow accounts overview (admin)' })
+  @ApiOkResponse({ description: 'Escrow data retrieved' })
+  getEscrow(@Request() req) {
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getEscrow(tenantId);
+  }
+
   @Get('health')
   @ApiOperation({ summary: 'System health' })
   @ApiOkResponse({ description: 'Health status retrieved' })

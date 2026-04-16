@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   Lock,
@@ -16,14 +16,21 @@ import {
   Package,
   LineChart,
   Calendar,
-  X
+  X,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import { adminAPI } from '../services/adminApi';
 
 interface EscrowAccount {
   id: string;
-  tripId: string;
+  source: 'escrow' | 'trip';
+  tripId?: string;
+  loadId?: string;
+  tenantId?: string;
+  tenantName?: string;
   cargoOwner: string;
   truckOwner: string;
   amount: number;
@@ -31,8 +38,17 @@ interface EscrowAccount {
   status: 'PENDING' | 'ACTIVE' | 'RELEASED' | 'DISPUTED' | 'CANCELLED';
   createdAt: string;
   releaseCondition: string;
-  releaseDate?: string;
-  disputeReason?: string;
+  releaseDate?: string | null;
+  isDisputed?: boolean;
+}
+
+interface EscrowStats {
+  totalInEscrow: number;
+  totalAccounts: number;
+  activeAccounts: number;
+  pendingRelease: number;
+  releasedAccounts: number;
+  disputedAccounts: number;
 }
 
 const EscrowManagement: React.FC = () => {
@@ -40,63 +56,35 @@ const EscrowManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedEscrow, setSelectedEscrow] = useState<EscrowAccount | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [escrowAccounts, setEscrowAccounts] = useState<EscrowAccount[]>([]);
+  const [stats, setStats] = useState<EscrowStats>({
+    totalInEscrow: 0,
+    totalAccounts: 0,
+    activeAccounts: 0,
+    pendingRelease: 0,
+    releasedAccounts: 0,
+    disputedAccounts: 0,
+  });
 
-  // Mock data - replace with actual API call
-  const escrowAccounts: EscrowAccount[] = [
-    {
-      id: 'ESC-001',
-      tripId: 'TRP-2024-001',
-      cargoOwner: 'ABC Logistics Ltd',
-      truckOwner: 'XYZ Transport Co',
-      amount: 2500.00,
-      currency: 'USD',
-      status: 'ACTIVE',
-      createdAt: '2024-02-10T10:30:00Z',
-      releaseCondition: 'Delivery Confirmed',
-    },
-    {
-      id: 'ESC-002',
-      tripId: 'TRP-2024-002',
-      cargoOwner: 'Global Shipping Inc',
-      truckOwner: 'Fast Freight LLC',
-      amount: 3750.00,
-      currency: 'USD',
-      status: 'RELEASED',
-      createdAt: '2024-02-08T14:20:00Z',
-      releaseCondition: 'Delivery Confirmed',
-      releaseDate: '2024-02-11T09:15:00Z',
-    },
-    {
-      id: 'ESC-003',
-      tripId: 'TRP-2024-003',
-      cargoOwner: 'Metro Cargo Services',
-      truckOwner: 'Prime Movers Ltd',
-      amount: 1850.00,
-      currency: 'USD',
-      status: 'DISPUTED',
-      createdAt: '2024-02-09T08:45:00Z',
-      releaseCondition: 'Delivery Confirmed',
-      disputeReason: 'Damaged goods reported',
-    },
-    {
-      id: 'ESC-004',
-      tripId: 'TRP-2024-004',
-      cargoOwner: 'Express Cargo Hub',
-      truckOwner: 'Swift Transport',
-      amount: 4200.00,
-      currency: 'USD',
-      status: 'PENDING',
-      createdAt: '2024-02-12T11:00:00Z',
-      releaseCondition: 'Awaiting Pickup Confirmation',
-    },
-  ];
-
-  const stats = {
-    totalEscrow: escrowAccounts.reduce((sum, acc) => sum + acc.amount, 0),
-    activeAccounts: escrowAccounts.filter(acc => acc.status === 'ACTIVE').length,
-    pendingRelease: escrowAccounts.filter(acc => acc.status === 'PENDING').length,
-    disputes: escrowAccounts.filter(acc => acc.status === 'DISPUTED').length,
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await adminAPI.getEscrow();
+      const data = res.data?.data || res.data;
+      setEscrowAccounts(data?.escrowAccounts || []);
+      if (data?.stats) setStats(data.stats);
+    } catch (err: any) {
+      console.error('Error fetching escrow data:', err);
+      setError(err.response?.data?.message || 'Failed to load escrow data');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => { fetchData(); }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -171,12 +159,33 @@ const EscrowManagement: React.FC = () => {
       title={<TranslatedText text="Escrow Management" />}
       description={<TranslatedText text="Monitor and manage secure payment escrow accounts" />}
       actions={
-        <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 transition-all duration-200 text-sm font-bold">
-          <Download className="w-4 h-4" />
-          <TranslatedText text="Export Report" />
+        <button
+          onClick={fetchData}
+          className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 transition-all duration-200 text-sm font-bold"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <TranslatedText text="Refresh" />
         </button>
       }
     >
+      {loading ? (
+        <div className="flex items-center justify-center h-64 gap-3">
+          <Loader2 className="animate-spin w-8 h-8 text-indigo-600" />
+          <span className="text-gray-600 font-medium">Loading escrow data...</span>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex items-center gap-4">
+          <XCircle className="w-6 h-6 text-red-500 shrink-0" />
+          <div>
+            <p className="font-bold text-red-800 text-sm">Failed to load escrow data</p>
+            <p className="text-red-600 text-xs mt-1">{error}</p>
+          </div>
+          <button onClick={fetchData} className="ml-auto bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-lg text-sm font-bold">
+            Retry
+          </button>
+        </div>
+      ) : (
+      <>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
@@ -189,7 +198,7 @@ const EscrowManagement: React.FC = () => {
               <LineChart className="w-4 h-4 text-blue-400 opacity-50" />
             </div>
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-              {formatCurrency(stats.totalEscrow, 'USD')}
+              {formatCurrency(stats.totalInEscrow, 'USD')}
             </div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Total in Escrow" /></div>
           </div>
@@ -209,7 +218,6 @@ const EscrowManagement: React.FC = () => {
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
               {stats.activeAccounts}
             </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Accounts" /></div>
           </div>
         </div>
 
@@ -243,7 +251,7 @@ const EscrowManagement: React.FC = () => {
               </span>
             </div>
             <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-              {stats.disputes}
+              {stats.disputedAccounts}
             </div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Disputed Accounts" /></div>
           </div>
@@ -383,8 +391,7 @@ const EscrowManagement: React.FC = () => {
       </div>
 
       {/* Details Modal */}
-      {showDetailsModal && selectedEscrow && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      {showDetailsModal && selectedEscrow && (        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-[24px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -416,9 +423,9 @@ const EscrowManagement: React.FC = () => {
                     <span className="text-sm font-bold text-gray-900">{selectedEscrow.status}</span>
                   </div>
                 </div>
-                {selectedEscrow.disputeReason && (
+                {selectedEscrow.isDisputed && (
                   <div className="mt-3 pt-3 border-t border-red-100 text-sm text-red-700">
-                    <span className="font-bold"><TranslatedText text="Reason" />:</span> {selectedEscrow.disputeReason}
+                    <span className="font-bold"><TranslatedText text="Status" />:</span> Disputed
                   </div>
                 )}
               </div>
@@ -439,7 +446,7 @@ const EscrowManagement: React.FC = () => {
                     <TranslatedText text="Trip ID" />
                   </div>
                   <div className="font-bold text-gray-900 font-mono text-sm bg-gray-50 px-3 py-2 rounded-lg inline-block border border-gray-100">
-                    {selectedEscrow.tripId}
+                    {selectedEscrow.tripId || '—'}
                   </div>
                 </div>
                 <div>
@@ -503,6 +510,8 @@ const EscrowManagement: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </AdminPageLayout>
   );

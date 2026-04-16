@@ -317,6 +317,152 @@ export class AdminService {
     return { status: 'ok', uptime: process.uptime() };
   }
 
+  async getEscrow(tenantId?: string) {
+    try {
+      // 1. Real escrow_accounts records
+      let escrowQuery = this.userRepo.manager
+        .createQueryBuilder()
+        .select([
+          'e.id            AS id',
+          'e."tenantId"    AS "tenantId"',
+          'e."tripId"      AS "tripId"',
+          'e."loadId"      AS "loadId"',
+          'e."payerId"     AS "payerId"',
+          'e."payeeId"     AS "payeeId"',
+          'e.status        AS status',
+          'e."totalAmount" AS "totalAmount"',
+          'e."fundedAmount" AS "fundedAmount"',
+          'e."releasedAmount" AS "releasedAmount"',
+          'e."currencyCode" AS "currencyCode"',
+          'e."isDisputed"  AS "isDisputed"',
+          'e."disputeId"   AS "disputeId"',
+          'e."createdAt"   AS "createdAt"',
+          'e."fundedAt"    AS "fundedAt"',
+        ])
+        .from('escrow_accounts', 'e');
+
+      if (tenantId) {
+        escrowQuery = escrowQuery.where('e."tenantId" = :tenantId', { tenantId });
+      }
+
+      const escrowRows = await escrowQuery.getRawMany();
+
+      // 2. Trips with agreedPrice as synthetic escrow-like records
+      let tripsQuery = this.tripRepo
+        .createQueryBuilder('t')
+        .select([
+          't.id            AS id',
+          't."tenantId"    AS "tenantId"',
+          't."loadId"      AS "loadId"',
+          't."truckId"     AS "truckId"',
+          't."driverId"    AS "driverId"',
+          't.status        AS status',
+          't."agreedPrice" AS "agreedPrice"',
+          't."currencyCode" AS "currencyCode"',
+          't."createdAt"   AS "createdAt"',
+          't."completedAt" AS "completedAt"',
+        ])
+        .where('t."agreedPrice" IS NOT NULL')
+        .andWhere('t."agreedPrice" > 0')
+        .orderBy('t."createdAt"', 'DESC')
+        .limit(100);
+
+      if (tenantId) {
+        tripsQuery = tripsQuery.andWhere('t."tenantId" = :tenantId', { tenantId });
+      }
+
+      const tripRows = await tripsQuery.getRawMany();
+
+      // Enrich trip rows with tenant/user names
+      const tenantIds = [...new Set(tripRows.map(r => r.tenantId).filter(Boolean))];
+      const tenants = tenantIds.length
+        ? await this.tenantRepo.findByIds(tenantIds)
+        : [];
+      const tenantMap = new Map(tenants.map(t => [t.id, t]));
+
+      const syntheticEscrows = tripRows.map(t => {
+        const tenant = tenantMap.get(t.tenantId);
+        // Map trip status → escrow status
+        const statusMap: Record<string, string> = {
+          COMPLETED: 'RELEASED',
+          IN_PROGRESS: 'ACTIVE',
+          PENDING: 'PENDING',
+          CANCELLED: 'CANCELLED',
+          DISPUTED: 'DISPUTED',
+        };
+        return {
+          id: `TRIP-${t.id.slice(0, 8).toUpperCase()}`,
+          source: 'trip',
+          tripId: t.id,
+          loadId: t.loadId,
+          tenantId: t.tenantId,
+          tenantName: tenant?.name || 'Unknown Tenant',
+          cargoOwner: tenant?.name || 'Cargo Owner',
+          truckOwner: 'Truck Owner',
+          amount: parseFloat(t.agreedPrice) || 0,
+          currency: t.currencyCode || 'USD',
+          status: statusMap[t.status] || 'PENDING',
+          releaseCondition: t.completedAt ? 'Delivery Confirmed' : 'Awaiting Delivery',
+          releaseDate: t.completedAt || null,
+          createdAt: t.createdAt,
+          isDisputed: false,
+        };
+      });
+
+      // Combine real escrow + synthetic from trips
+      const allEscrow = [
+        ...escrowRows.map(e => ({
+          id: e.id,
+          source: 'escrow',
+          tripId: e.tripId,
+          loadId: e.loadId,
+          tenantId: e.tenantId,
+          tenantName: 'Unknown',
+          cargoOwner: e.payerId || 'Payer',
+          truckOwner: e.payeeId || 'Payee',
+          amount: parseFloat(e.totalAmount) || 0,
+          currency: e.currencyCode || 'USD',
+          status: e.status,
+          releaseCondition: 'Delivery Confirmed',
+          releaseDate: null,
+          createdAt: e.createdAt,
+          isDisputed: e.isDisputed,
+        })),
+        ...syntheticEscrows,
+      ];
+
+      // Stats
+      const totalInEscrow = allEscrow
+        .filter(e => ['ACTIVE', 'PENDING'].includes(e.status))
+        .reduce((s, e) => s + e.amount, 0);
+
+      return {
+        escrowAccounts: allEscrow,
+        stats: {
+          totalInEscrow,
+          totalAccounts: allEscrow.length,
+          activeAccounts: allEscrow.filter(e => e.status === 'ACTIVE').length,
+          pendingRelease: allEscrow.filter(e => e.status === 'PENDING').length,
+          releasedAccounts: allEscrow.filter(e => e.status === 'RELEASED').length,
+          disputedAccounts: allEscrow.filter(e => e.status === 'DISPUTED').length,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error fetching escrow data:', error);
+      return {
+        escrowAccounts: [],
+        stats: {
+          totalInEscrow: 0,
+          totalAccounts: 0,
+          activeAccounts: 0,
+          pendingRelease: 0,
+          releasedAccounts: 0,
+          disputedAccounts: 0,
+        },
+      };
+    }
+  }
+
   async getDisputes(tenantId: string) {
     const disputes = await this.disputeRepo.find({
       where: { tenantId } as any,
