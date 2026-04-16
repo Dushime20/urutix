@@ -54,14 +54,6 @@ export class AdminController {
     return this.adminService.getKpi(tenantId);
   }
 
-  @Get('analytics')
-  @ApiOperation({ summary: 'Get admin analytics overview' })
-  @ApiOkResponse({ description: 'Analytics data retrieved' })
-  getAnalytics(@Request() req) {
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
-    return this.adminService.getAnalytics(tenantId);
-  }
-
   @Get('analytics/overview')
   @ApiOperation({ summary: 'Get global overview analytics' })
   getAnalyticsOverview(@Request() req) {
@@ -87,6 +79,14 @@ export class AdminController {
   @ApiOperation({ summary: 'Get system vitals analytics' })
   getSystemVitals() {
     return this.adminService.getSystemVitals();
+  }
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get admin analytics overview' })
+  @ApiOkResponse({ description: 'Analytics data retrieved' })
+  getAnalytics(@Request() req) {
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getAnalytics(tenantId);
   }
 
   @Get('users')

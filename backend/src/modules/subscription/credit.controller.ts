@@ -307,7 +307,7 @@ export class CreditController {
     );
 
     // ── Record payment in payments table ──────────────────────────────────
-    const totalAmount = Number(pkg.priceMonthly || pkg.priceYearly || 0);
+    const totalAmount = Number(pkg.price || 0);
     if (totalAmount > 0) {
       try {
         const payment = this.paymentRepository.create({
