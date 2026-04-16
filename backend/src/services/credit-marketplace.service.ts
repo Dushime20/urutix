@@ -5,6 +5,7 @@ import { CreditMarketplaceSettings } from '../entities/credit-marketplace-settin
 import { CreditService } from './credit.service';
 import { User } from '../entities/user.entity';
 import { CreditTransactionType } from '../entities/credit-transaction.entity';
+import { Payment, PaymentMethod, PaymentStatus, PaymentType } from '../entities/payment.entity';
 
 export interface ConfigureMarketplaceDto {
   tenantId: string;
@@ -39,6 +40,8 @@ export class CreditMarketplaceService {
     private marketplaceSettingsRepository: Repository<CreditMarketplaceSettings>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Payment)
+    private paymentRepository: Repository<Payment>,
     private creditService: CreditService,
   ) {}
 
@@ -201,6 +204,38 @@ export class CreditMarketplaceService {
       totalAmount,
       paymentTransactionId: paymentResult.transactionId,
     });
+
+    // ── Record payment in payments table ──────────────────────────────────
+    if (totalAmount > 0) {
+      try {
+        const methodMap: Record<string, PaymentMethod> = {
+          card: PaymentMethod.CREDIT_CARD,
+          mobile_money: PaymentMethod.DIGITAL_WALLET,
+        };
+        const payment = this.paymentRepository.create({
+          tenantId: dto.tenantId,
+          payerId: dto.truckOwnerUserId,
+          amount: totalAmount,
+          currency: 'USD',
+          paymentMethod: methodMap[dto.paymentMethod] ?? PaymentMethod.DIGITAL_WALLET,
+          paymentType: PaymentType.SERVICE_FEE,
+          status: PaymentStatus.COMPLETED,
+          transactionId: paymentResult.transactionId,
+          description: `Credit marketplace purchase: ${dto.creditAmount} credits`,
+          processedAt: new Date(),
+          metadata: {
+            creditAmount: dto.creditAmount,
+            pricePerCredit: Number(settings.pricePerCredit),
+            sellerId: settings.tenantAdminUserId,
+            buyerId: dto.truckOwnerUserId,
+          },
+        });
+        await this.paymentRepository.save(payment);
+      } catch (e) {
+        console.error('[CreditMarketplaceService] Failed to save payment record:', e.message);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     return {
       success: true,

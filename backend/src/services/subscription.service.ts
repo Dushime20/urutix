@@ -11,6 +11,7 @@ import {
 import { Tenant } from './../entities/tenant.entity';
 import { CreditService } from './credit.service';
 import { PricingService } from './pricing.service';
+import { Payment, PaymentMethod, PaymentStatus, PaymentType } from '../entities/payment.entity';
 
 export interface CreateSubscriptionDto {
   tenantId: string;
@@ -41,6 +42,8 @@ export class SubscriptionService {
     private tenantSubscriptionRepository: Repository<TenantSubscription>,
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
+    @InjectRepository(Payment)
+    private paymentRepository: Repository<Payment>,
     private creditService: CreditService,
     private pricingService: PricingService,
   ) { }
@@ -371,6 +374,38 @@ export class SubscriptionService {
         creditsToGrant,
       );
     }
+
+    // ── Record payment in payments table ──────────────────────────────────
+    if (totalAmount > 0) {
+      try {
+        const methodMap: Record<string, PaymentMethod> = {
+          card: PaymentMethod.CREDIT_CARD,
+          mobile_money: PaymentMethod.DIGITAL_WALLET,
+        };
+        const payment = this.paymentRepository.create({
+          tenantId: data.tenantId,
+          payerId: data.userId,
+          amount: totalAmount,
+          currency: 'USD',
+          paymentMethod: methodMap[data.paymentMethod] ?? PaymentMethod.CREDIT_CARD,
+          paymentType: PaymentType.SUBSCRIPTION,
+          status: PaymentStatus.COMPLETED,
+          transactionId: paymentResult.transactionId,
+          description: `Subscription: ${plan.name} (${creditsToGrant} credits)`,
+          processedAt: new Date(),
+          metadata: {
+            planId: data.planId,
+            planName: plan.name,
+            subscriptionId: subscription.id,
+            creditsGranted: creditsToGrant,
+          },
+        });
+        await this.paymentRepository.save(payment);
+      } catch (e) {
+        console.error('[SubscriptionService] Failed to save payment record:', e.message);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     return {
       subscription,

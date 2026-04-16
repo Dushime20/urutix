@@ -9,6 +9,7 @@ import { CreditTransaction } from '../../entities/credit-transaction.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { User } from '../../entities/user.entity';
 import { Tenant } from '../../entities/tenant.entity';
+import { Payment } from '../../entities/payment.entity';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Tenant } from '../../entities/tenant.entity';
       FeatureCreditCost,
       User,
       Tenant,
+      Payment,
     ]),
   ],
   controllers: [CreditMarketplaceController],

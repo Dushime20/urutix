@@ -17,6 +17,7 @@ import { Repository } from 'typeorm';
 import { CreditPackage } from '../../entities/credit-package.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
+import { Payment, PaymentMethod, PaymentStatus, PaymentType } from '../../entities/payment.entity';
 
 @ApiTags('Credits')
 @ApiBearerAuth()
@@ -30,6 +31,8 @@ export class CreditController {
     private creditPackageRepository: Repository<CreditPackage>,
     @InjectRepository(FeatureCreditCost)
     private featureCreditCostRepository: Repository<FeatureCreditCost>,
+    @InjectRepository(Payment)
+    private paymentRepository: Repository<Payment>,
   ) { }
 
   @Get('balance')
@@ -302,6 +305,30 @@ export class CreditController {
       mockPaymentId,
       pkg.name,
     );
+
+    // ── Record payment in payments table ──────────────────────────────────
+    const totalAmount = Number(pkg.priceMonthly || pkg.priceYearly || 0);
+    if (totalAmount > 0) {
+      try {
+        const payment = this.paymentRepository.create({
+          tenantId,
+          payerId: req.user.id,
+          amount: totalAmount,
+          currency: 'USD',
+          paymentMethod: PaymentMethod.CREDIT_CARD,
+          paymentType: PaymentType.SERVICE_FEE,
+          status: PaymentStatus.COMPLETED,
+          transactionId: mockPaymentId,
+          description: `Credit package purchase: ${pkg.name} (${pkg.credits} credits)`,
+          processedAt: new Date(),
+          metadata: { packageId: pkg.id, packageName: pkg.name, credits: pkg.credits },
+        });
+        await this.paymentRepository.save(payment);
+      } catch (e) {
+        console.error('[CreditController] Failed to save payment record:', e.message);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     return {
       success: true,
