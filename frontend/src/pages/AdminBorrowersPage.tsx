@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { fetchUsers } from '../services/adminApi';
+import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
@@ -64,202 +65,7 @@ interface BorrowerAnalytics {
   monthlyGrowth: number;
 }
 
-const mockFetchBorrowers = async (): Promise<Borrower[]> => {
-  const lenders: Lender[] = [
-    {
-      id: '1',
-      name: 'Bank of Kigali',
-      type: 'bank',
-      email: 'lending@bk.rw',
-      phone: '+250788900100'
-    },
-    {
-      id: '2',
-      name: 'Urwego Opportunity Bank',
-      type: 'microfinance',
-      email: 'loans@urwego.com',
-      phone: '+250788900200'
-    },
-    {
-      id: '3',
-      name: 'SACCO Munyax',
-      type: 'cooperative',
-      email: 'credit@saccomunyax.rw',
-      phone: '+250788900300'
-    },
-    {
-      id: '4',
-      name: 'John Uwimana (Private Lender)',
-      type: 'individual',
-      email: 'john.uwimana@gmail.com',
-      phone: '+250788900400'
-    }
-  ];
-
-  return [
-    {
-      id: '1',
-      name: 'Jean Baptiste Uwimana',
-      email: 'jean@cargocompany.rw',
-      phone: '+250788123456',
-      company: 'Kigali Cargo Services',
-      address: 'Kigali, Rwanda',
-      nationalId: '1199880123456789',
-      status: 'active',
-      creditScore: 750,
-      riskRating: 'low',
-      totalLoans: 12,
-      totalBorrowed: 15000000,
-      totalRepaid: 13500000,
-      outstandingAmount: 1500000,
-      onTimePayments: 10,
-      latePayments: 2,
-      defaultedLoans: 0,
-      joinedDate: '2023-06-15',
-      lastActivity: '2024-02-08',
-      verificationStatus: 'verified',
-      lenderId: '1',
-      lender: lenders[0],
-      documents: {
-        nationalId: true,
-        businessLicense: true,
-        bankStatement: true,
-        taxCertificate: true
-      }
-    },
-    {
-      id: '2',
-      name: 'Marie Claire Mukamana',
-      email: 'marie@transportrw.com',
-      phone: '+250788654321',
-      company: 'Express Transport Ltd',
-      address: 'Huye, Rwanda',
-      nationalId: '1198870987654321',
-      status: 'active',
-      creditScore: 680,
-      riskRating: 'medium',
-      totalLoans: 8,
-      totalBorrowed: 8500000,
-      totalRepaid: 7200000,
-      outstandingAmount: 1300000,
-      onTimePayments: 6,
-      latePayments: 2,
-      defaultedLoans: 0,
-      joinedDate: '2023-08-22',
-      lastActivity: '2024-02-07',
-      verificationStatus: 'verified',
-      lenderId: '1',
-      lender: lenders[0],
-      documents: {
-        nationalId: true,
-        businessLicense: true,
-        bankStatement: true,
-        taxCertificate: false
-      }
-    },
-    {
-      id: '3',
-      name: 'Paul Ntakirutimana',
-      email: 'paul@freelancer.rw',
-      phone: '+250788111222',
-      address: 'Musanze, Rwanda',
-      nationalId: '1199770555666777',
-      status: 'suspended',
-      creditScore: 520,
-      riskRating: 'high',
-      totalLoans: 5,
-      totalBorrowed: 3200000,
-      totalRepaid: 2100000,
-      outstandingAmount: 1100000,
-      onTimePayments: 2,
-      latePayments: 2,
-      defaultedLoans: 1,
-      joinedDate: '2023-12-10',
-      lastActivity: '2024-01-15',
-      verificationStatus: 'pending',
-      lenderId: '2',
-      lender: lenders[1],
-      documents: {
-        nationalId: true,
-        bankStatement: false,
-        taxCertificate: false
-      }
-    },
-    {
-      id: '4',
-      name: 'Alice Uwimana',
-      email: 'alice@logistics.rw',
-      phone: '+250788333444',
-      company: 'Quick Logistics',
-      address: 'Rubavu, Rwanda',
-      nationalId: '1199660777888999',
-      status: 'active',
-      creditScore: 720,
-      riskRating: 'low',
-      totalLoans: 6,
-      totalBorrowed: 5500000,
-      totalRepaid: 4800000,
-      outstandingAmount: 700000,
-      onTimePayments: 5,
-      latePayments: 1,
-      defaultedLoans: 0,
-      joinedDate: '2023-09-15',
-      lastActivity: '2024-02-06',
-      verificationStatus: 'verified',
-      lenderId: '3',
-      lender: lenders[2],
-      documents: {
-        nationalId: true,
-        businessLicense: true,
-        bankStatement: true,
-        taxCertificate: true
-      }
-    },
-    {
-      id: '5',
-      name: 'Eric Habimana',
-      email: 'eric@transport.rw',
-      phone: '+250788555666',
-      address: 'Nyagatare, Rwanda',
-      nationalId: '1199550888999000',
-      status: 'active',
-      creditScore: 640,
-      riskRating: 'medium',
-      totalLoans: 3,
-      totalBorrowed: 2800000,
-      totalRepaid: 2400000,
-      outstandingAmount: 400000,
-      onTimePayments: 3,
-      latePayments: 0,
-      defaultedLoans: 0,
-      joinedDate: '2024-01-20',
-      lastActivity: '2024-02-05',
-      verificationStatus: 'verified',
-      lenderId: '4',
-      lender: lenders[3],
-      documents: {
-        nationalId: true,
-        bankStatement: true,
-        taxCertificate: false
-      }
-    }
-  ];
-};
-
-const mockFetchAnalytics = async (): Promise<BorrowerAnalytics> => {
-  return {
-    totalBorrowers: 5,
-    activeBorrowers: 4,
-    totalLoansIssued: 34,
-    totalAmountBorrowed: 35000000,
-    totalRepaid: 29800000,
-    defaultRate: 2.9,
-    avgCreditScore: 662,
-    monthlyGrowth: 18.5
-  };
-};
-
-const getCreditScoreColor = (score: number) => {
+const AdminBorrowersPage: React.FC = () => {
   if (score >= 700) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
   if (score >= 600) return 'bg-amber-50 text-amber-700 border-amber-100';
   return 'bg-rose-50 text-rose-700 border-rose-100';
@@ -416,47 +222,95 @@ const AdminBorrowersPage: React.FC = () => {
     (async () => {
       setFetching(true);
       try {
+        // Fetch all users and filter for borrowers (truck owners, cargo owners who have loans)
         const usersData = await fetchUsers();
+        
+        // Get all lenders to map borrower-lender relationships
+        const lendersData = await lendingApi.getAllLenders();
 
+        // Transform users into borrowers format
         const transformedBorrowers: Borrower[] = usersData
-          .filter((user: any) => user.role === 'borrower' || user.type === 'borrower')
-          .map((user: any) => ({
-            id: user.id,
-            name: user.name || `${user.firstName} ${user.lastName}`,
-            email: user.email,
-            phone: user.phone || '+250788000000',
-            company: user.companyName || user.company || 'N/A',
-            address: user.address || 'Kigali, Rwanda',
-            nationalId: user.nationalId || 'N/A',
-            creditScore: user.creditScore || 750,
-            verificationStatus: user.status === 'active' ? 'verified' : 'pending',
-            joinedDate: user.createdAt || user.created_at,
-            totalLoans: user.totalLoans || 0,
-            activeLoans: user.activeLoans || 0,
-            totalBorrowed: user.totalBorrowed || 0,
-            totalRepaid: user.totalRepaid || 0,
-            lenderId: user.preferredLenderId || '1',
-            lenderName: user.preferredLenderName || 'Bank of Kigali'
-          }));
+          .filter((user: any) => 
+            // Filter users who are potential borrowers (truck owners, cargo owners)
+            user.role === 'TRUCK_OWNER' || user.role === 'CARGO_OWNER' || user.role === 'DRIVER'
+          )
+          .map((user: any) => {
+            // Find associated lender (default to first lender if not specified)
+            const lender = lendersData.find((l: any) => l.id === user.lenderId) || lendersData[0] || {
+              id: '1',
+              name: 'Default Lender',
+              type: 'bank',
+              email: 'lender@example.com',
+              phone: '+250788000000'
+            };
+
+            return {
+              id: user.id,
+              name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email?.split('@')[0] || 'Unknown',
+              email: user.email,
+              phone: user.phone || '+250788000000',
+              company: user.companyName || undefined,
+              address: user.address || 'Kigali, Rwanda',
+              nationalId: user.nationalId || 'N/A',
+              status: user.status === 'active' ? 'active' : user.status === 'suspended' ? 'suspended' : 'inactive',
+              creditScore: user.creditScore || 650,
+              riskRating: user.creditScore >= 700 ? 'low' : user.creditScore >= 600 ? 'medium' : 'high',
+              totalLoans: 0, // TODO: fetch from loan requests
+              totalBorrowed: 0,
+              totalRepaid: 0,
+              outstandingAmount: 0,
+              onTimePayments: 0,
+              latePayments: 0,
+              defaultedLoans: 0,
+              joinedDate: user.createdAt || new Date().toISOString(),
+              lastActivity: user.updatedAt || user.createdAt || new Date().toISOString(),
+              verificationStatus: user.emailVerified ? 'verified' : 'pending',
+              lenderId: lender.id,
+              lender: {
+                id: lender.id,
+                name: lender.name,
+                type: 'bank' as const,
+                email: lender.contact_email || lender.email,
+                phone: lender.phone || '+250788000000'
+              },
+              documents: {
+                nationalId: !!user.nationalId,
+                businessLicense: !!user.companyName,
+                bankStatement: false,
+                taxCertificate: false
+              }
+            };
+          });
 
         setBorrowers(transformedBorrowers);
-        const analyticsData = await mockFetchAnalytics();
-        setAnalytics(analyticsData);
+        
+        // Compute analytics from real data
+        const activeBorrowers = transformedBorrowers.filter(b => b.status === 'active').length;
+        const totalLoans = transformedBorrowers.reduce((sum, b) => sum + b.totalLoans, 0);
+        const totalBorrowed = transformedBorrowers.reduce((sum, b) => sum + b.totalBorrowed, 0);
+        const totalRepaid = transformedBorrowers.reduce((sum, b) => sum + b.totalRepaid, 0);
+        const avgCreditScore = transformedBorrowers.length > 0
+          ? Math.round(transformedBorrowers.reduce((sum, b) => sum + b.creditScore, 0) / transformedBorrowers.length)
+          : 0;
+        const defaultedCount = transformedBorrowers.reduce((sum, b) => sum + b.defaultedLoans, 0);
+        const defaultRate = totalLoans > 0 ? (defaultedCount / totalLoans) * 100 : 0;
+
+        setAnalytics({
+          totalBorrowers: transformedBorrowers.length,
+          activeBorrowers,
+          totalLoansIssued: totalLoans,
+          totalAmountBorrowed: totalBorrowed,
+          totalRepaid,
+          defaultRate,
+          avgCreditScore,
+          monthlyGrowth: 18.5 // TODO: compute from historical data
+        });
 
       } catch (err) {
-        console.error('Error fetching borrowers from API, falling back to mock data:', err);
-
-        try {
-          const [borrowersData, analyticsData] = await Promise.all([
-            mockFetchBorrowers(),
-            mockFetchAnalytics()
-          ]);
-          setBorrowers(borrowersData);
-          setAnalytics(analyticsData);
-        } catch {
-          setBorrowers([]);
-          setAnalytics(null);
-        }
+        console.error('Error fetching borrowers from API:', err);
+        toast.error('Failed to load borrowers');
+        setBorrowers([]);
+        setAnalytics(null);
       } finally {
         setFetching(false);
       }

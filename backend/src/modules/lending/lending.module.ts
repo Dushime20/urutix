@@ -30,7 +30,7 @@ import { User } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
-import { PaymentsModule } from '../payments/payments.module';
+// import { PaymentsModule } from '../payments/payments.module'; // Temporarily comment out to avoid circular dependency
 
 @Module({
   imports: [
@@ -51,7 +51,7 @@ import { PaymentsModule } from '../payments/payments.module';
       PasswordResetToken,
     ]),
     EnhancedAuthModule,
-    PaymentsModule,
+    // PaymentsModule, // Temporarily comment out
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
   ],
