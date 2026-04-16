@@ -58,9 +58,35 @@ export class AdminController {
   @ApiOperation({ summary: 'Get admin analytics overview' })
   @ApiOkResponse({ description: 'Analytics data retrieved' })
   getAnalytics(@Request() req) {
-    // Super admins see all analytics, tenant admins see only their tenant's analytics
     const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
     return this.adminService.getAnalytics(tenantId);
+  }
+
+  @Get('analytics/overview')
+  @ApiOperation({ summary: 'Get global overview analytics' })
+  getAnalyticsOverview(@Request() req) {
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getAnalyticsOverview(tenantId);
+  }
+
+  @Get('analytics/cargo')
+  @ApiOperation({ summary: 'Get cargo ecosystem analytics' })
+  getCargoAnalytics(@Request() req) {
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getCargoAnalytics(tenantId);
+  }
+
+  @Get('analytics/fleet')
+  @ApiOperation({ summary: 'Get fleet logistics analytics' })
+  getFleetAnalytics(@Request() req) {
+    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    return this.adminService.getFleetAnalytics(tenantId);
+  }
+
+  @Get('analytics/system')
+  @ApiOperation({ summary: 'Get system vitals analytics' })
+  getSystemVitals() {
+    return this.adminService.getSystemVitals();
   }
 
   @Get('users')

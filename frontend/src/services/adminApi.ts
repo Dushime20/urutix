@@ -155,6 +155,18 @@ export const adminAPI = {
   getEscrow: (tenantId?: string) =>
     api.get<any>('/admin/escrow', { params: tenantId ? { tenantId } : {} }),
 
+  getAnalyticsOverview: (tenantId?: string) =>
+    api.get<any>('/admin/analytics/overview', { params: tenantId ? { tenantId } : {} }),
+
+  getCargoAnalytics: (tenantId?: string) =>
+    api.get<any>('/admin/analytics/cargo', { params: tenantId ? { tenantId } : {} }),
+
+  getFleetAnalytics: (tenantId?: string) =>
+    api.get<any>('/admin/analytics/fleet', { params: tenantId ? { tenantId } : {} }),
+
+  getSystemVitals: () =>
+    api.get<any>('/admin/analytics/system'),
+
   // Entity listings
   getAllUsers: (tenantId?: string) => 
     api.get<{ users: AdminUser[] }>('/admin/all/users', { params: tenantId ? { tenantId } : {} }),
