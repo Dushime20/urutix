@@ -622,9 +622,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
             due_date: req.due_date || req.dueDate,
-            borrower_name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You',
-            borrower_email: user?.email || '',
-            borrower_phone: (user as any)?.phone || '',
+            // Use borrower relation if available, fall back to user context
+            borrower_name: req.borrower?.contact_name || req.borrower?.company_name ||
+              (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You'),
+            borrower_email: req.borrower?.email || user?.email || '',
+            borrower_phone: req.borrower?.phone || (user as any)?.phone || '',
             cargo_type: cargoType,
             cargo_weight: 0,
             cargo_value: 0,
@@ -633,7 +635,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             distance: 0,
             estimated_duration: 0,
             risk_score: 50,
-            credit_score: 600,
+            credit_score: req.borrower?.credit_score || 600,
             interest_rate: req.interest_rate || req.interestRate || 10,
             purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
             lender_id: lenderId,
@@ -641,8 +643,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             processing_fee: 0,
             total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
             loan_term_months: 12,
-            // store cargo label for display
-            borrower_company: cargoLabel ? `Load: ${cargoLabel}` : undefined,
+            borrower_company: req.borrower?.company_name || (cargoLabel ? `Load: ${cargoLabel}` : undefined),
           };
         })
       );

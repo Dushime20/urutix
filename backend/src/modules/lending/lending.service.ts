@@ -55,6 +55,7 @@ import {
 } from '../../entities/lender-team.entity';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
+import { Borrower } from '../../entities/borrower.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { Trip } from '../../entities/trip.entity';
 import { EmailService } from '../auth/services/email.service';
@@ -99,6 +100,9 @@ export class LendingService {
     @InjectRepository(UserProfile)
     private userProfileRepository: Repository<UserProfile>,
 
+    @InjectRepository(Borrower)
+    private borrowerRepository: Repository<Borrower>,
+
     @InjectRepository(PasswordResetToken)
     private passwordResetTokenRepository: Repository<PasswordResetToken>,
 
@@ -111,6 +115,66 @@ export class LendingService {
 
     private urutiLendingIntegration: UrutiLendingIntegrationService,
   ) {}
+
+  /**
+   * Find an existing Borrower record for a user, or create one from their profile.
+   * This ensures borrower_id is always populated on loan requests.
+   */
+  private async findOrCreateBorrower(
+    userId: string,
+    tenantId: string,
+  ): Promise<Borrower | null> {
+    try {
+      // 1. Look up the user + profile
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ['profile'],
+      });
+      if (!user) return null;
+
+      const profile = user.profile;
+
+      // 2. Try to find an existing Borrower by email in this tenant
+      let borrower = await this.borrowerRepository.findOne({
+        where: { email: user.email, tenant_id: tenantId },
+      });
+
+      if (!borrower) {
+        // 3. Create a new Borrower record from user data
+        const companyName =
+          profile?.companyName ||
+          (profile?.firstName && profile?.lastName
+            ? `${profile.firstName} ${profile.lastName}`
+            : user.email);
+
+        borrower = this.borrowerRepository.create({
+          tenant_id: tenantId,
+          company_name: companyName,
+          contact_name:
+            profile?.firstName && profile?.lastName
+              ? `${profile.firstName} ${profile.lastName}`
+              : undefined,
+          email: user.email,
+          phone: user.phone || undefined,
+          business_type: 'TRUCK_OWNER',
+          status: 'active',
+        });
+
+        borrower = await this.borrowerRepository.save(borrower);
+        this.logger.log(
+          `✅ Created Borrower record ${borrower.id} for user ${userId} (${user.email})`,
+        );
+      }
+
+      return borrower;
+    } catch (err) {
+      // Non-fatal — log and continue without borrower_id
+      this.logger.warn(
+        `Could not find/create Borrower for user ${userId}: ${err.message}`,
+      );
+      return null;
+    }
+  }
 
   // Credit and Risk Management
   private async validateCreditLimit(
@@ -483,10 +547,17 @@ export class LendingService {
     // Check for existing loan request with enhanced idempotency
     await this.checkIdempotency(idempotencyKey, createLoanDto.tenant_id);
 
+    // Resolve borrower_id from the user who created the request
+    const borrower = await this.findOrCreateBorrower(
+      createdBy,
+      createLoanDto.tenant_id,
+    );
+
     const loanRequest = this.loanRequestRepository.create({
       ...createLoanDto,
       idempotency_key: idempotencyKey,
       created_by: createdBy,
+      borrower_id: borrower?.id ?? null,
       due_date: createLoanDto.due_date
         ? new Date(createLoanDto.due_date)
         : null,
@@ -2483,6 +2554,7 @@ export class LendingService {
       .leftJoinAndSelect('loan.lender', 'lender')
       .leftJoinAndSelect('loan.disbursements', 'disbursements')
       .leftJoinAndSelect('loan.repayments', 'repayments')
+      .leftJoinAndSelect('loan.borrower', 'borrower')
       .where('loan.tenant_id = :tenantId', { tenantId });
 
     if (status) {
