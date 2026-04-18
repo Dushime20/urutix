@@ -463,21 +463,21 @@ const TruckOwnerLoanRequestsView: React.FC<{
                     <td className="px-6 py-4">
                       <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}&hellip;</p>
                       <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        {req.borrower_company || (req.cargo_id ? `Cargo: ${req.cargo_id.slice(0, 8)}` : `"`+"—`")}
+                        {req.borrower_company || (req.cargo_id ? `Cargo: ${req.cargo_id.slice(0, 8)}` : '—')}
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-black text-slate-900">${"{"}req.requested_amount.toLocaleString(){"}"}</p>
+                      <p className="text-sm font-black text-slate-900">${req.requested_amount.toLocaleString()}</p>
                       {req.approved_amount != null && (
-                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Approved: ${"{"}req.approved_amount.toLocaleString(){"}"}</p>
+                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Approved: ${req.approved_amount.toLocaleString()}</p>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-slate-700">{req.cargo_type || `"`+"General Cargo`"}</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">{req.purpose || `"`+"Fleet financing`"}</p>
+                      <p className="text-sm font-semibold text-slate-700">{req.cargo_type || 'General Cargo'}</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">{req.purpose || 'Fleet financing'}</p>
                     </td>
                     <td className="px-6 py-4 min-w-[150px]">
-                      {req.pickup_location !== `"`+"N/A`" ? (
+                      {req.pickup_location !== 'N/A' ? (
                         <div className="text-xs text-slate-600 font-medium space-y-0.5">
                           <p className="text-[#345E85] font-bold truncate max-w-[130px]">{req.pickup_location}</p>
                           <p className="text-slate-400 text-[10px]">&#8594; {req.delivery_location}</p>
@@ -496,7 +496,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
                     <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
-                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : `"`+"—`"}
+                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
                       </p>
                     </td>
                     <td className="px-6 py-4">
@@ -592,11 +592,25 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               const cargo = cr.data?.data || cr.data;
               if (cargo) {
                 cargoType = cargo.cargoType || cargo.cargo_type || 'General Cargo';
-                const origin = cargo.locations?.find((l: any) => l.type === 'PICKUP') || cargo.origin;
-                const dest   = cargo.locations?.find((l: any) => l.type === 'DELIVERY') || cargo.destination;
-                const fmt = (loc: any) => !loc ? '' : typeof loc === 'string' ? loc : loc.address || loc.city || loc.name || '';
-                pickupLoc   = fmt(origin) || 'N/A';
-                deliveryLoc = fmt(dest)   || 'N/A';
+
+                // Helper: extract readable string from any location shape
+                const fmt = (loc: any): string => {
+                  if (!loc) return '';
+                  if (typeof loc === 'string') return loc;
+                  // LoadLocation shape: { locationData: { address, city, name } }
+                  if (loc.locationData) {
+                    return loc.locationData.address || loc.locationData.city || loc.locationData.name || '';
+                  }
+                  // Address shape: { address, city }
+                  return loc.address || loc.city || loc.name || '';
+                };
+
+                // Try locations array first (preferred), then origin/destination fields
+                const originLoc   = cargo.locations?.find((l: any) => l.type === 'PICKUP')   || cargo.origin;
+                const destLoc     = cargo.locations?.find((l: any) => l.type === 'DELIVERY') || cargo.destination;
+
+                pickupLoc   = fmt(originLoc)  || 'N/A';
+                deliveryLoc = fmt(destLoc)    || 'N/A';
                 cargoLabel  = cargo.loadNumber || cargo.load_number || cargoId.slice(0, 8);
               }
             } catch { /* non-critical */ }
@@ -959,6 +973,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 };
 
 export default EnhancedLoanRequestsPage;
+
 
 
 
