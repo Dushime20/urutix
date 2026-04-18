@@ -99,7 +99,7 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans' | 'buy-credits'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans' | 'buy-credits' | 'partner-plans'>('overview');
 
 
   const [showForm, setShowForm] = useState(false);
@@ -113,11 +113,11 @@ export const FleetDashboard: React.FC = () => {
 
   // ── Role Based Access Control ──────────────────────────────────────────────
   const rolePermissions: Record<string, string[]> = {
-    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits'],
-    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits'],
-    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits'],
-    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits'],
-    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits'],
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
+    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
     'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'assignments', 'matches', 'analytics', 'communicate'],
     'FLEET_ACCOUNTANT': ['overview', 'financial', 'expenses', 'credits', 'fuel', 'analytics'],
     'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
@@ -150,7 +150,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/assignments')) setActiveTab('assignments');
     else if (path.includes('/fleet/fuel')) setActiveTab('fuel');
     else if (path.includes('/fleet/buy-credits')) setActiveTab('credits');
-    else if (path.includes('/fleet/partner-plans')) navigate('/dashboard/fleet/buy-credits', { replace: true });
+    else if (path.includes('/fleet/partner-plans')) setActiveTab('partner-plans');
     else if (path.includes('/fleet/communicate') || path.includes('/fleet/communication')) setActiveTab('communicate');
     else if (path.includes('/dashboard/fleet/overview')) setActiveTab('financial');
     else if (path.includes('/dashboard/fleet')) setActiveTab('overview');
@@ -505,12 +505,7 @@ export const FleetDashboard: React.FC = () => {
   return (
     <DetailedErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-slate-800 transition-colors">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <DashboardHeader />
-          </div>
-        </div>
+        <DashboardHeader />
 
         {/* Intelligence Header Context */}
         <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200">
