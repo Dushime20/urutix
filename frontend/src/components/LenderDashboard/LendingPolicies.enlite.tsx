@@ -88,6 +88,7 @@ export interface RepaymentPolicy {
 export interface CargoTypePolicy {
     id: string;
     cargoType: string;
+    riskLevel: string;
     riskMultiplier: number;
     maxLoanAmount: number;
     insuranceRequired: boolean;
@@ -354,6 +355,321 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             </div>
                         </div>
                     </div>
+                );
+
+            case 'eligibility':
+                const eligibilityColumns = [
+                    {
+                        key: 'name',
+                        label: 'CRITERIA NAME',
+                        render: (_: any, p: EligibilityCriteria) => (
+                            <div className="flex flex-col">
+                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
+                                <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.category.replace('_', ' ')}</span>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'requirement',
+                        label: 'REQUIREMENT',
+                        render: (_: any, p: EligibilityCriteria) => (
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-900">{p.requirement}</span>
+                                {p.minimumValue && (
+                                    <span className="text-[8px] text-slate-500">Min: {p.minimumValue}</span>
+                                )}
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'required',
+                        label: 'REQUIRED',
+                        render: (_: any, p: EligibilityCriteria) => (
+                            <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${
+                                p.required ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-600'
+                            }`}>
+                                {p.required ? 'Mandatory' : 'Optional'}
+                            </span>
+                        )
+                    },
+                    {
+                        key: 'status',
+                        label: 'STATUS',
+                        render: (_: any, p: EligibilityCriteria) => (
+                            <button
+                                onClick={() => onToggleActive('eligibilityCriteria', p.id)}
+                                className="flex items-center gap-2"
+                            >
+                                {p.isActive ? (
+                                    <ToggleRight className="text-[#345E85] w-5 h-5" />
+                                ) : (
+                                    <ToggleLeft className="text-slate-300 w-5 h-5" />
+                                )}
+                            </button>
+                        )
+                    },
+                    {
+                        key: 'actions',
+                        label: '',
+                        render: (_: any, p: EligibilityCriteria) => (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => onEdit(p.id)}
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                >
+                                    <Edit size={14} />
+                                </button>
+                            </div>
+                        )
+                    }
+                ];
+                return (
+                    <EnhancedTable
+                        columns={eligibilityColumns}
+                        data={policies.eligibilityCriteria}
+                        loading={loading}
+                    />
+                );
+
+            case 'risk-assessment':
+                const riskColumns = [
+                    {
+                        key: 'factor',
+                        label: 'RISK FACTOR',
+                        render: (_: any, p: RiskAssessmentRule) => (
+                            <div className="flex flex-col">
+                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.factor.replace('_', ' ')}</span>
+                                <span className="text-[9px] font-bold text-[#345E85]">Weight: {p.weight}%</span>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'scoring',
+                        label: 'SCORING RANGE',
+                        render: (_: any, p: RiskAssessmentRule) => (
+                            <div className="flex gap-2">
+                                <div className="text-center">
+                                    <p className="text-[8px] font-black text-emerald-600 uppercase">Excellent</p>
+                                    <p className="text-[10px] font-bold">{p.scoringCriteria.excellent.score}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[8px] font-black text-amber-600 uppercase">Good</p>
+                                    <p className="text-[10px] font-bold">{p.scoringCriteria.good.score}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[8px] font-black text-rose-600 uppercase">Poor</p>
+                                    <p className="text-[10px] font-bold">{p.scoringCriteria.poor.score}</p>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'status',
+                        label: 'STATUS',
+                        render: (_: any, p: RiskAssessmentRule) => (
+                            <button
+                                onClick={() => onToggleActive('riskAssessment', p.id)}
+                                className="flex items-center gap-2"
+                            >
+                                {p.isActive ? (
+                                    <ToggleRight className="text-[#345E85] w-5 h-5" />
+                                ) : (
+                                    <ToggleLeft className="text-slate-300 w-5 h-5" />
+                                )}
+                            </button>
+                        )
+                    },
+                    {
+                        key: 'actions',
+                        label: '',
+                        render: (_: any, p: RiskAssessmentRule) => (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => onEdit(p.id)}
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                >
+                                    <Edit size={14} />
+                                </button>
+                            </div>
+                        )
+                    }
+                ];
+                return (
+                    <EnhancedTable
+                        columns={riskColumns}
+                        data={policies.riskAssessment}
+                        loading={loading}
+                    />
+                );
+
+            case 'repayment':
+                const repaymentColumns = [
+                    {
+                        key: 'name',
+                        label: 'POLICY NAME',
+                        render: (_: any, p: RepaymentPolicy) => (
+                            <div className="flex flex-col">
+                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
+                                <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.frequency}</span>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'terms',
+                        label: 'TERMS',
+                        render: (_: any, p: RepaymentPolicy) => (
+                            <div className="flex gap-4">
+                                <div>
+                                    <p className="text-[8px] font-black text-slate-400 uppercase">Grace</p>
+                                    <p className="text-[11px] font-bold">{p.gracePeriod} days</p>
+                                </div>
+                                <div>
+                                    <p className="text-[8px] font-black text-slate-400 uppercase">Late Fee</p>
+                                    <p className="text-[11px] font-bold text-rose-600">RWF {p.lateFee.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'penalties',
+                        label: 'PENALTIES',
+                        render: (_: any, p: RepaymentPolicy) => (
+                            <div className="flex gap-3">
+                                <div>
+                                    <p className="text-[8px] font-black text-slate-400 uppercase">Rate</p>
+                                    <p className="text-[10px] font-bold">{p.penaltyRate}%</p>
+                                </div>
+                                <div>
+                                    <p className="text-[8px] font-black text-slate-400 uppercase">Default</p>
+                                    <p className="text-[10px] font-bold">{p.defaultThreshold} days</p>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'status',
+                        label: 'STATUS',
+                        render: (_: any, p: RepaymentPolicy) => (
+                            <button
+                                onClick={() => onToggleActive('repaymentPolicies', p.id)}
+                                className="flex items-center gap-2"
+                            >
+                                {p.isActive ? (
+                                    <ToggleRight className="text-[#345E85] w-5 h-5" />
+                                ) : (
+                                    <ToggleLeft className="text-slate-300 w-5 h-5" />
+                                )}
+                            </button>
+                        )
+                    },
+                    {
+                        key: 'actions',
+                        label: '',
+                        render: (_: any, p: RepaymentPolicy) => (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => onEdit(p.id)}
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                >
+                                    <Edit size={14} />
+                                </button>
+                            </div>
+                        )
+                    }
+                ];
+                return (
+                    <EnhancedTable
+                        columns={repaymentColumns}
+                        data={policies.repaymentPolicies}
+                        loading={loading}
+                    />
+                );
+
+            case 'cargo-types':
+                const cargoColumns = [
+                    {
+                        key: 'cargoType',
+                        label: 'CARGO TYPE',
+                        render: (_: any, p: CargoTypePolicy) => (
+                            <div className="flex flex-col">
+                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.cargoType}</span>
+                                <span className={`mt-1 px-1.5 py-0.5 rounded text-[8px] font-black border w-fit uppercase ${getRiskColor(p.riskLevel)}`}>
+                                    {p.riskLevel} RISK
+                                </span>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'limits',
+                        label: 'LOAN LIMITS',
+                        render: (_: any, p: CargoTypePolicy) => (
+                            <div className="flex flex-col">
+                                <div>
+                                    <p className="text-[8px] font-black text-slate-400 uppercase">Max Amount</p>
+                                    <p className="text-[11px] font-black text-rose-600">RWF {(p.maxLoanAmount / 1000000).toFixed(1)}M</p>
+                                </div>
+                                <div className="mt-1">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase">Risk Multiplier</p>
+                                    <p className="text-[10px] font-bold">{p.riskMultiplier}x</p>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'requirements',
+                        label: 'REQUIREMENTS',
+                        render: (_: any, p: CargoTypePolicy) => (
+                            <div className="flex flex-col gap-1">
+                                {p.insuranceRequired && (
+                                    <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-[8px] font-black uppercase">
+                                        Insurance Required
+                                    </span>
+                                )}
+                                {p.specialConditions && p.specialConditions.length > 0 && (
+                                    <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-[8px] font-black uppercase">
+                                        {p.specialConditions.length} Conditions
+                                    </span>
+                                )}
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'status',
+                        label: 'STATUS',
+                        render: (_: any, p: CargoTypePolicy) => (
+                            <button
+                                onClick={() => onToggleActive('cargoTypePolicies', p.id)}
+                                className="flex items-center gap-2"
+                            >
+                                {p.isActive ? (
+                                    <ToggleRight className="text-[#345E85] w-5 h-5" />
+                                ) : (
+                                    <ToggleLeft className="text-slate-300 w-5 h-5" />
+                                )}
+                            </button>
+                        )
+                    },
+                    {
+                        key: 'actions',
+                        label: '',
+                        render: (_: any, p: CargoTypePolicy) => (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => onEdit(p.id)}
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                >
+                                    <Edit size={14} />
+                                </button>
+                            </div>
+                        )
+                    }
+                ];
+                return (
+                    <EnhancedTable
+                        columns={cargoColumns}
+                        data={policies.cargoTypePolicies}
+                        loading={loading}
+                    />
                 );
 
             default:

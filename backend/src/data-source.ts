@@ -24,7 +24,6 @@ export const AppDataSource = new DataSource({
   entities: [
     'src/**/*.entity.ts',
     'src/**/entities/*.entity.ts',
-    'src/*.ts',
   ],
   migrations: [
     'src/database/migrations/*.ts',

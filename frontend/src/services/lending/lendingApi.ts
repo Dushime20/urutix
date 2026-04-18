@@ -518,4 +518,371 @@ export const lendingApi = {
     const response = await api.post(`/admin/lenders/${lenderId}/team`, memberData);
     return response.data;
   },
+
+  // ===== COMPREHENSIVE LENDING POLICIES API =====
+
+  // Get all policies for a lender
+  getLenderPolicies: async (lenderId: string, activeOnly: boolean = false) => {
+    try {
+      const response = await api.get(`/lending/policies/${lenderId}/all`, {
+        params: { activeOnly }
+      });
+      
+      const policies = response.data;
+      
+      // Transform backend data to frontend format
+      return {
+        interestRates: policies.interestRates?.map((policy: any) => ({
+          id: policy.id,
+          name: policy.name,
+          riskLevel: policy.risk_level,
+          baseRate: policy.base_rate,
+          minRate: policy.min_rate,
+          maxRate: policy.max_rate,
+          adjustmentFactors: policy.adjustment_factors || {},
+          isActive: policy.is_active,
+          created_at: policy.created_at
+        })) || [],
+        
+        loanLimits: policies.loanLimits?.map((policy: any) => ({
+          id: policy.id,
+          name: policy.name,
+          businessType: policy.business_type,
+          minAmount: policy.min_amount,
+          maxAmount: policy.max_amount,
+          creditScoreRequirement: policy.credit_score_requirement,
+          collateralRequirement: policy.collateral_requirement,
+          maxUtilization: policy.max_utilization,
+          isActive: policy.is_active,
+          created_at: policy.created_at
+        })) || [],
+        
+        eligibilityCriteria: policies.eligibilityCriteria?.map((policy: any) => ({
+          id: policy.id,
+          name: policy.name,
+          category: policy.category,
+          description: policy.description,
+          requirement: policy.requirement,
+          minimumValue: policy.minimum_value,
+          maximumValue: policy.maximum_value,
+          required: policy.is_required,
+          isActive: policy.is_active,
+          created_at: policy.created_at
+        })) || [],
+        
+        riskAssessment: policies.riskAssessment?.map((policy: any) => ({
+          id: policy.id,
+          factor: policy.factor,
+          weight: policy.weight,
+          scoringCriteria: policy.scoring_criteria || {},
+          isActive: policy.is_active,
+          created_at: policy.created_at
+        })) || [],
+        
+        repaymentPolicies: policies.repaymentPolicies?.map((policy: any) => ({
+          id: policy.id,
+          name: policy.name,
+          frequency: policy.frequency,
+          gracePeriod: policy.grace_period,
+          lateFee: policy.late_fee,
+          penaltyRate: policy.penalty_rate,
+          maxExtensions: policy.max_extensions,
+          defaultThreshold: policy.default_threshold,
+          isActive: policy.is_active,
+          created_at: policy.created_at
+        })) || [],
+        
+        cargoTypePolicies: policies.cargoTypePolicies?.map((policy: any) => ({
+          id: policy.id,
+          cargoType: policy.cargo_type,
+          riskLevel: policy.risk_level,
+          riskMultiplier: policy.risk_multiplier,
+          maxLoanAmount: policy.max_loan_amount,
+          insuranceRequired: policy.insurance_required,
+          specialConditions: policy.special_conditions || [],
+          isActive: policy.is_active,
+          created_at: policy.created_at
+        })) || [],
+        
+        globalSettings: policies.systemConfig ? {
+          autoApprovalLimit: policies.systemConfig.auto_approval_limit,
+          manualReviewThreshold: policies.systemConfig.manual_review_threshold,
+          maxConcurrentLoans: policies.systemConfig.max_concurrent_loans,
+          totalExposureLimit: policies.systemConfig.total_exposure_limit,
+          cooldownPeriod: policies.systemConfig.cooldown_period,
+          complianceMode: policies.systemConfig.compliance_mode,
+          auditTrail: policies.systemConfig.audit_trail
+        } : {
+          autoApprovalLimit: 0,
+          manualReviewThreshold: 0,
+          maxConcurrentLoans: 0,
+          totalExposureLimit: 0,
+          cooldownPeriod: 0,
+          complianceMode: false,
+          auditTrail: false
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching lender policies:', error);
+      return null;
+    }
+  },
+
+  // Interest Rate Policies
+  createInterestRatePolicy: async (lenderId: string, policyData: {
+    name: string;
+    riskLevel: string;
+    baseRate: number;
+    minRate: number;
+    maxRate: number;
+    adjustmentFactors: {
+      creditScore: number;
+      loanHistory: number;
+      collateral: number;
+      businessType: number;
+    };
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/interest-rates`, {
+      name: policyData.name,
+      risk_level: policyData.riskLevel,
+      base_rate: policyData.baseRate,
+      min_rate: policyData.minRate,
+      max_rate: policyData.maxRate,
+      adjustment_factors: policyData.adjustmentFactors,
+      priority: 1,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // Loan Limit Policies
+  createLoanLimitPolicy: async (lenderId: string, policyData: {
+    name: string;
+    businessType: string;
+    minAmount: number;
+    maxAmount: number;
+    creditScoreRequirement: number;
+    collateralRequirement: number;
+    maxUtilization: number;
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/loan-limits`, {
+      name: policyData.name,
+      business_type: policyData.businessType,
+      min_amount: policyData.minAmount,
+      max_amount: policyData.maxAmount,
+      credit_score_requirement: policyData.creditScoreRequirement,
+      collateral_requirement: policyData.collateralRequirement,
+      max_utilization: policyData.maxUtilization,
+      priority: 1,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // Eligibility Criteria
+  createEligibilityCriteria: async (lenderId: string, policyData: {
+    name: string;
+    category: string;
+    description: string;
+    requirement: string;
+    minimumValue?: number;
+    maximumValue?: number;
+    required: boolean;
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/eligibility`, {
+      name: policyData.name,
+      category: policyData.category,
+      description: policyData.description,
+      requirement: policyData.requirement,
+      minimum_value: policyData.minimumValue,
+      maximum_value: policyData.maximumValue,
+      is_required: policyData.required,
+      priority: 1,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // Risk Assessment Rules
+  createRiskAssessmentRule: async (lenderId: string, policyData: {
+    factor: string;
+    weight: number;
+    scoringCriteria: any;
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/risk-assessment`, {
+      factor: policyData.factor,
+      weight: policyData.weight,
+      scoring_criteria: policyData.scoringCriteria,
+      priority: 1,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // Repayment Policies
+  createRepaymentPolicy: async (lenderId: string, policyData: {
+    name: string;
+    frequency: string;
+    gracePeriod: number;
+    lateFee: number;
+    penaltyRate: number;
+    maxExtensions: number;
+    defaultThreshold: number;
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/repayment`, {
+      name: policyData.name,
+      frequency: policyData.frequency,
+      grace_period: policyData.gracePeriod,
+      late_fee: policyData.lateFee,
+      penalty_rate: policyData.penaltyRate,
+      max_extensions: policyData.maxExtensions,
+      default_threshold: policyData.defaultThreshold,
+      priority: 1,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // Cargo Type Policies
+  createCargoTypePolicy: async (lenderId: string, policyData: {
+    cargoType: string;
+    riskLevel: string;
+    riskMultiplier: number;
+    maxLoanAmount: number;
+    insuranceRequired: boolean;
+    specialConditions: string[];
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/cargo-types`, {
+      cargo_type: policyData.cargoType,
+      risk_level: policyData.riskLevel,
+      risk_multiplier: policyData.riskMultiplier,
+      max_loan_amount: policyData.maxLoanAmount,
+      insurance_required: policyData.insuranceRequired,
+      special_conditions: policyData.specialConditions,
+      priority: 1,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // System Configuration
+  createSystemConfigPolicy: async (lenderId: string, policyData: {
+    name: string;
+    autoApprovalLimit: number;
+    manualReviewThreshold: number;
+    maxConcurrentLoans: number;
+    totalExposureLimit: number;
+    cooldownPeriod: number;
+    complianceMode: boolean;
+    auditTrail: boolean;
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/system-config`, {
+      name: policyData.name,
+      auto_approval_limit: policyData.autoApprovalLimit,
+      manual_review_threshold: policyData.manualReviewThreshold,
+      max_concurrent_loans: policyData.maxConcurrentLoans,
+      total_exposure_limit: policyData.totalExposureLimit,
+      cooldown_period: policyData.cooldownPeriod,
+      compliance_mode: policyData.complianceMode,
+      audit_trail: policyData.auditTrail,
+      is_active: true
+    });
+    
+    return {
+      id: response.data.id,
+      ...policyData,
+      isActive: true,
+      created_at: response.data.created_at
+    };
+  },
+
+  // Policy Status Management
+  updatePolicyStatus: async (lenderId: string, policyType: string, policyId: string, isActive: boolean) => {
+    const endpoints = {
+      interestRates: 'interest-rates',
+      loanLimits: 'loan-limits',
+      eligibilityCriteria: 'eligibility',
+      riskAssessment: 'risk-assessment',
+      repaymentPolicies: 'repayment',
+      cargoTypePolicies: 'cargo-types'
+    };
+    
+    const endpoint = endpoints[policyType as keyof typeof endpoints];
+    if (!endpoint) {
+      throw new Error(`Unknown policy type: ${policyType}`);
+    }
+    
+    const response = await api.patch(`/lending/policies/${lenderId}/${endpoint}/${policyId}/status`, {
+      isActive
+    });
+    
+    return response.data;
+  },
+
+  // Delete Policy
+  deleteLenderPolicy: async (lenderId: string, policyType: string, policyId: string) => {
+    const endpoints = {
+      interestRates: 'interest-rates',
+      loanLimits: 'loan-limits',
+      eligibilityCriteria: 'eligibility',
+      riskAssessment: 'risk-assessment',
+      repaymentPolicies: 'repayment',
+      cargoTypePolicies: 'cargo-types'
+    };
+    
+    const endpoint = endpoints[policyType as keyof typeof endpoints];
+    if (!endpoint) {
+      throw new Error(`Unknown policy type: ${policyType}`);
+    }
+    
+    await api.delete(`/lending/policies/${lenderId}/${endpoint}/${policyId}`);
+    return { success: true, message: 'Policy deleted successfully' };
+  },
+
+  // Validate Loan Against Policies
+  validateLoanAgainstPolicies: async (lenderId: string, loanData: {
+    amount: number;
+    borrowerData: any;
+    cargoType?: string;
+    businessType?: string;
+  }) => {
+    const response = await api.post(`/lending/policies/${lenderId}/validate-loan`, loanData);
+    return response.data;
+  },
 };

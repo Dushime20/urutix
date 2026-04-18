@@ -10,11 +10,20 @@ import { AutoLoanGeneratorService } from './services/auto-loan-generator.service
 import { LenderAnalyticsService } from './services/lender-analytics.service';
 import { RepaymentProcessorService } from './services/repayment-processor.service';
 import { UrutiLendingIntegrationService } from './services/uruti-lending-integration.service';
+import { LendingPoliciesService } from './services/lending-policies.service';
+import { LendingPoliciesController } from './controllers/lending-policies.controller';
 import { UrutiLendingWebhookController } from './controllers/uruti-lending-webhook.controller';
 import { UrutiLendingAdminController } from './controllers/uruti-lending-admin.controller';
 import { LendingExceptionFilter } from './filters/lending-exception.filter';
 import { Lender } from '../../entities/lender.entity';
 import { LenderPolicy } from '../../entities/lender-policy.entity';
+import { LendingPolicyInterestRate } from '../../entities/lending-policy-interest-rate.entity';
+import { LendingPolicyLoanLimit } from '../../entities/lending-policy-loan-limit.entity';
+import { LendingPolicyEligibility } from '../../entities/lending-policy-eligibility.entity';
+import { LendingPolicyRiskAssessment } from '../../entities/lending-policy-risk-assessment.entity';
+import { LendingPolicyRepayment } from '../../entities/lending-policy-repayment.entity';
+import { LendingPolicyCargoType } from '../../entities/lending-policy-cargo-type.entity';
+import { LendingPolicySystemConfig } from '../../entities/lending-policy-system-config.entity';
 import { LoanRequest } from '../../entities/loan-request.entity';
 import { LoanDisbursement } from '../../entities/loan-disbursement.entity';
 import { LoanRepayment } from '../../entities/loan-repayment.entity';
@@ -37,6 +46,13 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     TypeOrmModule.forFeature([
       Lender,
       LenderPolicy,
+      LendingPolicyInterestRate,
+      LendingPolicyLoanLimit,
+      LendingPolicyEligibility,
+      LendingPolicyRiskAssessment,
+      LendingPolicyRepayment,
+      LendingPolicyCargoType,
+      LendingPolicySystemConfig,
       LoanRequest,
       LoanDisbursement,
       LoanRepayment,
@@ -57,11 +73,13 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
   ],
   controllers: [
     LendingController,
+    LendingPoliciesController,
     UrutiLendingWebhookController,
     UrutiLendingAdminController,
   ],
   providers: [
     LendingService,
+    LendingPoliciesService,
     RiskAssessmentService,
     AutoLoanGeneratorService,
     LenderAnalyticsService,
@@ -74,6 +92,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
   ],
   exports: [
     LendingService,
+    LendingPoliciesService,
     RiskAssessmentService,
     AutoLoanGeneratorService,
     LenderAnalyticsService,

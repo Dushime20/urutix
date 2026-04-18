@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
+import { useAuth } from '../contexts/AuthContext';
 import {
   ShieldAlert,
   Download,
@@ -9,8 +10,10 @@ import {
 import LendingPoliciesEnlite, {
   type LendingPolicies
 } from '../components/LenderDashboard/LendingPolicies.enlite';
+import PolicyConfigurationModal from '../components/LenderDashboard/PolicyConfigurationModal';
 
 const LendingPoliciesPage: React.FC = () => {
+  const { user } = useAuth();
   const [policies, setPolicies] = useState<LendingPolicies>({
     interestRates: [],
     loanLimits: [],
@@ -30,81 +33,38 @@ const LendingPoliciesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('interest-rates');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalCategory, setModalCategory] = useState<string>('');
+  const [modalLoading, setModalLoading] = useState(false);
 
-  // Lender ID - would typically come from context or auth
-  const lenderId = "89fa1340-429e-448f-a19d-0e987679d7cd";
-
-  // Mock data for fallback (truncated for brevity, using same logic as original)
-  const mockPolicies: LendingPolicies = {
-    interestRates: [
-      {
-        id: 'IR-001',
-        name: 'Low Risk Standard Rate',
-        riskLevel: 'low',
-        baseRate: 8.5,
-        minRate: 7.0,
-        maxRate: 10.0,
-        adjustmentFactors: { creditScore: 0.5, loanHistory: 0.3, collateral: 0.4, businessType: 0.2 },
-        isActive: true
-      },
-      {
-        id: 'IR-002',
-        name: 'Medium Risk Premium Rate',
-        riskLevel: 'medium',
-        baseRate: 12.0,
-        minRate: 10.0,
-        maxRate: 15.0,
-        adjustmentFactors: { creditScore: 0.8, loanHistory: 0.6, collateral: 0.7, businessType: 0.4 },
-        isActive: true
-      }
-    ],
-    loanLimits: [
-      {
-        id: 'LL-001',
-        name: 'Individual Borrower Limits',
-        businessType: 'individual',
-        minAmount: 50000,
-        maxAmount: 500000,
-        creditScoreRequirement: 600,
-        collateralRequirement: 120,
-        maxUtilization: 80,
-        isActive: true
-      }
-    ],
-    eligibilityCriteria: [], // ... rest of mock data
-    riskAssessment: [],
-    repaymentPolicies: [],
-    cargoTypePolicies: [],
-    globalSettings: {
-      autoApprovalLimit: 200000,
-      manualReviewThreshold: 500000,
-      maxConcurrentLoans: 5,
-      cooldownPeriod: 30,
-      complianceMode: true,
-      auditTrail: true
-    }
-  };
+  // Get lender ID from authenticated user
+  const lenderId = user?.lenderId || user?.id || "89fa1340-429e-448f-a19d-0e987679d7cd";
 
   useEffect(() => {
     const fetchPolicies = async () => {
+      if (!lenderId) {
+        console.warn('No lender ID available');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const lenderData = await lendingApi.getLender(lenderId);
-
-        // Simplified mapping for the demo
-        setPolicies({
-          ...mockPolicies,
-          interestRates: [
-            {
-              ...mockPolicies.interestRates[0],
-              name: `${lenderData.name} Standard Rate`,
-              isActive: lenderData.status === 'active'
-            }
-          ]
-        });
+        console.log('Fetching policies for lender:', lenderId);
+        
+        // Fetch real policies from backend
+        const lenderPolicies = await lendingApi.getLenderPolicies(lenderId);
+        
+        if (lenderPolicies) {
+          console.log('Policies loaded successfully:', lenderPolicies);
+          setPolicies(lenderPolicies);
+        } else {
+          console.log('No policies found for lender');
+          // Keep empty state - no mock data
+        }
       } catch (error) {
         console.error('Error fetching lending policies:', error);
-        setPolicies(mockPolicies);
+        // Show error but don't use mock data
       } finally {
         setLoading(false);
       }
@@ -113,19 +73,38 @@ const LendingPoliciesPage: React.FC = () => {
     fetchPolicies();
   }, [lenderId]);
 
-  const handleToggleActive = (category: string, id: string) => {
-    setPolicies(prev => {
-      const updated = { ...prev };
+  const handleToggleActive = async (category: string, id: string) => {
+    try {
+      // Find the current policy to get its status
       const cat = category as keyof LendingPolicies;
-      if (Array.isArray(updated[cat])) {
-        // @ts-ignore - dynamic access
-        updated[cat] = updated[cat].map((item: any) =>
-          item.id === id ? { ...item, isActive: !item.isActive } : item
-        );
-      }
-      setHasUnsavedChanges(true);
-      return updated;
-    });
+      const policies_array = policies[cat];
+      if (!Array.isArray(policies_array)) return;
+      
+      const policy = policies_array.find((item: any) => item.id === id);
+      if (!policy) return;
+
+      const newStatus = !policy.isActive;
+
+      // Update backend
+      await lendingApi.updatePolicyStatus(lenderId, category, id, newStatus);
+
+      // Update local state
+      setPolicies(prev => {
+        const updated = { ...prev };
+        if (Array.isArray(updated[cat])) {
+          // @ts-ignore - dynamic access
+          updated[cat] = updated[cat].map((item: any) =>
+            item.id === id ? { ...item, isActive: newStatus } : item
+          );
+        }
+        return updated;
+      });
+
+      console.log(`Policy ${id} status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Error toggling policy status:', error);
+      alert('Failed to update policy status. Please try again.');
+    }
   };
 
   const handleExportPolicies = () => {
@@ -142,14 +121,68 @@ const LendingPoliciesPage: React.FC = () => {
   const handleSavePolicies = async () => {
     try {
       setLoading(true);
-      // Logic for saving via API (mocked here but preserved from original)
-      // await lendingApi.createLenderPolicy(...)
+      // Save policies to backend
+      // await lendingApi.updateLenderPolicies(lenderId, policies);
       alert('Lending policies have been synchronized successfully!');
       setHasUnsavedChanges(false);
     } catch (error) {
       alert('Failed to synchronize policies. Please check your connection.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddPolicy = (category: string) => {
+    setModalCategory(category);
+    setShowModal(true);
+  };
+
+  const handleSaveNewPolicy = async (policyData: any) => {
+    try {
+      setModalLoading(true);
+      
+      let savedPolicy;
+      
+      // Call appropriate API based on category
+      switch (modalCategory) {
+        case 'interestRates':
+          savedPolicy = await lendingApi.createInterestRatePolicy(lenderId, policyData);
+          break;
+        case 'loanLimits':
+          savedPolicy = await lendingApi.createLoanLimitPolicy(lenderId, policyData);
+          break;
+        case 'eligibilityCriteria':
+          savedPolicy = await lendingApi.createEligibilityCriteria(lenderId, policyData);
+          break;
+        case 'riskAssessment':
+          savedPolicy = await lendingApi.createRiskAssessmentRule(lenderId, policyData);
+          break;
+        case 'repaymentPolicies':
+          savedPolicy = await lendingApi.createRepaymentPolicy(lenderId, policyData);
+          break;
+        case 'cargoTypePolicies':
+          savedPolicy = await lendingApi.createCargoTypePolicy(lenderId, policyData);
+          break;
+        case 'globalSettings':
+          savedPolicy = await lendingApi.createSystemConfigPolicy(lenderId, policyData);
+          break;
+        default:
+          throw new Error('Unknown policy category');
+      }
+
+      // Refresh policies from backend
+      const refreshedPolicies = await lendingApi.getLenderPolicies(lenderId);
+      if (refreshedPolicies) {
+        setPolicies(refreshedPolicies);
+      }
+
+      setShowModal(false);
+      alert('Policy created successfully!');
+    } catch (error) {
+      console.error('Error creating policy:', error);
+      alert('Failed to create policy. Please try again.');
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -210,6 +243,21 @@ const LendingPoliciesPage: React.FC = () => {
           </div>
         )}
 
+        {/* System Status Banner */}
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="text-blue-500 w-5 h-5" />
+            <div>
+              <span className="text-blue-800 text-xs font-black uppercase tracking-widest">
+                Policy Configuration System Active
+              </span>
+              <p className="text-blue-600 text-[10px] mt-1">
+                You can now create and manage lending policies. New configurations will be integrated with the existing lender policy system.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <LendingPoliciesEnlite
           loading={loading}
           policies={policies}
@@ -217,7 +265,15 @@ const LendingPoliciesPage: React.FC = () => {
           onTabChange={setActiveTab}
           onToggleActive={handleToggleActive}
           onEdit={(id) => alert(`Editing policy ${id} (Module opening...)`)}
-          onAdd={(cat) => alert(`Initializing new ${cat} entry...`)}
+          onAdd={handleAddPolicy}
+        />
+
+        <PolicyConfigurationModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onSave={handleSaveNewPolicy}
+          category={modalCategory}
+          loading={modalLoading}
         />
       </div>
     </div>

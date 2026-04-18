@@ -98,6 +98,15 @@ import { UserPermissionOverride } from './../entities/user-permission-override.e
 // Team and Lender entities
 import { LenderUser, LenderRole, LenderPermission } from './../entities/lender-team.entity';
 
+// Lending policy entities
+import { LendingPolicyInterestRate } from './../entities/lending-policy-interest-rate.entity';
+import { LendingPolicyLoanLimit } from './../entities/lending-policy-loan-limit.entity';
+import { LendingPolicyEligibility } from './../entities/lending-policy-eligibility.entity';
+import { LendingPolicyRiskAssessment } from './../entities/lending-policy-risk-assessment.entity';
+import { LendingPolicyRepayment } from './../entities/lending-policy-repayment.entity';
+import { LendingPolicyCargoType } from './../entities/lending-policy-cargo-type.entity';
+import { LendingPolicySystemConfig } from './../entities/lending-policy-system-config.entity';
+
 // Fuel and Wallet entities
 import { FuelWallet } from './../entities/fuel-wallet.entity';
 import { FuelWalletTransaction } from './../entities/fuel-wallet-transaction.entity';
@@ -235,6 +244,14 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LenderUser,
     LenderRole,
     LenderPermission,
+    // Lending policy entities
+    LendingPolicyInterestRate,
+    LendingPolicyLoanLimit,
+    LendingPolicyEligibility,
+    LendingPolicyRiskAssessment,
+    LendingPolicyRepayment,
+    LendingPolicyCargoType,
+    LendingPolicySystemConfig,
     // Fuel and Wallet entities
     FuelWallet,
     FuelWalletTransaction,
@@ -369,6 +386,14 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     LenderUser,
     LenderRole,
     LenderPermission,
+    // Lending policy entities
+    LendingPolicyInterestRate,
+    LendingPolicyLoanLimit,
+    LendingPolicyEligibility,
+    LendingPolicyRiskAssessment,
+    LendingPolicyRepayment,
+    LendingPolicyCargoType,
+    LendingPolicySystemConfig,
     // Fuel and Wallet entities
     FuelWallet,
     FuelWalletTransaction,
