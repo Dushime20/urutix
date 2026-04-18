@@ -174,8 +174,8 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 overflow-hidden my-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-8 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 overflow-hidden flex flex-col max-h-[80vh]">
         <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Fleet Financing</p>
@@ -185,7 +185,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
             <X size={16} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-4 overflow-y-auto custom-scrollbar flex-1">
 
           {/* Amount */}
           <div>
@@ -452,7 +452,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-50">
-                  {['Loan ID', 'Amount', 'Purpose', 'Status', 'Due Date', 'Submitted'].map(h => (
+                  {['Loan ID', 'Amount', 'Cargo / Purpose', 'Route', 'Lender', 'Status', 'Due Date', 'Submitted'].map(h => (
                     <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                   ))}
                 </tr>
@@ -461,28 +461,46 @@ const TruckOwnerLoanRequestsView: React.FC<{
                 {filtered.map(req => (
                   <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}...</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Cargo: {req.cargo_id?.slice(0, 8)}...</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-black text-slate-900">${req.requested_amount.toLocaleString()}</p>
-                      {req.approved_amount && (
-                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Approved: ${req.approved_amount.toLocaleString()}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-slate-700">{req.purpose || 'Fleet financing'}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={req.status} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600 font-medium">
-                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : 'Ã¢â‚¬â€'}
+                      <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}&hellip;</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                        {req.borrower_company || (req.cargo_id ? `Cargo: ${req.cargo_id.slice(0, 8)}` : `"`+"—`")}
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600 font-medium">
+                      <p className="text-sm font-black text-slate-900">${"{"}req.requested_amount.toLocaleString(){"}"}</p>
+                      {req.approved_amount != null && (
+                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Approved: ${"{"}req.approved_amount.toLocaleString(){"}"}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-slate-700">{req.cargo_type || `"`+"General Cargo`"}</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">{req.purpose || `"`+"Fleet financing`"}</p>
+                    </td>
+                    <td className="px-6 py-4 min-w-[150px]">
+                      {req.pickup_location !== `"`+"N/A`" ? (
+                        <div className="text-xs text-slate-600 font-medium space-y-0.5">
+                          <p className="text-[#345E85] font-bold truncate max-w-[130px]">{req.pickup_location}</p>
+                          <p className="text-slate-400 text-[10px]">&#8594; {req.delivery_location}</p>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {req.lender?.name ? (
+                        <p className="text-xs font-semibold text-slate-700">{req.lender.name}</p>
+                      ) : (
+                        <span className="text-[10px] text-slate-300 italic">Auto-assigned</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : `"`+"—`"}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
                         {new Date(req.created_at).toLocaleDateString()}
                       </p>
                     </td>
@@ -555,49 +573,99 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     setFetching(true); setError(null);
     try {
       const raw = await lendingApi.getTenantLoans(user.tenantId);
-      const data = Array.isArray(raw) ? raw : ((raw as any)?.data || []);
-      const mapped: LoanRequest[] = data.map((req: any) => ({
-        id: req.id,
-        cargo_id: req.cargo_id || req.cargoId || '',
-        tenant_id: req.tenant_id || req.tenantId || '',
-        trip_id: req.trip_id || req.tripId || '',
-        requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
-        approved_amount: req.approved_amount || req.approvedAmount,
-        status: req.status || 'pending',
-        priority: 'medium',
-        created_at: req.created_at || req.createdAt || new Date().toISOString(),
-        due_date: req.due_date || req.dueDate,
-        borrower_name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You',
-        borrower_email: user?.email || '',
-        borrower_phone: (user as any)?.phone || '',
-        cargo_type: 'General Cargo',
-        cargo_weight: 0, cargo_value: 0,
-        pickup_location: 'N/A', delivery_location: 'N/A',
-        distance: 0, estimated_duration: 0,
-        risk_score: 50, credit_score: 600,
-        interest_rate: req.interest_rate || 10,
-        purpose: req.metadata?.purpose || 'Fleet financing',
-        lender_id: req.lender_id || req.lenderId,
-        processing_fee: 0,
-        total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
-        loan_term_months: 12,
-      }));
+      const data: any[] = Array.isArray(raw) ? raw : ((raw as any)?.data || []);
+
+      // Enrich each loan with cargo and lender details in parallel
+      const mapped: LoanRequest[] = await Promise.all(
+        data.map(async (req: any) => {
+          let cargoLabel = '';
+          let pickupLoc = 'N/A';
+          let deliveryLoc = 'N/A';
+          let cargoType = 'General Cargo';
+          let lenderName = '';
+
+          // Fetch cargo details
+          const cargoId = req.cargo_id || req.cargoId;
+          if (cargoId) {
+            try {
+              const cr = await api.get(`/loads-v2/${cargoId}`);
+              const cargo = cr.data?.data || cr.data;
+              if (cargo) {
+                cargoType = cargo.cargoType || cargo.cargo_type || 'General Cargo';
+                const origin = cargo.locations?.find((l: any) => l.type === 'PICKUP') || cargo.origin;
+                const dest   = cargo.locations?.find((l: any) => l.type === 'DELIVERY') || cargo.destination;
+                const fmt = (loc: any) => !loc ? '' : typeof loc === 'string' ? loc : loc.address || loc.city || loc.name || '';
+                pickupLoc   = fmt(origin) || 'N/A';
+                deliveryLoc = fmt(dest)   || 'N/A';
+                cargoLabel  = cargo.loadNumber || cargo.load_number || cargoId.slice(0, 8);
+              }
+            } catch { /* non-critical */ }
+          }
+
+          // Fetch lender name if lender_id present
+          const lenderId = req.lender_id || req.lenderId;
+          if (lenderId) {
+            try {
+              const lr = await api.get(`/admin/lenders/${lenderId}`);
+              lenderName = lr.data?.name || lr.data?.data?.name || '';
+            } catch { /* non-critical */ }
+          }
+
+          return {
+            id: req.id,
+            cargo_id: cargoId || '',
+            tenant_id: req.tenant_id || req.tenantId || '',
+            trip_id: req.trip_id || req.tripId || '',
+            requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
+            approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
+            status: req.status || 'pending',
+            priority: 'medium' as const,
+            created_at: req.created_at || req.createdAt || new Date().toISOString(),
+            due_date: req.due_date || req.dueDate,
+            borrower_name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You',
+            borrower_email: user?.email || '',
+            borrower_phone: (user as any)?.phone || '',
+            cargo_type: cargoType,
+            cargo_weight: 0,
+            cargo_value: 0,
+            pickup_location: pickupLoc,
+            delivery_location: deliveryLoc,
+            distance: 0,
+            estimated_duration: 0,
+            risk_score: 50,
+            credit_score: 600,
+            interest_rate: req.interest_rate || req.interestRate || 10,
+            purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
+            lender_id: lenderId,
+            lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
+            processing_fee: 0,
+            total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
+            loan_term_months: 12,
+            // store cargo label for display
+            borrower_company: cargoLabel ? `Load: ${cargoLabel}` : undefined,
+          };
+        })
+      );
+
       setRequests(mapped);
       setAnalytics({
         totalRequests: mapped.length,
-        pendingRequests: mapped.filter(r => r.status === 'pending').length,
+        pendingRequests:  mapped.filter(r => r.status === 'pending').length,
         approvedRequests: mapped.filter(r => r.status === 'approved').length,
         rejectedRequests: mapped.filter(r => r.status === 'rejected').length,
         totalAmountRequested: mapped.reduce((s, r) => s + r.requested_amount, 0),
-        totalAmountApproved: mapped.filter(r => r.status === 'approved').reduce((s, r) => s + r.requested_amount, 0),
+        totalAmountApproved:  mapped.filter(r => r.status === 'approved').reduce((s, r) => s + (r.approved_amount ?? r.requested_amount), 0),
         averageAmount: mapped.length ? mapped.reduce((s, r) => s + r.requested_amount, 0) / mapped.length : 0,
         averageRiskScore: 50,
         approvalRate: mapped.length ? (mapped.filter(r => r.status === 'approved').length / mapped.length) * 100 : 0,
         monthlyGrowth: 0,
       });
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to load loan requests.');
-    } finally { setFetching(false); }
+      const msg = err?.response?.data?.message || err?.message || 'Failed to load loan requests.';
+      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+    } finally {
+      setFetching(false);
+    }
   }, [user, accessToken]);
 
   useEffect(() => {
@@ -844,8 +912,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       </div>
 
       {showPaymentModal && selectedLoanForPayment && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-6 overflow-hidden">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-8 overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col max-h-[80vh]">
             <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Complete <span className="text-blue-600">Payment</span></h3>
@@ -890,5 +958,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 };
 
 export default EnhancedLoanRequestsPage;
+
+
 
 

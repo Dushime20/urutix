@@ -2473,6 +2473,33 @@ export class LendingService {
       .orderBy('loan.created_at', 'DESC');
   }
 
+  async getTenantLoanHistory(
+    tenantId: string,
+    status?: string,
+    createdBy?: string,
+  ) {
+    const qb = this.loanRequestRepository
+      .createQueryBuilder('loan')
+      .leftJoinAndSelect('loan.lender', 'lender')
+      .leftJoinAndSelect('loan.disbursements', 'disbursements')
+      .leftJoinAndSelect('loan.repayments', 'repayments')
+      .where('loan.tenant_id = :tenantId', { tenantId });
+
+    if (status) {
+      qb.andWhere('loan.status = :status', { status });
+    }
+
+    // Truck owners only see their own loans
+    if (createdBy) {
+      qb.andWhere('loan.created_by = :createdBy', { createdBy });
+    }
+
+    qb.orderBy('loan.created_at', 'DESC');
+
+    const loans = await qb.getMany();
+    return loans;
+  }
+
   // Disbursement Management Methods
   async getLenderDisbursements(lenderId: string, query: DisbursementQueryDto) {
     const {

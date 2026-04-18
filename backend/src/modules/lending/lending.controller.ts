@@ -1370,11 +1370,11 @@ export class LendingController {
   // ===== TENANT ENDPOINTS =====
 
   @Get('lending/tenant/:tenantId/loans')
-  @Roles(UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER, UserRole.TRUCK_OWNER)
   @ApiOperation({
     summary: 'Get tenant loan history',
     description:
-      'Retrieve loan history for a specific tenant with optional status filtering',
+      'Retrieve loan history for a specific tenant with optional status filtering. TRUCK_OWNER sees only their own loans.',
   })
   @ApiParam({
     name: 'tenantId',
@@ -1422,9 +1422,16 @@ export class LendingController {
   async getTenantLoans(
     @Param('tenantId', ParseUUIDPipe) tenantId: string,
     @Query('status') status?: string,
+    @Request() req?: any,
   ) {
-    // TODO: Implement getLoansByTenantId method in LendingService
-    return { message: 'Method not implemented yet', tenantId, status };
+    const user = req?.user;
+    // TRUCK_OWNER / FLEET_MANAGER: only see loans they created
+    const createdBy =
+      user?.role === 'TRUCK_OWNER'
+        ? user.userId || user.id
+        : undefined;
+
+    return this.lendingService.getTenantLoanHistory(tenantId, status, createdBy);
   }
 
   // ===== RISK ASSESSMENT ENDPOINTS =====
