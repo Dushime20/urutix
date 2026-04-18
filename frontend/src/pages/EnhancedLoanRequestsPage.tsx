@@ -1,13 +1,15 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { lendingApi } from '../services/lending/lendingApi';
 import type { CreateLoanRequestDto } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
 import api, { paymentsAPI } from '../services/api';
+import { fleetApi } from '../services/fleetApi';
 import { FaSearch, FaTimes, FaMoneyBillWave } from 'react-icons/fa';
 import {
   X, DollarSign, Clock, CheckCircle, AlertTriangle, FileText,
   RefreshCw, ChevronDown, Landmark, CalendarDays, CircleDollarSign,
-  Plus, TrendingUp, Banknote,
+  Plus, TrendingUp, Banknote, Package, MapPin, Loader2, Info,
 } from 'lucide-react';
 import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
 
@@ -59,8 +61,19 @@ interface LoanRequestFormModalProps {
   userId: string;
 }
 
+const selectCls = (hasIcon = false) =>
+  `w-full ${hasIcon ? 'pl-10' : 'pl-4'} pr-8 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed`;
+
 const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
-  const [lenders, setLenders] = useState<any[]>([]);
+  const [lenders, setLenders]     = useState<any[]>([]);
+  const [loads, setLoads]         = useState<any[]>([]);
+  const [trips, setTrips]         = useState<any[]>([]);
+  const [drivers, setDrivers]     = useState<any[]>([]);
+  const [trucks, setTrucks]       = useState<any[]>([]);
+  const [loadingLenders, setLoadingLenders] = useState(true);
+  const [loadingLoads,   setLoadingLoads]   = useState(true);
+  const [loadingTrips,   setLoadingTrips]   = useState(false);
+  const [loadingBenef,   setLoadingBenef]   = useState(false);
   const [form, setForm] = useState({
     requested_amount: '',
     lender_id: '',
@@ -72,31 +85,82 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
     beneficiary_id: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
+  const [success,    setSuccess]    = useState(false);
+
+  const selectedLoad = loads.find((l: any) => l.id === form.cargo_id);
 
   useEffect(() => {
-    lendingApi.getTenantLenders().then(setLenders).catch(() => {});
+    lendingApi.getTenantLenders()
+      .then(data => setLenders(Array.isArray(data) ? data : []))
+      .catch(() => setLenders([]))
+      .finally(() => setLoadingLenders(false));
+    api.get('/loads-v2/assigned-loads')
+      .then(res => {
+        const raw = res.data?.data || res.data?.loads || res.data || [];
+        setLoads(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => setLoads([]))
+      .finally(() => setLoadingLoads(false));
   }, []);
+
+  useEffect(() => {
+    if (!form.cargo_id) { setTrips([]); return; }
+    setLoadingTrips(true);
+    api.get('/trips', { params: { loadId: form.cargo_id, limit: 50 } })
+      .then(res => {
+        const raw = res.data?.data || res.data?.trips || res.data || [];
+        setTrips(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => setTrips([]))
+      .finally(() => setLoadingTrips(false));
+  }, [form.cargo_id]);
+
+  useEffect(() => {
+    setForm(p => ({ ...p, beneficiary_id: '' }));
+    if (form.beneficiary_type === 'driver') {
+      setLoadingBenef(true);
+      fleetApi.getDrivers()
+        .then(data => setDrivers(Array.isArray(data) ? data : []))
+        .catch(() => setDrivers([]))
+        .finally(() => setLoadingBenef(false));
+    } else if (form.beneficiary_type === 'maintenance') {
+      setLoadingBenef(true);
+      fleetApi.getTrucks()
+        .then(data => setTrucks(Array.isArray(data) ? data : []))
+        .catch(() => setTrucks([]))
+        .finally(() => setLoadingBenef(false));
+    }
+  }, [form.beneficiary_type]);
+
+  const beneficiaryOptions = (): { id: string; label: string }[] => {
+    if (form.beneficiary_type === 'driver')
+      return drivers.map((d: any) => ({ id: d.userId || d.id, label: `${d.firstName} ${d.lastName}${d.licenseNumber ? ' — ' + d.licenseNumber : ''}` }));
+    if (form.beneficiary_type === 'maintenance')
+      return trucks.map((t: any) => ({ id: t.id, label: `${t.plateNumber}${t.make ? ' (' + t.make + ' ' + (t.model || '') + ')' : ''}` }));
+    return [];
+  };
+  const benefOptions = beneficiaryOptions();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     const amount = parseFloat(form.requested_amount);
-    if (!amount || amount <= 0) { setError('Enter a valid loan amount.'); return; }
-    if (!form.cargo_id.trim()) { setError('Cargo ID is required.'); return; }
-    if (!form.trip_id.trim()) { setError('Trip ID is required.'); return; }
-    if (!form.beneficiary_id.trim()) { setError('Beneficiary ID is required.'); return; }
+    if (!amount || amount <= 0)      { setError('Enter a valid loan amount.'); return; }
+    if (amount > 50000)              { setError('Maximum loan amount is $50,000.'); return; }
+    if (!form.cargo_id)              { setError('Please select a cargo/load.'); return; }
+    if (!form.trip_id)               { setError('Please select a trip.'); return; }
+    if (!form.beneficiary_id.trim()) { setError('Please select or enter a beneficiary.'); return; }
     const payload: CreateLoanRequestDto = {
       tenant_id: tenantId,
-      cargo_id: form.cargo_id.trim(),
-      trip_id: form.trip_id.trim(),
+      cargo_id: form.cargo_id,
+      trip_id: form.trip_id,
       requested_amount: amount,
       created_by: userId,
       requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
       ...(form.lender_id && { lender_id: form.lender_id }),
-      ...(form.due_date && { due_date: form.due_date }),
-      ...(form.purpose && { metadata: { purpose: form.purpose } }),
+      ...(form.due_date   && { due_date: form.due_date }),
+      metadata: { purpose: form.purpose || form.beneficiary_type },
     };
     try {
       setSubmitting(true);
@@ -106,14 +170,12 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to submit loan request.';
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 overflow-hidden my-auto">
         <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Fleet Financing</p>
@@ -124,67 +186,129 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
+
+          {/* Amount */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount (USD) *</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount (USD) <span className="text-rose-400">*</span></label>
             <div className="relative">
               <CircleDollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="number" min="1" max="1000000" step="0.01" value={form.requested_amount}
+              <input type="number" min="1" max="50000" step="0.01" value={form.requested_amount}
                 onChange={e => setForm(p => ({ ...p, requested_amount: e.target.value }))}
                 placeholder="e.g. 5000"
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                 required />
             </div>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Max $50,000 per request</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo ID *</label>
-              <input type="text" value={form.cargo_id} onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value }))}
-                placeholder="UUID"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
-                required />
+
+          {/* Cargo */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cargo / Load <span className="text-rose-400">*</span></label>
+            <div className="relative">
+              <Package size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              {loadingLoads && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
+              <select value={form.cargo_id}
+                onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value, trip_id: '' }))}
+                className={selectCls(true)} disabled={loadingLoads} required>
+                <option value="">{loadingLoads ? 'Loading loads…' : loads.length === 0 ? 'No assigned loads found' : 'Select a load'}</option>
+                {loads.map((l: any) => (
+                  <option key={l.id} value={l.id}>
+                    {l.loadNumber || l.id.slice(0, 8)} — {l.cargoType || 'Cargo'}{l.origin?.city ? ' · ' + l.origin.city : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Trip ID *</label>
-              <input type="text" value={form.trip_id} onChange={e => setForm(p => ({ ...p, trip_id: e.target.value }))}
-                placeholder="UUID"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
-                required />
+            {selectedLoad && (
+              <p className="text-[10px] text-[#345E85] mt-1 font-semibold flex items-center gap-1">
+                <MapPin size={10} />
+                {selectedLoad.origin?.address || selectedLoad.pickupLocation || ''}{selectedLoad.destination?.address ? ' → ' + (selectedLoad.destination?.address || selectedLoad.deliveryLocation || '') : ''}
+              </p>
+            )}
+          </div>
+
+          {/* Trip */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Trip <span className="text-rose-400">*</span></label>
+            <div className="relative">
+              <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              {loadingTrips && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
+              <select value={form.trip_id}
+                onChange={e => setForm(p => ({ ...p, trip_id: e.target.value }))}
+                className={selectCls(true)} disabled={!form.cargo_id || loadingTrips} required>
+                <option value="">{!form.cargo_id ? 'Select a load first' : loadingTrips ? 'Loading trips…' : trips.length === 0 ? 'No trips found for this load' : 'Select a trip'}</option>
+                {trips.map((t: any) => (
+                  <option key={t.id} value={t.id}>
+                    {t.tripNumber || t.id.slice(0, 8)} — {t.status || 'Trip'}{t.createdAt ? ' · ' + new Date(t.createdAt).toLocaleDateString() : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {/* Fund Allocation */}
+          <div className="bg-slate-50 rounded-2xl p-4 space-y-4 border border-slate-100">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+              <Info size={12} /> Fund Allocation
+            </p>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fund Purpose *</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fund Purpose <span className="text-rose-400">*</span></label>
               <div className="relative">
-                <select value={form.beneficiary_type} onChange={e => setForm(p => ({ ...p, beneficiary_type: e.target.value as any }))}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none">
-                  {BENEFICIARY_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                <select value={form.beneficiary_type}
+                  onChange={e => setForm(p => ({ ...p, beneficiary_type: e.target.value as any }))}
+                  className={selectCls()}>
+                  <option value="fuel">⛽ Fuel</option>
+                  <option value="driver">👤 Driver</option>
+                  <option value="maintenance">🔧 Maintenance</option>
+                  <option value="tolls">🛣️ Tolls</option>
+                  <option value="other">📦 Other</option>
                 </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Beneficiary ID *</label>
-              <input type="text" value={form.beneficiary_id} onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
-                placeholder="UUID"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
-                required />
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Beneficiary <span className="text-rose-400">*</span></label>
+              {(form.beneficiary_type === 'driver' || form.beneficiary_type === 'maintenance') ? (
+                <div className="relative">
+                  {loadingBenef && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
+                  <select value={form.beneficiary_id}
+                    onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
+                    className={selectCls()} disabled={loadingBenef} required>
+                    <option value="">{loadingBenef ? 'Loading…' : benefOptions.length === 0 ? 'No options found' : form.beneficiary_type === 'driver' ? 'Select a driver' : 'Select a truck'}</option>
+                    {benefOptions.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+                </div>
+              ) : (
+                <input type="text" value={form.beneficiary_id}
+                  onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
+                  placeholder={form.beneficiary_type === 'fuel' ? 'Fuel supplier ID or account' : form.beneficiary_type === 'tolls' ? 'Toll account ID' : 'Beneficiary ID or reference'}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                  required />
+              )}
             </div>
           </div>
+
+          {/* Lender */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preferred Lender <span className="text-slate-300">(optional)</span></label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preferred Lender <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
             <div className="relative">
-              <Landmark size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Landmark size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              {loadingLenders && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
               <select value={form.lender_id} onChange={e => setForm(p => ({ ...p, lender_id: e.target.value }))}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none">
-                <option value="">Any available lender</option>
-                {lenders.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                className={selectCls(true)} disabled={loadingLenders}>
+                <option value="">{loadingLenders ? 'Loading lenders…' : 'Any available lender'}</option>
+                {lenders.map((l: any) => <option key={l.id} value={l.id}>{l.name}{l.contact_email ? ' — ' + l.contact_email : ''}</option>)}
               </select>
-              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
           </div>
+
+          {/* Date + Note */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Repayment Date <span className="text-slate-300">(optional)</span></label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Repayment Date <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
               <div className="relative">
                 <CalendarDays size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="date" value={form.due_date} min={new Date().toISOString().split('T')[0]}
@@ -193,24 +317,27 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Purpose <span className="text-slate-300">(optional)</span></label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
               <input type="text" value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}
-                placeholder="e.g. Fuel advance"
+                placeholder="e.g. Fuel advance for trip"
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
             </div>
           </div>
-          {error && <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><AlertTriangle size={14} /> {error}</div>}
-          {success && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><CheckCircle size={14} /> Loan request submitted successfully!</div>}
+
+          {error && <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><AlertTriangle size={14} className="flex-shrink-0" /> {error}</div>}
+          {success && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><CheckCircle size={14} className="flex-shrink-0" /> Loan request submitted successfully!</div>}
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Cancel</button>
             <button type="submit" disabled={submitting || success}
               className="flex-1 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 flex items-center justify-center gap-2">
-              {submitting ? <><RefreshCw size={12} className="animate-spin" /> Submitting...</> : 'Submit Request'}
+              {submitting ? <><RefreshCw size={12} className="animate-spin" /> Submitting…</> : 'Submit Request'}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -351,7 +478,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-slate-600 font-medium">
-                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : 'â€”'}
+                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : 'Ã¢â‚¬â€'}
                       </p>
                     </td>
                     <td className="px-6 py-4">
@@ -651,7 +778,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
   });
 
-  // â”€â”€ Truck Owner View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Truck Owner View Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   if (isTruckOwner) {
     return (
       <div className="min-h-screen bg-slate-50/50 p-6 md:p-8">
@@ -680,7 +807,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     );
   }
 
-  // â”€â”€ Lender View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Lender View Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   if (fetching) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -716,10 +843,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         />
       </div>
 
-      {showPaymentModal && selectedLoanForPayment && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
-            <div className="p-8">
+      {showPaymentModal && selectedLoanForPayment && createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-6 overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+            <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Complete <span className="text-blue-600">Payment</span></h3>
                 <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-50 rounded-xl"><FaTimes size={18} /></button>
@@ -756,11 +883,12 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
     </div>
   );
 };
 
 export default EnhancedLoanRequestsPage;
+
 
