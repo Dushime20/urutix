@@ -27,6 +27,7 @@ interface LoanRequest {
   collateral_type?: string; collateral_value?: number; purpose: string;
   lender_id?: string; lender?: Lender; processing_fee: number; total_amount: number;
   monthly_payment?: number; loan_term_months: number;
+  requested_split?: Array<{ type: string; id: string; amount: number }>;
 }
 interface LoanAnalytics {
   totalRequests: number; pendingRequests: number; approvedRequests: number; rejectedRequests: number;
@@ -452,7 +453,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-50">
-                  {['Loan ID', 'Amount', 'Cargo / Purpose', 'Route', 'Lender', 'Status', 'Due Date', 'Submitted'].map(h => (
+                  {['Loan ID', 'Amount', 'Purpose', 'Fund Split', 'Lender', 'Status', 'Due Date', 'Submitted'].map(h => (
                     <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                   ))}
                 </tr>
@@ -460,50 +461,78 @@ const TruckOwnerLoanRequestsView: React.FC<{
               <tbody className="divide-y divide-slate-50">
                 {filtered.map(req => (
                   <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
+
+                    {/* Loan ID */}
                     <td className="px-6 py-4">
-                      <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}&hellip;</p>
+                      <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
                       <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        {req.borrower_company || (req.cargo_id ? `Cargo: ${req.cargo_id.slice(0, 8)}` : '—')}
+                        {req.trip_id ? `Trip: ${req.trip_id.slice(0, 8)}…` : '—'}
                       </p>
                     </td>
+
+                    {/* Amount */}
                     <td className="px-6 py-4">
                       <p className="text-sm font-black text-slate-900">${req.requested_amount.toLocaleString()}</p>
                       {req.approved_amount != null && (
-                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Approved: ${req.approved_amount.toLocaleString()}</p>
+                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                          ✓ Approved: ${req.approved_amount.toLocaleString()}
+                        </p>
                       )}
                     </td>
+
+                    {/* Purpose — from metadata.purpose */}
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-slate-700">{req.cargo_type || 'General Cargo'}</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">{req.purpose || 'Fleet financing'}</p>
+                      <p className="text-sm font-semibold text-slate-700 capitalize">
+                        {req.purpose || 'Fleet financing'}
+                      </p>
                     </td>
-                    <td className="px-6 py-4 min-w-[150px]">
-                      {req.pickup_location !== 'N/A' ? (
-                        <div className="text-xs text-slate-600 font-medium space-y-0.5">
-                          <p className="text-[#345E85] font-bold truncate max-w-[130px]">{req.pickup_location}</p>
-                          <p className="text-slate-400 text-[10px]">&#8594; {req.delivery_location}</p>
+
+                    {/* Fund Split — from requested_split array */}
+                    <td className="px-6 py-4">
+                      {req.requested_split && req.requested_split.length > 0 ? (
+                        <div className="space-y-1">
+                          {req.requested_split.map((s, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
+                                {s.type}
+                              </span>
+                              <span className="text-xs font-bold text-slate-800">${s.amount.toLocaleString()}</span>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <span className="text-[10px] text-slate-300">—</span>
                       )}
                     </td>
+
+                    {/* Lender */}
                     <td className="px-6 py-4">
                       {req.lender?.name ? (
                         <p className="text-xs font-semibold text-slate-700">{req.lender.name}</p>
                       ) : (
-                        <span className="text-[10px] text-slate-300 italic">Auto-assigned</span>
+                        <span className="text-[10px] text-slate-400 italic">Auto-assigned</span>
                       )}
                     </td>
-                    <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4">
+                      <StatusBadge status={req.status} />
+                    </td>
+
+                    {/* Due Date */}
                     <td className="px-6 py-4">
                       <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
                         {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
                       </p>
                     </td>
+
+                    {/* Submitted */}
                     <td className="px-6 py-4">
                       <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
                         {new Date(req.created_at).toLocaleDateString()}
                       </p>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -579,42 +608,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       const mapped: LoanRequest[] = await Promise.all(
         data.map(async (req: any) => {
           let cargoLabel = '';
-          let pickupLoc = 'N/A';
-          let deliveryLoc = 'N/A';
           let cargoType = 'General Cargo';
           let lenderName = '';
-
-          // Fetch cargo details
-          const cargoId = req.cargo_id || req.cargoId;
-          if (cargoId) {
-            try {
-              const cr = await api.get(`/loads-v2/${cargoId}`);
-              const cargo = cr.data?.data || cr.data;
-              if (cargo) {
-                cargoType = cargo.cargoType || cargo.cargo_type || 'General Cargo';
-
-                // Helper: extract readable string from any location shape
-                const fmt = (loc: any): string => {
-                  if (!loc) return '';
-                  if (typeof loc === 'string') return loc;
-                  // LoadLocation shape: { locationData: { address, city, name } }
-                  if (loc.locationData) {
-                    return loc.locationData.address || loc.locationData.city || loc.locationData.name || '';
-                  }
-                  // Address shape: { address, city }
-                  return loc.address || loc.city || loc.name || '';
-                };
-
-                // Try locations array first (preferred), then origin/destination fields
-                const originLoc   = cargo.locations?.find((l: any) => l.type === 'PICKUP')   || cargo.origin;
-                const destLoc     = cargo.locations?.find((l: any) => l.type === 'DELIVERY') || cargo.destination;
-
-                pickupLoc   = fmt(originLoc)  || 'N/A';
-                deliveryLoc = fmt(destLoc)    || 'N/A';
-                cargoLabel  = cargo.loadNumber || cargo.load_number || cargoId.slice(0, 8);
-              }
-            } catch { /* non-critical */ }
-          }
 
           // Fetch lender name if lender_id present
           const lenderId = req.lender_id || req.lenderId;
@@ -627,7 +622,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
           return {
             id: req.id,
-            cargo_id: cargoId || '',
+            cargo_id: req.cargo_id || req.cargoId || '',
             tenant_id: req.tenant_id || req.tenantId || '',
             trip_id: req.trip_id || req.tripId || '',
             requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
@@ -644,8 +639,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             cargo_type: cargoType,
             cargo_weight: 0,
             cargo_value: 0,
-            pickup_location: pickupLoc,
-            delivery_location: deliveryLoc,
+            pickup_location: 'N/A',
+            delivery_location: 'N/A',
             distance: 0,
             estimated_duration: 0,
             risk_score: 50,
@@ -658,6 +653,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
             loan_term_months: 12,
             borrower_company: req.borrower?.company_name || (cargoLabel ? `Load: ${cargoLabel}` : undefined),
+            requested_split: req.requested_split || [],
           };
         })
       );
@@ -973,6 +969,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 };
 
 export default EnhancedLoanRequestsPage;
+
 
 
 
