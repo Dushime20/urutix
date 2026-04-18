@@ -67,6 +67,8 @@ export interface CreateLoanRequestDto {
   trip_id: string;
   requested_amount: number;
   requested_split: Beneficiary[];
+  lender_id?: string;
+  created_by?: string;
   due_date?: string;
   metadata?: any;
 }
