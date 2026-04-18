@@ -490,6 +490,32 @@ export class LendingService {
     return await this.lenderPolicyRepository.save(policy);
   }
 
+  /** Resolve User ID → Lender entity, then return the latest policy */
+  async getLenderPolicyByUserId(userId: string): Promise<LenderPolicy | null> {
+    const lender = await this.resolveLenderById(userId);
+    if (!lender) return null;
+    const policies = await this.lenderPolicyRepository.find({
+      where: { lender_id: lender.id },
+      order: { created_at: 'DESC' },
+      take: 1,
+    });
+    return policies[0] ?? null;
+  }
+
+  /** Resolve User ID → Lender entity, then create/replace the policy */
+  async upsertLenderPolicyByUserId(
+    userId: string,
+    dto: CreateLenderPolicyDto,
+  ): Promise<LenderPolicy> {
+    const lender = await this.resolveLenderById(userId);
+    if (!lender) {
+      throw new NotFoundException(
+        `No Lender entity found for user ${userId}. Please ensure a Lender record exists.`,
+      );
+    }
+    return this.createLenderPolicy(lender.id, dto);
+  }
+
   async getLenderByApiKey(apiKey: string): Promise<Lender | null> {
     const lenders = await this.lenderRepository.find({
       select: ['id', 'name', 'api_key_hash', 'status'],
@@ -759,20 +785,33 @@ export class LendingService {
       relations: ['policies'],
     });
 
-    for (const lender of lenders) {
-      const policy = lender.policies?.[0]; // Get latest policy
-      if (!policy) continue;
+    // Default limits used when a lender has no policy configured
+    const DEFAULT_MAX_ADVANCE = 100_000;
+    const DEFAULT_MAX_EXPOSURE = 1_000_000;
 
-      // Check if loan amount is within limits
-      if (loan.requested_amount <= policy.max_advance_per_trip) {
-        // Check current exposure
-        const currentExposure = await this.getCurrentExposure(lender.id);
-        if (currentExposure + loan.requested_amount <= policy.max_exposure) {
-          return lender;
-        }
+    for (const lender of lenders) {
+      const policy = lender.policies?.[0];
+
+      const maxAdvance  = policy ? Number(policy.max_advance_per_trip) : DEFAULT_MAX_ADVANCE;
+      const maxExposure = policy ? Number(policy.max_exposure)         : DEFAULT_MAX_EXPOSURE;
+
+      // Check if loan amount is within per-trip limit
+      if (loan.requested_amount > maxAdvance) continue;
+
+      // Check current exposure
+      const currentExposure = await this.getCurrentExposure(lender.id);
+      if (currentExposure + loan.requested_amount <= maxExposure) {
+        this.logger.log(
+          `findSuitableLender: selected lender ${lender.id} (${lender.name}) for loan ${loan.id}` +
+          (policy ? '' : ' [using default limits — no policy configured]'),
+        );
+        return lender;
       }
     }
 
+    this.logger.warn(
+      `findSuitableLender: no suitable lender found for loan ${loan.id} (amount: ${loan.requested_amount})`,
+    );
     return null;
   }
 
@@ -1854,84 +1893,64 @@ export class LendingService {
     page: number = 1,
     limit: number = 10,
   ) {
-    // First, try to find if lenderId is a Lender entity ID
-    let actualLenderId = lenderId;
-    let lender = await this.lenderRepository.findOne({
+    // Step 1: Resolve the actual Lender entity ID from whatever was passed
+    let actualLenderId: string | null = null;
+
+    const lenderEntity = await this.lenderRepository.findOne({
       where: { id: lenderId },
     });
 
-    // If not found, try to find by user email (lenderId might be a User ID)
-    if (!lender) {
+    if (lenderEntity) {
+      actualLenderId = lenderEntity.id;
+    } else {
+      // lenderId might be a User ID — resolve via email
       const user = await this.userRepository.findOne({
         where: { id: lenderId, role: UserRole.LENDER },
-        relations: ['profile'],
       });
-
       if (user) {
-        // Find lender by contact_email matching user email
-        lender = await this.lenderRepository.findOne({
+        const lenderByEmail = await this.lenderRepository.findOne({
           where: { contact_email: user.email },
         });
-
-        if (lender) {
-          actualLenderId = lender.id;
-          this.logger.log(`Resolved lender ID from user ${lenderId} to lender entity ${actualLenderId}`);
-        } else {
-          // If no lender entity found, try to find loan requests by user ID in metadata
-          this.logger.log(`No lender entity found for user ${lenderId}, searching loan requests by metadata`);
-          const queryBuilder = this.loanRequestRepository
-            .createQueryBuilder('loan')
-            .leftJoinAndSelect('loan.lender', 'lender')
-            .leftJoinAndSelect('loan.disbursements', 'disbursements')
-            .leftJoinAndSelect('loan.repayments', 'repayments')
-            .where('loan.metadata->>\'selected_lender\' = :userId', { userId: lenderId })
-            .orderBy('loan.created_at', 'DESC')
-            .skip((page - 1) * limit)
-            .take(limit);
-
-          if (status) {
-            queryBuilder.andWhere('loan.status = :status', { status });
-          }
-
-          const [loans, total] = await queryBuilder.getManyAndCount();
-
-          return {
-            data: loans,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-          };
+        if (lenderByEmail) {
+          actualLenderId = lenderByEmail.id;
+          this.logger.log(
+            `Resolved lender ID from user ${lenderId} → lender entity ${actualLenderId}`,
+          );
         }
       }
     }
 
-    // Query by lender entity ID
-    const queryBuilder = this.loanRequestRepository
+    if (!actualLenderId) {
+      this.logger.warn(
+        `getLenderLoanRequests: no Lender entity found for ID ${lenderId}`,
+      );
+      return { data: [], total: 0, page, limit, totalPages: 0 };
+    }
+
+    // Step 2: Query loans assigned to this lender
+    const qb = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.lender', 'lender')
       .leftJoinAndSelect('loan.disbursements', 'disbursements')
       .leftJoinAndSelect('loan.repayments', 'repayments')
-      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId })
-      .orderBy('loan.created_at', 'DESC')
+      .leftJoinAndSelect('loan.borrower', 'borrower')
+      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
+
+    if (status) {
+      qb.andWhere('loan.status = :status', { status });
+    }
+
+    qb.orderBy('loan.created_at', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
-    if (status) {
-      queryBuilder.andWhere('loan.status = :status', { status });
-    }
+    const [loans, total] = await qb.getManyAndCount();
 
-    const [loans, total] = await queryBuilder.getManyAndCount();
+    this.logger.log(
+      `getLenderLoanRequests: found ${total} loans for lender ${actualLenderId}`,
+    );
 
-    this.logger.log(`Found ${total} loan requests for lender ${actualLenderId}`);
-
-    return {
-      data: loans,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return { data: loans, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getLenderAnalytics(lenderId: string, period: string = '30d') {

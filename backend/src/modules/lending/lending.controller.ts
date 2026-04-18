@@ -169,6 +169,28 @@ export class LendingController {
     );
   }
 
+  // ── Lender self-service: manage own policy ──────────────────────────────────
+
+  @Get('lending/my-policy')
+  @Roles(UserRole.LENDER)
+  @ApiOperation({ summary: 'Get own lending policy' })
+  async getMyPolicy(@Request() req: any) {
+    return await this.lendingService.getLenderPolicyByUserId(req.user.userId || req.user.id);
+  }
+
+  @Post('lending/my-policy')
+  @Roles(UserRole.LENDER)
+  @ApiOperation({ summary: 'Create or update own lending policy' })
+  async upsertMyPolicy(
+    @Body() createPolicyDto: CreateLenderPolicyDto,
+    @Request() req: any,
+  ) {
+    return await this.lendingService.upsertLenderPolicyByUserId(
+      req.user.userId || req.user.id,
+      createPolicyDto,
+    );
+  }
+
   @Post('lending/cargo/:cargoId/loan-request')
   @UseGuards(JwtAuthGuard)
   async createLoanRequestForCargo(
