@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: urutix_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1234"
+      POSTGRES_DB: urutix
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - urutix_network_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d urutix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: urutix_redis_dev
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - urutix_network_dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service (Development with hot reload)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: urutix_backend_dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: "1234"
+      DB_NAME: urutix
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      REDIS_TLS: false
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 465
+      SMTP_USER: urutix4@gmail.com
+      SMTP_PASS: "tmio mopw fmba bwuu"
+      SMTP_SECURE: true
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend_uploads_dev:/app/uploads
+    networks:
+      - urutix_network_dev
+    command: npm run start:dev
+
+  # Frontend Service (Development with hot reload)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: urutix_frontend_dev
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:3005/api
+      VITE_WEBSOCKET_URL: ws://localhost:3005
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - urutix_network_dev
+    command: npm run dev
+
+networks:
+  urutix_network_dev:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+  backend_uploads_dev:
+    driver: local

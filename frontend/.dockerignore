@@ -2,7 +2,7 @@
 node_modules
 npm-debug.log
 
-# Build outputs
+# Build outputs (will be created during build)
 dist
 
 # Environment files
@@ -22,11 +22,13 @@ dist
 coverage
 test
 *.test.ts
+*.test.tsx
 *.spec.ts
+*.spec.tsx
 
 # Documentation
 *.md
-docs
+README.md
 
 # Logs
 logs
@@ -41,16 +43,3 @@ Dockerfile
 Dockerfile.dev
 docker-compose*.yml
 .dockerignore
-
-# Scripts (keep only necessary ones)
-*.ps1
-check-*.js
-test-*.js
-debug-*.js
-fix-*.js
-seed-*.js
-verify-*.js
-create-*.js
-dump*.js
-dump*.txt
-build_log*.txt
