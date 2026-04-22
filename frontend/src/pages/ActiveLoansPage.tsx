@@ -103,7 +103,10 @@ const ActiveLoansPage: React.FC = () => {
           lendingApi.getLenderAnalytics(user.id, '12months')
         ]);
 
-        const transformedLoans: ActiveLoan[] = loansData.map((loan: any) => ({
+        // API returns { data: [], total, page, limit, totalPages }
+        const loans: any[] = loansData?.data ?? [];
+
+        const transformedLoans: ActiveLoan[] = loans.map((loan: any) => ({
           id: loan.id,
           loan_request_id: loan.loanRequestId || loan.id,
           borrower: {

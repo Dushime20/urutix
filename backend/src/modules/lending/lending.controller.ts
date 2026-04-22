@@ -1013,6 +1013,26 @@ export class LendingController {
     );
   }
 
+  // ===== LENDER ACTIVE LOANS ENDPOINT =====
+
+  @Get('lending/lenders/:lenderId/active-loans')
+  @ApiOperation({
+    summary: 'Get active loans for a lender',
+    description: 'Returns all approved and disbursed loans for a lender with pagination.',
+  })
+  @ApiParam({ name: 'lenderId', type: 'string', format: 'uuid' })
+  @ApiQuery({ name: 'page',  required: false, type: 'number', schema: { default: 1 } })
+  @ApiQuery({ name: 'limit', required: false, type: 'number', schema: { default: 10 } })
+  @ApiResponse({ status: 200, description: 'Active loans retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getLenderActiveLoans(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Query('page')  page  = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return await this.lendingService.getLenderActiveLoans(lenderId, Number(page), Number(limit));
+  }
+
   // ===== LENDER REPAYMENTS ENDPOINT =====
 
   @Get('lending/lenders/:lenderId/repayments')

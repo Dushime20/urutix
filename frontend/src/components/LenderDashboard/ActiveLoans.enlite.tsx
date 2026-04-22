@@ -233,7 +233,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
                         title="Portfolio Exposure"
-                        value={`RWF ${(analytics.totalOutstanding / 1000000).toFixed(1)}M`}
+                        value={`RWF ${((analytics.totalOutstanding || 0) / 1000000).toFixed(1)}M`}
                         trend="+2.4% vs last month"
                         trendDirection="up"
                         icon={<DollarSign size={24} />}
@@ -241,7 +241,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     />
                     <StatCard
                         title="Active Asset Count"
-                        value={analytics.totalActiveLoans.toString()}
+                        value={(analytics.totalActiveLoans || 0).toString()}
                         trend="Stable deployment"
                         trendDirection="neutral"
                         icon={<FileText size={24} />}
@@ -249,7 +249,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     />
                     <StatCard
                         title="Weighted Yield"
-                        value={`${analytics.portfolioYield.toFixed(1)}%`}
+                        value={`${(analytics.portfolioYield || 0).toFixed(1)}%`}
                         trend="+0.5% optimization"
                         trendDirection="up"
                         icon={<TrendingUp size={24} />}
@@ -257,7 +257,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     />
                     <StatCard
                         title="Collection Index"
-                        value={`${analytics.onTimePaymentRate.toFixed(1)}%`}
+                        value={`${(analytics.onTimePaymentRate || 0).toFixed(1)}%`}
                         trend="-1.2% alert"
                         trendDirection="down"
                         icon={<CheckCircle2 size={24} />}
