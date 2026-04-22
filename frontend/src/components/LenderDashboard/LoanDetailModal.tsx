@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, DollarSign, Calendar, MapPin, Package, TrendingUp, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, User, DollarSign, Calendar, MapPin, Package, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface LoanDetailModalProps {

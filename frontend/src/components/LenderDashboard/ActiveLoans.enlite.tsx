@@ -5,7 +5,6 @@ import {
     CheckCircle2,
     DollarSign,
     ExternalLink,
-    History,
     Mail,
     ShieldAlert,
     Download,
@@ -17,38 +16,35 @@ import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 
 interface Borrower {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    company?: string;
-    credit_score: number;
-}
-
-interface CargoDetails {
-    type: string;
-    pickup_location: string;
-    delivery_location: string;
+    id: string | null;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    company: string | null;
+    credit_score: number | null;
+    verification_status: string | null;
 }
 
 interface ActiveLoan {
     id: string;
+    loan_request_id: string;
     borrower: Borrower;
-    cargo: CargoDetails;
     principal_amount: number;
-    interest_rate: number;
-    loan_term_months: number;
-    outstanding_balance: number;
-    amount_repaid: number;
+    approved_amount: number | null;
+    interest_rate: number | null;
+    loan_term_months: number | null;
     total_amount: number;
-    next_payment_date: string;
-    next_payment_amount: number;
-    status: 'active' | 'overdue' | 'defaulted' | 'early_repayment';
-    performance_rating: 'excellent' | 'good' | 'fair' | 'poor';
-    risk_score: number;
-    payments_made: number;
-    payments_remaining: number;
-    disbursement_date: string;
+    amount_repaid: number;
+    outstanding_balance: number;
+    total_principal_paid: number;
+    total_interest_paid: number;
+    created_at: string | null;
+    due_date: string | null;
+    status: string;
+    purpose: string | null;
+    repayment_count: number;
+    lender_name: string | null;
+    _rawData?: any;
 }
 
 interface PortfolioAnalytics {
@@ -69,9 +65,6 @@ interface ActiveLoansEnliteProps {
     sortKey: string;
     sortDirection: 'asc' | 'desc';
     onViewDetails: (loan: ActiveLoan) => void;
-    onViewHistory: (loan: ActiveLoan) => void;
-    onContactBorrower: (loan: ActiveLoan) => void;
-    onExport: () => void;
 }
 
 const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
@@ -81,51 +74,111 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
     onSort,
     sortKey,
     sortDirection,
-    onViewDetails,
-    onViewHistory,
-    onContactBorrower,
-    onExport
+    onViewDetails
 }) => {
     const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
 
+    const handleExport = () => {
+        if (loans.length === 0) return;
+
+        const headers = [
+            'Loan ID', 'Borrower', 'Company', 'Email', 'Phone',
+            'Principal', 'Approved Amount', 'Outstanding', 'Amount Repaid',
+            'Interest Paid', 'Interest Rate', 'Status', 'Due Date',
+            'Purpose', 'Repayment Count', 'Created At',
+        ];
+
+        const rows = loans.map(l => [
+            l.id,
+            l.borrower.name ?? '',
+            l.borrower.company ?? '',
+            l.borrower.email ?? '',
+            l.borrower.phone ?? '',
+            l.principal_amount,
+            l.approved_amount ?? '',
+            l.outstanding_balance,
+            l.amount_repaid,
+            l.total_interest_paid,
+            l.interest_rate ?? '',
+            l.status,
+            l.due_date ?? '',
+            l.purpose ?? '',
+            l.repayment_count,
+            l.created_at ?? '',
+        ]);
+
+        const csv = [headers, ...rows]
+            .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `active-loans-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleContactBorrower = (loan: ActiveLoan) => {
+        if (loan.borrower.email) {
+            window.location.href = `mailto:${loan.borrower.email}?subject=Regarding Loan ${loan.id}`;
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'active': return 'emerald';
+            case 'approved': return 'emerald';
+            case 'disbursed': return 'blue';
             case 'overdue': return 'rose';
-            case 'defaulted': return 'slate';
-            case 'early_repayment': return 'indigo';
+            case 'repaid': return 'slate';
             default: return 'slate';
         }
     };
 
-    const getPerformanceColor = (rating: string) => {
-        switch (rating) {
-            case 'excellent': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-            case 'good': return 'text-[#345E85] bg-blue-50 border-blue-100';
-            case 'fair': return 'text-amber-600 bg-amber-50 border-amber-100';
-            case 'poor': return 'text-rose-600 bg-rose-50 border-rose-100';
-            default: return 'text-slate-600 bg-slate-50 border-slate-100';
-        }
+    const getPerformanceColor = (repaymentCount: number) => {
+        // Derive performance from repayment count
+        if (repaymentCount >= 5) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+        if (repaymentCount >= 3) return 'text-[#345E85] bg-blue-50 border-blue-100';
+        if (repaymentCount >= 1) return 'text-amber-600 bg-amber-50 border-amber-100';
+        return 'text-slate-600 bg-slate-50 border-slate-100';
+    };
+
+    const getPerformanceLabel = (repaymentCount: number) => {
+        if (repaymentCount >= 5) return 'excellent';
+        if (repaymentCount >= 3) return 'good';
+        if (repaymentCount >= 1) return 'fair';
+        return 'new';
     };
 
     const columns = [
         {
             key: 'borrower',
             label: 'BORROWER IDENTITY',
-            render: (_: any, loan: ActiveLoan) => (
-                <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs ${loan.performance_rating === 'excellent' ? 'bg-emerald-500' :
-                        loan.performance_rating === 'good' ? 'bg-[#345E85]' :
-                            loan.performance_rating === 'fair' ? 'bg-amber-500' : 'bg-rose-500'
+            render: (_: any, loan: ActiveLoan) => {
+                const performanceLabel = getPerformanceLabel(loan.repayment_count);
+                return (
+                    <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs ${
+                            performanceLabel === 'excellent' ? 'bg-emerald-500' :
+                            performanceLabel === 'good' ? 'bg-[#345E85]' :
+                            performanceLabel === 'fair' ? 'bg-amber-500' : 'bg-slate-500'
                         }`}>
-                        {loan.borrower.name.charAt(0)}
+                            {(loan.borrower.name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-black text-slate-900 uppercase tracking-tight text-[11px]">
+                                {loan.borrower.name || 'Unknown'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                {loan.borrower.company || 'Private Borrower'}
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="font-black text-slate-900 uppercase tracking-tight text-[11px]">{loan.borrower.name}</span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{loan.borrower.company || 'Private Borrower'}</span>
-                    </div>
-                </div>
-            ),
+                );
+            },
             sortable: true
         },
         {
@@ -134,22 +187,32 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
             render: (_: any, loan: ActiveLoan) => (
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900 text-[11px]">RWF {(loan.principal_amount / 1000000).toFixed(1)}M</span>
-                        <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-black">{loan.interest_rate}%</span>
+                        <span className="font-black text-slate-900 text-[11px]">
+                            RWF {(loan.principal_amount / 1000000).toFixed(1)}M
+                        </span>
+                        {loan.interest_rate && (
+                            <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-black">
+                                {loan.interest_rate}%
+                            </span>
+                        )}
                     </div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{loan.loan_term_months} Months Term</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        {loan.loan_term_months ? `${loan.loan_term_months} Months Term` : 'Term N/A'}
+                    </span>
                 </div>
             )
         },
         {
-            key: 'outstanding',
+            key: 'outstanding_balance',
             label: 'EXPOSURE INDEX',
             render: (_: any, loan: ActiveLoan) => {
-                const progress = (loan.amount_repaid / loan.total_amount) * 100;
+                const progress = loan.total_amount > 0 ? (loan.amount_repaid / loan.total_amount) * 100 : 0;
                 return (
                     <div className="space-y-2 min-w-[120px]">
                         <div className="flex justify-between items-center mb-1">
-                            <span className="font-black text-slate-900 text-[11px]">RWF {(loan.outstanding_balance / 1000000).toFixed(1)}M</span>
+                            <span className="font-black text-slate-900 text-[11px]">
+                                RWF {(loan.outstanding_balance / 1000000).toFixed(1)}M
+                            </span>
                             <span className="text-[10px] font-black text-[#345E85]">{progress.toFixed(0)}%</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -164,30 +227,40 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
             sortable: true
         },
         {
-            key: 'next_payment',
+            key: 'due_date',
             label: 'NEXT SETTLEMENT',
             render: (_: any, loan: ActiveLoan) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px]">RWF {(loan.next_payment_amount / 1000).toFixed(0)}K</span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(loan.next_payment_date).toLocaleDateString()}</span>
+                    <span className="font-black text-slate-900 text-[11px]">
+                        {loan.due_date ? new Date(loan.due_date).toLocaleDateString() : 'N/A'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        {loan.repayment_count} payments made
+                    </span>
                 </div>
             ),
             sortable: true
         },
         {
             key: 'performance',
-            label: 'CREDIT RATING',
-            render: (_: any, loan: ActiveLoan) => (
-                <div className="flex flex-col gap-1.5">
-                    <span className={`w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getPerformanceColor(loan.performance_rating)}`}>
-                        {loan.performance_rating}
-                    </span>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        <ShieldAlert size={10} className={loan.risk_score > 80 ? 'text-emerald-500' : loan.risk_score > 60 ? 'text-amber-500' : 'text-rose-500'} />
-                        Score: {loan.risk_score}
+            label: 'STATUS & RATING',
+            render: (_: any, loan: ActiveLoan) => {
+                const performanceLabel = getPerformanceLabel(loan.repayment_count);
+                return (
+                    <div className="flex flex-col gap-1.5">
+                        <span className={`w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getPerformanceColor(loan.repayment_count)}`}>
+                            {performanceLabel}
+                        </span>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            <ShieldAlert size={10} className={
+                                loan.status === 'overdue' ? 'text-rose-500' :
+                                loan.status === 'approved' ? 'text-emerald-500' : 'text-blue-500'
+                            } />
+                            {loan.status}
+                        </div>
                     </div>
-                </div>
-            )
+                );
+            }
         },
         {
             key: 'actions',
@@ -197,21 +270,15 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     <button
                         onClick={() => onViewDetails(loan)}
                         className="p-2 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-lg transition-all"
-                        title="Overview"
+                        title="View Details"
                     >
                         <ExternalLink size={14} />
                     </button>
                     <button
-                        onClick={() => onViewHistory(loan)}
-                        className="p-2 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-lg transition-all"
-                        title="History"
-                    >
-                        <History size={14} />
-                    </button>
-                    <button
-                        onClick={() => onContactBorrower(loan)}
+                        onClick={() => handleContactBorrower(loan)}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="Contact"
+                        title="Contact Borrower"
+                        disabled={!loan.borrower.email}
                     >
                         <Mail size={14} />
                     </button>
@@ -286,7 +353,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             </button>
                         </div>
                         <button
-                            onClick={onExport}
+                            onClick={handleExport}
                             className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                         >
                             <Download size={14} /> Export Portfolio

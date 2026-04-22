@@ -4,65 +4,41 @@ import { lendingApi } from '../services/lending/lendingApi';
 import {
   FaExclamationTriangle
 } from 'react-icons/fa';
-import { Search, LayoutGrid, List } from 'lucide-react';
+import { Search, LayoutGrid, List, RotateCcw } from 'lucide-react';
 import ActiveLoansEnlite from '../components/LenderDashboard/ActiveLoans.enlite';
+import LoanDetailModal from '../components/LenderDashboard/LoanDetailModal';
+import toast from 'react-hot-toast';
 
 interface Borrower {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company?: string;
-  credit_score: number;
-  verification_status: 'verified' | 'pending' | 'unverified';
-}
-
-interface CargoDetails {
-  id: string;
-  type: string;
-  weight: number;
-  value: number;
-  pickup_location: string;
-  delivery_location: string;
-  distance: number;
-  estimated_duration: number;
-}
-
-interface PaymentSchedule {
-  payment_number: number;
-  due_date: string;
-  amount: number;
-  status: 'paid' | 'pending' | 'overdue';
-  paid_date?: string;
+  id: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  credit_score: number | null;
+  verification_status: string | null;
 }
 
 interface ActiveLoan {
   id: string;
   loan_request_id: string;
   borrower: Borrower;
-  cargo: CargoDetails;
   principal_amount: number;
-  interest_rate: number;
-  loan_term_months: number;
-  monthly_payment: number;
+  approved_amount: number | null;
+  interest_rate: number | null;
+  loan_term_months: number | null;
   total_amount: number;
-  amount_disbursed: number;
   amount_repaid: number;
   outstanding_balance: number;
-  disbursement_date: string;
-  maturity_date: string;
-  next_payment_date: string;
-  next_payment_amount: number;
-  status: 'active' | 'overdue' | 'defaulted' | 'early_repayment';
-  risk_score: number;
-  collateral_type?: string;
-  collateral_value?: number;
-  performance_rating: 'excellent' | 'good' | 'fair' | 'poor';
-  days_since_disbursement: number;
-  payments_made: number;
-  payments_remaining: number;
-  payment_schedule: PaymentSchedule[];
-  created_at: string;
+  total_principal_paid: number;
+  total_interest_paid: number;
+  created_at: string | null;
+  due_date: string | null;
+  status: string;
+  purpose: string | null;
+  repayment_count: number;
+  lender_name: string | null;
+  _rawData?: any;
 }
 
 interface LoanPortfolioAnalytics {
@@ -81,22 +57,19 @@ interface LoanPortfolioAnalytics {
 const ActiveLoansPage: React.FC = () => {
   const { user } = useAuth();
   const [loans, setLoans] = useState<ActiveLoan[]>([]);
-  const [analytics, setAnalytics] = useState<LoanPortfolioAnalytics | null>(null);
+  const [analytics, setAnalytics] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'disbursement_date' | 'outstanding_balance' | 'next_payment_date' | 'borrower_name'>('disbursement_date');
+  const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'overdue' | 'defaulted' | 'early_repayment'>('all');
-  const [performanceFilter, setPerformanceFilter] = useState<'all' | 'excellent' | 'good' | 'fair' | 'poor'>('all');
-  const [groupByStatus, setGroupByStatus] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [detailLoan, setDetailLoan] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== 'LENDER') return;
 
     const fetchActiveLoans = async () => {
       setLoading(true);
-      setError(null);
       try {
         const [loansData, analyticsData] = await Promise.all([
           lendingApi.getActiveLoans(user.id),
@@ -106,57 +79,76 @@ const ActiveLoansPage: React.FC = () => {
         // API returns { data: [], total, page, limit, totalPages }
         const loans: any[] = loansData?.data ?? [];
 
-        const transformedLoans: ActiveLoan[] = loans.map((loan: any) => ({
-          id: loan.id,
-          loan_request_id: loan.loanRequestId || loan.id,
-          borrower: {
-            id: loan.borrower?.id || loan.borrowerId,
-            name: loan.borrower?.name || `${loan.borrower?.firstName} ${loan.borrower?.lastName}`,
-            email: loan.borrower?.email || '',
-            phone: loan.borrower?.phone || '',
-            company: loan.borrower?.companyName || '',
-            credit_score: loan.borrower?.creditScore || 0,
-            verification_status: loan.borrower?.verificationStatus || 'pending'
-          },
-          cargo: {
-            id: loan.cargo?.id || loan.cargoId,
-            type: loan.cargo?.type || 'General Cargo',
-            weight: loan.cargo?.weight || 0,
-            value: loan.cargo?.value || 0,
-            pickup_location: loan.cargo?.pickupLocation || '',
-            delivery_location: loan.cargo?.deliveryLocation || '',
-            distance: loan.cargo?.distance || 0,
-            estimated_duration: loan.cargo?.estimatedDuration || 0
-          },
-          principal_amount: loan.principalAmount || 0,
-          interest_rate: loan.interestRate || 0,
-          loan_term_months: loan.loanTermMonths || 0,
-          monthly_payment: loan.monthlyPayment || 0,
-          total_amount: loan.totalAmount || 0,
-          amount_disbursed: loan.amountDisbursed || 0,
-          amount_repaid: loan.amountRepaid || 0,
-          outstanding_balance: loan.outstandingBalance || 0,
-          disbursement_date: loan.disbursementDate || loan.createdAt,
-          maturity_date: loan.maturityDate || '',
-          next_payment_date: loan.nextPaymentDate || '',
-          next_payment_amount: loan.nextPaymentAmount || 0,
-          status: loan.status || 'active',
-          risk_score: loan.riskScore || 50,
-          collateral_type: loan.collateralType,
-          collateral_value: loan.collateralValue,
-          performance_rating: loan.performanceRating || 'good',
-          days_since_disbursement: loan.daysSinceDisbursement || 0,
-          payments_made: loan.paymentsMade || 0,
-          payments_remaining: loan.paymentsRemaining || 0,
-          payment_schedule: loan.paymentSchedule || [],
-          created_at: loan.createdAt
-        }));
+        const transformedLoans: ActiveLoan[] = loans.map((loan: any) => {
+          // Borrower — use actual API field names
+          const borrower = loan.borrower ?? null;
+          const borrowerName = borrower?.contact_name ?? borrower?.company_name ?? null;
+
+          // Repayment totals from embedded repayments array
+          const repayments: any[] = loan.repayments ?? [];
+          const totalPrincipalPaid = repayments.reduce((s: number, r: any) => s + (Number(r.principal_paid) || 0), 0);
+          const totalInterestPaid  = repayments.reduce((s: number, r: any) => s + (Number(r.interest_paid) || 0), 0);
+          const totalRepaid        = repayments.reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0);
+
+          const approvedAmount  = loan.approved_amount  != null ? Number(loan.approved_amount)  : null;
+          const requestedAmount = loan.requested_amount != null ? Number(loan.requested_amount) : null;
+          const principal       = approvedAmount ?? requestedAmount ?? 0;
+          const outstanding     = Math.max(0, principal - totalPrincipalPaid);
+
+          // Determine overdue status from due_date
+          const dueDate = loan.due_date ?? null;
+          const isOverdue = dueDate && new Date(dueDate) < new Date() && loan.status !== 'repaid';
+          const derivedStatus = isOverdue ? 'overdue' : loan.status;
+
+          return {
+            id:                loan.id,
+            loan_request_id:   loan.id,
+            borrower: {
+              id:                  borrower?.id ?? null,
+              name:                borrowerName,
+              email:               borrower?.email ?? null,
+              phone:               borrower?.phone ?? null,
+              company:             borrower?.company_name ?? null,
+              credit_score:        borrower?.credit_score ?? null,
+              verification_status: borrower?.status ?? null,
+            },
+            // Loan financials — from real API fields
+            principal_amount:      principal,
+            approved_amount:       approvedAmount,
+            interest_rate:         loan.interest_rate ?? loan.interestRate ?? null,
+            loan_term_months:      loan.loan_term_months ?? loan.loanTermMonths ?? null,
+            total_amount:          principal,
+            amount_repaid:         totalRepaid,
+            outstanding_balance:   outstanding,
+            total_principal_paid:  totalPrincipalPaid,
+            total_interest_paid:   totalInterestPaid,
+            // Dates
+            created_at:            loan.created_at ?? null,
+            due_date:              dueDate,
+            // Status
+            status:                derivedStatus,
+            // Purpose from metadata
+            purpose:               loan.metadata?.purpose ?? null,
+            // Repayment count
+            repayment_count:       repayments.length,
+            // Lender
+            lender_name:           loan.lender?.name ?? null,
+            // Raw data for detail modal
+            _rawData:              loan,
+          };
+        });
 
         setLoans(transformedLoans);
-        setAnalytics(analyticsData);
+        // Analytics from getLenderAnalytics — real data
+        setAnalytics(analyticsData ?? null);
+
+        if (transformedLoans.length === 0) {
+          toast('No active loans found.', { icon: 'ℹ️' });
+        }
       } catch (err: any) {
-        console.error('Error fetching active loans:', err);
-        setError(err.message || 'Failed to load active loans');
+        const msg = err?.response?.data?.message || err?.message || 'Failed to load active loans';
+        toast.error(msg);
+        setLoans([]);
       } finally {
         setLoading(false);
       }
@@ -165,149 +157,74 @@ const ActiveLoansPage: React.FC = () => {
     fetchActiveLoans();
   }, [user]);
 
-  const toggleSort = (field: any) => {
-    if (sortBy === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortDir('asc');
-    }
-  };
-
-  const handleExport = () => {
-    const csvData = filtered.map(loan => ({
-      'Loan ID': loan.id,
-      'Borrower Name': loan.borrower.name,
-      'Principal Amount': loan.principal_amount,
-      'Outstanding Balance': loan.outstanding_balance,
-      'Status': loan.status,
-      'Next Payment Date': new Date(loan.next_payment_date).toLocaleDateString(),
-    }));
-
-    const csv = [
-      Object.keys(csvData[0]).join(','),
-      ...csvData.map(row => Object.values(row).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `active-loans-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const toggleSort = (field: string) => {
+    if (sortBy === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortBy(field); setSortDir('asc'); }
   };
 
   const filtered = loans.filter(loan => {
+    const q = search.toLowerCase();
     const matchesSearch = !search || [
       loan.borrower.name,
       loan.borrower.company,
-      loan.id
-    ].some(field => field?.toLowerCase().includes(search.toLowerCase()));
-
+      loan.id,
+      loan.purpose,
+    ].some(field => field?.toLowerCase().includes(q));
     const matchesStatus = statusFilter === 'all' || loan.status === statusFilter;
-    const matchesPerformance = performanceFilter === 'all' || loan.performance_rating === performanceFilter;
-
-    return matchesSearch && matchesStatus && matchesPerformance;
+    return matchesSearch && matchesStatus;
   });
 
   const sorted = [...filtered].sort((a, b) => {
     const dir = sortDir === 'asc' ? 1 : -1;
-    if (sortBy === 'borrower_name') return a.borrower.name.localeCompare(b.borrower.name) * dir;
     if (sortBy === 'outstanding_balance') return (a.outstanding_balance - b.outstanding_balance) * dir;
-    if (sortBy === 'disbursement_date') return (new Date(a.disbursement_date).getTime() - new Date(b.disbursement_date).getTime()) * dir;
-    if (sortBy === 'next_payment_date') return (new Date(a.next_payment_date).getTime() - new Date(b.next_payment_date).getTime()) * dir;
+    if (sortBy === 'created_at') return (new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()) * dir;
     return 0;
   });
-
-  if (!user || user.role !== 'LENDER') {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
-          <FaExclamationTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2 uppercase tracking-tight">Access Restricted</h2>
-          <p className="text-gray-500 text-sm">Please authenticate as a Lender to access this console.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
       <div className="max-w-[1536px] mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Active Loans Portfolio</h1>
-            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">Monitor and manage your active loan portfolio performance</p>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Active Loan Book</h1>
+            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
+              Approved and disbursed loans — real data only
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-              <button
-                onClick={() => setGroupByStatus(false)}
-                className={`p-1.5 rounded-lg transition-all ${!groupByStatus ? 'bg-slate-100 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Table View"
-              >
-                <List size={16} />
-              </button>
-              <button
-                onClick={() => setGroupByStatus(true)}
-                className={`p-1.5 rounded-lg transition-all ${groupByStatus ? 'bg-slate-100 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                title="Grouped View"
-              >
-                <LayoutGrid size={16} />
-              </button>
-            </div>
             <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all w-fit"
+              onClick={() => { setLoading(true); lendingApi.getActiveLoans(user!.id).then(r => { const d = r?.data ?? []; setLoans(d.map((loan: any) => { const borrower = loan.borrower ?? null; const borrowerName = borrower?.contact_name ?? borrower?.company_name ?? null; const repayments: any[] = loan.repayments ?? []; const totalPrincipalPaid = repayments.reduce((s: number, r: any) => s + (Number(r.principal_paid) || 0), 0); const totalInterestPaid = repayments.reduce((s: number, r: any) => s + (Number(r.interest_paid) || 0), 0); const totalRepaid = repayments.reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0); const approvedAmount = loan.approved_amount != null ? Number(loan.approved_amount) : null; const requestedAmount = loan.requested_amount != null ? Number(loan.requested_amount) : null; const principal = approvedAmount ?? requestedAmount ?? 0; const outstanding = Math.max(0, principal - totalPrincipalPaid); const dueDate = loan.due_date ?? null; const isOverdue = dueDate && new Date(dueDate) < new Date() && loan.status !== 'repaid'; return { id: loan.id, loan_request_id: loan.id, borrower: { id: borrower?.id ?? null, name: borrowerName, email: borrower?.email ?? null, phone: borrower?.phone ?? null, company: borrower?.company_name ?? null, credit_score: borrower?.credit_score ?? null, verification_status: borrower?.status ?? null }, principal_amount: principal, approved_amount: approvedAmount, interest_rate: loan.interest_rate ?? null, loan_term_months: loan.loan_term_months ?? null, total_amount: principal, amount_repaid: totalRepaid, outstanding_balance: outstanding, total_principal_paid: totalPrincipalPaid, total_interest_paid: totalInterestPaid, created_at: loan.created_at ?? null, due_date: dueDate, status: isOverdue ? 'overdue' : loan.status, purpose: loan.metadata?.purpose ?? null, repayment_count: repayments.length, lender_name: loan.lender?.name ?? null, _rawData: loan }; })); }).catch(() => toast.error('Failed to refresh')).finally(() => setLoading(false)); }}
+              disabled={loading}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40"
             >
-              <Search size={14} className="rotate-90" /> Export Portfolio
+              <RotateCcw size={14} className={loading ? 'animate-spin' : ''} />
+              {loading ? 'Loading...' : 'Refresh'}
             </button>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-              <div className="relative group min-w-[240px]">
-                <input
-                  type="text"
-                  placeholder="SEARCH PORTFOLIO..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full bg-[#fafafa] transition-all shadow-sm"
-                />
-                <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-indigo-500 transition-colors w-3.5 h-3.5" />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
-                >
-                  <option value="all">ALL STATUS</option>
-                  <option value="active">ACTIVE</option>
-                  <option value="overdue">OVERDUE</option>
-                  <option value="defaulted">DEFAULTED</option>
-                  <option value="early_repayment">EARLY REPAYMENT</option>
-                </select>
-
-                <select
-                  value={performanceFilter}
-                  onChange={(e) => setPerformanceFilter(e.target.value as any)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
-                >
-                  <option value="all">ALL PERFORMANCE</option>
-                  <option value="excellent">EXCELLENT</option>
-                  <option value="good">GOOD</option>
-                  <option value="fair">FAIR</option>
-                  <option value="poor">POOR</option>
-                </select>
-              </div>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="SEARCH LOANS..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#345E85] focus:border-transparent w-full bg-slate-50 transition-all"
+            />
           </div>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white cursor-pointer"
+          >
+            <option value="all">ALL STATUS</option>
+            <option value="approved">APPROVED</option>
+            <option value="disbursed">DISBURSED</option>
+            <option value="overdue">OVERDUE</option>
+          </select>
         </div>
 
         <ActiveLoansEnlite
@@ -317,11 +234,15 @@ const ActiveLoansPage: React.FC = () => {
           onSort={toggleSort}
           sortKey={sortBy}
           sortDirection={sortDir}
-          onViewDetails={(loan) => console.log('View details', loan)}
-          onViewHistory={(loan) => console.log('View history', loan)}
-          onContactBorrower={(loan) => console.log('Contact borrower', loan)}
-          onExport={handleExport}
+          onViewDetails={(loan) => setDetailLoan(loan._rawData)}
         />
+
+        {detailLoan && (
+          <LoanDetailModal
+            loan={detailLoan}
+            onClose={() => setDetailLoan(null)}
+          />
+        )}
       </div>
     </div>
   );

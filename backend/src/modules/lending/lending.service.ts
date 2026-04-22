@@ -2098,6 +2098,7 @@ export class LendingService {
     const queryBuilder = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.lender', 'lender')
+      .leftJoinAndSelect('loan.borrower', 'borrower')
       .leftJoinAndSelect('loan.disbursements', 'disbursements')
       .leftJoinAndSelect('loan.repayments', 'repayments')
       .where('loan.lender_id = :lenderId', { lenderId })
@@ -2761,7 +2762,7 @@ export class LendingService {
       status,
       priority,
       search,
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'desc',
     } = query;
 
@@ -2798,9 +2799,19 @@ export class LendingService {
       );
     }
 
+    // Map camelCase sortBy to actual database columns
+    const sortByMap: Record<string, string> = {
+      'amount': 'disbursement.amount',
+      'requestedDate': 'disbursement.disbursement_date',
+      'borrowerName': 'borrower.contact_name',
+      'createdAt': 'disbursement.created_at',
+    };
+
+    const orderByColumn = sortByMap[sortBy] || 'disbursement.created_at';
+
     queryBuilder
       .orderBy(
-        `disbursement.${sortBy}`,
+        orderByColumn,
         sortOrder.toUpperCase() as 'ASC' | 'DESC',
       )
       .skip((page - 1) * limit)
