@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, AlertTriangle, CheckCircle, Droplets, Fuel, X, Search, User, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import QuickActions from '../Widgets/QuickActions';
 
@@ -103,11 +103,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
 
                         {/* Desktop Navigation */}
                         <nav className="hidden lg:flex items-center gap-10">
-                            <a className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-teal-500" href="/dashboard">Dashboard</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/cargos">Shipments</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/financing">Financing</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Wallet</a>
-                            <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="#">Reports</a>
+                            <Link className="text-white text-sm font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-0.5 after:bg-teal-500" to="/dashboard">Dashboard</Link>
+                            <Link className="text-white/60 hover:text-white text-sm font-semibold transition-all" to="/dashboard/cargos">Shipments</Link>
+                            <Link className="text-white/60 hover:text-white text-sm font-semibold transition-all" to="/dashboard/financing">Financing</Link>
+                            <Link className="text-white/60 hover:text-white text-sm font-semibold transition-all" to="#">Wallet</Link>
+                            <Link className="text-white/60 hover:text-white text-sm font-semibold transition-all" to="#">Reports</Link>
                         </nav>
 
                         {/* Search Bar */}
@@ -163,26 +163,22 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
                                             </div>
                                             <div className="text-xs text-gray-400 truncate">{user?.email}</div>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                setShowUserMenu(false);
-                                                navigate('/dashboard/settings');
-                                            }}
+                                        <Link
+                                            to="/dashboard/settings"
+                                            onClick={() => setShowUserMenu(false)}
                                             className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2 mt-1"
                                         >
                                             <Settings size={16} />
                                             Profile Settings
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowUserMenu(false);
-                                                navigate('/dashboard/settings');
-                                            }}
+                                        </Link>
+                                        <Link
+                                            to="/dashboard/settings"
+                                            onClick={() => setShowUserMenu(false)}
                                             className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
                                         >
                                             <User size={16} />
                                             Account
-                                        </button>
+                                        </Link>
                                         <div className="border-t border-white/10 my-1"></div>
                                         <button
                                             onClick={handleLogout}
@@ -202,11 +198,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
                 {isMobileMenuOpen && (
                     <div className="lg:hidden absolute top-[120px] left-0 right-0 bg-[#0f172a] border-b border-white/10 p-4 z-50 shadow-xl">
                         <nav className="flex flex-col space-y-3 text-sm font-semibold text-gray-400">
-                            <a href="/dashboard" className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</a>
-                            <a href="/dashboard/cargos" className="hover:text-white px-3 py-2">Shipments</a>
-                            <a href="/dashboard/financing" className="hover:text-white px-3 py-2">Financing</a>
-                            <a href="#" className="hover:text-white px-3 py-2">Wallet</a>
-                            <a href="#" className="hover:text-white px-3 py-2">Reports</a>
+                            <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-white px-3 py-2 bg-white/5 rounded-lg">Dashboard</Link>
+                            <Link to="/dashboard/cargos" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white px-3 py-2">Shipments</Link>
+                            <Link to="/dashboard/financing" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white px-3 py-2">Financing</Link>
+                            <Link to="#" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white px-3 py-2">Wallet</Link>
+                            <Link to="#" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white px-3 py-2">Reports</Link>
                         </nav>
                     </div>
                 )}

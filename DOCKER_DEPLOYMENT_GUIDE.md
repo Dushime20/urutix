@@ -305,14 +305,23 @@ sudo apt-get install git -y
 
 ```bash
 # Navigate to your desired directory
-cd /home/$USER
+# Connect to server
+ssh root@38.242.224.199
 
-# Clone the repository (replace with your actual repository URL)
-git clone https://github.com/your-username/urutix-smart-logistics.git
+# Navigate to root home directory
+cd /root
 
-# Navigate into the project directory (ROOT DIRECTORY - STAY HERE!)
-cd urutix-smart-logistics
+# Clone repository (first time only)
+git clone https://github.com/Dushime20/urutix.git urutix-smart-logistics
 
+# Enter project directory
+cd /root/urutix-smart-logistics
+
+# Checkout correct branch
+git checkout merge-superdashboard-into-dev
+
+# Pull latest changes
+git pull origin merge-superdashboard-into-dev
 # ⚠️ IMPORTANT: All commands below are run from this root directory
 # DO NOT cd into backend/ or frontend/ folders
 # Docker Compose handles everything from the root
@@ -377,12 +386,12 @@ BACKEND_PORT=3005
 NODE_ENV=production
 
 # Frontend Configuration
-FRONTEND_PORT=80
-VITE_API_BASE_URL=http://YOUR_SERVER_IP:3005/api
-VITE_WEBSOCKET_URL=ws://YOUR_SERVER_IP:3005
+FRONTEND_PORT=5173
+VITE_API_BASE_URL=http://38.242.224.199:3005/api
+VITE_WEBSOCKET_URL=ws://38.242.224.199:3005
 
 # CORS Configuration (comma-separated, no spaces)
-ALLOWED_ORIGINS=http://YOUR_SERVER_IP,http://YOUR_DOMAIN.com,https://YOUR_DOMAIN.com
+ALLOWED_ORIGINS=http://38.242.224.199:5173,http://38.242.224.199,http://localhost:5173
 
 # SMTP Configuration
 SMTP_HOST=smtp.gmail.com
@@ -394,12 +403,12 @@ SMTP_SECURE=true
 # Mobile Money API (if applicable)
 MOBILE_MONEY_API_URL=https://api.payment.ishema.rw
 MOBILE_MONEY_API_KEY=your_api_key_here
-MOBILE_MONEY_CALLBACK_URL=http://YOUR_SERVER_IP:3005/api/payments/webhooks/mobile-money
+MOBILE_MONEY_CALLBACK_URL=http://38.242.224.199:3005/api/payments/webhooks/mobile-money
 MOBILE_MONEY_CURRENCY=RWF
 MOBILE_MONEY_ACCOUNT_PHONE=250788309463
 
 # Frontend URL
-FRONTEND_URL=http://YOUR_SERVER_IP
+FRONTEND_URL=http://38.242.224.199:5173
 ```
 
 **Generate Secure Secrets:**
@@ -551,7 +560,7 @@ curl http://localhost:3005/api/health
 # {"status":"ok","timestamp":"..."}
 
 # Check frontend health
-curl http://localhost:80/health
+curl http://localhost:5173/health
 
 # Expected output:
 # healthy
@@ -645,12 +654,12 @@ curl http://localhost:3005/api/users
 
 ```bash
 # Test frontend health
-curl http://localhost:80/health
+curl http://localhost:5173/health
 
 # Expected: healthy
 
 # Test frontend loads (should return HTML)
-curl http://localhost:80
+curl http://localhost:5173
 
 # Should return HTML with <div id="root">
 ```
@@ -661,21 +670,21 @@ Open your browser and navigate to:
 
 1. **Frontend Application:**
    ```
-   http://YOUR_SERVER_IP
+   http://38.242.224.199:5173
    ```
    - Should load the React application
    - Check browser console for errors (F12)
 
 2. **Backend API Documentation:**
    ```
-   http://YOUR_SERVER_IP:3005/api/docs
+   http://38.242.224.199:3005/api/docs
    ```
    - Should show Swagger API documentation
    - Test some endpoints
 
 3. **Backend Health Check:**
    ```
-   http://YOUR_SERVER_IP:3005/api/health
+   http://38.242.224.199:3005/api/health
    ```
    - Should return: `{"status":"ok",...}`
 
@@ -798,9 +807,9 @@ chmod +x scripts/health-check.sh
 
 Your application is now live and accessible at:
 
-- **Frontend**: `http://YOUR_SERVER_IP`
-- **Backend API**: `http://YOUR_SERVER_IP:3005/api`
-- **API Documentation**: `http://YOUR_SERVER_IP:3005/api/docs`
+- **Frontend**: `http://38.242.224.199:5173`
+- **Backend API**: `http://38.242.224.199:3005/api`
+- **API Documentation**: `http://38.242.224.199:3005/api/docs`
 
 ---
 
@@ -889,7 +898,7 @@ docker-compose -f docker-compose.production.yml exec postgres psql -U postgres -
 # Check VITE_API_BASE_URL in .env.production
 grep VITE_API_BASE_URL .env.production
 
-# Should be: http://YOUR_SERVER_IP:3005/api
+# Should be: http://38.242.224.199:3005/api
 
 # Check ALLOWED_ORIGINS in .env.production
 grep ALLOWED_ORIGINS .env.production
@@ -1009,8 +1018,8 @@ After deployment, verify:
 - [ ] Database is accessible: `docker-compose -f docker-compose.production.yml exec postgres pg_isready`
 - [ ] Redis is accessible: `docker-compose -f docker-compose.production.yml exec redis redis-cli ping`
 - [ ] Backend health check passes: `curl http://localhost:3005/api/health`
-- [ ] Frontend loads in browser: `http://YOUR_SERVER_IP`
-- [ ] API documentation accessible: `http://YOUR_SERVER_IP:3005/api/docs`
+- [ ] Frontend loads in browser: `http://38.242.224.199:5173`
+- [ ] API documentation accessible: `http://38.242.224.199:3005/api/docs`
 - [ ] Migrations completed: `docker-compose -f docker-compose.production.yml exec backend npm run migration:show`
 - [ ] Logs show no errors: `docker-compose -f docker-compose.production.yml logs`
 - [ ] Firewall configured: `sudo ufw status`
@@ -1255,7 +1264,7 @@ docker stats
 curl http://localhost:3005/api/health
 
 # Frontend health
-curl http://localhost:80/health
+curl http://localhost:5173/health
 
 # Database health
 docker-compose -f docker-compose.production.yml exec postgres \

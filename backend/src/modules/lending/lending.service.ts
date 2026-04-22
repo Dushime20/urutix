@@ -161,8 +161,9 @@ export class LendingService {
         });
 
         borrower = await this.borrowerRepository.save(borrower);
+
         this.logger.log(
-          `✅ Created Borrower record ${borrower.id} for user ${userId} (${user.email})`,
+          `✅ Created Borrower record ${borrower.id} for user ${userId} (${user.email}) — credit_score will be set after first credit check`,
         );
       }
 
@@ -538,7 +539,7 @@ export class LendingService {
     createdBy: string,
   ): Promise<LoanRequest> {
     this.logger.log(
-      `Creating loan request for tenant: ${createLoanDto.tenant_id}`,
+      `Creating loan request for tenant: ${createLoanDto.tenant_id}, amount: ${createLoanDto.requested_amount}`,
     );
 
     // Validate requested_split sums to requested_amount
@@ -565,7 +566,10 @@ export class LendingService {
     );
 
     if (createLoanDto.lender_id) {
+      this.logger.log(`Validating specified lender: ${createLoanDto.lender_id}`);
       await this.validateLenderAvailability(createLoanDto.lender_id);
+    } else {
+      this.logger.log(`No lender specified, will attempt automatic assignment`);
     }
 
     const idempotencyKey = this.generateIdempotencyKey(createLoanDto);
@@ -590,9 +594,13 @@ export class LendingService {
     });
 
     const savedLoan = await this.loanRequestRepository.save(loanRequest);
+    this.logger.log(`Loan request created with ID: ${savedLoan.id}`);
 
-    // Attempt to process with available lenders
-    await this.processLoanRequest(savedLoan.id);
+    // Attempt to process with available lenders if no lender was specified
+    if (!createLoanDto.lender_id) {
+      this.logger.log(`Triggering automatic lender assignment for loan ${savedLoan.id}`);
+      await this.processLoanRequest(savedLoan.id);
+    }
 
     return savedLoan;
   }
@@ -748,32 +756,43 @@ export class LendingService {
   }
 
   async processLoanRequest(loanId: string): Promise<void> {
+    this.logger.log(`processLoanRequest: Starting automatic lender assignment for loan ${loanId}`);
+    
     const loan = await this.loanRequestRepository.findOne({
       where: { id: loanId },
       relations: ['lender'],
     });
 
-    if (!loan || loan.status !== LoanRequestStatus.PENDING) {
+    if (!loan) {
+      this.logger.warn(`processLoanRequest: Loan ${loanId} not found`);
+      return;
+    }
+
+    if (loan.status !== LoanRequestStatus.PENDING) {
+      this.logger.log(`processLoanRequest: Loan ${loanId} status is ${loan.status}, skipping automatic assignment`);
       return;
     }
 
     // Find suitable lender
+    this.logger.log(`processLoanRequest: Finding suitable lender for loan ${loanId} (amount: ${loan.requested_amount})`);
     const lender = await this.findSuitableLender(loan);
     if (!lender) {
-      this.logger.warn(`No suitable lender found for loan ${loanId}`);
+      this.logger.warn(`processLoanRequest: No suitable lender found for loan ${loanId}`);
       return;
     }
 
     // Update loan with lender
+    this.logger.log(`processLoanRequest: Assigning lender ${lender.id} (${lender.name}) to loan ${loanId}`);
     loan.lender_id = lender.id;
     await this.loanRequestRepository.save(loan);
+    this.logger.log(`processLoanRequest: Successfully assigned lender to loan ${loanId}`);
 
     // Send loan request to lender
     try {
       await this.sendLoanRequestToLender(loan, lender);
     } catch (error) {
       this.logger.error(
-        `Failed to send loan request to lender: ${error.message}`,
+        `processLoanRequest: Failed to send loan request to lender: ${error.message}`,
       );
       // Could implement retry logic here
     }
@@ -785,6 +804,8 @@ export class LendingService {
       relations: ['policies'],
     });
 
+    this.logger.log(`findSuitableLender: Found ${lenders.length} active lenders to evaluate`);
+
     // Default limits used when a lender has no policy configured
     const DEFAULT_MAX_ADVANCE = 100_000;
     const DEFAULT_MAX_EXPOSURE = 1_000_000;
@@ -795,37 +816,72 @@ export class LendingService {
       const maxAdvance  = policy ? Number(policy.max_advance_per_trip) : DEFAULT_MAX_ADVANCE;
       const maxExposure = policy ? Number(policy.max_exposure)         : DEFAULT_MAX_EXPOSURE;
 
+      this.logger.log(
+        `findSuitableLender: Evaluating lender ${lender.id} (${lender.name}) - ` +
+        `maxAdvance: ${maxAdvance}, maxExposure: ${maxExposure}${policy ? '' : ' [defaults]'}`
+      );
+
       // Check if loan amount is within per-trip limit
-      if (loan.requested_amount > maxAdvance) continue;
+      if (loan.requested_amount > maxAdvance) {
+        this.logger.log(`findSuitableLender: Lender ${lender.name} rejected - loan amount ${loan.requested_amount} exceeds max advance ${maxAdvance}`);
+        continue;
+      }
 
       // Check current exposure
       const currentExposure = await this.getCurrentExposure(lender.id);
-      if (currentExposure + loan.requested_amount <= maxExposure) {
+      const newExposure = currentExposure + loan.requested_amount;
+      
+      this.logger.log(
+        `findSuitableLender: Lender ${lender.name} - current exposure: ${currentExposure}, ` +
+        `new exposure would be: ${newExposure}, max allowed: ${maxExposure}`
+      );
+
+      if (newExposure <= maxExposure) {
         this.logger.log(
-          `findSuitableLender: selected lender ${lender.id} (${lender.name}) for loan ${loan.id}` +
+          `findSuitableLender: ✓ Selected lender ${lender.id} (${lender.name}) for loan ${loan.id}` +
           (policy ? '' : ' [using default limits — no policy configured]'),
         );
         return lender;
+      } else {
+        this.logger.log(`findSuitableLender: Lender ${lender.name} rejected - new exposure ${newExposure} would exceed max ${maxExposure}`);
       }
     }
 
     this.logger.warn(
-      `findSuitableLender: no suitable lender found for loan ${loan.id} (amount: ${loan.requested_amount})`,
+      `findSuitableLender: ✗ No suitable lender found for loan ${loan.id} (amount: ${loan.requested_amount})`,
     );
     return null;
   }
 
   private async getCurrentExposure(lenderId: string): Promise<number> {
-    const result = await this.loanRequestRepository
+    // Calculate exposure from both pending (requested_amount) and approved/disbursed (approved_amount) loans
+    const pendingResult = await this.loanRequestRepository
       .createQueryBuilder('loan')
-      .select('SUM(loan.approved_amount)', 'total')
+      .select('COALESCE(SUM(loan.requested_amount), 0)', 'total')
+      .where('loan.lender_id = :lenderId', { lenderId })
+      .andWhere('loan.status = :status', {
+        status: LoanRequestStatus.PENDING,
+      })
+      .getRawOne();
+
+    const approvedResult = await this.loanRequestRepository
+      .createQueryBuilder('loan')
+      .select('COALESCE(SUM(loan.approved_amount), 0)', 'total')
       .where('loan.lender_id = :lenderId', { lenderId })
       .andWhere('loan.status IN (:...statuses)', {
         statuses: [LoanRequestStatus.APPROVED, LoanRequestStatus.DISBURSED],
       })
       .getRawOne();
 
-    return parseFloat(result?.total || '0');
+    const pendingExposure = parseFloat(pendingResult?.total || '0');
+    const approvedExposure = parseFloat(approvedResult?.total || '0');
+    const totalExposure = pendingExposure + approvedExposure;
+
+    this.logger.log(
+      `getCurrentExposure for lender ${lenderId}: pending=${pendingExposure}, approved=${approvedExposure}, total=${totalExposure}`
+    );
+
+    return totalExposure;
   }
 
   private async sendLoanRequestToLender(
@@ -1936,8 +1992,18 @@ export class LendingService {
       .leftJoinAndSelect('loan.borrower', 'borrower')
       .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
 
+    // Handle status filter - support comma-separated values
     if (status) {
-      qb.andWhere('loan.status = :status', { status });
+      // Split comma-separated status values into array
+      const statusArray = status.split(',').map(s => s.trim());
+      
+      if (statusArray.length === 1) {
+        // Single status - use equality
+        qb.andWhere('loan.status = :status', { status: statusArray[0] });
+      } else {
+        // Multiple statuses - use IN clause
+        qb.andWhere('loan.status IN (:...statuses)', { statuses: statusArray });
+      }
     }
 
     qb.orderBy('loan.created_at', 'DESC')
@@ -1947,7 +2013,7 @@ export class LendingService {
     const [loans, total] = await qb.getManyAndCount();
 
     this.logger.log(
-      `getLenderLoanRequests: found ${total} loans for lender ${actualLenderId}`,
+      `getLenderLoanRequests: found ${total} loans for lender ${actualLenderId} with status filter: ${status || 'all'}`,
     );
 
     return { data: loans, total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -3107,6 +3173,16 @@ export class LendingService {
         // For basic checks, we can provide immediate results
         const basicResults = await this.performBasicCreditCheck(borrower);
 
+        // Persist the calculated credit score back to the borrower record
+        if (basicResults?.creditScore && basicResults.creditScore > 0) {
+          await this.dataSource
+            .getRepository('Borrower')
+            .update(borrower.id, { credit_score: basicResults.creditScore });
+          this.logger.log(
+            `✅ Updated credit_score for borrower ${borrower.id} → ${basicResults.creditScore}`,
+          );
+        }
+
         return {
           creditCheckId,
           status: 'completed',
@@ -3115,7 +3191,7 @@ export class LendingService {
           borrower: {
             id: borrower.id,
             name: borrower.company_name || borrower.contact_name,
-            currentCreditScore: borrower.credit_score || 0,
+            currentCreditScore: basicResults?.creditScore ?? null,
           },
           results: basicResults,
         };
@@ -3169,13 +3245,19 @@ export class LendingService {
         totalRecentLoans > 0 ? (defaultedLoans / totalRecentLoans) * 100 : 0;
 
       // Basic credit score calculation
-      let creditScore = borrower.credit_score || 600; // Base score
+      // Only adjust from existing verified score — never invent one
+      let creditScore = borrower.credit_score ?? null;
 
-      // Adjust based on recent performance
-      if (defaultRate === 0 && completedLoans > 0) {
-        creditScore += 50; // Good performance bonus
-      } else if (defaultRate > 20) {
-        creditScore -= 100; // High default rate penalty
+      if (creditScore !== null && totalRecentLoans > 0) {
+        if (defaultRate === 0 && completedLoans > 0) {
+          creditScore += 50;
+        } else if (defaultRate > 20) {
+          creditScore -= 100;
+        } else if (defaultRate > 10) {
+          creditScore -= 50;
+        }
+        // Clamp to valid range only if we had a real starting score
+        creditScore = Math.max(300, Math.min(850, creditScore));
       }
 
       // Ensure score is within valid range
@@ -3183,11 +3265,11 @@ export class LendingService {
 
       return {
         creditScore,
-        riskLevel: this.calculateRiskLevel(creditScore, defaultedLoans),
+        riskLevel: creditScore !== null ? this.calculateRiskLevel(creditScore, defaultedLoans) : null,
         recentLoanCount: totalRecentLoans,
         defaultRate: Math.round(defaultRate * 100) / 100,
         completedLoanCount: completedLoans,
-        recommendation: this.getCreditRecommendation(creditScore, defaultRate),
+        recommendation: creditScore !== null ? this.getCreditRecommendation(creditScore, defaultRate) : 'No credit history available',
         lastUpdated: new Date().toISOString(),
       };
     } catch (error) {
@@ -3196,8 +3278,8 @@ export class LendingService {
         error.stack,
       );
       return {
-        creditScore: borrower.credit_score || 0,
-        riskLevel: 'unknown',
+        creditScore: null,
+        riskLevel: null,
         error: 'Unable to calculate credit metrics',
       };
     }
@@ -3219,6 +3301,159 @@ export class LendingService {
     } else {
       return 'High Risk - Recommend rejection or extensive review';
     }
+  }
+
+  /**
+   * Interest summary for a lender.
+   * Returns per-loan interest breakdown and portfolio-level aggregates.
+   * Only uses real data from loan_requests and loan_repayments tables.
+   */
+  async getLenderInterestSummary(lenderId: string) {
+    // Resolve actual lender entity ID (user ID may be passed)
+    let actualLenderId = lenderId;
+    const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
+    if (!lenderEntity) {
+      const user = await this.userRepository.findOne({ where: { id: lenderId, role: UserRole.LENDER } });
+      if (user) {
+        const lenderByEmail = await this.lenderRepository.findOne({ where: { contact_email: user.email } });
+        if (lenderByEmail) actualLenderId = lenderByEmail.id;
+      }
+    }
+
+    const loans = await this.loanRequestRepository
+      .createQueryBuilder('loan')
+      .leftJoinAndSelect('loan.repayments', 'repayments')
+      .leftJoinAndSelect('loan.borrower', 'borrower')
+      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId })
+      .orderBy('loan.created_at', 'DESC')
+      .getMany();
+
+    // Per-loan interest breakdown
+    const loanBreakdown = loans.map(loan => {
+      const totalInterestPaid = loan.repayments?.reduce(
+        (sum, r) => sum + (Number(r.interest_paid) || 0), 0,
+      ) ?? 0;
+
+      const totalPrincipalPaid = loan.repayments?.reduce(
+        (sum, r) => sum + (Number(r.principal_paid) || 0), 0,
+      ) ?? 0;
+
+      const totalRepaid = loan.repayments?.reduce(
+        (sum, r) => sum + (Number(r.amount) || 0), 0,
+      ) ?? 0;
+
+      // interest_amount on the loan record is the contracted interest (set at approval)
+      const contractedInterest = Number(loan.interest_amount) || null;
+
+      // Outstanding = contracted interest - paid interest (only meaningful if contracted is set)
+      const outstandingInterest = contractedInterest !== null
+        ? Math.max(0, contractedInterest - totalInterestPaid)
+        : null;
+
+      return {
+        loanId:             loan.id,
+        borrowerName:       loan.borrower?.contact_name ?? loan.borrower?.company_name ?? null,
+        borrowerCompany:    loan.borrower?.company_name ?? null,
+        requestedAmount:    Number(loan.requested_amount) || null,
+        approvedAmount:     loan.approved_amount != null ? Number(loan.approved_amount) : null,
+        status:             loan.status,
+        dueDate:            loan.due_date ?? null,
+        createdAt:          loan.created_at,
+        // Interest fields
+        contractedInterest,
+        totalInterestPaid,
+        outstandingInterest,
+        // Repayment totals
+        totalPrincipalPaid,
+        totalRepaid,
+        repaymentCount:     loan.repayments?.length ?? 0,
+        // Purpose from metadata
+        purpose:            loan.metadata?.purpose ?? null,
+      };
+    });
+
+    // Portfolio-level aggregates — only sum real values
+    const totalInterestCollected = loanBreakdown.reduce(
+      (s, l) => s + l.totalInterestPaid, 0,
+    );
+
+    const totalContractedInterest = loanBreakdown
+      .filter(l => l.contractedInterest !== null)
+      .reduce((s, l) => s + l.contractedInterest!, 0);
+
+    const totalOutstandingInterest = loanBreakdown
+      .filter(l => l.outstandingInterest !== null)
+      .reduce((s, l) => s + l.outstandingInterest!, 0);
+
+    const totalPrincipalDeployed = loanBreakdown.reduce(
+      (s, l) => s + (l.approvedAmount ?? l.requestedAmount ?? 0), 0,
+    );
+
+    // Collection efficiency: only calculable when contracted interest > 0
+    const collectionEfficiency = totalContractedInterest > 0
+      ? (totalInterestCollected / totalContractedInterest) * 100
+      : null;
+
+    // Overdue loans: past due_date and not repaid
+    const now = new Date();
+    const overdueLoans = loanBreakdown.filter(
+      l => l.dueDate && new Date(l.dueDate) < now && l.status !== 'repaid',
+    );
+
+    return {
+      summary: {
+        totalLoans:              loans.length,
+        totalPrincipalDeployed,
+        totalInterestCollected,
+        totalContractedInterest: totalContractedInterest > 0 ? totalContractedInterest : null,
+        totalOutstandingInterest: totalOutstandingInterest > 0 ? totalOutstandingInterest : null,
+        collectionEfficiency,
+        overdueCount:            overdueLoans.length,
+      },
+      loans: loanBreakdown,
+    };
+  }
+
+  /**
+   * Backfill credit scores for all borrowers that currently have null credit_score.
+   * Only updates if the borrower has real loan history to score from.
+   */
+  async backfillBorrowerCreditScores(): Promise<{ updated: number; skipped: number }> {
+    const borrowers = await this.borrowerRepository.find({
+      where: { credit_score: null },
+    });
+
+    let updated = 0;
+    let skipped = 0;
+
+    for (const borrower of borrowers) {
+      try {
+        const result = await this.performBasicCreditCheck(borrower);
+        // Only persist if we have a real score derived from actual loan history
+        if (result?.creditScore !== null && result?.creditScore !== undefined && result.recentLoanCount > 0) {
+          await this.borrowerRepository.update(borrower.id, {
+            credit_score: result.creditScore,
+          });
+          updated++;
+          this.logger.log(
+            `✅ Backfilled credit_score for borrower ${borrower.id} → ${result.creditScore}`,
+          );
+        } else {
+          // No loan history — skip, do not invent a score
+          skipped++;
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Could not backfill credit score for borrower ${borrower.id}: ${err.message}`,
+        );
+        skipped++;
+      }
+    }
+
+    this.logger.log(
+      `Backfill complete: ${updated} updated, ${skipped} skipped (no history) out of ${borrowers.length} borrowers`,
+    );
+    return { updated, skipped };
   }
 
   // Get lender portfolio trends analytics - PORTFOLIO ANALYTICS ENHANCEMENT

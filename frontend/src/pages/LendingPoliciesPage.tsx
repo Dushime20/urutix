@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 import {
   ShieldAlert,
   Download,
@@ -38,7 +39,7 @@ const LendingPoliciesPage: React.FC = () => {
   const [modalLoading, setModalLoading] = useState(false);
 
   // Get lender ID from authenticated user
-  const lenderId = user?.lenderId || user?.id || "89fa1340-429e-448f-a19d-0e987679d7cd";
+  const lenderId = user?.lenderId || user?.id;
 
   useEffect(() => {
     const fetchPolicies = async () => {
@@ -100,10 +101,11 @@ const LendingPoliciesPage: React.FC = () => {
         return updated;
       });
 
-      console.log(`Policy ${id} status updated to ${newStatus}`);
-    } catch (error) {
+      toast.success(`Policy ${newStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (error: any) {
       console.error('Error toggling policy status:', error);
-      alert('Failed to update policy status. Please try again.');
+      const errorMessage = error?.response?.data?.message || 'Failed to update policy status. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -123,10 +125,12 @@ const LendingPoliciesPage: React.FC = () => {
       setLoading(true);
       // Save policies to backend
       // await lendingApi.updateLenderPolicies(lenderId, policies);
-      alert('Lending policies have been synchronized successfully!');
+      toast.success('Lending policies have been synchronized successfully!');
       setHasUnsavedChanges(false);
-    } catch (error) {
-      alert('Failed to synchronize policies. Please check your connection.');
+    } catch (error: any) {
+      console.error('Error saving policies:', error);
+      const errorMessage = error?.response?.data?.message || 'Failed to synchronize policies. Please check your connection.';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -177,10 +181,31 @@ const LendingPoliciesPage: React.FC = () => {
       }
 
       setShowModal(false);
-      alert('Policy created successfully!');
-    } catch (error) {
+      toast.success('Policy created successfully!');
+    } catch (error: any) {
       console.error('Error creating policy:', error);
-      alert('Failed to create policy. Please try again.');
+      
+      // Extract error message from response
+      let errorMessage = 'Failed to create policy. Please try again.';
+      
+      if (error?.response?.data?.message) {
+        const messages = error.response.data.message;
+        if (Array.isArray(messages)) {
+          // Join multiple validation errors
+          errorMessage = messages.join(', ');
+        } else {
+          errorMessage = messages;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000,
+        style: {
+          maxWidth: '500px',
+        },
+      });
     } finally {
       setModalLoading(false);
     }

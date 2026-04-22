@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
-  Plus,
   Save,
   AlertTriangle,
   Percent,
@@ -12,14 +12,6 @@ import {
   Truck,
   Settings
 } from 'lucide-react';
-import type {
-  InterestRatePolicy,
-  LoanLimitPolicy,
-  EligibilityCriteria,
-  RiskAssessmentRule,
-  RepaymentPolicy,
-  CargoTypePolicy
-} from './LendingPolicies.enlite';
 
 interface PolicyConfigurationModalProps {
   isOpen: boolean;
@@ -27,6 +19,16 @@ interface PolicyConfigurationModalProps {
   onSave: (policyData: any) => void;
   category: string;
   loading?: boolean;
+}
+
+interface PolicyField {
+  key: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  options?: string[];
+  step?: string;
+  group?: string;
 }
 
 const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
@@ -41,7 +43,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
 
   if (!isOpen) return null;
 
-  const getCategoryConfig = () => {
+  const getCategoryConfig = (): { title: string; icon: React.ReactNode; fields: PolicyField[] } => {
     switch (category) {
       case 'interestRates':
         return {
@@ -184,7 +186,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    config.fields.forEach(field => {
+    config.fields.forEach((field: PolicyField) => {
       if (field.required) {
         const value = field.group ? formData[field.group]?.[field.key] : formData[field.key];
         if (!value && value !== 0) {
@@ -248,7 +250,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
     onSave(policyData);
   };
 
-  const renderField = (field: any) => {
+  const renderField = (field: PolicyField) => {
     const value = field.group ? formData[field.group]?.[field.key] || '' : formData[field.key] || '';
     const error = errors[field.key];
 
@@ -261,7 +263,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
             className={`w-full px-3 py-2 border rounded-lg text-sm ${error ? 'border-red-300' : 'border-slate-200'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
           >
             <option value="">Select {field.label}</option>
-            {field.options.map((option: string) => (
+            {field.options?.map((option: string) => (
               <option key={option} value={option}>
                 {option.charAt(0).toUpperCase() + option.slice(1).replace('_', ' ')}
               </option>
@@ -304,40 +306,40 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-slate-100 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+            <div className="p-2 bg-[#345E85] rounded-lg text-white shadow-lg shadow-blue-100">
               {config.icon}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">{config.title}</h2>
-              <p className="text-sm text-slate-500">Configure new policy parameters</p>
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{config.title}</h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Configure new policy parameters</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-200 rounded-lg transition-colors group"
           >
-            <X size={20} className="text-slate-400" />
+            <X size={20} className="text-slate-400 group-hover:text-slate-900" />
           </button>
         </div>
 
         {/* Form */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {config.fields.map((field) => (
               <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                   {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                  {field.required && <span className="text-rose-500 ml-1 font-bold">*</span>}
                 </label>
                 {renderField(field)}
                 {errors[field.key] && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <p className="text-rose-500 text-[10px] font-bold mt-1.5 flex items-center gap-1 uppercase tracking-tight">
                     <AlertTriangle size={12} />
                     {errors[field.key]}
                   </p>
@@ -348,33 +350,34 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50/30">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            className="px-6 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+            className="px-8 py-2.5 bg-[#345E85] hover:bg-blue-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100 active:scale-95"
           >
             {loading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Creating...
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processing…
               </>
             ) : (
               <>
-                <Save size={16} />
+                <Save size={14} />
                 Create Policy
               </>
             )}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -268,11 +268,44 @@ const SecurityCenter: React.FC = () => {
   const formatUserAgent = (userAgent: string | null) => {
     if (!userAgent) return 'Unknown';
     
-    // Simple parsing
-    if (userAgent.includes('Chrome')) return 'Chrome';
-    if (userAgent.includes('Firefox')) return 'Firefox';
-    if (userAgent.includes('Safari')) return 'Safari';
-    if (userAgent.includes('Edge')) return 'Edge';
+    // Enhanced browser detection with version
+    // Check Edge first (before Chrome, as Edge contains "Chrome" in UA)
+    if (userAgent.includes('Edg/')) {
+      const match = userAgent.match(/Edg\/([\d.]+)/);
+      return match ? `Edge ${match[1].split('.')[0]}` : 'Edge';
+    }
+    
+    // Check Chrome (but not Edge or other Chromium browsers)
+    if (userAgent.includes('Chrome/') && !userAgent.includes('Edg/')) {
+      const match = userAgent.match(/Chrome\/([\d.]+)/);
+      return match ? `Chrome ${match[1].split('.')[0]}` : 'Chrome';
+    }
+    
+    // Check Firefox
+    if (userAgent.includes('Firefox/')) {
+      const match = userAgent.match(/Firefox\/([\d.]+)/);
+      return match ? `Firefox ${match[1].split('.')[0]}` : 'Firefox';
+    }
+    
+    // Check Safari (but not Chrome, as Chrome contains "Safari" in UA)
+    if (userAgent.includes('Safari/') && !userAgent.includes('Chrome/')) {
+      const match = userAgent.match(/Version\/([\d.]+)/);
+      return match ? `Safari ${match[1].split('.')[0]}` : 'Safari';
+    }
+    
+    // Check Opera
+    if (userAgent.includes('OPR/') || userAgent.includes('Opera/')) {
+      const match = userAgent.match(/(?:OPR|Opera)\/([\d.]+)/);
+      return match ? `Opera ${match[1].split('.')[0]}` : 'Opera';
+    }
+    
+    // Check for mobile browsers
+    if (userAgent.includes('Mobile')) {
+      if (userAgent.includes('Safari')) return 'Mobile Safari';
+      if (userAgent.includes('Chrome')) return 'Mobile Chrome';
+      return 'Mobile Browser';
+    }
+    
     return 'Other';
   };
 

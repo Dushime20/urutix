@@ -428,6 +428,11 @@ export const lendingApi = {
     return response.data;
   },
 
+  getLenderInterestSummary: async (lenderId: string) => {
+    const response = await api.get(`/lending/lenders/${lenderId}/interest-summary`);
+    return response.data;
+  },
+
   // Borrower Profile Management
   getBorrowerProfile: async (borrowerId: string) => {
     const response = await api.get(`/lending/borrowers/${borrowerId}/profile`);
@@ -648,7 +653,12 @@ export const lendingApi = {
       base_rate: policyData.baseRate,
       min_rate: policyData.minRate,
       max_rate: policyData.maxRate,
-      adjustment_factors: policyData.adjustmentFactors,
+      adjustment_factors: {
+        credit_score: policyData.adjustmentFactors.creditScore,
+        loan_history: policyData.adjustmentFactors.loanHistory,
+        collateral: policyData.adjustmentFactors.collateral,
+        business_type: policyData.adjustmentFactors.businessType
+      },
       priority: 1,
       is_active: true
     });

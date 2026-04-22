@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
+import { useAuth } from '../contexts/AuthContext';
 import BorrowersEnlite, { type BorrowerProfile as EnliteBorrowerProfile } from '../components/LenderDashboard/Borrowers.enlite';
 import {
   FaTimesCircle,
@@ -55,12 +56,13 @@ interface BorrowerProfile extends EnliteBorrowerProfile {
 }
 
 const BorrowersManagementPage: React.FC = () => {
+  const { user } = useAuth();
   const [borrowers, setBorrowers] = useState<BorrowerProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Lender ID - would typically come from context or auth
-  const lenderId = "89fa1340-429e-448f-a19d-0e987679d7cd";
+  // Dynamic Lender ID from auth context
+  const lenderId = user?.id;
 
   // Mock data for fallback
   const mockBorrowers: BorrowerProfile[] = [
@@ -315,6 +317,12 @@ const BorrowersManagementPage: React.FC = () => {
         setError(null);
 
         // Try to get borrowers from API
+        if (!lenderId) {
+          setBorrowers(mockBorrowers);
+          setLoading(false);
+          return;
+        }
+
         const data = await lendingApi.getLenderBorrowers(lenderId);
 
         // Transform API data to BorrowerProfile format if needed

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
+import { useAuth } from '../contexts/AuthContext';
 import {
   History,
   Download,
@@ -18,15 +19,17 @@ import {
 } from 'lucide-react';
 import HistoryEnlite, { type Transaction } from '../components/LenderDashboard/History.enlite';
 
-const TransactionsHistoryPage: React.FC = () => {
+const TransactionsHistoryPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
 
-  // Lender ID - would typically come from context or auth
-  const lenderId = "89fa1340-429e-448f-a19d-0e987679d7cd";
+  const { user } = useAuth();
+
+  // Dynamic Lender ID from auth context
+  const lenderId = user?.id;
 
   // Mock data for fallback (truncated for brevity, using same logic as original)
   const mockTransactions: Transaction[] = [

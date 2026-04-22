@@ -348,7 +348,7 @@ const LenderDashboard: React.FC = () => {
                     <p className="text-sm font-medium text-gray-600 mb-1">
                       <TranslatedText text="Total Amount" />
                     </p>
-                    <p className="text-3xl font-bold text-gray-800 mb-2">RWF {stats.totalAmount.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-gray-800 mb-2">USD {stats.totalAmount.toLocaleString()}</p>
                     <div className="flex items-center space-x-2">
                       <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
@@ -435,7 +435,7 @@ const LenderDashboard: React.FC = () => {
                     <p className="text-sm font-medium text-gray-600 mb-1">
                       <TranslatedText text="Average Amount" />
                     </p>
-                    <p className="text-3xl font-bold text-gray-800 mb-2">RWF {stats.averageAmount.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-gray-800 mb-2">USD {stats.averageAmount.toLocaleString()}</p>
                     <div className="flex items-center space-x-2">
                       <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
@@ -542,7 +542,7 @@ const LenderDashboard: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     <tr>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">John Doe</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">RWF 15,000,000</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">USD 15,000</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Equipment Purchase</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
@@ -553,7 +553,7 @@ const LenderDashboard: React.FC = () => {
                     </tr>
                     <tr>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Jane Smith</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">RWF 25,000,000</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">USD 25,000</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Working Capital</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">

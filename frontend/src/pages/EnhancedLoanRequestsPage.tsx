@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { lendingApi } from '../services/lending/lendingApi';
 import type { CreateLoanRequestDto } from '../services/lending/lendingApi';
@@ -12,6 +12,7 @@ import {
   Plus, TrendingUp, Banknote, Package, MapPin, Loader2, Info,
 } from 'lucide-react';
 import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
+import LoanDetailModal from '../components/LenderDashboard/LoanDetailModal';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
 interface LoanRequest {
@@ -570,8 +571,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [advancePaymentCalculations, setAdvancePaymentCalculations] = useState<Record<string, any>>({});
   const [loadingCalculations, setLoadingCalculations] = useState<Record<string, boolean>>({});
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedLoanForDetail, setSelectedLoanForDetail] = useState<LoanRequest | null>(null);
 
-  const lenderId = user?.role === 'LENDER' ? user.id : '89fa1340-429e-448f-a19d-0e987679d7cd';
+  const lenderId = user?.id; // Dynamically use the logged-in user's ID
 
   const fetchAdvancePaymentCalculation = async (tripId: string, loanRequestId: string) => {
     if (!tripId || advancePaymentCalculations[loanRequestId] || loadingCalculations[loanRequestId]) return;
@@ -701,23 +704,25 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
         const transformedRequests: LoanRequest[] = await Promise.all(
           requestsData.map(async (req: any) => {
-            let cargoData = null; let borrowerData = null;
+            let cargoData = null;
+            
+            // Fetch cargo data only for additional context (locations, cargo type, etc.)
             if (req.cargo_id || req.cargoId) {
               try {
                 const cr = await api.get(`/loads-v2/${req.cargo_id || req.cargoId}`);
                 if (cr.data) {
                   cargoData = cr.data;
-                  if (cargoData.cargoOwner) {
-                    const p = cargoData.cargoOwner.profile;
-                    borrowerData = {
-                      name: p?.firstName && p?.lastName ? `${p.firstName} ${p.lastName}` : cargoData.cargoOwner.companyName || cargoData.cargoOwner.email || 'Unknown',
-                      email: cargoData.cargoOwner.email, phone: cargoData.cargoOwner.phone || p?.phone,
-                      companyName: cargoData.cargoOwner.companyName || p?.companyName,
-                    };
-                  }
                 }
               } catch {}
             }
+            
+            // Use borrower data from API response (populated by backend with actual borrower)
+            const borrower = req.borrower;
+            const borrowerName = borrower?.contact_name || borrower?.company_name || 'Unknown Borrower';
+            const borrowerEmail = borrower?.email || '';
+            const borrowerPhone = borrower?.phone || '';
+            const borrowerCompany = borrower?.company_name || '';
+            
             const pickupLoc = cargoData?.locations?.find((l: any) => l.type === 'PICKUP') || cargoData?.origin;
             const deliveryLoc = cargoData?.locations?.find((l: any) => l.type === 'DELIVERY') || cargoData?.destination;
             const fmt = (loc: any) => !loc ? '' : typeof loc === 'string' ? loc : loc.address || loc.city || loc.name || '';
@@ -727,16 +732,18 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               approved_amount: req.approved_amount || req.approvedAmount, status: req.status || 'pending',
               priority: req.priority || 'medium', created_at: req.created_at || req.createdAt,
               due_date: req.due_date || req.dueDate,
-              borrower_name: borrowerData?.name || req.borrower?.name || 'Unknown Borrower',
-              borrower_email: borrowerData?.email || req.borrower?.email || '',
-              borrower_phone: borrowerData?.phone || req.borrower?.phone || '',
-              borrower_company: borrowerData?.companyName || req.borrower?.companyName,
+              borrower_name: borrowerName,
+              borrower_email: borrowerEmail,
+              borrower_phone: borrowerPhone,
+              borrower_company: borrowerCompany,
               cargo_type: cargoData?.cargoType || req.cargoType || 'General Cargo',
               cargo_weight: cargoData?.weight || req.cargoWeight || 0,
               cargo_value: cargoData?.loadValue || req.cargoValue || 0,
               pickup_location: fmt(pickupLoc) || 'N/A', delivery_location: fmt(deliveryLoc) || 'N/A',
-              risk_score: req.risk_score || req.riskScore || 50, credit_score: req.credit_score || req.creditScore || 600,
-              interest_rate: req.interest_rate || req.interestRate || 10, purpose: req.purpose || 'Cargo financing',
+              risk_score: req.risk_score || req.riskScore || 50, credit_score: req.credit_score || req.creditScore || borrower?.credit_score || 600,
+              interest_rate: req.interest_rate || req.interestRate || 10, 
+              purpose: req.purpose || req.metadata?.purpose || 'Cargo financing',
+              metadata: req.metadata,
               lender_id: req.lender_id || req.lenderId, processing_fee: req.processing_fee || req.processingFee || 0,
               total_amount: req.total_amount || req.totalAmount || 0, loan_term_months: req.loan_term_months || req.loanTermMonths || 12,
               distance: 0, estimated_duration: 0,
@@ -915,7 +922,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         <LoanRequestsEnlite
           loading={fetching} requests={sorted} analytics={analytics}
           onApprove={handleApproveLoan} onReject={handleRejectLoan}
-          onViewDetails={req => alert(`Details for ${req.borrower_name}`)}
+          onViewDetails={req => { setSelectedLoanForDetail(req); setShowDetailModal(true); }}
           onProcessPayment={req => { setSelectedLoanForPayment(req); setShowPaymentModal(true); fetchTruckOwnerPhoneNumber(req); }}
           onViewPaymentDetails={req => { setSelectedLoanForPaymentDetails(req); fetchLoanPayments(req.id); setShowPaymentDetailsModal(true); }}
           onExport={() => alert('Exporting...')}
@@ -963,6 +970,14 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             </div>
           </div>
         </div>, document.body
+      )}
+
+      {/* Loan Detail Modal */}
+      {showDetailModal && selectedLoanForDetail && (
+        <LoanDetailModal
+          loan={selectedLoanForDetail}
+          onClose={() => { setShowDetailModal(false); setSelectedLoanForDetail(null); }}
+        />
       )}
     </div>
   );

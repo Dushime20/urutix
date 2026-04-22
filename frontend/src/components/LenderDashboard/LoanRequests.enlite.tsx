@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Clock,
     DollarSign,
@@ -18,6 +18,8 @@ import {
 import { motion } from 'framer-motion';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import ExportModal from '../ExportModal/ExportModal';
+import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 
 interface LoanRequestsEnliteProps {
     loading: boolean;
@@ -42,6 +44,16 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onViewPaymentDetails,
     onExport
 }) => {
+    const [showExportModal, setShowExportModal] = useState(false);
+
+    const handleExport = () => {
+        setShowExportModal(true);
+    };
+
+    const handleExportComplete = () => {
+        setShowExportModal(false);
+        if (onExport) onExport();
+    };
 
     const SummaryCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string; icon: any; subtitle?: string }) => (
         <motion.div
@@ -111,7 +123,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             sortable: true,
             render: (amount: number, row: any) => (
                 <div className="space-y-1">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">RWF {(amount / 1000000).toFixed(1)}M</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">USD {(amount / 1000).toFixed(1)}K</p>
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold border border-blue-100 dark:border-blue-800/50 italic">
                             {row.interest_rate}% APR
@@ -268,7 +280,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                 />
                 <SummaryCard
                     title="Capital Requested"
-                    value={`RWF ${(analytics?.totalAmountRequested / 1000000 || 0).toFixed(1)}M`}
+                    value={`USD ${(analytics?.totalAmountRequested / 1000 || 0).toFixed(1)}K`}
                     icon={DollarSign}
                     subtitle="Pipeline volume"
                 />
@@ -287,7 +299,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                 headerColor="primary"
                 actions={
                     <button
-                        onClick={onExport}
+                        onClick={handleExport}
                         className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-md text-xs font-bold transition-colors"
                     >
                         <Download className="w-3.5 h-3.5" />
@@ -304,6 +316,16 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     emptyMessage="No loan requests match your current filters"
                 />
             </DataCard>
+
+            {/* Export Modal */}
+            <ExportModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                data={requests}
+                filename="loan_requests"
+                prepareData={prepareLoanRequestsForExport}
+                title="Export Loan Requests"
+            />
         </div>
     );
 };

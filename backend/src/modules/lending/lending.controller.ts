@@ -1013,6 +1013,53 @@ export class LendingController {
     );
   }
 
+  // ===== LENDER REPAYMENTS ENDPOINT =====
+
+  @Get('lending/lenders/:lenderId/repayments')
+  @ApiOperation({
+    summary: 'Get repayments for a lender',
+    description: 'Returns all repayments across loans assigned to this lender, with optional date range filtering and pagination.',
+  })
+  @ApiParam({ name: 'lenderId', type: 'string', format: 'uuid' })
+  @ApiQuery({ name: 'page',      required: false, type: 'number', schema: { default: 1 } })
+  @ApiQuery({ name: 'limit',     required: false, type: 'number', schema: { default: 50 } })
+  @ApiQuery({ name: 'startDate', required: false, type: 'string', description: 'ISO date string' })
+  @ApiQuery({ name: 'endDate',   required: false, type: 'string', description: 'ISO date string' })
+  @ApiResponse({ status: 200, description: 'Repayments retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async getLenderRepayments(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Query('page')      page      = 1,
+    @Query('limit')     limit     = 50,
+    @Query('startDate') startDate?: string,
+    @Query('endDate')   endDate?:  string,
+  ) {
+    return await this.lendingService.getLenderRepayments(lenderId, {
+      page: Number(page),
+      limit: Number(limit),
+      startDate,
+      endDate,
+    });
+  }
+
+  // ===== LENDER INTEREST SUMMARY ENDPOINT =====
+
+  @Get('lending/lenders/:lenderId/interest-summary')
+  @ApiOperation({
+    summary: 'Get interest summary for a lender',
+    description: 'Returns aggregated interest data across all loans for this lender: total interest collected, outstanding interest amounts, and per-loan interest breakdown.',
+  })
+  @ApiParam({ name: 'lenderId', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 200, description: 'Interest summary retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Lender not found' })
+  async getLenderInterestSummary(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+  ) {
+    return await this.lendingService.getLenderInterestSummary(lenderId);
+  }
+
   // ===== EXTERNAL LENDING SYSTEM ENDPOINTS =====
 
   @Get('lending/external/loan-officers/:lenderId')

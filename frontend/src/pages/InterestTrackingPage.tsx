@@ -1,134 +1,150 @@
-import React, { useState, useMemo } from 'react';
-import InterestTrackingEnlite, { type InterestEarning } from '../components/LenderDashboard/InterestTracking.enlite';
+import React, { useState, useCallback, useEffect } from 'react';
+import { lendingApi } from '../services/lending/lendingApi';
+import { useAuth } from '../contexts/AuthContext';
+import InterestTrackingEnlite, { type InterestLoan } from '../components/LenderDashboard/InterestTracking.enlite';
 import { Download, RotateCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const InterestTrackingPage: React.FC = () => {
-  const [loading] = useState(false);
+  const { user } = useAuth();
+  const [loans, setLoans]       = useState<InterestLoan[]>([]);
+  const [summary, setSummary]   = useState<any | null>(null);
+  const [loading, setLoading]   = useState(true);
 
-  const [interestData] = useState<InterestEarning[]>([
-    {
-      id: 'INT-001',
-      loanId: 'LOAN-2024-001',
-      borrowerName: 'TransGlobal Logistics',
-      principalAmount: 75000000,
-      interestRate: 8.5,
-      accruedInterest: 15650000,
-      paidInterest: 12400000,
-      outstandingInterest: 3250000,
-      startDate: '2024-01-15',
-      maturityDate: '2025-01-15',
-      paymentFrequency: 'monthly',
-      status: 'active',
-      cargoType: 'Electronics',
-      riskCategory: 'low',
-      nextPaymentDate: '2024-08-15',
-      daysActive: 210
-    },
-    {
-      id: 'INT-002',
-      loanId: 'LOAN-2024-002',
-      borrowerName: 'Pacific Freight Solutions',
-      principalAmount: 45000000,
-      interestRate: 9.2,
-      accruedInterest: 8280000,
-      paidInterest: 6900000,
-      outstandingInterest: 1380000,
-      startDate: '2024-02-01',
-      maturityDate: '2025-08-01',
-      paymentFrequency: 'monthly',
-      status: 'active',
-      cargoType: 'Automotive Parts',
-      riskCategory: 'low',
-      nextPaymentDate: '2024-09-01',
-      daysActive: 193
-    },
-    {
-      id: 'INT-003',
-      loanId: 'LOAN-2024-003',
-      borrowerName: 'Coastal Shipping Corp',
-      principalAmount: 120000000,
-      interestRate: 7.8,
-      accruedInterest: 18720000,
-      paidInterest: 15600000,
-      outstandingInterest: 3120000,
-      startDate: '2024-01-10',
-      maturityDate: '2026-01-10',
-      paymentFrequency: 'monthly',
-      status: 'active',
-      cargoType: 'Machinery',
-      riskCategory: 'medium',
-      nextPaymentDate: '2024-08-10',
-      daysActive: 215
-    },
-    {
-      id: 'INT-004',
-      loanId: 'LOAN-2024-004',
-      borrowerName: 'Metro Transport LLC',
-      principalAmount: 32000000,
-      interestRate: 11.2,
-      accruedInterest: 5376000,
-      paidInterest: 3200000,
-      outstandingInterest: 2176000,
-      startDate: '2024-03-15',
-      maturityDate: '2025-12-15',
-      paymentFrequency: 'monthly',
-      status: 'overdue',
-      cargoType: 'Perishables',
-      riskCategory: 'high',
-      nextPaymentDate: '2024-07-15',
-      daysActive: 150
+  const lenderId = user?.id;
+
+  const fetchData = useCallback(async () => {
+    if (!lenderId) {
+      setLoading(false);
+      toast.error('No lender session found. Please log in again.');
+      return;
     }
-  ]);
 
-  const metrics = useMemo(() => {
-    const totalInterestEarned = interestData.reduce((sum, loan) => sum + loan.paidInterest, 0);
-    const totalAccruedInterest = interestData.reduce((sum, loan) => sum + loan.accruedInterest, 0);
-    const totalOutstandingInterest = interestData.reduce((sum, loan) => sum + loan.outstandingInterest, 0);
-    const totalPrincipal = interestData.reduce((sum, loan) => sum + loan.principalAmount, 0);
-    const averageInterestRate = totalPrincipal > 0
-      ? interestData.reduce((sum, loan) => sum + (loan.interestRate * loan.principalAmount), 0) / totalPrincipal
-      : 0;
-    const collectionEfficiency = totalAccruedInterest > 0
-      ? (totalInterestEarned / totalAccruedInterest) * 100
-      : 0;
+    try {
+      setLoading(true);
 
-    return {
-      totalInterestEarned,
-      averageInterestRate,
-      totalOutstandingInterest,
-      collectionEfficiency
-    };
-  }, [interestData]);
+      const response = await lendingApi.getLenderInterestSummary(lenderId);
+
+      // Map each loan from the API response — no fallbacks
+      const mapped: InterestLoan[] = (response?.loans ?? []).map((l: any) => ({
+        loanId:              l.loanId,
+        borrowerName:        l.borrowerName ?? null,
+        businessName:        l.borrowerCompany ?? null,
+        requestedAmount:     l.requestedAmount ?? null,
+        approvedAmount:      l.approvedAmount ?? null,
+        status:              l.status,
+        dueDate:             l.dueDate ?? null,
+        createdAt:           l.createdAt ?? null,
+        contractedInterest:  l.contractedInterest ?? null,
+        totalInterestPaid:   l.totalInterestPaid,
+        outstandingInterest: l.outstandingInterest ?? null,
+        totalPrincipalPaid:  l.totalPrincipalPaid,
+        totalRepaid:         l.totalRepaid,
+        repaymentCount:      l.repaymentCount,
+        purpose:             l.purpose ?? null,
+      }));
+
+      setLoans(mapped);
+      setSummary(response?.summary ?? null);
+
+      if (mapped.length === 0) {
+        toast('No loan data available for interest tracking.', { icon: 'ℹ️' });
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to load interest data';
+      toast.error(msg);
+      setLoans([]);
+      setSummary(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [lenderId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleExport = () => {
+    if (loans.length === 0) return;
+
+    const headers = [
+      'Loan ID', 'Borrower', 'Business', 'Requested Amount', 'Approved Amount',
+      'Status', 'Contracted Interest', 'Interest Paid', 'Outstanding Interest',
+      'Principal Paid', 'Total Repaid', 'Repayment Count', 'Purpose', 'Due Date', 'Created At',
+    ];
+
+    const rows = loans.map(l => [
+      l.loanId,
+      l.borrowerName ?? '',
+      l.businessName ?? '',
+      l.requestedAmount ?? '',
+      l.approvedAmount ?? '',
+      l.status,
+      l.contractedInterest ?? '',
+      l.totalInterestPaid,
+      l.outstandingInterest ?? '',
+      l.totalPrincipalPaid,
+      l.totalRepaid,
+      l.repaymentCount,
+      l.purpose ?? '',
+      l.dueDate ?? '',
+      l.createdAt ?? '',
+    ]);
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `interest-tracking-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast.success('Interest report exported');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
       <div className="max-w-[1536px] mx-auto space-y-8">
-        {/* Header Section */}
+
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Interest Tracking</h1>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">
+              Interest Tracking
+            </h1>
             <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
-              Revenue auditing and yield performance monitoring
+              Revenue auditing and yield performance — real data only
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
-              <Download size={14} /> Revenue Report
+            <button
+              onClick={handleExport}
+              disabled={loans.length === 0}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download size={14} /> Export CSV
             </button>
             <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
+              onClick={fetchData}
+              disabled={loading}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40"
             >
-              <RotateCcw size={14} /> Sync Metrics
+              <RotateCcw size={14} className={loading ? 'animate-spin' : ''} />
+              {loading ? 'Loading...' : 'Refresh'}
             </button>
           </div>
         </div>
 
         <InterestTrackingEnlite
           loading={loading}
-          data={interestData}
-          metrics={metrics}
-          onViewDetails={(loan) => alert(`Auditing revenue for ${loan.loanId}...`)}
+          loans={loans}
+          summary={summary}
         />
       </div>
     </div>
