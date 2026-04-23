@@ -539,6 +539,22 @@ export class DriverController {
     return this.driverService.getDriverAnalytics(id, req.user.tenantId, period);
   }
 
+  @Get(':id/earnings')
+  @ApiOperation({
+    summary: 'Get driver earnings by period',
+    description: 'Returns period-bucketed earnings data (week/month/quarter/year) from completed trips',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiQuery({ name: 'period', required: false, description: 'week | month | quarter | year', type: String })
+  @ApiResponse({ status: 200, description: 'Earnings data retrieved successfully' })
+  async getDriverEarnings(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('period') period: string = 'month',
+    @Request() req,
+  ) {
+    return this.driverService.getDriverEarnings(id, req.user.tenantId, period);
+  }
+
   @Get(':id/assigned-loads')
   @ApiOperation({
     summary: 'Get loads assigned to driver\'s truck',

@@ -907,6 +907,133 @@ export class DriverService {
     };
   }
 
+  /**
+   * Returns period-bucketed earnings from completed trips.
+   * Buckets: week → 7 days, month → 4 weeks, quarter → 3 months, year → 12 months
+   */
+  async getDriverEarnings(
+    id: string,
+    tenantId: string,
+    period: string = 'month',
+  ): Promise<{
+    period: string;
+    trips: number;
+    distance: number;
+    hours: number;
+    earnings: number;
+    bonuses: number;
+    deductions: number;
+    netEarnings: number;
+  }[]> {
+    await this.getDriverById(id, tenantId); // validates driver exists
+
+    const now = new Date();
+
+    // Determine date range and bucket strategy
+    let from: Date;
+    let bucketCount: number;
+    let bucketLabel: (i: number) => string;
+    let bucketIndex: (trip: Trip) => number;
+
+    if (period === 'week') {
+      // 7 daily buckets
+      from = new Date(now);
+      from.setDate(now.getDate() - 6);
+      from.setHours(0, 0, 0, 0);
+      bucketCount = 7;
+      const DAY = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      bucketLabel = (i) => {
+        const d = new Date(from);
+        d.setDate(from.getDate() + i);
+        return DAY[d.getDay()];
+      };
+      bucketIndex = (trip) => {
+        const end = new Date(trip.actualEndTime!);
+        return Math.floor((end.getTime() - from.getTime()) / (86400000));
+      };
+    } else if (period === 'quarter') {
+      // 3 monthly buckets
+      from = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      bucketCount = 3;
+      bucketLabel = (i) => {
+        const d = new Date(from.getFullYear(), from.getMonth() + i, 1);
+        return d.toLocaleString('default', { month: 'short' }).toUpperCase();
+      };
+      bucketIndex = (trip) => {
+        const end = new Date(trip.actualEndTime!);
+        return (end.getFullYear() - from.getFullYear()) * 12 + (end.getMonth() - from.getMonth());
+      };
+    } else if (period === 'year') {
+      // 12 monthly buckets
+      from = new Date(now.getFullYear(), 0, 1);
+      bucketCount = 12;
+      bucketLabel = (i) => {
+        const d = new Date(now.getFullYear(), i, 1);
+        return d.toLocaleString('default', { month: 'short' }).toUpperCase();
+      };
+      bucketIndex = (trip) => new Date(trip.actualEndTime!).getMonth();
+    } else {
+      // month → 4 weekly buckets
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      bucketCount = 4;
+      bucketLabel = (i) => `Week ${i + 1}`;
+      bucketIndex = (trip) => {
+        const end = new Date(trip.actualEndTime!);
+        const dayOfMonth = end.getDate();
+        return Math.min(3, Math.floor((dayOfMonth - 1) / 7));
+      };
+    }
+
+    const trips = await this.tripRepository
+      .createQueryBuilder('trip')
+      .where('trip.driverId = :id', { id })
+      .andWhere('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('trip.actualEndTime >= :from', { from })
+      .andWhere('trip.status = :status', { status: TripStatus.COMPLETED })
+      .getMany();
+
+    // Initialise buckets
+    const buckets = Array.from({ length: bucketCount }, (_, i) => ({
+      period: bucketLabel(i),
+      trips: 0,
+      distance: 0,
+      hours: 0,
+      earnings: 0,
+      bonuses: 0,
+      deductions: 0,
+      netEarnings: 0,
+    }));
+
+    for (const trip of trips) {
+      const idx = bucketIndex(trip);
+      if (idx < 0 || idx >= bucketCount) continue;
+
+      const base = Number(trip.agreedPrice || 0);
+      const fuel = Number(trip.fuelCost || 0);
+      const tolls = Number(trip.tollsCost || 0);
+      const other = Number(trip.otherExpenses || 0);
+      const deductions = fuel + tolls + other;
+      const dist = Number(trip.totalDistance || trip.distance || 0);
+
+      // Hours: derive from actual start/end if available
+      let hours = 0;
+      if (trip.actualStartTime && trip.actualEndTime) {
+        hours = Math.round(
+          (new Date(trip.actualEndTime).getTime() - new Date(trip.actualStartTime).getTime()) / 3600000 * 10,
+        ) / 10;
+      }
+
+      buckets[idx].trips += 1;
+      buckets[idx].distance += dist;
+      buckets[idx].hours += hours;
+      buckets[idx].earnings += base;
+      buckets[idx].deductions += deductions;
+      buckets[idx].netEarnings += base - deductions;
+    }
+
+    return buckets;
+  }
+
   async updateDriverLocation(
     id: string,
     latitude: number,
