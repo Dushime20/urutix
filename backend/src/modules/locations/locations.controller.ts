@@ -167,7 +167,6 @@ export class LocationsController {
         'https://overpass-api.de/api/interpreter',
         {
           params: { data: query },
-          headers: { 'Accept': 'application/json' },
           timeout: 30000,
         },
       );
