@@ -317,7 +317,10 @@ export class FleetController {
   @ApiResponse({ status: 404, description: 'Truck not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findOneTruck(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    const truck = await this.fleetService.findOneTruck(id, req.user.tenantId, req.user.userId);
+    // Cargo owners can read truck info for trucks assigned to their loads
+    // Only enforce ownership check for TRUCK_OWNER role
+    const userId = req.user.role === 'TRUCK_OWNER' ? req.user.userId : undefined;
+    const truck = await this.fleetService.findOneTruck(id, req.user.tenantId, userId);
     return {
       message: 'Truck retrieved successfully',
       truck,
