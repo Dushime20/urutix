@@ -73,6 +73,8 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
   const [loadingCargos, setLoadingCargos] = useState(true);
   const [loadingTrip, setLoadingTrip] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
+  const [beneficiaryOptions, setBeneficiaryOptions] = useState<{ id: string; label: string }[]>([]);
+  const [loadingBeneficiary, setLoadingBeneficiary] = useState(false);
   const [form, setForm] = useState({
     requested_amount: '',
     lender_id: '',
@@ -139,6 +141,102 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       .catch(() => { setSelectedTrip(null); setForm(p => ({ ...p, trip_id: '' })); })
       .finally(() => setLoadingTrip(false));
   }, [form.cargo_id]);
+
+  // Auto-fill beneficiary based on fund purpose + trip/cargo data
+  useEffect(() => {
+    setBeneficiaryOptions([]);
+    setForm(p => ({ ...p, beneficiary_id: '' }));
+
+    if (!selectedTrip && !selectedCargo) return;
+
+    const type = form.beneficiary_type;
+
+    if (type === 'truck_owner') {
+      // Truck owner comes from the trip's assigned truck owner
+      const truckOwnerId = selectedTrip?.assignedTruck?.ownerId
+        || selectedTrip?.assignedTruck?.owner?.id
+        || selectedTrip?.truckOwnerId;
+      const truckOwnerName = selectedTrip?.assignedTruck?.owner?.name
+        || selectedTrip?.assignedTruck?.owner?.firstName
+        || selectedTrip?.truckOwnerName
+        || 'Truck Owner';
+      if (truckOwnerId) {
+        setBeneficiaryOptions([{ id: truckOwnerId, label: truckOwnerName }]);
+        setForm(p => ({ ...p, beneficiary_id: truckOwnerId }));
+      } else {
+        // Fetch truck owner from trip details
+        if (selectedTrip?.id) {
+          setLoadingBeneficiary(true);
+          api.get(`/trips/${selectedTrip.id}`)
+            .then(res => {
+              const trip = res.data?.data || res.data;
+              const ownerId = trip?.assignedTruck?.ownerId || trip?.assignedTruck?.owner?.id;
+              const ownerName = trip?.assignedTruck?.owner?.firstName
+                ? `${trip.assignedTruck.owner.firstName} ${trip.assignedTruck.owner.lastName || ''}`.trim()
+                : trip?.assignedTruck?.owner?.name || 'Truck Owner';
+              if (ownerId) {
+                setBeneficiaryOptions([{ id: ownerId, label: ownerName }]);
+                setForm(p => ({ ...p, beneficiary_id: ownerId }));
+              }
+            })
+            .catch(() => {})
+            .finally(() => setLoadingBeneficiary(false));
+        }
+      }
+    } else if (type === 'driver') {
+      // Driver comes from the trip's assigned driver
+      const driverId = selectedTrip?.driverId || selectedTrip?.driver?.id || selectedTrip?.assignedDriver?.id;
+      const driverName = selectedTrip?.driver?.firstName
+        ? `${selectedTrip.driver.firstName} ${selectedTrip.driver.lastName || ''}`.trim()
+        : selectedTrip?.assignedDriver?.name || selectedTrip?.driverName || 'Assigned Driver';
+      if (driverId) {
+        setBeneficiaryOptions([{ id: driverId, label: driverName }]);
+        setForm(p => ({ ...p, beneficiary_id: driverId }));
+      } else if (selectedTrip?.id) {
+        setLoadingBeneficiary(true);
+        api.get(`/trips/${selectedTrip.id}`)
+          .then(res => {
+            const trip = res.data?.data || res.data;
+            const dId = trip?.driverId || trip?.driver?.id;
+            const dName = trip?.driver?.firstName
+              ? `${trip.driver.firstName} ${trip.driver.lastName || ''}`.trim()
+              : 'Assigned Driver';
+            if (dId) {
+              setBeneficiaryOptions([{ id: dId, label: dName }]);
+              setForm(p => ({ ...p, beneficiary_id: dId }));
+            }
+          })
+          .catch(() => {})
+          .finally(() => setLoadingBeneficiary(false));
+      }
+    } else if (type === 'maintenance') {
+      // Truck from the trip
+      const truckId = selectedTrip?.truckId || selectedTrip?.truck?.id || selectedTrip?.assignedTruck?.id;
+      const truckLabel = selectedTrip?.assignedTruck?.plateNumber
+        || selectedTrip?.truck?.plateNumber
+        || selectedTrip?.truckPlate
+        || 'Assigned Truck';
+      if (truckId) {
+        setBeneficiaryOptions([{ id: truckId, label: truckLabel }]);
+        setForm(p => ({ ...p, beneficiary_id: truckId }));
+      }
+    } else if (type === 'fuel') {
+      // Use the trip ID itself as the fuel reference (fuel is for the trip)
+      if (selectedTrip?.id) {
+        const label = `Trip ${selectedTrip.tripNumber || selectedTrip.id.slice(0, 8)} — Fuel`;
+        setBeneficiaryOptions([{ id: selectedTrip.id, label }]);
+        setForm(p => ({ ...p, beneficiary_id: selectedTrip.id }));
+      }
+    } else if (type === 'tolls') {
+      // Use the trip ID as toll reference
+      if (selectedTrip?.id) {
+        const label = `Trip ${selectedTrip.tripNumber || selectedTrip.id.slice(0, 8)} — Tolls`;
+        setBeneficiaryOptions([{ id: selectedTrip.id, label }]);
+        setForm(p => ({ ...p, beneficiary_id: selectedTrip.id }));
+      }
+    }
+    // 'other' — leave empty for manual input
+  }, [form.beneficiary_type, selectedTrip, selectedCargo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,17 +382,43 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Beneficiary Reference <span className="text-rose-400">*</span></label>
-              <input type="text" value={form.beneficiary_id}
-                onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
-                placeholder={
-                  form.beneficiary_type === 'fuel' ? 'Fuel supplier ID or account' : 
-                  form.beneficiary_type === 'tolls' ? 'Toll account ID' : 
-                  form.beneficiary_type === 'truck_owner' ? 'Truck owner ID or company name' :
-                  'Beneficiary ID or reference'
-                }
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
-                required />
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Beneficiary <span className="text-rose-400">*</span></label>
+              {loadingBeneficiary ? (
+                <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <Loader2 size={14} className="animate-spin text-slate-400" />
+                  <span className="text-sm text-slate-400 font-medium">Resolving beneficiary…</span>
+                </div>
+              ) : beneficiaryOptions.length > 0 ? (
+                // Auto-filled — show as read-only info card
+                <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                  <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-black text-emerald-800">{beneficiaryOptions[0].label}</p>
+                    <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-widest">
+                      Auto-filled · {form.beneficiary_type.replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+              ) : form.beneficiary_type === 'other' ? (
+                // 'Other' — free text input
+                <input type="text" value={form.beneficiary_id}
+                  onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
+                  placeholder="Enter beneficiary name or reference"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                  required />
+              ) : (
+                // No data found — show warning
+                <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
+                  <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
+                  <span className="text-sm text-amber-700 font-semibold">
+                    {!form.cargo_id
+                      ? 'Select a cargo first to auto-fill beneficiary'
+                      : !selectedTrip
+                      ? 'Waiting for trip to load…'
+                      : `No ${form.beneficiary_type.replace('_', ' ')} found for this trip`}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
