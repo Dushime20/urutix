@@ -163,11 +163,11 @@ export class LocationsController {
 
       this.logger.log(`Querying OSM fuel stations: lat=${latitude} lng=${longitude} radius=${radiusM}m`);
 
-      const response = await axios.post(
+      const response = await axios.get(
         'https://overpass-api.de/api/interpreter',
-        `data=${encodeURIComponent(query)}`,
         {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          params: { data: query },
+          headers: { 'Accept': 'application/json' },
           timeout: 30000,
         },
       );
