@@ -20,6 +20,7 @@ export enum BeneficiaryType {
   DRIVER = 'driver',
   MAINTENANCE = 'maintenance',
   TOLLS = 'tolls',
+  TRUCK_OWNER = 'truck_owner',
   OTHER = 'other',
 }
 
