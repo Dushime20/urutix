@@ -36,7 +36,7 @@ interface LoanAnalytics {
   averageRiskScore: number; approvalRate: number; monthlyGrowth: number;
 }
 
-const BENEFICIARY_TYPES = ['fuel', 'driver', 'maintenance', 'tolls', 'other'] as const;
+const BENEFICIARY_TYPES = ['fuel', 'driver', 'maintenance', 'tolls', 'truck_owner', 'other'] as const;
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const cfg: Record<string, { cls: string; icon: React.ReactNode }> = {
@@ -63,10 +63,326 @@ interface LoanRequestFormModalProps {
   userId: string;
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// CARGO OWNER LOAN REQUEST MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
+  const [lenders, setLenders] = useState<any[]>([]);
+  const [cargos, setCargos] = useState<any[]>([]);
+  const [trips, setTrips] = useState<any[]>([]);
+  const [loadingLenders, setLoadingLenders] = useState(true);
+  const [loadingCargos, setLoadingCargos] = useState(true);
+  const [loadingTrips, setLoadingTrips] = useState(false);
+  const [form, setForm] = useState({
+    requested_amount: '',
+    lender_id: '',
+    due_date: '',
+    purpose: '',
+    cargo_id: '',
+    trip_id: '',
+    beneficiary_type: 'fuel' as typeof BENEFICIARY_TYPES[number],
+    beneficiary_id: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const selectedCargo = cargos.find((c: any) => c.id === form.cargo_id);
+
+  useEffect(() => {
+    // Fetch lenders
+    lendingApi.getTenantLenders()
+      .then(data => setLenders(Array.isArray(data) ? data : []))
+      .catch(() => setLenders([]))
+      .finally(() => setLoadingLenders(false));
+
+    // Fetch cargo owner's cargos/loads
+    setLoadingCargos(true);
+    console.log('🔍 Fetching cargos for cargo owner, userId:', userId);
+    api.get('/loads', { params: { page: 1, limit: 50 } })
+      .then(res => {
+        console.log('📦 /loads Response:', res.data);
+        // FIXED: The response has 'items' not 'data' or 'loads'
+        const raw = res.data?.items || res.data?.data || res.data?.loads || res.data || [];
+        console.log('📦 Raw cargos array:', raw);
+        let cargosList = Array.isArray(raw) ? raw : [];
+        console.log('📦 Total cargos before filter:', cargosList.length);
+        
+        // Log first cargo to see its structure
+        if (cargosList.length > 0) {
+          console.log('📦 Sample cargo object:', cargosList[0]);
+          console.log('📦 Cargo owner ID:', cargosList[0].cargoOwner?.id);
+          console.log('📦 Current user ID:', userId);
+        }
+        
+        // Filter by cargo owner's user ID - check cargoOwner.id
+        cargosList = cargosList.filter((cargo: any) => {
+          const match = cargo.cargoOwner?.id === userId ||
+                       cargo.createdBy === userId || 
+                       cargo.created_by === userId ||
+                       cargo.ownerId === userId ||
+                       cargo.owner_id === userId ||
+                       cargo.userId === userId ||
+                       cargo.user_id === userId;
+          if (match) {
+            console.log('✅ Matched cargo:', cargo.id, cargo);
+          }
+          return match;
+        });
+        
+        console.log('📦 Filtered cargos for user:', cargosList.length, cargosList);
+        setCargos(cargosList);
+      })
+      .catch((err) => {
+        console.error('❌ Error fetching cargos:', err);
+        console.error('❌ Error response:', err.response?.data);
+        setCargos([]);
+      })
+      .finally(() => setLoadingCargos(false));
+  }, [userId]);
+
+  // Auto-fetch and auto-select trip when cargo is selected (CargoOwner modal)
+  useEffect(() => {
+    if (!form.cargo_id) { setTrips([]); setForm(p => ({ ...p, trip_id: '' })); return; }
+    setLoadingTrips(true);
+    api.get('/trips', { params: { loadId: form.cargo_id, limit: 50 } })
+      .then(res => {
+        const raw = res.data?.data || res.data?.trips || res.data || [];
+        const tripsList = Array.isArray(raw) ? raw : [];
+        setTrips(tripsList);
+        // Auto-select: if only one trip exists, pick it automatically
+        if (tripsList.length === 1) {
+          setForm(p => ({ ...p, trip_id: tripsList[0].id }));
+        } else if (tripsList.length > 1) {
+          // Auto-select the most recent active trip
+          const activeTrip = tripsList.find((t: any) => t.status === 'active' || t.status === 'in_progress')
+            || tripsList[0];
+          setForm(p => ({ ...p, trip_id: activeTrip.id }));
+        }
+      })
+      .catch(() => setTrips([]))
+      .finally(() => setLoadingTrips(false));
+  }, [form.cargo_id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const amount = parseFloat(form.requested_amount);
+    if (!amount || amount <= 0) { setError('Enter a valid loan amount.'); return; }
+    if (amount > 50000) { setError('Maximum loan amount is $50,000.'); return; }
+    if (!form.cargo_id) { setError('Please select a cargo.'); return; }
+    if (!form.trip_id) { setError('Please select a trip.'); return; }
+    if (!form.beneficiary_id.trim()) { setError('Please enter a beneficiary.'); return; }
+    
+    const payload: CreateLoanRequestDto = {
+      tenant_id: tenantId,
+      cargo_id: form.cargo_id,
+      trip_id: form.trip_id,
+      requested_amount: amount,
+      created_by: userId,
+      requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
+      ...(form.lender_id && { lender_id: form.lender_id }),
+      ...(form.due_date && { due_date: form.due_date }),
+      metadata: { purpose: form.purpose || form.beneficiary_type },
+    };
+    
+    try {
+      setSubmitting(true);
+      await lendingApi.createLoanRequest(payload);
+      setSuccess(true);
+      setTimeout(() => { onSuccess(); onClose(); }, 1500);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to submit loan request.';
+      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+    } finally { setSubmitting(false); }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-8 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Cargo Financing</p>
+            <h3 className="text-xl font-black text-white tracking-tight">New Loan Request</h3>
+          </div>
+          <button onClick={onClose} className="h-9 w-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+
+          {/* Amount */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount (USD) <span className="text-rose-400">*</span></label>
+            <div className="relative">
+              <CircleDollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input type="number" min="1" max="50000" step="0.01" value={form.requested_amount}
+                onChange={e => setForm(p => ({ ...p, requested_amount: e.target.value }))}
+                placeholder="e.g. 5000"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                required />
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Max $50,000 per request</p>
+          </div>
+
+          {/* Cargo */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Cargo <span className="text-rose-400">*</span></label>
+            <div className="relative">
+              <Package size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              {loadingCargos && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
+              <select value={form.cargo_id}
+                onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value, trip_id: '' }))}
+                className={selectCls(true)} disabled={loadingCargos} required>
+                <option value="">{loadingCargos ? 'Loading your cargos…' : cargos.length === 0 ? 'No cargos found' : 'Select your cargo'}</option>
+                {cargos.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.loadNumber || c.id.slice(0, 8)} — {c.cargoType || 'Cargo'}{c.origin?.city ? ' · ' + (typeof c.origin.city === 'object' ? (c.origin.city.name || c.origin.city.address || '') : c.origin.city) : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+            </div>
+            {selectedCargo && (
+              <p className="text-[10px] text-[#345E85] mt-1 font-semibold flex items-center gap-1">
+                <MapPin size={10} />
+                {(typeof selectedCargo.origin?.address === 'object' ? selectedCargo.origin.address.address : (selectedCargo.origin?.address || (typeof selectedCargo.pickupLocation === 'object' ? selectedCargo.pickupLocation.address : selectedCargo.pickupLocation) || ''))}
+                {(selectedCargo.destination?.address || selectedCargo.deliveryLocation) ? ' → ' + (typeof selectedCargo.destination?.address === 'object' ? selectedCargo.destination.address.address : (selectedCargo.destination?.address || (typeof selectedCargo.deliveryLocation === 'object' ? selectedCargo.deliveryLocation.address : selectedCargo.deliveryLocation) || '')) : ''}
+              </p>
+            )}
+          </div>
+
+          {/* Trip */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+              Trip <span className="text-rose-400">*</span>
+              {trips.length === 1 && form.trip_id && (
+                <span className="ml-2 text-emerald-500 normal-case font-semibold tracking-normal">✓ Auto-selected</span>
+              )}
+            </label>
+            <div className="relative">
+              <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              {loadingTrips && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
+              <select value={form.trip_id}
+                onChange={e => setForm(p => ({ ...p, trip_id: e.target.value }))}
+                className={selectCls(true)} disabled={!form.cargo_id || loadingTrips} required>
+                <option value="">{!form.cargo_id ? 'Select a cargo first' : loadingTrips ? 'Loading trips…' : trips.length === 0 ? 'No trips found for this cargo' : 'Select a trip'}</option>
+                {trips.map((t: any) => (
+                  <option key={t.id} value={t.id}>
+                    {t.tripNumber || t.id.slice(0, 8)} — {t.status || 'Trip'}{t.createdAt ? ' · ' + new Date(t.createdAt).toLocaleDateString() : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+            </div>
+            {trips.length > 1 && (
+              <p className="text-[10px] text-amber-500 mt-1 font-semibold">
+                {trips.length} trips found — most recent auto-selected, you can change it
+              </p>
+            )}
+            {form.cargo_id && !loadingTrips && trips.length === 0 && (
+              <p className="text-[10px] text-rose-500 mt-1 font-semibold">
+                No trips found for this cargo. A trip must exist before requesting a loan.
+              </p>
+            )}
+          </div>
+
+          {/* Fund Allocation */}
+          <div className="bg-slate-50 rounded-2xl p-4 space-y-4 border border-slate-100">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+              <Info size={12} /> Fund Allocation
+            </p>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fund Purpose <span className="text-rose-400">*</span></label>
+              <div className="relative">
+                <select value={form.beneficiary_type}
+                  onChange={e => setForm(p => ({ ...p, beneficiary_type: e.target.value as any }))}
+                  className={selectCls()}>
+                  <option value="fuel">⛽ Fuel</option>
+                  <option value="driver">👤 Driver</option>
+                  <option value="maintenance">🔧 Maintenance</option>
+                  <option value="tolls">🛣️ Tolls</option>
+                  <option value="truck_owner">🚛 Truck Owner Payment</option>
+                  <option value="other">📦 Other</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Beneficiary Reference <span className="text-rose-400">*</span></label>
+              <input type="text" value={form.beneficiary_id}
+                onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
+                placeholder={
+                  form.beneficiary_type === 'fuel' ? 'Fuel supplier ID or account' : 
+                  form.beneficiary_type === 'tolls' ? 'Toll account ID' : 
+                  form.beneficiary_type === 'truck_owner' ? 'Truck owner ID or company name' :
+                  'Beneficiary ID or reference'
+                }
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                required />
+            </div>
+          </div>
+
+          {/* Lender */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preferred Lender <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+            <div className="relative">
+              <Landmark size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+              {loadingLenders && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
+              <select value={form.lender_id} onChange={e => setForm(p => ({ ...p, lender_id: e.target.value }))}
+                className={selectCls(true)} disabled={loadingLenders}>
+                <option value="">{loadingLenders ? 'Loading lenders…' : 'Any available lender'}</option>
+                {lenders.map((l: any) => <option key={l.id} value={l.id}>{l.name}{l.contact_email ? ' — ' + l.contact_email : ''}</option>)}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+            </div>
+          </div>
+
+          {/* Date + Note */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Repayment Date <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+              <div className="relative">
+                <CalendarDays size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input type="date" value={form.due_date} min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+              <input type="text" value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}
+                placeholder="e.g. Fuel advance for trip"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+            </div>
+          </div>
+
+          {error && <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><AlertTriangle size={14} className="flex-shrink-0" /> {error}</div>}
+          {success && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><CheckCircle size={14} className="flex-shrink-0" /> Loan request submitted successfully!</div>}
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Cancel</button>
+            <button type="submit" disabled={submitting || success}
+              className="flex-1 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 flex items-center justify-center gap-2">
+              {submitting ? <><RefreshCw size={12} className="animate-spin" /> Submitting…</> : 'Submit Request'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRUCK OWNER LOAN REQUEST MODAL (Original)
+// ══════════════════════════════════════════════════════════════════════════════
+
 const selectCls = (hasIcon = false) =>
   `w-full ${hasIcon ? 'pl-10' : 'pl-4'} pr-8 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed`;
 
 const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
+  const { user } = useAuth(); // Get user context to check role
   const [lenders, setLenders]     = useState<any[]>([]);
   const [loads, setLoads]         = useState<any[]>([]);
   const [trips, setTrips]         = useState<any[]>([]);
@@ -97,22 +413,50 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       .then(data => setLenders(Array.isArray(data) ? data : []))
       .catch(() => setLenders([]))
       .finally(() => setLoadingLenders(false));
-    api.get('/loads-v2/assigned-loads')
+    
+    // Fetch loads based on user role
+    const isCargoOwner = user?.role === 'CARGO_OWNER';
+    const loadsEndpoint = isCargoOwner ? '/loads-v2' : '/loads-v2/assigned-loads';
+    
+    api.get(loadsEndpoint)
       .then(res => {
         const raw = res.data?.data || res.data?.loads || res.data || [];
-        setLoads(Array.isArray(raw) ? raw : []);
+        let loadsList = Array.isArray(raw) ? raw : [];
+        
+        // For cargo owners, filter by created_by or ownerId
+        if (isCargoOwner && userId) {
+          loadsList = loadsList.filter((load: any) => 
+            load.created_by === userId || 
+            load.createdBy === userId ||
+            load.owner_id === userId ||
+            load.ownerId === userId
+          );
+        }
+        
+        setLoads(loadsList);
       })
       .catch(() => setLoads([]))
       .finally(() => setLoadingLoads(false));
-  }, []);
+  }, [user, userId]);
 
+  // Auto-fetch and auto-select trip when cargo is selected (TruckOwner modal)
   useEffect(() => {
-    if (!form.cargo_id) { setTrips([]); return; }
+    if (!form.cargo_id) { setTrips([]); setForm(p => ({ ...p, trip_id: '' })); return; }
     setLoadingTrips(true);
     api.get('/trips', { params: { loadId: form.cargo_id, limit: 50 } })
       .then(res => {
         const raw = res.data?.data || res.data?.trips || res.data || [];
-        setTrips(Array.isArray(raw) ? raw : []);
+        const tripsList = Array.isArray(raw) ? raw : [];
+        setTrips(tripsList);
+        // Auto-select: if only one trip exists, pick it automatically
+        if (tripsList.length === 1) {
+          setForm(p => ({ ...p, trip_id: tripsList[0].id }));
+        } else if (tripsList.length > 1) {
+          // Auto-select the most recent active trip
+          const activeTrip = tripsList.find((t: any) => t.status === 'active' || t.status === 'in_progress')
+            || tripsList[0];
+          setForm(p => ({ ...p, trip_id: activeTrip.id }));
+        }
       })
       .catch(() => setTrips([]))
       .finally(() => setLoadingTrips(false));
@@ -215,7 +559,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
                 <option value="">{loadingLoads ? 'Loading loads…' : loads.length === 0 ? 'No assigned loads found' : 'Select a load'}</option>
                 {loads.map((l: any) => (
                   <option key={l.id} value={l.id}>
-                    {l.loadNumber || l.id.slice(0, 8)} — {l.cargoType || 'Cargo'}{l.origin?.city ? ' · ' + l.origin.city : ''}
+                    {l.loadNumber || l.id.slice(0, 8)} — {l.cargoType || 'Cargo'}{l.origin?.city ? ' · ' + (typeof l.origin.city === 'object' ? (l.origin.city.name || l.origin.city.address || '') : l.origin.city) : ''}
                   </option>
                 ))}
               </select>
@@ -224,7 +568,8 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
             {selectedLoad && (
               <p className="text-[10px] text-[#345E85] mt-1 font-semibold flex items-center gap-1">
                 <MapPin size={10} />
-                {selectedLoad.origin?.address || selectedLoad.pickupLocation || ''}{selectedLoad.destination?.address ? ' → ' + (selectedLoad.destination?.address || selectedLoad.deliveryLocation || '') : ''}
+                {(typeof selectedLoad.origin?.address === 'object' ? selectedLoad.origin.address.address : (selectedLoad.origin?.address || (typeof selectedLoad.pickupLocation === 'object' ? selectedLoad.pickupLocation.address : selectedLoad.pickupLocation) || ''))}
+                {(selectedLoad.destination?.address || selectedLoad.deliveryLocation) ? ' → ' + (typeof selectedLoad.destination?.address === 'object' ? selectedLoad.destination.address.address : (selectedLoad.destination?.address || (typeof selectedLoad.deliveryLocation === 'object' ? selectedLoad.deliveryLocation.address : selectedLoad.deliveryLocation) || '')) : ''}
               </p>
             )}
           </div>
@@ -548,6 +893,8 @@ const TruckOwnerLoanRequestsView: React.FC<{
 const EnhancedLoanRequestsPage: React.FC = () => {
   const { user, accessToken } = useAuth();
   const isTruckOwner = user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER';
+  const isCargoOwner = user?.role === 'CARGO_OWNER';
+  const isBorrower = isTruckOwner || isCargoOwner; // Both can request loans
 
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [analytics, setAnalytics] = useState<LoanAnalytics | null>(null);
@@ -607,9 +954,102 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       const raw = await lendingApi.getTenantLoans(user.tenantId);
       const data: any[] = Array.isArray(raw) ? raw : ((raw as any)?.data || []);
 
+      // Filter by created_by for the current user (only their own requests)
+      const userLoans = data.filter((req: any) => 
+        req.created_by === user.id || req.createdBy === user.id
+      );
+
       // Enrich each loan with cargo and lender details in parallel
       const mapped: LoanRequest[] = await Promise.all(
-        data.map(async (req: any) => {
+        userLoans.map(async (req: any) => {
+          let cargoLabel = '';
+          let cargoType = 'General Cargo';
+          let lenderName = '';
+
+          // Fetch lender name if lender_id present
+          const lenderId = req.lender_id || req.lenderId;
+          if (lenderId) {
+            try {
+              const lr = await api.get(`/admin/lenders/${lenderId}`);
+              lenderName = lr.data?.name || lr.data?.data?.name || '';
+            } catch { /* non-critical */ }
+          }
+
+          return {
+            id: req.id,
+            cargo_id: req.cargo_id || req.cargoId || '',
+            tenant_id: req.tenant_id || req.tenantId || '',
+            trip_id: req.trip_id || req.tripId || '',
+            requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
+            approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
+            status: req.status || 'pending',
+            priority: 'medium' as const,
+            created_at: req.created_at || req.createdAt || new Date().toISOString(),
+            due_date: req.due_date || req.dueDate,
+            // Use borrower relation if available, fall back to user context
+            borrower_name: req.borrower?.contact_name || req.borrower?.company_name ||
+              (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'You'),
+            borrower_email: req.borrower?.email || user?.email || '',
+            borrower_phone: req.borrower?.phone || (user as any)?.phone || '',
+            cargo_type: cargoType,
+            cargo_weight: 0,
+            cargo_value: 0,
+            pickup_location: 'N/A',
+            delivery_location: 'N/A',
+            distance: 0,
+            estimated_duration: 0,
+            risk_score: 50,
+            credit_score: req.borrower?.credit_score || 600,
+            interest_rate: req.interest_rate || req.interestRate || 10,
+            purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
+            lender_id: lenderId,
+            lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
+            processing_fee: 0,
+            total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
+            loan_term_months: 12,
+            borrower_company: req.borrower?.company_name || (cargoLabel ? `Load: ${cargoLabel}` : undefined),
+            requested_split: req.requested_split || [],
+          };
+        })
+      );
+
+      setRequests(mapped);
+      setAnalytics({
+        totalRequests: mapped.length,
+        pendingRequests:  mapped.filter(r => r.status === 'pending').length,
+        approvedRequests: mapped.filter(r => r.status === 'approved').length,
+        rejectedRequests: mapped.filter(r => r.status === 'rejected').length,
+        totalAmountRequested: mapped.reduce((s, r) => s + r.requested_amount, 0),
+        totalAmountApproved:  mapped.filter(r => r.status === 'approved').reduce((s, r) => s + (r.approved_amount ?? r.requested_amount), 0),
+        averageAmount: mapped.length ? mapped.reduce((s, r) => s + r.requested_amount, 0) / mapped.length : 0,
+        averageRiskScore: 50,
+        approvalRate: mapped.length ? (mapped.filter(r => r.status === 'approved').length / mapped.length) * 100 : 0,
+        monthlyGrowth: 0,
+      });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to load loan requests.';
+      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+    } finally {
+      setFetching(false);
+    }
+  }, [user, accessToken]);
+
+  // Separate function for cargo owners to fetch their own loan requests
+  const fetchCargoOwnerLoans = useCallback(async () => {
+    if (!user?.tenantId || !accessToken || !user?.id) { setFetching(false); return; }
+    setFetching(true); setError(null);
+    try {
+      const raw = await lendingApi.getTenantLoans(user.tenantId);
+      const data: any[] = Array.isArray(raw) ? raw : ((raw as any)?.data || []);
+
+      // CRITICAL: Filter by created_by to show only cargo owner's own requests
+      const cargoOwnerLoans = data.filter((req: any) => 
+        (req.created_by === user.id || req.createdBy === user.id)
+      );
+
+      // Enrich each loan with cargo and lender details in parallel
+      const mapped: LoanRequest[] = await Promise.all(
+        cargoOwnerLoans.map(async (req: any) => {
           let cargoLabel = '';
           let cargoType = 'General Cargo';
           let lenderName = '';
@@ -683,7 +1123,15 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   }, [user, accessToken]);
 
   useEffect(() => {
-    if (isTruckOwner) { fetchTruckOwnerLoans(); return; }
+    // Call appropriate fetch function based on user role
+    if (isTruckOwner) { 
+      fetchTruckOwnerLoans(); 
+      return; 
+    }
+    if (isCargoOwner) { 
+      fetchCargoOwnerLoans(); 
+      return; 
+    }
 
     const fetchLoanRequests = async () => {
       if (!lenderId || !accessToken) { setFetching(false); return; }
@@ -770,7 +1218,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       } finally { setFetching(false); }
     };
     fetchLoanRequests();
-  }, [lenderId, accessToken, statusFilter, isTruckOwner, fetchTruckOwnerLoans]);
+  }, [lenderId, accessToken, statusFilter, isTruckOwner, isCargoOwner, fetchTruckOwnerLoans, fetchCargoOwnerLoans]);
 
   const handleApproveLoan = async (loanId: string, approvedAmount: number, interestRate: number) => {
     try {
@@ -865,7 +1313,12 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   });
 
   // Ã¢â€â‚¬Ã¢â€â‚¬ Truck Owner View Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-  if (isTruckOwner) {
+  // ══════════════════════════════════════════════════════════════════════════════
+  // Borrower View (Truck Owner or Cargo Owner)
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (isBorrower) {
+    const refreshFunction = isTruckOwner ? fetchTruckOwnerLoans : fetchCargoOwnerLoans;
+    
     return (
       <div className="min-h-screen bg-slate-50/50 p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
@@ -875,19 +1328,30 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             loading={fetching}
             error={error}
             onNewRequest={() => setShowRequestForm(true)}
-            onRefresh={fetchTruckOwnerLoans}
+            onRefresh={refreshFunction}
             search={search}
             onSearchChange={setSearch}
           />
         </div>
 
         {showRequestForm && user?.tenantId && (
-          <LoanRequestFormModal
-            tenantId={user.tenantId}
-            userId={user.id}
-            onClose={() => setShowRequestForm(false)}
-            onSuccess={fetchTruckOwnerLoans}
-          />
+          <>
+            {isCargoOwner ? (
+              <CargoOwnerLoanRequestModal
+                tenantId={user.tenantId}
+                userId={user.id}
+                onClose={() => setShowRequestForm(false)}
+                onSuccess={refreshFunction}
+              />
+            ) : (
+              <LoanRequestFormModal
+                tenantId={user.tenantId}
+                userId={user.id}
+                onClose={() => setShowRequestForm(false)}
+                onSuccess={refreshFunction}
+              />
+            )}
+          </>
         )}
       </div>
     );
