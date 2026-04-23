@@ -362,13 +362,8 @@ class DriverApiService {
 
   async getTripHistory(driverId: string, _period: string): Promise<Trip[]> {
     try {
-      const response = await api.get('/trips', {
-        params: {
-          userId: driverId,
-          limit: 20,
-        }
-      });
-      const raw: any[] = response.data?.data || [];
+      const response = await api.get('/trips/my-trips');
+      const raw: any[] = response.data?.data?.history || [];
       return raw.map(normalizeTrip);
     } catch (error: any) {
       if (error.response?.status === 404) return [];
