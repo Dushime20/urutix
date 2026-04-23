@@ -152,31 +152,31 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
     const type = form.beneficiary_type;
 
     if (type === 'truck_owner') {
-      // Truck owner is on the ACCEPTED BID for the cargo, not directly on the trip
-      if (!selectedCargo?.id) return;
+      // Trip has truckId — fetch the truck to get its owner
+      if (!selectedTrip?.id) return;
       setLoadingBeneficiary(true);
-      api.get(`/bidding/loads/${selectedCargo.id}/bids`)
-        .then(res => {
-          const raw = res.data?.data || res.data?.items || res.data?.bids || res.data || [];
-          const bids = Array.isArray(raw) ? raw : [];
-          // Find the accepted bid
-          const acceptedBid = bids.find((b: any) =>
-            b.status === 'ACCEPTED' || b.status === 'accepted'
-          ) || bids[0];
-          if (acceptedBid) {
-            const ownerId = acceptedBid.truckOwnerId || acceptedBid.truck_owner_id || acceptedBid.truckOwner?.id;
-            const ownerName = acceptedBid.truckOwner?.firstName
-              ? `${acceptedBid.truckOwner.firstName} ${acceptedBid.truckOwner.lastName || ''}`.trim()
-              : acceptedBid.truckOwner?.name
-              || acceptedBid.truckOwner?.email
-              || 'Truck Owner';
-            if (ownerId) {
-              setBeneficiaryOptions([{ id: ownerId, label: ownerName }]);
-              setForm(p => ({ ...p, beneficiary_id: ownerId }));
-            }
+      api.get(`/trips/${selectedTrip.id}`)
+        .then(async res => {
+          const trip = res.data?.data || res.data;
+          const truckId = trip?.truckId || trip?.truck_id;
+          if (!truckId) return;
+          // Fetch truck details to get ownerId
+          const truckRes = await api.get(`/fleet/trucks/${truckId}`);
+          const truck = truckRes.data?.truck || truckRes.data?.data || truckRes.data;
+          console.log('🚛 Truck details:', truck);
+          const ownerId = truck?.ownerId || truck?.owner_id || truck?.owner?.id;
+          const ownerName = truck?.owner?.firstName
+            ? `${truck.owner.firstName} ${truck.owner.lastName || ''}`.trim()
+            : truck?.owner?.name
+            || truck?.owner?.email
+            || `Truck ${truck?.plateNumber || truckId.slice(0, 8)}`;
+          console.log('🚛 Owner ID:', ownerId, 'Owner Name:', ownerName);
+          if (ownerId) {
+            setBeneficiaryOptions([{ id: ownerId, label: ownerName }]);
+            setForm(p => ({ ...p, beneficiary_id: ownerId }));
           }
         })
-        .catch(() => {})
+        .catch((err) => { console.error('🚛 Truck fetch error:', err.response?.data || err.message); })
         .finally(() => setLoadingBeneficiary(false));
     } else if (type === 'driver') {
       // Driver comes from the trip's assigned driver
