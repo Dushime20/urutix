@@ -522,6 +522,23 @@ export class DriverController {
     return this.driverService.getDriverStats(id, req.user.tenantId);
   }
 
+  @Get(':id/analytics')
+  @ApiOperation({
+    summary: 'Get driver dashboard analytics',
+    description: 'Returns chart-ready earnings, performance metrics, and HOS data for the driver dashboard',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiQuery({ name: 'period', required: false, description: '7d | 14d | 30d', type: String })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  async getDriverAnalytics(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('period') period: string = '7d',
+    @Request() req,
+  ) {
+    return this.driverService.getDriverAnalytics(id, req.user.tenantId, period);
+  }
+
   @Get(':id/assigned-loads')
   @ApiOperation({
     summary: 'Get loads assigned to driver\'s truck',

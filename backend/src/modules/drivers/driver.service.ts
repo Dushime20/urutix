@@ -739,6 +739,174 @@ export class DriverService {
     }
   }
 
+  /**
+   * Returns chart-ready analytics for the driver dashboard:
+   * - Weekly earnings & trips per day (last 7 days from trips table)
+   * - Performance metrics (fuel efficiency, load utilization, response time)
+   *   computed from completed trips
+   * - HOS (Hours of Service) data from driver entity
+   * - Performance grade derived from composite score
+   */
+  async getDriverAnalytics(
+    id: string,
+    tenantId: string,
+    period: string = '7d',
+  ): Promise<{
+    earnings: {
+      labels: string[];
+      earnings: number[];
+      trips: number[];
+      totalEarnings: number;
+      totalTrips: number;
+      avgPerTrip: number;
+      performanceGrade: string;
+    };
+    performance: {
+      onTimeDelivery: number;
+      safetyScore: number;
+      customerRating: number;
+      fuelEfficiency: number;
+      loadUtilization: number;
+      responseTime: number;
+    };
+    hos: {
+      hoursWorkedThisWeek: number;
+      maxHoursPerShift: number;
+      consecutiveDrivingHours: number;
+      fatiguePercent: number;
+      status: string;
+      breakInHours: number | null;
+    };
+  }> {
+    const driver = await this.getDriverById(id, tenantId);
+
+    // ── Date range ────────────────────────────────────────────────────────────
+    const days = period === '30d' ? 30 : period === '14d' ? 14 : 7;
+    const from = new Date();
+    from.setDate(from.getDate() - (days - 1));
+    from.setHours(0, 0, 0, 0);
+
+    // ── Fetch completed trips in range ────────────────────────────────────────
+    const trips = await this.tripRepository
+      .createQueryBuilder('trip')
+      .where('trip.driverId = :id', { id })
+      .andWhere('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('trip.actualEndTime >= :from', { from })
+      .andWhere('trip.status = :status', { status: TripStatus.COMPLETED })
+      .getMany();
+
+    // ── Build per-day buckets ─────────────────────────────────────────────────
+    const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const buckets: { label: string; earnings: number; trips: number }[] = [];
+
+    for (let i = 0; i < days; i++) {
+      const d = new Date(from);
+      d.setDate(from.getDate() + i);
+      buckets.push({ label: DAY_LABELS[d.getDay()], earnings: 0, trips: 0 });
+    }
+
+    for (const trip of trips) {
+      const end = new Date(trip.actualEndTime!);
+      const idx = Math.floor(
+        (end.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      if (idx >= 0 && idx < days) {
+        buckets[idx].earnings += Number(trip.agreedPrice || 0);
+        buckets[idx].trips += 1;
+      }
+    }
+
+    const totalEarnings = buckets.reduce((s, b) => s + b.earnings, 0);
+    const totalTrips = buckets.reduce((s, b) => s + b.trips, 0);
+    const avgPerTrip = totalTrips > 0 ? Math.round(totalEarnings / totalTrips) : 0;
+
+    // ── Performance grade from driver entity ──────────────────────────────────
+    const composite =
+      (driver.onTimeDeliveryRate || 0) * 0.3 +
+      (driver.safetyScore || 0) * 0.3 +
+      ((driver.rating || 0) * 20) * 0.2 +
+      20; // base floor
+
+    const grade =
+      composite >= 90 ? 'A+' :
+      composite >= 80 ? 'A'  :
+      composite >= 70 ? 'B+' :
+      composite >= 60 ? 'B'  :
+      composite >= 50 ? 'C'  : 'D';
+
+    // ── Performance metrics from trips ────────────────────────────────────────
+    const completedTrips = trips.filter(t => t.status === TripStatus.COMPLETED);
+    const withFuel = completedTrips.filter(t => t.fuelEfficiency != null && Number(t.fuelEfficiency) > 0);
+    const avgFuelEfficiency = withFuel.length
+      ? Math.round(withFuel.reduce((s, t) => s + Number(t.fuelEfficiency), 0) / withFuel.length)
+      : 0;
+
+    // Load utilization: % of trips where agreedPrice > 0 (proxy for loaded trips)
+    const loadedTrips = completedTrips.filter(t => Number(t.agreedPrice) > 0);
+    const loadUtilization = completedTrips.length
+      ? Math.round((loadedTrips.length / completedTrips.length) * 100)
+      : 0;
+
+    // Response time score: % of trips started within 30 min of plannedStartTime
+    const tripsWithStart = completedTrips.filter(
+      t => t.actualStartTime && t.plannedStartTime,
+    );
+    const onTimeStarts = tripsWithStart.filter(t => {
+      const diff =
+        new Date(t.actualStartTime!).getTime() -
+        new Date(t.plannedStartTime).getTime();
+      return diff <= 30 * 60 * 1000; // within 30 minutes
+    });
+    const responseTime = tripsWithStart.length
+      ? Math.round((onTimeStarts.length / tripsWithStart.length) * 100)
+      : 0;
+
+    // ── HOS (Hours of Service) ────────────────────────────────────────────────
+    const MAX_SHIFT_HOURS = 11;
+    const MAX_CONSECUTIVE_HOURS = 8;
+    const hoursWorked = driver.hoursWorkedThisWeek || 0;
+    const consecutive = driver.consecutiveDrivingHours || 0;
+    const fatiguePercent = Math.min(
+      100,
+      Math.round((consecutive / MAX_CONSECUTIVE_HOURS) * 100),
+    );
+    const breakInHours =
+      consecutive > 0
+        ? Math.max(0, Math.round((MAX_CONSECUTIVE_HOURS - consecutive) * 10) / 10)
+        : null;
+    const hosStatus =
+      fatiguePercent >= 90 ? 'Rest Required' :
+      fatiguePercent >= 70 ? 'Caution'       : 'Safe to Drive';
+
+    return {
+      earnings: {
+        labels: buckets.map(b => b.label),
+        earnings: buckets.map(b => b.earnings),
+        trips: buckets.map(b => b.trips),
+        totalEarnings,
+        totalTrips,
+        avgPerTrip,
+        performanceGrade: grade,
+      },
+      performance: {
+        onTimeDelivery: Math.round(driver.onTimeDeliveryRate || 0),
+        safetyScore: Math.round(driver.safetyScore || 0),
+        customerRating: Math.round((driver.rating || 0) * 20),
+        fuelEfficiency: avgFuelEfficiency,
+        loadUtilization,
+        responseTime,
+      },
+      hos: {
+        hoursWorkedThisWeek: hoursWorked,
+        maxHoursPerShift: MAX_SHIFT_HOURS,
+        consecutiveDrivingHours: consecutive,
+        fatiguePercent,
+        status: hosStatus,
+        breakInHours,
+      },
+    };
+  }
+
   async updateDriverLocation(
     id: string,
     latitude: number,

@@ -403,30 +403,53 @@ class DriverApiService {
       const response = await api.get(`/drivers/${driverId}/stats`);
       return response.data;
     } catch (error: any) {
-      // Return mock stats if endpoint doesn't exist yet
       if (error.response?.status === 404) {
         return {
-          totalTrips: 0,
-          totalEarnings: 0,
-          rating: 0,
-          onTimeDeliveryRate: 0,
-          safetyScore: 0,
-          hoursWorkedThisWeek: 0,
-          hoursWorkedThisMonth: 0,
-          consecutiveDrivingHours: 0,
-          milesThisWeek: 0,
-          fuelEfficiency: 0,
-          completedTrips: 0,
-          cancelledTrips: 0,
-          averageRating: 0,
-          totalDistance: 0,
-          totalFuelUsed: 0,
-          averageSpeed: 0,
-          violationsCount: 0,
-          lastTripDate: null,
-          nextTripDate: null,
+          totalTrips: 0, totalEarnings: 0, rating: 0,
+          onTimeDeliveryRate: 0, safetyScore: 0,
+          hoursWorkedThisWeek: 0, hoursWorkedThisMonth: 0,
+          consecutiveDrivingHours: 0, milesThisWeek: 0,
+          fuelEfficiency: 0, completedTrips: 0, cancelledTrips: 0,
+          averageRating: 0, totalDistance: 0, totalFuelUsed: 0,
+          averageSpeed: 0, violationsCount: 0, lastTripDate: null, nextTripDate: null,
         };
       }
+      throw error;
+    }
+  }
+
+  async getDriverAnalytics(driverId: string, period: string = '7d'): Promise<{
+    earnings: {
+      labels: string[];
+      earnings: number[];
+      trips: number[];
+      totalEarnings: number;
+      totalTrips: number;
+      avgPerTrip: number;
+      performanceGrade: string;
+    };
+    performance: {
+      onTimeDelivery: number;
+      safetyScore: number;
+      customerRating: number;
+      fuelEfficiency: number;
+      loadUtilization: number;
+      responseTime: number;
+    };
+    hos: {
+      hoursWorkedThisWeek: number;
+      maxHoursPerShift: number;
+      consecutiveDrivingHours: number;
+      fatiguePercent: number;
+      status: string;
+      breakInHours: number | null;
+    };
+  } | null> {
+    try {
+      const response = await api.get(`/drivers/${driverId}/analytics`, { params: { period } });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) return null;
       throw error;
     }
   }

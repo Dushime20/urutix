@@ -30,6 +30,10 @@ interface DriverEarningsChartProps {
     labels: string[];
     earnings: number[];
     trips: number[];
+    totalEarnings?: number;
+    totalTrips?: number;
+    avgPerTrip?: number;
+    performanceGrade?: string;
   };
   isLoading?: boolean;
   timeRange?: string;
@@ -156,9 +160,9 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({
       <div className="grid grid-cols-3 gap-6 mt-10 pt-10 border-t border-slate-50">
         {[
           { label: 'Total Trips', value: chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },
-          { label: 'Avg. Per Trip', value: `$${Math.round(totalEarnings / chartData.trips.reduce((sum, val) => sum + val, 0))}`, icon: Activity },
-          { label: 'Performance Grade', value: 'A+', icon: Zap }
-        ].map((stat) => (
+          { label: 'Total Trips', value: chartData.totalTrips ?? chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },
+          { label: 'Avg. Per Trip', value: chartData.avgPerTrip != null ? \          { label: 'Total Trips', value: chartData.totalTrips ?? chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },{chartData.avgPerTrip.toLocaleString()} : (totalTrips > 0 ? \          { label: 'Total Trips', value: chartData.totalTrips ?? chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },{Math.round(totalEarnings / totalTrips).toLocaleString()} : '—'), icon: Activity },
+          { label: 'Performance Grade', value: chartData.performanceGrade ?? '—', icon: Zap }
           <div key={stat.label} className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2 text-[#345E85]">
               <stat.icon size={12} />

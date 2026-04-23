@@ -11,6 +11,14 @@ interface DriverQuickStatsProps {
     activeTrips?: number;
     hoursWorked?: number;
   };
+  hos?: {
+    hoursWorkedThisWeek: number;
+    maxHoursPerShift: number;
+    consecutiveDrivingHours: number;
+    fatiguePercent: number;
+    status: string;
+    breakInHours: number | null;
+  } | null;
   isLoading?: boolean;
 }
 
@@ -43,8 +51,8 @@ const DashboardStatCard = ({ title, value, icon: Icon, delay = 0, isAward = fals
           {value}
         </h4>
         <div className="flex items-center gap-1.5 mt-2">
-           <TrendingUp size={12} className="text-emerald-500" />
-           <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">12.5% <span className="text-slate-400 font-medium">up</span></p>
+           <TrendingUp size={12} className="text-slate-300" />
+           <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Live Data</p>
         </div>
       </div>
       
@@ -78,7 +86,7 @@ const DashboardStatCard = ({ title, value, icon: Icon, delay = 0, isAward = fals
   </motion.div>
 );
 
-export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, isLoading }) => {
+export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, hos, isLoading }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
@@ -128,9 +136,9 @@ export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, isLoa
     },
     {
       label: 'Fatigue',
-      value: '22%',
+      value: hos ? `${hos.fatiguePercent}%` : '—',
       icon: Activity,
-      percentage: 22,
+      percentage: hos?.fatiguePercent ?? 0,
     }
   ];
 
@@ -159,17 +167,32 @@ export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, isLoa
              </div>
              <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Shift Progress</p>
-                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">4.5 / 11.0 Hours Driven</p>
+                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">
+                  {hos ? `${hos.consecutiveDrivingHours} / ${hos.maxHoursPerShift} Hours Driven` : '— / — Hours Driven'}
+                </p>
              </div>
           </div>
           <div className="flex-1 w-full max-w-md">
              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 h-full w-[41%]" />
+                <div
+                  className="bg-gradient-to-r from-emerald-500 to-blue-500 h-full transition-all duration-700"
+                  style={{ width: hos ? `${Math.min(100, (hos.consecutiveDrivingHours / hos.maxHoursPerShift) * 100)}%` : '0%' }}
+                />
              </div>
           </div>
           <div className="flex items-center gap-3">
-             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black uppercase tracking-widest">Safe to Drive</span>
-             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Break in 3.5H</span>
+             <span className={`px-3 py-1 border rounded-lg text-[10px] font-black uppercase tracking-widest ${
+               hos?.status === 'Rest Required' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+               hos?.status === 'Caution' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+               'bg-emerald-50 text-emerald-600 border-emerald-100'
+             }`}>
+               {hos?.status ?? '—'}
+             </span>
+             {hos?.breakInHours != null && (
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                 Break in {hos.breakInHours}H
+               </span>
+             )}
           </div>
         </div>
       </div>

@@ -145,6 +145,12 @@ const DriverDashboard: React.FC = () => {
     enabled: !!driverId,
   });
 
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ['driver-analytics', driverId, timeRange],
+    queryFn: () => driverApi.getDriverAnalytics(driverId, timeRange),
+    enabled: !!driverId,
+  });
+
   const { data: upcomingTrips, isLoading: upcomingLoading } = useQuery({
     queryKey: ['driver-upcoming-trips', driverId, timeRange],
     queryFn: () => driverApi.getUpcomingTrips(driverId),
@@ -349,7 +355,8 @@ const DriverDashboard: React.FC = () => {
                   activeTrips: currentTrip ? 1 : 0,
                   hoursWorked: stats?.hoursWorkedThisWeek
                 }}
-                isLoading={statsLoading}
+                hos={analytics?.hos}
+                isLoading={statsLoading || analyticsLoading}
               />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
