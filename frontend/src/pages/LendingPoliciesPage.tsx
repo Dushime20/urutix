@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 import {
   ShieldAlert,
@@ -38,8 +39,30 @@ const LendingPoliciesPage: React.FC = () => {
   const [modalCategory, setModalCategory] = useState<string>('');
   const [modalLoading, setModalLoading] = useState(false);
 
-  // Get lender ID from authenticated user
-  const lenderId = user?.lenderId || user?.id;
+  // Resolved lender entity ID (user?.id is the auth user ID, not the lender entity ID)
+  const [resolvedLenderId, setResolvedLenderId] = useState<string | null>(null);
+
+  // Resolve the real lender entity ID from the backend on mount
+  useEffect(() => {
+    const resolveLenderId = async () => {
+      try {
+        const r = await api.get('/lending/my-lender-id');
+        if (r.data?.lenderId) {
+          setResolvedLenderId(r.data.lenderId);
+        } else {
+          // Fallback: use user?.lenderId if available
+          setResolvedLenderId(user?.lenderId || user?.id || null);
+        }
+      } catch {
+        // Fallback if endpoint fails
+        setResolvedLenderId(user?.lenderId || user?.id || null);
+      }
+    };
+    if (user) resolveLenderId();
+  }, [user]);
+
+  // Use resolved lender entity ID for all API calls
+  const lenderId = resolvedLenderId;
 
   useEffect(() => {
     const fetchPolicies = async () => {

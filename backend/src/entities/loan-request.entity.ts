@@ -117,4 +117,7 @@ export class LoanRequest {
   @ManyToOne('Borrower')
   @JoinColumn({ name: 'borrower_id' })
   borrower: any;
+
+  @OneToMany('LoanTerms', 'loan_request')
+  loanTerms: any[];
 }

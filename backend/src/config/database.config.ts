@@ -30,6 +30,7 @@ import { LenderPolicy } from './../entities/lender-policy.entity';
 import { LoanRequest } from './../entities/loan-request.entity';
 import { LoanDisbursement } from './../entities/loan-disbursement.entity';
 import { LoanRepayment } from './../entities/loan-repayment.entity';
+import { LoanTerms } from './../entities/loan-terms.entity';
 import { Borrower } from './../entities/borrower.entity';
 import { RouteTruck } from './../entities/route-truck.entity';
 import { AuctionView } from './../entities/auction-view.entity';
@@ -183,6 +184,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LoanRequest,
     LoanDisbursement,
     LoanRepayment,
+    LoanTerms,
     Borrower,
     RouteTruck,
     // Financial entities
@@ -329,6 +331,7 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     LoanRequest,
     LoanDisbursement,
     LoanRepayment,
+    LoanTerms,
     Borrower,
     RouteTruck,
     // Financial entities

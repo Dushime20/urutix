@@ -60,6 +60,10 @@ import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { Trip } from '../../entities/trip.entity';
 import { EmailService } from '../auth/services/email.service';
 import { UrutiLendingIntegrationService } from './services/uruti-lending-integration.service';
+import { LendingPoliciesService } from './services/lending-policies.service';
+import { LendingPolicyInterestRate, RiskLevel } from '../../entities/lending-policy-interest-rate.entity';
+import { LendingPolicyRiskAssessment, RiskFactor } from '../../entities/lending-policy-risk-assessment.entity';
+import { LoanTerms } from '../../entities/loan-terms.entity';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import axios from 'axios';
@@ -114,6 +118,17 @@ export class LendingService {
     private moduleRef: ModuleRef,
 
     private urutiLendingIntegration: UrutiLendingIntegrationService,
+
+    @InjectRepository(LendingPolicyInterestRate)
+    private interestRatePolicyRepository: Repository<LendingPolicyInterestRate>,
+
+    @InjectRepository(LendingPolicyRiskAssessment)
+    private riskAssessmentPolicyRepository: Repository<LendingPolicyRiskAssessment>,
+
+    @InjectRepository(LoanTerms)
+    private loanTermsRepository: Repository<LoanTerms>,
+
+    private lendingPoliciesService: LendingPoliciesService,
   ) {}
 
   /**
@@ -596,6 +611,26 @@ export class LendingService {
     const savedLoan = await this.loanRequestRepository.save(loanRequest);
     this.logger.log(`Loan request created with ID: ${savedLoan.id}`);
 
+    // Compute and persist interest_rate / risk_score from lender's active policies
+    if (savedLoan.lender_id) {
+      const terms = await this.computeLoanTerms(
+        savedLoan.lender_id,
+        borrower?.credit_score ?? null,
+        savedLoan.id,
+      );
+      if (terms.interest_rate !== null || terms.risk_score !== null) {
+        savedLoan.metadata = {
+          ...(savedLoan.metadata || {}),
+          interest_rate: terms.interest_rate,
+          effective_annual_rate: terms.effective_annual_rate,
+          risk_score: terms.risk_score,
+          risk_level: terms.risk_level,
+          credit_score: borrower?.credit_score ?? null,
+        };
+        await this.loanRequestRepository.save(savedLoan);
+      }
+    }
+
     // Attempt to process with available lenders if no lender was specified
     if (!createLoanDto.lender_id) {
       this.logger.log(`Triggering automatic lender assignment for loan ${savedLoan.id}`);
@@ -786,6 +821,23 @@ export class LendingService {
     loan.lender_id = lender.id;
     await this.loanRequestRepository.save(loan);
     this.logger.log(`processLoanRequest: Successfully assigned lender to loan ${loanId}`);
+
+    // Compute and persist loan terms now that lender is known
+    try {
+      const fullLoan = await this.loanRequestRepository.findOne({
+        where: { id: loanId },
+        relations: ['borrower'],
+      });
+      if (fullLoan) {
+        await this.computeLoanTerms(
+          lender.id,
+          fullLoan.borrower?.credit_score ?? null,
+          loanId,
+        );
+      }
+    } catch (termsErr) {
+      this.logger.error(`processLoanRequest: computeLoanTerms failed for ${loanId}: ${termsErr.message}`);
+    }
 
     // Send loan request to lender
     try {
@@ -999,6 +1051,7 @@ export class LendingService {
     return await this.dataSource.transaction(async (manager) => {
       const loan = await manager.findOne(LoanRequest, {
         where: { id: loanId },
+        relations: ['borrower'],
       } as any);
       if (!loan) {
         throw new NotFoundException('Loan request not found');
@@ -1011,6 +1064,30 @@ export class LendingService {
       const anyApproval: any = approval as any;
       if (anyApproval.due_date) {
         loan.due_date = new Date(anyApproval.due_date);
+      }
+
+      // Compute interest_rate and risk_score from lender's active policies.
+      // Only compute if no loan_terms record exists yet (origination snapshot takes precedence).
+      if (loan.lender_id) {
+        const existingTerms = await this.loanTermsRepository.findOne({
+          where: { loan_request_id: loanId },
+        });
+        if (!existingTerms) {
+          const borrowerCreditScore = (loan as any).borrower?.credit_score ?? null;
+          const terms = await this.computeLoanTerms(
+            loan.lender_id,
+            borrowerCreditScore,
+            loanId,
+          );
+          loan.metadata = {
+            ...(loan.metadata || {}),
+            interest_rate: terms.interest_rate,
+            effective_annual_rate: terms.effective_annual_rate,
+            risk_score: terms.risk_score,
+            risk_level: terms.risk_level,
+            credit_score: borrowerCreditScore,
+          };
+        }
       }
 
       const updatedLoan = await manager.save(LoanRequest, loan);
@@ -1072,6 +1149,9 @@ export class LendingService {
         beneficiaries: beneficiaries,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
+        interest_rate: loan.metadata?.interest_rate ?? null,
+        risk_score: loan.metadata?.risk_score ?? null,
+        credit_score: loan.metadata?.credit_score ?? null,
       });
 
       const savedDisbursement = await manager.save(
@@ -1185,6 +1265,9 @@ export class LendingService {
         beneficiaries: beneficiaries,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
+        interest_rate: loan.metadata?.interest_rate ?? null,
+        risk_score: loan.metadata?.risk_score ?? null,
+        credit_score: loan.metadata?.credit_score ?? null,
       });
 
       const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
@@ -1943,6 +2026,184 @@ export class LendingService {
     return await this.lenderRepository.save(lender);
   }
 
+  /**
+   * Compute and persist loan terms for a given loan request.
+   *
+   * Professional-grade implementation:
+   * - Per-factor risk scoring using each rule's own scoring_criteria bands
+   * - Adjustment factors applied to the base rate (credit_score adjustment
+   *   from the policy's adjustment_factors field)
+   * - Effective Annual Rate (EAR/APR) computed from nominal rate via monthly
+   *   compounding � displayed to borrowers per disclosure requirements
+   * - Full policy snapshot stored for immutable audit trail
+   * - Engine version tracked so scoring changes are traceable
+   */
+  async computeLoanTerms(
+    lenderId: string,
+    borrowerCreditScore: number | null,
+    loanRequestId?: string,
+    borrowerData?: {
+      business_age_years?: number | null;
+      debt_to_income_ratio?: number | null;
+      collateral_value?: number | null;
+    },
+  ): Promise<{
+    interest_rate: number | null;
+    effective_annual_rate: number | null;
+    risk_score: number | null;
+    risk_level: RiskLevel | null;
+    base_rate: number | null;
+    rate_adjustment: number | null;
+    policy_id: string | null;
+    breakdown: Array<{ factor: string; weight: number; input_value: number | null; band: string | null; factor_score: number }>;
+  }> {
+    const ENGINE_VERSION = '1.0.0';
+    try {
+      const [interestRatePolicies, riskRules] = await Promise.all([
+        this.interestRatePolicyRepository.find({
+          where: { lender_id: lenderId, is_active: true },
+          order: { priority: 'DESC' },
+        }),
+        this.riskAssessmentPolicyRepository.find({
+          where: { lender_id: lenderId, is_active: true },
+          order: { priority: 'DESC' },
+        }),
+      ]);
+
+      if (!interestRatePolicies.length && !riskRules.length) {
+        this.logger.warn(`computeLoanTerms: no active policies for lender ${lenderId}`);
+        return { interest_rate: null, effective_annual_rate: null, risk_score: null, risk_level: null, base_rate: null, rate_adjustment: null, policy_id: null, breakdown: [] };
+      }
+
+      // -- Step 1: Per-factor risk scoring --------------------------------------
+      // Map each RiskFactor to the best available input value.
+      const factorInputs: Record<string, number | null> = {
+        credit_score:      borrowerCreditScore,
+        payment_history:   borrowerCreditScore,
+        debt_to_income:    borrowerData?.debt_to_income_ratio ?? null,
+        business_age:      borrowerData?.business_age_years ?? null,
+        industry_risk:     null,
+        collateral_value:  borrowerData?.collateral_value ?? null,
+        cash_flow:         null,
+        market_conditions: null,
+      };
+
+      const breakdown: Array<{ factor: string; weight: number; input_value: number | null; band: string | null; factor_score: number }> = [];
+      let totalWeight = 0;
+      let weightedScore = 0;
+
+      for (const rule of riskRules) {
+        const weight = Number(rule.weight) || 0;
+        if (weight === 0) continue;
+        const inputValue = factorInputs[rule.factor] ?? null;
+        let factorScore = 50; // neutral default for missing data
+        let matchedBand: string | null = null;
+
+        if (inputValue !== null && rule.scoring_criteria) {
+          for (const tier of ['excellent', 'good', 'fair', 'poor'] as const) {
+            const band = rule.scoring_criteria[tier];
+            if (band && inputValue >= Number(band.min) && inputValue <= Number(band.max)) {
+              factorScore = Number(band.score);
+              matchedBand = tier;
+              break;
+            }
+          }
+        } else if (inputValue === null) {
+          matchedBand = 'missing_data';
+        }
+
+        breakdown.push({ factor: rule.factor, weight, input_value: inputValue, band: matchedBand, factor_score: factorScore });
+        weightedScore += factorScore * weight;
+        totalWeight += weight;
+      }
+
+      const risk_score: number | null = totalWeight > 0
+        ? Math.round((weightedScore / totalWeight) * 100) / 100
+        : null;
+
+      // -- Step 2: Derive risk level ---------------------------------------------
+      let risk_level: RiskLevel | null = null;
+      if (risk_score !== null) {
+        if (risk_score >= 80)      risk_level = RiskLevel.LOW;
+        else if (risk_score >= 60) risk_level = RiskLevel.MEDIUM;
+        else if (risk_score >= 40) risk_level = RiskLevel.HIGH;
+        else                       risk_level = RiskLevel.CRITICAL;
+      }
+
+      // -- Step 3: Select interest rate policy ----------------------------------
+      const matchedPolicy = (risk_level
+        ? interestRatePolicies.find(p => p.risk_level === risk_level)
+        : null) ?? interestRatePolicies[0] ?? null;
+
+      let base_rate: number | null = null;
+      let rate_adjustment = 0;
+      let nominal_rate: number | null = null;
+
+      if (matchedPolicy) {
+        base_rate = Number(matchedPolicy.base_rate);
+        const min_rate = Number(matchedPolicy.min_rate);
+        const max_rate = Number(matchedPolicy.max_rate);
+        const adj = matchedPolicy.adjustment_factors;
+
+        // Apply credit_score adjustment factor if configured
+        if (adj?.credit_score != null && borrowerCreditScore !== null) {
+          // Scale linearly: 575 is midpoint of 300-850 FICO range
+          rate_adjustment += Number(adj.credit_score) * ((borrowerCreditScore - 575) / 275);
+        }
+
+        nominal_rate = Math.round(Math.min(max_rate, Math.max(min_rate, base_rate + rate_adjustment)) * 10000) / 10000;
+      }
+
+      // -- Step 4: Effective Annual Rate (APR) -----------------------------------
+      // EAR = (1 + r/n)^n - 1  where r = nominal rate, n = 12 (monthly compounding)
+      let effective_annual_rate: number | null = null;
+      if (nominal_rate !== null) {
+        const n = 12;
+        effective_annual_rate = Math.round((Math.pow(1 + nominal_rate / 100 / n, n) - 1) * 100 * 10000) / 10000;
+      }
+
+      this.logger.log(
+        `computeLoanTerms lender=${lenderId} credit=${borrowerCreditScore} ` +
+        `risk_score=${risk_score} risk_level=${risk_level} ` +
+        `base=${base_rate} adj=${rate_adjustment} nominal=${nominal_rate}% EAR=${effective_annual_rate}%`,
+      );
+
+      // -- Step 5: Persist immutable LoanTerms record ---------------------------
+      if (loanRequestId && this.loanTermsRepository) {
+        try {
+          const existing = await this.loanTermsRepository.findOne({ where: { loan_request_id: loanRequestId } });
+          if (!existing) {
+            const loanTerms = this.loanTermsRepository.create({
+              loan_request_id: loanRequestId,
+              lender_id: lenderId,
+              nominal_rate,
+              effective_annual_rate,
+              risk_score,
+              risk_level,
+              credit_score_input: borrowerCreditScore,
+              interest_rate_policy_id: matchedPolicy?.id ?? null,
+              interest_rate_policy_snapshot: matchedPolicy
+                ? { id: matchedPolicy.id, name: matchedPolicy.name, risk_level: matchedPolicy.risk_level, base_rate: matchedPolicy.base_rate, min_rate: matchedPolicy.min_rate, max_rate: matchedPolicy.max_rate, adjustment_factors: matchedPolicy.adjustment_factors, priority: matchedPolicy.priority }
+                : null,
+              risk_score_breakdown: breakdown,
+              base_rate,
+              rate_adjustment,
+              engine_version: ENGINE_VERSION,
+            });
+            await this.loanTermsRepository.save(loanTerms);
+          }
+        } catch (persistErr) {
+          this.logger.error(`computeLoanTerms: failed to persist LoanTerms for ${loanRequestId}: ${persistErr.message}`);
+        }
+      }
+
+      return { interest_rate: nominal_rate, effective_annual_rate, risk_score, risk_level, base_rate, rate_adjustment, policy_id: matchedPolicy?.id ?? null, breakdown };
+    } catch (err) {
+      this.logger.error(`computeLoanTerms error for lender ${lenderId}: ${err.message}`);
+      return { interest_rate: null, effective_annual_rate: null, risk_score: null, risk_level: null, base_rate: null, rate_adjustment: null, policy_id: null, breakdown: [] };
+    }
+  }
+
   async getLenderLoanRequests(
     lenderId: string,
     status?: string,
@@ -1983,13 +2244,14 @@ export class LendingService {
       return { data: [], total: 0, page, limit, totalPages: 0 };
     }
 
-    // Step 2: Query loans assigned to this lender
+    // Step 2: Query loans assigned to this lender, joining loan_terms for computed values
     const qb = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.lender', 'lender')
       .leftJoinAndSelect('loan.disbursements', 'disbursements')
       .leftJoinAndSelect('loan.repayments', 'repayments')
       .leftJoinAndSelect('loan.borrower', 'borrower')
+      .leftJoinAndSelect('loan.loanTerms', 'loanTerms')
       .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
 
     // Handle status filter - support comma-separated values
@@ -2016,7 +2278,36 @@ export class LendingService {
       `getLenderLoanRequests: found ${total} loans for lender ${actualLenderId} with status filter: ${status || 'all'}`,
     );
 
-    return { data: loans, total, page, limit, totalPages: Math.ceil(total / limit) };
+    // Enrich each loan with computed terms.
+    // Priority: loan_terms (immutable snapshot) → disbursement → metadata fallback
+    const enrichedLoans = loans.map((loan: any) => {
+      const terms = (loan as any).loanTerms ?? null;
+      const disbursement = loan.disbursements?.[0] ?? null;
+      const meta = loan.metadata ?? {};
+
+      const interest_rate =
+        terms?.nominal_rate != null ? Number(terms.nominal_rate) :
+        (disbursement?.interest_rate != null && Number(disbursement.interest_rate) > 0 ? Number(disbursement.interest_rate) :
+        (meta.interest_rate != null ? Number(meta.interest_rate) : null));
+
+      const effective_annual_rate =
+        terms?.effective_annual_rate != null ? Number(terms.effective_annual_rate) :
+        (meta.effective_annual_rate != null ? Number(meta.effective_annual_rate) : null);
+
+      const risk_score =
+        terms?.risk_score != null ? Number(terms.risk_score) :
+        (disbursement?.risk_score != null && Number(disbursement.risk_score) > 0 ? Number(disbursement.risk_score) :
+        (meta.risk_score != null ? Number(meta.risk_score) : null));
+
+      const credit_score =
+        terms?.credit_score_input != null ? Number(terms.credit_score_input) :
+        (disbursement?.credit_score != null && Number(disbursement.credit_score) > 0 ? Number(disbursement.credit_score) :
+        (meta.credit_score != null ? Number(meta.credit_score) : (loan.borrower?.credit_score ?? null)));
+
+      return { ...loan, interest_rate, effective_annual_rate, risk_score, credit_score };
+    });
+
+    return { data: enrichedLoans, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getLenderAnalytics(lenderId: string, period: string = '30d') {

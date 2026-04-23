@@ -25,6 +25,7 @@ import { LendingPolicyRepayment } from '../../entities/lending-policy-repayment.
 import { LendingPolicyCargoType } from '../../entities/lending-policy-cargo-type.entity';
 import { LendingPolicySystemConfig } from '../../entities/lending-policy-system-config.entity';
 import { LoanRequest } from '../../entities/loan-request.entity';
+import { LoanTerms } from '../../entities/loan-terms.entity';
 import { LoanDisbursement } from '../../entities/loan-disbursement.entity';
 import { LoanRepayment } from '../../entities/loan-repayment.entity';
 import { Borrower } from '../../entities/borrower.entity';
@@ -54,6 +55,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       LendingPolicyCargoType,
       LendingPolicySystemConfig,
       LoanRequest,
+      LoanTerms,
       LoanDisbursement,
       LoanRepayment,
       Borrower,

@@ -24,7 +24,7 @@ interface LoanRequest {
   borrower_name: string; borrower_email: string; borrower_phone: string; borrower_company?: string;
   cargo_type: string; cargo_weight: number; cargo_value: number;
   pickup_location: string; delivery_location: string; distance: number; estimated_duration: number;
-  risk_score?: number; credit_score: number; interest_rate: number;
+  risk_score?: number | null; credit_score?: number | null; interest_rate?: number | null; effective_annual_rate?: number | null;
   collateral_type?: string; collateral_value?: number; purpose: string;
   lender_id?: string; lender?: Lender; processing_fee: number; total_amount: number;
   monthly_payment?: number; loan_term_months: number;
@@ -33,7 +33,7 @@ interface LoanRequest {
 interface LoanAnalytics {
   totalRequests: number; pendingRequests: number; approvedRequests: number; rejectedRequests: number;
   totalAmountRequested: number; totalAmountApproved: number; averageAmount: number;
-  averageRiskScore: number; approvalRate: number; monthlyGrowth: number;
+  averageRiskScore: number | null; approvalRate: number; monthlyGrowth: number;
 }
 
 const BENEFICIARY_TYPES = ['fuel', 'driver', 'maintenance', 'tolls', 'truck_owner', 'other'] as const;
@@ -1092,9 +1092,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             delivery_location: 'N/A',
             distance: 0,
             estimated_duration: 0,
-            risk_score: 50,
-            credit_score: req.borrower?.credit_score || 600,
-            interest_rate: req.interest_rate || req.interestRate || 10,
+            risk_score: req.risk_score != null ? Number(req.risk_score) : null,
+            credit_score: req.borrower?.credit_score ?? null,
+            interest_rate: req.interest_rate != null ? Number(req.interest_rate) : null,
             purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
             lender_id: lenderId,
             lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
@@ -1116,7 +1116,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         totalAmountRequested: mapped.reduce((s, r) => s + r.requested_amount, 0),
         totalAmountApproved:  mapped.filter(r => r.status === 'approved').reduce((s, r) => s + (r.approved_amount ?? r.requested_amount), 0),
         averageAmount: mapped.length ? mapped.reduce((s, r) => s + r.requested_amount, 0) / mapped.length : 0,
-        averageRiskScore: 50,
+        averageRiskScore: mapped.filter(r => r.risk_score != null).length > 0 ? mapped.filter(r => r.risk_score != null).reduce((s, r) => s + (r.risk_score ?? 0), 0) / mapped.filter(r => r.risk_score != null).length : null,
         approvalRate: mapped.length ? (mapped.filter(r => r.status === 'approved').length / mapped.length) * 100 : 0,
         monthlyGrowth: 0,
       });
@@ -1180,9 +1180,9 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             delivery_location: 'N/A',
             distance: 0,
             estimated_duration: 0,
-            risk_score: 50,
-            credit_score: req.borrower?.credit_score || 600,
-            interest_rate: req.interest_rate || req.interestRate || 10,
+            risk_score: req.risk_score != null ? Number(req.risk_score) : null,
+            credit_score: req.borrower?.credit_score ?? null,
+            interest_rate: req.interest_rate != null ? Number(req.interest_rate) : null,
             purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
             lender_id: lenderId,
             lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
@@ -1204,7 +1204,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         totalAmountRequested: mapped.reduce((s, r) => s + r.requested_amount, 0),
         totalAmountApproved:  mapped.filter(r => r.status === 'approved').reduce((s, r) => s + (r.approved_amount ?? r.requested_amount), 0),
         averageAmount: mapped.length ? mapped.reduce((s, r) => s + r.requested_amount, 0) / mapped.length : 0,
-        averageRiskScore: 50,
+        averageRiskScore: mapped.filter(r => r.risk_score != null).length > 0 ? mapped.filter(r => r.risk_score != null).reduce((s, r) => s + (r.risk_score ?? 0), 0) / mapped.filter(r => r.risk_score != null).length : null,
         approvalRate: mapped.length ? (mapped.filter(r => r.status === 'approved').length / mapped.length) * 100 : 0,
         monthlyGrowth: 0,
       });
@@ -1282,8 +1282,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               cargo_weight: cargoData?.weight || req.cargoWeight || 0,
               cargo_value: cargoData?.loadValue || req.cargoValue || 0,
               pickup_location: fmt(pickupLoc) || 'N/A', delivery_location: fmt(deliveryLoc) || 'N/A',
-              risk_score: req.risk_score || req.riskScore || 50, credit_score: req.credit_score || req.creditScore || borrower?.credit_score || 600,
-              interest_rate: req.interest_rate || req.interestRate || 10, 
+              risk_score: req.risk_score != null ? Number(req.risk_score) : (req.riskScore != null ? Number(req.riskScore) : null),
+              credit_score: req.credit_score != null ? Number(req.credit_score) : (req.creditScore != null ? Number(req.creditScore) : (borrower?.credit_score ?? null)),
+              interest_rate: req.interest_rate != null ? Number(req.interest_rate) : (req.interestRate != null ? Number(req.interestRate) : null),
+              effective_annual_rate: req.effective_annual_rate != null ? Number(req.effective_annual_rate) : (req.effectiveAnnualRate != null ? Number(req.effectiveAnnualRate) : null),
               purpose: req.purpose || req.metadata?.purpose || 'Cargo financing',
               metadata: req.metadata,
               lender_id: req.lender_id || req.lenderId, processing_fee: req.processing_fee || req.processingFee || 0,
@@ -1302,7 +1304,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           totalAmountRequested: transformedRequests.reduce((sum, r) => sum + r.requested_amount, 0),
           totalAmountApproved: transformedRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.requested_amount, 0),
           averageAmount: analyticsData?.averageLoanAmount || (transformedRequests.length > 0 ? transformedRequests.reduce((sum, r) => sum + r.requested_amount, 0) / transformedRequests.length : 0),
-          averageRiskScore: analyticsData?.averageRiskScore || 50,
+          averageRiskScore: analyticsData?.averageRiskScore ?? (transformedRequests.filter(r => r.risk_score != null).length > 0 ? transformedRequests.filter(r => r.risk_score != null).reduce((sum, r) => sum + (r.risk_score ?? 0), 0) / transformedRequests.filter(r => r.risk_score != null).length : null),
           approvalRate: analyticsData?.approvalRate || (transformedRequests.length > 0 ? (transformedRequests.filter(r => r.status === 'approved').length / transformedRequests.length) * 100 : 0),
           monthlyGrowth: analyticsData?.monthlyGrowthRate || 0,
         });

@@ -134,8 +134,14 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
               )}
               {loan.interest_rate && (
                 <div>
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Interest Rate</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-white">{loan.interest_rate}% APR</p>
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Nominal Rate</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-white">{loan.interest_rate}%</p>
+                </div>
+              )}
+              {loan.effective_annual_rate && (
+                <div>
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">APR (Effective Annual)</p>
+                  <p className="text-xl font-black text-blue-600 dark:text-blue-400">{loan.effective_annual_rate}%</p>
                 </div>
               )}
               {loan.loan_term_months && (
