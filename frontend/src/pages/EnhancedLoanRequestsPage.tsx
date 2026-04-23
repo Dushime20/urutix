@@ -69,10 +69,10 @@ interface LoanRequestFormModalProps {
 const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
   const [lenders, setLenders] = useState<any[]>([]);
   const [cargos, setCargos] = useState<any[]>([]);
-  const [trips, setTrips] = useState<any[]>([]);
   const [loadingLenders, setLoadingLenders] = useState(true);
   const [loadingCargos, setLoadingCargos] = useState(true);
-  const [loadingTrips, setLoadingTrips] = useState(false);
+  const [loadingTrip, setLoadingTrip] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
   const [form, setForm] = useState({
     requested_amount: '',
     lender_id: '',
@@ -89,79 +89,55 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
 
   const selectedCargo = cargos.find((c: any) => c.id === form.cargo_id);
 
+  // Fetch lenders and cargo owner's cargos on mount
   useEffect(() => {
-    // Fetch lenders
     lendingApi.getTenantLenders()
       .then(data => setLenders(Array.isArray(data) ? data : []))
       .catch(() => setLenders([]))
       .finally(() => setLoadingLenders(false));
 
-    // Fetch cargo owner's cargos/loads
     setLoadingCargos(true);
-    console.log('🔍 Fetching cargos for cargo owner, userId:', userId);
     api.get('/loads', { params: { page: 1, limit: 50 } })
       .then(res => {
-        console.log('📦 /loads Response:', res.data);
-        // FIXED: The response has 'items' not 'data' or 'loads'
         const raw = res.data?.items || res.data?.data || res.data?.loads || res.data || [];
-        console.log('📦 Raw cargos array:', raw);
         let cargosList = Array.isArray(raw) ? raw : [];
-        console.log('📦 Total cargos before filter:', cargosList.length);
-        
-        // Log first cargo to see its structure
-        if (cargosList.length > 0) {
-          console.log('📦 Sample cargo object:', cargosList[0]);
-          console.log('📦 Cargo owner ID:', cargosList[0].cargoOwner?.id);
-          console.log('📦 Current user ID:', userId);
-        }
-        
-        // Filter by cargo owner's user ID - check cargoOwner.id
-        cargosList = cargosList.filter((cargo: any) => {
-          const match = cargo.cargoOwner?.id === userId ||
-                       cargo.createdBy === userId || 
-                       cargo.created_by === userId ||
-                       cargo.ownerId === userId ||
-                       cargo.owner_id === userId ||
-                       cargo.userId === userId ||
-                       cargo.user_id === userId;
-          if (match) {
-            console.log('✅ Matched cargo:', cargo.id, cargo);
-          }
-          return match;
-        });
-        
-        console.log('📦 Filtered cargos for user:', cargosList.length, cargosList);
+        cargosList = cargosList.filter((cargo: any) =>
+          cargo.cargoOwner?.id === userId ||
+          cargo.createdBy === userId ||
+          cargo.created_by === userId ||
+          cargo.ownerId === userId ||
+          cargo.owner_id === userId
+        );
         setCargos(cargosList);
       })
-      .catch((err) => {
-        console.error('❌ Error fetching cargos:', err);
-        console.error('❌ Error response:', err.response?.data);
-        setCargos([]);
-      })
+      .catch(() => setCargos([]))
       .finally(() => setLoadingCargos(false));
   }, [userId]);
 
-  // Auto-fetch and auto-select trip when cargo is selected (CargoOwner modal)
+  // When cargo is selected, auto-fetch its linked trip (1 cargo = 1 trip)
   useEffect(() => {
-    if (!form.cargo_id) { setTrips([]); setForm(p => ({ ...p, trip_id: '' })); return; }
-    setLoadingTrips(true);
-    api.get('/trips', { params: { loadId: form.cargo_id, limit: 50 } })
+    if (!form.cargo_id) {
+      setSelectedTrip(null);
+      setForm(p => ({ ...p, trip_id: '' }));
+      return;
+    }
+    setLoadingTrip(true);
+    setSelectedTrip(null);
+    api.get('/trips', { params: { loadId: form.cargo_id, limit: 1 } })
       .then(res => {
-        const raw = res.data?.data || res.data?.trips || res.data || [];
+        const raw = res.data?.data || res.data?.trips || res.data?.items || res.data || [];
         const tripsList = Array.isArray(raw) ? raw : [];
-        setTrips(tripsList);
-        // Auto-select: if only one trip exists, pick it automatically
-        if (tripsList.length === 1) {
-          setForm(p => ({ ...p, trip_id: tripsList[0].id }));
-        } else if (tripsList.length > 1) {
-          // Auto-select the most recent active trip
-          const activeTrip = tripsList.find((t: any) => t.status === 'active' || t.status === 'in_progress')
-            || tripsList[0];
-          setForm(p => ({ ...p, trip_id: activeTrip.id }));
+        if (tripsList.length > 0) {
+          const trip = tripsList[0]; // Each cargo has exactly one trip
+          setSelectedTrip(trip);
+          setForm(p => ({ ...p, trip_id: trip.id }));
+        } else {
+          setSelectedTrip(null);
+          setForm(p => ({ ...p, trip_id: '' }));
         }
       })
-      .catch(() => setTrips([]))
-      .finally(() => setLoadingTrips(false));
+      .catch(() => { setSelectedTrip(null); setForm(p => ({ ...p, trip_id: '' })); })
+      .finally(() => setLoadingTrip(false));
   }, [form.cargo_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -252,40 +228,39 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
             )}
           </div>
 
-          {/* Trip */}
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-              Trip <span className="text-rose-400">*</span>
-              {trips.length === 1 && form.trip_id && (
-                <span className="ml-2 text-emerald-500 normal-case font-semibold tracking-normal">✓ Auto-selected</span>
-              )}
-            </label>
-            <div className="relative">
-              <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
-              {loadingTrips && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
-              <select value={form.trip_id}
-                onChange={e => setForm(p => ({ ...p, trip_id: e.target.value }))}
-                className={selectCls(true)} disabled={!form.cargo_id || loadingTrips} required>
-                <option value="">{!form.cargo_id ? 'Select a cargo first' : loadingTrips ? 'Loading trips…' : trips.length === 0 ? 'No trips found for this cargo' : 'Select a trip'}</option>
-                {trips.map((t: any) => (
-                  <option key={t.id} value={t.id}>
-                    {t.tripNumber || t.id.slice(0, 8)} — {t.status || 'Trip'}{t.createdAt ? ' · ' + new Date(t.createdAt).toLocaleDateString() : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
+          {/* Trip — auto-resolved from cargo, shown as read-only */}
+          {form.cargo_id && (
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                Linked Trip
+              </label>
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${
+                loadingTrip ? 'bg-slate-50 border-slate-200' :
+                selectedTrip ? 'bg-emerald-50 border-emerald-200' :
+                'bg-rose-50 border-rose-200'
+              }`}>
+                {loadingTrip ? (
+                  <><Loader2 size={14} className="animate-spin text-slate-400" />
+                  <span className="text-sm text-slate-400 font-medium">Fetching linked trip…</span></>
+                ) : selectedTrip ? (
+                  <><CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-black text-emerald-800">
+                      {selectedTrip.tripNumber || selectedTrip.id?.slice(0, 8)}
+                    </p>
+                    <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-widest">
+                      Status: {selectedTrip.status} · Auto-linked to cargo
+                    </p>
+                  </div></>
+                ) : (
+                  <><AlertTriangle size={14} className="text-rose-500 flex-shrink-0" />
+                  <span className="text-sm text-rose-600 font-semibold">
+                    No trip found for this cargo. A trip must be assigned first.
+                  </span></>
+                )}
+              </div>
             </div>
-            {trips.length > 1 && (
-              <p className="text-[10px] text-amber-500 mt-1 font-semibold">
-                {trips.length} trips found — most recent auto-selected, you can change it
-              </p>
-            )}
-            {form.cargo_id && !loadingTrips && trips.length === 0 && (
-              <p className="text-[10px] text-rose-500 mt-1 font-semibold">
-                No trips found for this cargo. A trip must exist before requesting a loan.
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Fund Allocation */}
           <div className="bg-slate-50 rounded-2xl p-4 space-y-4 border border-slate-100">
