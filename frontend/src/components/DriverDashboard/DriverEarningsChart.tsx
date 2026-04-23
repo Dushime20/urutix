@@ -34,35 +34,36 @@ interface DriverEarningsChartProps {
     totalTrips?: number;
     avgPerTrip?: number;
     performanceGrade?: string;
-  };
+  } | null;
   isLoading?: boolean;
   timeRange?: string;
 }
 
-export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({
-  data,
-  isLoading
-}) => {
-  // Mock data if not provided
-  const mockData = {
-    labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-    earnings: [12000, 15000, 13500, 18000, 16500, 14000, 19000],
-    trips: [3, 4, 3, 5, 4, 3, 5]
-  };
+export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, isLoading }) => {
+  if (isLoading) {
+    return <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 animate-pulse h-[450px]" />;
+  }
 
-  const chartData = data || mockData;
+  if (!data) {
+    return (
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 h-[450px] flex flex-col items-center justify-center gap-3">
+        <Zap size={32} className="text-slate-200" />
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No earnings data yet</p>
+        <p className="text-xs text-slate-300">Complete trips to see your revenue chart</p>
+      </div>
+    );
+  }
 
-  const totalEarnings = chartData.earnings.reduce((sum, val) => sum + val, 0);
-  const avgEarnings = totalEarnings / chartData.earnings.length;
-  const lastWeekAvg = avgEarnings * 0.85;
-  const growth = ((avgEarnings - lastWeekAvg) / lastWeekAvg) * 100;
+  const totalEarnings = data.totalEarnings ?? data.earnings.reduce((s, v) => s + v, 0);
+  const totalTrips = data.totalTrips ?? data.trips.reduce((s, v) => s + v, 0);
+  const avgPerTrip = data.avgPerTrip ?? (totalTrips > 0 ? Math.round(totalEarnings / totalTrips) : 0);
 
   const chartConfig = {
-    labels: chartData.labels,
+    labels: data.labels,
     datasets: [
       {
         label: 'Earnings',
-        data: chartData.earnings,
+        data: data.earnings,
         borderColor: '#345E85',
         backgroundColor: 'rgba(52, 94, 133, 0.05)',
         borderWidth: 4,
@@ -76,8 +77,8 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({
         pointHoverBackgroundColor: '#345E85',
         pointHoverBorderColor: 'white',
         pointHoverBorderWidth: 4,
-      }
-    ]
+      },
+    ],
   };
 
   const options = {
@@ -91,32 +92,23 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({
         bodyFont: { family: 'Inter', size: 12, weight: 'bold' as const },
         padding: 16,
         displayColors: false,
-        callbacks: {
-          label: (context: any) => `$${context.parsed.y.toLocaleString()}`
-        }
-      }
+        callbacks: { label: (ctx: any) => `$${ctx.parsed.y.toLocaleString()}` },
+      },
     },
     scales: {
-      y: {
-        display: false,
-        beginAtZero: true,
-      },
+      y: { display: false, beginAtZero: true },
       x: {
         grid: { display: false },
-        ticks: {
-          color: '#94a3b8',
-          font: { family: 'Inter', size: 9, weight: 'bold' as const },
-          padding: 10
-        }
-      }
-    }
+        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 9, weight: 'bold' as const }, padding: 10 },
+      },
+    },
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 animate-pulse h-[450px]" />
-    );
-  }
+  const stats = [
+    { label: 'Total Trips', value: totalTrips, icon: BarChart3 },
+    { label: 'Avg. Per Trip', value: `$${avgPerTrip.toLocaleString()}`, icon: Activity },
+    { label: 'Performance Grade', value: data.performanceGrade ?? 'â€”', icon: Zap },
+  ];
 
   return (
     <motion.div
@@ -136,33 +128,25 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({
         </div>
 
         <div className="text-right">
-          <div className="flex items-center justify-end gap-2 mb-1">
-            <span className="text-2xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 origin-right">
-              ${totalEarnings.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex items-center justify-end gap-2">
+          <span className="text-2xl font-black text-[#0f172a] tracking-tight">
+            ${totalEarnings.toLocaleString()}
+          </span>
+          <div className="flex items-center justify-end gap-2 mt-1">
             <div className="flex items-center gap-1 bg-blue-50 text-[#345E85] px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
               <TrendingUp size={10} />
-              +{growth.toFixed(1)}%
+              Live Data
             </div>
-            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Growth</span>
           </div>
         </div>
       </div>
 
       <div className="h-64 relative">
-        {/* Background Decor */}
         <div className="absolute inset-0 bg-slate-50/50 rounded-3xl -z-10" />
         <Line data={chartConfig} options={options as any} />
       </div>
 
       <div className="grid grid-cols-3 gap-6 mt-10 pt-10 border-t border-slate-50">
-        {[
-          { label: 'Total Trips', value: chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },
-          { label: 'Total Trips', value: chartData.totalTrips ?? chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },
-          { label: 'Avg. Per Trip', value: chartData.avgPerTrip != null ? \          { label: 'Total Trips', value: chartData.totalTrips ?? chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },{chartData.avgPerTrip.toLocaleString()} : (totalTrips > 0 ? \          { label: 'Total Trips', value: chartData.totalTrips ?? chartData.trips.reduce((sum, val) => sum + val, 0), icon: BarChart3 },{Math.round(totalEarnings / totalTrips).toLocaleString()} : '—'), icon: Activity },
-          { label: 'Performance Grade', value: chartData.performanceGrade ?? '—', icon: Zap }
+        {stats.map((stat) => (
           <div key={stat.label} className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2 text-[#345E85]">
               <stat.icon size={12} />

@@ -413,17 +413,14 @@ const DriverDashboard: React.FC = () => {
 
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <DriverEarningsChart isLoading={statsLoading} timeRange={timeRange} />
+              <DriverEarningsChart
+                isLoading={analyticsLoading}
+                timeRange={timeRange}
+                data={analytics?.earnings}
+              />
               <DriverPerformanceChart
-                data={{
-                  onTimeDelivery: stats?.onTimeDeliveryRate || 0,
-                  safetyScore: stats?.safetyScore || 0,
-                  customerRating: (stats?.rating || 0) * 20,
-                  fuelEfficiency: 85,
-                  loadUtilization: 90,
-                  responseTime: 87
-                }}
-                isLoading={statsLoading}
+                data={analytics?.performance}
+                isLoading={analyticsLoading}
               />
             </div>
 
