@@ -20,27 +20,34 @@ interface Station {
   distanceKm: number;
   fuelType: string;
   brand: string | null;
+  phone?: string | null;
+  openingHours?: string | null;
   coordinates: { latitude: number; longitude: number };
   isNearest?: boolean;
 }
 
-export const SmartFuelFinder: React.FC = () => {
+interface SmartFuelFinderProps {
+  /** Driver's last known location from the DB (currentLocation field on Driver entity) */
+  driverLocation?: { latitude?: number; longitude?: number } | null;
+}
+
+export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationSource, setLocationSource] = useState<'driver' | 'browser' | null>(null);
 
-  const fetchStations = async (lat: number, lng: number) => {
+  const fetchStations = async (lat: number, lng: number, source: 'driver' | 'browser') => {
     setLoading(true);
     setError(null);
+    setLocationSource(source);
     try {
       const res = await api.get('/locations/fuel-stations', {
         params: { lat, lng, radius: 10000 },
       });
       const raw: Station[] = res.data?.stations ?? [];
-      // Mark nearest
       if (raw.length > 0) raw[0].isNearest = true;
       setStations(raw);
     } catch {
@@ -50,7 +57,7 @@ export const SmartFuelFinder: React.FC = () => {
     }
   };
 
-  const requestLocation = () => {
+  const requestBrowserLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser.');
       return;
@@ -58,16 +65,12 @@ export const SmartFuelFinder: React.FC = () => {
     setLoading(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserCoords({ lat: latitude, lng: longitude });
-        fetchStations(latitude, longitude);
-      },
+      (pos) => fetchStations(pos.coords.latitude, pos.coords.longitude, 'browser'),
       (err) => {
         setLoading(false);
         if (err.code === err.PERMISSION_DENIED) {
           setLocationDenied(true);
-          setError('Location access denied. Enable location to find nearby stations.');
+          setError('Location access denied. Enable location permissions to find nearby stations.');
         } else {
           setError('Could not determine your location. Please try again.');
         }
@@ -76,10 +79,27 @@ export const SmartFuelFinder: React.FC = () => {
     );
   };
 
-  // Auto-request on mount
+  const handleRefresh = () => {
+    // Always prefer driver's DB location first, fall back to browser
+    const dbLat = driverLocation?.latitude;
+    const dbLng = driverLocation?.longitude;
+    if (dbLat && dbLng && !isNaN(dbLat) && !isNaN(dbLng)) {
+      fetchStations(dbLat, dbLng, 'driver');
+    } else {
+      requestBrowserLocation();
+    }
+  };
+
+  // On mount: use driver's stored location first, then browser geolocation
   useEffect(() => {
-    requestLocation();
-  }, []);
+    const dbLat = driverLocation?.latitude;
+    const dbLng = driverLocation?.longitude;
+    if (dbLat && dbLng && !isNaN(dbLat) && !isNaN(dbLng)) {
+      fetchStations(dbLat, dbLng, 'driver');
+    } else {
+      requestBrowserLocation();
+    }
+  }, [driverLocation?.latitude, driverLocation?.longitude]);
 
   const handleNavigate = (station: Station) => {
     const query = encodeURIComponent(
@@ -112,7 +132,7 @@ export const SmartFuelFinder: React.FC = () => {
           </div>
         </div>
         <button
-          onClick={requestLocation}
+          onClick={handleRefresh}
           disabled={loading}
           className="px-4 py-2 bg-blue-50 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2 hover:bg-[#345E85] hover:text-white transition-all disabled:opacity-50"
         >
@@ -152,7 +172,7 @@ export const SmartFuelFinder: React.FC = () => {
               </p>
             )}
             <button
-              onClick={requestLocation}
+              onClick={handleRefresh}
               className="mt-2 px-6 py-2 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all"
             >
               Try Again
@@ -240,7 +260,9 @@ export const SmartFuelFinder: React.FC = () => {
             <Zap size={16} />
           </div>
           <p className="text-[10px] font-bold text-[#345E85]">
-            {stations.length} station{stations.length !== 1 ? 's' : ''} found within 10 km of your location. Data from OpenStreetMap.
+            {stations.length} station{stations.length !== 1 ? 's' : ''} found within 10 km
+            {locationSource === 'driver' ? ' of your tracked position' : ' of your current location'}.
+            Data from OpenStreetMap.
           </p>
         </div>
       )}

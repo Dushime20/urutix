@@ -8,7 +8,9 @@ import {
   Delete,
   Query,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
+import axios from 'axios';
 import { LocationsService } from './locations.service';
 import {
   LocationUtilsService,
@@ -25,6 +27,8 @@ import { GetTenant } from '../auth/decorators/tenant.decorator';
 @Controller('locations')
 @UseGuards(JwtAuthGuard, TenantGuard)
 export class LocationsController {
+  private readonly logger = new Logger(LocationsController.name);
+
   constructor(
     private readonly locationsService: LocationsService,
     private readonly locationUtilsService: LocationUtilsService,
@@ -157,10 +161,19 @@ export class LocationsController {
         out center tags;
       `;
 
-      const response = await fetch(
-        `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+      this.logger.log(`Querying OSM fuel stations: lat=${latitude} lng=${longitude} radius=${radiusM}m`);
+
+      const response = await axios.post(
+        'https://overpass-api.de/api/interpreter',
+        `data=${encodeURIComponent(query)}`,
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          timeout: 30000,
+        },
       );
-      const data = await response.json() as any;
+      const data = response.data as any;
+
+      this.logger.log(`OSM returned ${data.elements?.length ?? 0} elements`);
 
       const stations = (data.elements || [])
         .map((el: any) => {
@@ -180,26 +193,34 @@ export class LocationsController {
           const distanceKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
           const tags = el.tags || {};
+          const hasDiesel = tags['fuel:diesel'] === 'yes' || tags['fuel:HGV_diesel'] === 'yes';
+          const hasPetrol = tags['fuel:octane_95'] === 'yes' || tags['fuel:octane_91'] === 'yes';
+          const fuelType = hasDiesel && hasPetrol ? 'Diesel & Petrol'
+            : hasDiesel ? 'Diesel'
+            : hasPetrol ? 'Petrol'
+            : 'Fuel';
+
           return {
             id: String(el.id),
             name: tags.name || tags.brand || tags.operator || 'Fuel Station',
-            address: [tags['addr:street'], tags['addr:city']]
-              .filter(Boolean)
-              .join(', ') || tags['addr:full'] || null,
+            address: [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
+              .filter(Boolean).join(' ') || tags['addr:full'] || null,
             distanceKm: Math.round(distanceKm * 10) / 10,
-            fuelType: tags.fuel || tags['fuel:diesel'] ? 'Diesel' : 'Petrol/Diesel',
+            fuelType,
             brand: tags.brand || null,
-            openNow: tags.opening_hours ? null : null, // OSM doesn't reliably expose this
+            phone: tags.phone || tags['contact:phone'] || null,
+            openingHours: tags.opening_hours || null,
             coordinates: { latitude: lat2, longitude: lng2 },
           };
         })
         .filter(Boolean)
         .sort((a: any, b: any) => a.distanceKm - b.distanceKm)
-        .slice(0, 10);
+        .slice(0, 15);
 
-      return { stations };
-    } catch (err) {
-      return { stations: [], error: 'Failed to fetch fuel stations' };
+      return { stations, source: 'OpenStreetMap', count: stations.length };
+    } catch (err: any) {
+      this.logger.error(`Fuel stations query failed: ${err.message}`);
+      return { stations: [], error: 'Failed to fetch fuel stations. Please try again.' };
     }
   }
 

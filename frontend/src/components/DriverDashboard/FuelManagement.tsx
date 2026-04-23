@@ -609,7 +609,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
         </div>
 
         <div className="xl:col-span-1">
-           <SmartFuelFinder />
+           <SmartFuelFinder driverLocation={(driverProfile as any)?.currentLocation} />
         </div>
       </div>
     </div>
