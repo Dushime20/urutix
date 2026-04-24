@@ -4,9 +4,11 @@ import { toast } from 'react-hot-toast';
 import { paymentsAPI } from '../../services/api';
 import PendingPaymentsSection from '../Payments/components/PendingPaymentsSection';
 import FinancialOverview from '../Payments/components/FinancialOverview';
-import { 
+import type { 
   PendingPayment, 
   FinancialSummary,
+} from '../Payments/types';
+import {
   PaymentUrgency,
   PaymentType 
 } from '../Payments/types';

@@ -3,10 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { paymentsAPI } from '../../services/api';
 import CompletedTransactionsSection from '../Payments/components/CompletedTransactionsSection';
-import { 
-  CompletedTransaction,
-  PaymentType 
-} from '../Payments/types';
+import type { CompletedTransaction } from '../Payments/types';
+import { PaymentType } from '../Payments/types';
 
 const FleetTransactionHistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');

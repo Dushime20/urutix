@@ -23,6 +23,11 @@ All users belong to **Test Company** tenant.
 
 -**password**:Lender123@
 
+
+### driver
+-**email**:keyor62431@poisonword.com
+-**password**:Driver@123
+
 ### 🚛 Truck Owner
 - **Email**: truckowner@test.com
 - **Password**: TruckOwner@123
