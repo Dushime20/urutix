@@ -598,7 +598,6 @@ export class FleetService {
   async findDriverByUserId(userId: string): Promise<Driver> {
     const driver = await this.driverRepository.findOne({
       where: { userId },
-      relations: ['truck', 'tenant', 'user'],
     });
 
     if (!driver) {
