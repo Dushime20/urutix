@@ -11,6 +11,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import axios from 'axios';
+import * as https from 'https';
 import { LocationsService } from './locations.service';
 import {
   LocationUtilsService,
@@ -163,14 +164,32 @@ export class LocationsController {
 
       this.logger.log(`Querying OSM fuel stations: lat=${latitude} lng=${longitude} radius=${radiusM}m`);
 
-      const response = await axios.get(
-        'https://overpass-api.de/api/interpreter',
-        {
-          params: { data: query },
-          timeout: 30000,
-        },
-      );
-      const data = response.data as any;
+      // Use native https — axios sends Accept: application/json by default
+      // which Overpass rejects with 406. Native https sends no Accept header.
+      const data: any = await new Promise((resolve, reject) => {
+        const encoded = encodeURIComponent(query);
+        const options = {
+          hostname: 'overpass-api.de',
+          path: `/api/interpreter?data=${encoded}`,
+          method: 'GET',
+          headers: { 'User-Agent': 'UrutiX-Fleet/1.0' },
+        };
+        const req = https.request(options, (res) => {
+          let body = '';
+          res.on('data', (chunk) => (body += chunk));
+          res.on('end', () => {
+            if (res.statusCode !== 200) {
+              reject(new Error(`Overpass returned ${res.statusCode}`));
+              return;
+            }
+            try { resolve(JSON.parse(body)); }
+            catch (e) { reject(new Error('Invalid JSON from Overpass')); }
+          });
+        });
+        req.setTimeout(30000, () => { req.destroy(); reject(new Error('Overpass timeout')); });
+        req.on('error', reject);
+        req.end();
+      });
 
       this.logger.log(`OSM returned ${data.elements?.length ?? 0} elements`);
 
