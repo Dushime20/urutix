@@ -15,7 +15,7 @@ async function runMigration() {
   try {
     console.log('Running subscription migration...');
     
-    const migrationPath = path.join(__dirname, 'migrations', '006_subscription_credit_system_simple.sql');
+    const migrationPath = path.join(__dirname, 'migrations', '006_subscription_credit_system.sql');
     const sql = fs.readFileSync(migrationPath, 'utf8');
     
     await pool.query(sql);

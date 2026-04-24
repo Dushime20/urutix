@@ -1,28 +1,21 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { paymentsAPI } from '../services/api';
-import FinancialOverview from './Payments/components/FinancialOverview';
-import PendingPaymentsSection from './Payments/components/PendingPaymentsSection';
-import CompletedTransactionsSection from './Payments/components/CompletedTransactionsSection';
+import { paymentsAPI } from '../../services/api';
+import FinancialOverview from './components/FinancialOverview';
+import PendingPaymentsSection from './components/PendingPaymentsSection';
 import type { 
   PendingPayment, 
-  CompletedTransaction, 
   FinancialSummary,
-} from './Payments/types';
+} from './types';
 import {
   PaymentUrgency,
   PaymentType 
-} from './Payments/types';
-import { calculateUrgency } from './Payments/utils';
+} from './types';
+import { calculateUrgency } from './utils';
 
-const Payments = () => {
-  const navigate = useNavigate();
+const PendingPaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filterType, setFilterType] = useState<PaymentType | undefined>();
-  const itemsPerPage = 20;
 
   // Fetch all payments
   const { data: paymentsData, isLoading } = useQuery({
@@ -30,12 +23,11 @@ const Payments = () => {
     queryFn: () => paymentsAPI.getAll({ search: searchTerm }),
   });
 
-  // Process payments data
+  // Process payments data - only pending
   const processedData = useMemo(() => {
     if (!paymentsData?.data?.payments) {
       return {
         pending: { overdue: [], dueSoon: [], pending: [] },
-        completed: [],
         summary: {
           overdue: { amount: 0, count: 0 },
           dueSoon: { amount: 0, count: 0 },
@@ -46,26 +38,14 @@ const Payments = () => {
     }
 
     const payments = paymentsData.data.payments;
-    const now = new Date();
-
-    // Separate pending and completed
     const pendingPayments: PendingPayment[] = [];
-    const completedTransactions: CompletedTransaction[] = [];
+    let completedAmount = 0;
+    let completedCount = 0;
 
     payments.forEach((payment: any) => {
       if (payment.status === 'COMPLETED') {
-        completedTransactions.push({
-          id: payment.id,
-          type: payment.paymentType || PaymentType.LOAD_PAYMENT,
-          amount: payment.amount,
-          currency: payment.currency || 'USD',
-          paidDate: payment.processedAt || payment.createdAt,
-          paymentMethod: payment.paymentMethod || 'WALLET',
-          referenceNumber: payment.referenceNumber || `PAY-${payment.id.slice(0, 8)}`,
-          description: payment.description || `Payment for ${payment.trip?.tripNumber || 'service'}`,
-          status: 'COMPLETED',
-          trip: payment.trip,
-        });
+        completedAmount += payment.amount;
+        completedCount++;
       } else if (payment.status === 'PENDING' || payment.status === 'PROCESSING') {
         // Only include if there's a due date
         if (payment.dueDate) {
@@ -106,8 +86,8 @@ const Payments = () => {
         count: dueSoon.length,
       },
       completed: {
-        amount: completedTransactions.reduce((sum, t) => sum + t.amount, 0),
-        count: completedTransactions.length,
+        amount: completedAmount,
+        count: completedCount,
       },
       total: {
         amount: payments.reduce((sum: number, p: any) => sum + p.amount, 0),
@@ -117,50 +97,12 @@ const Payments = () => {
 
     return {
       pending: { overdue, dueSoon, pending },
-      completed: completedTransactions,
       summary,
     };
   }, [paymentsData]);
 
-  // Apply filters and pagination to completed transactions
-  const filteredCompleted = useMemo(() => {
-    let filtered = processedData.completed;
-
-    // Apply type filter
-    if (filterType) {
-      filtered = filtered.filter(t => t.type === filterType);
-    }
-
-    // Apply search
-    if (searchTerm) {
-      const query = searchTerm.toLowerCase();
-      filtered = filtered.filter(t => 
-        t.referenceNumber.toLowerCase().includes(query) ||
-        t.description.toLowerCase().includes(query) ||
-        t.amount.toString().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [processedData.completed, filterType, searchTerm]);
-
-  // Paginate completed transactions
-  const paginatedCompleted = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredCompleted.slice(startIndex, endIndex);
-  }, [filteredCompleted, currentPage, itemsPerPage]);
-
-  const pagination = {
-    page: currentPage,
-    limit: itemsPerPage,
-    total: filteredCompleted.length,
-    totalPages: Math.ceil(filteredCompleted.length / itemsPerPage),
-  };
-
   // Handlers
   const handlePayNow = (paymentId: string) => {
-    // Navigate to payment processing or open payment modal
     toast.success('Opening payment modal...');
     // TODO: Implement payment modal
   };
@@ -170,28 +112,9 @@ const Payments = () => {
     // TODO: Implement details modal
   };
 
-  const handleDownloadReceipt = (transactionId: string) => {
-    toast.success('Downloading receipt...');
-    // TODO: Implement receipt download
-  };
-
   const handleRequestExtension = (paymentId: string) => {
     toast.success('Opening extension request...');
     // TODO: Implement extension request
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchTerm(query);
-    setCurrentPage(1); // Reset to first page on search
-  };
-
-  const handleFilterChange = (filters: any) => {
-    setFilterType(filters.type);
-    setCurrentPage(1); // Reset to first page on filter
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
   };
 
   return (
@@ -212,20 +135,8 @@ const Payments = () => {
         onViewDetails={handleViewDetails}
         onRequestExtension={handleRequestExtension}
       />
-
-      {/* Completed Transactions Section */}
-      <CompletedTransactionsSection
-        transactions={paginatedCompleted}
-        isLoading={isLoading}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        onViewDetails={handleViewDetails}
-        onDownloadReceipt={handleDownloadReceipt}
-        onSearch={handleSearch}
-        onFilterChange={handleFilterChange}
-      />
     </div>
   );
 };
 
-export default Payments;
+export default PendingPaymentsPage;

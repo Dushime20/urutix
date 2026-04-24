@@ -318,7 +318,11 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
         <CargoHealthModal
           isOpen={showCargoHealth}
           onClose={() => setShowCargoHealth(false)}
-          cargoType={trip.cargo.type}
+          cargo={{
+            ...trip.cargo,
+            name: trip.cargo.description,
+            pickupLocation: trip.origin.city
+          }}
         />
 
 

@@ -1,4 +1,3 @@
-// ...existing code...
 import {
   Injectable,
   NotFoundException,
@@ -9,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Payment } from '../../entities/payment.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
@@ -82,6 +82,7 @@ export class PaymentsService {
     private readonly reconciliationService: ReconciliationService,
     private readonly invoiceReceiptService?: InvoiceReceiptService,
     private readonly tripsService?: TripsService,
+    private readonly eventEmitter?: EventEmitter2,
   ) {}
 
   async createPayment(
@@ -560,6 +561,81 @@ export class PaymentsService {
             // Log but don't fail payment processing
             this.logger.warn('Failed to generate invoice/receipt:', error);
           }
+        }
+
+        // Emit payment.received event for notification system
+        try {
+          if (this.eventEmitter && !isMobileMoney) {
+            // Get trip details to find recipient and sender
+            const trip = updated.tripId 
+              ? await this.tripRepository.findOne({ 
+                  where: { id: updated.tripId },
+                  relations: ['truck', 'truck.owner', 'load']
+                })
+              : null;
+
+            if (trip && trip.truck && trip.load) {
+              const recipientId = trip.truck.ownerId; // Truck owner receives payment
+              const senderId = updated.payerId; // Cargo owner sends payment
+
+              // Get user profiles for names
+              const userRepo = this.paymentRepository.manager.getRepository('User');
+              const userProfileRepo = this.paymentRepository.manager.getRepository('UserProfile');
+              
+              const [recipient, sender, recipientProfile, senderProfile] = await Promise.all([
+                userRepo.findOne({ where: { id: recipientId } }),
+                userRepo.findOne({ where: { id: senderId } }),
+                userProfileRepo.findOne({ where: { userId: recipientId } }),
+                userProfileRepo.findOne({ where: { userId: senderId } }),
+              ]);
+
+              const recipientName = recipientProfile
+                ? `${recipientProfile.firstName || ''} ${recipientProfile.lastName || ''}`.trim() || recipient?.email || 'Recipient'
+                : recipient?.email || 'Recipient';
+
+              const senderName = senderProfile
+                ? `${senderProfile.firstName || ''} ${senderProfile.lastName || ''}`.trim() || sender?.email || 'Sender'
+                : sender?.email || 'Sender';
+
+              // Determine payment source
+              const paymentSource = updated.metadata?.isLenderPayment ? 'LOAN' : 'WALLET';
+
+              // Emit general payment received event
+              this.eventEmitter.emit('payment.received', {
+                paymentId: updated.id,
+                recipientId,
+                recipientName,
+                senderId,
+                senderName,
+                amount: updated.amount,
+                tenantId: updated.tenantId,
+                paymentSource,
+                tripId: updated.tripId,
+                cargoTitle: trip.load.title || trip.load.cargoType,
+              });
+
+              // If recipient is truck owner, emit specific event
+              if (recipient && (recipient.role === 'TRUCK_OWNER' || recipient.role === 'FLEET_OWNER')) {
+                this.eventEmitter.emit('payment.truck.owner.received', {
+                  paymentId: updated.id,
+                  recipientId,
+                  recipientName,
+                  senderId,
+                  senderName,
+                  amount: updated.amount,
+                  tenantId: updated.tenantId,
+                  paymentSource,
+                  tripId: updated.tripId,
+                  cargoTitle: trip.load.title || trip.load.cargoType,
+                });
+              }
+
+              this.logger.log(`Emitted payment events for payment ${updated.id}`);
+            }
+          }
+        } catch (eventError) {
+          // Log but don't fail payment processing
+          this.logger.warn('Failed to emit payment events:', eventError);
         }
 
         return updated;

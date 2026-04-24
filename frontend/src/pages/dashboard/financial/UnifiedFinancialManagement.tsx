@@ -7,9 +7,15 @@ import {
   Calculator,
   Plus,
   Wallet,
+  AlertCircle,
+  History,
 } from "lucide-react";
 import Payments from "@/pages/Payments";
+import PendingPaymentsPage from "@/pages/Payments/PendingPaymentsPage";
+import TransactionHistoryPage from "@/pages/Payments/TransactionHistoryPage";
+import FleetPaymentsManagement from "@/pages/FleetPayments/FleetPaymentsManagement";
 import EnhancedLoanRequestsPage from "@/pages/EnhancedLoanRequestsPage";
+import { useAuth } from "@/contexts/AuthContext";
 // Dynamically import heavy page to reduce initial bundle size
 // Truck owner specific financial management
 const TruckOwnerFinancialManagement = lazy(() => import("@/components/FleetDashboard/TruckOwnerFinancialManagement"));
@@ -20,7 +26,7 @@ import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
 
-type TabType = "overview" | "payments" | "payment" | "expenses" | "loans" | "cost-analysis" | "financial-info";
+type TabType = "overview" | "payments" | "pending-payments" | "transaction-history" | "payment" | "expenses" | "loans" | "cost-analysis" | "financial-info";
 
 const FinancialDashboard = lazy(() => import("@/pages/dashboard/financial/FinancialDashboard"));
 const ExpenseManagement = lazy(() => import("@/components/FinancialManagement/ExpenseManagement"));
@@ -28,16 +34,20 @@ const ExpenseManagement = lazy(() => import("@/components/FinancialManagement/Ex
 const UnifiedFinancialManagement = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth(); // Get user to check role
 
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
     if (location.pathname.includes("/overview")) return "overview";
     if (location.pathname.includes("/loan-requests")) return "loans";
+    if (location.pathname.includes("/pending-payments")) return "pending-payments";
+    if (location.pathname.includes("/transaction-history")) return "transaction-history";
     if (location.pathname.includes("/payment")) return "payment";
     if (location.pathname.includes("/cost-analysis")) return "cost-analysis";
     if (location.pathname.includes("/financial-info")) return "financial-info";
     if (location.pathname.includes("/expenses")) return "expenses";
-    return "payments";
+    if (location.pathname.includes("/payments")) return "payments";
+    return "overview";
   };
 
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
@@ -66,6 +76,10 @@ const UnifiedFinancialManagement = () => {
       navigate(`${basePath}/overview`, { replace: true });
     } else if (tab === "loans") {
       navigate(`${basePath}/loan-requests`, { replace: true });
+    } else if (tab === "pending-payments") {
+      navigate(`${basePath}/pending-payments`, { replace: true });
+    } else if (tab === "transaction-history") {
+      navigate(`${basePath}/transaction-history`, { replace: true });
     } else if (tab === "payment") {
       navigate(`${basePath}/payment`, { replace: true });
     } else if (tab === "cost-analysis") {
@@ -91,12 +105,28 @@ const UnifiedFinancialManagement = () => {
       icon: Activity,
       description: "Financial analytics and performance metrics",
     },
-    {
+    // For cargo owners: show Pending Payments and Transaction History tabs
+    ...((user?.role === 'CARGO_OWNER' || location.pathname.includes("/cargo-owner") || location.pathname.includes("/dashboard")) && !location.pathname.includes("/fleet") ? [
+      {
+        id: "pending-payments" as TabType,
+        label: "Pending Payments",
+        icon: AlertCircle,
+        description: "Payments requiring action",
+      },
+      {
+        id: "transaction-history" as TabType,
+        label: "Transaction History",
+        icon: History,
+        description: "Completed payment records",
+      },
+    ] : []),
+    // For fleet owners: show single Payments tab
+    ...(location.pathname.includes("/fleet") ? [{
       id: "payments" as TabType,
       label: "Payments",
       icon: CreditCard,
       description: "Manage payments and transactions",
-    },
+    }] : []),
     {
       id: "expenses" as TabType,
       label: "Expenses",
@@ -123,12 +153,13 @@ const UnifiedFinancialManagement = () => {
       icon: Wallet,
       description: "Manage your payment methods",
     }] : []),
-    {
+    // Only show Loan Requests tab for cargo owners and lenders (NOT for truck owners/fleet owners)
+    ...((user?.role === 'CARGO_OWNER' || user?.role === 'LENDER') ? [{
       id: "loans" as TabType,
       label: "Loan Requests",
       icon: DollarSign,
       description: "Manage cargo-based loan requests",
-    },
+    }] : []),
   ];
 
   return (
@@ -201,11 +232,11 @@ const UnifiedFinancialManagement = () => {
                 <FinancialDashboard />
               </Suspense>
             )}
+            {activeTab === "pending-payments" && <PendingPaymentsPage />}
+            {activeTab === "transaction-history" && <TransactionHistoryPage />}
             {activeTab === "payments" && (
               location.pathname.includes("/fleet") ? (
-                <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
-                  <TruckOwnerFinancialManagement />
-                </Suspense>
+                <FleetPaymentsManagement />
               ) : (
                 <Payments />
               )

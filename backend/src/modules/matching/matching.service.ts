@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, IsNull } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Load,
   LoadStatus,
@@ -190,6 +191,7 @@ export class MatchingService {
     private readonly mlPrediction: MLPredictionService,
     private readonly notificationService: NotificationService,
     private readonly creditService: CreditService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
@@ -755,10 +757,49 @@ export class MatchingService {
     const savedMatch = await this.loadMatchRepository.save(match);
     this.logger.log(`✅ Match saved successfully: ${savedMatch.id}`);
 
-    // Send notification to truck owner
+    // Emit smart.match.selected event for notification system
     try {
       if (load && truck && truck.owner) {
-        // Get cargo owner's profile information directly
+        // Get cargo owner's profile information
+        const userProfileRepo = this.loadRepository.manager.getRepository(UserProfile);
+        const cargoOwnerProfile = await userProfileRepo.findOne({
+          where: { userId: load.cargoOwnerId },
+        });
+
+        const truckOwnerProfile = await userProfileRepo.findOne({
+          where: { userId: truck.ownerId },
+        });
+
+        const cargoOwnerName = cargoOwnerProfile
+          ? `${cargoOwnerProfile.firstName || ''} ${cargoOwnerProfile.lastName || ''}`.trim() || 'Cargo Owner'
+          : 'Cargo Owner';
+
+        const truckOwnerName = truckOwnerProfile
+          ? `${truckOwnerProfile.firstName || ''} ${truckOwnerProfile.lastName || ''}`.trim() || 'Truck Owner'
+          : 'Truck Owner';
+
+        // Emit event for notification system
+        this.eventEmitter.emit('smart.match.selected', {
+          matchId: savedMatch.id,
+          truckOwnerId: truck.ownerId,
+          truckOwnerName,
+          cargoOwnerId: load.cargoOwnerId,
+          cargoOwnerName,
+          tenantId,
+          cargoTitle: load.title || load.cargoType,
+          estimatedPrice: load.offeredPrice || 0,
+        });
+
+        this.logger.log(`📧 Emitted smart.match.selected event for match ${savedMatch.id}`);
+      }
+    } catch (eventError) {
+      // Log error but don't fail the match request
+      this.logger.error(`⚠️ Failed to emit smart.match.selected event: ${eventError.message}`, eventError.stack);
+    }
+
+    // Legacy notification (can be removed once event system is verified)
+    try {
+      if (load && truck && truck.owner) {
         const userProfileRepo = this.loadRepository.manager.getRepository(UserProfile);
         const userProfile = await userProfileRepo.findOne({
           where: { userId: load.cargoOwnerId },
@@ -770,8 +811,7 @@ export class MatchingService {
         }
         const truckPlateNumber = truck.plateNumber || 'your truck';
 
-        this.logger.log(`📧 Creating notification for truck owner: ${truck.owner.id}`);
-        this.logger.log(`📧 Notification details: tenantId=${tenantId}, cargoOwner=${cargoOwnerFullName}, truck=${truckPlateNumber}`);
+        this.logger.log(`📧 Creating legacy notification for truck owner: ${truck.owner.id}`);
 
         // Create notification for truck owner
         const notification = await this.notificationService.createNotification({
@@ -791,13 +831,13 @@ export class MatchingService {
           actionText: 'View Request',
         });
 
-        this.logger.log(`📧 Notification created successfully with ID: ${notification?.id}`);
+        this.logger.log(`📧 Legacy notification created successfully with ID: ${notification?.id}`);
       } else {
         this.logger.warn(`⚠️ Could not create notification: load=${!!load}, truck=${!!truck}, owner=${!!truck?.owner}`);
       }
     } catch (notificationError) {
       // Log error but don't fail the match request
-      this.logger.error(`⚠️ Failed to send notification: ${notificationError.message}`, notificationError.stack);
+      this.logger.error(`⚠️ Failed to send legacy notification: ${notificationError.message}`, notificationError.stack);
     }
 
     return savedMatch;

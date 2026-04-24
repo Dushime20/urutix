@@ -134,3 +134,149 @@ export class DriverBreakEndedEvent {
     },
   ) {}
 }
+
+// ─── Loan Events ────────────────────────────────────────────────────────────
+
+export class LoanRequestedEvent {
+  constructor(
+    public readonly loanId: string,
+    public readonly cargoOwnerId: string,
+    public readonly lenderId: string | null,
+    public readonly tenantId: string,
+    public readonly loanDetails: {
+      requestedAmount: number;
+      tripId?: string;
+      cargoId?: string;
+      cargoTitle?: string;
+    },
+  ) {}
+}
+
+export class LoanApprovedEvent {
+  constructor(
+    public readonly loanId: string,
+    public readonly cargoOwnerId: string,
+    public readonly truckOwnerId: string | null,
+    public readonly lenderId: string | null,
+    public readonly tenantId: string,
+    public readonly loanDetails: {
+      approvedAmount: number;
+      tripId?: string;
+      cargoTitle?: string;
+    },
+  ) {}
+}
+
+export class LoanRejectedEvent {
+  constructor(
+    public readonly loanId: string,
+    public readonly cargoOwnerId: string,
+    public readonly tenantId: string,
+    public readonly loanDetails: {
+      requestedAmount: number;
+      reason?: string;
+      cargoTitle?: string;
+    },
+  ) {}
+}
+
+export class LoanRepaymentReceivedEvent {
+  constructor(
+    public readonly loanId: string,
+    public readonly cargoOwnerId: string,
+    public readonly lenderId: string | null,
+    public readonly tenantId: string,
+    public readonly repaymentDetails: {
+      amount: number;
+      remainingBalance: number;
+    },
+  ) {}
+}
+
+export class LoanOverdueEvent {
+  constructor(
+    public readonly loanId: string,
+    public readonly cargoOwnerId: string,
+    public readonly lenderId: string | null,
+    public readonly tenantId: string,
+    public readonly loanDetails: {
+      overdueAmount: number;
+      dueDate: Date;
+    },
+  ) {}
+}
+
+export class LenderPaidOnBehalfEvent {
+  constructor(
+    public readonly loanId: string,
+    public readonly cargoOwnerId: string,
+    public readonly truckOwnerId: string,
+    public readonly lenderId: string | null,
+    public readonly tenantId: string,
+    public readonly paymentDetails: {
+      amount: number;
+      cargoTitle?: string;
+      tripId?: string;
+    },
+  ) {}
+}
+
+// ─── Auction / Smart Match Events ───────────────────────────────────────────
+
+export class AuctionWonEvent {
+  constructor(
+    public readonly auctionId: string,
+    public readonly truckOwnerId: string,
+    public readonly cargoOwnerId: string,
+    public readonly tenantId: string,
+    public readonly auctionDetails: {
+      winningBid: number;
+      cargoTitle: string;
+      origin: string;
+      destination: string;
+    },
+  ) {}
+}
+
+export class SmartMatchSelectedEvent {
+  constructor(
+    public readonly matchId: string,
+    public readonly truckOwnerId: string,
+    public readonly cargoOwnerId: string,
+    public readonly tenantId: string,
+    public readonly matchDetails: {
+      cargoTitle: string;
+      origin: string;
+      destination: string;
+      matchScore?: number;
+    },
+  ) {}
+}
+
+export class PaymentReminderEvent {
+  constructor(
+    public readonly paymentId: string,
+    public readonly cargoOwnerId: string,
+    public readonly tenantId: string,
+    public readonly paymentDetails: {
+      amount: number;
+      dueDate: Date;
+      tripId?: string;
+      cargoTitle?: string;
+    },
+  ) {}
+}
+
+export class TruckOwnerPaymentReceivedEvent {
+  constructor(
+    public readonly paymentId: string,
+    public readonly truckOwnerId: string,
+    public readonly tenantId: string,
+    public readonly paymentDetails: {
+      amount: number;
+      cargoTitle?: string;
+      tripId?: string;
+      paymentSource?: 'DIRECT' | 'LOAN';
+    },
+  ) {}
+}

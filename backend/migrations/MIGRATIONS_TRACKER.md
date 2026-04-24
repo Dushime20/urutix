@@ -46,9 +46,9 @@ Where:
 | 017 | 017_add_unique_constraint_tenant_email.sql | Add unique constraint for tenant email | - | ✅ |
 | 018 | 018_notification_system.sql | Add notification system | - | ✅ |
 | 019 | 019_make_password_hash_nullable.sql | Make password hash nullable | - | ✅ |
-| 019 | 019_tenant_kyc_system.sql | Add tenant KYC system | - | ✅ |
 | 020 | 020_user_kyc_system_enhancement.sql | Enhance user KYC system | - | ✅ |
 | 021 | 021_cargo_owner_analytics_foundation.sql | Add cargo owner analytics foundation | - | ✅ |
+| 022 | 022_tenant_kyc_system.sql | Add tenant KYC system | - | ✅ |
 | 023 | 023_operational_analytics.sql | Add operational analytics | - | ✅ |
 | 025 | 025_ai_insights.sql | Add AI insights | - | ✅ |
 | 026 | 026_advanced_analytics_phase4.sql | Add advanced analytics phase 4 | - | ✅ |
@@ -66,16 +66,11 @@ Where:
 ## Notes
 
 ### Missing Numbers
-- 022, 024, 031 - Skipped or removed
+- 024, 031 - Skipped or removed
 
-### Duplicate Numbers
-- 019 appears twice (password hash and tenant KYC)
-- 030 might be duplicate of 012
-
-### Recommendations
-1. Consolidate duplicate migrations
-2. Renumber to fill gaps
-3. Add rollback files for each migration
+### Previously Resolved
+- 022 was a gap, now filled by `022_tenant_kyc_system.sql` (renumbered from duplicate 019)
+- `006_subscription_credit_system_simple.sql` removed (was a redundant duplicate of 006)
 
 ## Migration Status Tracking
 

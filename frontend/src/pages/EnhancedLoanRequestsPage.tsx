@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import toast from 'react-hot-toast';
 import { lendingApi } from '../services/lending/lendingApi';
 import type { CreateLoanRequestDto } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
 import LoanDetailModal from '../components/LenderDashboard/LoanDetailModal';
+import EnhancedRepayButton from '../components/Lending/EnhancedRepayButton';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
 interface LoanRequest {
@@ -259,10 +261,18 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       setSubmitting(true);
       await lendingApi.createLoanRequest(payload);
       setSuccess(true);
+      toast.success('Loan request submitted successfully!', {
+        icon: '✅',
+        duration: 4000,
+      });
       setTimeout(() => { onSuccess(); onClose(); }, 1500);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to submit loan request.';
-      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+      const errorMsg = Array.isArray(msg) ? msg.join(', ') : msg;
+      setError(errorMsg);
+      toast.error(errorMsg, {
+        duration: 5000,
+      });
     } finally { setSubmitting(false); }
   };
 
@@ -606,10 +616,18 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       setSubmitting(true);
       await lendingApi.createLoanRequest(payload);
       setSuccess(true);
+      toast.success('Loan request submitted successfully!', {
+        icon: '✅',
+        duration: 4000,
+      });
       setTimeout(() => { onSuccess(); onClose(); }, 1500);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to submit loan request.';
-      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+      const errorMsg = Array.isArray(msg) ? msg.join(', ') : msg;
+      setError(errorMsg);
+      toast.error(errorMsg, {
+        duration: 5000,
+      });
     } finally { setSubmitting(false); }
   };
 
@@ -782,6 +800,9 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
   );
 };
 
+// ── Repay Button (now using EnhancedRepayButton) ────────────────────────────
+// Old RepayButton component removed - now using EnhancedRepayButton from components/Lending
+
 const TruckOwnerLoanRequestsView: React.FC<{
   requests: LoanRequest[];
   analytics: LoanAnalytics | null;
@@ -893,7 +914,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-50">
-                  {['Loan ID', 'Amount', 'Purpose', 'Fund Split', 'Lender', 'Status', 'Due Date', 'Submitted'].map(h => (
+                  {['Loan ID', 'Amount', 'Purpose', 'Fund Split', 'Lender', 'Status', 'Due Date', 'Submitted', 'Actions'].map(h => (
                     <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                   ))}
                 </tr>
@@ -973,6 +994,22 @@ const TruckOwnerLoanRequestsView: React.FC<{
                       </p>
                     </td>
 
+                    {/* Actions */}
+                    <td className="px-6 py-4">
+                      {(req.status === 'approved' || req.status === 'disbursed') && (
+                        <EnhancedRepayButton 
+                          loanId={req.id} 
+                          amount={req.approved_amount ?? req.requested_amount}
+                          onRepaymentSuccess={onRefresh}
+                        />
+                      )}
+                      {req.status === 'rejected' && req.rejection_reason && (
+                        <span className="text-[10px] text-rose-500 font-semibold" title={req.rejection_reason}>
+                          Rejected
+                        </span>
+                      )}
+                    </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -1045,13 +1082,21 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     if (!user?.tenantId || !accessToken) { setFetching(false); return; }
     setFetching(true); setError(null);
     try {
-      const raw = await lendingApi.getTenantLoans(user.tenantId);
-      const data: any[] = Array.isArray(raw) ? raw : ((raw as any)?.data || []);
+      // Use the dedicated my-loans endpoint for cargo owners (returns only their own loans)
+      let raw: any[];
+      if (isCargoOwner) {
+        const res = await api.get('/lending/my-loans');
+        raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      } else {
+        const tenantRaw = await lendingApi.getTenantLoans(user.tenantId);
+        raw = Array.isArray(tenantRaw) ? tenantRaw : ((tenantRaw as any)?.data || []);
+      }
+      const data: any[] = raw;
 
-      // Filter by created_by for the current user (only their own requests)
-      const userLoans = data.filter((req: any) => 
-        req.created_by === user.id || req.createdBy === user.id
-      );
+      // For non-cargo-owners, still filter by created_by
+      const userLoans = isCargoOwner
+        ? data
+        : data.filter((req: any) => req.created_by === user.id || req.createdBy === user.id);
 
       // Enrich each loan with cargo and lender details in parallel
       const mapped: LoanRequest[] = await Promise.all(
@@ -1133,17 +1178,13 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     if (!user?.tenantId || !accessToken || !user?.id) { setFetching(false); return; }
     setFetching(true); setError(null);
     try {
-      const raw = await lendingApi.getTenantLoans(user.tenantId);
-      const data: any[] = Array.isArray(raw) ? raw : ((raw as any)?.data || []);
-
-      // CRITICAL: Filter by created_by to show only cargo owner's own requests
-      const cargoOwnerLoans = data.filter((req: any) => 
-        (req.created_by === user.id || req.createdBy === user.id)
-      );
+      // Use the dedicated my-loans endpoint — returns only this cargo owner's loans
+      const res = await api.get('/lending/my-loans');
+      const data: any[] = Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
       // Enrich each loan with cargo and lender details in parallel
       const mapped: LoanRequest[] = await Promise.all(
-        cargoOwnerLoans.map(async (req: any) => {
+        data.map(async (req: any) => {
           let cargoLabel = '';
           let cargoType = 'General Cargo';
           let lenderName = '';

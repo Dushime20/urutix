@@ -30,14 +30,13 @@ import { DriverHeader } from '../../components/DriverDashboard/DriverHeader';
 import { DriverQuickStats } from '../../components/DriverDashboard/DriverQuickStats';
 import { TimeRangeSelector } from '../../components/DriverDashboard/TimeRangeSelector';
 import { DriverSkeleton } from '../../components/DriverDashboard/DriverSkeleton';
-import { DriverEarningsChart } from '../../components/DriverDashboard/DriverEarningsChart';
+import { DriverEarningsChart } from '@/components/DriverDashboard/DriverEarningsChart';
 import { DriverPerformanceChart } from '../../components/DriverDashboard/DriverPerformanceChart';
 import { CurrentTrip } from '../../components/DriverDashboard/CurrentTrip';
 import { EarningsOverview } from '../../components/DriverDashboard/EarningsOverview';
 import { SafetyRecords } from '../../components/DriverDashboard/SafetyRecords';
 import { UpcomingTrips } from '../../components/DriverDashboard/UpcomingTrips';
 import { QuickActions } from '../../components/DriverDashboard/QuickActions';
-import { NotificationsPanel } from '../../components/DriverDashboard/NotificationsPanel';
 import { CargoManagement } from '../../components/DriverDashboard/CargoManagement';
 import { PreTripChecklist } from '../../components/DriverDashboard/PreTripChecklist';
 import { DriverProfile } from '../../components/DriverDashboard/DriverProfile';
@@ -157,12 +156,6 @@ const DriverDashboard: React.FC = () => {
     enabled: !!driverId,
   });
 
-  const { data: notifications, isLoading: notificationsLoading } = useQuery({
-    queryKey: ['driver-notifications', driverId],
-    queryFn: () => driverApi.getNotifications(driverId),
-    enabled: !!driverId,
-  });
-
   const { data: announcements, isLoading: announcementsLoading } = useQuery({
     queryKey: ['driver-announcements', driverId],
     queryFn: () => driverApi.getAnnouncements(driverId),
@@ -178,7 +171,6 @@ const DriverDashboard: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ['driver-trips'] }),
         queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] }),
         queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] }),
-        queryClient.invalidateQueries({ queryKey: ['driver-notifications'] }),
         queryClient.invalidateQueries({ queryKey: ['driver-announcements'] }),
         new Promise(resolve => setTimeout(resolve, 800))
       ]);

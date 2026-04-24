@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets, IsNull } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
@@ -34,6 +35,7 @@ export class TripsService {
     private readonly userProfileRepository: Repository<UserProfile>,
     private readonly notificationService: NotificationService,
     private readonly creditService: CreditService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -202,11 +204,23 @@ export class TripsService {
 
     // Send notification if status changed to IN_PROGRESS (Loaded)
     if (updateTripStatusDto.status === TripStatus.IN_PROGRESS && oldStatus !== TripStatus.IN_PROGRESS) {
+      // Emit event for notification system
+      this.emitTripStartedEvent(savedTrip).catch(err => 
+        this.logger.error(`Failed to emit trip.started event: ${err.message}`, err.stack)
+      );
+      
+      // Legacy notification (can be removed once event system is verified)
       this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
     }
 
     // Send notification if status changed to COMPLETED
     if (updateTripStatusDto.status === TripStatus.COMPLETED && oldStatus !== TripStatus.COMPLETED) {
+      // Emit event for notification system
+      this.emitTripCompletedEvent(savedTrip).catch(err =>
+        this.logger.error(`Failed to emit trip.completed event: ${err.message}`, err.stack)
+      );
+      
+      // Legacy notification (can be removed once event system is verified)
       this.sendTripCompletedNotifications(savedTrip.id, tenantId).catch(err => console.error('Failed to send completed notifications', err));
     }
 
@@ -440,6 +454,72 @@ export class TripsService {
       
     } catch (error) {
       console.error('Error sending completion notifications:', error);
+    }
+  }
+
+  /**
+   * Emit trip.started event for notification system
+   */
+  private async emitTripStartedEvent(trip: Trip): Promise<void> {
+    try {
+      const [load, truck, driver] = await Promise.all([
+        trip.loadId ? this.loadRepository.findOne({ where: { id: trip.loadId } }) : null,
+        trip.truckId ? this.truckRepository.findOne({ where: { id: trip.truckId } }) : null,
+        trip.driverId ? this.userRepository.findOne({ where: { id: trip.driverId }, relations: ['profile'] }) : null,
+      ]);
+
+      const driverName = driver?.profile
+        ? `${driver.profile.firstName || ''} ${driver.profile.lastName || ''}`.trim() || driver.email
+        : 'Driver';
+
+      this.eventEmitter.emit('trip.started', {
+        tripId: trip.id,
+        driverId: trip.driverId,
+        driverName,
+        cargoOwnerId: load?.cargoOwnerId,
+        truckOwnerId: truck?.ownerId,
+        tenantId: trip.tenantId,
+        cargoTitle: load?.title || load?.cargoType,
+        startLocation: trip.currentLocation,
+        estimatedArrival: trip.plannedEndTime,
+      });
+
+      this.logger.log(`Emitted trip.started event for trip ${trip.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to emit trip.started event: ${error.message}`, error.stack);
+    }
+  }
+
+  /**
+   * Emit trip.completed event for notification system
+   */
+  private async emitTripCompletedEvent(trip: Trip): Promise<void> {
+    try {
+      const [load, truck, driver] = await Promise.all([
+        trip.loadId ? this.loadRepository.findOne({ where: { id: trip.loadId } }) : null,
+        trip.truckId ? this.truckRepository.findOne({ where: { id: trip.truckId } }) : null,
+        trip.driverId ? this.userRepository.findOne({ where: { id: trip.driverId }, relations: ['profile'] }) : null,
+      ]);
+
+      const driverName = driver?.profile
+        ? `${driver.profile.firstName || ''} ${driver.profile.lastName || ''}`.trim() || driver.email
+        : 'Driver';
+
+      this.eventEmitter.emit('trip.completed', {
+        tripId: trip.id,
+        driverId: trip.driverId,
+        driverName,
+        cargoOwnerId: load?.cargoOwnerId,
+        truckOwnerId: truck?.ownerId,
+        tenantId: trip.tenantId,
+        cargoTitle: load?.title || load?.cargoType,
+        deliveryLocation: load?.deliveryLocation,
+        completedAt: trip.actualEndTime || new Date(),
+      });
+
+      this.logger.log(`Emitted trip.completed event for trip ${trip.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to emit trip.completed event: ${error.message}`, error.stack);
     }
   }
 }

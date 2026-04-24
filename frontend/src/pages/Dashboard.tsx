@@ -1242,7 +1242,7 @@ const CargoOwnerDashboard = () => {
                   QUICK CREATE
                 </button>
                 <button
-                  onClick={() => setActiveTab('Transactions')}
+                  onClick={() => navigate('/dashboard/loan-requests')}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-[#358c9c] text-white rounded-lg hover:bg-[#2c7380] transition-colors font-medium shadow-sm"
                 >
                   <CreditCard className="w-5 h-5" />

@@ -107,7 +107,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
   const stats = [
     { label: 'Total Trips', value: totalTrips, icon: BarChart3 },
     { label: 'Avg. Per Trip', value: `$${avgPerTrip.toLocaleString()}`, icon: Activity },
-    { label: 'Performance Grade', value: data.performanceGrade ?? '—', icon: Zap },
+    { label: 'Performance Grade', value: data.performanceGrade ?? '-', icon: Zap },
   ];
 
   return (

@@ -40,6 +40,9 @@ import { User } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { LoanNotificationService } from './services/loan-notification.service';
+import { LoanEventListener } from './listeners/loan-event.listener';
+import { Notification } from '../../entities/notification.entity';
 // import { PaymentsModule } from '../payments/payments.module'; // Temporarily comment out to avoid circular dependency
 
 @Module({
@@ -67,6 +70,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       User,
       UserProfile,
       PasswordResetToken,
+      Notification,
     ]),
     EnhancedAuthModule,
     // PaymentsModule, // Temporarily comment out
@@ -87,6 +91,8 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     LenderAnalyticsService,
     RepaymentProcessorService,
     UrutiLendingIntegrationService,
+    LoanNotificationService,
+    LoanEventListener,
     {
       provide: APP_FILTER,
       useClass: LendingExceptionFilter,
@@ -100,6 +106,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     LenderAnalyticsService,
     RepaymentProcessorService,
     UrutiLendingIntegrationService,
+    LoanNotificationService,
   ],
 })
 export class LendingModule {}

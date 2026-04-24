@@ -1,4 +1,4 @@
--- Migration: Add KYC fields to tenants table
+-- Migration 022: Add KYC fields to tenants table
 -- This migration adds comprehensive KYC (Know Your Customer) fields to the tenants table
 
 -- Add KYC status enum type

@@ -34,38 +34,38 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
 import FleetAssignmentManager from './FleetAssignmentManager';
-import { useAuth } from '../../contexts/AuthContext';
-import DashboardHeader from '../Layout/DashboardHeader';
-import DashboardFooter from '../Layout/DashboardFooter';
+import { useAuth } from '@/contexts/AuthContext';
+import DashboardHeader from '@/components/Layout/DashboardHeader';
+import DashboardFooter from '@/components/Layout/DashboardFooter';
 import 'leaflet/dist/leaflet.css';
-import { fleetApi } from '../../services/fleetApi';
-import type { Truck as ServiceTruck, Driver as ServiceDriver } from '../../services/fleetApi';
-import { authAPI } from '../../services/api';
-import type { FleetItem as LocalFleetItem } from '../../types/fleet';
-import { FleetStatus } from '../../types/fleet';
+import { fleetApi } from '@/services/fleetApi';
+import type { Truck as ServiceTruck, Driver as ServiceDriver } from '@/services/fleetApi';
+import { authAPI } from '@/services/api';
+import type { FleetItem as LocalFleetItem } from '@/types/fleet';
+import { FleetStatus } from '@/types/fleet';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TruckAnalytics } from './TruckAnalytics';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { TrucksList } from './TrucksList';
 import { TruckMatches } from './TruckMatches';
 import { TruckOwnerRecentActivities } from './TruckOwnerRecentActivities';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '@/hooks/useTranslation';
 
-import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
+import { useCargoOwnerLayout } from '@/contexts/CargoOwnerLayoutContext';
 
 // Lazy load Credits component
-const TruckOwnerCredits = lazy(() => import('../../pages/truck-owner/TruckOwnerCredits'));
-const TruckOwnerPartnerPlans = lazy(() => import('../../pages/truck-owner/PartnerPlans'));
-const FuelManagement = lazy(() => import('../../pages/FuelPage'));
-const RoutesPage = lazy(() => import('../../pages/Routes'));
+const TruckOwnerCredits = lazy(() => import('@/pages/truck-owner/TruckOwnerCredits'));
+const TruckOwnerPartnerPlans = lazy(() => import('@/pages/truck-owner/PartnerPlans'));
+const FuelManagement = lazy(() => import('@/pages/FuelPage'));
+const RoutesPage = lazy(() => import('@/pages/Routes'));
 
 // Lazy load the full financial hub
-const UnifiedFinancialManagement = lazy(() => import('../../pages/dashboard/financial/UnifiedFinancialManagement'));
+const UnifiedFinancialManagement = lazy(() => import('@/pages/dashboard/financial/UnifiedFinancialManagement'));
 
 // Import TenantCommunication for Truck Owners
-import TenantCommunication from '../../pages/tenant/TenantCommunication';
+import TenantCommunication from '@/pages/tenant/TenantCommunication';
 
 // Fix default marker icon for Leaflet in React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -579,7 +579,6 @@ export const FleetDashboard: React.FC = () => {
                  { id: 'safety', icon: Shield, label: 'Safety' },
                  { id: 'matches', icon: Zap, label: 'Matches' },
                  { id: 'financial', icon: CreditCard, label: 'Financials' },
-                 { id: 'loans', icon: DollarSign, label: 'Loans' },
                  { id: 'expenses', icon: Calculator, label: 'Expenses' },
                  { id: 'credits', icon: CreditCard, label: 'Credits' },
                  { id: 'buy-credits', icon: ShoppingCart, label: 'Marketplace' },
@@ -879,8 +878,9 @@ export const FleetDashboard: React.FC = () => {
                                   activeTab === 'matches' ? <Zap size={28} /> :
                                     activeTab === 'fuel' ? <Fuel size={28} /> :
                                       activeTab === 'credits' ? <CreditCard size={28} /> :
-                                        activeTab === 'partner-plans' ? <Star size={28} /> :
-                                          activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
+                                        activeTab === 'loans' ? <DollarSign size={28} /> :
+                                          activeTab === 'partner-plans' ? <Star size={28} /> :
+                                            activeTab === 'communicate' ? <MessageSquare size={28} /> : <User size={28} />}
                     </div>
                     <div>
                       <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
@@ -888,7 +888,8 @@ export const FleetDashboard: React.FC = () => {
                           activeTab === 'analytics' ? <TranslatedText text="Analytics" /> :
                             activeTab === 'safety' ? <TranslatedText text="Safety" /> :
                               activeTab === 'financial' ? <TranslatedText text="Financials" /> :
-                                activeTab === 'routes' ? <TranslatedText text="Route Management" /> : 
+                                activeTab === 'loans' ? <TranslatedText text="Loan Requests" /> :
+                                 activeTab === 'routes' ? <TranslatedText text="Route Management" /> : 
                                   activeTab === 'assignments' ? <TranslatedText text="Assignments" /> :
                                     activeTab === 'matches' ? <TranslatedText text="Matches" /> :
                                       activeTab === 'credits' ? <TranslatedText text="Credits" /> :

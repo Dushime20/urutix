@@ -192,6 +192,7 @@ export class LendingController {
   }
 
   @Post('lending/cargo/:cargoId/loan-request')
+  @Roles(UserRole.CARGO_OWNER)
   @UseGuards(JwtAuthGuard)
   async createLoanRequestForCargo(
     @Param('cargoId', ParseUUIDPipe) cargoId: string,
@@ -613,9 +614,10 @@ export class LendingController {
   // ===== LOAN REQUEST ENDPOINTS =====
 
   @Post('lending/loan-requests')
+  @Roles(UserRole.CARGO_OWNER)
   @ApiOperation({
     summary: 'Create loan request',
-    description: 'Create a new loan request for cargo transportation financing',
+    description: 'Create a new loan request for cargo transportation financing. Only Cargo Owners can request loans.',
   })
   @ApiBody({ type: CreateLoanRequestDto })
   @ApiResponse({
@@ -710,6 +712,16 @@ export class LendingController {
       'disbursements',
       'repayments',
     ]);
+  }
+
+  @Get('lending/my-loans')
+  @Roles(UserRole.CARGO_OWNER)
+  @ApiOperation({ summary: 'Get my loan requests (Cargo Owner)' })
+  async getMyLoanRequests(@Request() req: any) {
+    const userId = req.user?.userId || req.user?.id;
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) throw new BadRequestException('Tenant ID is required');
+    return this.lendingService.getMyLoanRequests(userId, tenantId);
   }
 
   // ===== LOAN APPROVAL ENDPOINTS =====

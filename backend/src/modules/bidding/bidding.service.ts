@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, IsNull } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Bid, BidStatus } from '../../entities/bid.entity';
 import {
   Auction,
@@ -133,6 +134,7 @@ export class BiddingService {
     private readonly notificationService: NotificationService,
     private readonly biddingIntelligence: BiddingIntelligenceService,
     private readonly creditService: CreditService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async createBid(
@@ -333,7 +335,29 @@ export class BiddingService {
     // Update auction analytics
     await this.updateAuctionAnalytics(createBidDto.loadId);
 
-    // Send Notification to Cargo Owner
+    // Emit event for notification system
+    try {
+      const userProfile = await this.userProfileRepository.findOne({
+        where: { userId: truckOwnerId },
+      });
+      const bidderName = userProfile && userProfile.firstName
+        ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim()
+        : 'A truck owner';
+
+      this.eventEmitter.emit('auction.bid.received', {
+        auctionId: auction.id,
+        bidderId: truckOwnerId,
+        bidderName,
+        amount: savedBid.bidAmount,
+        cargoOwnerId: load.cargoOwnerId,
+        tenantId,
+        cargoTitle: load.title || load.cargoType,
+      });
+    } catch (error) {
+      console.error('Failed to emit auction.bid.received event:', error);
+    }
+
+    // Send Notification to Cargo Owner (legacy - can be removed once event system is verified)
     try {
       const userProfile = await this.userProfileRepository.findOne({
         where: { userId: truckOwnerId },
@@ -676,6 +700,41 @@ export class BiddingService {
     }
 
     // Send notifications
+    try {
+      // Emit event for notification system
+      const winnerProfile = await this.userProfileRepository.findOne({
+        where: { userId: bid.truckOwnerId },
+      });
+      const winnerName = winnerProfile && winnerProfile.firstName
+        ? `${winnerProfile.firstName} ${winnerProfile.lastName || ''}`.trim()
+        : 'A truck owner';
+
+      const cargoOwnerProfile = await this.userProfileRepository.findOne({
+        where: { userId: bid.load.cargoOwnerId },
+      });
+      const cargoOwnerName = cargoOwnerProfile && cargoOwnerProfile.firstName
+        ? `${cargoOwnerProfile.firstName} ${cargoOwnerProfile.lastName || ''}`.trim()
+        : 'Cargo owner';
+
+      const auction = await this.auctionRepository.findOne({
+        where: { loadId: bid.loadId },
+      });
+
+      this.eventEmitter.emit('auction.winner.selected', {
+        auctionId: auction?.id || bid.loadId,
+        winnerId: bid.truckOwnerId,
+        winnerName,
+        cargoOwnerId: bid.load.cargoOwnerId,
+        cargoOwnerName,
+        tenantId,
+        winningBid: bid.bidAmount,
+        cargoTitle: bid.load.title || bid.load.cargoType,
+      });
+    } catch (error) {
+      console.error('Failed to emit auction.winner.selected event:', error);
+    }
+
+    // Send notifications (legacy - can be removed once event system is verified)
     try {
       // 1. Notify Truck Owner
       await this.notificationService.createNotification({

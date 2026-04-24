@@ -68,6 +68,7 @@ import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import axios from 'axios';
 import { encryptString, decryptString } from '../../common/utils/crypto.util';
+import { LoanNotificationService } from './services/loan-notification.service';
 
 @Injectable()
 export class LendingService {
@@ -129,6 +130,7 @@ export class LendingService {
     private loanTermsRepository: Repository<LoanTerms>,
 
     private lendingPoliciesService: LendingPoliciesService,
+    private loanNotificationService: LoanNotificationService,
   ) {}
 
   /**
@@ -637,6 +639,30 @@ export class LendingService {
       await this.processLoanRequest(savedLoan.id);
     }
 
+    // Notify lender about new loan request
+    if (savedLoan.lender_id) {
+      try {
+        const lender = await this.lenderRepository.findOne({ where: { id: savedLoan.lender_id } });
+        const requesterUser = await this.userRepository.findOne({ where: { id: createdBy }, relations: ['profile'] });
+        const requesterName = requesterUser?.profile
+          ? `${requesterUser.profile.firstName || ''} ${requesterUser.profile.lastName || ''}`.trim() || requesterUser.email
+          : requesterUser?.email || 'A cargo owner';
+        // Find lender's user account to notify
+        const lenderUser = await this.userRepository.findOne({ where: { email: lender?.contact_email, role: UserRole.LENDER } });
+        if (lenderUser) {
+          await this.loanNotificationService.notifyLenderNewRequest(
+            lenderUser.id,
+            savedLoan.tenant_id,
+            savedLoan.id,
+            requesterName,
+            savedLoan.requested_amount,
+          );
+        }
+      } catch (notifErr) {
+        this.logger.warn(`Could not send loan request notification: ${notifErr.message}`);
+      }
+    }
+
     return savedLoan;
   }
 
@@ -1096,6 +1122,23 @@ export class LendingService {
         await this.initiateDisbursement(loanId);
       }
 
+      // Notify cargo owner of approval
+      try {
+        const lender = await this.lenderRepository.findOne({ where: { id: updatedLoan.lender_id } });
+        const creatorUser = await this.userRepository.findOne({ where: { id: updatedLoan.created_by } });
+        if (creatorUser) {
+          await this.loanNotificationService.notifyCargoOwnerLoanApproved(
+            creatorUser.id,
+            updatedLoan.tenant_id,
+            updatedLoan.id,
+            updatedLoan.approved_amount || updatedLoan.requested_amount,
+            lender?.name || 'Lender',
+          );
+        }
+      } catch (notifErr) {
+        this.logger.warn(`Could not send loan approval notification: ${notifErr.message}`);
+      }
+
       return updatedLoan;
     });
   }
@@ -1114,7 +1157,28 @@ export class LendingService {
     loan.status = LoanRequestStatus.REJECTED;
     loan.rejection_reason = reason;
 
-    return await this.loanRequestRepository.save(loan);
+    const rejectedLoan = await this.loanRequestRepository.save(loan);
+
+    // Notify cargo owner of rejection
+    try {
+      const lender = loan.lender_id
+        ? await this.lenderRepository.findOne({ where: { id: loan.lender_id } })
+        : null;
+      const creatorUser = await this.userRepository.findOne({ where: { id: loan.created_by } });
+      if (creatorUser) {
+        await this.loanNotificationService.notifyCargoOwnerLoanRejected(
+          creatorUser.id,
+          loan.tenant_id,
+          loan.id,
+          reason,
+          lender?.name || 'Lender',
+        );
+      }
+    } catch (notifErr) {
+      this.logger.warn(`Could not send loan rejection notification: ${notifErr.message}`);
+    }
+
+    return rejectedLoan;
   }
 
   async initiateDisbursement(loanId: string): Promise<LoanDisbursement> {
@@ -1163,6 +1227,25 @@ export class LendingService {
         await this.processDisbursementToBeneficiaries(savedDisbursement);
         loan.status = LoanRequestStatus.DISBURSED;
         await manager.save(LoanRequest, loan);
+
+        // Notify truck owner that lender paid on their behalf
+        try {
+          const lender = await this.lenderRepository.findOne({ where: { id: loan.lender_id } });
+          // Notify each beneficiary (truck owner)
+          for (const ben of savedDisbursement.beneficiaries || []) {
+            if (ben.recipientId && ben.recipientType !== 'cargo_owner') {
+              await this.loanNotificationService.notifyTruckOwnerLenderPaid(
+                ben.recipientId,
+                loan.tenant_id,
+                loan.id,
+                ben.amount || loan.approved_amount || loan.requested_amount,
+                lender?.name || 'Lender',
+              );
+            }
+          }
+        } catch (notifErr) {
+          this.logger.warn(`Could not send disbursement notification: ${notifErr.message}`);
+        }
       } catch (error) {
         this.logger.error(
           `Disbursement failed for loan ${loanId}: ${error.message}`,
@@ -1635,6 +1718,15 @@ export class LendingService {
     return await this.loanRequestRepository.findOne({
       where: { id: loanId },
       relations,
+    });
+  }
+
+  /** Get all loan requests created by a specific user (cargo owner) */
+  async getMyLoanRequests(userId: string, tenantId: string): Promise<LoanRequest[]> {
+    return this.loanRequestRepository.find({
+      where: { created_by: userId, tenant_id: tenantId },
+      relations: ['lender', 'disbursements', 'repayments'],
+      order: { created_at: 'DESC' },
     });
   }
 

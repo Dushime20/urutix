@@ -28,7 +28,6 @@ export function VideoTutorial() {
                         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50 group cursor-pointer" onClick={() => setIsPlaying(true)}>
                             {/* Placeholder Background (Simulated Video Thumbnail) */}
                             <div className="absolute inset-0 bg-slate-900 opacity-90" />
-                            <div className="absolute inset-0 bg-[url('/dashboard-preview.jpg')] bg-cover bg-center opacity-20" />
 
                             {/* Play Button */}
                             <div className="relative z-10 flex flex-col items-center gap-4">

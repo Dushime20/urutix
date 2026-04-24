@@ -245,6 +245,8 @@ function App() {
                       <Route path="profile" element={<UnifiedAccountManagement />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />
                       <Route path="payments" element={<UnifiedFinancialManagement />} />
+                      <Route path="pending-payments" element={<UnifiedFinancialManagement />} />
+                      <Route path="transaction-history" element={<UnifiedFinancialManagement />} />
                       <Route path="financial" element={<UnifiedFinancialManagement />} />
                       <Route path="expenses" element={<UnifiedFinancialManagement />} />
                       <Route path="overview" element={<UnifiedFinancialManagement />} />
@@ -297,6 +299,8 @@ function App() {
                       <Route path="profile" element={<UnifiedAccountManagement />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />
                       <Route path="payments" element={<UnifiedFinancialManagement />} />
+                      <Route path="pending-payments" element={<UnifiedFinancialManagement />} />
+                      <Route path="transaction-history" element={<UnifiedFinancialManagement />} />
                       <Route path="payment" element={<UnifiedFinancialManagement />} />
                       <Route path="expenses" element={<UnifiedFinancialManagement />} />
                       <Route path="overview" element={<UnifiedFinancialManagement />} />
@@ -368,11 +372,6 @@ function App() {
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
                       <Route path="settings" element={<Settings />} />
                       <Route path="support" element={<FleetHelpSupport />} />
-                    </Route>
-
-                    {/* Payments Route for Truck Owner */}
-                    <Route path="/dashboard/payments" element={<FleetOwnerLayout />}>
-                      <Route index element={<FleetPaymentManagement />} />
                     </Route>
 
                     {/* Profile Route for Truck Owner */}

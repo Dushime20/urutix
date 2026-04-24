@@ -108,10 +108,13 @@ const CargoOwnerPayment: React.FC = () => {
   const [loadingAdvanceCalculation, setLoadingAdvanceCalculation] = useState(false);
   const [tripId, setTripId] = useState<string | null>(null);
   const [lenderType, setLenderType] = useState<'internal' | 'external'>('internal');
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
   // Fetch loads with status LOADED
   useEffect(() => {
     fetchLoadsReadyForPayment();
+    fetchWalletBalance();
   }, [user]);
 
   // Handle Deep Linking for Payment Action
@@ -194,9 +197,26 @@ const CargoOwnerPayment: React.FC = () => {
     }
   }, [selectedLender, selectedLenderData, lenders]);
 
+  const fetchWalletBalance = async () => {
+    if (!user?.id) return;
+    setLoadingBalance(true);
+    try {
+      const res = await api.get('/payments/wallet/balance').catch(() =>
+        api.get('/financial/wallet/balance').catch(() => null)
+      );
+      if (res?.data) {
+        const bal = res.data?.balance ?? res.data?.available_balance ?? res.data?.data?.balance;
+        if (bal !== undefined) setWalletBalance(Number(bal));
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
+
   const fetchLoadsReadyForPayment = async () => {
     if (!user?.id) return;
-
     try {
       setLoading(true);
       const response = await api.get('/loads-v2/my-loads', {
@@ -844,6 +864,35 @@ const CargoOwnerPayment: React.FC = () => {
             </div>
 
             <div className="p-6">
+              {/* Wallet Balance Display */}
+              {walletBalance !== null && (
+                <div className={`mb-4 p-4 rounded-lg border ${
+                  walletBalance >= (Number(paymentAmount) || 0)
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className={`w-5 h-5 ${
+                        walletBalance >= (Number(paymentAmount) || 0) ? 'text-green-600' : 'text-amber-600'
+                      }`} />
+                      <span className="font-semibold text-gray-900">Wallet Balance:</span>
+                    </div>
+                    <span className={`text-lg font-bold ${
+                      walletBalance >= (Number(paymentAmount) || 0) ? 'text-green-700' : 'text-amber-700'
+                    }`}>
+                      {selectedLoad?.currencyCode || 'USD'} {walletBalance.toLocaleString()}
+                    </span>
+                  </div>
+                  {walletBalance < (Number(paymentAmount) || 0) && (
+                    <p className="text-sm text-amber-700 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      Insufficient balance. Consider requesting a loan below.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {!paymentMode ? (
                 <div className="space-y-4">
                   <h4 className="font-semibold text-gray-900 mb-4">Select Payment Method</h4>
@@ -868,7 +917,11 @@ const CargoOwnerPayment: React.FC = () => {
 
                   <button
                     onClick={() => setPaymentMode('loan')}
-                    className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                    className={`w-full p-4 border-2 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all text-left ${
+                      walletBalance !== null && walletBalance < (Number(paymentAmount) || 0)
+                        ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300'
+                        : 'border-gray-200'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -878,6 +931,9 @@ const CargoOwnerPayment: React.FC = () => {
                         <div>
                           <h5 className="font-semibold text-gray-900">Loan Request</h5>
                           <p className="text-sm text-gray-600">Request a loan from available lenders</p>
+                          {walletBalance !== null && walletBalance < (Number(paymentAmount) || 0) && (
+                            <p className="text-xs text-amber-700 font-semibold mt-0.5">⚡ Recommended — insufficient balance</p>
+                          )}
                         </div>
                       </div>
                       <ArrowRight className="w-5 h-5 text-gray-400" />

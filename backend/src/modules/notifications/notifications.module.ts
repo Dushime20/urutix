@@ -14,6 +14,10 @@ import { PushService } from './services/push.service';
 import { InAppService } from './services/in-app.service';
 import { RateLimitService } from './services/rate-limit.service';
 import { TemplateService } from './services/template.service';
+import { AuctionNotificationListener } from './listeners/auction-notification.listener';
+import { TripNotificationListener } from './listeners/trip-notification.listener';
+import { PaymentNotificationListener } from './listeners/payment-notification.listener';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -24,6 +28,7 @@ import { TemplateService } from './services/template.service';
     ]),
     EventEmitterModule.forRoot(),
     ConfigModule,
+    EventsModule,
   ],
   controllers: [NotificationsController],
   providers: [
@@ -35,6 +40,10 @@ import { TemplateService } from './services/template.service';
     InAppService,
     RateLimitService,
     TemplateService,
+    // Event Listeners
+    AuctionNotificationListener,
+    TripNotificationListener,
+    PaymentNotificationListener,
   ],
   exports: [
     NotificationsService,
