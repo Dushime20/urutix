@@ -505,13 +505,13 @@ const CargoOwnerDashboard = () => {
     // For other roles: show all recent cargos sorted by latest update
     const statusColors: Record<string, string> = {
       'DELIVERED': 'bg-green-100 text-green-700',
-      'IN_TRANSIT': 'bg-blue-100 text-blue-700',
-      'ASSIGNED': 'bg-purple-100 text-purple-700',
-      'PUBLISHED': 'bg-yellow-100 text-yellow-700',
-      'CREATED': 'bg-blue-100 text-blue-700',
-      'DRAFT': 'bg-gray-100 text-gray-700',
-      'CANCELLED': 'bg-red-100 text-red-700',
-      'COMPLETED': 'bg-green-100 text-green-700',
+      'IN_TRANSIT': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+      'ASSIGNED': 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+      'PUBLISHED': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+      'CREATED': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+      'DRAFT': 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-400',
+      'CANCELLED': 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+      'COMPLETED': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     };
 
     return [...cargos]
@@ -528,7 +528,7 @@ const CargoOwnerDashboard = () => {
           amount: Number(cargo.loadValue) || 0,
           status: cargo.status || 'DRAFT',
           logo: cargo.title?.[0]?.toUpperCase() || 'C',
-          statusColor: statusColors[cargo.status] || 'bg-gray-100 text-gray-700',
+          statusColor: statusColors[cargo.status] || 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-400',
           fullCargo: cargo,
         };
       });
@@ -575,7 +575,7 @@ const CargoOwnerDashboard = () => {
         action: 'View Drafts',
         onClick: () => { setActiveTab('All Cargos'); navigate('/dashboard/cargos/list?status=DRAFT'); },
         icon: Sparkles,
-        color: 'text-gray-600',
+        color: 'text-gray-600 dark:text-slate-400',
       });
     }
 
@@ -588,7 +588,7 @@ const CargoOwnerDashboard = () => {
         action: 'View Matches',
         onClick: () => { setActiveTab('All Cargos'); navigate('/dashboard/cargos?filter=matching'); },
         icon: Zap,
-        color: 'text-gray-600',
+        color: 'text-gray-600 dark:text-slate-400',
       });
     }
 
@@ -602,7 +602,7 @@ const CargoOwnerDashboard = () => {
         action: 'Create Cargo',
         onClick: () => setShowQuickCreate(true),
         icon: TrendingUp,
-        color: 'text-gray-600',
+        color: 'text-gray-600 dark:text-slate-400',
       });
     }
 
@@ -611,35 +611,35 @@ const CargoOwnerDashboard = () => {
   const renderOverview = () => (
     <div className="space-y-4 md:space-y-8 pb-10">
       {/* 1. Hero / Performance Overview */}
-      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white border border-slate-200 shadow-sm p-6 md:p-12 mb-4 md:mb-8">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 to-transparent pointer-events-none"></div>
+      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-12 mb-4 md:mb-8 transition-colors duration-300">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 dark:from-blue-900/10 to-transparent pointer-events-none"></div>
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="max-w-2xl">
               <div className="flex items-center gap-2 mb-3">
-                <div className="bg-[#345E85]/10 text-[#345E85] p-1.5 rounded-lg border border-[#345E85]/10">
+                <div className="bg-[#345E85]/10 dark:bg-primary-900/30 text-[#345E85] dark:text-primary-400 p-1.5 rounded-lg border border-[#345E85]/10 dark:border-primary-800">
                   <Activity className="w-4 h-4" />
                 </div>
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85]">System_Summary</h2>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] dark:text-primary-400">System_Summary</h2>
               </div>
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.1] mb-5">
-                Neural <span className="text-[#345E85]">Insights</span>
+              <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-5">
+                Neural <span className="text-[#345E85] dark:text-primary-400">Insights</span>
               </h1>
-              <p className="text-xs md:text-lg text-slate-500 font-medium mb-6 md:mb-8 leading-relaxed">
+              <p className="text-xs md:text-lg text-slate-500 dark:text-slate-400 font-medium mb-6 md:mb-8 leading-relaxed">
                 Aggregated logistics intelligence for {stats.activeCargos} active missions. Optimized with AI matching protocols and real-time capital management.
               </p>
 
               <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:gap-4">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="px-4 md:px-8 py-3 md:py-4 bg-[#345E85] text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-md hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3"
+                  className="px-4 md:px-8 py-3 md:py-4 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3"
                 >
                   <Plus className="w-3 h-3 md:w-4 md:w-4" />
                   Add Cargo
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/analytics')}
-                  className="px-4 md:px-8 py-3 md:py-4 bg-white text-slate-700 border border-slate-200 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs hover:border-[#345E85] hover:text-[#345E85] transition-all flex items-center justify-center gap-2 md:gap-3 shadow-sm"
+                  className="px-4 md:px-8 py-3 md:py-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-sm"
                 >
                   <BarChart3 className="w-3 h-3 md:w-4 md:w-4" />
                   Visual Analytics
@@ -649,27 +649,27 @@ const CargoOwnerDashboard = () => {
 
             <div className="flex flex-col gap-4">
               {/* Achievements / Status Summary */}
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 shadow-inner">
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 shadow-inner transition-colors duration-300">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-xl font-black text-slate-900">{formatNumber(stats.efficiencyScore)}%</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efficiency</div>
+                    <div className="text-xl font-black text-slate-900 dark:text-slate-100">{formatNumber(stats.efficiencyScore)}%</div>
+                    <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Efficiency</div>
                   </div>
                 </div>
-                <div className="h-2 w-48 bg-white rounded-full overflow-hidden shadow-sm">
+                <div className="h-2 w-48 bg-white dark:bg-slate-700 rounded-full overflow-hidden shadow-sm">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-indigo-600 rounded-full"
+                    className="h-full bg-gradient-to-r from-blue-400 to-indigo-600 dark:from-blue-500 dark:to-indigo-700 rounded-full"
                     style={{ width: `${stats.efficiencyScore}%` }}
                   ></div>
                 </div>
               </div>
 
-              <div className="bg-[#0f172a] rounded-2xl p-6 shadow-md text-white">
+              <div className="bg-[#0f172a] dark:bg-slate-950 rounded-2xl p-6 shadow-md text-white border border-transparent dark:border-slate-800 transition-colors duration-300">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-slate-800 dark:bg-slate-900 flex items-center justify-center">
                     <DollarSign className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -684,7 +684,7 @@ const CargoOwnerDashboard = () => {
       </section>
 
       {/* 2. Key Performance Indicators - Circular Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 place-items-center bg-white p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-100 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 place-items-center bg-white dark:bg-slate-900 p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
         {[
           { icon: Package, label: 'TOTAL_PAYLOAD', value: stats.totalCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos/list') },
           { icon: Truck, label: 'ACTIVE_MISSIONS', value: stats.activeCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/tracking') },
@@ -696,7 +696,7 @@ const CargoOwnerDashboard = () => {
             onClick={onClick}
             className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''} w-full`}
           >
-            <div className="relative w-full aspect-square max-w-[140px] md:max-w-[160px] rounded-full bg-white border-[6px] md:border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
+            <div className="relative w-full aspect-square max-w-[140px] md:max-w-[160px] rounded-full bg-white dark:bg-slate-800 border-[6px] md:border-[8px] border-slate-50 dark:border-slate-700 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-600 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
                 <circle
                   cx="50%" cy="50%" r="44%"
@@ -708,17 +708,17 @@ const CargoOwnerDashboard = () => {
                   strokeDashoffset="25"
                 />
               </svg>
-              <div className={`p-1.5 rounded-xl mb-1.5 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+              <div className={`p-1.5 rounded-xl mb-1.5 bg-slate-50 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600 transition-all duration-500 shadow-sm ${colorClass}`}>
                 <Icon size={14} />
               </div>
               <div className="flex flex-col items-center px-2 w-full overflow-hidden">
-                <span className="text-lg font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-none">
+                <span className="text-lg font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-none">
                   {value}
                 </span>
               </div>
             </div>
             <div className="mt-3 text-center px-1">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
+              <p className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">
                 {label}
               </p>
             </div>
@@ -727,20 +727,20 @@ const CargoOwnerDashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <section className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm">
-        <div className="px-7 py-5 border-b border-slate-100 flex justify-between items-center">
+      <section className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm transition-colors duration-300">
+        <div className="px-7 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="size-9 bg-slate-50 rounded-xl flex items-center justify-center">
-              <Clock className="w-4 h-4 text-[#345E85]" />
+            <div className="size-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+              <Clock className="w-4 h-4 text-[#345E85] dark:text-primary-400" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-900 tracking-tight">Recent Activity</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Latest cargo updates</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight">Recent Activity</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Latest cargo updates</p>
             </div>
           </div>
           <button
             onClick={() => navigate('/dashboard/cargos/list')}
-            className="px-4 py-2 bg-slate-50 hover:bg-[#345E85] hover:text-white text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl transition-all"
+            className="px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-[#345E85] dark:hover:bg-primary-600 hover:text-white text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 rounded-xl transition-all"
           >
             View All
           </button>
@@ -748,23 +748,23 @@ const CargoOwnerDashboard = () => {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cargo</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Type</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Date</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Amount</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
+              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Cargo</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Type</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Date</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Amount</th>
+                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
               {recentCargoActivity.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-7 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center">
-                        <Package className="w-5 h-5 text-slate-300" />
+                      <div className="size-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                        <Package className="w-5 h-5 text-slate-300 dark:text-slate-600" />
                       </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No cargo activity yet</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">No cargo activity yet</p>
                     </div>
                   </td>
                 </tr>
@@ -772,25 +772,25 @@ const CargoOwnerDashboard = () => {
                 recentCargoActivity.map(tx => (
                   <tr
                     key={tx.id}
-                    className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                     onClick={() => handleCargoRowClick(tx.fullCargo)}
                   >
                     <td className="px-7 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="size-9 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-[#345E85] transition-colors shrink-0">
+                        <div className="size-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors shrink-0">
                           <span className="text-xs font-black">{tx.logo}</span>
                         </div>
-                        <p className="text-sm font-black text-slate-900 group-hover:text-[#345E85] transition-colors">{tx.name}</p>
+                        <p className="text-sm font-black text-slate-900 dark:text-slate-100 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">{tx.name}</p>
                       </div>
                     </td>
                     <td className="px-7 py-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{tx.type}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{tx.type}</span>
                     </td>
                     <td className="px-7 py-4">
-                      <span className="text-xs font-medium text-slate-500">{tx.date}</span>
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{tx.date}</span>
                     </td>
                     <td className="px-7 py-4">
-                      <span className="text-sm font-black text-slate-900">{formatCurrency(tx.amount)}</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-slate-100">{formatCurrency(tx.amount)}</span>
                     </td>
                     <td className="px-7 py-4">
                       <span className={`inline-flex px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${tx.statusColor}`}>
@@ -809,8 +809,8 @@ const CargoOwnerDashboard = () => {
           {recentCargoActivity.length === 0 ? (
             <div className="px-7 py-12 text-center">
               <div className="flex flex-col items-center gap-3">
-                <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center">
-                  <Package className="w-5 h-5 text-slate-300" />
+                <div className="size-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                  <Package className="w-5 h-5 text-slate-300 dark:text-slate-600" />
                 </div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No activity yet</p>
               </div>
@@ -819,12 +819,12 @@ const CargoOwnerDashboard = () => {
             recentCargoActivity.map(tx => (
               <div 
                 key={tx.id} 
-                className="p-5 active:bg-slate-50 transition-colors"
+                className="p-5 active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
                 onClick={() => handleCargoRowClick(tx.fullCargo)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="size-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+                    <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0">
                       <span className="text-xs font-black">{tx.logo}</span>
                     </div>
                     <div>
@@ -853,8 +853,8 @@ const CargoOwnerDashboard = () => {
             {/* 3. Advanced Features Section - Premium Styling */}
             <section aria-label="Quick Tools">
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-tight">Quick Tools</h2>
-                <span className="text-[10px] bg-[#345E85] text-white px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-sm">NEW</span>
+                <h2 className="text-xl md:text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Quick Tools</h2>
+                <span className="text-[10px] bg-[#345E85] dark:bg-primary-600 text-white px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-sm">NEW</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {/* Voice Input */}
@@ -863,18 +863,18 @@ const CargoOwnerDashboard = () => {
                     setShowVoiceInput(true);
                     markFeatureDiscovered('voice_input');
                   }}
-                  className="p-8 bg-white border border-slate-100 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 transition-all duration-300 group relative overflow-hidden shadow-sm"
+                  className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 group relative overflow-hidden shadow-sm"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-colors"></div>
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <div className="bg-blue-50 rounded-2xl p-4 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
-                        <Mic className="w-6 h-6 text-[#345E85] group-hover:text-white" />
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-4 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                        <Mic className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
                       </div>
-                      <span className="text-[10px] bg-slate-50 text-slate-400 px-3 py-1 rounded-lg font-black uppercase tracking-widest">2 Min</span>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-3 py-1 rounded-lg font-black uppercase tracking-widest">2 Min</span>
                     </div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight mb-2 group-hover:text-[#345E85] transition-colors">Voice Create</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Speak to create cargo hands-free</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">Voice Create</h3>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Speak to create cargo hands-free</p>
                   </div>
                 </button>
 
@@ -884,18 +884,18 @@ const CargoOwnerDashboard = () => {
                     setShowDocumentScanner(true);
                     markFeatureDiscovered('document_scanner');
                   }}
-                  className="p-8 bg-white border border-slate-100 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 transition-all duration-300 group relative overflow-hidden shadow-sm"
+                  className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 group relative overflow-hidden shadow-sm"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-colors"></div>
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <div className="bg-blue-50 rounded-2xl p-4 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
-                        <Camera className="w-6 h-6 text-[#345E85] group-hover:text-white" />
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-4 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                        <Camera className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
                       </div>
-                      <span className="text-[10px] bg-slate-50 text-slate-400 px-3 py-1 rounded-lg font-black uppercase tracking-widest">Instant</span>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-3 py-1 rounded-lg font-black uppercase tracking-widest">Instant</span>
                     </div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight mb-2 group-hover:text-[#345E85] transition-colors">Scan Docs</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Camera upload with OCR</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">Scan Docs</h3>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Camera upload with OCR</p>
                   </div>
                 </button>
 
@@ -905,18 +905,18 @@ const CargoOwnerDashboard = () => {
                     navigate('/dashboard/reports/builder');
                     markFeatureDiscovered('custom_reports');
                   }}
-                  className="p-8 bg-white border border-slate-100 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 transition-all duration-300 group relative overflow-hidden shadow-sm"
+                  className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 group relative overflow-hidden shadow-sm"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-colors"></div>
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <div className="bg-blue-50 rounded-2xl p-4 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
-                        <BarChart3 className="w-6 h-6 text-[#345E85] group-hover:text-white" />
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-4 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                        <BarChart3 className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
                       </div>
-                      <span className="text-[10px] bg-slate-50 text-slate-400 px-3 py-1 rounded-lg font-black uppercase tracking-widest">Builder</span>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-3 py-1 rounded-lg font-black uppercase tracking-widest">Builder</span>
                     </div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight mb-2 group-hover:text-[#345E85] transition-colors">Reports</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Build your own dashboards</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">Reports</h3>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Build your own dashboards</p>
                   </div>
                 </button>
 
@@ -926,18 +926,18 @@ const CargoOwnerDashboard = () => {
                     navigate('/dashboard/routes');
                     markFeatureDiscovered('route_planner');
                   }}
-                  className="p-8 bg-white border border-slate-100 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 transition-all duration-300 group relative overflow-hidden shadow-sm"
+                  className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 group relative overflow-hidden shadow-sm"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-colors"></div>
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <div className="bg-blue-50 rounded-2xl p-4 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-300">
-                        <MapPin className="w-6 h-6 text-[#345E85] group-hover:text-white" />
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-4 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                        <MapPin className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
                       </div>
-                      <span className="text-[10px] bg-[#345E85] text-white px-3 py-1 rounded-lg font-black uppercase tracking-widest">AI Power</span>
+                      <span className="text-[10px] bg-[#345E85] dark:bg-primary-600 text-white px-3 py-1 rounded-lg font-black uppercase tracking-widest">AI Power</span>
                     </div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight mb-2 group-hover:text-[#345E85] transition-colors">Route Planner</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Optimize multi-stop routes</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">Route Planner</h3>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Optimize multi-stop routes</p>
                   </div>
                 </button>
               </div>
@@ -948,28 +948,28 @@ const CargoOwnerDashboard = () => {
               <section aria-label="Smart Insights">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-gray-900">Smart Insights</h2>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">Smart Insights</h2>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {insights.map((insight, index) => (
                     <div
                       key={index}
-                      className="group relative bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col justify-between h-full hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer shadow-sm"
+                      className="group relative bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 flex flex-col justify-between h-full hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all cursor-pointer shadow-sm"
                       onClick={insight.onClick}
                     >
                       <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-wider group-hover:text-[#345E85] transition-colors">{insight.title}</h3>
-                        <div className={`p-2.5 rounded-xl bg-slate-50 ${insight.color} group-hover:bg-[#345E85] group-hover:text-white transition-all`}>
+                        <h3 className="text-sm font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-wider group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">{insight.title}</h3>
+                        <div className={`p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 ${insight.color} group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all`}>
                           <insight.icon className="w-5 h-5 flex-shrink-0" />
                         </div>
                       </div>
                       <div className="mb-6">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">{insight.message}</p>
+                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">{insight.message}</p>
                       </div>
-                      <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                        <span className="text-[10px] font-black text-[#345E85] uppercase tracking-[0.2em]">Execute Optimization</span>
-                        <ArrowUpRight className="w-4 h-4 text-[#345E85] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                      <div className="pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-[#345E85] dark:text-primary-400 uppercase tracking-[0.2em]">Execute Optimization</span>
+                        <ArrowUpRight className="w-4 h-4 text-[#345E85] dark:text-primary-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                       </div>
                     </div>
                   ))}
@@ -980,20 +980,20 @@ const CargoOwnerDashboard = () => {
             {/* 3. Main Activity Area */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Chart */}
-              <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all group">
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-10 hover:shadow-xl transition-all group">
                 <div className="flex justify-between items-center mb-8">
                   <div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Cargo Activity</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Global logistics throughput</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Cargo Activity</h3>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Global logistics throughput</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-blue-50 text-[#345E85]">
+                    <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400">
                       <BarChart3 className="w-6 h-6" />
                     </div>
                     <select
                       value={chartPeriod}
                       onChange={e => setChartPeriod(e.target.value as '7' | '30')}
-                      className="text-[10px] font-black uppercase tracking-widest border-none bg-slate-50 rounded-xl px-4 py-2 outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="text-[10px] font-black uppercase tracking-widest border-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 outline-none hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     >
                       <option value="7">Last 7 Days</option>
                       <option value="30">Last 30 Days</option>
@@ -1025,12 +1025,6 @@ const CargoOwnerDashboard = () => {
                         formatter={(value: number) => [value, 'Cargos']}
                         cursor={{ stroke: '#345E85', strokeWidth: 1, strokeDasharray: '4 4' }}
                       />
-                      <defs>
-                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#345E85" stopOpacity={0.1} />
-                          <stop offset="95%" stopColor="#345E85" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
                       <Line
                         type="monotone"
                         dataKey="value"
@@ -1045,39 +1039,39 @@ const CargoOwnerDashboard = () => {
               </div>
 
               {/* Live Active List */}
-              <div className="lg:col-span-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all">
+              <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-10 hover:shadow-xl transition-all duration-300">
                 <div className="flex justify-between items-center mb-8">
                   <div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Live Shipments</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time status tracking</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Live Shipments</h3>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Real-time status tracking</p>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse"></div>
                     Operational
                   </div>
                 </div>
                 <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
                   {activeCargosList.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
-                      <Truck className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No active deployments</p>
+                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700">
+                      <Truck className="w-10 h-10 text-slate-200 dark:text-slate-700 mx-auto mb-3" />
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">No active deployments</p>
                     </div>
                   ) : (
                     activeCargosList.map((cargo) => (
                       <div
                         key={cargo.id}
-                        className="group flex items-center gap-4 p-4 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg hover:border-blue-100 transition-all cursor-pointer"
+                        className="group flex items-center gap-4 p-4 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 cursor-pointer"
                         onClick={() => setActiveTab('Tracking')}
                       >
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 group-hover:bg-[#345E85] group-hover:text-white transition-all shadow-sm">
-                          <cargo.icon className="w-6 h-6 text-[#345E85] group-hover:text-white" />
+                        <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center flex-shrink-0 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                          <cargo.icon className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-black text-[#0f172a] text-sm truncate uppercase tracking-tight">{cargo.name}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate mt-1">{cargo.pickupLocation} → {cargo.deliveryLocation}</p>
+                          <p className="font-black text-[#0f172a] dark:text-slate-100 text-sm truncate uppercase tracking-tight">{cargo.name}</p>
+                          <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate mt-1">{cargo.pickupLocation} → {cargo.deliveryLocation}</p>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-100 group-hover:border-blue-200">
-                          <ArrowUpRight className="w-4 h-4 text-[#345E85]" />
+                        <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:border-blue-200 dark:group-hover:border-primary-700">
+                          <ArrowUpRight className="w-4 h-4 text-[#345E85] dark:text-blue-400" />
                         </div>
                       </div>
                     ))
@@ -1085,7 +1079,7 @@ const CargoOwnerDashboard = () => {
                 </div>
                 <button
                   onClick={() => setActiveTab('Tracking')}
-                  className="w-full mt-8 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                  className="w-full mt-8 py-4 bg-[#345E85] dark:bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-primary-700 transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   <MapPin className="w-4 h-4" />
                   Visual Fleet Map
@@ -1096,28 +1090,28 @@ const CargoOwnerDashboard = () => {
             {/* 4. Department & Financials Split */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-32">
               {/* Operations Status */}
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all">
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-10 hover:shadow-xl transition-all duration-300">
                 <div className="flex justify-between items-center mb-8">
                   <div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Operations Status</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time matching & bidding intelligence</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Operations Status</h3>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Real-time matching & bidding intelligence</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-blue-50 text-[#345E85]">
+                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400">
                     <Activity className="w-6 h-6" />
                   </div>
                 </div>
                 {/* Circular cards row */}
-                <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
+                <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700">
                   {[
-                    { icon: Gavel, label: 'Global Bidding', value: biddingData.activeAuctions, sub: `Pending: ${biddingData.pendingBids}`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/bidding') },
-                    { icon: Zap, label: 'Smart Matching', value: matchingData.matchRecommendations, sub: `Success: ${formatNumber(matchingData.matchSuccessRate)}%`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/smart-matching') },
+                    { icon: Gavel, label: 'Global Bidding', value: biddingData.activeAuctions, sub: `Pending: ${biddingData.pendingBids}`, colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400', secondaryColor: 'text-[#345E85] dark:text-blue-400', onClick: () => navigate('/dashboard/bidding') },
+                    { icon: Zap, label: 'Smart Matching', value: matchingData.matchRecommendations, sub: `Success: ${formatNumber(matchingData.matchSuccessRate)}%`, colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400', secondaryColor: 'text-[#345E85] dark:text-blue-400', onClick: () => navigate('/dashboard/smart-matching') },
                   ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
                     <div
                       key={label}
                       onClick={onClick}
                       className="flex flex-col items-center group cursor-pointer"
                     >
-                      <div className="relative w-36 h-36 rounded-full bg-white border-[8px] border-white flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/50 shadow-sm">
+                      <div className="relative w-36 h-36 rounded-full bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-900 flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl shadow-sm">
                         <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
                           <circle
                             cx="72" cy="72" r="64"
@@ -1129,19 +1123,19 @@ const CargoOwnerDashboard = () => {
                             className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
                           />
                         </svg>
-                        <div className={`p-2 rounded-2xl mb-1.5 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+                        <div className={`p-2 rounded-2xl mb-1.5 bg-slate-50 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-900 transition-all duration-500 shadow-sm ${colorClass}`}>
                           <Icon size={16} />
                         </div>
                         <div className="flex flex-col items-center px-3 w-full overflow-hidden">
-                          <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+                          <span className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
                             {value}
                           </span>
                         </div>
-                        <div className="absolute inset-3 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+                        <div className="absolute inset-3 rounded-full border border-dashed border-slate-100 dark:border-slate-700 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
                       </div>
                       <div className="mt-3 text-center px-2">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">{label}</p>
-                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">{sub}</p>
+                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">{label}</p>
+                        <p className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-1">{sub}</p>
                       </div>
                     </div>
                   ))}
@@ -1149,28 +1143,28 @@ const CargoOwnerDashboard = () => {
               </div>
 
               {/* Financial Overview */}
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-10 hover:shadow-xl transition-all">
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-10 hover:shadow-xl transition-all duration-300">
                 <div className="flex justify-between items-center mb-8">
                   <div>
-                    <h3 className="text-xl font-black text-[#0f172a] tracking-tight">Financial Overview</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Capital distribution & payment lifecycle</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Financial Overview</h3>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Capital distribution & payment lifecycle</p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-blue-50 text-[#345E85]">
+                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400">
                     <Wallet className="w-6 h-6" />
                   </div>
                 </div>
                 {/* Circular cards row */}
-                <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100">
+                <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700">
                   {[
-                    { icon: CreditCard, label: 'Available Balance', value: creditBalance.loading ? '...' : `${creditBalance.currentBalance.toLocaleString()} TRX`, sub: `Total cargo value: ${formatCurrency(stats.totalValue)}`, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/credits') },
-                    { icon: AlertCircle, label: 'Accounts Payable', value: paymentData.pendingPayments, sub: `Value: ${formatCurrency(paymentData.totalAmount)}`, colorClass: 'bg-amber-50 text-amber-500', secondaryColor: 'text-amber-500', onClick: () => navigate('/dashboard/financial') },
+                    { icon: CreditCard, label: 'Available Balance', value: creditBalance.loading ? '...' : `${creditBalance.currentBalance.toLocaleString()} TRX`, sub: `Total cargo value: ${formatCurrency(stats.totalValue)}`, colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400', secondaryColor: 'text-[#345E85] dark:text-blue-400', onClick: () => navigate('/dashboard/credits') },
+                    { icon: AlertCircle, label: 'Accounts Payable', value: paymentData.pendingPayments, sub: `Value: ${formatCurrency(paymentData.totalAmount)}`, colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400', secondaryColor: 'text-amber-500 dark:text-amber-400', onClick: () => navigate('/dashboard/financial') },
                   ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
                     <div
                       key={label}
                       onClick={onClick}
                       className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''}`}
                     >
-                      <div className="relative w-36 h-36 rounded-full bg-white border-[8px] border-white flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/50 shadow-sm">
+                      <div className="relative w-36 h-36 rounded-full bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-900 flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl shadow-sm">
                         <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
                           <circle
                             cx="72" cy="72" r="64"
@@ -1182,19 +1176,19 @@ const CargoOwnerDashboard = () => {
                             className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
                           />
                         </svg>
-                        <div className={`p-2 rounded-2xl mb-1.5 bg-slate-50 group-hover:bg-white transition-all duration-500 shadow-sm ${colorClass}`}>
+                        <div className={`p-2 rounded-2xl mb-1.5 bg-slate-50 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-900 transition-all duration-500 shadow-sm ${colorClass}`}>
                           <Icon size={16} />
                         </div>
                         <div className="flex flex-col items-center px-3 w-full overflow-hidden">
-                          <span className="text-sm font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-tight">
+                          <span className="text-sm font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-tight">
                             {value}
                           </span>
                         </div>
-                        <div className="absolute inset-3 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+                        <div className="absolute inset-3 rounded-full border border-dashed border-slate-100 dark:border-slate-700 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
                       </div>
                       <div className="mt-3 text-center px-2">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">{label}</p>
-                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">{sub}</p>
+                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">{label}</p>
+                        <p className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-1">{sub}</p>
                       </div>
                     </div>
                   ))}
@@ -1209,12 +1203,12 @@ const CargoOwnerDashboard = () => {
   return (
     <div className="space-y-6">
 
-      {/* Modern Welcome Section - Clean White Theme */}
-      <div className="bg-white shadow-sm">
+      {/* Modern Welcome Section */}
+      <div className="bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -1225,7 +1219,7 @@ const CargoOwnerDashboard = () => {
                   return `${greeting}, ${firstName}`;
                 })()}
               </h1>
-              <p className="mt-1 text-gray-600">
+              <p className="mt-1 text-gray-600 dark:text-slate-400">
                 {stats.totalCargos > 0
                   ? `${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed`
                   : 'Welcome to your dashboard'}
@@ -1236,21 +1230,21 @@ const CargoOwnerDashboard = () => {
               <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-2xl transition-all duration-300 font-black text-sm hover:bg-slate-800 dark:hover:bg-primary-700"
                 >
                   <Zap className="w-5 h-5" />
                   QUICK CREATE
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/loan-requests')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#358c9c] text-white rounded-lg hover:bg-[#2c7380] transition-colors font-medium shadow-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#358c9c] dark:bg-teal-600 text-white rounded-lg hover:bg-[#2c7380] dark:hover:bg-teal-700 transition-colors duration-300 font-medium shadow-sm"
                 >
                   <CreditCard className="w-5 h-5" />
                   Request Financing
                 </button>
                 <button
                   onClick={() => navigate('/cargo-owner/cargos/create')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-300 font-medium shadow-sm"
                 >
                   <Plus className="w-5 h-5" />
                   Full Form

@@ -1147,21 +1147,21 @@ export const CargoDashboard: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-slate-50 font-['Manrope',sans-serif] antialiased">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-['Manrope',sans-serif] antialiased transition-colors duration-300">
 
         {/* Main Content */}
         <div className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-8 md:py-12">
           {/* Breadcrumb Navigation - Styled to match premium theme */}
-          <nav className="mb-6 flex items-center gap-2 text-xs sm:text-sm text-slate-500 overflow-x-auto scrollbar-hide">
+          <nav className="mb-6 flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-1 hover:text-primary-600 transition-colors font-medium"
+              className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
             >
               <Home className="size-3.5 sm:size-4" />
               <span><TranslatedText text="Dashboard" /></span>
             </button>
-            <ChevronRightIcon className="size-3 sm:size-3.5 text-slate-300" />
-            <span className="text-slate-900 font-bold"><TranslatedText text="Cargo Management" /></span>
+            <ChevronRightIcon className="size-3 sm:size-3.5 text-slate-300 dark:text-slate-600" />
+            <span className="text-slate-900 dark:text-slate-100 font-bold"><TranslatedText text="Cargo Management" /></span>
           </nav>
 
           {/* Stats Cards */}
@@ -1208,25 +1208,25 @@ export const CargoDashboard: React.FC = () => {
             />
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors duration-300">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-8 border-b border-slate-100">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-8 border-b border-slate-100 dark:border-slate-800">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-primary-50 p-2 rounded-xl">
-                    <Package className="w-5 h-5 text-primary-500" />
+                  <div className="bg-primary-50 dark:bg-primary-900/30 p-2 rounded-xl">
+                    <Package className="w-5 h-5 text-primary-500 dark:text-primary-400" />
                   </div>
-                  <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                  <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                     <TranslatedText text="Cargo Dashboard" />
                   </h1>
                 </div>
-                <p className="text-slate-500 font-medium"><TranslatedText text="Manage your cargo and shipments." /></p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium"><TranslatedText text="Manage your cargo and shipments." /></p>
               </div>
 
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleCreateNew}
-                  className="px-6 py-3 bg-primary-500 text-white rounded-2xl font-bold text-sm shadow-md hover:bg-primary-600 transition-all flex items-center gap-2"
+                  className="px-6 py-3 bg-primary-500 dark:bg-primary-600 text-white rounded-2xl font-bold text-sm shadow-md hover:bg-primary-600 dark:hover:bg-primary-700 transition-all flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   <TranslatedText text="Create Cargo" />
@@ -1250,7 +1250,7 @@ export const CargoDashboard: React.FC = () => {
 
             {/* Sort Controls */}
             <div className="mb-4 flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Sort by:</span>
               <div className="flex items-center gap-2 flex-wrap">
                 {[
                   { value: 'date', label: 'Date', icon: '📅' },
@@ -1262,8 +1262,8 @@ export const CargoDashboard: React.FC = () => {
                     key={option.value}
                     onClick={() => handleSort(option.value as any)}
                     className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${sortField === option.value
-                      ? 'bg-primary-500 text-white border-primary-500'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                      ? 'bg-primary-500 dark:bg-primary-600 text-white border-primary-500 dark:border-primary-600'
+                      : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600'
                       } `}
                   >
                     <span>{option.icon}</span>
@@ -1291,11 +1291,11 @@ export const CargoDashboard: React.FC = () => {
                     : allCargos.length;
 
                   const colorClasses = {
-                    gray: isActive ? 'bg-gray-600 text-white border-gray-600' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400',
-                    yellow: isActive ? 'bg-yellow-600 text-white border-yellow-600' : 'bg-white text-yellow-700 border-yellow-300 hover:border-yellow-400',
-                    green: isActive ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-700 border-green-300 hover:border-green-400',
-                    blue: isActive ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-primary-700 border-primary-300 hover:border-primary-400',
-                    purple: isActive ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-300 hover:border-purple-400',
+                    gray: isActive ? 'bg-gray-600 dark:bg-gray-700 text-white border-gray-600 dark:border-gray-700' : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600',
+                    yellow: isActive ? 'bg-yellow-600 dark:bg-yellow-700 text-white border-yellow-600 dark:border-yellow-700' : 'bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-slate-700 hover:border-yellow-400 dark:hover:border-slate-600',
+                    green: isActive ? 'bg-green-600 dark:bg-green-700 text-white border-green-600 dark:border-green-700' : 'bg-white dark:bg-slate-800 text-green-700 dark:text-green-400 border-green-300 dark:border-slate-700 hover:border-green-400 dark:hover:border-slate-600',
+                    blue: isActive ? 'bg-primary-500 dark:bg-primary-600 text-white border-primary-500 dark:border-primary-600' : 'bg-white dark:bg-slate-800 text-primary-700 dark:text-primary-400 border-primary-300 dark:border-slate-700 hover:border-primary-400 dark:hover:border-slate-600',
+                    purple: isActive ? 'bg-purple-600 dark:bg-purple-700 text-white border-purple-600 dark:border-purple-700' : 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-slate-700 hover:border-purple-400 dark:hover:border-slate-600',
                   };
 
                   return (
@@ -1310,7 +1310,7 @@ export const CargoDashboard: React.FC = () => {
                     >
                       <span>{statusFilter.icon}</span>
                       <span>{statusFilter.label}</span>
-                      <span className={`px - 1.5 py - 0.5 rounded - full text - xs font - semibold ${isActive ? 'bg-white/20' : 'bg-gray-100'
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${isActive ? 'bg-white/20 dark:bg-white/10' : 'bg-gray-100 dark:bg-slate-700'
                         } `}>
                         {count}
                       </span>
@@ -1324,11 +1324,11 @@ export const CargoDashboard: React.FC = () => {
             {recentTemplates.length > 0 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <FaClock className="w-4 h-4 text-primary-600" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                    <FaClock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     Recent Templates
                   </h3>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
                     {recentTemplates.length} template{recentTemplates.length > 1 ? 's' : ''}
                   </span>
                 </div>
@@ -1350,7 +1350,7 @@ export const CargoDashboard: React.FC = () => {
 
             {error && (
               <div
-                className="bg-red-50 border border-red-200 text-red-800 p-3 sm:p-4 rounded-lg flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 shadow-sm"
+                className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 p-3 sm:p-4 rounded-lg flex items-start sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4 shadow-sm transition-colors duration-300"
                 role="alert"
               >
                 <div className="flex-shrink-0 mt-0.5 sm:mt-0">
@@ -1358,11 +1358,11 @@ export const CargoDashboard: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm sm:text-base">Error loading cargos</p>
-                  <p className="text-xs sm:text-sm text-red-600 mt-1 break-words">{error}</p>
+                  <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-1 break-words">{error}</p>
                 </div>
                 <button
                   onClick={() => setError(null)}
-                  className="text-red-400 hover:text-red-600 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
+                  className="text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-300 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
                   aria-label="Dismiss error"
                 >
                   <X className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1373,11 +1373,11 @@ export const CargoDashboard: React.FC = () => {
               <CargoSkeleton />
             ) : allCargos.length === 0 ? (
               <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-colors duration-300">
+                  <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 dark:text-slate-500" />
                 </div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2"><TranslatedText text="No cargos found" /></h3>
-                <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-slate-100 mb-2"><TranslatedText text="No cargos found" /></h3>
+                <p className="text-sm sm:text-base text-gray-500 dark:text-slate-400 mb-4 sm:mb-6 max-w-md mx-auto">
                   {search || Object.keys(filters).length > 0
                     ? <TranslatedText text="Try adjusting your search or filters to find what you're looking for." />
                     : <TranslatedText text="Get started by creating your first cargo shipment." />}
@@ -1385,7 +1385,7 @@ export const CargoDashboard: React.FC = () => {
                 {(!search && Object.keys(filters).length === 0) && (
                   <Button
                     onClick={handleCreateNew}
-                    className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
+                    className="flex items-center justify-center gap-2 bg-primary-600 dark:bg-primary-600 hover:bg-primary-700 dark:hover:bg-primary-700 text-white mx-auto touch-manipulation min-h-[44px] sm:min-h-0"
                   >
                     <FaPlus className="w-4 h-4" />
                     <TranslatedText text="Create New Cargo" />
@@ -1414,10 +1414,10 @@ export const CargoDashboard: React.FC = () => {
 
                 {/* Pagination */}
                 {allCargos.length > 0 && (
-                  <div className="mt-4 sm:mt-6 flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="mt-4 sm:mt-6 flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white dark:bg-slate-800/50 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm transition-colors duration-300">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                        <div className="text-xs sm:text-sm text-gray-700">
+                        <div className="text-xs sm:text-sm text-gray-700 dark:text-slate-300">
                           Showing <span className="font-medium">{(page - 1) * itemsPerPage + 1}</span> to{' '}
                           <span className="font-medium">
                             {Math.min(page * itemsPerPage, totalCargos)}
@@ -1426,11 +1426,11 @@ export const CargoDashboard: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Show:</span>
+                          <span className="text-xs sm:text-sm text-gray-700 dark:text-slate-300 whitespace-nowrap">Show:</span>
                           <select
                             value={itemsPerPage}
                             onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                            className="h-9 sm:h-9 rounded-md border border-gray-300 bg-white px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 touch-manipulation min-h-[44px] sm:min-h-0"
+                            className="h-9 sm:h-9 rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 px-2 sm:px-3 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900 touch-manipulation min-h-[44px] sm:min-h-0"
                           >
                             <option value={10}>10</option>
                             <option value={25}>25</option>

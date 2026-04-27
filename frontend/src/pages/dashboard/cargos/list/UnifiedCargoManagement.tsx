@@ -629,26 +629,26 @@ const UnifiedCargoManagement = () => {
       <div className="space-y-6">
         {/* Header - Enlite Prime Style */}
         {activeTab !== "bidding" && (
-          <div className="mb-6 rounded-2xl p-6 bg-white border border-slate-100 shadow-sm flex items-center justify-between">
+          <div className="mb-6 rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-                <FaBox className="w-6 h-6 text-[#345E85]" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                <FaBox className="w-6 h-6 text-[#345E85] dark:text-blue-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-[#0f172a] tracking-tight">Cargo Management</h1>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                <h1 className="text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Cargo Management</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                   Shipments, Analytics & Intelligence
                 </p>
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">
-              <div className="text-right mr-4 px-4 py-2 border-r border-slate-100">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Loads</div>
-                <div className="text-lg font-black text-[#345E85] leading-tight">{activeLoads.length}</div>
+              <div className="text-right mr-4 px-4 py-2 border-r border-slate-100 dark:border-slate-800">
+                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Loads</div>
+                <div className="text-lg font-black text-[#345E85] dark:text-primary-400 leading-tight">{activeLoads.length}</div>
               </div>
               <button
                 onClick={() => handleTabChange("create")}
-                className="px-6 py-2.5 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800 flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#345E85] dark:bg-primary-600 text-white rounded-2xl transition-all duration-300 font-black text-sm hover:bg-slate-800 dark:hover:bg-primary-700 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>CREATE CARGO</span>
@@ -667,10 +667,10 @@ const UnifiedCargoManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all relative",
+                    "px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all duration-300 relative",
                     isActive
-                      ? "bg-[#345E85] text-white shadow-lg shadow-blue-900/20"
-                      : "bg-white text-slate-500 border border-slate-100 hover:bg-slate-50"
+                      ? "bg-[#345E85] dark:bg-primary-600 text-white"
+                      : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
                   )}
                 >
                   <Icon className={cn(
@@ -684,7 +684,7 @@ const UnifiedCargoManagement = () => {
                         "ml-1 px-2 py-0.5 text-[10px] font-bold rounded-lg",
                         isActive
                           ? "bg-white/20 text-white"
-                          : "bg-slate-100 text-slate-500"
+                          : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
                       )}
                     >
                       {tab.count}
@@ -698,7 +698,7 @@ const UnifiedCargoManagement = () => {
 
         {/* Content Container - Hide for bidding tab */}
         {activeTab !== "bidding" && (
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm mb-8 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm mb-8 overflow-hidden transition-colors duration-300">
 
             {/* Tab Content */}
             <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
@@ -717,9 +717,10 @@ const UnifiedCargoManagement = () => {
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className={cn(
-                            "w-full pl-14 pr-6 py-4 text-sm font-bold bg-slate-50 border border-slate-100 rounded-[2rem]",
-                            "focus:bg-white focus:outline-none focus:ring-8 focus:ring-blue-500/5 focus:border-blue-200/60",
-                            "transition-all duration-300 placeholder:text-slate-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest"
+                            "w-full pl-14 pr-6 py-4 text-sm font-bold bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[2rem]",
+                            "focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-8 focus:ring-blue-500/5 dark:focus:ring-primary-500/10 focus:border-blue-200/60 dark:focus:border-primary-700",
+                            "transition-all duration-300 placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:font-black placeholder:uppercase placeholder:tracking-widest",
+                            "text-slate-900 dark:text-slate-100"
                           )}
                           aria-label="Search cargo"
                         />
@@ -751,15 +752,15 @@ const UnifiedCargoManagement = () => {
                              className={cn(
                                "px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all duration-300 border-2",
                                statusFilter === status
-                                 ? "bg-slate-900 border-slate-900 text-white shadow-xl shadow-slate-900/10 scale-105"
-                                 : "bg-white border-slate-50 text-slate-400 hover:border-slate-200"
+                                 ? "bg-slate-900 dark:bg-primary-600 border-slate-900 dark:border-primary-600 text-white scale-105"
+                                 : "bg-white dark:bg-slate-800 border-slate-50 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:border-slate-200 dark:hover:border-slate-600"
                              )}
                            >
                              {status === '' ? 'Manifest_All' : status.replace('_', ' ')}
                            </button>
                          ))}
                       </div>
-                      <div className="absolute top-0 right-0 bottom-2 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+                      <div className="absolute top-0 right-0 bottom-2 w-12 bg-gradient-to-l from-white dark:from-slate-950 to-transparent pointer-events-none" />
                     </div>
 
                     {/* Desktop Filters / Mobile Expanded Filters */}
@@ -811,14 +812,14 @@ const UnifiedCargoManagement = () => {
                   </div>
 
                   {/* View Mode Toggle - Prime Style */}
-                  <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 mt-6 max-w-fit">
+                  <div className="flex items-center gap-2 bg-slate-100/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700 mt-6 max-w-fit transition-colors duration-300">
                     <button
                       onClick={() => setViewMode('card')}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all",
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300",
                         viewMode === 'card'
-                          ? "bg-white text-[#345E85] shadow-sm"
-                          : "text-slate-500 hover:text-slate-800"
+                          ? "bg-white dark:bg-slate-900 text-[#345E85] dark:text-primary-400 shadow-sm"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                       )}
                     >
                       <Grid className="w-4 h-4" />
@@ -827,10 +828,10 @@ const UnifiedCargoManagement = () => {
                     <button
                       onClick={() => setViewMode('table')}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all",
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300",
                         viewMode === 'table'
-                          ? "bg-white text-[#345E85] shadow-sm"
-                          : "text-slate-500 hover:text-slate-800"
+                          ? "bg-white dark:bg-slate-900 text-[#345E85] dark:text-primary-400 shadow-sm"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                       )}
                     >
                       <Table className="w-4 h-4" />
@@ -845,22 +846,22 @@ const UnifiedCargoManagement = () => {
                 <div>
                   {isLoading ? (
                     <div className="text-center py-8 sm:py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-xs sm:text-sm text-gray-600">Loading...</p>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-primary-500 mx-auto"></div>
+                      <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-slate-400">Loading...</p>
                     </div>
                   ) : error ? (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
-                      <p className="text-xs sm:text-sm text-red-700 break-words">
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 sm:p-4">
+                      <p className="text-xs sm:text-sm text-red-700 dark:text-red-400 break-words">
                         {error?.message || "Error loading cargo"}
                       </p>
                     </div>
                   ) : filteredLoads.length === 0 ? (
                     <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-                      <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
+                      <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 dark:text-slate-600 mx-auto mb-3 sm:mb-4" />
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">
                         No cargo found
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 mb-4">
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mb-4">
                         {activeTab === "active"
                           ? "No active shipments at the moment."
                           : activeTab === "drafts"
@@ -871,7 +872,7 @@ const UnifiedCargoManagement = () => {
                         <div className="mt-8 flex justify-center">
                           <button
                             onClick={() => setActiveTab("create")}
-                            className="inline-flex items-center justify-center gap-3 px-8 py-3 bg-[#345E85] text-white rounded-2xl transition-all font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+                            className="inline-flex items-center justify-center gap-3 px-8 py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-2xl transition-all duration-300 font-black text-sm hover:bg-slate-800 dark:hover:bg-primary-700"
                           >
                             <Plus className="w-5 h-5" />
                             CREATE CARGO
@@ -898,19 +899,19 @@ const UnifiedCargoManagement = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors duration-300">
                           {/* Mobile View for "Table" Mode (Compact List) */}
-                          <div className="block md:hidden divide-y divide-slate-50">
+                          <div className="block md:hidden divide-y divide-slate-50 dark:divide-slate-800">
                             {filteredLoads.map((load: any) => (
                               <div key={load.id} className="p-4 flex flex-col gap-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center">
-                                      <Package className="w-5 h-5 text-slate-400" />
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                                      <Package className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                                     </div>
                                     <div>
-                                      <div className="text-sm font-black text-slate-800">{load.title || 'Untitled'}</div>
-                                      <div className="text-[10px] font-bold text-slate-400 uppercase">{load.cargoType}</div>
+                                      <div className="text-sm font-black text-slate-800 dark:text-slate-100">{load.title || 'Untitled'}</div>
+                                      <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{load.cargoType}</div>
                                     </div>
                                   </div>
                                   <span className={cn(
@@ -920,8 +921,8 @@ const UnifiedCargoManagement = () => {
                                     {getStatusDisplayName(load.status)}
                                   </span>
                                 </div>
-                                <div className="flex items-center justify-between bg-slate-50/50 p-2 rounded-xl">
-                                  <div className="text-[10px] font-bold text-slate-500">
+                                <div className="flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 p-2 rounded-xl">
+                                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                                     {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
                                   </div>
                                   <div className="flex items-center gap-1">
@@ -937,43 +938,43 @@ const UnifiedCargoManagement = () => {
 
                           {/* Desktop View (Enhanced Table) */}
                           <div className="hidden md:block overflow-x-auto">
-                            <table className="min-w-full divide-y divide-slate-100">
-                              <thead className="bg-slate-50/50">
+                            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                              <thead className="bg-slate-50/50 dark:bg-slate-800/50">
                                 <tr>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargo</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Route</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Value</th>
-                                  <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cargo</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Route</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Details</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Value</th>
+                                  <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Actions</th>
                                 </tr>
                               </thead>
-                              <tbody className="bg-white divide-y divide-slate-50">
+                              <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-50 dark:divide-slate-800">
                                 {filteredLoads.map((load: any) => (
-                                  <tr key={load.id} className="hover:bg-slate-50/50 transition-colors">
+                                  <tr key={load.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors duration-300">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                       <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center">
-                                          <Package className="h-5 w-5 text-slate-400" />
+                                        <div className="flex-shrink-0 h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+                                          <Package className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                                         </div>
                                         <div className="ml-3">
-                                          <div className="text-sm font-black text-slate-800">{load.title || 'Untitled'}</div>
-                                          <div className="text-[10px] font-bold text-slate-400 uppercase">{load.cargoType}</div>
+                                          <div className="text-sm font-black text-slate-800 dark:text-slate-100">{load.title || 'Untitled'}</div>
+                                          <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{load.cargoType}</div>
                                         </div>
                                       </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                      <div className="text-xs font-bold text-slate-700">
+                                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                         {load.pickupLocation?.city || load.pickupLocation?.address || 'N/A'}
                                       </div>
-                                      <div className="text-[10px] text-slate-400">→</div>
-                                      <div className="text-xs font-bold text-slate-700">
+                                      <div className="text-[10px] text-slate-400 dark:text-slate-500">→</div>
+                                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                         {load.deliveryLocation?.city || load.deliveryLocation?.address || 'N/A'}
                                       </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                      <div className="text-xs font-bold text-slate-700">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
-                                      <div className="text-[10px] text-slate-400 font-bold">{load.volume ? `${load.volume} L` : ''}</div>
+                                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
+                                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">{load.volume ? `${load.volume} L` : ''}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                       <span className={cn(
@@ -983,7 +984,7 @@ const UnifiedCargoManagement = () => {
                                         {getStatusDisplayName(load.status)}
                                       </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700 dark:text-slate-300">
                                       {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -1042,10 +1043,10 @@ const UnifiedCargoManagement = () => {
               {activeTab === "create" && (
                 <div>
                   <div className="mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
                       Create Cargo
                     </h2>
-                    <p className="text-xs sm:text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-400">
                       {selectedTemplate
                         ? "Edit the template details below to create your cargo shipment"
                         : "Fill in the form below to create a new cargo shipment"}
@@ -1070,10 +1071,10 @@ const UnifiedCargoManagement = () => {
               {activeTab === "template" && (
                 <div>
                   <div className="mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
                       Create from Template
                     </h2>
-                    <p className="text-xs sm:text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-400">
                       Select a template to quickly create cargo with pre-filled information
                     </p>
                   </div>
@@ -1093,14 +1094,14 @@ const UnifiedCargoManagement = () => {
 
         {activeTab === "bidding" && (
           <div className="space-y-6">
-            <div className="rounded-2xl p-6 bg-white border border-slate-100 shadow-sm flex items-center justify-between">
+            <div className="rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-                  <Gavel className="w-6 h-6 text-[#345E85]" />
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Gavel className="w-6 h-6 text-[#345E85] dark:text-blue-400" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-[#0f172a] tracking-tight">Bidding Dashboard</h1>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                  <h1 className="text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Bidding Dashboard</h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                     Auctions, Offers & Negotiations
                   </p>
                 </div>
@@ -1112,7 +1113,7 @@ const UnifiedCargoManagement = () => {
               />
             ) : (
               <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
-                <p className="text-sm sm:text-base text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400">
                   Please log in to access the bidding system.
                 </p>
               </div>

@@ -44,7 +44,7 @@ export const FilterSelect: React.FC<FilterSelectProps> = ({
       {label ? <span className="filter-select-label">{typeof label === 'string' ? <TranslatedText text={label} /> : label}</span> : null}
       <div className="relative flex items-center">
         {icon ? (
-          <span className="pointer-events-none absolute left-3 text-base text-slate-400">
+          <span className="pointer-events-none absolute left-3 text-base text-slate-400 dark:text-slate-500">
             {icon}
           </span>
         ) : null}

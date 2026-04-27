@@ -68,10 +68,10 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
   };
 
   const InfoSection = ({ icon: Icon, title, children }: { icon: any; title: string | React.ReactNode; children: React.ReactNode }) => (
-    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 border border-gray-200 dark:border-slate-700 transition-colors duration-300">
       <div className="flex items-center gap-2 mb-3">
-        <Icon className="w-5 h-5 text-primary-600" />
-        <h3 className="font-semibold text-gray-900">{title}</h3>
+        <Icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+        <h3 className="font-semibold text-gray-900 dark:text-slate-100">{title}</h3>
       </div>
       {children}
     </div>
@@ -80,11 +80,11 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
   const InfoRow = ({ label, value, icon: Icon }: { label: string | React.ReactNode; value: any; icon?: any }) => {
     if (value === null || value === undefined || value === '') return null;
     return (
-      <div className="flex items-start gap-3 py-2 border-b border-gray-200 last:border-0">
-        {Icon && <Icon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />}
+      <div className="flex items-start gap-3 py-2 border-b border-gray-200 dark:border-slate-700 last:border-0">
+        {Icon && <Icon className="w-4 h-4 text-gray-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />}
         <div className="flex-1 min-w-0">
-          <dt className="text-sm font-medium text-gray-600">{label}</dt>
-          <dd className="text-sm text-gray-900 mt-0.5 break-words">{String(value)}</dd>
+          <dt className="text-sm font-medium text-gray-600 dark:text-slate-400">{label}</dt>
+          <dd className="text-sm text-gray-900 dark:text-slate-200 mt-0.5 break-words">{String(value)}</dd>
         </div>
       </div>
     );
@@ -92,26 +92,26 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4 overflow-y-auto transition-colors duration-300"
       role="dialog"
       aria-modal="true"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl dark:shadow-slate-950/50 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-slate-800 transition-colors duration-300">
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-white/20 dark:bg-white/10 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-xl font-bold">{cargo.title || <TranslatedText text="Cargo Details" />}</h2>
-              <p className="text-sm text-primary-100"><TranslatedText text="ID" />: {cargo.id}</p>
+              <p className="text-sm text-primary-100 dark:text-primary-200"><TranslatedText text="ID" />: {cargo.id}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20 flex items-center justify-center transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -119,7 +119,7 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto flex-1 p-6">
+        <div className="overflow-y-auto flex-1 p-6 bg-white dark:bg-slate-900">
           <div className="space-y-6">
             {/* Status Badge */}
             <div className="flex items-center gap-2">

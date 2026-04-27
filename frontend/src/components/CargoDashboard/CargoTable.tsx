@@ -312,38 +312,38 @@ export const CargoTable: React.FC<CargoTableProps> = ({
     return (
       <div className="space-y-4">
         {selectedIds.length > 0 && onBulkAction && (
-          <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-primary-900">
+          <div className="bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-lg p-3 flex items-center justify-between mb-4 transition-colors duration-300">
+            <span className="text-sm font-medium text-primary-900 dark:text-primary-100">
               {selectedIds.length} <TranslatedText text="items selected" />
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => onBulkAction('enrich', selectedIds)}
-                className="px-3 py-1.5 bg-white text-primary-600 border border-primary-200 rounded text-sm font-medium hover:bg-primary-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-700 rounded text-sm font-medium hover:bg-primary-50 dark:hover:bg-primary-900/50 transition-colors"
               >
                 <TranslatedText text="Batch Enrich" />
               </button>
               <button
                 onClick={() => onBulkAction('export', selectedIds)}
-                className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
               >
                 Export Selected
               </button>
               <button
                 onClick={() => onBulkAction('publish', selectedIds)}
-                className="px-3 py-1.5 bg-white text-green-600 border border-green-200 rounded text-sm font-medium hover:bg-green-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded text-sm font-medium hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
               >
                 Publish Selected
               </button>
               <button
                 onClick={() => onBulkAction('unpublish', selectedIds)}
-                className="px-3 py-1.5 bg-white text-orange-600 border border-orange-200 rounded text-sm font-medium hover:bg-orange-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded text-sm font-medium hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors"
               >
                 Unpublish Selected
               </button>
               <button
                 onClick={() => onBulkAction('delete', selectedIds)}
-                className="px-3 py-1.5 bg-white text-red-600 border border-red-200 rounded text-sm font-medium hover:bg-red-50 transition-colors"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
               >
                 Delete Selected
               </button>
@@ -355,7 +355,7 @@ export const CargoTable: React.FC<CargoTableProps> = ({
             <div
               key={cargo.id}
               ref={index === cargos.length - 1 ? lastCargoRef : null}
-              className={`bg-white rounded-lg shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full min-w-0 relative ${selectedIds.includes(cargo.id) ? 'ring-2 ring-primary-500' : ''} `}
+              className={`bg-white dark:bg-slate-900 rounded-lg shadow-md dark:shadow-slate-950/50 p-3 sm:p-4 hover:shadow-lg dark:hover:shadow-slate-950/70 transition-all cursor-pointer flex flex-col h-full min-w-0 relative border border-transparent dark:border-slate-800 ${selectedIds.includes(cargo.id) ? 'ring-2 ring-primary-500 dark:ring-primary-400' : ''} `}
               onClick={(e) => {
                 // If clicking checkbox, don't trigger row click
                 if ((e.target as HTMLElement).tagName === 'INPUT') return;
@@ -375,16 +375,16 @@ export const CargoTable: React.FC<CargoTableProps> = ({
               )}
               <div className="flex items-start justify-between mb-3 gap-2 pr-8">
                 <div className="flex items-center space-x-2 min-w-0 flex-1">
-                  <FaBox className="text-primary-600 flex-shrink-0" />
+                  <FaBox className="text-primary-600 dark:text-primary-400 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     {/* Cargo Title */}
                     {cargo.title && (
-                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-0.5" title={cargo.title}>
+                      <h3 className="font-semibold text-gray-900 dark:text-slate-100 text-sm sm:text-base truncate mb-0.5" title={cargo.title}>
                         {cargo.title}
                       </h3>
                     )}
                     {/* Cargo ID */}
-                    <span className="text-xs text-gray-500 truncate block">#{cargo.id.slice(0, 8)}...</span>
+                    <span className="text-xs text-gray-500 dark:text-slate-400 truncate block">#{cargo.id.slice(0, 8)}...</span>
                   </div>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${getStatusColor(cargo.status)} `}>
@@ -458,8 +458,8 @@ export const CargoTable: React.FC<CargoTableProps> = ({
               <div className="flex-grow flex flex-col">
                 <div className="space-y-2">
                   {(cargo.pickupLocation || cargo.deliveryLocation) && (
-                    <div className="flex items-start space-x-2 text-sm text-gray-600">
-                      <FaMapMarkerAlt className="text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-slate-400">
+                      <FaMapMarkerAlt className="text-gray-400 dark:text-slate-500 flex-shrink-0 mt-0.5" />
                       <span className="break-words line-clamp-2">
                         {getPickupLocation(cargo)} → {getDeliveryLocation(cargo)}
                       </span>
@@ -467,8 +467,8 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   )}
 
                   {hasValue(cargo.pickupDate) && (
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <FaCalendar className="text-gray-400" />
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-400">
+                      <FaCalendar className="text-gray-400 dark:text-slate-500" />
                       <span>{new Date(cargo.pickupDate).toLocaleDateString()}</span>
                     </div>
                   )}
@@ -476,10 +476,10 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                   {(hasValue(cargo.loadValue) || hasValue(cargo.weight)) && (
                     <div className="text-sm flex flex-wrap gap-2">
                       {hasValue(cargo.loadValue) && (
-                        <span className="font-medium text-gray-900 whitespace-nowrap">${cargo.loadValue}</span>
+                        <span className="font-medium text-gray-900 dark:text-slate-100 whitespace-nowrap">${cargo.loadValue}</span>
                       )}
                       {hasValue(cargo.weight) && (
-                        <span className="text-gray-500 whitespace-nowrap">
+                        <span className="text-gray-500 dark:text-slate-400 whitespace-nowrap">
                           {hasValue(cargo.loadValue) ? '• ' : ''}{cargo.weight}kg
                         </span>
                       )}
@@ -691,35 +691,35 @@ export const CargoTable: React.FC<CargoTableProps> = ({
   return (
     <div className="space-y-4">
       {selectedIds.length > 0 && onBulkAction && (
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 flex items-center justify-between">
-          <span className="text-sm font-medium text-primary-900">
+        <div className="bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-lg p-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-primary-900 dark:text-primary-100">
             {selectedIds.length} <TranslatedText text="items selected" />
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => onBulkAction('enrich', selectedIds)}
-              className="px-3 py-1.5 bg-white text-primary-600 border border-primary-200 rounded text-sm font-medium hover:bg-primary-50 transition-colors"
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-700 rounded text-sm font-medium hover:bg-primary-50 dark:hover:bg-primary-900/50 transition-colors"
             >
               <TranslatedText text="Batch Enrich" />
             </button>
             <button
               onClick={() => onBulkAction('export', selectedIds)}
-              className="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             >
               <TranslatedText text="Export Selected" />
             </button>
             <button
               onClick={() => onBulkAction('delete', selectedIds)}
-              className="px-3 py-1.5 bg-white text-red-600 border border-red-200 rounded text-sm font-medium hover:bg-red-50 transition-colors"
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
             >
               <TranslatedText text="Delete Selected" />
             </button>
           </div>
         </div>
       )}
-      <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow dark:shadow-slate-950/50 overflow-hidden overflow-x-auto transition-colors duration-300">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+          <thead className="bg-gray-50 dark:bg-slate-800/50">
             <tr>
               {onSelectionChange && (
                 <th className="px-3 sm:px-6 py-3 w-4">
@@ -727,34 +727,34 @@ export const CargoTable: React.FC<CargoTableProps> = ({
                     type="checkbox"
                     checked={cargos.length > 0 && selectedIds.length === cargos.length}
                     onChange={handleSelectAll}
-                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 dark:bg-slate-700"
                   />
                 </th>
               )}
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <TranslatedText text="Cargo" />
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <TranslatedText text="Route" />
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <TranslatedText text="Status" />
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <TranslatedText text="Price" />
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell">
                 <TranslatedText text="Created" />
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">
                 <TranslatedText text="Operator" />
               </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 <TranslatedText text="Actions" />
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
             {cargos.map((cargo, index) => (
               <tr
                 key={cargo.id}

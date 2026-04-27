@@ -327,19 +327,19 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         setShowMapPicker(false);
         setSelectingFor(null);
       }}>
-        <DialogContent className="w-full max-w-3xl max-h-[90vh]">
+        <DialogContent className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-slate-900 transition-colors duration-300">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <DialogTitle className="text-lg font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2 transition-colors duration-300">
               <Map className="w-5 h-5" style={{ color: '#345E85' }} />
               Select {selectingFor === 'pickup' ? 'Pickup' : 'Delivery'} Location
             </DialogTitle>
           </DialogHeader>
 
           <div className="mt-4">
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-3 transition-colors duration-300">
               Click anywhere on the map to select the {selectingFor} location
             </p>
-            <div className="h-[500px] rounded-lg overflow-hidden border border-gray-300">
+            <div className="h-[500px] rounded-lg overflow-hidden border border-gray-300 dark:border-slate-700 transition-colors duration-300">
               <MapContainer
                 center={[0, 0]}
                 zoom={2}
@@ -366,11 +366,11 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b border-slate-100 pb-4">
-          <DialogTitle className="text-xl font-black text-[#0f172a] tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-[#345E85]" />
+      <DialogContent className="w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 transition-colors duration-300">
+        <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4 transition-colors duration-300">
+          <DialogTitle className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight flex items-center gap-3 transition-colors duration-300">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center transition-colors duration-300">
+              <Zap className="w-5 h-5 text-[#345E85] dark:text-blue-400 transition-colors duration-300" />
             </div>
             Quick Create Cargo
           </DialogTitle>
@@ -378,13 +378,13 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {recentCargos.length > 0 && (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
+            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 mb-6 transition-colors duration-300">
               <div className="flex items-center gap-2 mb-3">
-                <Copy className="w-4 h-4 text-[#345E85]" />
-                <span className="text-xs font-black text-[#345E85] uppercase tracking-wider">Templates</span>
+                <Copy className="w-4 h-4 text-[#345E85] dark:text-blue-400 transition-colors duration-300" />
+                <span className="text-xs font-black text-[#345E85] dark:text-blue-400 uppercase tracking-wider transition-colors duration-300">Templates</span>
               </div>
               <Select onValueChange={handleDuplicate}>
-                <SelectTrigger className="w-full bg-white border-slate-200 rounded-xl">
+                <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl transition-colors duration-300">
                   <SelectValue placeholder="Copy details from recent shipment..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -443,13 +443,13 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <div className="flex justify-between items-center mb-1">
-                <Label htmlFor="pickupLocation" className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                <Label htmlFor="pickupLocation" className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest transition-colors duration-300">
                   Pickup
                 </Label>
                 <button
                   type="button"
                   onClick={() => openMapPicker('pickup')}
-                  className="text-[10px] font-black text-[#345E85] flex items-center gap-1 hover:underline"
+                  className="text-[10px] font-black text-[#345E85] dark:text-blue-400 flex items-center gap-1 hover:underline transition-colors duration-300"
                 >
                   <Map className="w-3 h-3" />
                   MAP PICKER
@@ -466,20 +466,20 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
                 list="recent-locations"
               />
               {pickupCoords && (
-                <p className="text-[10px] text-green-600 font-bold mt-1 uppercase tracking-tighter">
+                <p className="text-[10px] text-green-600 dark:text-green-400 font-bold mt-1 uppercase tracking-tighter transition-colors duration-300">
                   ✓ Geocoded: {pickupCoords.lat.toFixed(4)}, {pickupCoords.lng.toFixed(4)}
                 </p>
               )}
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <Label htmlFor="deliveryLocation" className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                <Label htmlFor="deliveryLocation" className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest transition-colors duration-300">
                   Delivery
                 </Label>
                 <button
                   type="button"
                   onClick={() => openMapPicker('delivery')}
-                  className="text-[10px] font-black text-emerald-600 flex items-center gap-1 hover:underline"
+                  className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1 hover:underline transition-colors duration-300"
                 >
                   <Map className="w-3 h-3" />
                   MAP PICKER
@@ -496,7 +496,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
                 list="recent-locations"
               />
               {deliveryCoords && (
-                <p className="text-[10px] text-green-600 font-bold mt-1 uppercase tracking-tighter">
+                <p className="text-[10px] text-green-600 dark:text-green-400 font-bold mt-1 uppercase tracking-tighter transition-colors duration-300">
                   ✓ Geocoded: {deliveryCoords.lat.toFixed(4)}, {deliveryCoords.lng.toFixed(4)}
                 </p>
               )}
@@ -561,18 +561,18 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 transition-colors duration-300">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all font-bold text-sm"
+              className="flex-1 px-6 py-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm duration-300"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-[#345E85] text-white rounded-2xl transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 hover:bg-slate-800"
+              className="flex-1 px-6 py-3 bg-[#345E85] dark:bg-blue-600 text-white rounded-2xl transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 hover:bg-slate-800 dark:hover:bg-blue-700 duration-300"
             >
               {loading ? (
                 <>
@@ -588,7 +588,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 dark:text-slate-400 text-center transition-colors duration-300">
             You can add more details later in the full cargo form
           </p>
         </form>

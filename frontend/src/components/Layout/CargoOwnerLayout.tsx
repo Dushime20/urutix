@@ -43,19 +43,19 @@ const CargoOwnerLayout: React.FC = () => {
 
   if (isLoading || !user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
         <div className="w-16 h-16 relative">
-          <div className="absolute inset-0 border-4 border-slate-100 rounded-2xl"></div>
-          <div className="absolute inset-0 border-4 border-[#345E85] rounded-2xl border-t-transparent animate-spin"></div>
+          <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-2xl"></div>
+          <div className="absolute inset-0 border-4 border-[#345E85] dark:border-primary-500 rounded-2xl border-t-transparent animate-spin"></div>
         </div>
-        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading_Protocol</p>
+        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Loading_Protocol</p>
       </div>
     );
   }
 
   return (
     <CargoOwnerLayoutProvider value={providerValue}>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col relative">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300">
         {!hideHeader && <DashboardHeader />}
         
         <main className="flex-1 pb-32 lg:pb-12">

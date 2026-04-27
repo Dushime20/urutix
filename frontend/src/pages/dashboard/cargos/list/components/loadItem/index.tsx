@@ -172,7 +172,7 @@ export default function LoadItem({
   }, [handleEditCargo, load, navigate]);
 
   return (
-    <div className="group p-4 sm:p-6 transition-all duration-300 border border-slate-100 hover:border-[#345E85]/20 shadow-sm hover:shadow-xl hover:-translate-y-1 rounded-[2rem] bg-white overflow-hidden w-full">
+    <div className="group p-4 sm:p-6 transition-all duration-300 border border-slate-100 dark:border-slate-800 hover:border-[#345E85]/20 dark:hover:border-primary-700 shadow-sm hover:shadow-xl hover:-translate-y-1 rounded-[2rem] bg-white dark:bg-slate-900 overflow-hidden w-full">
       {/* Mobile Simplified View */}
       <div className="sm:hidden">
         {!showMobileDetails ? (
@@ -184,16 +184,16 @@ export default function LoadItem({
                     {getCargoTypeIcon(load.cargoType)}
                   </div>
                   <div className="min-w-0 flex-1 overflow-hidden">
-                    <h3 className="text-base font-black text-slate-800 break-words overflow-wrap-anywhere leading-tight">
+                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100 break-words overflow-wrap-anywhere leading-tight">
                       {load.title ||
                         `${getCargoTypeDisplayName(load.cargoType)} Shipment`}
                     </h3>
                     <div className="mt-1 flex flex-col gap-0.5">
-                      <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 flex-shrink-0 text-slate-400" />
+                      <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 flex-shrink-0 text-slate-400 dark:text-slate-500" />
                         <span className="truncate">{getLocationDisplay(load)}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
+                      <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 dark:text-slate-500">
                          <span className="flex items-center gap-1">
                             <Weight className="w-3 h-3 flex-shrink-0" />
                             {formatWeight(load.weight)}
@@ -230,11 +230,11 @@ export default function LoadItem({
               </div>
 
               {/* Action Bar - Mobile Visible */}
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-50">
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-50 dark:border-slate-800">
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleViewClick(load)}
-                    className="p-2.5 bg-slate-50 text-slate-500 hover:text-[#345E85] rounded-xl transition-all active:scale-95"
+                    className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#345E85] dark:hover:text-primary-400 rounded-xl transition-all duration-300 active:scale-95"
                     title="View Details"
                   >
                     <Eye className="w-4 h-4" />
@@ -242,7 +242,7 @@ export default function LoadItem({
                   {!load.broker && (
                     <button
                       onClick={handleEditClick}
-                      className="p-2.5 bg-slate-50 text-slate-500 hover:text-primary-600 rounded-xl transition-all active:scale-95"
+                      className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary-600 rounded-xl transition-all duration-300 active:scale-95"
                       title="Edit"
                     >
                       <Edit className="w-4 h-4" />
@@ -251,7 +251,7 @@ export default function LoadItem({
                   {handleAssignBroker && !load.broker && (
                     <button
                       onClick={() => handleAssignBroker(load)}
-                      className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all active:scale-95"
+                      className="p-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl transition-all duration-300 active:scale-95"
                       title="Assign Broker"
                     >
                       <User className="w-4 h-4" />
@@ -262,8 +262,8 @@ export default function LoadItem({
                       onClick={() => !load.receiverId && handleAssignReceiver(load)}
                       disabled={!!load.receiverId}
                       className={cn(
-                        "p-2.5 rounded-xl transition-all active:scale-95",
-                        load.receiverId ? "bg-slate-50 text-slate-300" : "bg-teal-50 text-teal-600"
+                        "p-2.5 rounded-xl transition-all duration-300 active:scale-95",
+                        load.receiverId ? "bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600" : "bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400"
                       )}
                       title="Assign Receiver"
                     >
@@ -276,7 +276,7 @@ export default function LoadItem({
                   {isLoadingConfirmable(load.status) && (
                     <button
                       onClick={() => handleConfirmLoading(load)}
-                      className="p-2.5 bg-orange-50 text-orange-600 rounded-xl transition-all active:scale-95 flex items-center gap-2"
+                      className="p-2.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-xl transition-all duration-300 active:scale-95 flex items-center gap-2"
                     >
                       <CheckCircle className="w-4 h-4" />
                       <span className="text-[10px] font-black uppercase">CONFIRM</span>
@@ -285,7 +285,7 @@ export default function LoadItem({
                   {!load.broker && (
                     <button
                       onClick={() => handleDeleteCargo(load)}
-                      className="p-2.5 bg-red-50 text-red-500 rounded-xl transition-all active:scale-95"
+                      className="p-2.5 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-xl transition-all duration-300 active:scale-95"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -428,10 +428,10 @@ export default function LoadItem({
 
                 if (detailedLocationInfo.hasEnrichedData) {
                   return (
-                    <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm w-full overflow-hidden">
+                    <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm w-full overflow-hidden transition-colors duration-300">
                       <div className="flex items-center space-x-2 mb-3">
-                        <div className="p-1.5 bg-gray-100 rounded-lg flex-shrink-0">
-                          <Globe className="w-3.5 h-3.5 text-gray-600" />
+                        <div className="p-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg flex-shrink-0">
+                          <Globe className="w-3.5 h-3.5 text-gray-600 dark:text-slate-400" />
                         </div>
                         <span className="text-xs font-medium text-gray-800 break-words">
                           Enhanced Location Intelligence
@@ -440,13 +440,13 @@ export default function LoadItem({
 
                       <div className="grid grid-cols-1 gap-4">
                         {/* Pickup Location Enhanced */}
-                        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+                        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm transition-colors duration-300">
                           <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
                             <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0"></div>
                             <span className="text-xs sm:text-sm font-medium text-gray-700">
                               Pickup Location
                             </span>
-                            <div className="p-1 bg-gray-100 rounded flex-shrink-0">
+                            <div className="p-1 bg-gray-100 dark:bg-slate-700 rounded flex-shrink-0">
                               {getLocationTypeIcon(
                                 detailedLocationInfo.pickup.type
                               )}
@@ -481,13 +481,13 @@ export default function LoadItem({
                         </div>
 
                         {/* Delivery Location Enhanced */}
-                        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+                        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm transition-colors duration-300">
                           <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
                             <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
                             <span className="text-xs sm:text-sm font-medium text-gray-700">
                               Delivery Location
                             </span>
-                            <div className="p-1 bg-gray-100 rounded flex-shrink-0">
+                            <div className="p-1 bg-gray-100 dark:bg-slate-700 rounded flex-shrink-0">
                               {getLocationTypeIcon(
                                 detailedLocationInfo.delivery.type
                               )}
@@ -552,10 +552,10 @@ export default function LoadItem({
 
               {/* Special Requirements - Mobile */}
               {requirements?.length > 0 && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg shadow-sm w-full overflow-hidden">
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg shadow-sm w-full overflow-hidden transition-colors duration-300">
                   <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
-                    <div className="p-1.5 sm:p-2 bg-gray-100 rounded-lg flex-shrink-0">
-                      <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
+                    <div className="p-1.5 sm:p-2 bg-gray-100 dark:bg-slate-700 rounded-lg flex-shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600 dark:text-slate-400" />
                     </div>
                     <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">
                       Special Requirements
@@ -565,7 +565,7 @@ export default function LoadItem({
                     {requirements?.map((req, index) => (
                       <span
                         key={index}
-                        className="px-2 sm:px-3 py-1 bg-white text-orange-700 text-xs rounded-full border border-orange-200 shadow-sm whitespace-nowrap"
+                        className="px-2 sm:px-3 py-1 bg-white dark:bg-slate-900 text-orange-700 dark:text-orange-400 text-xs rounded-full border border-orange-200 dark:border-orange-800 shadow-sm whitespace-nowrap transition-colors duration-300"
                       >
                         {req}
                       </span>
@@ -614,7 +614,7 @@ export default function LoadItem({
               <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
                 {!load.broker && (
                   <button
-                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-lg font-medium text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-300 flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     onClick={() => handleEditClick()}
                   >
                     <Edit className="w-4 h-4" />
@@ -623,7 +623,7 @@ export default function LoadItem({
                 )}
                 {handleAssignBroker && !load.broker && (
                   <button
-                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-purple-600 border border-purple-300 rounded-lg font-medium text-sm hover:bg-purple-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-700 rounded-lg font-medium text-sm hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors duration-300 flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     onClick={() => handleAssignBroker(load)}
                   >
                     <User className="w-4 h-4" />
@@ -633,9 +633,9 @@ export default function LoadItem({
                 )}
                 {handleAssignReceiver && (
                   <button
-                    className={`flex-1 min-w-[120px] px-4 py-2.5 bg-white border rounded-lg font-medium text-sm flex items-center justify-center gap-2 touch-manipulation min-h-[44px] ${load.receiverId
-                        ? 'text-gray-400 border-gray-200 cursor-not-allowed'
-                        : 'text-teal-600 border-teal-300 hover:bg-teal-50 transition-colors'
+                    className={`flex-1 min-w-[120px] px-4 py-2.5 bg-white dark:bg-slate-800 border rounded-lg font-medium text-sm flex items-center justify-center gap-2 touch-manipulation min-h-[44px] transition-colors duration-300 ${load.receiverId
+                        ? 'text-gray-400 dark:text-slate-600 border-gray-200 dark:border-slate-700 cursor-not-allowed'
+                        : 'text-teal-600 dark:text-teal-400 border-teal-300 dark:border-teal-700 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors'
                       }`}
                     onClick={() => !load.receiverId && handleAssignReceiver(load)}
                     disabled={!!load.receiverId}
@@ -648,7 +648,7 @@ export default function LoadItem({
                 )}
                 {handleUnassignBroker && load.broker && (
                   <button
-                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-orange-600 border border-orange-300 rounded-lg font-medium text-sm hover:bg-orange-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 border border-orange-300 dark:border-orange-700 rounded-lg font-medium text-sm hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors duration-300 flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     onClick={() => handleUnassignBroker(load)}
                   >
                     <UserX className="w-4 h-4" />
@@ -658,7 +658,7 @@ export default function LoadItem({
                 )}
                 {!load.broker && (
                   <button
-                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white text-red-600 border border-red-300 rounded-lg font-medium text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg font-medium text-sm hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors duration-300 flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                     onClick={() => handleDeleteCargo(load)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -681,11 +681,11 @@ export default function LoadItem({
                 {getCargoTypeIcon(load.cargoType)}
               </div>
               <div className="min-w-0 flex-1 max-w-full overflow-hidden">
-                <h3 className="text-lg font-black text-[#0f172a] tracking-tight group-hover:text-[#345E85] transition-colors">
+                <h3 className="text-lg font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">
                   {load.title ||
                     `${getCargoTypeDisplayName(load.cargoType)} Shipment`}
                 </h3>
-                <p className="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
                   {load.description || "Cargo shipment details"}
                 </p>
               </div>
@@ -713,7 +713,7 @@ export default function LoadItem({
                 const enrichedDetails = getEnrichedLocationDetails(load);
                 if (enrichedDetails?.pickup || enrichedDetails?.delivery) {
                   return (
-                    <span className="px-2 sm:px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 shadow-sm whitespace-nowrap flex items-center">
+                    <span className="px-2 sm:px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 shadow-sm whitespace-nowrap flex items-center transition-colors duration-300">
                       <Globe className="w-3 h-3 inline mr-1 flex-shrink-0" />
                       <span className="hidden xs:inline">OSM Data</span>
                       <span className="xs:hidden">OSM</span>
@@ -807,10 +807,10 @@ export default function LoadItem({
 
             if (detailedLocationInfo.hasEnrichedData) {
               return (
-                <div className="mb-4 sm:mb-6 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm w-full overflow-hidden">
+                <div className="mb-4 sm:mb-6 p-4 sm:p-6 bg-slate-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm w-full overflow-hidden transition-colors duration-300">
                   <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                    <div className="p-1.5 sm:p-2 bg-gray-100 rounded-lg flex-shrink-0">
-                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
+                    <div className="p-1.5 sm:p-2 bg-gray-100 dark:bg-slate-700 rounded-lg flex-shrink-0">
+                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600 dark:text-slate-400" />
                     </div>
                     <span className="text-xs sm:text-sm font-medium text-gray-800 break-words">
                       Enhanced Location Intelligence
@@ -819,13 +819,13 @@ export default function LoadItem({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Pickup Location Enhanced */}
-                    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+                    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm transition-colors duration-300">
                       <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
                         <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm font-medium text-gray-700">
+                        <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300">
                           Pickup Location
                         </span>
-                        <div className="p-1 bg-gray-100 rounded flex-shrink-0">
+                        <div className="p-1 bg-gray-100 dark:bg-slate-700 rounded flex-shrink-0">
                           {getLocationTypeIcon(
                             detailedLocationInfo.pickup.type
                           )}
@@ -860,13 +860,13 @@ export default function LoadItem({
                     </div>
 
                     {/* Delivery Location Enhanced */}
-                    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white rounded-lg shadow-sm">
+                    <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm transition-colors duration-300">
                       <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
                         <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm font-medium text-gray-700">
+                        <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300">
                           Delivery Location
                         </span>
-                        <div className="p-1 bg-gray-100 rounded flex-shrink-0">
+                        <div className="p-1 bg-gray-100 dark:bg-slate-700 rounded flex-shrink-0">
                           {getLocationTypeIcon(
                             detailedLocationInfo.delivery.type
                           )}
@@ -931,10 +931,10 @@ export default function LoadItem({
 
           {/* Special Requirements - Desktop */}
           {requirements?.length > 0 && (
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg shadow-sm group-hover:shadow w-full overflow-hidden">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 dark:bg-slate-800 rounded-lg shadow-sm group-hover:shadow w-full overflow-hidden transition-colors duration-300">
               <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
-                <div className="p-1.5 sm:p-2 bg-gray-100 rounded-lg flex-shrink-0">
-                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
+                <div className="p-1.5 sm:p-2 bg-gray-100 dark:bg-slate-700 rounded-lg flex-shrink-0">
+                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600 dark:text-slate-400" />
                 </div>
                 <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">
                   Special Requirements
@@ -994,7 +994,7 @@ export default function LoadItem({
         <div className="sm:ml-6 relative flex items-center sm:items-center lg:items-center lg:justify-center max-lg:w-full max-lg:justify-end flex-shrink-0">
           <div className="flex items-center lg:flex-col gap-2 lg:sticky lg:top-32">
             <button
-              className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
               title="View Details"
               onClick={() => handleViewClick(load)}
             >
@@ -1002,7 +1002,7 @@ export default function LoadItem({
             </button>
             {isLoadingConfirmable(load.status) && (
               <button
-                className="p-3 bg-white text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 title="Confirm Cargo Loaded"
                 onClick={() => handleConfirmLoading(load)}
               >
@@ -1011,7 +1011,7 @@ export default function LoadItem({
             )}
             {!load.broker && (
               <button
-                className="p-3 bg-white text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 title="Edit Cargo"
                 onClick={handleEditClick}
               >
@@ -1020,7 +1020,7 @@ export default function LoadItem({
             )}
             {!load.broker && (
               <button
-                className="p-3 bg-white text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 title="Delete Cargo"
                 onClick={() => handleDeleteCargo(load)}
               >
@@ -1029,7 +1029,7 @@ export default function LoadItem({
             )}
             {handleAssignBroker && !load.broker && (
               <button
-                className="p-3 bg-white text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 title="Assign Broker"
                 onClick={() => handleAssignBroker(load)}
               >
@@ -1038,9 +1038,9 @@ export default function LoadItem({
             )}
             {handleAssignReceiver && (
               <button
-                className={`p-3 bg-white rounded-xl transition-all duration-200 shadow-sm ${load.receiverId
-                    ? 'text-gray-300 cursor-not-allowed hover:shadow-sm'
-                    : 'text-gray-400 hover:text-teal-600 hover:bg-teal-50 hover:shadow-md'
+                className={`p-3 bg-white dark:bg-slate-800 rounded-xl transition-all duration-300 shadow-sm ${load.receiverId
+                    ? 'text-gray-300 dark:text-slate-600 cursor-not-allowed hover:shadow-sm'
+                    : 'text-gray-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:shadow-md'
                   }`}
                 title={load.receiverId ? "Receiver already assigned" : "Assign Receiver"}
                 onClick={() => !load.receiverId && handleAssignReceiver(load)}
@@ -1051,7 +1051,7 @@ export default function LoadItem({
             )}
             {handleUnassignBroker && load.broker && (
               <button
-                className="p-3 bg-white text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 title="Unassign Broker"
                 onClick={() => handleUnassignBroker(load)}
               >

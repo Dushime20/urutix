@@ -34,31 +34,31 @@ const LocationItem: React.FC<LocationItemProps> = ({
       return {
         primary: "blue",
         active:
-          "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 shadow-blue-100",
+          "border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-blue-100 dark:shadow-blue-900/20",
         inactive:
-          "border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-25 hover:shadow-blue-50",
-        focus: "focus:ring-blue-400 focus:ring-offset-2",
-        card: "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300 shadow-sm",
-        title: "text-blue-900",
-        content: "text-blue-700",
-        placeholder: "text-blue-500",
-        icon: "text-blue-600",
-        success: "text-blue-600",
+          "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-25 dark:hover:bg-blue-900/20",
+        focus: "focus:ring-blue-400 dark:focus:ring-blue-600 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+        card: "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 shadow-sm",
+        title: "text-blue-900 dark:text-blue-300",
+        content: "text-blue-700 dark:text-blue-400",
+        placeholder: "text-blue-500 dark:text-blue-400",
+        icon: "text-blue-600 dark:text-blue-400",
+        success: "text-blue-600 dark:text-blue-400",
       };
     } else {
       return {
         primary: "green",
         active:
-          "border-green-500 bg-gradient-to-br from-green-50 to-green-100 text-green-700 shadow-green-100",
+          "border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 shadow-green-100 dark:shadow-green-900/20",
         inactive:
-          "border-gray-200 bg-white hover:border-green-400 hover:bg-green-25 hover:shadow-green-50",
-        focus: "focus:ring-green-400 focus:ring-offset-2",
-        card: "bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:border-green-300 shadow-sm",
-        title: "text-green-900",
-        content: "text-green-700",
-        placeholder: "text-green-500",
-        icon: "text-green-600",
-        success: "text-green-600",
+          "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-25 dark:hover:bg-green-900/20",
+        focus: "focus:ring-green-400 dark:focus:ring-green-600 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+        card: "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 shadow-sm",
+        title: "text-green-900 dark:text-green-300",
+        content: "text-green-700 dark:text-green-400",
+        placeholder: "text-green-500 dark:text-green-400",
+        icon: "text-green-600 dark:text-green-400",
+        success: "text-green-600 dark:text-green-400",
       };
     }
   };
@@ -129,7 +129,7 @@ const LocationItem: React.FC<LocationItemProps> = ({
           <div
             className={cn(
               "p-2 rounded-full",
-              isActive ? "bg-white/50" : "bg-gray-50"
+              isActive ? "bg-white/50 dark:bg-slate-700/50" : "bg-gray-50 dark:bg-slate-700"
             )}
           >
             <FaMapPin className={getIconStyles()} />
@@ -146,7 +146,7 @@ const LocationItem: React.FC<LocationItemProps> = ({
         <div
           className={cn(
             "p-2 rounded-full transition-all duration-300",
-            isActive ? "bg-white/50" : "bg-gray-50 group-hover:bg-white/50"
+            isActive ? "bg-white/50 dark:bg-slate-700/50" : "bg-gray-50 dark:bg-slate-700 group-hover:bg-white/50 dark:group-hover:bg-slate-700/50"
           )}
         >
           {getStatusIcon()}
