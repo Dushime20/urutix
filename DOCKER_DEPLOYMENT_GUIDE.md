@@ -234,17 +234,35 @@ curl http://localhost:5173
 #### Step 12: Configure Firewall
 
 ```bash
-# Allow HTTP traffic
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw allow 3005/tcp
+# Allow frontend port
 ufw allow 5173/tcp
+
+# Allow backend API
+ufw allow 3005/tcp
+
+# Allow HTTP traffic (for future nginx reverse proxy)
+ufw allow 80/tcp
+
+# Allow HTTPS traffic (for future SSL setup)
+ufw allow 443/tcp
+
+# DO NOT expose database and Redis ports publicly
+# These should only be accessible within Docker network
 
 # Enable firewall
 ufw enable
 
 # Check status
 ufw status
+
+# Expected output:
+# Status: active
+# To                         Action      From
+# --                         ------      ----
+# 5173/tcp                   ALLOW       Anywhere
+# 3005/tcp                   ALLOW       Anywhere
+# 80/tcp                     ALLOW       Anywhere
+# 443/tcp                    ALLOW       Anywhere
 ```
 
 ---
@@ -1095,14 +1113,17 @@ Open your browser and navigate to:
 ### Step 9: Configure Firewall (Important!)
 
 ```bash
-# Allow HTTP traffic
+# Allow frontend port
+sudo ufw allow 5173/tcp
+
+# Allow backend API
+sudo ufw allow 3005/tcp
+
+# Allow HTTP traffic (for future nginx reverse proxy)
 sudo ufw allow 80/tcp
 
 # Allow HTTPS traffic (for future SSL setup)
 sudo ufw allow 443/tcp
-
-# Allow backend API (if accessing directly)
-sudo ufw allow 3005/tcp
 
 # DO NOT expose database and Redis ports publicly
 # These should only be accessible within Docker network
@@ -1117,9 +1138,10 @@ sudo ufw status
 # Status: active
 # To                         Action      From
 # --                         ------      ----
+# 5173/tcp                   ALLOW       Anywhere
+# 3005/tcp                   ALLOW       Anywhere
 # 80/tcp                     ALLOW       Anywhere
 # 443/tcp                    ALLOW       Anywhere
-# 3005/tcp                   ALLOW       Anywhere
 ```
 
 ---
