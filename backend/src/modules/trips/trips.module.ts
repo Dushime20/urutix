@@ -16,6 +16,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { NotificationService } from '../notifications/notification.service';
 import { CreditService } from '../../services/credit.service';
+import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CreditService } from '../../services/credit.service';
       CreditAccount, CreditTransaction, FeatureCreditCost,
     ]),
     NotificationsModule,
+    EnhancedAuthModule,
   ],
   providers: [TripsService, CreditService],
   controllers: [TripsController],

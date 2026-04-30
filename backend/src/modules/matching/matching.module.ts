@@ -30,6 +30,7 @@ import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { MLPredictionService } from './services/ml-prediction.service';
 import { NotificationModule } from '../notifications/notification.module';
+import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { NotificationModule } from '../notifications/notification.module';
     EventEmitterModule.forRoot(),
     ConfigModule,
     NotificationModule,
+    EnhancedAuthModule,
   ],
   providers: [
     MatchingService,

@@ -15,6 +15,7 @@ import { NotificationType, NotificationCategory, NotificationChannel, EntityType
 import { CreditService } from '../../services/credit.service';
 import { UserRole } from '../../entities/user.entity';
 import { SubscriptionStatus } from '../../entities/tenant-subscription.entity';
+import { EmailService } from '../auth/services/email.service';
 
 @Injectable()
 export class TripsService {
@@ -36,6 +37,7 @@ export class TripsService {
     private readonly notificationService: NotificationService,
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly emailService: EmailService,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -129,7 +131,14 @@ export class TripsService {
   async assignDriver(id: string, driverId: string, tenantId: string): Promise<Trip> {
     const trip = await this.findOne(id, tenantId);
     trip.driverId = driverId;
-    return this.tripRepository.save(trip);
+    const savedTrip = await this.tripRepository.save(trip);
+
+    // Send driver assignment notifications (fire-and-forget)
+    this.sendDriverAssignmentNotifications(savedTrip, driverId, tenantId).catch(err =>
+      this.logger.error(`Failed to send driver assignment notifications: ${err.message}`, err.stack),
+    );
+
+    return savedTrip;
   }
 
   async getActiveTrips(tenantId: string): Promise<Trip[]> {
@@ -346,6 +355,23 @@ export class TripsService {
       });
 
       this.logger.log(`[TripsService] Credit deduction successful for trip ${tripId}`);
+
+      // Send credit deduction notifications to truck owner and tenant admin
+      const tenantCreditsDeducted = Math.ceil(cargoWeightTons * creditsPerTonTenant);
+      const truckOwnerCreditsDeducted = Math.ceil(cargoWeightTons * creditsPerTonTruckOwner);
+      this.sendCreditDeductionNotifications({
+        tenantId,
+        tenantAdminUser,
+        truckOwnerId: trip.truck.ownerId,
+        tripNumber: trip.tripNumber,
+        tripId,
+        loadTitle: trip.load.title,
+        cargoWeightTons,
+        tenantCreditsDeducted,
+        truckOwnerCreditsDeducted,
+      }).catch(err =>
+        this.logger.error(`Credit notification failed for trip ${tripId}: ${err.message}`, err.stack),
+      );
     } catch (error) {
       this.logger.error(`[TripsService] Credit deduction failed for trip ${tripId}: ${error.message}`, error.stack);
       // We do NOT re-throw here — the trip status has already been saved.
@@ -520,6 +546,348 @@ export class TripsService {
       this.logger.log(`Emitted trip.completed event for trip ${trip.id}`);
     } catch (error) {
       this.logger.error(`Failed to emit trip.completed event: ${error.message}`, error.stack);
+    }
+  }
+
+  /**
+   * Send in-app + email notifications to truck owner and tenant admin when credits are deducted.
+   */
+  private async sendCreditDeductionNotifications(params: {
+    tenantId: string;
+    tenantAdminUser: User;
+    truckOwnerId: string;
+    tripNumber: string;
+    tripId: string;
+    loadTitle: string;
+    cargoWeightTons: number;
+    tenantCreditsDeducted: number;
+    truckOwnerCreditsDeducted: number;
+  }): Promise<void> {
+    const {
+      tenantId, tenantAdminUser, truckOwnerId, tripNumber, tripId,
+      loadTitle, cargoWeightTons, tenantCreditsDeducted, truckOwnerCreditsDeducted,
+    } = params;
+
+    // Fetch truck owner user
+    const truckOwnerUser = await this.userRepository.findOne({
+      where: { id: truckOwnerId },
+      relations: ['profile'],
+    });
+
+    const tenantAdminName = tenantAdminUser.profile
+      ? `${(tenantAdminUser as any).profile?.firstName || ''} ${(tenantAdminUser as any).profile?.lastName || ''}`.trim() || tenantAdminUser.email
+      : tenantAdminUser.email;
+
+    const truckOwnerName = truckOwnerUser?.profile
+      ? `${(truckOwnerUser as any).profile?.firstName || ''} ${(truckOwnerUser as any).profile?.lastName || ''}`.trim() || truckOwnerUser?.email
+      : truckOwnerUser?.email || 'Truck Owner';
+
+    const weightDisplay = cargoWeightTons.toFixed(2);
+
+    // ── 1. Notify Truck Owner ──────────────────────────────────────────────
+    await this.notificationService.createNotification({
+      userId: truckOwnerId,
+      tenantId,
+      subject: '💳 Credits Deducted – Trip Started',
+      content: `${truckOwnerCreditsDeducted} credits have been deducted from your account for trip ${tripNumber} (cargo: "${loadTitle}", ${weightDisplay} tons). This covers your job payment for this trip.`,
+      type: NotificationType.PAYMENT,
+      category: NotificationCategory.FINANCIAL,
+      channel: NotificationChannel.IN_APP,
+      priority: 'HIGH' as any,
+      actionUrl: `/dashboard/credits`,
+      actionText: 'View Credit Balance',
+      metadata: {
+        tripId,
+        tripNumber,
+        creditsDeducted: truckOwnerCreditsDeducted,
+        role: 'TRUCK_OWNER',
+        entityType: EntityType.TRIP,
+        entityId: tripId,
+      },
+    } as any);
+
+    // ── 2. Notify Tenant Admin ─────────────────────────────────────────────
+    await this.notificationService.createNotification({
+      userId: tenantAdminUser.id,
+      tenantId,
+      subject: '💳 Credits Deducted – Trip Started',
+      content: `${tenantCreditsDeducted} credits have been deducted from your account as operational cost for trip ${tripNumber} (cargo: "${loadTitle}", ${weightDisplay} tons). You also earned ${truckOwnerCreditsDeducted} credits from the truck owner's payment.`,
+      type: NotificationType.PAYMENT,
+      category: NotificationCategory.FINANCIAL,
+      channel: NotificationChannel.IN_APP,
+      priority: 'HIGH' as any,
+      actionUrl: `/dashboard/credits`,
+      actionText: 'View Credit Balance',
+      metadata: {
+        tripId,
+        tripNumber,
+        creditsDeducted: tenantCreditsDeducted,
+        creditsEarned: truckOwnerCreditsDeducted,
+        role: 'TENANT_ADMIN',
+        entityType: EntityType.TRIP,
+        entityId: tripId,
+      },
+    } as any);
+
+    this.logger.log(`[TripsService] Credit deduction in-app notifications sent for trip ${tripId}`);
+
+    // ── 3. Email – Truck Owner ─────────────────────────────────────────────
+    if (truckOwnerUser?.email) {
+      await this.sendCreditDeductionEmail({
+        email: truckOwnerUser.email,
+        recipientName: truckOwnerName,
+        role: 'truck_owner',
+        tripNumber,
+        tripId,
+        loadTitle,
+        weightDisplay,
+        creditsDeducted: truckOwnerCreditsDeducted,
+        creditsEarned: 0,
+      });
+    }
+
+    // ── 4. Email – Tenant Admin ────────────────────────────────────────────
+    if (tenantAdminUser.email) {
+      await this.sendCreditDeductionEmail({
+        email: tenantAdminUser.email,
+        recipientName: tenantAdminName,
+        role: 'tenant_admin',
+        tripNumber,
+        tripId,
+        loadTitle,
+        weightDisplay,
+        creditsDeducted: tenantCreditsDeducted,
+        creditsEarned: truckOwnerCreditsDeducted,
+      });
+    }
+  }
+
+  /**
+   * Send credit deduction email via SMTP.
+   */
+  private async sendCreditDeductionEmail(params: {
+    email: string;
+    recipientName: string;
+    role: 'truck_owner' | 'tenant_admin';
+    tripNumber: string;
+    tripId: string;
+    loadTitle: string;
+    weightDisplay: string;
+    creditsDeducted: number;
+    creditsEarned: number;
+  }): Promise<void> {
+    const { email, recipientName, role, tripNumber, tripId, loadTitle, weightDisplay, creditsDeducted, creditsEarned } = params;
+    try {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const creditsUrl = `${frontendUrl}/dashboard/credits`;
+      const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+
+      const roleLabel = role === 'tenant_admin' ? 'Operational Cost' : 'Job Payment';
+      const earnedRow = role === 'tenant_admin' && creditsEarned > 0
+        ? `<tr><td style="padding: 10px 14px; font-weight: bold; color: #333;">Credits Earned</td><td style="padding: 10px 14px; color: #16a34a;">+${creditsEarned} credits (from truck owner)</td></tr>`
+        : '';
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"></head>
+        <body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="background: #dc2626; padding: 24px; text-align: center;">
+              <h1 style="color: #fff; margin: 0; font-size: 22px;">💳 Credits Deducted</h1>
+            </div>
+            <div style="padding: 28px;">
+              <p style="font-size: 16px; color: #333;">Hi <strong>${recipientName}</strong>,</p>
+              <p style="color: #555;">Credits have been deducted from your account as a trip has started. Here are the details:</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333; width: 45%;">Trip Number</td>
+                  <td style="padding: 10px 14px; color: #555;">${tripNumber}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Cargo</td>
+                  <td style="padding: 10px 14px; color: #555;">${loadTitle}</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Cargo Weight</td>
+                  <td style="padding: 10px 14px; color: #555;">${weightDisplay} tons</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Deduction Type</td>
+                  <td style="padding: 10px 14px; color: #555;">${roleLabel}</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Credits Deducted</td>
+                  <td style="padding: 10px 14px; color: #dc2626; font-weight: bold;">-${creditsDeducted} credits</td>
+                </tr>
+                ${earnedRow}
+              </table>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${creditsUrl}" style="background: #1a56db; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-size: 15px; font-weight: bold;">View Credit Balance</a>
+              </div>
+              <p style="color: #888; font-size: 13px;">If you have questions about this deduction, please contact your platform administrator.</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 16px; text-align: center; color: #aaa; font-size: 12px;">
+              © ${new Date().getFullYear()} UrutiX Smart Logistics. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const netLine = role === 'tenant_admin' && creditsEarned > 0
+        ? `\nCredits Earned: +${creditsEarned} credits (from truck owner)\nNet: ${creditsEarned - creditsDeducted} credits`
+        : '';
+
+      await (this.emailService as any).transporter?.sendMail({
+        from: fromAddress,
+        to: email,
+        subject: `Credits Deducted – Trip ${tripNumber} Started | UrutiX`,
+        text: `Hi ${recipientName},\n\nCredits have been deducted for trip ${tripNumber}.\nCargo: ${loadTitle} (${weightDisplay} tons)\nDeduction Type: ${roleLabel}\nCredits Deducted: -${creditsDeducted} credits${netLine}\n\nView balance: ${creditsUrl}\n\nUrutiX Smart Logistics`,
+        html,
+      });
+
+      this.logger.log(`[TripsService] Credit deduction email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`[TripsService] Failed to send credit deduction email to ${email}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Send in-app + email notifications to a driver when they are assigned to a trip.
+   */
+  private async sendDriverAssignmentNotifications(trip: Trip, driverId: string, tenantId: string): Promise<void> {
+    try {
+      // Load full trip details with relations
+      const fullTrip = await this.tripRepository.findOne({
+        where: { id: trip.id },
+        relations: ['load', 'truck'],
+      });
+
+      const driver = await this.userRepository.findOne({
+        where: { id: driverId },
+        relations: ['profile'],
+      });
+
+      if (!driver) {
+        this.logger.warn(`[TripsService] Driver ${driverId} not found, skipping assignment notifications`);
+        return;
+      }
+
+      const driverName = driver.profile
+        ? `${driver.profile.firstName || ''} ${driver.profile.lastName || ''}`.trim() || driver.email
+        : driver.email;
+
+      const cargoTitle = fullTrip?.load?.title || fullTrip?.load?.cargoType || 'Cargo';
+      const truckPlate = fullTrip?.truck?.plateNumber || 'N/A';
+      const pickupDate = fullTrip?.plannedStartTime
+        ? new Date(fullTrip.plannedStartTime).toLocaleDateString('en-US', { dateStyle: 'medium' })
+        : 'TBD';
+
+      // 1. In-app notification
+      await this.notificationService.createNotification({
+        userId: driverId,
+        tenantId,
+        subject: '🚛 New Trip Assignment',
+        content: `You have been assigned to trip ${trip.tripNumber}. Cargo: "${cargoTitle}", Truck: ${truckPlate}. Planned start: ${pickupDate}.`,
+        type: NotificationType.DRIVER_ASSIGNMENT,
+        category: NotificationCategory.TRIP,
+        channel: NotificationChannel.IN_APP,
+        priority: 'HIGH' as any,
+        actionUrl: `/dashboard/driver/trips?tripId=${trip.id}`,
+        actionText: 'View Trip',
+        metadata: {
+          tripId: trip.id,
+          tripNumber: trip.tripNumber,
+          entityType: EntityType.TRIP,
+          entityId: trip.id,
+        },
+      } as any);
+
+      this.logger.log(`[TripsService] In-app notification sent to driver ${driverId} for trip ${trip.id}`);
+
+      // 2. Email notification
+      if (driver.email) {
+        await this.sendDriverAssignmentEmail(driver.email, driverName, trip, cargoTitle, truckPlate, pickupDate);
+      }
+    } catch (error) {
+      this.logger.error(`[TripsService] sendDriverAssignmentNotifications failed: ${error.message}`, error.stack);
+    }
+  }
+
+  /**
+   * Send driver assignment email via SMTP.
+   */
+  private async sendDriverAssignmentEmail(
+    email: string,
+    driverName: string,
+    trip: Trip,
+    cargoTitle: string,
+    truckPlate: string,
+    pickupDate: string,
+  ): Promise<void> {
+    try {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const tripUrl = `${frontendUrl}/dashboard/driver/trips?tripId=${trip.id}`;
+      const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"></head>
+        <body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
+          <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="background: #1a56db; padding: 24px; text-align: center;">
+              <h1 style="color: #fff; margin: 0; font-size: 22px;">🚛 New Trip Assignment</h1>
+            </div>
+            <div style="padding: 28px;">
+              <p style="font-size: 16px; color: #333;">Hi <strong>${driverName}</strong>,</p>
+              <p style="color: #555;">You have been assigned to a new trip. Here are the details:</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333; width: 40%;">Trip Number</td>
+                  <td style="padding: 10px 14px; color: #555;">${trip.tripNumber}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Cargo</td>
+                  <td style="padding: 10px 14px; color: #555;">${cargoTitle}</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Truck</td>
+                  <td style="padding: 10px 14px; color: #555;">${truckPlate}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; font-weight: bold; color: #333;">Planned Start</td>
+                  <td style="padding: 10px 14px; color: #555;">${pickupDate}</td>
+                </tr>
+              </table>
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${tripUrl}" style="background: #1a56db; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-size: 15px; font-weight: bold;">View Trip Details</a>
+              </div>
+              <p style="color: #888; font-size: 13px;">Please log in to your driver dashboard to review the full trip details and prepare accordingly.</p>
+            </div>
+            <div style="background: #f8f9fa; padding: 16px; text-align: center; color: #aaa; font-size: 12px;">
+              © ${new Date().getFullYear()} UrutiX Smart Logistics. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const text = `Hi ${driverName},\n\nYou have been assigned to trip ${trip.tripNumber}.\nCargo: ${cargoTitle}\nTruck: ${truckPlate}\nPlanned Start: ${pickupDate}\n\nView trip: ${tripUrl}\n\nUrutiX Smart Logistics`;
+
+      await (this.emailService as any).transporter?.sendMail({
+        from: fromAddress,
+        to: email,
+        subject: `New Trip Assignment - ${trip.tripNumber} | UrutiX`,
+        text,
+        html,
+      });
+
+      this.logger.log(`[TripsService] Assignment email sent to driver ${email} for trip ${trip.id}`);
+    } catch (error) {
+      this.logger.error(`[TripsService] Failed to send assignment email to ${email}: ${error.message}`);
+      // Non-fatal — in-app notification already sent
     }
   }
 }

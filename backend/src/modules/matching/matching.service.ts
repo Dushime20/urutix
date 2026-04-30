@@ -51,6 +51,7 @@ import {
   NotificationChannel,
   EntityType,
 } from '../../entities/notification.entity';
+import { EmailService } from '../auth/services/email.service';
 
 // =====================================================
 // CONSOLIDATED MATCHING INTERFACES
@@ -192,6 +193,7 @@ export class MatchingService {
     private readonly notificationService: NotificationService,
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly emailService: EmailService,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
@@ -1031,12 +1033,18 @@ export class MatchingService {
         });
 
         if (driver && driver.userId) {
-           await this.notificationService.createNotification({
+          // Fetch driver user for email
+          const driverUser = await this.userRepository.findOne({
+            where: { id: driver.userId },
+            relations: ['profile'],
+          });
+
+          await this.notificationService.createNotification({
             tenantId: load.tenantId,
             recipientId: driver.userId,
-            title: 'New Trip Assignment',
-            message: `You have been assigned to trip ${trip.tripNumber}. Cargo: ${load.title || 'General Cargo'}.`,
-            notificationType: NotificationType.GENERAL,
+            title: '🚛 New Trip Assignment',
+            message: `You have been assigned to trip ${trip.tripNumber}. Cargo: "${load.title || 'General Cargo'}", Truck: ${truck.plateNumber || 'N/A'}.`,
+            notificationType: NotificationType.DRIVER_ASSIGNMENT,
             category: NotificationCategory.TRIP,
             priority: NotificationPriority.HIGH,
             channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
@@ -1046,7 +1054,76 @@ export class MatchingService {
             actionUrl: `/dashboard/driver/trips?tripId=${trip.id}`,
             actionText: 'View Trip'
           });
-          this.logger.log(`📧 Notification sent to Driver: ${driver.userId}`);
+          this.logger.log(`📧 In-app notification sent to Driver: ${driver.userId}`);
+
+          // Send assignment email to driver
+          if (driverUser?.email) {
+            const driverName = driverUser.profile
+              ? `${driverUser.profile.firstName || ''} ${driverUser.profile.lastName || ''}`.trim() || driverUser.email
+              : driverUser.email;
+            const pickupDate = trip.plannedStartTime
+              ? new Date(trip.plannedStartTime).toLocaleDateString('en-US', { dateStyle: 'medium' })
+              : 'TBD';
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            const tripUrl = `${frontendUrl}/dashboard/driver/trips?tripId=${trip.id}`;
+            const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+
+            const html = `
+              <!DOCTYPE html>
+              <html>
+              <head><meta charset="UTF-8"></head>
+              <body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                  <div style="background: #1a56db; padding: 24px; text-align: center;">
+                    <h1 style="color: #fff; margin: 0; font-size: 22px;">🚛 New Trip Assignment</h1>
+                  </div>
+                  <div style="padding: 28px;">
+                    <p style="font-size: 16px; color: #333;">Hi <strong>${driverName}</strong>,</p>
+                    <p style="color: #555;">You have been assigned to a new trip. Here are the details:</p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                      <tr style="background: #f8f9fa;">
+                        <td style="padding: 10px 14px; font-weight: bold; color: #333; width: 40%;">Trip Number</td>
+                        <td style="padding: 10px 14px; color: #555;">${trip.tripNumber}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 14px; font-weight: bold; color: #333;">Cargo</td>
+                        <td style="padding: 10px 14px; color: #555;">${load.title || 'General Cargo'}</td>
+                      </tr>
+                      <tr style="background: #f8f9fa;">
+                        <td style="padding: 10px 14px; font-weight: bold; color: #333;">Truck</td>
+                        <td style="padding: 10px 14px; color: #555;">${truck.plateNumber || 'N/A'}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 14px; font-weight: bold; color: #333;">Planned Start</td>
+                        <td style="padding: 10px 14px; color: #555;">${pickupDate}</td>
+                      </tr>
+                    </table>
+                    <div style="text-align: center; margin: 28px 0;">
+                      <a href="${tripUrl}" style="background: #1a56db; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-size: 15px; font-weight: bold;">View Trip Details</a>
+                    </div>
+                    <p style="color: #888; font-size: 13px;">Please log in to your driver dashboard to review the full trip details and prepare accordingly.</p>
+                  </div>
+                  <div style="background: #f8f9fa; padding: 16px; text-align: center; color: #aaa; font-size: 12px;">
+                    © ${new Date().getFullYear()} UrutiX Smart Logistics. All rights reserved.
+                  </div>
+                </div>
+              </body>
+              </html>
+            `;
+
+            try {
+              await (this.emailService as any).transporter?.sendMail({
+                from: fromAddress,
+                to: driverUser.email,
+                subject: `New Trip Assignment - ${trip.tripNumber} | UrutiX`,
+                text: `Hi ${driverName},\n\nYou have been assigned to trip ${trip.tripNumber}.\nCargo: ${load.title || 'General Cargo'}\nTruck: ${truck.plateNumber || 'N/A'}\nPlanned Start: ${pickupDate}\n\nView trip: ${tripUrl}\n\nUrutiX Smart Logistics`,
+                html,
+              });
+              this.logger.log(`📧 Assignment email sent to driver ${driverUser.email}`);
+            } catch (emailErr) {
+              this.logger.error(`Failed to send assignment email to driver: ${emailErr.message}`);
+            }
+          }
         }
       }
 
