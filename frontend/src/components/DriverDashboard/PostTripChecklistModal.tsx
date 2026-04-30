@@ -2,25 +2,35 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X, Flag } from 'lucide-react';
 import { PostTripChecklist } from './PostTripChecklist';
+import { ProofOfDelivery } from './ProofOfDelivery';
 
 interface PostTripChecklistModalProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (data: { odometer: string; location: string }) => void;
+  tripId?: string;
+  tripNumber?: string;
+  cargoTitle?: string;
   truckId?: string;
   truckPlate?: string;
   driverId?: string;
   driverName?: string;
+  /** If true, show the ePOD form instead of the checklist */
+  showEpod?: boolean;
 }
 
 export const PostTripChecklistModal: React.FC<PostTripChecklistModalProps> = ({
   isOpen,
   onClose,
   onComplete,
+  tripId,
+  tripNumber,
+  cargoTitle,
   truckId,
   truckPlate,
   driverId,
   driverName,
+  showEpod = false,
 }) => {
   if (!isOpen) return null;
 
@@ -50,24 +60,39 @@ export const PostTripChecklistModal: React.FC<PostTripChecklistModalProps> = ({
           </button>
         </div>
 
-        {/* Form Content - Scrolling Checklist */}
+        {/* Form Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-           <PostTripChecklist
+          {showEpod && tripId ? (
+            <ProofOfDelivery
+              tripId={tripId}
+              tripNumber={tripNumber}
+              cargoTitle={cargoTitle}
+              onComplete={() => {
+                onComplete({ odometer: '', location: '' });
+                onClose();
+              }}
+              onCancel={onClose}
+            />
+          ) : (
+            <PostTripChecklist
               onComplete={onComplete}
               truckId={truckId}
               truckPlate={truckPlate}
               driverId={driverId}
               driverName={driverName}
             />
+          )}
         </div>
 
-        {/* Footer info/close hint */}
-        <div className="p-6 bg-slate-50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-4">
-             <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                 <Flag size={14} className="text-orange-500" />
-                 Complete your debrief to close this active mission securely
-             </div>
-        </div>
+        {/* Footer */}
+        {!showEpod && (
+          <div className="p-6 bg-slate-50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <Flag size={14} className="text-orange-500" />
+              Complete your debrief to close this active mission securely
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

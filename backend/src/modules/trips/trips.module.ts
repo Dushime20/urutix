@@ -10,11 +10,16 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreditAccount } from '../../entities/credit-account.entity';
 import { CreditTransaction } from '../../entities/credit-transaction.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
+import { UserProfile } from '../../entities/user-profile.entity';
+import { Epod } from '../../entities/epod.entity';
+import { Invoice, InvoiceItem } from '../financial/entities/invoice.entity';
+
 import { TripsService } from './trips.service';
 import { TripsController } from './trips.controller';
-import { UserProfile } from '../../entities/user-profile.entity';
+import { EpodService } from './epod.service';
+import { EpodController } from './epod.controller';
+
 import { NotificationsModule } from '../notifications/notifications.module';
-import { NotificationService } from '../notifications/notification.service';
 import { CreditService } from '../../services/credit.service';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
@@ -24,12 +29,13 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       Trip, Load, Truck, Driver, UserProfile, User,
       TenantSubscription, SubscriptionPlan,
       CreditAccount, CreditTransaction, FeatureCreditCost,
+      Epod, Invoice, InvoiceItem,
     ]),
     NotificationsModule,
     EnhancedAuthModule,
   ],
-  providers: [TripsService, CreditService],
-  controllers: [TripsController],
-  exports: [TripsService],
+  providers: [TripsService, CreditService, EpodService],
+  controllers: [TripsController, EpodController],
+  exports: [TripsService, EpodService],
 })
 export class TripsModule {}

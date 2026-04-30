@@ -107,6 +107,18 @@ export const tripsAPI = {
   updateStatus: (id: string, data: any) => api.patch(`/trips/${id}/status`, data),
   getAnalytics: () => api.get('/trips/analytics/summary'),
   getActive: () => api.get('/trips/active'),
+  start: (id: string) => api.post(`/trips/${id}/start`),
+  complete: (id: string) => api.post(`/trips/${id}/complete`),
+  assignDriver: (id: string, driverId: string) => api.patch(`/trips/${id}/assign-driver`, { driverId }),
+
+  // ePOD
+  submitEpod: (id: string, formData: FormData) =>
+    api.post(`/trips/${id}/epod`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getEpod: (id: string) => api.get(`/trips/${id}/epod`),
+  confirmEpod: (id: string) => api.patch(`/trips/${id}/epod/confirm`),
+
+  // Invoice
+  getInvoice: (id: string) => api.get(`/trips/${id}/invoice`),
 };
 
 // Fleet API

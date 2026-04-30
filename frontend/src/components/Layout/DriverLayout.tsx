@@ -91,7 +91,6 @@ const DriverLayout: React.FC = () => {
         onComplete={async (data) => {
           if (!currentTrip) return;
           try {
-            // In a real app, we'd save these metrics (odometer/location) too
             console.log('Completing trip with data:', data);
             await driverApi.completeTrip(currentTrip.id);
             toast.success('Mission finalized successfully!');
@@ -100,10 +99,14 @@ const DriverLayout: React.FC = () => {
             toast.error('Failed to finalize mission');
           }
         }}
+        tripId={currentTrip?.id}
+        tripNumber={currentTrip?.tripNumber}
+        cargoTitle={currentTrip?.load?.title || currentTrip?.load?.cargoType}
         truckId={currentTrip?.truck?.id}
         truckPlate={currentTrip?.truck?.plateNumber}
         driverId={driverId}
         driverName={currentDriverProfile ? `${currentDriverProfile.firstName} ${currentDriverProfile.lastName}` : undefined}
+        showEpod={true}
       />
 
       <MobileBottomNav />

@@ -119,6 +119,7 @@ import { EmailTemplate } from './../entities/email-template.entity';
 import { BulkEmailLog } from './../entities/bulk-email-log.entity';
 import { LoadTemplate } from './../entities/load-template.entity';
 import { Receipt } from './../entities/receipt.entity';
+import { Epod } from './../entities/epod.entity';
 
 // Notification system entities
 import { NotificationPreference } from './../entities/notification-preference.entity';
@@ -264,6 +265,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     BulkEmailLog,
     LoadTemplate,
     Receipt,
+    Epod,
     // Notification system entities
     NotificationPreference,
     NotificationLog,
@@ -407,6 +409,7 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     BulkEmailLog,
     LoadTemplate,
     Receipt,
+    Epod,
     // Notification system entities
     NotificationPreference,
     NotificationLog,
