@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { Epod, EpodStatus } from '../../entities/epod.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
@@ -54,6 +55,7 @@ export class EpodService {
     private readonly notificationService: NotificationService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.uploadDir = this.configService.get<string>('UPLOAD_DIR', './uploads');
   }
@@ -146,7 +148,46 @@ export class EpodService {
       })
       .catch(err => this.logger.error(`Invoice generation failed for trip ${tripId}: ${err.message}`, err.stack));
 
-    // 9. Send notifications (async, non-blocking)
+    // 9. Emit trip.completed event — triggers TripNotificationListener and CargoNotificationListener
+    //    which send in-app + push notifications to cargo owner, truck owner, and driver.
+    //    sendEpodNotifications() adds the ePOD-specific "View ePOD & Invoice" action link.
+    try {
+      const pickupLoc = load.locations?.find(l => l.type === 'PICKUP');
+      const deliveryLoc = load.locations?.find(l => l.type === 'DELIVERY');
+      const driverUser = trip.driverId
+        ? await this.userRepository.findOne({ where: { id: trip.driverId }, relations: ['profile'] })
+        : null;
+      const driverName = driverUser?.profile
+        ? `${(driverUser.profile as any).firstName || ''} ${(driverUser.profile as any).lastName || ''}`.trim() || driverUser.email
+        : 'Driver';
+
+      this.eventEmitter.emit('trip.completed', {
+        tripId: trip.id,
+        driverId: trip.driverId,
+        driverName,
+        cargoOwnerId: load.cargoOwnerId,
+        truckOwnerId: trip.truck?.ownerId,
+        tenantId,
+        cargoTitle: load.title || load.cargoType,
+        deliveryLocation: deliveryLoc?.locationData?.city || deliveryLoc?.locationData?.address,
+        completedAt: trip.actualEndTime || new Date(),
+        tripDetails: {
+          cargoTitle: load.title || load.cargoType || 'Cargo',
+          origin: pickupLoc?.locationData?.city || pickupLoc?.locationData?.address || 'Origin',
+          destination: deliveryLoc?.locationData?.city || deliveryLoc?.locationData?.address || 'Destination',
+          completedAt: trip.actualEndTime || new Date(),
+          distance: trip.totalDistance || null,
+          duration: trip.actualStartTime && trip.actualEndTime
+            ? (new Date(trip.actualEndTime).getTime() - new Date(trip.actualStartTime).getTime()) / 1000
+            : null,
+        },
+      });
+      this.logger.log(`Emitted trip.completed event for trip ${tripId} (via ePOD)`);
+    } catch (eventErr) {
+      this.logger.error(`Failed to emit trip.completed event: ${eventErr.message}`);
+    }
+
+    // 10. Send ePOD-specific notification with "View ePOD & Invoice" action link (async)
     this.sendEpodNotifications(savedEpod, trip, load, tenantId).catch(err =>
       this.logger.error(`ePOD notifications failed: ${err.message}`, err.stack),
     );

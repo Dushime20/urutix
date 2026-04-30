@@ -224,13 +224,10 @@ export class TripsService {
 
     // Send notification if status changed to COMPLETED
     if (updateTripStatusDto.status === TripStatus.COMPLETED && oldStatus !== TripStatus.COMPLETED) {
-      // Emit event for notification system
+      // Emit event — TripNotificationListener and CargoNotificationListener handle all recipients
       this.emitTripCompletedEvent(savedTrip).catch(err =>
         this.logger.error(`Failed to emit trip.completed event: ${err.message}`, err.stack)
       );
-      
-      // Legacy notification (can be removed once event system is verified)
-      this.sendTripCompletedNotifications(savedTrip.id, tenantId).catch(err => console.error('Failed to send completed notifications', err));
     }
 
     return savedTrip;
