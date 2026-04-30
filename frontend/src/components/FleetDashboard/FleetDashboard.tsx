@@ -49,6 +49,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { TrucksList } from './TrucksList';
 import { TruckMatches } from './TruckMatches';
 import { TruckOwnerRecentActivities } from './TruckOwnerRecentActivities';
+import { FleetOverview } from './FleetOverview';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -109,6 +110,8 @@ export const FleetDashboard: React.FC = () => {
   const [userProfileName, setUserProfileName] = useState<string | null>(null);
 
   const [analytics, setAnalytics] = useState<any>(null);
+  const [rawTrucks, setRawTrucks] = useState<any[]>([]);
+  const [rawDrivers, setRawDrivers] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // ── Role Based Access Control ──────────────────────────────────────────────
@@ -258,6 +261,9 @@ export const FleetDashboard: React.FC = () => {
 
       const validTrucks = Array.isArray(truckData) ? truckData : [];
       const validDrivers = Array.isArray(driverData) ? driverData : [];
+
+      setRawTrucks(validTrucks);
+      setRawDrivers(validDrivers);
 
       const allData = [
         ...validTrucks.filter(Boolean).map(normalizeTruck),
@@ -628,235 +634,15 @@ export const FleetDashboard: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {activeTab === 'overview' ? (
-            <div className="space-y-10">
-              {/* Metrics Matrix */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                <StatCard
-                  title={<TranslatedText text="Total Trucks" />}
-                  value={trucks.length}
-                  icon={<Truck />}
-                  subtitle={`${inTransit} ${tSync('In Transit')} • ${availableTrucks} ${tSync('Available')}`}
-                  color="primary"
-                  loading={loading}
-                />
-
-                <StatCard
-                  title={<TranslatedText text="Utilization" />}
-                  value={`${analytics?.utilizationRate !== undefined ? Math.round(analytics.utilizationRate) : utilization}%`}
-                  icon={<Zap />}
-                  trend={tSync("Good")}
-                  trendDirection="up"
-                  color="info"
-                  subtitle={<TranslatedText text="Fleet usage" />}
-                  loading={loading}
-                />
-
-                <StatCard
-                  title={<TranslatedText text="Average Rating" />}
-                  value={analytics?.averageRating?.toFixed(1) || '0.0'}
-                  icon={<Star />}
-                  subtitle={<TranslatedText text="Driver Rating" />}
-                  color="warning"
-                  loading={loading}
-                />
-
-                <StatCard
-                  title={<TranslatedText text="Total Revenue" />}
-                  value={analytics?.totalRevenue ? formatCurrency(analytics.totalRevenue) : 'KES 0'}
-                  icon={<CreditCard />}
-                  trend="+12.4%"
-                  trendDirection="up"
-                  color="success"
-                  loading={loading}
-                />
-
-                <StatCard
-                  title={<TranslatedText text="Safety Alerts" />}
-                  value="0"
-                  icon={<AlertTriangle />}
-                  subtitle={<TranslatedText text="All Good" />}
-                  color="accent"
-                  loading={loading}
-                />
-              </div>
-
-              {/* Operations Matrix */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Deployment Visualization */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col h-[560px] transition-colors duration-300 shadow-sm">
-                  <div className="px-8 py-6 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between shrink-0">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <MapIcon size={16} className="text-blue-600 dark:text-blue-400" />
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                          <TranslatedText text="Live Tracking" />
-                        </h3>
-                      </div>
-                      <h4 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
-                        <TranslatedText text="Fleet Map" />
-                      </h4>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex -space-x-2">
-                        {[1, 2, 3].map(i => (
-                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500 dark:text-slate-400">
-                            TR
-                          </div>
-                        ))}
-                      </div>
-                      <button className="flex items-center gap-2 px-5 py-2.5 bg-primary-50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all">
-                        <Zap size={14} /> <TranslatedText text="Refresh Map" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 relative bg-slate-50 dark:bg-slate-950 z-0">
-                    <MapContainer
-                      center={[-1.2921, 36.8219]}
-                      zoom={13}
-                      style={{ height: '100%', width: '100%' }}
-                      zoomControl={false}
-                    >
-                      <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      />
-                      {fleetItems
-                        .filter(i => {
-                          const coords = i.currentLocation?.coordinates?.coordinates;
-                          return coords && coords.length >= 2 &&
-                            typeof coords[0] === 'number' &&
-                            typeof coords[1] === 'number';
-                        })
-                        .map(item => (
-                          <Marker
-                            key={item.id}
-                            position={[
-                              item.currentLocation!.coordinates.coordinates[1],
-                              item.currentLocation!.coordinates.coordinates[0]
-                            ]}
-                            icon={fleetIcon}
-                          >
-                            <Popup>
-                              <div className="p-3">
-                                <p className="font-black text-primary-500 uppercase text-[10px] mb-1">Truck ID: {item.plateNumber}</p>
-                                <p className="font-bold text-slate-900 dark:text-white">{item.name}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <div className={`h-1.5 w-1.5 rounded-full ${item.status === 'AVAILABLE' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.status}</span>
-                                </div>
-                              </div>
-                            </Popup>
-                          </Marker>
-                        ))}
-                    </MapContainer>
-
-                    {/* Layered Controls */}
-                    <div className="absolute bottom-8 left-8 z-[400] flex flex-col gap-2">
-                      <div className="bg-white dark:bg-gray-800 backdrop-blur-md p-2 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-2">
-                        <div className="flex items-center gap-3 px-3 py-2 bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600">
-                          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 dark:text-gray-300">Live Updates</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Performance Hub */}
-                <div className="flex flex-col gap-8">
-                  {/* Elite Personnel Card */}
-                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-8 flex flex-col relative overflow-hidden h-[300px] transition-colors duration-300 shadow-sm">
-                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
-                      <Shield size={100} className="text-amber-400" />
-                    </div>
-
-                    <div className="flex items-center gap-3 mb-8">
-                      <div className="h-8 w-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center text-amber-500 dark:text-amber-400">
-                        <Star size={16} fill="currentColor" />
-                      </div>
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400">
-                        <TranslatedText text="Top Driver" />
-                      </h3>
-                    </div>
-
-                    <div className="flex items-center gap-6 mb-8">
-                      <div className="h-24 w-24 rounded-lg bg-gray-50 dark:bg-gray-800 border-4 border-white dark:border-gray-700 overflow-hidden flex items-center justify-center">
-                        <User size={40} className="text-gray-300 dark:text-gray-600" />
-                      </div>
-                      <div>
-
-                        <h4 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Samuel Karanja</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Star size={14} className="fill-amber-400 text-amber-400" />
-                          <span className="text-lg font-black text-gray-900 dark:text-white">4.96</span>
-                          <span className="text-sm font-bold text-gray-400 dark:text-gray-500">Rating</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button className="mt-auto w-full py-4 bg-gray-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-                      View Driver Profile
-                    </button>
-                  </div>
-
-                  {/* Operational Metrics Sub-Matrix */}
-                  <div className="bg-blue-500 dark:bg-blue-600 rounded-lg p-8 text-white relative overflow-hidden flex-1">
-                    <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                      <Activity size={180} />
-                    </div>
-
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-8">Performance Metrics</h3>
-
-                    <div className="space-y-6 relative z-10">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                          <span>Dispatch Accuracy</span>
-                          <span className="text-emerald-400">98.4%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-white/10 rounded-full">
-                          <div className="h-full bg-emerald-400 rounded-full" style={{ width: '98.4%' }} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                          <span>Safety Compliance</span>
-                          <span className="text-emerald-400">99.1%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-white/10 rounded-full">
-                          <div className="h-full bg-emerald-400 rounded-full" style={{ width: '99.1%' }} />
-                        </div>
-                      </div>
-
-                      <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-                        <div>
-                          <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Verified</p>
-                          <p className="text-xs font-black tracking-tight mt-1">Enlite V4.2</p>
-                        </div>
-                        <ShieldCheck size={24} className="opacity-40" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Archive Logs Section */}
-              <div className="space-y-6 mt-12">
-                <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-500 dark:text-blue-400">
-                      <Clock size={16} />
-                    </div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400">Recent Activities</h3>
-                  </div>
-                  <button className="text-[10px] font-black uppercase tracking-widest text-blue-500 dark:text-blue-400 hover:underline decoration-2 underline-offset-4">
-                    View All
-                  </button>
-                </div>
-                <TruckOwnerRecentActivities />
-              </div>
-            </div>
+            <FleetOverview
+              trucks={rawTrucks}
+              drivers={rawDrivers}
+              analytics={analytics}
+              loading={loading}
+              onRefresh={loadFleetItems}
+              onAddTruck={handleCreateTruck}
+              onAddDriver={handleCreateDriver}
+            />
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
