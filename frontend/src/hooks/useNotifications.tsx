@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { notificationsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
-interface Notification {
+export interface UrutixNotification {
   id: string;
   type: string;
   title: string;
@@ -16,145 +16,105 @@ interface Notification {
   category?: string;
   priority?: string;
   createdAt?: string;
+  actionUrl?: string;
+  actionText?: string;
+}
+
+/** Returns true when a raw API notification object should be considered "read" */
+function isNotificationRead(n: any): boolean {
+  return (
+    n.isRead === true ||
+    n.status === 'READ' ||
+    (typeof n.readAt === 'string' && n.readAt.length > 0)
+  );
 }
 
 export const useNotifications = () => {
-  console.log('🔔 [HOOK] useNotifications hook called');
   const { user } = useAuth();
-  console.log('🔔 [HOOK] Current user:', user);
   const queryClient = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Fetch existing notifications from API
+  // ── Fetch notifications ──────────────────────────────────────────────────
   const { data: apiNotifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
-      console.log('🔔 [NOTIFICATIONS] Fetching notifications for user:', {
-        userId: user?.id,
-        userRole: user?.role,
-        userName: user?.name,
-        tenantId: user?.tenantId,
-      });
       const response = await notificationsAPI.getAll({ limit: 50 });
-      console.log('🔔 [NOTIFICATIONS] API response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
-      console.log('🔔 [NOTIFICATIONS] Response data:', response.data);
-      
-      // Backend returns array directly, not wrapped in { notifications: [] }
-      const notifications = Array.isArray(response.data) ? response.data : [];
-      console.log('🔔 [NOTIFICATIONS] Notifications array:', notifications);
-      console.log('🔔 [NOTIFICATIONS] Notifications count:', notifications.length);
-      
-      // Log each notification
-      if (notifications.length > 0) {
-        notifications.forEach((notif: any, index: number) => {
-          console.log(`🔔 [NOTIFICATIONS] Notification ${index + 1}:`, {
-            id: notif.id,
-            type: notif.type || notif.notificationType,
-            title: notif.title,
-            message: notif.message,
-            status: notif.status,
-            category: notif.category,
-            priority: notif.priority,
-            createdAt: notif.createdAt,
-            recipientId: notif.recipientId,
-          });
-        });
-      } else {
-        console.log('🔔 [NOTIFICATIONS] No notifications found');
-      }
-      
-      return notifications;
+      return Array.isArray(response.data) ? response.data : [];
     },
     enabled: !!user,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
-  // Fetch unread count
+  // ── Fetch unread count ───────────────────────────────────────────────────
   const { data: unreadCountData } = useQuery({
     queryKey: ['notifications-unread-count', user?.id],
     queryFn: async () => {
-      console.log('🔔 [UNREAD COUNT] Fetching unread count for user:', {
-        userId: user?.id,
-        userRole: user?.role,
-        userName: user?.name,
-      });
       const response = await notificationsAPI.getUnreadCount();
-      console.log('🔔 [UNREAD COUNT] API response:', {
-        status: response.status,
-        data: response.data,
-        count: response.data?.count,
-      });
       return response.data;
     },
     enabled: !!user,
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 10000,
   });
 
-  // WebSocket connection for real-time updates
+  // ── WebSocket for real-time updates ─────────────────────────────────────
   useEffect(() => {
     if (!user) return;
 
     const token = localStorage.getItem('accessToken');
     const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3001';
-    
+
     const newSocket = io(wsUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
 
     newSocket.on('connect', () => {
-      console.log('Notifications: Connected to WebSocket');
       setIsConnected(true);
-      
-      // Join user-specific room
       newSocket.emit('join:user', { userId: user.id });
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Notifications: Disconnected from WebSocket');
-      setIsConnected(false);
-    });
+    newSocket.on('disconnect', () => setIsConnected(false));
 
-    // Listen for new notifications
     newSocket.on('notification:new', (data: any) => {
-      console.log('🔔 [WEBSOCKET] New notification received:', {
-        data,
-        currentUser: user?.id,
-        currentRole: user?.role,
-      });
-      
-      // Invalidate queries to refetch
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
-      
-      // Show toast
-      toast.success(data.title || 'New notification', {
+      toast(data.title || 'New notification', {
+        icon: '🔔',
         duration: 5000,
       });
+    });
+
+    // Also listen on the events namespace event name used by NotificationContext
+    newSocket.on('notification', (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
     });
 
     setSocket(newSocket);
 
     return () => {
-      if (newSocket) {
-        newSocket.emit('leave:user', { userId: user.id });
-        newSocket.close();
-      }
+      newSocket.emit('leave:user', { userId: user.id });
+      newSocket.close();
     };
   }, [user, queryClient]);
 
+  // ── Actions ──────────────────────────────────────────────────────────────
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
       await notificationsAPI.markAsRead(notificationId);
-      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user?.id] });
+      // Optimistic update
+      queryClient.setQueryData(['notifications', user?.id], (old: any[]) =>
+        (old || []).map((n: any) =>
+          n.id === notificationId
+            ? { ...n, isRead: true, status: 'READ', readAt: new Date().toISOString() }
+            : n
+        )
+      );
+      queryClient.setQueryData(['notifications-unread-count', user?.id], (old: any) => ({
+        count: Math.max(0, (old?.count ?? 1) - 1),
+      }));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -162,48 +122,76 @@ export const useNotifications = () => {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      await notificationsAPI.markAllAsRead();
-      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user?.id] });
+      const unreadIds = (apiNotifications as any[])
+        .filter((n: any) => !isNotificationRead(n))
+        .map((n: any) => n.id);
+      if (unreadIds.length === 0) return;
+      await notificationsAPI.bulkMarkAsRead(unreadIds);
+      // Optimistic update
+      queryClient.setQueryData(['notifications', user?.id], (old: any[]) =>
+        (old || []).map((n: any) => ({
+          ...n,
+          isRead: true,
+          status: 'READ',
+          readAt: new Date().toISOString(),
+        }))
+      );
+      queryClient.setQueryData(['notifications-unread-count', user?.id], { count: 0 });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
-  }, [user?.id, queryClient]);
+  }, [user?.id, queryClient, apiNotifications]);
 
-  const unreadCount = unreadCountData?.count || 0;
-  const notifications = apiNotifications.map((n: any) => ({
+  const removeNotification = useCallback(async (notificationId: string) => {
+    try {
+      await notificationsAPI.delete(notificationId);
+      queryClient.setQueryData(['notifications', user?.id], (old: any[]) =>
+        (old || []).filter((n: any) => n.id !== notificationId)
+      );
+      queryClient.setQueryData(['notifications-unread-count', user?.id], (old: any) => {
+        const wasUnread = (apiNotifications as any[]).find(
+          (n: any) => n.id === notificationId && !isNotificationRead(n)
+        );
+        return { count: Math.max(0, (old?.count ?? 0) - (wasUnread ? 1 : 0)) };
+      });
+    } catch (error) {
+      console.error('Error removing notification:', error);
+    }
+  }, [user?.id, queryClient, apiNotifications]);
+
+  // ── Derived state ────────────────────────────────────────────────────────
+  const notifications: UrutixNotification[] = (apiNotifications as any[]).map((n: any) => ({
     id: n.id,
-    type: n.notificationType || n.type || 'general',
+    type: n.notificationType || n.type || 'GENERAL',
     title: n.title,
     message: n.message,
     data: n.metadata || n.data,
-    timestamp: n.createdAt || n.timestamp,
-    isRead: n.status === 'READ',
+    timestamp: n.createdAt || n.timestamp || new Date().toISOString(),
+    isRead: isNotificationRead(n),
     category: n.category,
     priority: n.priority,
+    createdAt: n.createdAt,
+    actionUrl: n.actionUrl,
+    actionText: n.actionText,
   }));
 
-  console.log('🔔 [FINAL STATE] Notifications state:', {
-    apiNotificationsCount: apiNotifications.length,
-    notificationsCount: notifications.length,
-    unreadCount,
-    unreadCountData,
-    isLoading,
-    userRole: user?.role,
-    userId: user?.id,
-  });
-  
-  // Log first 3 notifications for debugging
-  if (notifications.length > 0) {
-    console.log('🔔 [FINAL STATE] First 3 notifications:', notifications.slice(0, 3));
-  }
+  // Unread count: prefer server value, fall back to client-side count
+  const serverUnreadCount = unreadCountData?.count ?? null;
+  const clientUnreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = serverUnreadCount !== null ? serverUnreadCount : clientUnreadCount;
+
+  const highPriorityCount = notifications.filter(
+    n => !n.isRead && (n.priority === 'HIGH' || n.priority === 'URGENT' || n.priority === 'CRITICAL')
+  ).length;
 
   return {
     notifications,
     isConnected,
     unreadCount,
+    highPriorityCount,
     isLoading,
     markAsRead,
     markAllAsRead,
+    removeNotification,
   };
 };

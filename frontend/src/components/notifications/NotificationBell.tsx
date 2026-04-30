@@ -108,7 +108,7 @@ const NotificationBell: React.FC = () => {
           <span className="absolute bottom-1 right-1 w-2 h-2 bg-green-500 rounded-full border border-white" title="Real-time connected" />
         )}
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

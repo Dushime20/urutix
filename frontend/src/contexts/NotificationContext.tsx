@@ -36,7 +36,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setLoading(true);
       setError(null);
       const data = await notificationApi.getMyNotifications(50);
-      setNotifications(data);
+      // Normalise isRead so both readAt and status='READ' are treated as read
+      const normalised = data.map((n: any) => ({
+        ...n,
+        isRead: !!(n.isRead || n.status === 'READ' || (typeof n.readAt === 'string' && n.readAt.length > 0)),
+      }));
+      setNotifications(normalised);
     } catch (err: any) {
       console.error('Error fetching notifications:', err);
       setError(err.message || 'Failed to fetch notifications');
@@ -53,7 +58,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setUnreadCount(data.count);
     } catch (err: any) {
       console.error('Error fetching unread count:', err);
-      setUnreadCount(0);
+      // Fall back to client-side count
+      setUnreadCount(prev => prev);
     }
   }, [user]);
 
@@ -61,7 +67,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       await notificationApi.markAsRead(id);
       setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString(), status: 'READ' } : n)
+        prev.map(n => n.id === id ? { ...n, readAt: new Date().toISOString(), status: 'READ', isRead: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err: any) {
@@ -71,11 +77,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const unreadIds = notifications.filter(n => !n.readAt).map(n => n.id);
+      const unreadIds = notifications.filter(n => !n.isRead && !n.readAt).map(n => n.id);
       if (unreadIds.length === 0) return;
       await notificationApi.bulkMarkAsRead(unreadIds);
       setNotifications(prev =>
-        prev.map(n => ({ ...n, readAt: new Date().toISOString(), status: 'READ' }))
+        prev.map(n => ({ ...n, readAt: new Date().toISOString(), status: 'READ', isRead: true }))
       );
       setUnreadCount(0);
     } catch (err: any) {
@@ -156,6 +162,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       refreshNotifications();
     }
   }, [user, refreshNotifications]);
+
+  // After notifications load, sync unread count from local state if server count is 0
+  useEffect(() => {
+    if (notifications.length > 0 && unreadCount === 0) {
+      const localUnread = notifications.filter(n => !n.isRead).length;
+      if (localUnread > 0) setUnreadCount(localUnread);
+    }
+  }, [notifications]);
 
   // Poll unread count every 30s as fallback
   useEffect(() => {

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Package, Bell, User, PlusCircle, Activity, DollarSign, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { cn } from '../../utils/cn';
 
 interface NavItem {
@@ -15,6 +16,7 @@ const MobileBottomNav: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const { unreadCount } = useNotifications();
 
     // Base navigation items for all users
     const navItems: NavItem[] = [
@@ -32,16 +34,15 @@ const MobileBottomNav: React.FC = () => {
         navItems.push({ icon: MessageSquare, label: 'Chat', path: '/dashboard/driver/messages' });
     } else if (user?.role === 'TRUCK_OWNER') {
         navItems.push({ icon: Activity, label: 'Trips', path: '/dashboard/trips' });
-    }
- else if (user?.role === 'BROKER') {
+    } else if (user?.role === 'BROKER') {
         navItems.push({ icon: Package, label: 'Loads', path: '/dashboard/broker/loads' });
         navItems.push({ icon: Activity, label: 'Ops', path: '/dashboard/broker/discovery' });
     } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
         navItems.push({ icon: Activity, label: 'Ops', path: '/admin/monitoring' });
     }
 
-    // Common items
-    navItems.push({ icon: Bell, label: 'Alerts', path: '/dashboard/notifications' });
+    // Common items — Bell gets the live unread count
+    navItems.push({ icon: Bell, label: 'Alerts', path: '/dashboard/notifications', count: unreadCount > 0 ? unreadCount : undefined });
     navItems.push({ icon: User, label: 'Profile', path: '/dashboard/settings' });
 
     // Ensure we only show 5 items max for better UI
@@ -51,7 +52,8 @@ const MobileBottomNav: React.FC = () => {
         <div className="lg:hidden fixed bottom-6 left-4 right-4 z-[100] h-16 bg-white/95 backdrop-blur-2xl border border-slate-100 rounded-[2rem] shadow-[0_15px_40px_-5px_rgba(0,0,0,0.15)] flex items-center justify-around px-2">
             {finalItems.map((item) => {
                 const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
-                
+                const displayCount = item.count && item.count > 0 ? (item.count > 99 ? '99+' : String(item.count)) : null;
+
                 return (
                     <button
                         key={item.label}
@@ -60,6 +62,7 @@ const MobileBottomNav: React.FC = () => {
                             "relative flex flex-col items-center justify-center p-1.5 min-w-[56px] transition-all duration-300",
                             isActive ? "text-[#345E85] -translate-y-1" : "text-slate-400"
                         )}
+                        aria-label={`${item.label}${displayCount ? `, ${item.count} unread` : ''}`}
                     >
                         {/* Active Indicator Bar */}
                         {isActive && (
@@ -71,9 +74,9 @@ const MobileBottomNav: React.FC = () => {
                             isActive ? "scale-110" : ""
                         )}>
                             <item.icon className={cn("w-5 h-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
-                            {item.count && (
-                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-white">
-                                    {item.count}
+                            {displayCount && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black min-w-[14px] h-3.5 px-0.5 rounded-full flex items-center justify-center border border-white">
+                                    {displayCount}
                                 </span>
                             )}
                         </div>
