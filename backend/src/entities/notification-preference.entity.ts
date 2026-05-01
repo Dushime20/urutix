@@ -36,11 +36,9 @@ export class NotificationPreference {
   id: string;
 
   @Column({ name: 'tenant_id' })
-  @Index()
   tenantId: string;
 
   @Column({ name: 'user_id', nullable: true })
-  @Index()
   userId?: string;
 
   @Column({

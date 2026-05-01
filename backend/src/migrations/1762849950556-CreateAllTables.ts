@@ -482,9 +482,6 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_c8c82b37aeb9e8533d1d8cc47e" ON "tracking_events" ("type") `,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_a409b6270ed1bfc522ab31d898" ON "tracking_events" ("loadId") `,
-    );
-    await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "route_trucks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tenantId" uuid NOT NULL, "routeId" uuid NOT NULL, "truckId" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_468d75203232a52d433c4eb12b0" UNIQUE ("tenantId", "routeId", "truckId"), CONSTRAINT "PK_eb8d8d94a28bcfe6d970802e578" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
@@ -495,9 +492,6 @@ export class CreateAllTables1762849950556 implements MigrationInterface {
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_09edcc3902bee3dcf05426e3d2" ON "route_trucks" ("routeId") `,
-    );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_941d32f73977001a50bf372375" ON "route_trucks" ("tenantId") `,
     );
     await this.createTypeIfNotExists(
       queryRunner,
@@ -872,9 +866,6 @@ END$$;`);
       `CREATE TABLE IF NOT EXISTS "audit_events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "loadId" uuid NOT NULL, "entityType" "public"."audit_events_entitytype_enum" NOT NULL DEFAULT 'load', "entityId" uuid, "action" "public"."audit_events_action_enum" NOT NULL, "actorId" uuid NOT NULL, "actorName" text, "actorEmail" text, "actorRole" text, "description" text, "reason" text, "before" jsonb, "after" jsonb, "changes" jsonb, "metadata" jsonb, "ipAddress" text, "userAgent" text, "sessionId" text, "requestId" text, "externalReference" text, "externalSystem" text, "isAutomated" boolean NOT NULL DEFAULT false, "automationSource" text, "relatedEntities" jsonb, "notes" text, "tags" text, "isSensitive" boolean NOT NULL DEFAULT false, "requiresReview" boolean NOT NULL DEFAULT false, "reviewedBy" uuid, "reviewedAt" TIMESTAMP WITH TIME ZONE, "reviewNotes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "PK_910f64d901a5c3e9878f0d4a407" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_fe948a2ef9575a943c46a916f5" ON "audit_events" ("loadId") `,
-    );
-    await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_9e76ea4cc84a0e407c5a3aeb05" ON "audit_events" ("actorId") `,
     );
     await queryRunner.query(
@@ -930,9 +921,6 @@ END$$;`);
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_b5262085cf88e336618af2cc68" ON "alerts" ("type") `,
-    );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_143edd01c2f285d77e22f36a31" ON "alerts" ("loadId") `,
     );
     await this.createTypeIfNotExists(
       queryRunner,

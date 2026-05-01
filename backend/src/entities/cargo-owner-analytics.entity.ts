@@ -26,11 +26,9 @@ export class CargoOwnerAnalytics {
   id: string;
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  @Index()
   tenantId: string;
 
   @Column({ type: 'uuid', name: 'cargo_owner_id' })
-  @Index()
   cargoOwnerId: string;
 
   @Column({ type: 'uuid', name: 'load_id' })
@@ -104,7 +102,6 @@ export class CargoOwnerAnalytics {
 
   // Carrier Performance
   @Column({ type: 'uuid', name: 'carrier_id', nullable: true })
-  @Index()
   carrierId?: string;
 
   @Column({ type: 'decimal', precision: 3, scale: 2, name: 'carrier_rating', nullable: true })
@@ -112,7 +109,6 @@ export class CargoOwnerAnalytics {
 
   // Market Context
   @Column({ type: 'varchar', length: 20, nullable: true })
-  @Index()
   season?: string;
 
   @Column({ type: 'jsonb', name: 'market_conditions', default: {} })

@@ -30,7 +30,6 @@ export class NotificationLog {
   id: string;
 
   @Column({ name: 'tenant_id' })
-  @Index()
   tenantId: string;
 
   @Column({ name: 'user_id', nullable: true })

@@ -56,11 +56,9 @@ export class AnalyticsInsights {
   id: string;
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  @Index()
   tenantId: string;
 
   @Column({ type: 'uuid', name: 'cargo_owner_id' })
-  @Index()
   cargoOwnerId: string;
 
   @Column({
@@ -68,7 +66,6 @@ export class AnalyticsInsights {
     enum: InsightType,
     name: 'insight_type',
   })
-  @Index()
   insightType: InsightType;
 
   @Column({ type: 'varchar', length: 255 })
@@ -100,11 +97,9 @@ export class AnalyticsInsights {
     enum: InsightStatus,
     default: InsightStatus.ACTIVE,
   })
-  @Index()
   status: InsightStatus;
 
   @Column({ type: 'timestamptz', name: 'expires_at', nullable: true })
-  @Index()
   expiresAt?: Date;
 
   @Column({ type: 'jsonb', default: {} })
