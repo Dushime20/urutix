@@ -4,75 +4,267 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
     name = 'ConsolidatedBaseline1777673845128'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "user_profiles" DROP CONSTRAINT IF EXISTS "FK_6ca9503d77ae39b4b5a6cc3ba88"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP CONSTRAINT IF EXISTS "tenants_kyc_reviewed_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "user_sessions" DROP CONSTRAINT IF EXISTS "fk_user_sessions_tenant"`);
-        await queryRunner.query(`ALTER TABLE "user_sessions" DROP CONSTRAINT IF EXISTS "user_sessions_user_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "subscription_plans" DROP CONSTRAINT IF EXISTS "subscription_plans_parent_subscription_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "subscription_payments" DROP CONSTRAINT IF EXISTS "subscription_payments_subscription_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "credit_accounts_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "fk_credit_accounts_user"`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "credit_transactions_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "credit_transactions_subscription_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "credit_transactions_credit_account_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "fk_credit_transactions_user_id"`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "tenant_subscriptions_plan_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "tenant_subscriptions_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "fk_tenant_subscriptions_user"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP CONSTRAINT IF EXISTS "tenant_kyc_documents_verified_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP CONSTRAINT IF EXISTS "tenant_kyc_documents_uploaded_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP CONSTRAINT IF EXISTS "tenant_kyc_documents_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP CONSTRAINT IF EXISTS "tenant_kyc_audit_log_performed_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP CONSTRAINT IF EXISTS "tenant_kyc_audit_log_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "system_settings" DROP CONSTRAINT IF EXISTS "FK_system_settings_updated_by"`);
-        await queryRunner.query(`ALTER TABLE "security_events" DROP CONSTRAINT IF EXISTS "fk_security_events_tenant"`);
-        await queryRunner.query(`ALTER TABLE "security_events" DROP CONSTRAINT IF EXISTS "security_events_user_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP CONSTRAINT IF EXISTS "FK_b3403e8b519a383776f6c693cc9"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP CONSTRAINT IF EXISTS "FK_b70c44e8b00757584a393225593"`);
-        await queryRunner.query(`ALTER TABLE "loan_terms" DROP CONSTRAINT IF EXISTS "FK_loan_terms_loan_request"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_system_config" DROP CONSTRAINT IF EXISTS "lending_policy_system_config_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_loan_limits" DROP CONSTRAINT IF EXISTS "lending_policy_loan_limits_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_risk_assessment" DROP CONSTRAINT IF EXISTS "lending_policy_risk_assessment_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_repayment" DROP CONSTRAINT IF EXISTS "lending_policy_repayment_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_interest_rates" DROP CONSTRAINT IF EXISTS "lending_policy_interest_rates_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_eligibility_criteria" DROP CONSTRAINT IF EXISTS "lending_policy_eligibility_criteria_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_cargo_types" DROP CONSTRAINT IF EXISTS "lending_policy_cargo_types_lender_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_tenant"`);
-        await queryRunner.query(`ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_load"`);
-        await queryRunner.query(`ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_transporter"`);
-        await queryRunner.query(`ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_broker"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_42c8e0e8ee2e6953e607e7c2daa"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_d4e396c5a1c8de48961bdf349a2"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_47ae4807b3ed676f608660b8dfa"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP CONSTRAINT IF EXISTS "FK_bf04611ec3fbf4d71b9f8515d43"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP CONSTRAINT IF EXISTS "FK_32881c13a51d3576a0222a6ebde"`);
-        await queryRunner.query(`ALTER TABLE "fuel_wallet_transactions" DROP CONSTRAINT IF EXISTS "fuel_wallet_transactions_wallet_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_tenant"`);
-        await queryRunner.query(`ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_trip"`);
-        await queryRunner.query(`ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_load"`);
-        await queryRunner.query(`ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_payee"`);
-        await queryRunner.query(`ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_payer"`);
-        await queryRunner.query(`ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_broker"`);
-        await queryRunner.query(`ALTER TABLE "email_templates" DROP CONSTRAINT IF EXISTS "email_templates_updated_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "email_templates" DROP CONSTRAINT IF EXISTS "email_templates_created_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "credit_pricing_rules_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "credit_pricing_rules_plan_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "credit_marketplace_settings_tenant_admin_user_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "credit_marketplace_settings_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "bulk_email_logs" DROP CONSTRAINT IF EXISTS "bulk_email_logs_created_by_fkey"`);
-        await queryRunner.query(`ALTER TABLE "bulk_email_logs" DROP CONSTRAINT IF EXISTS "bulk_email_logs_template_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "bulk_email_logs" DROP CONSTRAINT IF EXISTS "bulk_email_logs_tenant_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_tenant"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_trip"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_load"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_mediator"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_disputed_with"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_raised_by"`);
-        await queryRunner.query(`ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_broker"`);
-        await queryRunner.query(`ALTER TABLE "activity_logs" DROP CONSTRAINT IF EXISTS "fk_activity_logs_user"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_58b6d392b802763fda1b8cdd21d"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_permission_id_fkey"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_granted_by_fkey"`);
+        const drops = [
+            `ALTER TABLE "user_profiles" DROP CONSTRAINT IF EXISTS "FK_6ca9503d77ae39b4b5a6cc3ba88"`,
+            `ALTER TABLE "tenants" DROP CONSTRAINT IF EXISTS "tenants_kyc_reviewed_by_fkey"`,
+            `ALTER TABLE "user_sessions" DROP CONSTRAINT IF EXISTS "fk_user_sessions_tenant"`,
+            `ALTER TABLE "user_sessions" DROP CONSTRAINT IF EXISTS "user_sessions_user_id_fkey"`,
+            `ALTER TABLE "subscription_plans" DROP CONSTRAINT IF EXISTS "subscription_plans_parent_subscription_id_fkey"`,
+            `ALTER TABLE "subscription_payments" DROP CONSTRAINT IF EXISTS "subscription_payments_subscription_id_fkey"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "credit_accounts_tenant_id_fkey"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "fk_credit_accounts_user"`,
+            `ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "credit_transactions_tenant_id_fkey"`,
+            `ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "credit_transactions_subscription_id_fkey"`,
+            `ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "credit_transactions_credit_account_id_fkey"`,
+            `ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "fk_credit_transactions_user_id"`,
+            `ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "tenant_subscriptions_plan_id_fkey"`,
+            `ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "tenant_subscriptions_tenant_id_fkey"`,
+            `ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "fk_tenant_subscriptions_user"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP CONSTRAINT IF EXISTS "tenant_kyc_documents_verified_by_fkey"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP CONSTRAINT IF EXISTS "tenant_kyc_documents_uploaded_by_fkey"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP CONSTRAINT IF EXISTS "tenant_kyc_documents_tenant_id_fkey"`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP CONSTRAINT IF EXISTS "tenant_kyc_audit_log_performed_by_fkey"`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP CONSTRAINT IF EXISTS "tenant_kyc_audit_log_tenant_id_fkey"`,
+            `ALTER TABLE "system_settings" DROP CONSTRAINT IF EXISTS "FK_system_settings_updated_by"`,
+            `ALTER TABLE "security_events" DROP CONSTRAINT IF EXISTS "fk_security_events_tenant"`,
+            `ALTER TABLE "security_events" DROP CONSTRAINT IF EXISTS "security_events_user_id_fkey"`,
+            `ALTER TABLE "notification_preferences" DROP CONSTRAINT IF EXISTS "FK_b3403e8b519a383776f6c693cc9"`,
+            `ALTER TABLE "notification_preferences" DROP CONSTRAINT IF EXISTS "FK_b70c44e8b00757584a393225593"`,
+            `ALTER TABLE "loan_terms" DROP CONSTRAINT IF EXISTS "FK_loan_terms_loan_request"`,
+            `ALTER TABLE "lending_policy_system_config" DROP CONSTRAINT IF EXISTS "lending_policy_system_config_lender_id_fkey"`,
+            `ALTER TABLE "lending_policy_loan_limits" DROP CONSTRAINT IF EXISTS "lending_policy_loan_limits_lender_id_fkey"`,
+            `ALTER TABLE "lending_policy_risk_assessment" DROP CONSTRAINT IF EXISTS "lending_policy_risk_assessment_lender_id_fkey"`,
+            `ALTER TABLE "lending_policy_repayment" DROP CONSTRAINT IF EXISTS "lending_policy_repayment_lender_id_fkey"`,
+            `ALTER TABLE "lending_policy_interest_rates" DROP CONSTRAINT IF EXISTS "lending_policy_interest_rates_lender_id_fkey"`,
+            `ALTER TABLE "lending_policy_eligibility_criteria" DROP CONSTRAINT IF EXISTS "lending_policy_eligibility_criteria_lender_id_fkey"`,
+            `ALTER TABLE "lending_policy_cargo_types" DROP CONSTRAINT IF EXISTS "lending_policy_cargo_types_lender_id_fkey"`,
+            `ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_tenant"`,
+            `ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_load"`,
+            `ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_transporter"`,
+            `ALTER TABLE "insurance_verifications" DROP CONSTRAINT IF EXISTS "FK_insurance_verifications_broker"`,
+            `ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_42c8e0e8ee2e6953e607e7c2daa"`,
+            `ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_d4e396c5a1c8de48961bdf349a2"`,
+            `ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_47ae4807b3ed676f608660b8dfa"`,
+            `ALTER TABLE "insurance_policies" DROP CONSTRAINT IF EXISTS "FK_bf04611ec3fbf4d71b9f8515d43"`,
+            `ALTER TABLE "insurance_policies" DROP CONSTRAINT IF EXISTS "FK_32881c13a51d3576a0222a6ebde"`,
+            `ALTER TABLE "fuel_wallet_transactions" DROP CONSTRAINT IF EXISTS "fuel_wallet_transactions_wallet_id_fkey"`,
+            `ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_tenant"`,
+            `ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_trip"`,
+            `ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_load"`,
+            `ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_payee"`,
+            `ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_payer"`,
+            `ALTER TABLE "escrow_accounts" DROP CONSTRAINT IF EXISTS "FK_escrow_accounts_broker"`,
+            `ALTER TABLE "email_templates" DROP CONSTRAINT IF EXISTS "email_templates_updated_by_fkey"`,
+            `ALTER TABLE "email_templates" DROP CONSTRAINT IF EXISTS "email_templates_created_by_fkey"`,
+            `ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "credit_pricing_rules_tenant_id_fkey"`,
+            `ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "credit_pricing_rules_plan_id_fkey"`,
+            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "credit_marketplace_settings_tenant_admin_user_id_fkey"`,
+            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "credit_marketplace_settings_tenant_id_fkey"`,
+            `ALTER TABLE "bulk_email_logs" DROP CONSTRAINT IF EXISTS "bulk_email_logs_created_by_fkey"`,
+            `ALTER TABLE "bulk_email_logs" DROP CONSTRAINT IF EXISTS "bulk_email_logs_template_id_fkey"`,
+            `ALTER TABLE "bulk_email_logs" DROP CONSTRAINT IF EXISTS "bulk_email_logs_tenant_id_fkey"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_tenant"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_trip"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_load"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_mediator"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_disputed_with"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_raised_by"`,
+            `ALTER TABLE "broker_disputes" DROP CONSTRAINT IF EXISTS "FK_broker_disputes_broker"`,
+            `ALTER TABLE "activity_logs" DROP CONSTRAINT IF EXISTS "fk_activity_logs_user"`,
+            `ALTER TABLE "insurance_claims" DROP CONSTRAINT IF EXISTS "FK_58b6d392b802763fda1b8cdd21d"`,
+            `ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_permission_id_fkey"`,
+            `ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_granted_by_fkey"`,
+            `DROP INDEX IF EXISTS "public"."IDX_user_profiles_kyc_requirement_level"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenants_onboarding_step"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenants_health_score"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenants_last_health_check"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenants_kyc_status"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenants_kyc_submitted_at"`,
+            `DROP INDEX IF EXISTS "public"."IDX_users_tenant_email_role"`,
+            `DROP INDEX IF EXISTS "public"."idx_user_sessions_user_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_user_sessions_tenant_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_user_sessions_expires_at"`,
+            `DROP INDEX IF EXISTS "public"."idx_user_sessions_last_activity"`,
+            `DROP INDEX IF EXISTS "public"."idx_permissions_resource"`,
+            `DROP INDEX IF EXISTS "public"."idx_permissions_action"`,
+            `DROP INDEX IF EXISTS "public"."idx_permissions_name"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_plans_slug"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_plans_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_plans_price_per_credit"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_plans_credits_per_ton"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_plans_parent_subscription_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_payments_subscription"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_payments_payment"`,
+            `DROP INDEX IF EXISTS "public"."idx_subscription_payments_invoice"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_tenant"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_balance"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_refresh"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_user_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_tenant_user"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_revenue"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_accounts_partners_sold"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_transactions_tenant"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_transactions_account"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_transactions_type"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_transactions_reference"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_transactions_user_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_tenant"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_status"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_period"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_user_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_kyc_documents_tenant_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_kyc_documents_type"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_kyc_documents_verified"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_kyc_audit_log_tenant_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_tenant_kyc_audit_log_created_at"`,
+            `DROP INDEX IF EXISTS "public"."IDX_system_settings_category"`,
+            `DROP INDEX IF EXISTS "public"."IDX_system_settings_is_public"`,
+            `DROP INDEX IF EXISTS "public"."IDX_system_health_logs_service"`,
+            `DROP INDEX IF EXISTS "public"."IDX_system_health_logs_timestamp"`,
+            `DROP INDEX IF EXISTS "public"."IDX_system_health_logs_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_system_health_logs_service_timestamp"`,
+            `DROP INDEX IF EXISTS "public"."idx_system_health_timestamp"`,
+            `DROP INDEX IF EXISTS "public"."idx_system_health_service_timestamp"`,
+            `DROP INDEX IF EXISTS "public"."idx_security_events_severity"`,
+            `DROP INDEX IF EXISTS "public"."idx_security_events_created_at"`,
+            `DROP INDEX IF EXISTS "public"."idx_security_events_user_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_security_events_tenant_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_security_events_event_type"`,
+            `DROP INDEX IF EXISTS "public"."idx_security_events_severity_created"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8facef03fbe2ee514e7fe7fe14"`,
+            `DROP INDEX IF EXISTS "public"."IDX_90d452c90494da1080c16b52c1"`,
+            `DROP INDEX IF EXISTS "public"."IDX_a2e2691f8172b07d81e0d1e347"`,
+            `DROP INDEX IF EXISTS "public"."idx_messages_sender_recipient"`,
+            `DROP INDEX IF EXISTS "public"."idx_messages_thread_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_messages_created_at"`,
+            `DROP INDEX IF EXISTS "public"."idx_messages_is_read"`,
+            `DROP INDEX IF EXISTS "public"."idx_messages_tenant_id"`,
+            `DROP INDEX IF EXISTS "public"."IDX_messages_sender_recipient"`,
+            `DROP INDEX IF EXISTS "public"."IDX_messages_thread_id"`,
+            `DROP INDEX IF EXISTS "public"."IDX_messages_created_at"`,
+            `DROP INDEX IF EXISTS "public"."IDX_messages_is_read"`,
+            `DROP INDEX IF EXISTS "public"."idx_ml_tenant_truck"`,
+            `DROP INDEX IF EXISTS "public"."idx_ml_truck_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_loan_terms_lender_id_computed_at"`,
+            `DROP INDEX IF EXISTS "public"."idx_system_config_lender"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpsc_lender_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_loan_limits_lender"`,
+            `DROP INDEX IF EXISTS "public"."idx_loan_limits_business_type"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpll_lender_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpll_business_type_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_risk_assessment_lender"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpra_lender_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpra_factor_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_repayment_lender"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpr_lender_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpr_frequency_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_interest_rates_lender"`,
+            `DROP INDEX IF EXISTS "public"."idx_interest_rates_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpir_lender_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpir_risk_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpec_lender_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpec_category_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_cargo_types_lender"`,
+            `DROP INDEX IF EXISTS "public"."idx_cargo_types_cargo_type"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpct_lender_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_lpct_cargo_category_active"`,
+            `DROP INDEX IF EXISTS "public"."IDX_insurance_verifications_transporter_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_insurance_verifications_load_type"`,
+            `DROP INDEX IF EXISTS "public"."IDX_insurance_verifications_tenant_created"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8e5c713517ab7a21ff3e863ca9"`,
+            `DROP INDEX IF EXISTS "public"."IDX_85a9f10e2000f5b9346c385a98"`,
+            `DROP INDEX IF EXISTS "public"."IDX_7c69728b0eee8df90aa28cb3aa"`,
+            `DROP INDEX IF EXISTS "public"."IDX_390732a304351ba893fb459bbb"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8ba9f8f6f24babb4e5a4380198"`,
+            `DROP INDEX IF EXISTS "public"."IDX_baa50eb26aac0be1b692c080fb"`,
+            `DROP INDEX IF EXISTS "public"."idx_fw_tenant_owner"`,
+            `DROP INDEX IF EXISTS "public"."idx_fw_tenant_driver"`,
+            `DROP INDEX IF EXISTS "public"."idx_fwt_wallet"`,
+            `DROP INDEX IF EXISTS "public"."idx_feature_credit_costs_code"`,
+            `DROP INDEX IF EXISTS "public"."idx_feature_credit_costs_active"`,
+            `DROP INDEX IF EXISTS "public"."IDX_escrow_accounts_load_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_escrow_accounts_trip_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_escrow_accounts_tenant_created"`,
+            `DROP INDEX IF EXISTS "public"."idx_email_templates_category"`,
+            `DROP INDEX IF EXISTS "public"."idx_email_templates_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_email_templates_name"`,
+            `DROP INDEX IF EXISTS "public"."idx_dfa_tenant_driver"`,
+            `DROP INDEX IF EXISTS "public"."idx_dfa_tenant_trip"`,
+            `DROP INDEX IF EXISTS "public"."idx_dfa_tenant_status"`,
+            `DROP INDEX IF EXISTS "public"."idx_pricing_rules_type"`,
+            `DROP INDEX IF EXISTS "public"."idx_pricing_rules_plan"`,
+            `DROP INDEX IF EXISTS "public"."idx_pricing_rules_tenant"`,
+            `DROP INDEX IF EXISTS "public"."idx_pricing_rules_priority"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_packages_active"`,
+            `DROP INDEX IF EXISTS "public"."idx_credit_packages_slug"`,
+            `DROP INDEX IF EXISTS "public"."idx_marketplace_tenant"`,
+            `DROP INDEX IF EXISTS "public"."idx_marketplace_enabled"`,
+            `DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_tenant"`,
+            `DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_template"`,
+            `DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_status"`,
+            `DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_created_at"`,
+            `DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_created_by"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_match_recommendations_broker_load"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_match_recommendations_broker_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_match_recommendations_transporter_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_market_intelligence_broker_route"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_market_intelligence_broker_created"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_market_intelligence_route_type"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_transporter_credit_broker_transporter"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_transporter_credit_transporter_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_multi_stop_loads_broker_load"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_transporter_performance_broker_transporter"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_transporter_performance_transporter_calculated"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_disputes_broker_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_disputes_load_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_disputes_trip_status"`,
+            `DROP INDEX IF EXISTS "public"."IDX_broker_disputes_tenant_created"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_user_id"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_action"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_resource"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_created_at"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_suspicious"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_security_relevant"`,
+            `DROP INDEX IF EXISTS "public"."idx_activity_logs_security_created"`,
+            `DROP INDEX IF EXISTS "public"."IDX_rate_limits_tenant_endpoint_createdAt"`,
+            `DROP INDEX IF EXISTS "public"."IDX_rate_limits_tenant_createdAt"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6a368689710b119486785bf8cc"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1592f9cf82406fbce791f0f19a"`,
+            `DROP INDEX IF EXISTS "public"."idx_role_permissions_role"`,
+            `DROP INDEX IF EXISTS "public"."idx_role_permissions_permission"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_balance"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_subscription_credits"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_purchased_credits"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_bonus_credits"`,
+            `ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "chk_transaction_type"`,
+            `ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "chk_subscription_status"`,
+            `ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "chk_billing_cycle"`,
+            `ALTER TABLE "feature_credit_costs" DROP CONSTRAINT IF EXISTS "chk_positive_cost"`,
+            `ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "chk_positive_cost"`,
+            `ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "chk_valid_rule_type"`,
+            `ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_positive_credits"`,
+            `ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_positive_price"`,
+            `ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_valid_discount"`,
+            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_min_purchase"`,
+            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_max_purchase"`,
+            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "max_greater_than_min"`,
+            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_price"`,
+            `ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_resource_action_key"`,
+            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "uq_credit_accounts_tenant_user"`,
+            `ALTER TABLE "system_settings" DROP CONSTRAINT IF EXISTS "UQ_system_settings_category_key"`,
+            `ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_role_permission_id_key"`,
+        ];
+
+        for (const query of drops) {
+            try {
+                await queryRunner.query(query);
+            } catch (error) {
+                // Ignore "relation does not exist" errors (42P01)
+                if (error.code !== '42P01') {
+                    console.warn(`Warning during drop: ${query}. Error: ${error.message}`);
+                }
+            }
+        }
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_user_profiles_kyc_requirement_level"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_onboarding_step"`);
         await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_health_score"`);

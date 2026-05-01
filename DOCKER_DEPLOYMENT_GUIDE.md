@@ -292,6 +292,10 @@ docker-compose -f docker-compose.production.yml down
 docker-compose -f docker-compose.production.yml build --no-cache
 docker-compose -f docker-compose.production.yml up -d
 
+#for migration
+
+docker-compose -f docker-compose.production.yml run --rm backend npm run migration:run:prod
+
 # Restart backend
 docker-compose -f docker-compose.production.yml restart backend
 ```
@@ -363,7 +367,7 @@ nano .env.production  # Edit values, save with Ctrl+X, Y, Enter
 docker-compose -f docker-compose.production.yml build --no-cache
 docker-compose -f docker-compose.production.yml up -d
 sleep 30
-docker-compose -f docker-compose.production.yml exec backend npm run migration:run
+docker-compose -f docker-compose.production.yml run --rm backend npm run migration:run:prod
 
 # 4. Verify
 docker-compose -f docker-compose.production.yml ps
