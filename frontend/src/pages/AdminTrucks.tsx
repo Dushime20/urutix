@@ -4,10 +4,211 @@ import {
   FaTruck, FaUsers, FaMapMarkerAlt, FaCalendarAlt, FaSpinner,
   FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaTrash
 } from 'react-icons/fa';
+import {
+  X, Truck, User, MapPin, Calendar, Shield, CheckCircle2,
+  AlertTriangle, Clock, Building2, Phone, Mail, Hash,
+  Activity, Wrench, Circle,
+} from 'lucide-react';
 import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminTruck } from '../services/adminApi';
+
+// ── Truck Detail Modal ────────────────────────────────────────────────────────
+
+const statusConfig: Record<string, { label: string; bg: string; dot: string }> = {
+  AVAILABLE:      { label: 'Available',      bg: 'bg-emerald-100 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500' },
+  IN_TRANSIT:     { label: 'In Transit',     bg: 'bg-blue-100 text-blue-800 border-blue-200',         dot: 'bg-blue-500' },
+  MAINTENANCE:    { label: 'Maintenance',    bg: 'bg-amber-100 text-amber-800 border-amber-200',       dot: 'bg-amber-500' },
+  OUT_OF_SERVICE: { label: 'Out of Service', bg: 'bg-red-100 text-red-800 border-red-200',             dot: 'bg-red-500' },
+};
+
+function InfoRow({ label, value, icon: Icon }: { label: string; value?: string | number | null; icon?: any }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
+      {Icon && <Icon size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />}
+      <span className="text-xs font-semibold text-gray-500 w-36 flex-shrink-0">{label}</span>
+      <span className="text-sm text-gray-900 font-medium">{value}</span>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-gray-50 rounded-xl p-4">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{title}</p>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+interface TruckDetailModalProps {
+  truck: AdminTruck;
+  onClose: () => void;
+}
+
+const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) => {
+  const cfg = statusConfig[truck.status?.toUpperCase()] || { label: truck.status, bg: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-400' };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+              <Truck size={22} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black tracking-tight">
+                {truck.licensePlate || 'Truck Details'}
+              </h2>
+              <p className="text-indigo-200 text-sm">
+                {[truck.make, truck.model, truck.year].filter(Boolean).join(' ') || 'Vehicle Details'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${cfg.bg}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+              {cfg.label}
+            </span>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
+          {/* Quick stats row */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-indigo-50 rounded-xl p-3 text-center">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Status</p>
+              <p className="text-sm font-black text-indigo-700 mt-1">{cfg.label}</p>
+            </div>
+            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active</p>
+              <p className="text-sm font-black text-emerald-700 mt-1">{truck.isActive ? 'Yes' : 'No'}</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center">
+              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Drivers</p>
+              <p className="text-sm font-black text-blue-700 mt-1">{truck.assignedDrivers?.length ?? (truck.currentDriverName ? 1 : 0)}</p>
+            </div>
+          </div>
+
+          {/* Vehicle Info */}
+          <Section title="Vehicle Information">
+            <InfoRow label="License Plate"  value={truck.licensePlate}  icon={Hash} />
+            <InfoRow label="Make"           value={truck.make}          icon={Truck} />
+            <InfoRow label="Model"          value={truck.model}         icon={Truck} />
+            <InfoRow label="Year"           value={truck.year}          icon={Calendar} />
+            <InfoRow label="Truck ID"       value={truck.id}            icon={Hash} />
+            <InfoRow label="Registered"     value={truck.createdAt ? new Date(truck.createdAt).toLocaleDateString('en-US', { dateStyle: 'medium' }) : undefined} icon={Calendar} />
+          </Section>
+
+          {/* Ownership */}
+          <Section title="Ownership & Tenant">
+            <InfoRow label="Owner"       value={truck.ownerName}   icon={User} />
+            <InfoRow label="Owner Email" value={truck.ownerEmail}  icon={Mail} />
+            <InfoRow label="Tenant"      value={truck.tenantName}  icon={Building2} />
+            <InfoRow label="Tenant ID"   value={truck.tenantId}    icon={Hash} />
+          </Section>
+
+          {/* Current Driver */}
+          <Section title="Current Driver">
+            {truck.currentDriverName ? (
+              <>
+                <InfoRow label="Driver Name"  value={truck.currentDriverName}  icon={User} />
+                <InfoRow label="Driver Phone" value={truck.currentDriverPhone} icon={Phone} />
+                <InfoRow label="Driver ID"    value={truck.currentDriverId}    icon={Hash} />
+              </>
+            ) : (
+              <div className="flex items-center gap-2 py-2 text-gray-400">
+                <User size={14} />
+                <span className="text-sm">No driver currently assigned</span>
+              </div>
+            )}
+          </Section>
+
+          {/* Location */}
+          <Section title="Location">
+            <InfoRow label="Current Location" value={truck.currentLocationString || 'Unknown'} icon={MapPin} />
+            {truck.coordinates && (
+              <>
+                <InfoRow label="Latitude"  value={truck.coordinates.latitude?.toFixed(6)}  icon={MapPin} />
+                <InfoRow label="Longitude" value={truck.coordinates.longitude?.toFixed(6)} icon={MapPin} />
+              </>
+            )}
+            {truck.coordinates && (
+              <div className="mt-2">
+                <a
+                  href={`https://maps.google.com/?q=${truck.coordinates.latitude},${truck.coordinates.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                >
+                  <MapPin size={12} /> View on Google Maps →
+                </a>
+              </div>
+            )}
+          </Section>
+
+          {/* Assigned Drivers History */}
+          {truck.assignedDrivers && truck.assignedDrivers.length > 0 && (
+            <Section title={`Driver History (${truck.assignedDrivers.length})`}>
+              <div className="space-y-2">
+                {truck.assignedDrivers.map((d, i) => (
+                  <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <User size={12} className="text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{d.driverName}</p>
+                        <p className="text-[10px] text-gray-400">
+                          Since {new Date(d.assignmentDate).toLocaleDateString('en-US', { dateStyle: 'medium' })}
+                          {d.notes ? ` · ${d.notes}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      d.status === 'ACTIVE'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {d.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AdminTrucks: React.FC = () => {
   const { user } = useAuth();
@@ -25,6 +226,9 @@ const AdminTrucks: React.FC = () => {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  // Detail modal
+  const [selectedTruck, setSelectedTruck] = useState<AdminTruck | null>(null);
 
   // Fetch trucks data
   useEffect(() => {
@@ -398,7 +602,7 @@ const AdminTrucks: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
                           <button
-                            onClick={() => {/* Handle view details */}}
+                            onClick={() => setSelectedTruck(truck)}
                             className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
                             title="View Details"
                           >
@@ -496,6 +700,14 @@ const AdminTrucks: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Truck Detail Modal */}
+      {selectedTruck && (
+        <TruckDetailModal
+          truck={selectedTruck}
+          onClose={() => setSelectedTruck(null)}
+        />
+      )}
     </AdminPageLayout>
   );
 };
