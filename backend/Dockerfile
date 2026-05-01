@@ -37,7 +37,8 @@ RUN apk add --no-cache \
     jpeg \
     pango \
     giflib \
-    dumb-init
+    dumb-init \
+    bash
 
 # Create app user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -59,7 +60,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/migrations ./migrations
 COPY --from=builder --chown=nestjs:nodejs /app/data-source.js ./data-source.js
 COPY --from=builder --chown=nestjs:nodejs /app/scripts/migrate.sh ./scripts/migrate.sh
-COPY --from=builder --chown=nestjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
+
+# Copy entrypoint script from source (not from builder)
+COPY --chown=nestjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 
 # Make scripts executable
 RUN chmod +x ./scripts/migrate.sh ./docker-entrypoint.sh
