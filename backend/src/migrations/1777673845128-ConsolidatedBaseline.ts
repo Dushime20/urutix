@@ -247,210 +247,163 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
             `ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_valid_discount"`,
             `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_min_purchase"`,
             `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_max_purchase"`,
-            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "max_greater_than_min"`,
-            `ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_price"`,
-            `ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_resource_action_key"`,
-            `ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "uq_credit_accounts_tenant_user"`,
-            `ALTER TABLE "system_settings" DROP CONSTRAINT IF EXISTS "UQ_system_settings_category_key"`,
-            `ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_role_permission_id_key"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d6ee2d4bf901675877bb94977c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c665cbd04804c0de36c2019de5"`,
+            `DROP INDEX IF EXISTS "public"."IDX_797841712968aa775af0cb0b54"`,
+            `DROP INDEX IF EXISTS "public"."IDX_13c6c844995d9cc303e7e05087"`,
+            `DROP INDEX IF EXISTS "public"."IDX_9b2e0e69131e085736edccaec5"`,
+            `DROP INDEX IF EXISTS "public"."IDX_db8d3f73a58b39fc0c14302840"`,
+            `DROP INDEX IF EXISTS "public"."IDX_17022daf3f885f7d35423e9971"`,
+            `DROP INDEX IF EXISTS "public"."IDX_178199805b901ccd220ab7740e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d54f841fa5478e4734590d4403"`,
+            `DROP INDEX IF EXISTS "public"."IDX_879e2d305a025dadfe9929c47d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_aa8dcbb39c06587a1cf834da38"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1fa31efc2a0bc0b517b9f7225d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6a292c4dedc54c3610173796da"`,
+            `DROP INDEX IF EXISTS "public"."IDX_01b16a9f40838c61df9d8f2397"`,
+            `DROP INDEX IF EXISTS "public"."IDX_558fbfc6d3ed76397f133aa835"`,
+            `DROP INDEX IF EXISTS "public"."IDX_97352a82a3e20c23bd7df1ad3a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d997cf3d01e7778b2986194d50"`,
+            `DROP INDEX IF EXISTS "public"."IDX_a43ae68351096e8568a06382f1"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6a17042a7646c9c2a6d3ccef22"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ea1e8001e18da625271cb36faf"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8b1e30132e1b27cbb9cc63055e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e6a291fa1f367d1580ebd3ff41"`,
+            `DROP INDEX IF EXISTS "public"."IDX_dbc00de019adde78acb4c7750d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_5a2ef9676a68d2dd52b59d72b0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d0f9a2a260ee0f538c19d7c2a9"`,
+            `DROP INDEX IF EXISTS "public"."IDX_bc11f2da1320a870676faa8fed"`,
+            `DROP INDEX IF EXISTS "public"."IDX_2e99675306663490ddfe9b8240"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1fd8e9227c063c682884b93134"`,
+            `DROP INDEX IF EXISTS "public"."IDX_626bd18a1c31262c92de2ea7fc"`,
+            `DROP INDEX IF EXISTS "public"."IDX_842fba233d89f76938fdcb1cd0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_0768b1b477d6f9e590fc86aadd"`,
+            `DROP INDEX IF EXISTS "public"."IDX_4443a0125e443faf35976c0d07"`,
+            `DROP INDEX IF EXISTS "public"."IDX_febfac3b7bf38da9b119fa050a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6e2b6bf8bb5605165c05fc9a71"`,
+            `DROP INDEX IF EXISTS "public"."IDX_b23aa47a8f12016a210e5ac33c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f3c89f740731a501a18912bd0b"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e18ea109a1f68c3868b032a089"`,
+            `DROP INDEX IF EXISTS "public"."IDX_acda968d16da059e4f09824655"`,
+            `DROP INDEX IF EXISTS "public"."IDX_0f1bdfd84b52e5650828ee105d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_58b6d392b802763fda1b8cdd21"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ef0233f5751c8f5bb838dcc9c5"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1f5409092a6270aa78f5ef090b"`,
+            `DROP INDEX IF EXISTS "public"."IDX_dd355d444598693fc3bf82fea8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f2cc1127ccebde810e3a4f798c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d85cc00ebf68d5db0073b5bd62"`,
+            `DROP INDEX IF EXISTS "public"."IDX_b039730036806258874142386e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6bcdd18e09cde925d9927e72ae"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d7cbd8189238705b3d8ed1db66"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e76fdb341655fca56beef59750"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6be27131d692a211fda9b877a4"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e7276e088808d17c3350b9b3f5"`,
+            `DROP INDEX IF EXISTS "public"."IDX_813270e00e2d415496bb82419a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_583ca0d5b2d68c75108227af9c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e315e889a7c4d15e733070b95f"`,
+            `DROP INDEX IF EXISTS "public"."IDX_116c853dd79fad5ec4f3200809"`,
+            `DROP INDEX IF EXISTS "public"."IDX_3bf04f0b74badf9ad6f7bbc010"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ccf071140daa090281ed389288"`,
+            `DROP INDEX IF EXISTS "public"."IDX_469b81bb95497287c259fa5628"`,
+            `DROP INDEX IF EXISTS "public"."IDX_9d6c96fc3270ba756ae1e1e20b"`,
+            `DROP INDEX IF EXISTS "public"."IDX_bb3af7f695d50083e6523290d4"`,
+            `DROP INDEX IF EXISTS "public"."IDX_0777b63da90c27d6ed993dc60b"`,
+            `DROP INDEX IF EXISTS "public"."IDX_93eb201c7a9603e415301e69a0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_9c3e6cc717b4f6dc1b0260030f"`,
+            `DROP INDEX IF EXISTS "public"."IDX_7a0a6e2a61cf2f91c80a1c6701"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c0dfddafd5d9d49593930be293"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d86aa84090327c9a94aee62e18"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d1891b273f5c77638d2149a9f0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_63fea9549fcb8977a3c0abd783"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ac0419c594360d319a6a453591"`,
+            `DROP INDEX IF EXISTS "public"."IDX_7567faf52e0f0da34dbab2daf3"`,
+            `DROP INDEX IF EXISTS "public"."IDX_797d199fff9037e5b231dc4ffb"`,
+            `DROP INDEX IF EXISTS "public"."IDX_59d0580779f1111eafa7438a96"`,
+            `DROP INDEX IF EXISTS "public"."IDX_808e971782408664b9c7698a9d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_3bd81217db13f966e5509f559a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_3c410bba0742f62a0d29b9eb7d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_9ccc21465f0cc832c821d48a4b"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ff7f7505116709a5fc37955422"`,
+            `DROP INDEX IF EXISTS "public"."IDX_bd3a27c92d65df4ccc89ffa3a8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c59c97d5c1343951e044c137f0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_05f0369a57a0c7c0bdaebe0a40"`,
+            `DROP INDEX IF EXISTS "public"."IDX_b79fb41debf9b4f464db5fd565"`,
+            `DROP INDEX IF EXISTS "public"."IDX_51367f4601eb1a60444512646d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f4a5574cb41935313243a5eae7"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8ecced8d9f776030ab2060f3f2"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c1b2afb65de0f9494f2981e131"`,
+            `DROP INDEX IF EXISTS "public"."IDX_2c0395713680ab5eb6c8d001d0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_9ac41a5292ef4d8356a86be30c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_595ba72b7adb92ee80c0837694"`,
+            `DROP INDEX IF EXISTS "public"."IDX_22fb71850b9ff42bd211569c81"`,
+            `DROP INDEX IF EXISTS "public"."IDX_5c28e3be70b859f2f9a99c3a5c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e9e4079e4a9bc1ddeb3452b7f6"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e1265f24538173a087762a9745"`,
+            `DROP INDEX IF EXISTS "public"."IDX_173289b1de8485fbb852ff08fa"`,
+            `DROP INDEX IF EXISTS "public"."IDX_3e51a39cdc9a809c529b1535f7"`,
+            `DROP INDEX IF EXISTS "public"."IDX_0ebf9b0f0cbd7b2fb5b62e3fac"`,
+            `DROP INDEX IF EXISTS "public"."IDX_686d1ea5af1256411104b26548"`,
+            `DROP INDEX IF EXISTS "public"."IDX_aad80a27f0a425bfc3f092a732"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e9658e959c490b0a634dfc5478"`,
+            `DROP INDEX IF EXISTS "public"."IDX_dbc81ff542b1b3366bae195f2a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_97672ac88f789774dd47f7c8be"`,
+            `DROP INDEX IF EXISTS "public"."IDX_37b11c00133f4561aa6980ca33"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c118ebf755f0edce9d609279d0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1a5a1be0ff83033579522b0e4e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d6988ec6a7ed344657de8b7e0e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_34c3d35482c852a5b1994720c8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_2e736b729859342dec27976bc8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_388821de26f6747a5e8170f8d8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_af7d535aea2fc3ca1eb561ad30"`,
+            `DROP INDEX IF EXISTS "public"."IDX_a3de91fac75e0f8c03a52af32a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c7ea716d05f5325c4130a6867e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_38cc58643129eb7b03ea8cb6e5"`,
+            `DROP INDEX IF EXISTS "public"."IDX_98b2a588d40bd09bbf3437b9b0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_195490440ff2eace58959bbe1c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6e200f546c62dd34839d181598"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d91caab5b970b8866f63765d30"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8697e3af559e7fa64541e43e06"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f88a03adcc9e90f99ca260ebaa"`,
+            `DROP INDEX IF EXISTS "public"."IDX_0d100cf8bbd893a0469deb488d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_5ce2b1aebad387c1afe3a41343"`,
+            `DROP INDEX IF EXISTS "public"."IDX_48e45ac17b4e397bc55d22c153"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1af373960050ecb35914150112"`,
+            `DROP INDEX IF EXISTS "public"."IDX_7ca4ed34a4206249d7092751bc"`,
+            `DROP INDEX IF EXISTS "public"."IDX_a95cd3c455317ef9fd18f95050"`,
+            `DROP INDEX IF EXISTS "public"."IDX_5f4c893f2ee8263e346dfa1bf8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f803d5e1bd85942b24ee424870"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e1d131cc51fb6cdb698da6daba"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d5b619ad0cef9a8dc2666d4cb6"`,
+            `DROP INDEX IF EXISTS "public"."IDX_08e2c9330c96799fbbcc471190"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ed69c699355cfd7536cab85e11"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f0d33db611c87e2bca1f9f7edf"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1b8ced93a14a57a3a8cf555344"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d9fe14eea34dd7d7a8f2e16331"`,
+            `DROP INDEX IF EXISTS "public"."IDX_bdb69f93aceaa2c078ed604651"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e4cdc64b38672f20cd6ed6a1d3"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e929f0bed4987cb835b89e31b7"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1d942b6fc3eeefb988291fb128"`,
+            `DROP INDEX IF EXISTS "public"."IDX_85a618dede80136ba35a03b6a4"`,
         ];
 
         for (const query of drops) {
             try {
+                await queryRunner.query(`SAVEPOINT migration_cleanup_safety`);
                 await queryRunner.query(query);
+                await queryRunner.query(`RELEASE SAVEPOINT migration_cleanup_safety`);
             } catch (error) {
+                await queryRunner.query(`ROLLBACK TO SAVEPOINT migration_cleanup_safety`);
                 // Ignore "relation does not exist" errors (42P01)
                 if (error.code !== '42P01') {
-                    console.warn(`Warning during drop: ${query}. Error: ${error.message}`);
+                    console.warn(`Note: Skipped drop due to missing table/constraint (safe): ${query}`);
                 }
             }
         }
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_user_profiles_kyc_requirement_level"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_onboarding_step"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_health_score"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_last_health_check"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_kyc_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenants_kyc_submitted_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_users_tenant_email_role"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_user_sessions_user_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_user_sessions_tenant_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_user_sessions_expires_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_user_sessions_last_activity"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_permissions_resource"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_permissions_action"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_permissions_name"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_plans_slug"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_plans_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_plans_price_per_credit"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_plans_credits_per_ton"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_plans_parent_subscription_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_payments_subscription"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_payments_payment"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_subscription_payments_invoice"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_tenant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_balance"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_refresh"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_user_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_tenant_user"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_revenue"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_accounts_partners_sold"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_transactions_tenant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_transactions_account"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_transactions_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_transactions_reference"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_transactions_user_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_tenant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_period"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_subscriptions_user_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_kyc_documents_tenant_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_kyc_documents_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_kyc_documents_verified"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_kyc_audit_log_tenant_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_tenant_kyc_audit_log_created_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_system_settings_category"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_system_settings_is_public"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_system_health_logs_service"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_system_health_logs_timestamp"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_system_health_logs_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_system_health_logs_service_timestamp"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_system_health_timestamp"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_system_health_service_timestamp"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_security_events_severity"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_security_events_created_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_security_events_user_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_security_events_tenant_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_security_events_event_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_security_events_severity_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_8facef03fbe2ee514e7fe7fe14"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_90d452c90494da1080c16b52c1"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_a2e2691f8172b07d81e0d1e347"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_messages_sender_recipient"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_messages_thread_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_messages_created_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_messages_is_read"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_messages_tenant_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_messages_sender_recipient"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_messages_thread_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_messages_created_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_messages_is_read"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_ml_tenant_truck"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_ml_truck_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_loan_terms_lender_id_computed_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_system_config_lender"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpsc_lender_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_loan_limits_lender"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_loan_limits_business_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpll_lender_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpll_business_type_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_risk_assessment_lender"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpra_lender_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpra_factor_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_repayment_lender"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpr_lender_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpr_frequency_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_interest_rates_lender"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_interest_rates_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpir_lender_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpir_risk_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpec_lender_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpec_category_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_cargo_types_lender"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_cargo_types_cargo_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpct_lender_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_lpct_cargo_category_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_insurance_verifications_transporter_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_insurance_verifications_load_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_insurance_verifications_tenant_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_8e5c713517ab7a21ff3e863ca9"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_85a9f10e2000f5b9346c385a98"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_7c69728b0eee8df90aa28cb3aa"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_390732a304351ba893fb459bbb"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_8ba9f8f6f24babb4e5a4380198"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_baa50eb26aac0be1b692c080fb"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_fw_tenant_owner"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_fw_tenant_driver"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_fwt_wallet"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_feature_credit_costs_code"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_feature_credit_costs_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_escrow_accounts_load_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_escrow_accounts_trip_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_escrow_accounts_tenant_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_email_templates_category"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_email_templates_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_email_templates_name"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_dfa_tenant_driver"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_dfa_tenant_trip"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_dfa_tenant_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_pricing_rules_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_pricing_rules_plan"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_pricing_rules_tenant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_pricing_rules_priority"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_packages_active"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_credit_packages_slug"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_marketplace_tenant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_marketplace_enabled"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_tenant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_template"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_created_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_bulk_email_logs_created_by"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_match_recommendations_broker_load"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_match_recommendations_broker_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_match_recommendations_transporter_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_market_intelligence_broker_route"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_market_intelligence_broker_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_market_intelligence_route_type"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_transporter_credit_broker_transporter"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_transporter_credit_transporter_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_multi_stop_loads_broker_load"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_transporter_performance_broker_transporter"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_transporter_performance_transporter_calculated"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_disputes_broker_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_disputes_load_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_disputes_trip_status"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_broker_disputes_tenant_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_user_id"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_action"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_resource"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_created_at"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_suspicious"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_security_relevant"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_activity_logs_security_created"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_rate_limits_tenant_endpoint_createdAt"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_rate_limits_tenant_createdAt"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_6a368689710b119486785bf8cc"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_1592f9cf82406fbce791f0f19a"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_role_permissions_role"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."idx_role_permissions_permission"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_balance"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_subscription_credits"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_purchased_credits"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "chk_positive_bonus_credits"`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" DROP CONSTRAINT IF EXISTS "chk_transaction_type"`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "chk_subscription_status"`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" DROP CONSTRAINT IF EXISTS "chk_billing_cycle"`);
-        await queryRunner.query(`ALTER TABLE "feature_credit_costs" DROP CONSTRAINT IF EXISTS "chk_positive_cost"`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "chk_positive_cost"`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" DROP CONSTRAINT IF EXISTS "chk_valid_rule_type"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_positive_credits"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_positive_price"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "chk_valid_discount"`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_min_purchase"`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_max_purchase"`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "max_greater_than_min"`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" DROP CONSTRAINT IF EXISTS "positive_price"`);
-        await queryRunner.query(`ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_resource_action_key"`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" DROP CONSTRAINT IF EXISTS "uq_credit_accounts_tenant_user"`);
-        await queryRunner.query(`ALTER TABLE "system_settings" DROP CONSTRAINT IF EXISTS "UQ_system_settings_category_key"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_role_permission_id_key"`);
-        await queryRunner.query(`COMMENT ON TABLE "user_sessions" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "permissions" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "tenant_kyc_documents" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "tenant_kyc_audit_log" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "system_health_logs" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "security_events" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "insurance_verifications" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "escrow_accounts" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "email_templates" IS NULL`);
         await queryRunner.query(`COMMENT ON TABLE "credit_pricing_rules" IS NULL`);
