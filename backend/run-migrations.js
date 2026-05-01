@@ -1,56 +1,36 @@
-const { DataSource } = require('typeorm');
-require('dotenv').config();
+#!/usr/bin/env node
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: String(process.env.DB_PASSWORD || ''),
-  database: process.env.DB_NAME || 'urutix',
-  synchronize: false,
-  logging: process.env.NODE_ENV === 'development',
-  entities: [
-    'dist/entities/*.entity.js',
-  ],
-  migrations: [
-    'dist/migrations/*.js',
-  ],
-  subscribers: [],
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
-});
+/**
+ * Migration Runner Script
+ * 
+ * This script runs TypeORM migrations in both development and production environments.
+ * It handles the data source initialization and migration execution.
+ */
 
-async function runMigrations() {
-  try {
-    console.log('Initializing database connection...');
-    await dataSource.initialize();
-    console.log('Database connection established.');
+const { execSync } = require('child_process');
+const path = require('path');
 
-    console.log('Running pending migrations...');
-    const migrations = await dataSource.runMigrations();
-    
-    if (migrations.length === 0) {
-      console.log('No pending migrations found.');
-    } else {
-      console.log(`Successfully ran ${migrations.length} migrations:`);
-      migrations.forEach(migration => {
-        console.log(`- ${migration.name}`);
-      });
+console.log('🚀 Starting migration process...');
+console.log('Environment:', process.env.NODE_ENV || 'development');
+console.log('Database:', process.env.DB_NAME || 'urutix');
+console.log('Host:', process.env.DB_HOST || 'localhost');
+
+try {
+  // Run migrations using ts-node
+  console.log('\n📦 Running migrations...\n');
+  
+  execSync(
+    'ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/data-source.ts',
+    {
+      stdio: 'inherit',
+      cwd: __dirname,
+      env: process.env
     }
+  );
 
-    await dataSource.destroy();
-    console.log('Migration completed successfully!');
-    process.exit(0);
-  } catch (error) {
-    console.error('Migration failed:', error);
-    if (dataSource.isInitialized) {
-      await dataSource.destroy();
-    }
-    process.exit(1);
-  }
+  console.log('\n✅ Migrations completed successfully!');
+  process.exit(0);
+} catch (error) {
+  console.error('\n❌ Migration failed:', error.message);
+  process.exit(1);
 }
-
-runMigrations();
