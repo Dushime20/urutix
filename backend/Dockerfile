@@ -59,6 +59,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 # Copy migrations and necessary files
 COPY --from=builder --chown=nestjs:nodejs /app/migrations ./migrations
 COPY --from=builder --chown=nestjs:nodejs /app/data-source.js ./data-source.js
+COPY --from=builder --chown=nestjs:nodejs /app/init-database.js ./init-database.js
 COPY --from=builder --chown=nestjs:nodejs /app/scripts/migrate.sh ./scripts/migrate.sh
 
 # Copy entrypoint script from source (not from builder)

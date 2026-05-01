@@ -34,6 +34,7 @@
     "migration:show": "bash scripts/migrate.sh show",
     "migration:show:prod": "NODE_ENV=production bash scripts/migrate.sh show",
     "migration:check": "bash scripts/migrate.sh check",
+    "db:init": "node init-database.js",
     "migration:check": "node scripts/check-migrations.js",
     "migration:run:progress": "ts-node run-migrations-progress.ts",
     "migration:generate:linux": "npx typeorm-ts-node-commonjs migration:generate -d src/config/database-postgres.config.ts src/migrations/AutoMigration",
