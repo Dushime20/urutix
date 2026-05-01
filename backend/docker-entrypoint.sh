@@ -57,7 +57,7 @@ wait_for_db() {
                 console.error('Connection failed:', err.message);
                 process.exit(1);
             });
-    " 2>/dev/null; do
+    "; do
         attempt=$((attempt + 1))
         
         if [ $attempt -ge $max_attempts ]; then
