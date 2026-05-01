@@ -6,7 +6,7 @@ import {
 } from 'react-icons/fa';
 import {
   X, Truck, User, MapPin, Calendar, Shield, CheckCircle2,
-  AlertTriangle, Clock, Building2, Phone, Mail, Hash,
+  AlertTriangle, Clock, Building2, Phone, Mail,
   Activity, Wrench, Circle,
 } from 'lucide-react';
 import { TranslatedText } from '../components/translated-text';
@@ -113,7 +113,6 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
             <InfoRow label="Make"           value={truck.make}          icon={Truck} />
             <InfoRow label="Model"          value={truck.model}         icon={Truck} />
             <InfoRow label="Year"           value={truck.year}          icon={Calendar} />
-            <InfoRow label="Truck ID"       value={truck.id}            icon={Hash} />
             <InfoRow label="Registered"     value={truck.createdAt ? new Date(truck.createdAt).toLocaleDateString('en-US', { dateStyle: 'medium' }) : undefined} icon={Calendar} />
           </Section>
 
@@ -122,7 +121,6 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
             <InfoRow label="Owner"       value={truck.ownerName}   icon={User} />
             <InfoRow label="Owner Email" value={truck.ownerEmail}  icon={Mail} />
             <InfoRow label="Tenant"      value={truck.tenantName}  icon={Building2} />
-            <InfoRow label="Tenant ID"   value={truck.tenantId}    icon={Hash} />
           </Section>
 
           {/* Current Driver */}
@@ -131,7 +129,6 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
               <>
                 <InfoRow label="Driver Name"  value={truck.currentDriverName}  icon={User} />
                 <InfoRow label="Driver Phone" value={truck.currentDriverPhone} icon={Phone} />
-                <InfoRow label="Driver ID"    value={truck.currentDriverId}    icon={Hash} />
               </>
             ) : (
               <div className="flex items-center gap-2 py-2 text-gray-400">
