@@ -57,7 +57,12 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # Copy migrations and necessary files
 COPY --from=builder --chown=nestjs:nodejs /app/migrations ./migrations
-COPY --from=builder --chown=nestjs:nodejs /app/src/migrations ./src/migrations
+COPY --from=builder --chown=nestjs:nodejs /app/data-source.js ./data-source.js
+COPY --from=builder --chown=nestjs:nodejs /app/scripts/migrate.sh ./scripts/migrate.sh
+COPY --from=builder --chown=nestjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
+
+# Make scripts executable
+RUN chmod +x ./scripts/migrate.sh ./docker-entrypoint.sh
 
 # Create uploads directory with proper permissions
 RUN mkdir -p /app/uploads/documents && \
@@ -74,7 +79,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3005/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+ENTRYPOINT ["dumb-init", "--", "./docker-entrypoint.sh"]
 
 # Start the application
 CMD ["node", "dist/main.js"]
