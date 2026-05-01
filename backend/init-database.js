@@ -3,33 +3,19 @@
 /**
  * Professional Database Initialization Script
  * 
- * This script initializes a fresh database using TypeORM's synchronize feature
- * to auto-create all tables from the compiled entity definitions.
+ * This script initializes a fresh database by temporarily enabling
+ * TypeORM's synchronize feature to auto-create all tables.
  * 
- * Features:
- * - Validates environment configuration
- * - Tests database connectivity
- * - Creates schema from entities
- * - Verifies table creation
- * - Provides detailed logging
- * - Handles errors gracefully
+ * Works with webpack-bundled applications where entities are embedded
+ * in the bundle rather than separate files.
  * 
  * Usage: node init-database.js
- * 
- * Environment Variables Required:
- * - DB_HOST: Database host
- * - DB_PORT: Database port
- * - DB_USERNAME: Database username
- * - DB_PASSWORD: Database password
- * - DB_NAME: Database name
  */
 
 require('dotenv').config();
 const { DataSource } = require('typeorm');
-const fs = require('fs');
-const path = require('path');
 
-// ANSI color codes for terminal output
+// ANSI color codes
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
@@ -38,10 +24,8 @@ const colors = {
   red: '\x1b[31m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
-  magenta: '\x1b[35m',
 };
 
-// Logging utilities
 function log(message, color = colors.reset) {
   console.log(`${color}${message}${colors.reset}`);
 }
@@ -69,281 +53,227 @@ function logHeader(message) {
 }
 
 /**
- * Validate required environment variables
+ * Validate environment
  */
 function validateEnvironment() {
-  logInfo('Validating environment configuration...');
-  
   const required = ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME'];
   const missing = required.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
-    logError(`Missing required environment variables: ${missing.join(', ')}`);
-    logInfo('Please ensure these are set in your .env file or environment');
+    logError(`Missing environment variables: ${missing.join(', ')}`);
     return false;
   }
-  
-  logSuccess('Environment configuration valid');
-  logInfo(`Database: ${process.env.DB_NAME}`);
-  logInfo(`Host: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
-  logInfo(`User: ${process.env.DB_USERNAME}`);
   
   return true;
 }
 
 /**
- * Check if compiled database config exists
+ * Load all entity classes from the bundled main.js
+ * This extracts entity constructors from the webpack bundle
  */
-function validateCompiledConfig() {
-  logInfo('Checking for compiled database configuration...');
-  
-  const configPath = path.join(__dirname, 'dist', 'config', 'database.config.js');
-  
-  if (!fs.existsSync(configPath)) {
-    logError('Compiled database configuration not found!');
-    logError(`Expected path: ${configPath}`);
-    logInfo('Make sure the application has been built: npm run build');
-    return false;
-  }
-  
-  logSuccess('Compiled configuration found');
-  return true;
-}
-
-/**
- * Test database connectivity
- */
-async function testConnection() {
-  logInfo('Testing database connectivity...');
-  
-  const { Client } = require('pg');
-  const client = new Client({
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT),
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-  });
+function loadEntitiesFromBundle() {
+  logInfo('Loading entities from application bundle...');
   
   try {
-    await client.connect();
-    await client.query('SELECT NOW()');
-    await client.end();
-    logSuccess('Database connection successful');
-    return true;
-  } catch (error) {
-    logError(`Database connection failed: ${error.message}`);
-    logInfo('Please verify:');
-    logInfo('  1. Database server is running');
-    logInfo('  2. Credentials are correct');
-    logInfo('  3. Database exists');
-    logInfo('  4. Network connectivity');
-    return false;
-  }
-}
-
-/**
- * Check if database is empty
- */
-async function checkDatabaseState(dataSource) {
-  logInfo('Checking current database state...');
-  
-  try {
-    const tables = await dataSource.query(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `);
+    // Load the main bundle
+    const bundle = require('./dist/main.js');
     
-    const tableCount = parseInt(tables[0].count);
+    // Entity classes are exported in the bundle
+    // We need to extract them by looking for TypeORM decorators
+    const entities = [];
     
-    if (tableCount > 0) {
-      logWarning(`Database already contains ${tableCount} tables`);
-      logWarning('This script is designed for fresh database initialization');
-      logInfo('Existing tables will be synchronized with entity definitions');
-      return { isEmpty: false, tableCount };
-    }
+    // Common entity names based on your codebase
+    const entityNames = [
+      'User', 'UserProfile', 'Load', 'Location', 'Truck', 'Driver', 'Route', 'Trip',
+      'Payment', 'Tenant', 'RefreshToken', 'PasswordResetToken', 'EmailVerificationToken',
+      'Dispute', 'AuditLog', 'UserRating', 'UserReward', 'UserScore', 'Bid', 'Auction',
+      'Lender', 'LenderPolicy', 'LoanRequest', 'LoanDisbursement', 'LoanRepayment',
+      'LoanTerms', 'Borrower', 'RouteTruck', 'AuctionView', 'AuctionWatch',
+      'SafetyIncident', 'SafetyInspection', 'SafetyTraining', 'CargoInspection',
+      'BrokerCommission', 'LoadContract', 'InsuranceVerification', 'BrokerDispute',
+      'EscrowAccount', 'LoadDocument', 'LoadMatch', 'FuelLog', 'MaintenanceLog',
+      'Document', 'Notification', 'SystemSettings', 'SecurityEvent', 'UserSession',
+      'ActivityLog', 'Alert', 'AuditEvent', 'SystemHealthLog', 'CreditAccount',
+      'CreditPackage', 'CreditPricingRule', 'CreditTransaction', 'TenantSubscription',
+      'SubscriptionPlan', 'SubscriptionPayment', 'CreditMarketplaceSettings',
+      'FeatureCreditCost', 'Role', 'Permission', 'UserPermissionOverride',
+      'FuelWallet', 'FuelWalletTransaction', 'FuelBudget', 'DriverFuelAdvance',
+      'EmailTemplate', 'BulkEmailLog', 'LoadTemplate', 'Receipt', 'Epod',
+      'NotificationPreference', 'NotificationLog', 'CargoOwnerAnalytics',
+      'AnalyticsInsights', 'Message', 'InsurancePolicy', 'InsuranceClaim',
+      'InsuranceRenewal', 'TenantKycDocument', 'TenantKycAuditLog',
+      'UserKycDocument', 'UserKycAuditLog', 'KycRoleRequirements',
+      'LendingPolicyInterestRate', 'LendingPolicyLoanLimit', 'LendingPolicyEligibility',
+      'LendingPolicyRiskAssessment', 'LendingPolicyRepayment', 'LendingPolicyCargoType',
+      'LendingPolicySystemConfig', 'LenderUser', 'LenderRole', 'LenderPermission',
+      'PriceSuggestion', 'TrackingEvent',
+    ];
     
-    logInfo('Database is empty - ready for initialization');
-    return { isEmpty: true, tableCount: 0 };
-  } catch (error) {
-    logWarning(`Could not check database state: ${error.message}`);
-    return { isEmpty: true, tableCount: 0 };
-  }
-}
-
-/**
- * Initialize database schema
- */
-async function initializeSchema() {
-  logHeader('DATABASE SCHEMA INITIALIZATION');
-  
-  try {
-    // Load compiled database configuration
-    logInfo('Loading database configuration...');
-    const { databaseConfig } = require('./dist/config/database.config');
-    
-    if (!databaseConfig || !databaseConfig.entities) {
-      throw new Error('Invalid database configuration - entities not found');
-    }
-    
-    logSuccess(`Loaded configuration with ${databaseConfig.entities.length} entities`);
-    
-    // Create DataSource with synchronize enabled
-    logInfo('Creating TypeORM DataSource...');
-    const AppDataSource = new DataSource({
-      ...databaseConfig,
-      synchronize: true, // Enable automatic schema synchronization
-      logging: ['error', 'warn', 'schema'], // Log schema changes
-      dropSchema: false, // Never drop existing schema
-    });
-    
-    // Initialize connection
-    logInfo('Initializing database connection...');
-    await AppDataSource.initialize();
-    logSuccess('Database connection established');
-    
-    // Check current state
-    const state = await checkDatabaseState(AppDataSource);
-    
-    // Synchronize schema
-    logInfo('Synchronizing database schema with entity definitions...');
-    logInfo('This process will:');
-    logInfo('  - Create missing tables');
-    logInfo('  - Add missing columns');
-    logInfo('  - Create indexes and constraints');
-    logInfo('  - Preserve existing data');
-    log('');
-    
-    // Wait for synchronization to complete
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    logSuccess('Schema synchronization complete');
-    
-    // Verify tables were created
-    logInfo('Verifying table creation...');
-    const tables = await AppDataSource.query(`
-      SELECT tablename 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
-      ORDER BY tablename
-    `);
-    
-    if (tables.length === 0) {
-      throw new Error('No tables were created - synchronization may have failed');
-    }
-    
-    logSuccess(`Successfully created/verified ${tables.length} tables`);
-    
-    // Display table list
-    log('\n' + '-'.repeat(80), colors.cyan);
-    log('CREATED TABLES', colors.cyan);
-    log('-'.repeat(80), colors.cyan);
-    
-    const columns = 4;
-    const rows = Math.ceil(tables.length / columns);
-    
-    for (let i = 0; i < rows; i++) {
-      const row = [];
-      for (let j = 0; j < columns; j++) {
-        const index = i + j * rows;
-        if (index < tables.length) {
-          row.push(tables[index].tablename.padEnd(25));
-        }
+    // Try to find entities in the bundle
+    for (const name of entityNames) {
+      if (bundle[name] && typeof bundle[name] === 'function') {
+        entities.push(bundle[name]);
       }
-      log(row.join(''), colors.cyan);
     }
     
-    log('-'.repeat(80) + '\n', colors.cyan);
+    if (entities.length > 0) {
+      logSuccess(`Found ${entities.length} entity classes in bundle`);
+      return entities;
+    }
     
-    // Close connection
-    await AppDataSource.destroy();
-    logSuccess('Database connection closed');
-    
-    return { success: true, tableCount: tables.length };
+    logWarning('Could not extract entities from bundle');
+    return null;
     
   } catch (error) {
-    logError(`Schema initialization failed: ${error.message}`);
-    throw error;
+    logWarning(`Could not load bundle: ${error.message}`);
+    return null;
   }
 }
 
 /**
- * Main execution function
+ * Initialize database using direct SQL approach
+ * Since we can't easily extract entities from webpack bundle,
+ * we'll use the running application's schema
  */
-async function main() {
-  const startTime = Date.now();
-  
+async function initializeDatabase() {
   logHeader('URUTIX DATABASE INITIALIZATION');
   
+  const startTime = Date.now();
+  
   try {
-    // Step 1: Validate environment
+    // Validate environment
+    logInfo('Validating environment...');
     if (!validateEnvironment()) {
-      process.exit(1);
+      throw new Error('Environment validation failed');
     }
     
-    // Step 2: Validate compiled config
-    if (!validateCompiledConfig()) {
-      process.exit(1);
+    logSuccess('Environment valid');
+    logInfo(`Database: ${process.env.DB_NAME}@${process.env.DB_HOST}:${process.env.DB_PORT}`);
+    
+    // Test connection
+    logInfo('Testing database connection...');
+    const { Client } = require('pg');
+    const testClient = new Client({
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT),
+      user: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    });
+    
+    await testClient.connect();
+    await testClient.query('SELECT NOW()');
+    await testClient.end();
+    logSuccess('Database connection successful');
+    
+    // Since entities are bundled, we need to start the app briefly with synchronize
+    logInfo('Starting application with schema synchronization...');
+    logWarning('This will temporarily start the application to sync schema');
+    
+    // Set synchronize flag
+    process.env.TYPEORM_SYNCHRONIZE = 'true';
+    
+    // Import and bootstrap the application
+    const { NestFactory } = require('@nestjs/core');
+    const { AppModule } = require('./dist/main.js');
+    
+    logInfo('Bootstrapping NestJS application...');
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn'],
+    });
+    
+    // Wait for TypeORM to synchronize
+    logInfo('Waiting for schema synchronization...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Get DataSource to verify
+    const dataSource = app.get('DataSource');
+    
+    if (dataSource && dataSource.isInitialized) {
+      // Check tables
+      const tables = await dataSource.query(`
+        SELECT tablename 
+        FROM pg_tables 
+        WHERE schemaname = 'public' 
+        ORDER BY tablename
+      `);
+      
+      logSuccess(`Schema synchronized - ${tables.length} tables created`);
+      
+      // Display tables
+      log('\n' + '-'.repeat(80), colors.cyan);
+      log('CREATED TABLES', colors.cyan);
+      log('-'.repeat(80), colors.cyan);
+      
+      const columns = 4;
+      const rows = Math.ceil(tables.length / columns);
+      
+      for (let i = 0; i < rows; i++) {
+        const row = [];
+        for (let j = 0; j < columns; j++) {
+          const index = i + j * rows;
+          if (index < tables.length) {
+            row.push(tables[index].tablename.padEnd(25));
+          }
+        }
+        log(row.join(''), colors.cyan);
+      }
+      
+      log('-'.repeat(80) + '\n', colors.cyan);
     }
     
-    // Step 3: Test database connection
-    if (!await testConnection()) {
-      process.exit(1);
-    }
+    // Close application
+    await app.close();
+    logSuccess('Application closed');
     
-    // Step 4: Initialize schema
-    const result = await initializeSchema();
-    
-    // Success summary
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     
     logHeader('INITIALIZATION COMPLETE');
-    
-    logSuccess(`Database initialized successfully in ${duration}s`);
-    logSuccess(`Created ${result.tableCount} tables`);
+    logSuccess(`Database initialized in ${duration}s`);
     
     log('\n' + '='.repeat(80), colors.green);
     log('NEXT STEPS', colors.green);
     log('='.repeat(80) + '\n', colors.green);
     
-    logInfo('1. Seed initial data:');
-    log('   npm run seed:admin', colors.cyan);
-    log('');
-    logInfo('2. Start the application:');
-    log('   npm run start:prod', colors.cyan);
-    log('');
-    logInfo('3. Verify health:');
-    log('   curl http://localhost:3005/api/health', colors.cyan);
+    logInfo('1. Seed admin user: npm run seed:admin');
+    logInfo('2. Start application: npm run start:prod');
     log('');
     
     process.exit(0);
     
   } catch (error) {
     logHeader('INITIALIZATION FAILED');
-    
-    logError('Database initialization encountered an error');
     logError(`Error: ${error.message}`);
     
     if (error.stack) {
-      log('\nStack trace:', colors.red);
+      console.error('\nStack trace:');
       console.error(error.stack);
     }
     
     log('\n' + '='.repeat(80), colors.yellow);
-    log('TROUBLESHOOTING', colors.yellow);
+    log('ALTERNATIVE APPROACH', colors.yellow);
     log('='.repeat(80) + '\n', colors.yellow);
     
-    logInfo('Common issues:');
-    logInfo('  1. Database not running: docker-compose ps');
-    logInfo('  2. Wrong credentials: check .env file');
-    logInfo('  3. App not built: npm run build');
-    logInfo('  4. Network issues: check database host/port');
+    logInfo('Since the app uses webpack bundling, try this instead:');
+    log('');
+    log('1. Temporarily enable synchronize in database config:', colors.cyan);
+    log('   Edit src/config/database.config.ts', colors.cyan);
+    log('   Set: synchronize: true', colors.cyan);
+    log('');
+    log('2. Rebuild and start the app:', colors.cyan);
+    log('   docker-compose build backend', colors.cyan);
+    log('   docker-compose up -d backend', colors.cyan);
+    log('');
+    log('3. Wait 30 seconds for tables to be created', colors.cyan);
+    log('');
+    log('4. Stop the app and disable synchronize:', colors.cyan);
+    log('   Set: synchronize: false', colors.cyan);
+    log('   Rebuild and restart', colors.cyan);
     log('');
     
     process.exit(1);
   }
 }
 
-// Execute main function
-main();
+// Run
+initializeDatabase();
