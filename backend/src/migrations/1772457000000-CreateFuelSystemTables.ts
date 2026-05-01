@@ -55,10 +55,21 @@ export class CreateFuelSystemTables1772457000000 implements MigrationInterface {
             )
         `);
 
-        // 3. Set UUID defaults for existing tables to prevent "id violates not-null constraint"
-        await queryRunner.query(`ALTER TABLE "fuel_wallets" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`);
-        await queryRunner.query(`ALTER TABLE "fuel_wallet_transactions" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`);
-        await queryRunner.query(`ALTER TABLE "fuel_budgets" ALTER COLUMN "id" SET DEFAULT gen_random_uuid()`);
+        // 3. Set UUID defaults for existing tables only if they exist
+        await queryRunner.query(`
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fuel_wallets') THEN
+                    ALTER TABLE "fuel_wallets" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+                END IF;
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fuel_wallet_transactions') THEN
+                    ALTER TABLE "fuel_wallet_transactions" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+                END IF;
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fuel_budgets') THEN
+                    ALTER TABLE "fuel_budgets" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+                END IF;
+            END $$;
+        `);
 
         // 4. Create indexes for fuel_logs
         await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_fuel_logs_tenant_truck" ON "fuel_logs"("tenant_id", "truck_id")`);
