@@ -23,31 +23,42 @@ export class SeedDriverReports1775000000001 implements MigrationInterface {
 
         const driver = driverResult.length > 0 ? driverResult[0] : null;
 
-        // Find existing truck
+        // Find existing truck - use plateNumber instead of licensePlate
         const truckResult = await queryRunner.query(
-            `SELECT id, "licensePlate" FROM trucks WHERE "tenantId" = '${tenantId}' LIMIT 1`
+            `SELECT id, "plateNumber" FROM trucks WHERE "tenantId" = '${tenantId}' LIMIT 1`
         );
         const truck = truckResult.length > 0 ? truckResult[0] : null;
 
         if (driver && truck) {
-            // 1. Seed Safety Inspections
-            await queryRunner.query(`
-                INSERT INTO safety_inspections (
-                    id, "tenantId", type, inspector, "inspectionDate", 
-                    "truckId", "truckPlate", "driverId", "driverName", 
-                    status, score, "maxScore", notes, "createdAt", "updatedAt"
-                ) VALUES (
-                    uuid_generate_v4(), '${tenantId}', 'pre_trip', '${driver.firstName} ${driver.lastName}', 
-                    NOW() - INTERVAL '1 day', '${truck.id}', '${truck.licensePlate}', 
-                    '${driver.id}', '${driver.firstName} ${driver.lastName}', 
-                    'passed', 100, 100, 'All systems functional', NOW(), NOW()
-                ), (
-                    uuid_generate_v4(), '${tenantId}', 'post_trip', '${driver.firstName} ${driver.lastName}', 
-                    NOW() - INTERVAL '2 days', '${truck.id}', '${truck.licensePlate}', 
-                    '${driver.id}', '${driver.firstName} ${driver.lastName}', 
-                    'passed', 95, 100, 'Vehicle ready for next shift', NOW(), NOW()
+            // Check if safety_inspections table exists before seeding
+            const safetyInspectionsExists = await queryRunner.query(`
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = 'safety_inspections'
                 )
             `);
+
+            if (safetyInspectionsExists[0].exists) {
+                // 1. Seed Safety Inspections
+                await queryRunner.query(`
+                    INSERT INTO safety_inspections (
+                        id, "tenantId", type, inspector, "inspectionDate", 
+                        "truckId", "truckPlate", "driverId", "driverName", 
+                        status, score, "maxScore", notes, "createdAt", "updatedAt"
+                    ) VALUES (
+                        uuid_generate_v4(), '${tenantId}', 'pre_trip', '${driver.firstName} ${driver.lastName}', 
+                        NOW() - INTERVAL '1 day', '${truck.id}', '${truck.plateNumber}', 
+                        '${driver.id}', '${driver.firstName} ${driver.lastName}', 
+                        'passed', 100, 100, 'All systems functional', NOW(), NOW()
+                    ), (
+                        uuid_generate_v4(), '${tenantId}', 'post_trip', '${driver.firstName} ${driver.lastName}', 
+                        NOW() - INTERVAL '2 days', '${truck.id}', '${truck.plateNumber}', 
+                        '${driver.id}', '${driver.firstName} ${driver.lastName}', 
+                        'passed', 95, 100, 'Vehicle ready for next shift', NOW(), NOW()
+                    )
+                `);
+            }
+        }
 
             // 2. Find a load and add cargo inspection metadata
             const loadResult = await queryRunner.query(
