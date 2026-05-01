@@ -66,13 +66,37 @@ export interface AdminTruck {
 export interface AdminLoad {
   id: string;
   title: string;
-  origin: string;
-  destination: string;
+  description?: string;
+  origin: any; // may be string or {lat, lng, city, address, country}
+  destination: any;
   status: string;
   weight?: number;
   value?: number;
+  loadValue?: number;
+  offeredPrice?: number;
+  currencyCode?: string;
+  cargoType?: string;
+  loadType?: string;
+  equipmentType?: string;
+  urgencyLevel?: string;
+  packagingType?: string;
+  numberOfPieces?: number;
+  numberOfPallets?: number;
+  isHazardous?: boolean;
+  isFragile?: boolean;
+  requiresRefrigeration?: boolean;
+  pickupDate?: string;
+  deliveryDate?: string;
+  paymentTerms?: string;
   tenantId: string;
+  tenantName?: string;
+  cargoOwnerId?: string;
+  cargoOwnerName?: string;
+  cargoOwnerEmail?: string;
+  assignedTruckId?: string;
+  truckPlate?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AdminTrip {
@@ -176,6 +200,9 @@ export const adminAPI = {
   
   getAllLoads: (tenantId?: string) => 
     api.get<{ loads: AdminLoad[] }>('/admin/all/loads', { params: tenantId ? { tenantId } : {} }),
+
+  deleteLoad: (loadId: string) =>
+    api.delete(`/loads/${loadId}`),
   
   getAllTrips: (tenantId?: string) => 
     api.get<{ trips: AdminTrip[] }>('/admin/all/trips', { params: tenantId ? { tenantId } : {} }),
