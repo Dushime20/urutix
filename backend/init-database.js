@@ -50,9 +50,10 @@ const AppDataSource = new DataSource({
   password: String(process.env.DB_PASSWORD || ''),
   database: process.env.DB_NAME || 'urutix',
   synchronize: true, // This will auto-create tables from entities
-  logging: false,
+  logging: true, // Enable logging to see what's happening
   entities: [
     'dist/**/*.entity.js',
+    'dist/entities/*.entity.js',
   ],
   migrations: [],
   subscribers: [],
@@ -65,6 +66,33 @@ async function initializeDatabase() {
   log('='.repeat(80) + '\n', colors.blue);
 
   try {
+    // Step 0: Check if entities exist
+    const fs = require('fs');
+    const path = require('path');
+    
+    logInfo('Checking for entity files...');
+    const distPath = path.join(__dirname, 'dist');
+    
+    if (!fs.existsSync(distPath)) {
+      logError('dist folder not found! Application may not be built.');
+      process.exit(1);
+    }
+    
+    // Find entity files
+    const glob = require('glob');
+    const entityFiles = glob.sync('dist/**/*.entity.js', { cwd: __dirname });
+    logInfo(`Found ${entityFiles.length} entity files`);
+    
+    if (entityFiles.length === 0) {
+      logError('No entity files found in dist folder!');
+      logInfo('Entity search paths:');
+      logInfo('  - dist/**/*.entity.js');
+      logInfo('  - dist/entities/*.entity.js');
+      process.exit(1);
+    }
+    
+    logInfo('Sample entities: ' + entityFiles.slice(0, 5).join(', '));
+
     // Step 1: Connect and synchronize
     logInfo('Connecting to database...');
     logInfo(`Database: ${process.env.DB_NAME}@${process.env.DB_HOST}:${process.env.DB_PORT}`);
