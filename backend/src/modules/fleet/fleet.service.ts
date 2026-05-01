@@ -8,8 +8,8 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import {
   Truck,
   VehicleStatus,
@@ -48,6 +48,7 @@ export class FleetService {
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly emailService: EmailService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   // Truck operations
@@ -2886,7 +2887,7 @@ export class FleetService {
   // Fleet analytics
   async getFleetAnalytics(tenantId: string, userId: string, userRole?: string) {
     try {
-      console.log('📊 FleetService: Fetching analytics...', { tenantId, userId, userRole });
+      console.log('📊 FleetService: Fetching enhanced analytics...', { tenantId, userId, userRole });
       
       const trucks = await this.findAllTrucks(tenantId, userId);
       const drivers = await this.findAllDrivers(tenantId, userId, {}, userRole);
@@ -2909,6 +2910,20 @@ export class FleetService {
       const totalAverageDriverRating = drivers ? drivers.reduce((sum, d) => sum + Number(d.rating || 0), 0) : 0;
       const averageDriverRating = totalDrivers > 0 ? totalAverageDriverRating / totalDrivers : 0;
 
+      // Calculate utilization
+      const utilizationRate = totalTrucks > 0 ? Math.round(((totalTrucks - availableTrucks) / totalTrucks) * 100) : 0;
+
+      // Cargo Type Coverage
+      const cargoTypeMap: Record<string, number> = {};
+      trucks?.forEach(t => {
+        const type = t.truckType || 'Standard';
+        cargoTypeMap[type] = (cargoTypeMap[type] || 0) + 1;
+      });
+      const cargoTypeCoverage = Object.entries(cargoTypeMap).map(([name, value]) => ({ name, value }));
+
+      // Revenue vs Cost Trend (Last 7 days)
+      const revenueTrend = await this.calculateRevenueTrend(tenantId);
+
       return {
         totalTrucks,
         availableTrucks,
@@ -2917,10 +2932,12 @@ export class FleetService {
         totalCapacity: totalCapacityWeight,
         averageTruckRating,
         averageDriverRating,
+        utilizationRate,
+        cargoTypeCoverage,
+        revenueTrend,
       };
     } catch (error) {
-      console.error('❌ Error calculating getFleetAnalytics:', error);
-      // Return safe defaults instead of crashing if possible
+      this.logger.error('❌ Error calculating getFleetAnalytics:', error);
       return {
         totalTrucks: 0,
         availableTrucks: 0,
@@ -2929,9 +2946,153 @@ export class FleetService {
         totalCapacity: 0,
         averageTruckRating: 0,
         averageDriverRating: 0,
+        utilizationRate: 0,
+        cargoTypeCoverage: [],
+        revenueTrend: [],
         isPartial: true
       };
     }
+  }
+
+  private async calculateRevenueTrend(tenantId: string): Promise<any[]> {
+    const days = 7;
+    const trend = [];
+    const now = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+      // Revenue from payments (tenantId, createdAt)
+      const revenueResult = await this.dataSource.query(
+        `SELECT SUM(amount) as total FROM payments WHERE "tenantId" = $1 AND DATE("createdAt") = $2 AND status = 'completed'`,
+        [tenantId, dateStr]
+      );
+
+      // Costs from fuel and maintenance logs
+      const fuelCostResult = await this.dataSource.query(
+        `SELECT SUM(total_cost) as total FROM fuel_logs WHERE "tenant_id" = $1 AND DATE(fuel_date) = $2`,
+        [tenantId, dateStr]
+      );
+      
+      const maintCostResult = await this.dataSource.query(
+        `SELECT SUM(cost) as total FROM maintenance_logs WHERE "tenantId" = $1 AND DATE("createdAt") = $2`,
+        [tenantId, dateStr]
+      );
+
+      const revenue = Number(revenueResult[0]?.total || 0);
+      const cost = Number(fuelCostResult[0]?.total || 0) + Number(maintCostResult[0]?.total || 0);
+
+      trend.push({
+        name: dayLabel,
+        revenue,
+        cost,
+        profit: revenue - cost
+      });
+    }
+
+    return trend;
+  }
+
+  async getTCOAnalysis(tenantId: string, userId: string, role: string) {
+    const isAdmin = ['TENANT_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'FLEET_MANAGER', 'FLEET_ACCOUNTANT'].includes(role);
+
+    try {
+      // Get trucks for this user
+      const trucks = await this.dataSource.query(
+        `SELECT id, "plateNumber", mileage FROM trucks WHERE "tenantId" = $1 AND "isActive" = true AND deleted_at IS NULL ${isAdmin ? '' : 'AND "ownerId" = $2'}`,
+        isAdmin ? [tenantId] : [tenantId, userId],
+      );
+
+      // Fuel costs
+      const fuelRows = await this.dataSource.query(
+        `SELECT COALESCE(SUM(total_cost), 0) as total, truck_id FROM fuel_logs WHERE "tenant_id" = $1 GROUP BY truck_id`,
+        [tenantId],
+      ).catch(() => []);
+
+      // Maintenance costs
+      const maintRows = await this.dataSource.query(
+        `SELECT COALESCE(SUM(cost), 0) as total, "truckId" FROM maintenance_logs WHERE "tenantId" = $1 GROUP BY "truckId"`,
+        [tenantId],
+      ).catch(() => []);
+
+      // Expense costs
+      const expenseRows = await this.dataSource.query(
+        `SELECT COALESCE(SUM(amount), 0) as total, type FROM expenses WHERE "tenantId" = $1 GROUP BY type`,
+        [tenantId],
+      ).catch(() => []);
+
+      const totalFuel = fuelRows.reduce((s: number, r: any) => s + Number(r.total), 0);
+      const totalMaint = maintRows.reduce((s: number, r: any) => s + Number(r.total), 0);
+      const totalExpensesValue = expenseRows.reduce((s: number, r: any) => s + Number(r.total), 0);
+      const laborExpenses = expenseRows.filter((r: any) => r.type === 'driver').reduce((s: number, r: any) => s + Number(r.total), 0);
+      const fixedExpenses = totalExpensesValue - laborExpenses;
+      const totalCost = totalFuel + totalMaint + fixedExpenses + laborExpenses;
+
+      // Monthly Trends (Last 6 months)
+      const monthlyTrends = await this.calculateMonthlyTCOTrends(tenantId);
+
+      return {
+        totalExpenses: totalCost,
+        costPerMile: trucks.length > 0
+          ? parseFloat((totalCost / Math.max(trucks.reduce((s: number, t: any) => s + (Number(t.mileage) || 0), 0), 1)).toFixed(4))
+          : 0,
+        breakdown: {
+          fuel: totalFuel,
+          maintenance: totalMaint,
+          fixed: fixedExpenses,
+          labor: laborExpenses,
+        },
+        monthlyTrends,
+      };
+    } catch (error) {
+      this.logger.error(`TCO analysis failed: ${error.message}`);
+      return {
+        totalExpenses: 0,
+        costPerMile: 0,
+        breakdown: { fuel: 0, maintenance: 0, fixed: 0, labor: 0 },
+        monthlyTrends: [],
+      };
+    }
+  }
+
+  private async calculateMonthlyTCOTrends(tenantId: string): Promise<any[]> {
+    const months = 6;
+    const trends = [];
+    const now = new Date();
+
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthLabel = d.toLocaleDateString('en-US', { month: 'short' });
+      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+      const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
+
+      const fuel = await this.dataSource.query(
+        `SELECT SUM(total_cost) as total FROM fuel_logs WHERE "tenant_id" = $1 AND fuel_date >= $2 AND fuel_date < $3`,
+        [tenantId, monthStart, nextMonth]
+      );
+
+      const maint = await this.dataSource.query(
+        `SELECT SUM(cost) as total FROM maintenance_logs WHERE "tenantId" = $1 AND "createdAt" >= $2 AND "createdAt" < $3`,
+        [tenantId, monthStart, nextMonth]
+      );
+
+      const exp = await this.dataSource.query(
+        `SELECT SUM(amount) as total FROM expenses WHERE "tenantId" = $1 AND "createdAt" >= $2 AND "createdAt" < $3`,
+        [tenantId, monthStart, nextMonth]
+      );
+
+      const total = Number(fuel[0]?.total || 0) + Number(maint[0]?.total || 0) + Number(exp[0]?.total || 0);
+
+      trends.push({
+        month: monthLabel,
+        total: Math.round(total)
+      });
+    }
+
+    return trends;
   }
 
   // Route-Truck Assignment Methods

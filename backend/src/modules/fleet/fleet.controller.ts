@@ -2890,98 +2890,24 @@ export class FleetController {
       req.user.role,
     );
     return {
+      success: true,
+      data: analytics,
       message: 'Fleet analytics retrieved successfully',
-      analytics,
     };
   }
 
   @Get('analytics/tco')
   @ApiOperation({ summary: 'Get Total Cost of Ownership analysis' })
   async getTCOAnalysis(@Request() req) {
-    const tenantId = req.user.tenantId;
-    const userId = req.user.userId;
-    const isAdmin = ['TENANT_ADMIN', 'ADMIN', 'SUPER_ADMIN', 'FLEET_MANAGER', 'FLEET_ACCOUNTANT'].includes(req.user.role);
-
-    try {
-      // Get trucks for this user
-      const trucks = await this.dataSource.query(
-        `SELECT id, "plateNumber", mileage FROM trucks WHERE "tenantId" = $1 AND "isActive" = true AND deleted_at IS NULL ${isAdmin ? '' : 'AND "ownerId" = $2'}`,
-        isAdmin ? [tenantId] : [tenantId, userId],
-      );
-
-      // Fuel costs from fuel_logs
-      const fuelRows = await this.dataSource.query(
-        `SELECT COALESCE(SUM(total_cost), 0) as total, truck_id FROM fuel_logs WHERE "tenant_id" = $1 GROUP BY truck_id`,
-        [tenantId],
-      ).catch(() => []);
-
-      // Maintenance costs from maintenance_logs
-      const maintRows = await this.dataSource.query(
-        `SELECT COALESCE(SUM(cost), 0) as total, "truckId" FROM maintenance_logs WHERE "tenantId" = $1 GROUP BY "truckId"`,
-        [tenantId],
-      ).catch(() => []);
-
-      // Expense costs from expenses table
-      const expenseRows = await this.dataSource.query(
-        `SELECT COALESCE(SUM(amount), 0) as total, type FROM expenses WHERE "tenantId" = $1 GROUP BY type`,
-        [tenantId],
-      ).catch(() => []);
-
-      const totalFuel = fuelRows.reduce((s: number, r: any) => s + Number(r.total), 0);
-      const totalMaint = maintRows.reduce((s: number, r: any) => s + Number(r.total), 0);
-      const totalExpenses = expenseRows.reduce((s: number, r: any) => s + Number(r.total), 0);
-      const laborExpenses = expenseRows.filter((r: any) => r.type === 'driver').reduce((s: number, r: any) => s + Number(r.total), 0);
-      const fixedExpenses = totalExpenses - laborExpenses;
-      const totalCost = totalFuel + totalMaint + fixedExpenses + laborExpenses;
-
-      // Build per-vehicle breakdown
-      const fuelByTruck: Record<string, number> = {};
-      fuelRows.forEach((r: any) => { fuelByTruck[r.truck_id] = Number(r.total); });
-      const maintByTruck: Record<string, number> = {};
-      maintRows.forEach((r: any) => { maintByTruck[r.truckId] = Number(r.total); });
-
-      const vehicleBreakdown = trucks.map((t: any) => {
-        const truckFuel = fuelByTruck[t.id] || 0;
-        const truckMaint = maintByTruck[t.id] || 0;
-        const truckTotal = truckFuel + truckMaint;
-        const miles = Number(t.mileage) || 1;
-        const topCat = truckFuel >= truckMaint ? 'fuel' : 'maintenance';
-        return {
-          truckId: t.id,
-          plateNumber: t.plateNumber,
-          cpm: parseFloat((truckTotal / miles).toFixed(4)),
-          totalCost: truckTotal,
-          topExpenseCategory: topCat,
-        };
-      });
-
-      return {
-        fuelCost: totalFuel,
-        maintenanceCost: totalMaint,
-        insuranceCost: 0,
-        otherCosts: fixedExpenses,
-        totalCost: totalCost || 1, // avoid division by zero in frontend
-        costPerMile: trucks.length > 0
-          ? parseFloat((totalCost / Math.max(trucks.reduce((s: number, t: any) => s + (Number(t.mileage) || 0), 0), 1)).toFixed(4))
-          : 0,
-        breakdown: {
-          fuel: totalFuel,
-          maintenance: totalMaint,
-          fixed: fixedExpenses,
-          labor: laborExpenses,
-        },
-        vehicleBreakdown,
-      };
-    } catch (error) {
-      this.logger.error(`TCO analysis failed: ${error.message}`);
-      // Return zeros so the frontend chart doesn't crash
-      return {
-        fuelCost: 0, maintenanceCost: 0, insuranceCost: 0, otherCosts: 0,
-        totalCost: 1, costPerMile: 0,
-        breakdown: { fuel: 0, maintenance: 0, fixed: 0, labor: 0 },
-        vehicleBreakdown: [],
-      };
-    }
+    const data = await this.fleetService.getTCOAnalysis(
+      req.user.tenantId,
+      req.user.userId,
+      req.user.role,
+    );
+    return {
+      success: true,
+      data,
+    };
   }
 
   // Bulk operations

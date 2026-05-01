@@ -326,7 +326,7 @@ const AdminDashboard: React.FC = () => {
               <div key={trip.id || index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-gray-700">
-                  New trip: {trip.origin} → {trip.destination}
+                  New trip: {typeof trip.origin === 'object' ? (trip.origin?.city || trip.origin?.address || 'Origin') : (trip.origin || 'Origin')} → {typeof trip.destination === 'object' ? (trip.destination?.city || trip.destination?.address || 'Destination') : (trip.destination || 'Destination')}
                 </span>
                 <span className="text-xs text-gray-500 ml-auto">
                   {new Date(trip.createdAt).toLocaleTimeString()}

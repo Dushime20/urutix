@@ -26,6 +26,16 @@ const AdminLoads: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
+  /** Safely extract a display string from a location field that may be a string or an object */
+  const locStr = (loc: any): string => {
+    if (!loc) return '';
+    if (typeof loc === 'string') return loc;
+    if (typeof loc === 'object') {
+      return loc.city || loc.address || loc.name || `${loc.lat ?? ''},${loc.lng ?? ''}`;
+    }
+    return String(loc);
+  };
+
   // Fetch loads data
   useEffect(() => {
     const fetchLoads = async () => {
@@ -60,8 +70,8 @@ const AdminLoads: React.FC = () => {
     if (searchTerm) {
       filtered = filtered.filter(load =>
         load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.origin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.destination?.toLowerCase().includes(searchTerm.toLowerCase())
+        locStr(load.origin).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        locStr(load.destination).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -334,8 +344,8 @@ const AdminLoads: React.FC = () => {
                         <div className="flex items-center text-sm text-gray-900">
                           <FaMapMarkerAlt className="text-gray-400 mr-2" />
                           <div>
-                            <div className="font-medium">{load.origin || 'Unknown'}</div>
-                            <div className="text-gray-500">→ {load.destination || 'Unknown'}</div>
+                            <div className="font-medium">{locStr(load.origin) || 'Unknown'}</div>
+                            <div className="text-gray-500">→ {locStr(load.destination) || 'Unknown'}</div>
                           </div>
                         </div>
                       </td>

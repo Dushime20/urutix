@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart3,
   Truck,
@@ -13,15 +13,40 @@ import {
   TrendingUp,
   AlertCircle,
   Fuel,
-  Cpu
+  Cpu,
+  DollarSign,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Search,
+  Layout
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
+import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 interface TruckAnalyticsProps {
   trucks: any[];
+  analytics?: any;
+  fuelStats?: any;
+  tcoData?: any;
 }
 
-export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
+export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks, analytics, fuelStats, tcoData }) => {
   const calculateCargoAlignmentStats = () => {
     const stats = {
       totalTrucks: trucks.length,
@@ -55,23 +80,21 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
         cargoMonitoring: 0,
       },
       temperatureRanges: {
-        frozen: 0, // -40 to -10
-        chilled: 0, // -10 to 5
-        ambient: 0, // 5 to 25
-        heated: 0, // 25+
+        frozen: 0,
+        chilled: 0,
+        ambient: 0,
+        heated: 0,
       },
     };
 
     trucks.forEach(truck => {
       if (truck.cargoCapabilities) {
-        // Cargo type coverage
         truck.cargoCapabilities.supportedCargoTypes?.forEach((type: string) => {
           if (stats.cargoTypeCoverage[type as keyof typeof stats.cargoTypeCoverage] !== undefined) {
             stats.cargoTypeCoverage[type as keyof typeof stats.cargoTypeCoverage]++;
           }
         });
 
-        // Special handling capabilities
         if (truck.cargoCapabilities.maxFragileHandling) stats.specialHandling.fragile++;
         if (truck.cargoCapabilities.maxHazardousHandling) stats.specialHandling.hazardous++;
         if (truck.cargoCapabilities.maxRefrigeratedHandling) stats.specialHandling.refrigerated++;
@@ -79,7 +102,6 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
         if (truck.cargoCapabilities.maxOversizedHandling) stats.specialHandling.oversized++;
         if (truck.cargoCapabilities.maxValuableHandling) stats.specialHandling.valuable++;
 
-        // Temperature range analysis
         if (truck.cargoCapabilities.temperatureRange) {
           const { min, max } = truck.cargoCapabilities.temperatureRange;
           if (min <= -10 && max <= -10) stats.temperatureRanges.frozen++;
@@ -109,284 +131,425 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks }) => {
 
   const stats = calculateCargoAlignmentStats();
 
-  const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string; value: number; icon: any; color: string; trend?: string }) => (
-    <motion.div
-      whileHover={{ y: -5 }}
-      className={`bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 relative overflow-hidden group`}
-    >
-      <div className={`absolute top-0 right-0 p-10 opacity-[0.03] -mr-4 -mt-4 group-hover:scale-110 transition-transform duration-500`}>
-        <Icon size={80} />
-      </div>
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`size-10 rounded-xl flex items-center justify-center ${color} shadow-inner`}>
-            <Icon size={20} />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 transition-colors duration-200">{title}</span>
-        </div>
-        <div className="flex items-end gap-3">
-          <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight transition-colors duration-200">{value}</p>
-          {trend && (
-            <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500 mb-1.5 uppercase tracking-wider">
-              <TrendingUp size={12} />
-              {trend}
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      maximumFractionDigits: 0
+    }).format(val);
+  };
+
+  // Trend Data for Charts - Derived from props
+  const trendData = useMemo(() => {
+    if (fuelStats?.dailyTrend) {
+      return fuelStats.dailyTrend.map((d: any) => ({
+        name: d.name,
+        earnings: d.revenue || 0, // Fallback if revenue is not in fuelStats
+        costs: d.cost || 0
+      }));
+    }
+    if (analytics?.revenueTrend) {
+       return analytics.revenueTrend.map((d: any) => ({
+         name: d.date || d.name,
+         earnings: d.revenue || 0,
+         costs: d.expense || 0
+       }));
+    }
+    return [];
+  }, [fuelStats, analytics]);
+
+  const tcoPieData = useMemo(() => {
+    if (tcoData?.breakdown) {
+      return [
+        { name: 'Fuel', value: tcoData.breakdown.fuel || 0, color: '#3b82f6' },
+        { name: 'Maintenance', value: tcoData.breakdown.maintenance || 0, color: '#fbbf24' },
+        { name: 'Driver Labor', value: tcoData.breakdown.labor || 0, color: '#10b981' },
+        { name: 'Insurance & Fees', value: tcoData.breakdown.fixed || 0, color: '#f43f5e' },
+      ].filter(item => item.value > 0);
+    }
+    return [];
+  }, [tcoData]);
 
   const ProgressBar = ({ label, value, total, color, icon: Icon }: { label: string; value: number; total: number; color: string; icon?: any }) => {
     const percentage = total > 0 ? (value / total) * 100 : 0;
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex justify-between items-end">
           <div className="flex items-center gap-2">
             {Icon && <Icon size={14} className="text-slate-400 dark:text-slate-500" />}
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-sm font-black text-slate-900 dark:text-white">{value}</span>
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">/ {total}</span>
           </div>
         </div>
-        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 relative overflow-hidden">
+        <div className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-full h-1.5 relative overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className={`h-full rounded-full ${color} shadow-sm relative`}
+            transition={{ duration: 1.5, ease: "circOut" }}
+            className={`h-full rounded-full ${color} relative`}
           >
-            <div className="absolute inset-0 bg-white/20 dark:bg-black/10 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
           </motion.div>
         </div>
       </div>
     );
   };
 
+  const InsightCard = ({ title, desc, icon: Icon, color }: { title: string; desc: string; icon: any; color: string }) => (
+    <div className="flex items-start gap-4 p-5 bg-white/5 dark:bg-slate-800/40 rounded-2xl border border-white/5 hover:border-white/10 hover:bg-white/10 dark:hover:bg-slate-800/60 transition-all group cursor-default">
+      <div className={`p-3 rounded-xl ${color} bg-opacity-10 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform`}>
+        <Icon size={18} className={color.replace('bg-', 'text-')} />
+      </div>
+      <div>
+        <h4 className={`text-[11px] font-black uppercase tracking-widest mb-1 ${color.replace('bg-', 'text-')}`}>{title}</h4>
+        <p className="text-xs font-medium text-white/70 dark:text-slate-300 leading-relaxed">{desc}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-8 pb-12">
-      {/* Header Matrix */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-gray-900 p-8 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
-        <div className="flex items-center gap-5">
-          <div className="size-14 bg-blue-50 dark:bg-blue-950/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 transition-colors duration-200">
-            <BarChart3 size={28} />
-          </div>
-          <div>
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400 mb-1 transition-colors duration-200">Fleet Overview</h2>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight transition-colors duration-200">Fleet Capabilities</h1>
-          </div>
+    <div className="space-y-10 pb-20">
+      {/* Premium Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-900/40 dark:to-indigo-900/40 p-10 rounded-3xl border border-white/10 shadow-2xl">
+        <div className="absolute top-0 right-0 p-20 opacity-[0.05] grayscale rotate-12 -mr-10 -mt-10">
+          <Activity size={240} />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col transition-colors duration-200">
-            <span className="text-[8px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none mb-1 transition-colors duration-200">Status</span>
-            <span className="text-xs font-black text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider transition-colors duration-200">
-              <div className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-              Live
-            </span>
+        
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white">
+                <BarChart3 size={24} />
+              </div>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-100/60">Executive Intelligence</h2>
+            </div>
+            <h1 className="text-4xl font-black text-white tracking-tight">Fleet Capabilities & Analytics</h1>
+            <p className="text-blue-100/70 font-medium max-w-xl text-lg">
+              Comprehensive operational overview and strategic performance metrics for your transport infrastructure.
+            </p>
           </div>
-          <button className="h-12 px-6 bg-gray-900 dark:bg-gray-800 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2">
-            <Cpu size={14} />
-            Refresh Data
-          </button>
+
+          <div className="flex items-center gap-4">
+            <div className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex flex-col">
+              <span className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">System Health</span>
+              <span className="text-emerald-400 font-black flex items-center gap-2 uppercase tracking-wider text-sm">
+                <div className="size-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                Live Monitoring
+              </span>
+            </div>
+            <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl active:scale-95 flex items-center gap-3">
+              <Cpu size={16} />
+              Recompute Matrix
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Primary Stat Matrix */}
+      {/* KPI Layer */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Total Trucks"
-          value={stats.totalTrucks}
-          icon={Truck}
-          color="bg-blue-50 text-blue-600"
-          trend="+12% Usage"
+          variant="premium"
+          title="Fleet Utilization"
+          value={`${analytics?.utilizationRate || 0}%`}
+          icon={<Activity />}
+          color="primary"
+          subtitle="Real-time occupancy"
         />
         <StatCard
-          title="GPS Enabled"
-          value={stats.securityFeatures.gps}
-          icon={ShieldCheck}
-          color="bg-emerald-50 text-emerald-600"
-          trend="92% Coverage"
+          variant="premium"
+          title="Fuel Efficiency"
+          value={`${fuelStats?.avgConsumption?.toFixed(1) || '0.0'} L/100km`}
+          icon={<Fuel />}
+          color="emerald"
+          subtitle="Fleet-wide average"
         />
         <StatCard
-          title="Refrigerated"
-          value={stats.specialHandling.refrigerated}
-          icon={Thermometer}
-          color="bg-cyan-50 text-cyan-600"
+          variant="premium"
+          title="Est. Monthly TCO"
+          value={formatCurrency(analytics?.totalRevenue ? analytics.totalRevenue * 0.65 : (tcoData?.totalExpenses || 0))}
+          icon={<DollarSign />}
+          color="purple"
+          subtitle="Operating expenses"
         />
         <StatCard
-          title="Hazardous Certs"
-          value={stats.specialHandling.hazardous}
-          icon={Box}
-          color="bg-rose-50 text-rose-600"
+          variant="premium"
+          title="Security Coverage"
+          value={`${stats.totalTrucks > 0 ? Math.round((stats.securityFeatures.gps / stats.totalTrucks) * 100) : 0}%`}
+          icon={<ShieldCheck />}
+          color="accent"
+          subtitle="Active hardware units"
         />
       </div>
 
-      {/* Coverage Analysis Matrix */}
+      {/* Analytics Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cargo Specialization */}
+        {/* Financial Intelligence */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-8 col-span-2 transition-colors duration-200"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 lg:col-span-2 shadow-sm"
         >
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="size-10 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 transition-colors duration-200">
-                <Layers size={20} />
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-blue-600 dark:text-blue-400">
+                <TrendingUp size={24} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight transition-colors duration-200">Cargo Capabilities</h3>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-0.5 transition-colors duration-200">Distribution of cargo types</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Revenue vs Operating Costs</h3>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-1">Weekly Profitability Analysis</p>
               </div>
             </div>
+            {trendData.length > 0 && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-blue-500" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Earnings</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-indigo-200 dark:bg-indigo-800" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Costs</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-            <ProgressBar label="General Cargo" value={stats.cargoTypeCoverage.GENERAL} total={stats.totalTrucks} color="bg-blue-500" icon={Box} />
-            <ProgressBar label="Fragile Goods" value={stats.cargoTypeCoverage.FRAGILE} total={stats.totalTrucks} color="bg-amber-500" icon={Activity} />
-            <ProgressBar label="Hazardous" value={stats.cargoTypeCoverage.HAZARDOUS} total={stats.totalTrucks} color="bg-rose-500" icon={AlertCircle} />
-            <ProgressBar label="Refrigerated" value={stats.cargoTypeCoverage.REFRIGERATED} total={stats.totalTrucks} color="bg-cyan-500" icon={Thermometer} />
-            <ProgressBar label="Liquid Loads" value={stats.cargoTypeCoverage.LIQUID} total={stats.totalTrucks} color="bg-emerald-500" icon={Fuel} />
-            <ProgressBar label="Oversized Cargo" value={stats.cargoTypeCoverage.OVERSIZED} total={stats.totalTrucks} color="bg-purple-500" icon={TrendingUp} />
+          <div className="h-[300px] w-full flex items-center justify-center">
+            {trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1e293b', 
+                      border: 'none', 
+                      borderRadius: '12px', 
+                      color: '#fff',
+                      fontSize: '12px',
+                      fontWeight: '800'
+                    }}
+                    itemStyle={{ color: '#fff' }}
+                    cursor={{ stroke: '#3b82f6', strokeWidth: 2 }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="earnings" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorEarnings)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="costs" 
+                    stroke="#e2e8f0" 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                    fill="transparent" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center space-y-2">
+                <BarChart3 className="mx-auto text-slate-200 dark:text-slate-800" size={48} />
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Insufficient performance data for trend analysis</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Security & Hardware */}
+        {/* Cost Composition (TCO) */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-gray-900 dark:bg-black rounded-lg p-8 text-white border border-gray-800 dark:border-gray-900 relative overflow-hidden transition-colors duration-200"
+          className="bg-slate-900 rounded-3xl p-8 text-white border border-slate-800 relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 p-16 opacity-[0.05] grayscale -mr-8 -mt-8">
-            <ShieldCheck size={140} />
-          </div>
-
-          <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="size-10 bg-white/10 rounded-[14px] flex items-center justify-center text-white shadow-inner">
-                <ShieldCheck size={20} />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-white/10 rounded-2xl text-white shadow-inner">
+                <DollarSign size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-black tracking-tight">Fleet Security</h3>
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-0.5">Hardware & Tracking Status</p>
+                <h3 className="text-xl font-black tracking-tight">TCO Breakdown</h3>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-1">Total Cost of Ownership</p>
               </div>
             </div>
 
-            <div className="space-y-8 mt-10">
-              <ProgressBar label="GPS Tracking" value={stats.securityFeatures.gps} total={stats.totalTrucks} color="bg-white" />
-              <ProgressBar label="Data Feed" value={stats.securityFeatures.tracking} total={stats.totalTrucks} color="bg-blue-400" />
-              <ProgressBar label="Temperature Alerts" value={stats.securityFeatures.temperatureMonitoring} total={stats.totalTrucks} color="bg-rose-400" />
-              <ProgressBar label="Cargo Monitoring" value={stats.securityFeatures.cargoMonitoring} total={stats.totalTrucks} color="bg-emerald-400" />
+            <div className="flex-1 flex flex-col items-center justify-center py-4">
+              {tcoPieData.length > 0 ? (
+                <>
+                  <div className="h-[200px] w-full relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={tcoPieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={8}
+                          dataKey="value"
+                        >
+                          {tcoPieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total</span>
+                      <span className="text-2xl font-black">{tcoData?.totalExpenses ? formatCurrency(tcoData.totalExpenses) : '---'}</span>
+                    </div>
+                  </div>
+
+                  <div className="w-full space-y-3 mt-6">
+                    {tcoPieData.map((item) => (
+                      <div key={item.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.name}</span>
+                        </div>
+                        <span className="text-xs font-black">{item.value}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="size-24 rounded-full border-4 border-dashed border-slate-800 mx-auto flex items-center justify-center">
+                    <DollarSign className="text-slate-700" size={32} />
+                  </div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">No cost distribution data available</p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Equipment & Thermal Analysis */}
+      {/* Capabilities Layer */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Loading Equipment */}
-        <div className="bg-white dark:bg-gray-900 rounded-[40px] border border-slate-100 dark:border-gray-800 shadow-sm p-8 transition-colors duration-200">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-[14px] flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-inner">
-              <Wrench size={20} />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Loading Equipment</h3>
-              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-0.5">Onboard Tools & Hardware</p>
+        {/* Cargo Specialization */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                <Layers size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Operational Portfolio</h3>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-1">Asset Specialization Matrix</p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <ProgressBar label="Forklift Available" value={stats.equipmentCoverage.forklift} total={stats.totalTrucks} color="bg-slate-700 dark:bg-slate-600" />
-            <ProgressBar label="Crane Available" value={stats.equipmentCoverage.crane} total={stats.totalTrucks} color="bg-slate-700 dark:bg-slate-600" />
-            <ProgressBar label="Tail Lift Available" value={stats.equipmentCoverage.tailLift} total={stats.totalTrucks} color="bg-slate-700 dark:bg-slate-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+            <ProgressBar label="General Logistics" value={stats.cargoTypeCoverage.GENERAL} total={stats.totalTrucks} color="bg-blue-500" icon={Box} />
+            <ProgressBar label="Cold Chain" value={stats.cargoTypeCoverage.REFRIGERATED} total={stats.totalTrucks} color="bg-cyan-500" icon={Thermometer} />
+            <ProgressBar label="Fragile Handling" value={stats.cargoTypeCoverage.FRAGILE} total={stats.totalTrucks} color="bg-amber-500" icon={Activity} />
+            <ProgressBar label="Hazardous Material" value={stats.cargoTypeCoverage.HAZARDOUS} total={stats.totalTrucks} color="bg-rose-500" icon={AlertCircle} />
+            <ProgressBar label="Liquid Logistics" value={stats.cargoTypeCoverage.LIQUID} total={stats.totalTrucks} color="bg-emerald-500" icon={Fuel} />
+            <ProgressBar label="Oversized Cargo" value={stats.cargoTypeCoverage.OVERSIZED} total={stats.totalTrucks} color="bg-purple-500" icon={TrendingUp} />
           </div>
         </div>
 
-        {/* Thermal Layers */}
-        <div className="bg-white dark:bg-gray-900 rounded-[40px] border border-slate-100 dark:border-gray-800 shadow-sm p-8 transition-colors duration-200">
+        {/* Thermal Infrastructure */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
           <div className="flex items-center gap-4 mb-8">
-            <div className="size-10 bg-cyan-50 dark:bg-cyan-950/20 rounded-[14px] flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-inner">
-              <Thermometer size={20} />
+            <div className="p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl text-cyan-600 dark:text-cyan-400">
+              <Thermometer size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Temperature Zones</h3>
-              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-0.5">Cold Chain Capabilities</p>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Thermal Control Grid</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-1">Temperature-Regulated Capacity</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
-              <div className="text-2xl font-black mb-1">{stats.temperatureRanges.frozen}</div>
-              <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Frozen Zone</div>
-            </div>
-            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-cyan-500 dark:hover:bg-cyan-500 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
-              <div className="text-2xl font-black mb-1">{stats.temperatureRanges.chilled}</div>
-              <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Chilled Zone</div>
-            </div>
-            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-emerald-500 dark:hover:bg-emerald-500 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
-              <div className="text-2xl font-black mb-1">{stats.temperatureRanges.ambient}</div>
-              <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Ambient Zone</div>
-            </div>
-            <div className="bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-[24px] text-center border border-slate-50 dark:border-slate-700 group hover:bg-rose-500 dark:hover:bg-rose-500 hover:text-white transition-all cursor-default text-slate-900 dark:text-white">
-              <div className="text-2xl font-black mb-1">{stats.temperatureRanges.heated}</div>
-              <div className="text-[8px] font-black uppercase tracking-widest opacity-60">Heated Zone</div>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'Frozen Zone', val: stats.temperatureRanges.frozen, sub: '-40°C to -10°C', color: 'blue' },
+              { label: 'Chilled Zone', val: stats.temperatureRanges.chilled, sub: '-10°C to 5°C', color: 'cyan' },
+              { label: 'Ambient Zone', val: stats.temperatureRanges.ambient, sub: '5°C to 25°C', color: 'emerald' },
+              { label: 'Heated Zone', val: stats.temperatureRanges.heated, sub: '25°C+', color: 'rose' }
+            ].map(zone => (
+              <div key={zone.label} className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-blue-400 transition-colors group">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-2xl font-black text-slate-900 dark:text-white">{zone.val}</span>
+                  <div className={`size-1.5 rounded-full bg-${zone.color}-500 animate-pulse`} />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-500 transition-colors">{zone.label}</p>
+                <p className="text-[9px] font-bold text-slate-400/60 mt-1">{zone.sub}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Strategic Intelligence Feed */}
-      <div className="bg-gradient-to-br from-[#1A1C1E] to-[#2D3135] rounded-[40px] p-8 text-white shadow-2xl border border-white/5 relative overflow-hidden">
-        <div className="absolute bottom-0 right-0 p-16 opacity-[0.05] grayscale rotate-12 -mr-10 -mb-10">
-          <TrendingUp size={160} />
+      {/* Strategic Intelligence */}
+      <div className="bg-gradient-to-br from-slate-900 to-black rounded-[40px] p-10 text-white shadow-2xl border border-white/5 relative overflow-hidden">
+        <div className="absolute bottom-0 right-0 p-20 opacity-[0.03] grayscale rotate-12 -mr-16 -mb-16">
+          <TrendingUp size={240} />
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="size-10 bg-white/10 rounded-[14px] flex items-center justify-center text-white shadow-inner">
-              <Cpu size={20} />
+          <div className="flex items-center gap-5 mb-10">
+            <div className="p-4 bg-white/10 rounded-2xl text-white backdrop-blur-md border border-white/10 shadow-xl">
+              <Zap size={24} className="text-amber-400 fill-amber-400" />
             </div>
-            <h3 className="text-lg font-black tracking-tight">Fleet Suggestions</h3>
+            <div>
+              <h3 className="text-2xl font-black tracking-tight">Predictive Intelligence Feed</h3>
+              <p className="text-[11px] font-black text-white/40 uppercase tracking-[0.3em] mt-1">Strategic Optimization Recommendations</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {stats.cargoTypeCoverage.HAZARDOUS < stats.totalTrucks * 0.3 && (
-              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
-                <AlertCircle className="text-rose-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-rose-400 mb-1">Low Hazardous Capacity</h4>
-                  <p className="text-xs font-medium text-white/60 leading-relaxed">Hazardous transport certification is below 30% of total units. Consider asset upgrading for more markets.</p>
-                </div>
-              </div>
-            )}
-            {stats.cargoTypeCoverage.REFRIGERATED < stats.totalTrucks * 0.4 && (
-              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
-                <Thermometer className="text-cyan-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-cyan-400 mb-1">Low Cold Capacity</h4>
-                  <p className="text-xs font-medium text-white/60 leading-relaxed">Refrigerated units are limited. Increasing cold-chain units will improve contract acquisition for perishable cargo.</p>
-                </div>
-              </div>
-            )}
-            {stats.securityFeatures.gps < stats.totalTrucks * 0.8 && (
-              <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group">
-                <Navigation className="text-blue-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-400 mb-1">Missing GPS Trackers</h4>
-                  <p className="text-xs font-medium text-white/60 leading-relaxed">GPS tracking is missing on several units. Full-fleet tracking is recommended for insurance compliance.</p>
-                </div>
-              </div>
-            )}
-            <div className="flex items-start gap-4 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 hover:bg-emerald-500/20 transition-all group">
-              <Zap className="text-emerald-400 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-              <div>
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-1">Fleet Strength</h4>
-                <p className="text-xs font-medium text-white/60 leading-relaxed">Current fleet configuration is great for general cargo logistics. Keep maintaining this balance.</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <InsightCard 
+              title="Capacity Expansion"
+              desc={stats.cargoTypeCoverage.HAZARDOUS < stats.totalTrucks * 0.3 
+                ? "Hazardous transport certification is below 30%. Consider asset upgrading for high-margin specialized markets."
+                : "Your hazardous transport capacity is well-positioned for market demands."}
+              icon={AlertCircle}
+              color="bg-rose-500"
+            />
+            <InsightCard 
+              title="Asset Optimization"
+              desc={analytics?.utilizationRate < 70
+                ? "Current fleet utilization is sub-optimal. Review route assignments and reduce idle time in the Eastern sector."
+                : "Excellent utilization rate. Maintaining current assignment density is recommended."}
+              icon={TrendingUp}
+              color="bg-blue-500"
+            />
+            <InsightCard 
+              title="Compliance Alert"
+              desc={stats.securityFeatures.gps < stats.totalTrucks * 0.9
+                ? "Security hardware gap detected on several units. Full GPS integration is critical for Tier-1 insurance compliance."
+                : "Hardware compliance is at peak levels. Security standards are fully met."}
+              icon={ShieldCheck}
+              color="bg-emerald-500"
+            />
           </div>
         </div>
       </div>

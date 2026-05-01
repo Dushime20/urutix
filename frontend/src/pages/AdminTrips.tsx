@@ -355,14 +355,15 @@ const AdminTrips: React.FC = () => {
       .filter((trip: Trip) => {
         if (!trip || typeof trip !== 'object') return false;
 
+        const locStr = (v: any) => typeof v === 'object' && v ? (v.city || v.address || '') : (v || '');
         const searchFields = [
           trip.reference,
           trip.driverName,
-          trip.origin,
-          trip.destination,
+          locStr(trip.origin),
+          locStr(trip.destination),
           trip.cargoType,
           trip.tenantName
-        ].filter(Boolean).map(field => field.toLowerCase());
+        ].filter(Boolean).map((field: string) => field.toLowerCase());
 
         const matchesSearch = searchTerm === '' || searchFields.some(field =>
           field.includes(searchTerm.toLowerCase())
@@ -618,10 +619,10 @@ const AdminTrips: React.FC = () => {
                           <div className="space-y-3">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2 text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">
-                                <FaMapMarkerAlt className="text-emerald-500 w-3 h-3" /> {(trip.origin || 'N/A').split(',')[0]}
+                                <FaMapMarkerAlt className="text-emerald-500 w-3 h-3" /> {(typeof trip.origin === 'object' ? (trip.origin?.city || trip.origin?.address || 'N/A') : (trip.origin || 'N/A')).split(',')[0]}
                               </div>
                               <div className="flex items-center gap-2 text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">
-                                <FaMapMarkerAlt className="text-rose-500 w-3 h-3" /> {(trip.destination || 'N/A').split(',')[0]}
+                                <FaMapMarkerAlt className="text-rose-500 w-3 h-3" /> {(typeof trip.destination === 'object' ? (trip.destination?.city || trip.destination?.address || 'N/A') : (trip.destination || 'N/A')).split(',')[0]}
                               </div>
                             </div>
                             <div className="space-y-1.5">

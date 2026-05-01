@@ -39,7 +39,8 @@ import DashboardHeader from '@/components/Layout/DashboardHeader';
 import DashboardFooter from '@/components/Layout/DashboardFooter';
 import 'leaflet/dist/leaflet.css';
 import { fleetApi } from '@/services/fleetApi';
-import type { Truck as ServiceTruck, Driver as ServiceDriver } from '@/services/fleetApi';
+import { fuelApi } from '@/services/fuelApi';
+import type { Truck as ServiceTruck, Driver as ServiceDriver, TCOAnalysis } from '@/services/fleetApi';
 import { authAPI } from '@/services/api';
 import type { FleetItem as LocalFleetItem } from '@/types/fleet';
 import { FleetStatus } from '@/types/fleet';
@@ -110,6 +111,8 @@ export const FleetDashboard: React.FC = () => {
   const [userProfileName, setUserProfileName] = useState<string | null>(null);
 
   const [analytics, setAnalytics] = useState<any>(null);
+  const [fuelStats, setFuelStats] = useState<any>(null);
+  const [tcoData, setTcoData] = useState<TCOAnalysis | null>(null);
   const [rawTrucks, setRawTrucks] = useState<any[]>([]);
   const [rawDrivers, setRawDrivers] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -244,7 +247,7 @@ export const FleetDashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [truckData, driverData, analyticsData] = await Promise.all([
+      const [truckData, driverData, analyticsData, fuelStatsData, tcoAnalyticsData] = await Promise.all([
         fleetApi.getTrucks({ limit: 100 }).catch(err => {
           console.warn('Failed to load trucks matrix:', err);
           return [];
@@ -255,6 +258,14 @@ export const FleetDashboard: React.FC = () => {
         }),
         fleetApi.fetchAnalytics().catch(err => {
           console.warn('Failed to load fleet analytics:', err);
+          return null;
+        }),
+        fuelApi.getFuelStatistics().catch(err => {
+          console.warn('Failed to load fuel statistics:', err);
+          return null;
+        }),
+        fleetApi.getTCOAnalysis().catch(err => {
+          console.warn('Failed to load TCO analysis:', err);
           return null;
         })
       ]);
@@ -272,6 +283,8 @@ export const FleetDashboard: React.FC = () => {
       
       setFleetItems(allData);
       setAnalytics(analyticsData);
+      setFuelStats(fuelStatsData);
+      setTcoData(tcoAnalyticsData);
     } catch (e) {
       console.error('Critical failure in core fleet data pipeline:', e);
       setError('Core data systems encountered an unexpected interruption. Partial data degraded.');
@@ -715,7 +728,12 @@ export const FleetDashboard: React.FC = () => {
                   </div>
                 )}
                 {activeTab === 'analytics' ? (
-                  <TruckAnalytics trucks={trucks} />
+                  <TruckAnalytics 
+                    trucks={trucks} 
+                    analytics={analytics} 
+                    fuelStats={fuelStats}
+                    tcoData={tcoData}
+                  />
                 ) : activeTab === 'safety' ? (
                   <SafetyManagement />
                 ) : (activeTab === 'financial' || activeTab === 'expenses' || activeTab === 'loans') ? (
