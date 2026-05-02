@@ -25,6 +25,7 @@ export class AddAllMissingColumns1770000000003 implements MigrationInterface {
             ['drivers', 'driverNotes', 'text'],
             ['drivers', 'experience', 'integer'],
             ['tenants', 'onboardingStep', 'integer'],
+            ['tenants', 'kycStatus', 'character varying'],
             ['tenants', 'kycData', 'jsonb'],
             ['user_profiles', 'kyc_reviewed_by', 'uuid'],
             ['user_profiles', 'kyc_notes', 'text'],
