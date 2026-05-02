@@ -37,23 +37,18 @@ async function seedAdmin() {
     if (tenantResult.length === 0) {
       console.log('📦 Creating Admin Global tenant...');
       const newTenant = await queryRunner.query(
-        `INSERT INTO tenants (name, status, "contactEmail", "contactPhone", address, city, state, country, "postalCode", type, "onboardingStep", "kycStatus", "kycData", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+        `INSERT INTO tenants (
+          name, status, "contactEmail", "contactPhone", address, city, state, country, "postalCode", type, 
+          "onboardingStep", "kycStatus", "kycData", 
+          settings, features, "billingInfo", "isActive", 
+          "createdAt", "updatedAt"
+        )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW())
          RETURNING id, name`,
         [
-          'Admin Global',
-          'ACTIVE',
-          'admin@urutix.com',
-          '+250788000000',
-          'Kigali Business Center',
-          'Kigali',
-          'Kigali City',
-          'Rwanda',
-          '00000',
-          'ENTERPRISE',
-          1,
-          'VERIFIED',
-          '{}'
+          'Admin Global', 'ACTIVE', 'admin@urutix.com', '+250788000000', 'Kigali Business Center', 'Kigali', 'Kigali City', 'Rwanda', '00000', 'ENTERPRISE',
+          1, 'VERIFIED', '{}', 
+          '{}', '{}', '{}', true
         ]
       );
       tenantId = newTenant[0].id;
@@ -105,16 +100,11 @@ async function seedAdmin() {
 
     const userResult = await queryRunner.query(
       `INSERT INTO users (
-        email, 
-        "passwordHash", 
-        role, 
-        status, 
-        "tenantId",
-        "emailVerifiedAt",
-        "createdAt", 
-        "updatedAt"
+        email, "passwordHash", role, status, "tenantId", 
+        "emailVerifiedAt", "twoFactorEnabled", "loginAttempts",
+        "createdAt", "updatedAt"
       )
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, NOW(), false, 0, NOW(), NOW())
       RETURNING id, email, role, status`,
       [
         'admin@urutix.com',
@@ -132,14 +122,19 @@ async function seedAdmin() {
     console.log('📝 Creating user profile...');
     await queryRunner.query(
       `INSERT INTO user_profiles (
-        "userId",
-        "tenantId",
-        "firstName",
-        "lastName",
-        "createdAt",
-        "updatedAt"
+        "userId", "tenantId", "firstName", "lastName", 
+        "insuranceInfo", "bankAccountInfo", "preferences", "kycStatus", "kycDocuments",
+        "rating", "totalTrips", "kyc_data", "compliance_score",
+        "background_check_completed", "business_verified", "financial_verified", "address_verified", "identity_verified",
+        "createdAt", "updatedAt"
       )
-      VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+      VALUES (
+        $1, $2, $3, $4, 
+        '{}', '{}', '{}', 'VERIFIED', '[]', 
+        0, 0, '{}', 100, 
+        true, true, true, true, true, 
+        NOW(), NOW()
+      )`,
       [user.id, tenantId, 'System', 'Administrator']
     );
     console.log('✅ User profile created');
