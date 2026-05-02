@@ -81,7 +81,6 @@ const AdminUsers: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [companyName, setCompanyName] = useState('');
   const [role, setRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN'>('CARGO_OWNER');
 
   // Edit form state
@@ -192,9 +191,9 @@ const AdminUsers: React.FC = () => {
         password: generatedPassword,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-      role: role,
-      phoneNumber: phoneNumber.trim() || undefined,
-      companyName: companyName.trim() || undefined
+        role: role,
+        phoneNumber: phoneNumber.trim() || undefined,
+        companyName: tenantId
       });
     },
     onSuccess: () => {
@@ -270,7 +269,6 @@ const AdminUsers: React.FC = () => {
     setFirstName('');
     setLastName('');
     setPhoneNumber('');
-    setCompanyName('');
     setRole('CARGO_OWNER');
   };
 
@@ -710,7 +708,7 @@ const AdminUsers: React.FC = () => {
                       value={tenantId}
                       onChange={(e) => setTenantId(e.target.value)}
                     >
-                      <option value=""><TranslatedText text="Select tenant" /></option>
+                      <option value="">Select tenant</option>
                       {tenants.map((tenant) => (
                         <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                       ))}
@@ -793,18 +791,7 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Enter company name (optional)"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                  />
-                </div>
+
 
                 <div className="bg-primary-50 border border-primary-200 rounded-lg p-2">
                   <div className="flex items-start gap-1.5">
@@ -831,7 +818,7 @@ const AdminUsers: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCreateUser}
-                  disabled={isCreating || !tenantId || !email || !password || !firstName || !lastName}
+                  disabled={isCreating || !tenantId || !email || !firstName || !lastName}
                   className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium shadow-lg shadow-primary-200"
                 >
                   {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}

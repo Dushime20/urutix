@@ -283,7 +283,7 @@ export const createTenantUser = (tenantId: string, data: {
   phoneNumber?: string;
   companyName?: string;
 }) =>
-  api.post<any>(`/users/tenants/${tenantId}/users`, data)
+  api.post<any>(`/users/tenant/${tenantId}/user`, data)
     .then(res => res.data);
 
 export const updateUser = (userId: string, data: {
