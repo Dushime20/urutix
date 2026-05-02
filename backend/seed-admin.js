@@ -37,8 +37,8 @@ async function seedAdmin() {
     if (tenantResult.length === 0) {
       console.log('📦 Creating Admin Global tenant...');
       const newTenant = await queryRunner.query(
-        `INSERT INTO tenants (name, status, "contactEmail", "contactPhone", address, city, state, country, "postalCode", type, "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        `INSERT INTO tenants (name, status, "contactEmail", "contactPhone", address, city, state, country, "postalCode", type, "onboardingStep", "kycStatus", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
          RETURNING id, name`,
         [
           'Admin Global',
@@ -50,7 +50,9 @@ async function seedAdmin() {
           'Kigali City',
           'Rwanda',
           '00000',
-          'ENTERPRISE'
+          'ENTERPRISE',
+          1,
+          'VERIFIED'
         ]
       );
       tenantId = newTenant[0].id;
