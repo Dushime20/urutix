@@ -62,11 +62,36 @@ export class FixMissingSchema1780000000002 implements MigrationInterface {
                 "metric_value" numeric,
                 "threshold_value" numeric,
                 "severity" "public"."system_health_logs_severity_enum",
+                "response_time" integer,
+                "error_message" text,
                 "metadata" jsonb NOT NULL DEFAULT '{}',
                 "timestamp" TIMESTAMP WITH TIME ZONE,
                 "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_system_health_logs_id" PRIMARY KEY ("id")
             )
+        `);
+
+        // Just in case the table already exists from the previous run but is missing the new columns:
+        await queryRunner.query(`
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'system_health_logs' AND column_name = 'response_time') THEN 
+                    ALTER TABLE "system_health_logs" ADD COLUMN "response_time" integer;
+                END IF; 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'system_health_logs' AND column_name = 'error_message') THEN 
+                    ALTER TABLE "system_health_logs" ADD COLUMN "error_message" text;
+                END IF; 
+            END $$;
+        `);
+
+        // Add kyc_submitted_at to user_profiles if it doesn't exist
+        await queryRunner.query(`
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_profiles' AND column_name = 'kyc_submitted_at') THEN 
+                    ALTER TABLE "user_profiles" ADD COLUMN "kyc_submitted_at" TIMESTAMP;
+                END IF; 
+            END $$;
         `);
     }
 
