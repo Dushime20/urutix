@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class FixMissingSchema1780000000002 implements MigrationInterface {
-    name = 'FixMissingSchema1780000000002'
+export class FixMissingSchema1770000000002 implements MigrationInterface {
+    name = 'FixMissingSchema1770000000002'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Create user_profiles_kyc_requirement_level_enum if it doesn't exist
