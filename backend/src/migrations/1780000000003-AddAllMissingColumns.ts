@@ -38,9 +38,11 @@ export class AddAllMissingColumns1780000000003 implements MigrationInterface {
             await queryRunner.query(`
                 DO $$ 
                 BEGIN 
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '${table}' AND column_name = '${column}') THEN 
-                        ALTER TABLE "${table}" ADD COLUMN "${column}" ${type};
-                    END IF; 
+                    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '${table}') THEN
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '${table}' AND column_name = '${column}') THEN 
+                            ALTER TABLE "${table}" ADD COLUMN "${column}" ${type};
+                        END IF; 
+                    END IF;
                 END $$;
             `);
         }

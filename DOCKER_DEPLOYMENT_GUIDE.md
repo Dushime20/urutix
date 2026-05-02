@@ -192,7 +192,7 @@ docker-compose -f docker-compose.production.yml exec -T postgres \
 # ...
 ```
 
-docker-compose -f docker-compose.production.yml build backend
+
 
 #### Step 9: Verify Database
 
@@ -297,7 +297,7 @@ docker-compose -f docker-compose.production.yml up -d
 #for migration
 
 docker-compose -f docker-compose.production.yml run --rm backend npm run migration:run:prod
-
+docker-compose -f docker-compose.production.yml build backend
 docker-compose -f docker-compose.production.yml down -v
 docker-compose -f docker-compose.production.yml up -d postgres
 
