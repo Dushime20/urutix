@@ -48,9 +48,12 @@ check-*.js
 test-*.js
 debug-*.js
 fix-*.js
-seed-*.js
 verify-*.js
-create-*.js
 dump*.js
 dump*.txt
 build_log*.txt
+
+# But keep these important scripts
+!migrate.js
+!mark-migrations-done.js
+!seed-admin.js
