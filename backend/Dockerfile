@@ -65,8 +65,8 @@ COPY --chown=nestjs:nodejs seed-admin.js ./seed-admin.js
 # Copy entrypoint script from source (not from builder)
 COPY --chown=nestjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 
-# Make scripts executable
-RUN chmod +x ./scripts/migrate.sh ./docker-entrypoint.sh
+# Make entrypoint executable
+RUN chmod +x ./docker-entrypoint.sh
 
 # Create uploads directory with proper permissions
 RUN mkdir -p /app/uploads/documents && \
