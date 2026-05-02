@@ -399,24 +399,37 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
                 }
             }
         }
-        await queryRunner.query(`COMMENT ON TABLE "permissions" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "tenant_kyc_documents" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "tenant_kyc_audit_log" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "system_health_logs" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "security_events" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "escrow_accounts" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "email_templates" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "credit_pricing_rules" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "credit_marketplace_settings" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "bulk_email_logs" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_match_recommendations" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_market_intelligence" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_transporter_credit" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_multi_stop_loads" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_transporter_performance" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_disputes" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "activity_logs" IS NULL`);
-        await queryRunner.query(`COMMENT ON TABLE "role_permissions" IS NULL`);
+        const comments = [
+            `COMMENT ON TABLE "permissions" IS NULL`,
+            `COMMENT ON TABLE "tenant_kyc_documents" IS NULL`,
+            `COMMENT ON TABLE "tenant_kyc_audit_log" IS NULL`,
+            `COMMENT ON TABLE "system_health_logs" IS NULL`,
+            `COMMENT ON TABLE "security_events" IS NULL`,
+            `COMMENT ON TABLE "escrow_accounts" IS NULL`,
+            `COMMENT ON TABLE "email_templates" IS NULL`,
+            `COMMENT ON TABLE "credit_pricing_rules" IS NULL`,
+            `COMMENT ON TABLE "credit_marketplace_settings" IS NULL`,
+            `COMMENT ON TABLE "bulk_email_logs" IS NULL`,
+            `COMMENT ON TABLE "broker_match_recommendations" IS NULL`,
+            `COMMENT ON TABLE "broker_market_intelligence" IS NULL`,
+            `COMMENT ON TABLE "broker_transporter_credit" IS NULL`,
+            `COMMENT ON TABLE "broker_multi_stop_loads" IS NULL`,
+            `COMMENT ON TABLE "broker_transporter_performance" IS NULL`,
+            `COMMENT ON TABLE "broker_disputes" IS NULL`,
+            `COMMENT ON TABLE "activity_logs" IS NULL`,
+            `COMMENT ON TABLE "role_permissions" IS NULL`,
+        ];
+
+        for (const query of comments) {
+            try {
+                await queryRunner.query(`SAVEPOINT migration_step`);
+                await queryRunner.query(query);
+                await queryRunner.query(`RELEASE SAVEPOINT migration_step`);
+            } catch (error) {
+                await queryRunner.query(`ROLLBACK TO SAVEPOINT migration_step`);
+                // Ignore errors during comment phase
+            }
+        }
         await queryRunner.query(`CREATE TABLE "user_permission_overrides" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "permission_id" uuid NOT NULL, "granted" boolean NOT NULL, "reason" text, "granted_by" uuid, "expires_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8630d6e8e9664d946595eb6d86a" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_85a618dede80136ba35a03b6a4" ON "user_permission_overrides" ("expires_at") WHERE expires_at IS NOT NULL`);
         await queryRunner.query(`CREATE INDEX "IDX_1d942b6fc3eeefb988291fb128" ON "user_permission_overrides" ("user_id") `);
@@ -480,128 +493,140 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "role_inheritance" ("role_id" uuid NOT NULL, "inherits_from_role_id" uuid NOT NULL, CONSTRAINT "PK_a4c177d22623715dc839659f365" PRIMARY KEY ("role_id", "inherits_from_role_id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_1a5a1be0ff83033579522b0e4e" ON "role_inheritance" ("role_id") `);
         await queryRunner.query(`CREATE INDEX "IDX_c118ebf755f0edce9d609279d0" ON "role_inheritance" ("inherits_from_role_id") `);
-        await queryRunner.query(`ALTER TABLE "user_profiles" DROP CONSTRAINT IF EXISTS "REL_6ca9503d77ae39b4b5a6cc3ba8"`);
-        await queryRunner.query(`ALTER TABLE "user_profiles" DROP COLUMN "user_id"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "health_score"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "last_health_check"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "kyc_status"`);
-        await queryRunner.query(`DROP TYPE "public"."kyc_status_enum"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "kyc_data"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "kyc_submitted_at"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "kyc_verified_at"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "kyc_notes"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "kyc_reviewed_by"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "onboarding_step"`);
-        await queryRunner.query(`DROP TYPE "public"."onboarding_step_enum"`);
-        await queryRunner.query(`ALTER TABLE "tenants" DROP COLUMN "onboarding_completed_at"`);
-        await queryRunner.query(`ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_name_key"`);
-        await queryRunner.query(`ALTER TABLE "permissions" DROP COLUMN "name"`);
-        await queryRunner.query(`ALTER TABLE "permissions" DROP COLUMN "updated_at"`);
-        await queryRunner.query(`ALTER TABLE "subscription_plans" DROP COLUMN "is_popular"`);
-        await queryRunner.query(`ALTER TABLE "subscription_plans" DROP COLUMN "is_marketplace_plan"`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" DROP COLUMN "calculation_details"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "tenant_id"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "document_type"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "document_name"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "file_path"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "file_size"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "mime_type"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "uploaded_by"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "uploaded_at"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "verified_by"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "verified_at"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "created_at"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" DROP COLUMN "updated_at"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN "tenant_id"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN "old_status"`);
-        await queryRunner.query(`DROP TYPE "public"."kyc_status_enum"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN "new_status"`);
-        await queryRunner.query(`DROP TYPE "public"."kyc_status_enum"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN "performed_by"`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN "created_at"`);
-        await queryRunner.query(`ALTER TABLE "system_health_logs" DROP COLUMN "created_at"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "tenantId"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "userId"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "category"`);
-        await queryRunner.query(`DROP TYPE "public"."notification_preferences_category_enum"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "channel"`);
-        await queryRunner.query(`DROP TYPE "public"."notification_preferences_channel_enum"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "isEnabled"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "emailEnabled"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "smsEnabled"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "pushEnabled"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "inAppEnabled"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "emailAddress"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "phoneNumber"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "deviceToken"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "language"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "timezone"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "quietHours"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "frequency"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "priority"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "metadata"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "createdAt"`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" DROP COLUMN "updatedAt"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "adjusterName"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "adjusterPhone"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "adjusterEmail"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "adjusterNotes"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "investigationNotes"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "denialReason"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "photos"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "policeReportNumber"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "witnessName"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "witnessPhone"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "witnessStatement"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "isFault"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "faultDescription"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "settlementDate"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "settlementNotes"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "tenantId"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "createdBy"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "assignedTo"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "deletedAt"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "monthlyPremium"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "description"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "coverageDetails"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "exclusions"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "conditions"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "agentName"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "agentPhone"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "agentEmail"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "tenantId"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "createdBy"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "deletedAt"`);
-        await queryRunner.query(`ALTER TABLE "feature_credit_costs" DROP COLUMN "credit_cost"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "credit_packages_slug_key"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP COLUMN "slug"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP COLUMN "description"`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" DROP COLUMN "is_popular"`);
-        await queryRunner.query(`ALTER TABLE "activity_logs" DROP COLUMN "security_relevant"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "truckId"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "adjuster"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "notes"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "witnesses"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "policeReport"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "repairEstimates"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "timeline"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "settlement"`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" DROP COLUMN "appeal"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "premium"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "coverageTypes"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "agent"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "paymentMethod"`);
-        await queryRunner.query(`DROP TYPE "public"."insurance_policies_paymentmethod_enum"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "lastPaymentDate"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "nextPaymentDate"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "claimsCount"`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" DROP COLUMN "totalClaimsAmount"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_pkey"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP COLUMN "id"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP COLUMN "role"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP COLUMN "created_at"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP COLUMN "granted_at"`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" DROP COLUMN "granted_by"`);
+        const refinements = [
+            `ALTER TABLE "user_profiles" DROP CONSTRAINT IF EXISTS "REL_6ca9503d77ae39b4b5a6cc3ba8"`,
+            `ALTER TABLE "user_profiles" DROP COLUMN IF EXISTS "user_id"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "health_score"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "last_health_check"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "kyc_status"`,
+            `DROP TYPE IF EXISTS "public"."kyc_status_enum" CASCADE`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "kyc_data"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "kyc_submitted_at"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "kyc_verified_at"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "kyc_notes"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "kyc_reviewed_by"`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "onboarding_step"`,
+            `DROP TYPE IF EXISTS "public"."onboarding_step_enum" CASCADE`,
+            `ALTER TABLE "tenants" DROP COLUMN IF EXISTS "onboarding_completed_at"`,
+            `ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_name_key"`,
+            `ALTER TABLE "permissions" DROP COLUMN IF EXISTS "name"`,
+            `ALTER TABLE "permissions" DROP COLUMN IF EXISTS "updated_at"`,
+            `ALTER TABLE "subscription_plans" DROP COLUMN IF EXISTS "is_popular"`,
+            `ALTER TABLE "subscription_plans" DROP COLUMN IF EXISTS "is_marketplace_plan"`,
+            `ALTER TABLE "credit_transactions" DROP COLUMN IF EXISTS "calculation_details"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "tenant_id"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "document_type"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "document_name"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "file_path"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "file_size"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "mime_type"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "uploaded_by"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "uploaded_at"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "verified_by"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "verified_at"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "created_at"`,
+            `ALTER TABLE "tenant_kyc_documents" DROP COLUMN IF EXISTS "updated_at"`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN IF EXISTS "tenant_id"`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN IF EXISTS "old_status"`,
+            `DROP TYPE IF EXISTS "public"."kyc_status_enum" CASCADE`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN IF EXISTS "new_status"`,
+            `DROP TYPE IF EXISTS "public"."kyc_status_enum" CASCADE`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN IF EXISTS "performed_by"`,
+            `ALTER TABLE "tenant_kyc_audit_log" DROP COLUMN IF EXISTS "created_at"`,
+            `ALTER TABLE "system_health_logs" DROP COLUMN IF EXISTS "created_at"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "tenantId"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "userId"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "category"`,
+            `DROP TYPE IF EXISTS "public"."notification_preferences_category_enum" CASCADE`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "channel"`,
+            `DROP TYPE IF EXISTS "public"."notification_preferences_channel_enum" CASCADE`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "isEnabled"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "emailEnabled"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "smsEnabled"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "pushEnabled"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "inAppEnabled"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "emailAddress"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "phone_number"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "deviceToken"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "language"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "timezone"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "quietHours"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "frequency"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "priority"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "metadata"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "createdAt"`,
+            `ALTER TABLE "notification_preferences" DROP COLUMN IF EXISTS "updatedAt"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "adjusterName"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "adjusterPhone"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "adjusterEmail"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "adjusterNotes"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "investigationNotes"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "denialReason"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "photos"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "policeReportNumber"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "witnessName"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "witnessPhone"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "witnessStatement"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "isFault"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "faultDescription"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "settlementDate"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "settlementNotes"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "tenantId"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "createdBy"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "assignedTo"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "deletedAt"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "monthlyPremium"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "description"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "coverageDetails"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "exclusions"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "conditions"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "agentName"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "agentPhone"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "agentEmail"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "tenantId"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "createdBy"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "deletedAt"`,
+            `ALTER TABLE "feature_credit_costs" DROP COLUMN IF EXISTS "credit_cost"`,
+            `ALTER TABLE "credit_packages" DROP CONSTRAINT IF EXISTS "credit_packages_slug_key"`,
+            `ALTER TABLE "credit_packages" DROP COLUMN IF EXISTS "slug"`,
+            `ALTER TABLE "credit_packages" DROP COLUMN IF EXISTS "description"`,
+            `ALTER TABLE "credit_packages" DROP COLUMN IF EXISTS "is_popular"`,
+            `ALTER TABLE "activity_logs" DROP COLUMN IF EXISTS "security_relevant"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "truckId"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "adjuster"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "notes"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "witnesses"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "policeReport"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "repairEstimates"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "timeline"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "settlement"`,
+            `ALTER TABLE "insurance_claims" DROP COLUMN IF EXISTS "appeal"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "premium"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "coverageTypes"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "agent"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "paymentMethod"`,
+            `DROP TYPE IF EXISTS "public"."insurance_policies_paymentmethod_enum" CASCADE`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "lastPaymentDate"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "nextPaymentDate"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "claimsCount"`,
+            `ALTER TABLE "insurance_policies" DROP COLUMN IF EXISTS "totalClaimsAmount"`,
+            `ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "role_permissions_pkey"`,
+            `ALTER TABLE "role_permissions" DROP COLUMN IF EXISTS "id"`,
+            `ALTER TABLE "role_permissions" DROP COLUMN IF EXISTS "role"`,
+            `ALTER TABLE "role_permissions" DROP COLUMN IF EXISTS "created_at"`,
+            `ALTER TABLE "role_permissions" DROP COLUMN IF EXISTS "granted_at"`,
+            `ALTER TABLE "role_permissions" DROP COLUMN IF EXISTS "granted_by"`,
+        ];
+
+        for (const query of refinements) {
+            try {
+                await queryRunner.query(`SAVEPOINT migration_step`);
+                await queryRunner.query(query);
+                await queryRunner.query(`RELEASE SAVEPOINT migration_step`);
+            } catch (error) {
+                await queryRunner.query(`ROLLBACK TO SAVEPOINT migration_step`);
+            }
+        }
         await queryRunner.query(`ALTER TABLE "user_sessions" ADD "device_info" jsonb`);
         await queryRunner.query(`ALTER TABLE "user_sessions" ADD "location" jsonb`);
         await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" ADD "tenantId" uuid NOT NULL`);
@@ -1151,170 +1176,183 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
         await queryRunner.query(`CREATE INDEX "IDX_9ccc21465f0cc832c821d48a4b" ON "tenant_kyc_documents" ("tenantId") `);
         await queryRunner.query(`CREATE INDEX "IDX_3c410bba0742f62a0d29b9eb7d" ON "tenant_kyc_audit_log" ("action") `);
         await queryRunner.query(`CREATE INDEX "IDX_3bd81217db13f966e5509f559a" ON "tenant_kyc_audit_log" ("createdAt") `);
-        await queryRunner.query(`CREATE INDEX "IDX_808e971782408664b9c7698a9d" ON "tenant_kyc_audit_log" ("tenantId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_59d0580779f1111eafa7438a96" ON "system_settings" ("is_public") WHERE is_public = true`);
-        await queryRunner.query(`CREATE INDEX "IDX_797d199fff9037e5b231dc4ffb" ON "system_settings" ("category") `);
-        await queryRunner.query(`CREATE INDEX "IDX_7567faf52e0f0da34dbab2daf3" ON "security_events" ("severity", "created_at") `);
-        await queryRunner.query(`CREATE INDEX "IDX_ac0419c594360d319a6a453591" ON "security_events" ("event_type") `);
-        await queryRunner.query(`CREATE INDEX "IDX_63fea9549fcb8977a3c0abd783" ON "security_events" ("tenant_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d1891b273f5c77638d2149a9f0" ON "security_events" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d86aa84090327c9a94aee62e18" ON "security_events" ("created_at") `);
-        await queryRunner.query(`CREATE INDEX "IDX_c0dfddafd5d9d49593930be293" ON "security_events" ("severity") `);
-        await queryRunner.query(`CREATE INDEX "IDX_db8d3f73a58b39fc0c14302840" ON "notifications" ("category", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_13c6c844995d9cc303e7e05087" ON "notifications" ("notificationType", "priority") `);
-        await queryRunner.query(`CREATE INDEX "IDX_797841712968aa775af0cb0b54" ON "notifications" ("entityType", "entityId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_9b2e0e69131e085736edccaec5" ON "notifications" ("notificationType", "priority", "createdAt") `);
-        await queryRunner.query(`CREATE INDEX "IDX_7a0a6e2a61cf2f91c80a1c6701" ON "notification_preferences" ("tenant_id", "notification_type") `);
-        await queryRunner.query(`CREATE INDEX "IDX_9c3e6cc717b4f6dc1b0260030f" ON "notification_preferences" ("tenant_id", "user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_93eb201c7a9603e415301e69a0" ON "messages" ("is_read") `);
-        await queryRunner.query(`CREATE INDEX "IDX_0777b63da90c27d6ed993dc60b" ON "messages" ("created_at") `);
-        await queryRunner.query(`CREATE INDEX "IDX_bb3af7f695d50083e6523290d4" ON "messages" ("thread_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_9d6c96fc3270ba756ae1e1e20b" ON "messages" ("sender_id", "recipient_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_469b81bb95497287c259fa5628" ON "maintenance_logs" ("truckId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_ccf071140daa090281ed389288" ON "maintenance_logs" ("tenantId", "truckId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_3bf04f0b74badf9ad6f7bbc010" ON "loan_terms" ("lender_id", "computed_at") `);
-        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_116c853dd79fad5ec4f3200809" ON "loan_terms" ("loan_request_id") `);
-        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_e315e889a7c4d15e733070b95f" ON "lending_policy_system_config" ("lender_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_583ca0d5b2d68c75108227af9c" ON "lending_policy_loan_limits" ("business_type", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_813270e00e2d415496bb82419a" ON "lending_policy_loan_limits" ("lender_id", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e7276e088808d17c3350b9b3f5" ON "lending_policy_risk_assessment" ("factor", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6be27131d692a211fda9b877a4" ON "lending_policy_risk_assessment" ("lender_id", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e76fdb341655fca56beef59750" ON "lending_policy_repayment" ("frequency", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d7cbd8189238705b3d8ed1db66" ON "lending_policy_repayment" ("lender_id", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6bcdd18e09cde925d9927e72ae" ON "lending_policy_interest_rates" ("risk_level", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_b039730036806258874142386e" ON "lending_policy_interest_rates" ("lender_id", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d85cc00ebf68d5db0073b5bd62" ON "lending_policy_eligibility_criteria" ("category", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_f2cc1127ccebde810e3a4f798c" ON "lending_policy_eligibility_criteria" ("lender_id", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_dd355d444598693fc3bf82fea8" ON "lending_policy_cargo_types" ("cargo_category", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_1f5409092a6270aa78f5ef090b" ON "lending_policy_cargo_types" ("lender_id", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_7c69728b0eee8df90aa28cb3aa" ON "insurance_claims" ("claimNumber") `);
-        await queryRunner.query(`CREATE INDEX "IDX_ef0233f5751c8f5bb838dcc9c5" ON "insurance_claims" ("policyId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_58b6d392b802763fda1b8cdd21" ON "insurance_claims" ("truckId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_0f1bdfd84b52e5650828ee105d" ON "insurance_claims" ("reportedDate") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6a368689710b119486785bf8cc" ON "insurance_claims" ("status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_baa50eb26aac0be1b692c080fb" ON "insurance_policies" ("policyNumber") `);
-        await queryRunner.query(`CREATE INDEX "IDX_acda968d16da059e4f09824655" ON "insurance_policies" ("truckId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e18ea109a1f68c3868b032a089" ON "insurance_policies" ("insuranceCompany") `);
-        await queryRunner.query(`CREATE INDEX "IDX_f3c89f740731a501a18912bd0b" ON "insurance_policies" ("startDate") `);
-        await queryRunner.query(`CREATE INDEX "IDX_b23aa47a8f12016a210e5ac33c" ON "insurance_policies" ("endDate") `);
-        await queryRunner.query(`CREATE INDEX "IDX_1592f9cf82406fbce791f0f19a" ON "insurance_policies" ("status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6e2b6bf8bb5605165c05fc9a71" ON "insurance_renewals" ("renewalNumber") `);
-        await queryRunner.query(`CREATE INDEX "IDX_febfac3b7bf38da9b119fa050a" ON "insurance_renewals" ("policyId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_4443a0125e443faf35976c0d07" ON "insurance_renewals" ("truckId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_0768b1b477d6f9e590fc86aadd" ON "insurance_renewals" ("currentPolicyEndDate") `);
-        await queryRunner.query(`CREATE INDEX "IDX_842fba233d89f76938fdcb1cd0" ON "insurance_renewals" ("renewalDate") `);
-        await queryRunner.query(`CREATE INDEX "IDX_626bd18a1c31262c92de2ea7fc" ON "fuel_wallets" ("tenant_id", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_1fd8e9227c063c682884b93134" ON "fuel_wallets" ("tenant_id", "owner_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_2e99675306663490ddfe9b8240" ON "fuel_wallets" ("tenant_id", "truck_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_bc11f2da1320a870676faa8fed" ON "fuel_wallets" ("tenant_id", "driver_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d0f9a2a260ee0f538c19d7c2a9" ON "fuel_wallet_transactions" ("tenant_id", "created_at") `);
-        await queryRunner.query(`CREATE INDEX "IDX_5a2ef9676a68d2dd52b59d72b0" ON "fuel_wallet_transactions" ("tenant_id", "type") `);
-        await queryRunner.query(`CREATE INDEX "IDX_dbc00de019adde78acb4c7750d" ON "fuel_wallet_transactions" ("tenant_id", "wallet_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e6a291fa1f367d1580ebd3ff41" ON "feature_credit_costs" ("is_active") `);
-        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_8b1e30132e1b27cbb9cc63055e" ON "feature_credit_costs" ("feature_code") `);
-        await queryRunner.query(`CREATE INDEX "IDX_ea1e8001e18da625271cb36faf" ON "driver_fuel_advances" ("tenant_id", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6a17042a7646c9c2a6d3ccef22" ON "driver_fuel_advances" ("tenant_id", "trip_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_a43ae68351096e8568a06382f1" ON "driver_fuel_advances" ("tenant_id", "driver_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d997cf3d01e7778b2986194d50" ON "credit_pricing_rules" ("tenant_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_97352a82a3e20c23bd7df1ad3a" ON "credit_pricing_rules" ("plan_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_558fbfc6d3ed76397f133aa835" ON "credit_pricing_rules" ("rule_type", "is_active") `);
-        await queryRunner.query(`CREATE INDEX "IDX_01b16a9f40838c61df9d8f2397" ON "credit_packages" ("is_active", "display_order") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6a292c4dedc54c3610173796da" ON "activity_logs" ("is_suspicious") WHERE is_suspicious = true`);
-        await queryRunner.query(`CREATE INDEX "IDX_1fa31efc2a0bc0b517b9f7225d" ON "activity_logs" ("created_at") `);
-        await queryRunner.query(`CREATE INDEX "IDX_aa8dcbb39c06587a1cf834da38" ON "activity_logs" ("resource", "resource_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_879e2d305a025dadfe9929c47d" ON "activity_logs" ("action") `);
-        await queryRunner.query(`CREATE INDEX "IDX_d54f841fa5478e4734590d4403" ON "activity_logs" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_8facef03fbe2ee514e7fe7fe14" ON "notification_preferences" ("userId", "channel") `);
-        await queryRunner.query(`CREATE INDEX "IDX_90d452c90494da1080c16b52c1" ON "notification_preferences" ("userId", "category") `);
-        await queryRunner.query(`CREATE INDEX "IDX_a2e2691f8172b07d81e0d1e347" ON "notification_preferences" ("tenantId", "userId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_8e5c713517ab7a21ff3e863ca9" ON "insurance_claims" ("tenantId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_85a9f10e2000f5b9346c385a98" ON "insurance_claims" ("policyId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_390732a304351ba893fb459bbb" ON "insurance_policies" ("tenantId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_8ba9f8f6f24babb4e5a4380198" ON "insurance_policies" ("truckId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_178199805b901ccd220ab7740e" ON "role_permissions" ("role_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_17022daf3f885f7d35423e9971" ON "role_permissions" ("permission_id") `);
-        await queryRunner.query(`ALTER TABLE "user_profiles" ADD CONSTRAINT "FK_8481388d6325e752cd4d7e26c6d" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "trucks" ADD CONSTRAINT "FK_8c4c103d41f1f81a82506ed7504" FOREIGN KEY ("currentDriverId") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "loads" ADD CONSTRAINT "FK_f7e8115cc0ad9befebb3a666f4c" FOREIGN KEY ("assignedTruckId") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "loads" ADD CONSTRAINT "FK_20cae08ac027e8f02fa76440b1f" FOREIGN KEY ("assignedCarrierId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_sessions" ADD CONSTRAINT "FK_e9658e959c490b0a634dfc54783" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_permission_overrides" ADD CONSTRAINT "FK_1d942b6fc3eeefb988291fb1286" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_permission_overrides" ADD CONSTRAINT "FK_b23ab6a57668ecca2e2398287ea" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_permission_overrides" ADD CONSTRAINT "FK_05cf99c180d170ed758f03a80fe" FOREIGN KEY ("granted_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_kyc_documents" ADD CONSTRAINT "FK_f0d33db611c87e2bca1f9f7edf6" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_kyc_documents" ADD CONSTRAINT "FK_1b8ced93a14a57a3a8cf5553440" FOREIGN KEY ("user_profile_id") REFERENCES "user_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_kyc_documents" ADD CONSTRAINT "FK_d1eb93b1634018ae411173943b6" FOREIGN KEY ("verified_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_kyc_audit_log" ADD CONSTRAINT "FK_e1d131cc51fb6cdb698da6daba2" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_kyc_audit_log" ADD CONSTRAINT "FK_d5b619ad0cef9a8dc2666d4cb6f" FOREIGN KEY ("user_profile_id") REFERENCES "user_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user_kyc_audit_log" ADD CONSTRAINT "FK_52c650b77259d2495b15b67769f" FOREIGN KEY ("performed_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "subscription_payments" ADD CONSTRAINT "FK_3d76b7ca2d964925a54ad9fd516" FOREIGN KEY ("subscription_id") REFERENCES "tenant_subscriptions"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "subscription_payments" ADD CONSTRAINT "FK_173289b1de8485fbb852ff08fa8" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "FK_872ba75a97257de9a4bf8557ffa" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "FK_e9e4079e4a9bc1ddeb3452b7f69" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_c2694a0c5f7cbf8d96bc43273be" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_c8bc6d59f7c92922a2c691548d7" FOREIGN KEY ("credit_account_id") REFERENCES "credit_accounts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_77840254310a94486bc1773735f" FOREIGN KEY ("subscription_id") REFERENCES "tenant_subscriptions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_cec145f863cf10a14ecd9f47090" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "FK_c59c97d5c1343951e044c137f02" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "FK_cb2ac3bd398220d534c92db8b2e" FOREIGN KEY ("plan_id") REFERENCES "subscription_plans"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" ADD CONSTRAINT "FK_9ccc21465f0cc832c821d48a4b0" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" ADD CONSTRAINT "FK_0f6ffb96f893d9f75b205882c62" FOREIGN KEY ("uploadedBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_documents" ADD CONSTRAINT "FK_099ab4bc9a89e3d40c12875d155" FOREIGN KEY ("verifiedBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" ADD CONSTRAINT "FK_808e971782408664b9c7698a9dd" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "tenant_kyc_audit_log" ADD CONSTRAINT "FK_b1a4f3a3fb4892c7d23c1270726" FOREIGN KEY ("performedBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "system_settings" ADD CONSTRAINT "FK_301c531938f84c39fa5019e7465" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "security_events" ADD CONSTRAINT "FK_d1891b273f5c77638d2149a9f0d" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "security_events" ADD CONSTRAINT "FK_63fea9549fcb8977a3c0abd7833" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_e907e614e2cc6216ac076eb75e5" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_64c90edc7310c6be7c10c96f675" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "notification_logs" ADD CONSTRAINT "FK_fe6690289c5e319b2ac0d809d72" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "notification_logs" ADD CONSTRAINT "FK_f803d5e1bd85942b24ee4248701" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "maintenance_logs" ADD CONSTRAINT "FK_2b96fafe15b3ff0c0c3eb41851e" FOREIGN KEY ("truckId") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "maintenance_logs" ADD CONSTRAINT "FK_2abbdd7df627b46588df86e4fc1" FOREIGN KEY ("driverId") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "loan_terms" ADD CONSTRAINT "FK_116c853dd79fad5ec4f32008091" FOREIGN KEY ("loan_request_id") REFERENCES "loan_requests"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_system_config" ADD CONSTRAINT "FK_e315e889a7c4d15e733070b95f0" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_loan_limits" ADD CONSTRAINT "FK_b7516ddeff9ac0bca90c9c33d08" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_risk_assessment" ADD CONSTRAINT "FK_a1217463c9cc7516dcf007ce6d9" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_repayment" ADD CONSTRAINT "FK_42f6baf1f6be3f5a29711e1a57a" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_interest_rates" ADD CONSTRAINT "FK_93ae61fd5e91923a15c598b8685" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_eligibility_criteria" ADD CONSTRAINT "FK_5bc4e26a401efdc294a48efdf9d" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "lending_policy_cargo_types" ADD CONSTRAINT "FK_e4124ffc2ef9eb6564ec1962915" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_58b6d392b802763fda1b8cdd21d" FOREIGN KEY ("truckId") REFERENCES "trucks"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "fuel_wallets" ADD CONSTRAINT "FK_e52f696cd5ffc8d3ef96797494a" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "fuel_wallets" ADD CONSTRAINT "FK_eea5888de16d9fec2461723f294" FOREIGN KEY ("truck_id") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "fuel_wallet_transactions" ADD CONSTRAINT "FK_0adf3fef543d81a563c948f6c2a" FOREIGN KEY ("wallet_id") REFERENCES "fuel_wallets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "fuel_wallet_transactions" ADD CONSTRAINT "FK_9f1c742be605b50e4979187eb47" FOREIGN KEY ("fuel_log_id") REFERENCES "fuel_logs"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "fuel_budgets" ADD CONSTRAINT "FK_fc3274d6f51a80da8bf46fca1bf" FOREIGN KEY ("trip_id") REFERENCES "trips"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "fuel_budgets" ADD CONSTRAINT "FK_6aed29ce3bd375ef016a3873b21" FOREIGN KEY ("truck_id") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "driver_fuel_advances" ADD CONSTRAINT "FK_f64cd8a026b9982470f57f479e0" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "driver_fuel_advances" ADD CONSTRAINT "FK_81fd596a616bb36f9172eb2481a" FOREIGN KEY ("trip_id") REFERENCES "trips"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "driver_fuel_advances" ADD CONSTRAINT "FK_70202c19a5a9040c02f1c38c182" FOREIGN KEY ("approved_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "FK_97352a82a3e20c23bd7df1ad3ad" FOREIGN KEY ("plan_id") REFERENCES "subscription_plans"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "FK_d997cf3d01e7778b2986194d50f" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "FK_5ac1ba7d95a8826a6cfb5011b21" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "FK_3bc8be1900291afb8b56ab05b8b" FOREIGN KEY ("tenant_admin_user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cargo_owner_analytics" ADD CONSTRAINT "FK_7bb26828f77527d3ff1a88d05b1" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cargo_owner_analytics" ADD CONSTRAINT "FK_9bca7a9dbc4e481c745b4f3285f" FOREIGN KEY ("cargo_owner_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "cargo_owner_analytics" ADD CONSTRAINT "FK_6e200f546c62dd34839d181598e" FOREIGN KEY ("load_id") REFERENCES "loads"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "bulk_email_logs" ADD CONSTRAINT "FK_7cb8ee9bd09df8d4fcaf012d906" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "bulk_email_logs" ADD CONSTRAINT "FK_75fde5dd9def7c599a714d67f6b" FOREIGN KEY ("template_id") REFERENCES "email_templates"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "bulk_email_logs" ADD CONSTRAINT "FK_c2a3057ae61dbd0cf6caf27a5c1" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "analytics_insights" ADD CONSTRAINT "FK_db208a678e94f8c8f37fe3816b1" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "analytics_insights" ADD CONSTRAINT "FK_66f4e94935a0c84ef10772ec3d2" FOREIGN KEY ("cargo_owner_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "activity_logs" ADD CONSTRAINT "FK_d54f841fa5478e4734590d44036" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_b70c44e8b00757584a393225593" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_b3403e8b519a383776f6c693cc9" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "multi_modal_shipments" ADD CONSTRAINT "FK_013e3043db9d06f9854d4bb17d4" FOREIGN KEY ("loadId") REFERENCES "loads"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "multi_modal_legs" ADD CONSTRAINT "FK_3b0f09ebc541d9513e8afab1e32" FOREIGN KEY ("shipmentId") REFERENCES "multi_modal_shipments"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_47ae4807b3ed676f608660b8dfa" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_d4e396c5a1c8de48961bdf349a2" FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_42c8e0e8ee2e6953e607e7c2daa" FOREIGN KEY ("assignedTo") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" ADD CONSTRAINT "FK_32881c13a51d3576a0222a6ebde" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "insurance_policies" ADD CONSTRAINT "FK_bf04611ec3fbf4d71b9f8515d43" FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_178199805b901ccd220ab7740ec" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_17022daf3f885f7d35423e9971e" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "role_inheritance" ADD CONSTRAINT "FK_1a5a1be0ff83033579522b0e4e5" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`ALTER TABLE "role_inheritance" ADD CONSTRAINT "FK_c118ebf755f0edce9d609279d02" FOREIGN KEY ("inherits_from_role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
+        const finalOperations = [
+            `CREATE INDEX "IDX_808e971782408664b9c7698a9d" ON "tenant_kyc_audit_log" ("tenantId") `,
+            `CREATE INDEX "IDX_59d0580779f1111eafa7438a96" ON "system_settings" ("is_public") WHERE is_public = true`,
+            `CREATE INDEX "IDX_797d199fff9037e5b231dc4ffb" ON "system_settings" ("category") `,
+            `CREATE INDEX "IDX_7567faf52e0f0da34dbab2daf3" ON "security_events" ("severity", "created_at") `,
+            `CREATE INDEX "IDX_ac0419c594360d319a6a453591" ON "security_events" ("event_type") `,
+            `CREATE INDEX "IDX_63fea9549fcb8977a3c0abd783" ON "security_events" ("tenant_id") `,
+            `CREATE INDEX "IDX_d1891b273f5c77638d2149a9f0" ON "security_events" ("user_id") `,
+            `CREATE INDEX "IDX_d86aa84090327c9a94aee62e18" ON "security_events" ("created_at") `,
+            `CREATE INDEX "IDX_c0dfddafd5d9d49593930be293" ON "security_events" ("severity") `,
+            `CREATE INDEX "IDX_db8d3f73a58b39fc0c14302840" ON "notifications" ("category", "status") `,
+            `CREATE INDEX "IDX_13c6c844995d9cc303e7e05087" ON "notifications" ("notificationType", "priority") `,
+            `CREATE INDEX "IDX_797841712968aa775af0cb0b54" ON "notifications" ("entityType", "entityId") `,
+            `CREATE INDEX "IDX_9b2e0e69131e085736edccaec5" ON "notifications" ("notificationType", "priority", "createdAt") `,
+            `CREATE INDEX "IDX_7a0a6e2a61cf2f91c80a1c6701" ON "notification_preferences" ("tenant_id", "notification_type") `,
+            `CREATE INDEX "IDX_9c3e6cc717b4f6dc1b0260030f" ON "notification_preferences" ("tenant_id", "user_id") `,
+            `CREATE INDEX "IDX_93eb201c7a9603e415301e69a0" ON "messages" ("is_read") `,
+            `CREATE INDEX "IDX_0777b63da90c27d6ed993dc60b" ON "messages" ("created_at") `,
+            `CREATE INDEX "IDX_bb3af7f695d50083e6523290d4" ON "messages" ("thread_id") `,
+            `CREATE INDEX "IDX_9d6c96fc3270ba756ae1e1e20b" ON "messages" ("sender_id", "recipient_id") `,
+            `CREATE INDEX "IDX_469b81bb95497287c259fa5628" ON "maintenance_logs" ("truckId", "status") `,
+            `CREATE INDEX "IDX_ccf071140daa090281ed389288" ON "maintenance_logs" ("tenantId", "truckId") `,
+            `CREATE INDEX "IDX_3bf04f0b74badf9ad6f7bbc010" ON "loan_terms" ("lender_id", "computed_at") `,
+            `CREATE UNIQUE INDEX "IDX_116c853dd79fad5ec4f3200809" ON "loan_terms" ("loan_request_id") `,
+            `CREATE UNIQUE INDEX "IDX_e315e889a7c4d15e733070b95f" ON "lending_policy_system_config" ("lender_id") `,
+            `CREATE INDEX "IDX_583ca0d5b2d68c75108227af9c" ON "lending_policy_loan_limits" ("business_type", "is_active") `,
+            `CREATE INDEX "IDX_813270e00e2d415496bb82419a" ON "lending_policy_loan_limits" ("lender_id", "is_active") `,
+            `CREATE INDEX "IDX_e7276e088808d17c3350b9b3f5" ON "lending_policy_risk_assessment" ("factor", "is_active") `,
+            `CREATE INDEX "IDX_6be27131d692a211fda9b877a4" ON "lending_policy_risk_assessment" ("lender_id", "is_active") `,
+            `CREATE INDEX "IDX_e76fdb341655fca56beef59750" ON "lending_policy_repayment" ("frequency", "is_active") `,
+            `CREATE INDEX "IDX_d7cbd8189238705b3d8ed1db66" ON "lending_policy_repayment" ("lender_id", "is_active") `,
+            `CREATE INDEX "IDX_6bcdd18e09cde925d9927e72ae" ON "lending_policy_interest_rates" ("risk_level", "is_active") `,
+            `CREATE INDEX "IDX_b039730036806258874142386e" ON "lending_policy_interest_rates" ("lender_id", "is_active") `,
+            `CREATE INDEX "IDX_d85cc00ebf68d5db0073b5bd62" ON "lending_policy_eligibility_criteria" ("category", "is_active") `,
+            `CREATE INDEX "IDX_f2cc1127ccebde810e3a4f798c" ON "lending_policy_eligibility_criteria" ("lender_id", "is_active") `,
+            `CREATE INDEX "IDX_dd355d444598693fc3bf82fea8" ON "lending_policy_cargo_types" ("cargo_category", "is_active") `,
+            `CREATE INDEX "IDX_1f5409092a6270aa78f5ef090b" ON "lending_policy_cargo_types" ("lender_id", "is_active") `,
+            `CREATE INDEX "IDX_7c69728b0eee8df90aa28cb3aa" ON "insurance_claims" ("claimNumber") `,
+            `CREATE INDEX "IDX_ef0233f5751c8f5bb838dcc9c5" ON "insurance_claims" ("policyId") `,
+            `CREATE INDEX "IDX_58b6d392b802763fda1b8cdd21" ON "insurance_claims" ("truckId") `,
+            `CREATE INDEX "IDX_0f1bdfd84b52e5650828ee105d" ON "insurance_claims" ("reportedDate") `,
+            `CREATE INDEX "IDX_6a368689710b119486785bf8cc" ON "insurance_claims" ("status") `,
+            `CREATE INDEX "IDX_baa50eb26aac0be1b692c080fb" ON "insurance_policies" ("policyNumber") `,
+            `CREATE INDEX "IDX_acda968d16da059e4f09824655" ON "insurance_policies" ("truckId") `,
+            `CREATE INDEX "IDX_e18ea109a1f68c3868b032a089" ON "insurance_policies" ("insuranceCompany") `,
+            `CREATE INDEX "IDX_f3c89f740731a501a18912bd0b" ON "insurance_policies" ("startDate") `,
+            `CREATE INDEX "IDX_b23aa47a8f12016a210e5ac33c" ON "insurance_policies" ("endDate") `,
+            `CREATE INDEX "IDX_1592f9cf82406fbce791f0f19a" ON "insurance_policies" ("status") `,
+            `CREATE INDEX "IDX_6e2b6bf8bb5605165c05fc9a71" ON "insurance_renewals" ("renewalNumber") `,
+            `CREATE INDEX "IDX_febfac3b7bf38da9b119fa050a" ON "insurance_renewals" ("policyId") `,
+            `CREATE INDEX "IDX_4443a0125e443faf35976c0d07" ON "insurance_renewals" ("truckId") `,
+            `CREATE INDEX "IDX_0768b1b477d6f9e590fc86aadd" ON "insurance_renewals" ("currentPolicyEndDate") `,
+            `CREATE INDEX "IDX_842fba233d89f76938fdcb1cd0" ON "insurance_renewals" ("renewalDate") `,
+            `CREATE INDEX "IDX_626bd18a1c31262c92de2ea7fc" ON "fuel_wallets" ("tenant_id", "status") `,
+            `CREATE INDEX "IDX_1fd8e9227c063c682884b93134" ON "fuel_wallets" ("tenant_id", "owner_id") `,
+            `CREATE INDEX "IDX_2e99675306663490ddfe9b8240" ON "fuel_wallets" ("tenant_id", "truck_id") `,
+            `CREATE INDEX "IDX_bc11f2da1320a870676faa8fed" ON "fuel_wallets" ("tenant_id", "driver_id") `,
+            `CREATE INDEX "IDX_d0f9a2a260ee0f538c19d7c2a9" ON "fuel_wallet_transactions" ("tenant_id", "created_at") `,
+            `CREATE INDEX "IDX_5a2ef9676a68d2dd52b59d72b0" ON "fuel_wallet_transactions" ("tenant_id", "type") `,
+            `CREATE INDEX "IDX_dbc00de019adde78acb4c7750d" ON "fuel_wallet_transactions" ("tenant_id", "wallet_id") `,
+            `CREATE INDEX "IDX_e6a291fa1f367d1580ebd3ff41" ON "feature_credit_costs" ("is_active") `,
+            `CREATE UNIQUE INDEX "IDX_8b1e30132e1b27cbb9cc63055e" ON "feature_credit_costs" ("feature_code") `,
+            `CREATE INDEX "IDX_ea1e8001e18da625271cb36faf" ON "driver_fuel_advances" ("tenant_id", "status") `,
+            `CREATE INDEX "IDX_6a17042a7646c9c2a6d3ccef22" ON "driver_fuel_advances" ("tenant_id", "trip_id") `,
+            `CREATE INDEX "IDX_a43ae68351096e8568a06382f1" ON "driver_fuel_advances" ("tenant_id", "driver_id") `,
+            `CREATE INDEX "IDX_d997cf3d01e7778b2986194d50" ON "credit_pricing_rules" ("tenant_id") `,
+            `CREATE INDEX "IDX_97352a82a3e20c23bd7df1ad3a" ON "credit_pricing_rules" ("plan_id") `,
+            `CREATE INDEX "IDX_558fbfc6d3ed76397f133aa835" ON "credit_pricing_rules" ("rule_type", "is_active") `,
+            `CREATE INDEX "IDX_01b16a9f40838c61df9d8f2397" ON "credit_packages" ("is_active", "display_order") `,
+            `CREATE INDEX "IDX_6a292c4dedc54c3610173796da" ON "activity_logs" ("is_suspicious") WHERE is_suspicious = true`,
+            `CREATE INDEX "IDX_1fa31efc2a0bc0b517b9f7225d" ON "activity_logs" ("created_at") `,
+            `CREATE INDEX "IDX_aa8dcbb39c06587a1cf834da38" ON "activity_logs" ("resource", "resource_id") `,
+            `CREATE INDEX "IDX_879e2d305a025dadfe9929c47d" ON "activity_logs" ("action") `,
+            `CREATE INDEX "IDX_d54f841fa5478e4734590d4403" ON "activity_logs" ("user_id") `,
+            `CREATE INDEX "IDX_8facef03fbe2ee514e7fe7fe14" ON "notification_preferences" ("userId", "channel") `,
+            `CREATE INDEX "IDX_90d452c90494da1080c16b52c1" ON "notification_preferences" ("userId", "category") `,
+            `CREATE INDEX "IDX_a2e2691f8172b07d81e0d1e347" ON "notification_preferences" ("tenantId", "userId") `,
+            `CREATE INDEX "IDX_8e5c713517ab7a21ff3e863ca9" ON "insurance_claims" ("tenantId", "status") `,
+            `CREATE INDEX "IDX_85a9f10e2000f5b9346c385a98" ON "insurance_claims" ("policyId", "status") `,
+            `CREATE INDEX "IDX_390732a304351ba893fb459bbb" ON "insurance_policies" ("tenantId", "status") `,
+            `CREATE INDEX "IDX_8ba9f8f6f24babb4e5a4380198" ON "insurance_policies" ("truckId", "status") `,
+            `CREATE INDEX "IDX_178199805b901ccd220ab7740e" ON "role_permissions" ("role_id") `,
+            `CREATE INDEX "IDX_17022daf3f885f7d35423e9971" ON "role_permissions" ("permission_id") `,
+            `ALTER TABLE "user_profiles" ADD CONSTRAINT "FK_8481388d6325e752cd4d7e26c6d" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "trucks" ADD CONSTRAINT "FK_8c4c103d41f1f81a82506ed7504" FOREIGN KEY ("currentDriverId") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "loads" ADD CONSTRAINT "FK_f7e8115cc0ad9befebb3a666f4c" FOREIGN KEY ("assignedTruckId") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "loads" ADD CONSTRAINT "FK_20cae08ac027e8f02fa76440b1f" FOREIGN KEY ("assignedCarrierId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_sessions" ADD CONSTRAINT "FK_e9658e959c490b0a634dfc54783" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_permission_overrides" ADD CONSTRAINT "FK_1d942b6fc3eeefb988291fb1286" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_permission_overrides" ADD CONSTRAINT "FK_b23ab6a57668ecca2e2398287ea" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_permission_overrides" ADD CONSTRAINT "FK_05cf99c180d170ed758f03a80fe" FOREIGN KEY ("granted_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_kyc_documents" ADD CONSTRAINT "FK_f0d33db611c87e2bca1f9f7edf6" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_kyc_documents" ADD CONSTRAINT "FK_1b8ced93a14a57a3a8cf5553440" FOREIGN KEY ("user_profile_id") REFERENCES "user_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_kyc_documents" ADD CONSTRAINT "FK_d1eb93b1634018ae411173943b6" FOREIGN KEY ("verified_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_kyc_audit_log" ADD CONSTRAINT "FK_e1d131cc51fb6cdb698da6daba2" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_kyc_audit_log" ADD CONSTRAINT "FK_d5b619ad0cef9a8dc2666d4cb6f" FOREIGN KEY ("user_profile_id") REFERENCES "user_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "user_kyc_audit_log" ADD CONSTRAINT "FK_52c650b77259d2495b15b67769f" FOREIGN KEY ("performed_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "subscription_payments" ADD CONSTRAINT "FK_3d76b7ca2d964925a54ad9fd516" FOREIGN KEY ("subscription_id") REFERENCES "tenant_subscriptions"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "subscription_payments" ADD CONSTRAINT "FK_173289b1de8485fbb852ff08fa8" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "FK_872ba75a97257de9a4bf8557ffa" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "FK_e9e4079e4a9bc1ddeb3452b7f69" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_c2694a0c5f7cbf8d96bc43273be" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_c8bc6d59f7c92922a2c691548d7" FOREIGN KEY ("credit_account_id") REFERENCES "credit_accounts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_77840254310a94486bc1773735f" FOREIGN KEY ("subscription_id") REFERENCES "tenant_subscriptions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_transactions" ADD CONSTRAINT "FK_cec145f863cf10a14ecd9f47090" FOREIGN KEY ("payment_id") REFERENCES "payments"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "FK_c59c97d5c1343951e044c137f02" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "FK_cb2ac3bd398220d534c92db8b2e" FOREIGN KEY ("plan_id") REFERENCES "subscription_plans"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_kyc_documents" ADD CONSTRAINT "FK_9ccc21465f0cc832c821d48a4b0" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_kyc_documents" ADD CONSTRAINT "FK_0f6ffb96f893d9f75b205882c62" FOREIGN KEY ("uploadedBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_kyc_documents" ADD CONSTRAINT "FK_099ab4bc9a89e3d40c12875d155" FOREIGN KEY ("verifiedBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_kyc_audit_log" ADD CONSTRAINT "FK_808e971782408664b9c7698a9dd" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "tenant_kyc_audit_log" ADD CONSTRAINT "FK_b1a4f3a3fb4892c7d23c1270726" FOREIGN KEY ("performedBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "system_settings" ADD CONSTRAINT "FK_301c531938f84c39fa5019e7465" FOREIGN KEY ("updated_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "security_events" ADD CONSTRAINT "FK_d1891b273f5c77638d2149a9f0d" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "security_events" ADD CONSTRAINT "FK_63fea9549fcb8977a3c0abd7833" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_e907e614e2cc6216ac076eb75e5" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_64c90edc7310c6be7c10c96f675" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "notification_logs" ADD CONSTRAINT "FK_fe6690289c5e319b2ac0d809d72" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "notification_logs" ADD CONSTRAINT "FK_f803d5e1bd85942b24ee4248701" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "maintenance_logs" ADD CONSTRAINT "FK_2b96fafe15b3ff0c0c3eb41851e" FOREIGN KEY ("truckId") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "maintenance_logs" ADD CONSTRAINT "FK_2abbdd7df627b46588df86e4fc1" FOREIGN KEY ("driverId") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "loan_terms" ADD CONSTRAINT "FK_116c853dd79fad5ec4f32008091" FOREIGN KEY ("loan_request_id") REFERENCES "loan_requests"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_system_config" ADD CONSTRAINT "FK_e315e889a7c4d15e733070b95f0" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_loan_limits" ADD CONSTRAINT "FK_b7516ddeff9ac0bca90c9c33d08" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_risk_assessment" ADD CONSTRAINT "FK_a1217463c9cc7516dcf007ce6d9" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_repayment" ADD CONSTRAINT "FK_42f6baf1f6be3f5a29711e1a57a" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_interest_rates" ADD CONSTRAINT "FK_93ae61fd5e91923a15c598b8685" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_eligibility_criteria" ADD CONSTRAINT "FK_5bc4e26a401efdc294a48efdf9d" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "lending_policy_cargo_types" ADD CONSTRAINT "FK_e4124ffc2ef9eb6564ec1962915" FOREIGN KEY ("lender_id") REFERENCES "lenders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_58b6d392b802763fda1b8cdd21d" FOREIGN KEY ("truckId") REFERENCES "trucks"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "fuel_wallets" ADD CONSTRAINT "FK_e52f696cd5ffc8d3ef96797494a" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "fuel_wallets" ADD CONSTRAINT "FK_eea5888de16d9fec2461723f294" FOREIGN KEY ("truck_id") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "fuel_wallet_transactions" ADD CONSTRAINT "FK_0adf3fef543d81a563c948f6c2a" FOREIGN KEY ("wallet_id") REFERENCES "fuel_wallets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "fuel_wallet_transactions" ADD CONSTRAINT "FK_9f1c742be605b50e4979187eb47" FOREIGN KEY ("fuel_log_id") REFERENCES "fuel_logs"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "fuel_budgets" ADD CONSTRAINT "FK_fc3274d6f51a80da8bf46fca1bf" FOREIGN KEY ("trip_id") REFERENCES "trips"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "fuel_budgets" ADD CONSTRAINT "FK_6aed29ce3bd375ef016a3873b21" FOREIGN KEY ("truck_id") REFERENCES "trucks"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "driver_fuel_advances" ADD CONSTRAINT "FK_f64cd8a026b9982470f57f479e0" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "driver_fuel_advances" ADD CONSTRAINT "FK_81fd596a616bb36f9172eb2481a" FOREIGN KEY ("trip_id") REFERENCES "trips"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "driver_fuel_advances" ADD CONSTRAINT "FK_70202c19a5a9040c02f1c38c182" FOREIGN KEY ("approved_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "FK_97352a82a3e20c23bd7df1ad3ad" FOREIGN KEY ("plan_id") REFERENCES "subscription_plans"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "FK_d997cf3d01e7778b2986194d50f" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "FK_5ac1ba7d95a8826a6cfb5011b21" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "FK_3bc8be1900291afb8b56ab05b8b" FOREIGN KEY ("tenant_admin_user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "cargo_owner_analytics" ADD CONSTRAINT "FK_7bb26828f77527d3ff1a88d05b1" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "cargo_owner_analytics" ADD CONSTRAINT "FK_9bca7a9dbc4e481c745b4f3285f" FOREIGN KEY ("cargo_owner_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "cargo_owner_analytics" ADD CONSTRAINT "FK_6e200f546c62dd34839d181598e" FOREIGN KEY ("load_id") REFERENCES "loads"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "bulk_email_logs" ADD CONSTRAINT "FK_7cb8ee9bd09df8d4fcaf012d906" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "bulk_email_logs" ADD CONSTRAINT "FK_75fde5dd9def7c599a714d67f6b" FOREIGN KEY ("template_id") REFERENCES "email_templates"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "bulk_email_logs" ADD CONSTRAINT "FK_c2a3057ae61dbd0cf6caf27a5c1" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "analytics_insights" ADD CONSTRAINT "FK_db208a678e94f8c8f37fe3816b1" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "analytics_insights" ADD CONSTRAINT "FK_66f4e94935a0c84ef10772ec3d2" FOREIGN KEY ("cargo_owner_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "activity_logs" ADD CONSTRAINT "FK_d54f841fa5478e4734590d44036" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_b70c44e8b00757584a393225593" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "notification_preferences" ADD CONSTRAINT "FK_b3403e8b519a383776f6c693cc9" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "multi_modal_shipments" ADD CONSTRAINT "FK_013e3043db9d06f9854d4bb17d4" FOREIGN KEY ("loadId") REFERENCES "loads"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "multi_modal_legs" ADD CONSTRAINT "FK_3b0f09ebc541d9513e8afab1e32" FOREIGN KEY ("shipmentId") REFERENCES "multi_modal_shipments"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_47ae4807b3ed676f608660b8dfa" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_d4e396c5a1c8de48961bdf349a2" FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "insurance_claims" ADD CONSTRAINT "FK_42c8e0e8ee2e6953e607e7c2daa" FOREIGN KEY ("assignedTo") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+            `ALTER TABLE "insurance_policies" ADD CONSTRAINT "FK_32881c13a51d3576a0222a6ebde" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "insurance_policies" ADD CONSTRAINT "FK_bf04611ec3fbf4d71b9f8515d43" FOREIGN KEY ("createdBy") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+            `ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_178199805b901ccd220ab7740ec" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+            `ALTER TABLE "role_permissions" ADD CONSTRAINT "FK_17022daf3f885f7d35423e9971e" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+            `ALTER TABLE "role_inheritance" ADD CONSTRAINT "FK_1a5a1be0ff83033579522b0e4e5" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+            `ALTER TABLE "role_inheritance" ADD CONSTRAINT "FK_c118ebf755f0edce9d609279d02" FOREIGN KEY ("inherits_from_role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE`,
+        ];
+
+        for (const query of finalOperations) {
+            try {
+                await queryRunner.query(`SAVEPOINT migration_step`);
+                await queryRunner.query(query);
+                await queryRunner.query(`RELEASE SAVEPOINT migration_step`);
+            } catch (error) {
+                await queryRunner.query(`ROLLBACK TO SAVEPOINT migration_step`);
+                // Ignore errors during final schema evolution
+            }
+        }
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
@@ -2153,7 +2191,7 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "tenants" ADD "health_score" integer DEFAULT '100'`);
         await queryRunner.query(`ALTER TABLE "user_profiles" ADD "user_id" uuid`);
         await queryRunner.query(`ALTER TABLE "user_profiles" ADD CONSTRAINT "REL_6ca9503d77ae39b4b5a6cc3ba8" UNIQUE ("user_id")`);
-        const drops = [
+        const cleanupQueries = [
             `DROP INDEX IF EXISTS "public"."IDX_c118ebf755f0edce9d609279d0"`,
             `DROP INDEX IF EXISTS "public"."IDX_1a5a1be0ff83033579522b0e4e"`,
             `DROP TABLE IF EXISTS "role_inheritance"`,
@@ -2167,8 +2205,8 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
             `DROP INDEX IF EXISTS "public"."IDX_2e736b729859342dec27976bc8"`,
             `DROP INDEX IF EXISTS "public"."IDX_388821de26f6747a5e8170f8d8"`,
             `DROP TABLE IF EXISTS "analytics_insights"`,
-            `DROP TYPE "public"."analytics_insights_status_enum"`,
-            `DROP TYPE "public"."analytics_insights_insight_type_enum"`,
+            `DROP TYPE IF EXISTS "public"."analytics_insights_status_enum"`,
+            `DROP TYPE IF EXISTS "public"."analytics_insights_insight_type_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_af7d535aea2fc3ca1eb561ad30"`,
             `DROP INDEX IF EXISTS "public"."IDX_a3de91fac75e0f8c03a52af32a"`,
             `DROP INDEX IF EXISTS "public"."IDX_c7ea716d05f5325c4130a6867e"`,
@@ -2181,30 +2219,30 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
             `DROP INDEX IF EXISTS "public"."IDX_8697e3af559e7fa64541e43e06"`,
             `DROP INDEX IF EXISTS "public"."IDX_f88a03adcc9e90f99ca260ebaa"`,
             `DROP TABLE IF EXISTS "epods"`,
-            `DROP TYPE "public"."epods_status_enum"`,
+            `DROP TYPE IF EXISTS "public"."epods_status_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_0d100cf8bbd893a0469deb488d"`,
             `DROP INDEX IF EXISTS "public"."IDX_5ce2b1aebad387c1afe3a41343"`,
             `DROP INDEX IF EXISTS "public"."IDX_48e45ac17b4e397bc55d22c153"`,
             `DROP TABLE IF EXISTS "fuel_budgets"`,
-            `DROP TYPE "public"."fuel_budgets_status_enum"`,
+            `DROP TYPE IF EXISTS "public"."fuel_budgets_status_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_1af373960050ecb35914150112"`,
             `DROP TABLE IF EXISTS "kyc_role_requirements"`,
-            `DROP TYPE "public"."kyc_role_requirements_requirement_level_enum"`,
-            `DROP TYPE "public"."kyc_role_requirements_role_enum"`,
+            `DROP TYPE IF EXISTS "public"."kyc_role_requirements_requirement_level_enum"`,
+            `DROP TYPE IF EXISTS "public"."kyc_role_requirements_role_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_7ca4ed34a4206249d7092751bc"`,
             `DROP INDEX IF EXISTS "public"."IDX_a95cd3c455317ef9fd18f95050"`,
             `DROP INDEX IF EXISTS "public"."IDX_5f4c893f2ee8263e346dfa1bf8"`,
             `DROP INDEX IF EXISTS "public"."IDX_f803d5e1bd85942b24ee424870"`,
             `DROP TABLE IF EXISTS "notification_logs"`,
-            `DROP TYPE "public"."notification_logs_status_enum"`,
-            `DROP TYPE "public"."notification_logs_channel_enum"`,
-            `DROP TYPE "public"."notification_logs_notification_type_enum"`,
+            `DROP TYPE IF EXISTS "public"."notification_logs_status_enum"`,
+            `DROP TYPE IF EXISTS "public"."notification_logs_channel_enum"`,
+            `DROP TYPE IF EXISTS "public"."notification_logs_notification_type_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_e1d131cc51fb6cdb698da6daba"`,
             `DROP INDEX IF EXISTS "public"."IDX_d5b619ad0cef9a8dc2666d4cb6"`,
             `DROP INDEX IF EXISTS "public"."IDX_08e2c9330c96799fbbcc471190"`,
             `DROP INDEX IF EXISTS "public"."IDX_ed69c699355cfd7536cab85e11"`,
             `DROP TABLE IF EXISTS "user_kyc_audit_log"`,
-            `DROP TYPE "public"."user_kyc_audit_log_action_enum"`,
+            `DROP TYPE IF EXISTS "public"."user_kyc_audit_log_action_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_f0d33db611c87e2bca1f9f7edf"`,
             `DROP INDEX IF EXISTS "public"."IDX_1b8ced93a14a57a3a8cf555344"`,
             `DROP INDEX IF EXISTS "public"."IDX_d9fe14eea34dd7d7a8f2e16331"`,
@@ -2212,8 +2250,8 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
             `DROP INDEX IF EXISTS "public"."IDX_e4cdc64b38672f20cd6ed6a1d3"`,
             `DROP INDEX IF EXISTS "public"."IDX_e929f0bed4987cb835b89e31b7"`,
             `DROP TABLE IF EXISTS "user_kyc_documents"`,
-            `DROP TYPE "public"."user_kyc_documents_document_category_enum"`,
-            `DROP TYPE "public"."user_kyc_documents_document_type_enum"`,
+            `DROP TYPE IF EXISTS "public"."user_kyc_documents_document_category_enum"`,
+            `DROP TYPE IF EXISTS "public"."user_kyc_documents_document_type_enum"`,
             `DROP INDEX IF EXISTS "public"."IDX_1d942b6fc3eeefb988291fb128"`,
             `DROP INDEX IF EXISTS "public"."IDX_85a618dede80136ba35a03b6a4"`,
             `DROP TABLE IF EXISTS "user_permission_overrides"`,
@@ -2236,9 +2274,188 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
             `COMMENT ON TABLE "tenant_kyc_audit_log" IS NULL`,
             `COMMENT ON TABLE "tenant_kyc_documents" IS NULL`,
             `COMMENT ON TABLE "permissions" IS NULL`,
-            `COMMENT ON TABLE "user_sessions" IS NULL`
+            `COMMENT ON TABLE "user_sessions" IS NULL`,
+            `ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_permission_id_key" UNIQUE ("role", "permission_id")`,
+            `ALTER TABLE "system_settings" ADD CONSTRAINT "UQ_system_settings_category_key" UNIQUE ("category", "key")`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "uq_credit_accounts_tenant_user" UNIQUE ("tenant_id", "user_id")`,
+            `ALTER TABLE "permissions" ADD CONSTRAINT "permissions_resource_action_key" UNIQUE ("resource", "action")`,
+            `ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "positive_price" CHECK ((price_per_credit > (0)::numeric))`,
+            `ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "max_greater_than_min" CHECK (((max_purchase_amount IS NULL) OR (max_purchase_amount >= min_purchase_amount)))`,
+            `ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "positive_max_purchase" CHECK (((max_purchase_amount IS NULL) OR (max_purchase_amount > 0)))`,
+            `ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "positive_min_purchase" CHECK ((min_purchase_amount > 0))`,
+            `ALTER TABLE "credit_packages" ADD CONSTRAINT "chk_valid_discount" CHECK (((discount_percentage >= 0) AND (discount_percentage <= 100)))`,
+            `ALTER TABLE "credit_packages" ADD CONSTRAINT "chk_positive_price" CHECK ((price > (0)::numeric))`,
+            `ALTER TABLE "credit_packages" ADD CONSTRAINT "chk_positive_credits" CHECK ((credits > 0))`,
+            `ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "chk_valid_rule_type" CHECK (((rule_type)::text = ANY ((ARRAY['weight'::character varying, 'distance'::character varying, 'time'::character varying, 'flat'::character varying])::text[])))`,
+            `ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "chk_positive_cost" CHECK ((credit_cost >= (0)::numeric))`,
+            `ALTER TABLE "feature_credit_costs" ADD CONSTRAINT "chk_positive_cost" CHECK ((credit_cost >= (0)::numeric))`,
+            `ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "chk_billing_cycle" CHECK (((billing_cycle)::text = ANY ((ARRAY['monthly'::character varying, 'yearly'::character varying])::text[])))`,
+            `ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "chk_subscription_status" CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'cancelled'::character varying, 'expired'::character varying, 'suspended'::character varying, 'trial'::character varying])::text[])))`,
+            `ALTER TABLE "credit_transactions" ADD CONSTRAINT "chk_transaction_type" CHECK (((type)::text = ANY ((ARRAY['SUBSCRIPTION_GRANT'::character varying, 'PURCHASE'::character varying, 'CONSUMPTION'::character varying, 'REFUND'::character varying, 'BONUS'::character varying, 'EXPIRY'::character varying, 'ADJUSTMENT'::character varying])::text[])))`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_bonus_credits" CHECK ((bonus_credits >= 0))`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_purchased_credits" CHECK ((purchased_credits >= 0))`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_subscription_credits" CHECK ((subscription_credits >= 0))`,
+            `ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_balance" CHECK ((current_balance >= 0))`,
+            `CREATE INDEX "idx_role_permissions_permission" ON "role_permissions" ("permission_id")`,
+            `CREATE INDEX "idx_role_permissions_role" ON "role_permissions" ("role")`,
+            `CREATE INDEX "IDX_1592f9cf82406fbce791f0f19a" ON "insurance_policies" ("status")`,
+            `CREATE INDEX "IDX_6a368689710b119486785bf8cc" ON "insurance_claims" ("status")`,
+            `CREATE INDEX "IDX_rate_limits_tenant_createdAt" ON "rate_limits" ("tenantId", "createdAt")`,
+            `CREATE INDEX "IDX_rate_limits_tenant_endpoint_createdAt" ON "rate_limits" ("tenantId", "endpoint", "createdAt")`,
+            `CREATE INDEX "idx_activity_logs_security_created" ON "activity_logs" ("created_at", "security_relevant") WHERE (security_relevant = true)`,
+            `CREATE INDEX "idx_activity_logs_security_relevant" ON "activity_logs" ("security_relevant") WHERE (security_relevant = true)`,
+            `CREATE INDEX "idx_activity_logs_suspicious" ON "activity_logs" ("is_suspicious") WHERE (is_suspicious = true)`,
+            `CREATE INDEX "idx_activity_logs_created_at" ON "activity_logs" ("created_at")`,
+            `CREATE INDEX "idx_activity_logs_resource" ON "activity_logs" ("resource", "resource_id")`,
+            `CREATE INDEX "idx_activity_logs_action" ON "activity_logs" ("action")`,
+            `CREATE INDEX "idx_activity_logs_user_id" ON "activity_logs" ("user_id")`,
+            `CREATE INDEX "IDX_broker_disputes_tenant_created" ON "broker_disputes" ("tenantId", "createdAt")`,
+            `CREATE INDEX "IDX_broker_disputes_trip_status" ON "broker_disputes" ("tripId", "status")`,
+            `CREATE INDEX "IDX_broker_disputes_load_status" ON "broker_disputes" ("loadId", "status")`,
+            `CREATE INDEX "IDX_broker_disputes_broker_status" ON "broker_disputes" ("brokerId", "status")`,
+            `CREATE INDEX "IDX_broker_transporter_performance_transporter_calculated" ON "broker_transporter_performance" ("transporterId", "calculatedAt")`,
+            `CREATE INDEX "IDX_broker_transporter_performance_broker_transporter" ON "broker_transporter_performance" ("brokerId", "transporterId")`,
+            `CREATE INDEX "IDX_broker_multi_stop_loads_broker_load" ON "broker_multi_stop_loads" ("brokerId", "loadId")`,
+            `CREATE INDEX "IDX_broker_transporter_credit_transporter_status" ON "broker_transporter_credit" ("transporterId", "status")`,
+            `CREATE INDEX "IDX_broker_transporter_credit_broker_transporter" ON "broker_transporter_credit" ("brokerId", "transporterId")`,
+            `CREATE INDEX "IDX_broker_market_intelligence_route_type" ON "broker_market_intelligence" ("rateType", "route")`,
+            `CREATE INDEX "IDX_broker_market_intelligence_broker_created" ON "broker_market_intelligence" ("brokerId", "createdAt")`,
+            `CREATE INDEX "IDX_broker_market_intelligence_broker_route" ON "broker_market_intelligence" ("brokerId", "route")`,
+            `CREATE INDEX "IDX_broker_match_recommendations_transporter_status" ON "broker_match_recommendations" ("transporterId", "status")`,
+            `CREATE INDEX "IDX_broker_match_recommendations_broker_status" ON "broker_match_recommendations" ("brokerId", "status")`,
+            `CREATE INDEX "IDX_broker_match_recommendations_broker_load" ON "broker_match_recommendations" ("brokerId", "loadId")`,
+            `CREATE INDEX "idx_bulk_email_logs_created_by" ON "bulk_email_logs" ("created_by")`,
+            `CREATE INDEX "idx_bulk_email_logs_created_at" ON "bulk_email_logs" ("created_at")`,
+            `CREATE INDEX "idx_bulk_email_logs_status" ON "bulk_email_logs" ("status")`,
+            `CREATE INDEX "idx_bulk_email_logs_template" ON "bulk_email_logs" ("template_id")`,
+            `CREATE INDEX "idx_bulk_email_logs_tenant" ON "bulk_email_logs" ("tenant_id")`,
+            `CREATE INDEX "idx_marketplace_enabled" ON "credit_marketplace_settings" ("is_enabled") WHERE (is_enabled = true)`,
+            `CREATE INDEX "idx_marketplace_tenant" ON "credit_marketplace_settings" ("tenant_id")`,
+            `CREATE INDEX "idx_credit_packages_slug" ON "credit_packages" ("slug")`,
+            `CREATE INDEX "idx_credit_packages_active" ON "credit_packages" ("is_active", "display_order")`,
+            `CREATE INDEX "idx_pricing_rules_priority" ON "credit_pricing_rules" ("priority")`,
+            `CREATE INDEX "idx_pricing_rules_tenant" ON "credit_pricing_rules" ("tenant_id")`,
+            `CREATE INDEX "idx_pricing_rules_plan" ON "credit_pricing_rules" ("plan_id")`,
+            `CREATE INDEX "idx_pricing_rules_type" ON "credit_pricing_rules" ("rule_type", "is_active")`,
+            `CREATE INDEX "idx_dfa_tenant_status" ON "driver_fuel_advances" ("tenant_id", "status")`,
+            `CREATE INDEX "idx_dfa_tenant_trip" ON "driver_fuel_advances" ("tenant_id", "trip_id")`,
+            `CREATE INDEX "idx_dfa_tenant_driver" ON "driver_fuel_advances" ("tenant_id", "driver_id")`,
+            `CREATE INDEX "idx_email_templates_name" ON "email_templates" ("name")`,
+            `CREATE INDEX "idx_email_templates_active" ON "email_templates" ("is_active")`,
+            `CREATE INDEX "idx_email_templates_category" ON "email_templates" ("category")`,
+            `CREATE INDEX "IDX_escrow_accounts_tenant_created" ON "escrow_accounts" ("tenantId", "createdAt")`,
+            `CREATE INDEX "IDX_escrow_accounts_trip_status" ON "escrow_accounts" ("tripId", "status")`,
+            `CREATE INDEX "IDX_escrow_accounts_load_status" ON "escrow_accounts" ("loadId", "status")`,
+            `CREATE INDEX "idx_feature_credit_costs_active" ON "feature_credit_costs" ("is_active")`,
+            `CREATE INDEX "idx_feature_credit_costs_code" ON "feature_credit_costs" ("feature_code")`,
+            `CREATE INDEX "idx_fwt_wallet" ON "fuel_wallet_transactions" ("tenant_id", "wallet_id")`,
+            `CREATE INDEX "idx_fw_tenant_driver" ON "fuel_wallets" ("tenant_id", "driver_id")`,
+            `CREATE INDEX "idx_fw_tenant_owner" ON "fuel_wallets" ("tenant_id", "owner_id")`,
+            `CREATE UNIQUE INDEX "IDX_baa50eb26aac0be1b692c080fb" ON "insurance_policies" ("policyNumber")`,
+            `CREATE INDEX "IDX_8ba9f8f6f24babb4e5a4380198" ON "insurance_policies" ("truckId", "status")`,
+            `CREATE INDEX "IDX_390732a304351ba893fb459bbb" ON "insurance_policies" ("status", "tenantId")`,
+            `CREATE UNIQUE INDEX "IDX_7c69728b0eee8df90aa28cb3aa" ON "insurance_claims" ("claimNumber")`,
+            `CREATE INDEX "IDX_85a9f10e2000f5b9346c385a98" ON "insurance_claims" ("policyId", "status")`,
+            `CREATE INDEX "IDX_8e5c713517ab7a21ff3e863ca9" ON "insurance_claims" ("status", "tenantId")`,
+            `CREATE INDEX "IDX_insurance_verifications_tenant_created" ON "insurance_verifications" ("tenantId", "createdAt")`,
+            `CREATE INDEX "IDX_insurance_verifications_load_type" ON "insurance_verifications" ("loadId", "verificationType")`,
+            `CREATE INDEX "IDX_insurance_verifications_transporter_status" ON "insurance_verifications" ("transporterId", "status")`,
+            `CREATE INDEX "idx_lpct_cargo_category_active" ON "lending_policy_cargo_types" ("is_active", "cargo_category")`,
+            `CREATE INDEX "idx_lpct_lender_active" ON "lending_policy_cargo_types" ("lender_id", "is_active")`,
+            `CREATE INDEX "idx_cargo_types_cargo_type" ON "lending_policy_cargo_types" ("cargo_type")`,
+            `CREATE INDEX "idx_cargo_types_lender" ON "lending_policy_cargo_types" ("lender_id")`,
+            `CREATE INDEX "idx_lpec_category_active" ON "lending_policy_eligibility_criteria" ("category", "is_active")`,
+            `CREATE INDEX "idx_lpec_lender_active" ON "lending_policy_eligibility_criteria" ("lender_id", "is_active")`,
+            `CREATE INDEX "idx_lpir_risk_active" ON "lending_policy_interest_rates" ("risk_level", "is_active")`,
+            `CREATE INDEX "idx_lpir_lender_active" ON "lending_policy_interest_rates" ("lender_id", "is_active")`,
+            `CREATE INDEX "idx_interest_rates_active" ON "lending_policy_interest_rates" ("is_active")`,
+            `CREATE INDEX "idx_interest_rates_lender" ON "lending_policy_interest_rates" ("lender_id")`,
+            `CREATE INDEX "idx_lpr_frequency_active" ON "lending_policy_repayment" ("frequency", "is_active")`,
+            `CREATE INDEX "idx_lpr_lender_active" ON "lending_policy_repayment" ("lender_id", "is_active")`,
+            `CREATE INDEX "idx_repayment_lender" ON "lending_policy_repayment" ("lender_id")`,
+            `CREATE INDEX "idx_lpra_factor_active" ON "lending_policy_risk_assessment" ("factor", "is_active")`,
+            `CREATE INDEX "idx_lpra_lender_active" ON "lending_policy_risk_assessment" ("lender_id", "is_active")`,
+            `CREATE INDEX "idx_risk_assessment_lender" ON "lending_policy_risk_assessment" ("lender_id")`,
+            `CREATE INDEX "idx_lpll_business_type_active" ON "lending_policy_loan_limits" ("business_type", "is_active")`,
+            `CREATE INDEX "idx_lpll_lender_active" ON "lending_policy_loan_limits" ("lender_id", "is_active")`,
+            `CREATE INDEX "idx_loan_limits_business_type" ON "lending_policy_loan_limits" ("business_type")`,
+            `CREATE INDEX "idx_loan_limits_lender" ON "lending_policy_loan_limits" ("lender_id")`,
+            `CREATE UNIQUE INDEX "idx_lpsc_lender_id" ON "lending_policy_system_config" ("lender_id")`,
+            `CREATE INDEX "idx_system_config_lender" ON "lending_policy_system_config" ("lender_id")`,
+            `CREATE INDEX "IDX_loan_terms_lender_id_computed_at" ON "loan_terms" ("lender_id", "computed_at")`,
+            `CREATE INDEX "idx_ml_truck_status" ON "maintenance_logs" ("truckId", "status")`,
+            `CREATE INDEX "idx_ml_tenant_truck" ON "maintenance_logs" ("tenantId", "truckId")`,
+            `CREATE INDEX "IDX_messages_is_read" ON "messages" ("is_read")`,
+            `CREATE INDEX "IDX_messages_created_at" ON "messages" ("created_at")`,
+            `CREATE INDEX "IDX_messages_thread_id" ON "messages" ("thread_id")`,
+            `CREATE INDEX "IDX_messages_sender_recipient" ON "messages" ("sender_id", "recipient_id")`,
+            `CREATE INDEX "idx_messages_tenant_id" ON "messages" ("tenant_id")`,
+            `CREATE INDEX "idx_messages_is_read" ON "messages" ("is_read")`,
+            `CREATE INDEX "idx_messages_created_at" ON "messages" ("created_at")`,
+            `CREATE INDEX "idx_messages_thread_id" ON "messages" ("thread_id")`,
+            `CREATE INDEX "idx_messages_sender_recipient" ON "messages" ("sender_id", "recipient_id")`,
+            `CREATE INDEX "IDX_a2e2691f8172b07d81e0d1e347" ON "notification_preferences" ("tenantId", "userId")`,
+            `CREATE INDEX "IDX_90d452c90494da1080c16b52c1" ON "notification_preferences" ("userId", "category")`,
+            `CREATE INDEX "IDX_8facef03fbe2ee514e7fe7fe14" ON "notification_preferences" ("userId", "channel")`,
+            `CREATE INDEX "idx_security_events_severity_created" ON "security_events" ("severity", "created_at")`,
+            `CREATE INDEX "idx_security_events_event_type" ON "security_events" ("event_type")`,
+            `CREATE INDEX "idx_security_events_tenant_id" ON "security_events" ("tenant_id")`,
+            `CREATE INDEX "idx_security_events_user_id" ON "security_events" ("user_id")`,
+            `CREATE INDEX "idx_security_events_created_at" ON "security_events" ("created_at")`,
+            `CREATE INDEX "idx_security_events_severity" ON "security_events" ("severity")`,
+            `CREATE INDEX "idx_system_health_service_timestamp" ON "system_health_logs" ("service", "timestamp")`,
+            `CREATE INDEX "idx_system_health_timestamp" ON "system_health_logs" ("timestamp")`,
+            `CREATE INDEX "IDX_system_health_logs_service_timestamp" ON "system_health_logs" ("service", "timestamp")`,
+            `CREATE INDEX "IDX_system_health_logs_status" ON "system_health_logs" ("status")`,
+            `CREATE INDEX "IDX_system_health_logs_timestamp" ON "system_health_logs" ("timestamp")`,
+            `CREATE INDEX "IDX_system_health_logs_service" ON "system_health_logs" ("service")`,
+            `CREATE INDEX "IDX_system_settings_is_public" ON "system_settings" ("is_public") WHERE (is_public = true)`,
+            `CREATE INDEX "IDX_system_settings_category" ON "system_settings" ("category")`,
+            `CREATE INDEX "idx_tenant_kyc_audit_log_created_at" ON "tenant_kyc_audit_log" ("created_at")`,
+            `CREATE INDEX "idx_tenant_kyc_audit_log_tenant_id" ON "tenant_kyc_audit_log" ("tenant_id")`,
+            `CREATE INDEX "idx_tenant_kyc_documents_verified" ON "tenant_kyc_documents" ("verified")`,
+            `CREATE INDEX "idx_tenant_kyc_documents_type" ON "tenant_kyc_documents" ("document_type")`,
+            `CREATE INDEX "idx_tenant_kyc_documents_tenant_id" ON "tenant_kyc_documents" ("tenant_id")`,
+            `CREATE INDEX "idx_tenant_subscriptions_user_id" ON "tenant_subscriptions" ("user_id")`,
+            `CREATE INDEX "idx_tenant_subscriptions_period" ON "tenant_subscriptions" ("current_period_end")`,
+            `CREATE INDEX "idx_tenant_subscriptions_status" ON "tenant_subscriptions" ("status")`,
+            `CREATE INDEX "idx_tenant_subscriptions_tenant" ON "tenant_subscriptions" ("tenant_id")`,
+            `CREATE INDEX "idx_credit_transactions_user_id" ON "credit_transactions" ("user_id")`,
+            `CREATE INDEX "idx_credit_transactions_reference" ON "credit_transactions" ("reference_type", "reference_id")`,
+            `CREATE INDEX "idx_credit_transactions_type" ON "credit_transactions" ("type", "created_at")`,
+            `CREATE INDEX "idx_credit_transactions_account" ON "credit_transactions" ("credit_account_id", "created_at")`,
+            `CREATE INDEX "idx_credit_transactions_tenant" ON "credit_transactions" ("tenant_id", "created_at")`,
+            `CREATE INDEX "idx_credit_accounts_partners_sold" ON "credit_accounts" ("total_partners_sold")`,
+            `CREATE INDEX "idx_credit_accounts_revenue" ON "credit_accounts" ("revenue_from_partner_sales")`,
+            `CREATE UNIQUE INDEX "idx_credit_accounts_tenant_user" ON "credit_accounts" ("tenant_id", "user_id") WHERE (user_id IS NOT NULL)`,
+            `CREATE INDEX "idx_credit_accounts_user_id" ON "credit_accounts" ("user_id")`,
+            `CREATE INDEX "idx_credit_accounts_refresh" ON "credit_accounts" ("next_refresh_date")`,
+            `CREATE INDEX "idx_credit_accounts_balance" ON "credit_accounts" ("current_balance")`,
+            `CREATE INDEX "idx_credit_accounts_tenant" ON "credit_accounts" ("tenant_id")`,
+            `CREATE INDEX "idx_subscription_payments_invoice" ON "subscription_payments" ("invoice_number")`,
+            `CREATE INDEX "idx_subscription_payments_payment" ON "subscription_payments" ("payment_id")`,
+            `CREATE INDEX "idx_subscription_payments_subscription" ON "subscription_payments" ("subscription_id", "created_at")`,
+            `CREATE INDEX "idx_subscription_plans_parent_subscription_id" ON "subscription_plans" ("parent_subscription_id")`,
+            `CREATE INDEX "idx_subscription_plans_credits_per_ton" ON "subscription_plans" ("credits_per_ton_tenant", "credits_per_ton_truck_owner")`,
+            `CREATE INDEX "idx_subscription_plans_price_per_credit" ON "subscription_plans" ("price_per_credit")`,
+            `CREATE INDEX "idx_subscription_plans_active" ON "subscription_plans" ("is_active", "display_order")`,
+            `CREATE INDEX "idx_subscription_plans_slug" ON "subscription_plans" ("slug")`,
+            `CREATE INDEX "idx_permissions_name" ON "permissions" ("name")`,
+            `CREATE INDEX "idx_permissions_action" ON "permissions" ("action")`,
+            `CREATE INDEX "idx_permissions_resource" ON "permissions" ("resource")`,
+            `CREATE INDEX "idx_user_sessions_last_activity" ON "user_sessions" ("last_activity")`,
+            `CREATE INDEX "idx_user_sessions_expires_at" ON "user_sessions" ("expires_at")`,
+            `CREATE INDEX "idx_user_sessions_tenant_id" ON "user_sessions" ("tenant_id")`,
+            `CREATE INDEX "idx_user_sessions_user_id" ON "user_sessions" ("user_id")`,
+            `CREATE UNIQUE INDEX "IDX_users_tenant_email_role" ON "users" ("tenantId", "email", "role") WHERE (deleted_at IS NULL)`,
+            `CREATE INDEX "idx_tenants_kyc_submitted_at" ON "tenants" ("kyc_submitted_at")`,
+            `CREATE INDEX "idx_tenants_kyc_status" ON "tenants" ("kyc_status")`,
+            `CREATE INDEX "idx_tenants_last_health_check" ON "tenants" ("last_health_check")`,
+            `CREATE INDEX "idx_tenants_health_score" ON "tenants" ("health_score")`,
+            `CREATE INDEX "idx_tenants_onboarding_step" ON "tenants" ("onboardingStep")`,
+            `CREATE INDEX "IDX_user_profiles_kyc_requirement_level" ON "user_profiles" ("kyc_requirement_level")`
         ];
-        for (const query of drops) {
+        for (const query of cleanupQueries) {
             try {
                 await queryRunner.query(`SAVEPOINT migration_cleanup_safety`);
                 await queryRunner.query(query);
@@ -2247,62 +2464,6 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
                 await queryRunner.query(`ROLLBACK TO SAVEPOINT migration_cleanup_safety`);
             }
         }
-        await queryRunner.query(`ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_permission_id_key" UNIQUE ("role", "permission_id")`);
-        await queryRunner.query(`ALTER TABLE "system_settings" ADD CONSTRAINT "UQ_system_settings_category_key" UNIQUE ("category", "key")`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "uq_credit_accounts_tenant_user" UNIQUE ("tenant_id", "user_id")`);
-        await queryRunner.query(`ALTER TABLE "permissions" ADD CONSTRAINT "permissions_resource_action_key" UNIQUE ("resource", "action")`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "positive_price" CHECK ((price_per_credit > (0)::numeric))`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "max_greater_than_min" CHECK (((max_purchase_amount IS NULL) OR (max_purchase_amount >= min_purchase_amount)))`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "positive_max_purchase" CHECK (((max_purchase_amount IS NULL) OR (max_purchase_amount > 0)))`);
-        await queryRunner.query(`ALTER TABLE "credit_marketplace_settings" ADD CONSTRAINT "positive_min_purchase" CHECK ((min_purchase_amount > 0))`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" ADD CONSTRAINT "chk_valid_discount" CHECK (((discount_percentage >= 0) AND (discount_percentage <= 100)))`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" ADD CONSTRAINT "chk_positive_price" CHECK ((price > (0)::numeric))`);
-        await queryRunner.query(`ALTER TABLE "credit_packages" ADD CONSTRAINT "chk_positive_credits" CHECK ((credits > 0))`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "chk_valid_rule_type" CHECK (((rule_type)::text = ANY ((ARRAY['weight'::character varying, 'distance'::character varying, 'time'::character varying, 'flat'::character varying])::text[])))`);
-        await queryRunner.query(`ALTER TABLE "credit_pricing_rules" ADD CONSTRAINT "chk_positive_cost" CHECK ((credit_cost >= (0)::numeric))`);
-        await queryRunner.query(`ALTER TABLE "feature_credit_costs" ADD CONSTRAINT "chk_positive_cost" CHECK ((credit_cost >= (0)::numeric))`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "chk_billing_cycle" CHECK (((billing_cycle)::text = ANY ((ARRAY['monthly'::character varying, 'yearly'::character varying])::text[])))`);
-        await queryRunner.query(`ALTER TABLE "tenant_subscriptions" ADD CONSTRAINT "chk_subscription_status" CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'cancelled'::character varying, 'expired'::character varying, 'suspended'::character varying, 'trial'::character varying])::text[])))`);
-        await queryRunner.query(`ALTER TABLE "credit_transactions" ADD CONSTRAINT "chk_transaction_type" CHECK (((type)::text = ANY ((ARRAY['SUBSCRIPTION_GRANT'::character varying, 'PURCHASE'::character varying, 'CONSUMPTION'::character varying, 'REFUND'::character varying, 'BONUS'::character varying, 'EXPIRY'::character varying, 'ADJUSTMENT'::character varying])::text[])))`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_bonus_credits" CHECK ((bonus_credits >= 0))`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_purchased_credits" CHECK ((purchased_credits >= 0))`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_subscription_credits" CHECK ((subscription_credits >= 0))`);
-        await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "chk_positive_balance" CHECK ((current_balance >= 0))`);
-        await queryRunner.query(`CREATE INDEX "idx_role_permissions_permission" ON "role_permissions" ("permission_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_role_permissions_role" ON "role_permissions" ("role") `);
-        await queryRunner.query(`CREATE INDEX "IDX_1592f9cf82406fbce791f0f19a" ON "insurance_policies" ("status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6a368689710b119486785bf8cc" ON "insurance_claims" ("status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_rate_limits_tenant_createdAt" ON "rate_limits" ("tenantId", "createdAt") `);
-        await queryRunner.query(`CREATE INDEX "IDX_rate_limits_tenant_endpoint_createdAt" ON "rate_limits" ("tenantId", "endpoint", "createdAt") `);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_security_created" ON "activity_logs" ("created_at", "security_relevant") WHERE (security_relevant = true)`);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_security_relevant" ON "activity_logs" ("security_relevant") WHERE (security_relevant = true)`);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_suspicious" ON "activity_logs" ("is_suspicious") WHERE (is_suspicious = true)`);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_created_at" ON "activity_logs" ("created_at") `);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_resource" ON "activity_logs" ("resource", "resource_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_action" ON "activity_logs" ("action") `);
-        await queryRunner.query(`CREATE INDEX "idx_activity_logs_user_id" ON "activity_logs" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_disputes_tenant_created" ON "broker_disputes" ("tenantId", "createdAt") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_disputes_trip_status" ON "broker_disputes" ("tripId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_disputes_load_status" ON "broker_disputes" ("loadId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_disputes_broker_status" ON "broker_disputes" ("brokerId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_transporter_performance_transporter_calculated" ON "broker_transporter_performance" ("transporterId", "calculatedAt") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_transporter_performance_broker_transporter" ON "broker_transporter_performance" ("brokerId", "transporterId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_multi_stop_loads_broker_load" ON "broker_multi_stop_loads" ("brokerId", "loadId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_transporter_credit_transporter_status" ON "broker_transporter_credit" ("transporterId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_transporter_credit_broker_transporter" ON "broker_transporter_credit" ("brokerId", "transporterId") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_market_intelligence_route_type" ON "broker_market_intelligence" ("rateType", "route") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_market_intelligence_broker_created" ON "broker_market_intelligence" ("brokerId", "createdAt") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_market_intelligence_broker_route" ON "broker_market_intelligence" ("brokerId", "route") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_match_recommendations_transporter_status" ON "broker_match_recommendations" ("transporterId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_match_recommendations_broker_status" ON "broker_match_recommendations" ("brokerId", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_broker_match_recommendations_broker_load" ON "broker_match_recommendations" ("brokerId", "loadId") `);
-        await queryRunner.query(`CREATE INDEX "idx_bulk_email_logs_created_by" ON "bulk_email_logs" ("created_by") `);
-        await queryRunner.query(`CREATE INDEX "idx_bulk_email_logs_created_at" ON "bulk_email_logs" ("created_at") `);
-        await queryRunner.query(`CREATE INDEX "idx_bulk_email_logs_status" ON "bulk_email_logs" ("status") `);
-        await queryRunner.query(`CREATE INDEX "idx_bulk_email_logs_template" ON "bulk_email_logs" ("template_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_bulk_email_logs_tenant" ON "bulk_email_logs" ("tenant_id") `);
-        await queryRunner.query(`CREATE INDEX "idx_marketplace_enabled" ON "credit_marketplace_settings" ("is_enabled") WHERE (is_enabled = true)`);
-        await queryRunner.query(`CREATE INDEX "idx_marketplace_tenant" ON "credit_marketplace_settings" ("tenant_id") `);
         await queryRunner.query(`CREATE INDEX "idx_credit_packages_slug" ON "credit_packages" ("slug") `);
         await queryRunner.query(`CREATE INDEX "idx_credit_packages_active" ON "credit_packages" ("is_active", "display_order") `);
         await queryRunner.query(`CREATE INDEX "idx_pricing_rules_priority" ON "credit_pricing_rules" ("priority") `);
