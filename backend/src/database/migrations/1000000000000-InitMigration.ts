@@ -54,6 +54,7 @@ export class InitMigration1000000000000 implements MigrationInterface {
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_rewards_type_enum') THEN
           CREATE TYPE "public"."user_rewards_type_enum" AS ENUM('transaction_bonus', 'volume_bonus', 'loyalty_points', 'cashback', 'discount', 'premium_features');
         END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);
     await queryRunner.query(`
@@ -62,6 +63,7 @@ export class InitMigration1000000000000 implements MigrationInterface {
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_rewards_status_enum') THEN
           CREATE TYPE "public"."user_rewards_status_enum" AS ENUM('pending', 'active', 'redeemed', 'expired');
         END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);
     // Check if table exists before creating
@@ -83,6 +85,7 @@ export class InitMigration1000000000000 implements MigrationInterface {
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_ratings_ratingtype_enum') THEN
           CREATE TYPE "public"."user_ratings_ratingtype_enum" AS ENUM('transporter', 'financing_community', 'platform');
         END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);
     await queryRunner.query(`
@@ -91,6 +94,7 @@ export class InitMigration1000000000000 implements MigrationInterface {
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_ratings_category_enum') THEN
           CREATE TYPE "public"."user_ratings_category_enum" AS ENUM('reliability', 'payment_punctuality', 'communication', 'cargo_condition', 'professionalism', 'overall');
         END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);
     await queryRunner.query(
@@ -102,6 +106,7 @@ export class InitMigration1000000000000 implements MigrationInterface {
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tenants_type_enum') THEN
           CREATE TYPE "public"."tenants_type_enum" AS ENUM('ENTERPRISE', 'SMALL_BUSINESS', 'INDIVIDUAL', 'PARTNER');
         END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);
     await queryRunner.query(`
@@ -110,6 +115,7 @@ export class InitMigration1000000000000 implements MigrationInterface {
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tenants_status_enum') THEN
           CREATE TYPE "public"."tenants_status_enum" AS ENUM('ACTIVE', 'SUSPENDED', 'PENDING_ACTIVATION', 'DEACTIVATED');
         END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);
     await queryRunner.query(
