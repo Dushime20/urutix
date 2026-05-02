@@ -122,8 +122,7 @@ docker-compose -f docker-compose.production.yml up -d
 # Start with rebuild (after deployment)
 docker-compose -f docker-compose.production.yml up -d --build
 
-# Start and view logs (not recommended for production)
-docker-compose -f docker-compose.production.yml up
+
 
 # Start specific service
 docker-compose -f docker-compose.production.yml up -d backend
