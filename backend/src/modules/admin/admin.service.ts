@@ -1074,7 +1074,7 @@ export class AdminService {
       subdomain: normalizedSubdomain,
       domain,
       type: TenantType.SMALL_BUSINESS, // Default type, can be updated later
-      status: TenantStatus.PENDING_ACTIVATION,
+      status: TenantStatus.ACTIVE,
       description: createTenantDto.description?.trim(),
       contactEmail: createTenantDto.contactEmail.toLowerCase().trim(),
       contactPhone: createTenantDto.contactPhone?.trim(),
@@ -1090,7 +1090,7 @@ export class AdminService {
       maxDrivers: limits.maxDrivers,
       maxLoadsPerMonth: limits.maxLoadsPerMonth,
       trialEndsAt,
-      isActive: false, // Will be activated after approval
+      isActive: true, // Automatically active since created by super admin
       settings: {
         timezone: 'UTC',
         language: 'en',
@@ -1117,51 +1117,9 @@ export class AdminService {
     const savedTenant = await this.tenantRepo.save(tenant);
     this.logger.log(`Tenant created with ID: ${savedTenant.id}`);
 
-    try {
-      // Create tenant admin user
-      // If password is provided, we'll need to handle it differently
-      // For now, we'll use email-based password setup regardless
-      // TODO: Add support for direct password setting if adminPassword is provided
-      const adminUser = await this.usersService.createTenantAdminUser(
-        savedTenant.id,
-        {
-          email: createTenantDto.contactEmail.toLowerCase().trim(),
-          firstName: createTenantDto.adminFirstName.trim(),
-          lastName: createTenantDto.adminLastName.trim(),
-          companyName: createTenantDto.companyName?.trim() || createTenantDto.name.trim(),
-          phoneNumber: createTenantDto.contactPhone?.trim(),
-          // Note: adminPassword from DTO is ignored - user will receive email to set password
-          sendPasswordSetupEmail: true, // Ensure email is sent
-        },
-      );
-
-      this.logger.log(`Tenant admin user created with ID: ${adminUser.id}`);
-
-      // Return tenant with admin user info (without password)
-      return {
-        tenant: {
-          ...savedTenant,
-          // Remove sensitive fields if any
-        },
-        adminUser: {
-          id: adminUser.id,
-          email: adminUser.email,
-          firstName: createTenantDto.adminFirstName,
-          lastName: createTenantDto.adminLastName,
-          role: adminUser.role,
-        },
-      };
-    } catch (error) {
-      // If admin user creation fails, rollback tenant creation
-      this.logger.error(
-        `Failed to create admin user for tenant ${savedTenant.id}. Rolling back tenant creation.`,
-        error,
-      );
-      await this.tenantRepo.remove(savedTenant);
-      throw new BadRequestException(
-        `Failed to create tenant admin user: ${error.message}`,
-      );
-    }
+    return {
+      tenant: savedTenant,
+    };
   }
 
   // Create route for a tenant

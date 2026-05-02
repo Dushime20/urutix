@@ -74,8 +74,8 @@ export class UsersService {
       throw new NotFoundException('Tenant not found');
     }
 
-    // Check if tenant is active
-    if (tenant.status !== TenantStatus.ACTIVE) {
+    // Check if tenant is active or if we are creating the initial tenant admin for a pending tenant
+    if (tenant.status !== TenantStatus.ACTIVE && !(tenant.status === TenantStatus.PENDING_ACTIVATION && createUserDto.role === UserRole.TENANT_ADMIN)) {
       throw new ConflictException(
         `Cannot create users for tenant with status: ${tenant.status}. Tenant must be ACTIVE.`,
       );
