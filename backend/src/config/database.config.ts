@@ -276,7 +276,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Messenger entities
     Message,
   ],
-  synchronize: process.env.NODE_ENV === 'production' ? false : (process.env.DB_SYNCHRONIZE === 'true'),
+  synchronize: process.env.DB_SYNCHRONIZE === 'true',
   autoLoadEntities: false,
   logging: process.env.NODE_ENV === 'development',
   ssl:

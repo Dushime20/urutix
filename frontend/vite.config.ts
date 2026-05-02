@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: parseInt(env.PORT) || 5173,
-      host: 'localhost', // Use localhost instead of 127.0.0.1 to match CORS
+      host: '0.0.0.0', // Bind to all interfaces for Docker
       strictPort: false, // Allow Vite to find another port if unavailable
       proxy: {
         '/api': {

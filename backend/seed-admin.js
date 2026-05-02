@@ -47,7 +47,7 @@ async function seedAdmin() {
          RETURNING id, name`,
         [
           'Admin Global', 'ACTIVE', 'admin@urutix.com', '+250788000000', 'Kigali Business Center', 'Kigali', 'Kigali City', 'Rwanda', '00000', 'ENTERPRISE',
-          1, 'VERIFIED', '{}', 
+          1, 'APPROVED', '{}', 
           '{}', '{}', '{}', true
         ]
       );

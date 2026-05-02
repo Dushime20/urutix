@@ -62,6 +62,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: "1234"
       DB_NAME: urutix
+      DB_SYNCHRONIZE: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
@@ -104,7 +105,7 @@ services:
       - /app/node_modules
     networks:
       - urutix_network_dev
-    command: npm run dev
+    command: npm run dev -- --host 0.0.0.0
 
 networks:
   urutix_network_dev:
