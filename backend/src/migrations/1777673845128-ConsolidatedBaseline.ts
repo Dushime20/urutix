@@ -1367,6 +1367,15 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        const safeQuery = async (query: string) => {
+            try {
+                await queryRunner.query(`SAVEPOINT auto_safe`);
+                await queryRunner.query(query);
+                await queryRunner.query(`RELEASE SAVEPOINT auto_safe`);
+            } catch (e) {
+                await queryRunner.query(`ROLLBACK TO SAVEPOINT auto_safe`);
+            }
+        };
         await safeQuery(`ALTER TABLE "role_inheritance" DROP CONSTRAINT IF EXISTS "FK_c118ebf755f0edce9d609279d02"`);
         await safeQuery(`ALTER TABLE "role_inheritance" DROP CONSTRAINT IF EXISTS "FK_1a5a1be0ff83033579522b0e4e5"`);
         await safeQuery(`ALTER TABLE "role_permissions" DROP CONSTRAINT IF EXISTS "FK_17022daf3f885f7d35423e9971e"`);
@@ -2678,6 +2687,6 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
             } catch (error) {
                 await queryRunner.query(`ROLLBACK TO SAVEPOINT final_migration_safety`);
             }
+        }
     }
-
 }
