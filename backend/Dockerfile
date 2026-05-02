@@ -58,8 +58,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # Copy migrations and necessary files
 COPY --from=builder --chown=nestjs:nodejs /app/migrations ./migrations
-COPY --from=builder --chown=nestjs:nodejs /app/migrate.js ./migrate.js
-COPY --from=builder --chown=nestjs:nodejs /app/mark-migrations-done.js ./mark-migrations-done.js
+COPY --chown=nestjs:nodejs migrate.js ./migrate.js
+COPY --chown=nestjs:nodejs mark-migrations-done.js ./mark-migrations-done.js
+COPY --chown=nestjs:nodejs seed-admin.js ./seed-admin.js
 
 # Copy entrypoint script from source (not from builder)
 COPY --chown=nestjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
