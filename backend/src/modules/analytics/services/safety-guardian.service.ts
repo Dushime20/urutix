@@ -28,7 +28,7 @@ export class SafetyGuardianService {
   async performNeuralSafetyScan() {
     const activeTrips = await this.tripRepository.find({
       where: { status: TripStatus.IN_PROGRESS },
-      relations: ['truck', 'driver', 'driver.user', 'load'],
+      relations: ['truck', 'driver', 'load'],
     });
 
     if (activeTrips.length === 0) return;

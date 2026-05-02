@@ -78,7 +78,6 @@ const AdminUsers: React.FC = () => {
   // Form state
   const [tenantId, setTenantId] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -185,15 +184,19 @@ const AdminUsers: React.FC = () => {
 
   // Mutations
   const { mutate: createUser, isPending: isCreating } = useMutation({
-    mutationFn: () => createTenantUser(tenantId, {
-      email: email.trim(),
-      password: password,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
+    mutationFn: () => {
+      // Generate a secure random password since the admin shouldn't set this
+      const generatedPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      return createTenantUser(tenantId, {
+        email: email.trim(),
+        password: generatedPassword,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
       role: role,
       phoneNumber: phoneNumber.trim() || undefined,
       companyName: companyName.trim() || undefined
-    }),
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-all-users'] });
       resetForm();
@@ -264,7 +267,6 @@ const AdminUsers: React.FC = () => {
   const resetForm = () => {
     setTenantId('');
     setEmail('');
-    setPassword('');
     setFirstName('');
     setLastName('');
     setPhoneNumber('');
@@ -292,7 +294,7 @@ const AdminUsers: React.FC = () => {
   };
 
   const handleCreateUser = () => {
-    if (!tenantId || !email || !password || !firstName || !lastName) {
+    if (!tenantId || !email || !firstName || !lastName) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -775,19 +777,7 @@ const AdminUsers: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Password *
-                    </label>
-                    <input
-                      type="password"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="Enter password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">

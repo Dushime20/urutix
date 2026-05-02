@@ -66,7 +66,6 @@ const AdminTenants: React.FC = () => {
   const [subdomain, setSubdomain] = useState('');
   const [domain, setDomain] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-  const [plan, setPlan] = useState<'starter' | 'professional' | 'enterprise'>('starter');
 
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,7 +101,6 @@ const AdminTenants: React.FC = () => {
   const [editCountry, setEditCountry] = useState('');
   const [editPostalCode, setEditPostalCode] = useState('');
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
-  const [editPlan, setEditPlan] = useState<'starter' | 'professional' | 'enterprise'>('starter');
 
   // Toggle between basic and enriched data
   const [useEnrichedData, setUseEnrichedData] = useState(true);
@@ -358,7 +356,6 @@ const AdminTenants: React.FC = () => {
     setSubdomain('');
     setDomain('');
     setContactEmail('');
-    setPlan('starter');
   };
 
   const resetEditForm = () => {
@@ -374,7 +371,6 @@ const AdminTenants: React.FC = () => {
     setEditCountry('');
     setEditPostalCode('');
     setEditWebsiteUrl('');
-    setEditPlan('starter');
   };
 
   // Populate edit form when tenant details are loaded
@@ -393,7 +389,6 @@ const AdminTenants: React.FC = () => {
       setEditCountry(tenant.country || '');
       setEditPostalCode(tenant.postalCode || '');
       setEditWebsiteUrl(tenant.websiteUrl || '');
-      setEditPlan(mapBackendPlan(tenant.subscriptionPlan));
     }
   }, [tenantDetails, showEditModal]);
 
@@ -435,7 +430,6 @@ const AdminTenants: React.FC = () => {
       country: editCountry.trim() || undefined,
       postalCode: editPostalCode.trim() || undefined,
       websiteUrl: editWebsiteUrl.trim() || undefined,
-      subscriptionPlan: editPlan.toUpperCase(), // Backend expects uppercase
     };
 
     console.log('📤 Sending payload:', payload);
@@ -508,8 +502,7 @@ const AdminTenants: React.FC = () => {
       contactEmail: contactEmail.trim().toLowerCase(),
       adminFirstName,
       adminLastName,
-      adminPassword: tempPassword,
-      plan: plan || 'starter'
+      adminPassword: tempPassword
     });
   };
 
@@ -841,32 +834,7 @@ const AdminTenants: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                  Access Allocation Plan
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['starter', 'professional', 'enterprise'].map((planOption) => (
-                    <div
-                      key={planOption}
-                      className={`group border rounded-[24px] p-6 cursor-pointer transition-all ${plan === planOption
-                        ? 'border-indigo-600 bg-indigo-50/30'
-                        : 'border-gray-100 hover:border-indigo-200 hover:bg-gray-50'
-                        }`}
-                      onClick={() => setPlan(planOption as 'starter' | 'professional' | 'enterprise')}
-                    >
-                      <div className="text-center">
-                        <div className={`font-black uppercase text-xs tracking-widest mb-2 ${plan === planOption ? 'text-indigo-600' : 'text-gray-900'}`}>{planOption}</div>
-                        <div className="text-sm font-black text-slate-400 group-hover:text-indigo-600/50 transition-colors">
-                          {planOption === 'starter' && '$29/MO'}
-                          {planOption === 'professional' && '$99/MO'}
-                          {planOption === 'enterprise' && '$299/MO'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
 
               <div className="bg-[#fafafa] border border-gray-100 rounded-[24px] p-6">
                 <div className="flex items-start gap-4">
@@ -1109,32 +1077,7 @@ const AdminTenants: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                    Access Allocation Plan
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {['starter', 'professional', 'enterprise'].map((planOption) => (
-                      <div
-                        key={planOption}
-                        className={`group border rounded-[24px] p-6 cursor-pointer transition-all ${editPlan === planOption
-                          ? 'border-indigo-600 bg-indigo-50/30'
-                          : 'border-gray-100 hover:border-indigo-200 hover:bg-gray-50'
-                          }`}
-                        onClick={() => setEditPlan(planOption as 'starter' | 'professional' | 'enterprise')}
-                      >
-                        <div className="text-center">
-                          <div className={`font-black uppercase text-xs tracking-widest mb-2 ${editPlan === planOption ? 'text-indigo-600' : 'text-gray-900'}`}>{planOption}</div>
-                          <div className="text-sm font-black text-slate-400 group-hover:text-indigo-600/50 transition-colors">
-                            {planOption === 'starter' && '$29/MO'}
-                            {planOption === 'professional' && '$99/MO'}
-                            {planOption === 'enterprise' && '$299/MO'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
               </div>
             )}
 
