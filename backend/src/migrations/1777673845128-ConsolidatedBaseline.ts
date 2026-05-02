@@ -2153,89 +2153,100 @@ export class ConsolidatedBaseline1777673845128 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "tenants" ADD "health_score" integer DEFAULT '100'`);
         await queryRunner.query(`ALTER TABLE "user_profiles" ADD "user_id" uuid`);
         await queryRunner.query(`ALTER TABLE "user_profiles" ADD CONSTRAINT "REL_6ca9503d77ae39b4b5a6cc3ba8" UNIQUE ("user_id")`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_c118ebf755f0edce9d609279d0"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_1a5a1be0ff83033579522b0e4e"`);
-        await queryRunner.query(`DROP TABLE "role_inheritance"`);
-        await queryRunner.query(`DROP TABLE "multi_modal_legs"`);
-        await queryRunner.query(`DROP TYPE "public"."multi_modal_legs_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."multi_modal_legs_mode_enum"`);
-        await queryRunner.query(`DROP TABLE "multi_modal_shipments"`);
-        await queryRunner.query(`DROP TYPE "public"."multi_modal_shipments_status_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_d6988ec6a7ed344657de8b7e0e"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_34c3d35482c852a5b1994720c8"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_2e736b729859342dec27976bc8"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_388821de26f6747a5e8170f8d8"`);
-        await queryRunner.query(`DROP TABLE "analytics_insights"`);
-        await queryRunner.query(`DROP TYPE "public"."analytics_insights_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."analytics_insights_insight_type_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_af7d535aea2fc3ca1eb561ad30"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_a3de91fac75e0f8c03a52af32a"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_c7ea716d05f5325c4130a6867e"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_38cc58643129eb7b03ea8cb6e5"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_98b2a588d40bd09bbf3437b9b0"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_195490440ff2eace58959bbe1c"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_6e200f546c62dd34839d181598"`);
-        await queryRunner.query(`DROP TABLE "cargo_owner_analytics"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_d91caab5b970b8866f63765d30"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_8697e3af559e7fa64541e43e06"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_f88a03adcc9e90f99ca260ebaa"`);
-        await queryRunner.query(`DROP TABLE "epods"`);
-        await queryRunner.query(`DROP TYPE "public"."epods_status_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_0d100cf8bbd893a0469deb488d"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_5ce2b1aebad387c1afe3a41343"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_48e45ac17b4e397bc55d22c153"`);
-        await queryRunner.query(`DROP TABLE "fuel_budgets"`);
-        await queryRunner.query(`DROP TYPE "public"."fuel_budgets_status_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_1af373960050ecb35914150112"`);
-        await queryRunner.query(`DROP TABLE "kyc_role_requirements"`);
-        await queryRunner.query(`DROP TYPE "public"."kyc_role_requirements_requirement_level_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."kyc_role_requirements_role_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_7ca4ed34a4206249d7092751bc"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_a95cd3c455317ef9fd18f95050"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_5f4c893f2ee8263e346dfa1bf8"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_f803d5e1bd85942b24ee424870"`);
-        await queryRunner.query(`DROP TABLE "notification_logs"`);
-        await queryRunner.query(`DROP TYPE "public"."notification_logs_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."notification_logs_channel_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."notification_logs_notification_type_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_e1d131cc51fb6cdb698da6daba"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_d5b619ad0cef9a8dc2666d4cb6"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_08e2c9330c96799fbbcc471190"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_ed69c699355cfd7536cab85e11"`);
-        await queryRunner.query(`DROP TABLE "user_kyc_audit_log"`);
-        await queryRunner.query(`DROP TYPE "public"."user_kyc_audit_log_action_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_f0d33db611c87e2bca1f9f7edf"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_1b8ced93a14a57a3a8cf555344"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_d9fe14eea34dd7d7a8f2e16331"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bdb69f93aceaa2c078ed604651"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_e4cdc64b38672f20cd6ed6a1d3"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_e929f0bed4987cb835b89e31b7"`);
-        await queryRunner.query(`DROP TABLE "user_kyc_documents"`);
-        await queryRunner.query(`DROP TYPE "public"."user_kyc_documents_document_category_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."user_kyc_documents_document_type_enum"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_1d942b6fc3eeefb988291fb128"`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_85a618dede80136ba35a03b6a4"`);
-        await queryRunner.query(`DROP TABLE "user_permission_overrides"`);
-        await queryRunner.query(`COMMENT ON TABLE "role_permissions" IS 'Maps permissions to roles'`);
-        await queryRunner.query(`COMMENT ON TABLE "activity_logs" IS 'Tracks user activities and system events with security context (Enhanced Phase 1)'`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_disputes" IS 'Manages disputes between brokers, cargo owners, and transporters'`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_transporter_performance" IS 'Tracks transporter reliability, on-time delivery, and performance metrics'`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_multi_stop_loads" IS 'Manages loads with multiple pickup/delivery stops with route optimization'`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_transporter_credit" IS 'Credit management and payment terms for transporters'`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_market_intelligence" IS 'Real-time market rates and pricing intelligence for routes'`);
-        await queryRunner.query(`COMMENT ON TABLE "broker_match_recommendations" IS 'AI-powered load-to-transporter matching recommendations'`);
-        await queryRunner.query(`COMMENT ON TABLE "bulk_email_logs" IS 'Tracks bulk email campaigns sent through the system'`);
-        await queryRunner.query(`COMMENT ON TABLE "credit_marketplace_settings" IS 'Configuration for tenant admin credit marketplace where truck owners can purchase custom credit amounts'`);
-        await queryRunner.query(`COMMENT ON TABLE "credit_pricing_rules" IS 'Defines dynamic pricing rules for credit consumption based on various factors'`);
-        await queryRunner.query(`COMMENT ON TABLE "email_templates" IS 'Stores reusable email templates for the bulk email system'`);
-        await queryRunner.query(`COMMENT ON TABLE "escrow_accounts" IS 'Handles escrow payments for loads with automatic and manual release triggers'`);
-        await queryRunner.query(`COMMENT ON TABLE "insurance_verifications" IS 'Tracks insurance and compliance verification for transporters'`);
-        await queryRunner.query(`COMMENT ON TABLE "security_events" IS 'Tracks security-related events across the platform (Phase 1)'`);
-        await queryRunner.query(`COMMENT ON TABLE "system_health_logs" IS 'Stores system health metrics and logs for monitoring (Phase 1)'`);
-        await queryRunner.query(`COMMENT ON TABLE "tenant_kyc_audit_log" IS 'Audit trail for all KYC-related actions'`);
-        await queryRunner.query(`COMMENT ON TABLE "tenant_kyc_documents" IS 'Stores uploaded KYC documents for tenants'`);
-        await queryRunner.query(`COMMENT ON TABLE "permissions" IS 'Stores all available system permissions'`);
-        await queryRunner.query(`COMMENT ON TABLE "user_sessions" IS 'Tracks active user sessions for security monitoring (Phase 1)'`);
+        const drops = [
+            `DROP INDEX IF EXISTS "public"."IDX_c118ebf755f0edce9d609279d0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1a5a1be0ff83033579522b0e4e"`,
+            `DROP TABLE IF EXISTS "role_inheritance"`,
+            `DROP TABLE IF EXISTS "multi_modal_legs"`,
+            `DROP TYPE "public"."multi_modal_legs_status_enum"`,
+            `DROP TYPE "public"."multi_modal_legs_mode_enum"`,
+            `DROP TABLE IF EXISTS "multi_modal_shipments"`,
+            `DROP TYPE "public"."multi_modal_shipments_status_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d6988ec6a7ed344657de8b7e0e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_34c3d35482c852a5b1994720c8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_2e736b729859342dec27976bc8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_388821de26f6747a5e8170f8d8"`,
+            `DROP TABLE IF EXISTS "analytics_insights"`,
+            `DROP TYPE "public"."analytics_insights_status_enum"`,
+            `DROP TYPE "public"."analytics_insights_insight_type_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_af7d535aea2fc3ca1eb561ad30"`,
+            `DROP INDEX IF EXISTS "public"."IDX_a3de91fac75e0f8c03a52af32a"`,
+            `DROP INDEX IF EXISTS "public"."IDX_c7ea716d05f5325c4130a6867e"`,
+            `DROP INDEX IF EXISTS "public"."IDX_38cc58643129eb7b03ea8cb6e5"`,
+            `DROP INDEX IF EXISTS "public"."IDX_98b2a588d40bd09bbf3437b9b0"`,
+            `DROP INDEX IF EXISTS "public"."IDX_195490440ff2eace58959bbe1c"`,
+            `DROP INDEX IF EXISTS "public"."IDX_6e200f546c62dd34839d181598"`,
+            `DROP TABLE IF EXISTS "cargo_owner_analytics"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d91caab5b970b8866f63765d30"`,
+            `DROP INDEX IF EXISTS "public"."IDX_8697e3af559e7fa64541e43e06"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f88a03adcc9e90f99ca260ebaa"`,
+            `DROP TABLE IF EXISTS "epods"`,
+            `DROP TYPE "public"."epods_status_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_0d100cf8bbd893a0469deb488d"`,
+            `DROP INDEX IF EXISTS "public"."IDX_5ce2b1aebad387c1afe3a41343"`,
+            `DROP INDEX IF EXISTS "public"."IDX_48e45ac17b4e397bc55d22c153"`,
+            `DROP TABLE IF EXISTS "fuel_budgets"`,
+            `DROP TYPE "public"."fuel_budgets_status_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1af373960050ecb35914150112"`,
+            `DROP TABLE IF EXISTS "kyc_role_requirements"`,
+            `DROP TYPE "public"."kyc_role_requirements_requirement_level_enum"`,
+            `DROP TYPE "public"."kyc_role_requirements_role_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_7ca4ed34a4206249d7092751bc"`,
+            `DROP INDEX IF EXISTS "public"."IDX_a95cd3c455317ef9fd18f95050"`,
+            `DROP INDEX IF EXISTS "public"."IDX_5f4c893f2ee8263e346dfa1bf8"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f803d5e1bd85942b24ee424870"`,
+            `DROP TABLE IF EXISTS "notification_logs"`,
+            `DROP TYPE "public"."notification_logs_status_enum"`,
+            `DROP TYPE "public"."notification_logs_channel_enum"`,
+            `DROP TYPE "public"."notification_logs_notification_type_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e1d131cc51fb6cdb698da6daba"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d5b619ad0cef9a8dc2666d4cb6"`,
+            `DROP INDEX IF EXISTS "public"."IDX_08e2c9330c96799fbbcc471190"`,
+            `DROP INDEX IF EXISTS "public"."IDX_ed69c699355cfd7536cab85e11"`,
+            `DROP TABLE IF EXISTS "user_kyc_audit_log"`,
+            `DROP TYPE "public"."user_kyc_audit_log_action_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_f0d33db611c87e2bca1f9f7edf"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1b8ced93a14a57a3a8cf555344"`,
+            `DROP INDEX IF EXISTS "public"."IDX_d9fe14eea34dd7d7a8f2e16331"`,
+            `DROP INDEX IF EXISTS "public"."IDX_bdb69f93aceaa2c078ed604651"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e4cdc64b38672f20cd6ed6a1d3"`,
+            `DROP INDEX IF EXISTS "public"."IDX_e929f0bed4987cb835b89e31b7"`,
+            `DROP TABLE IF EXISTS "user_kyc_documents"`,
+            `DROP TYPE "public"."user_kyc_documents_document_category_enum"`,
+            `DROP TYPE "public"."user_kyc_documents_document_type_enum"`,
+            `DROP INDEX IF EXISTS "public"."IDX_1d942b6fc3eeefb988291fb128"`,
+            `DROP INDEX IF EXISTS "public"."IDX_85a618dede80136ba35a03b6a4"`,
+            `DROP TABLE IF EXISTS "user_permission_overrides"`,
+            `COMMENT ON TABLE "role_permissions" IS NULL`,
+            `COMMENT ON TABLE "activity_logs" IS NULL`,
+            `COMMENT ON TABLE "broker_disputes" IS NULL`,
+            `COMMENT ON TABLE "broker_transporter_performance" IS NULL`,
+            `COMMENT ON TABLE "broker_multi_stop_loads" IS NULL`,
+            `COMMENT ON TABLE "broker_transporter_credit" IS NULL`,
+            `COMMENT ON TABLE "broker_market_intelligence" IS NULL`,
+            `COMMENT ON TABLE "broker_match_recommendations" IS NULL`,
+            `COMMENT ON TABLE "bulk_email_logs" IS NULL`,
+            `COMMENT ON TABLE "credit_marketplace_settings" IS NULL`,
+            `COMMENT ON TABLE "credit_pricing_rules" IS NULL`,
+            `COMMENT ON TABLE "email_templates" IS NULL`,
+            `COMMENT ON TABLE "escrow_accounts" IS NULL`,
+            `COMMENT ON TABLE "insurance_verifications" IS NULL`,
+            `COMMENT ON TABLE "security_events" IS NULL`,
+            `COMMENT ON TABLE "system_health_logs" IS NULL`,
+            `COMMENT ON TABLE "tenant_kyc_audit_log" IS NULL`,
+            `COMMENT ON TABLE "tenant_kyc_documents" IS NULL`,
+            `COMMENT ON TABLE "permissions" IS NULL`,
+            `COMMENT ON TABLE "user_sessions" IS NULL`
+        ];
+        for (const query of drops) {
+            try {
+                await queryRunner.query(`SAVEPOINT migration_cleanup_safety`);
+                await queryRunner.query(query);
+                await queryRunner.query(`RELEASE SAVEPOINT migration_cleanup_safety`);
+            } catch (error) {
+                await queryRunner.query(`ROLLBACK TO SAVEPOINT migration_cleanup_safety`);
+            }
+        }
         await queryRunner.query(`ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_permission_id_key" UNIQUE ("role", "permission_id")`);
         await queryRunner.query(`ALTER TABLE "system_settings" ADD CONSTRAINT "UQ_system_settings_category_key" UNIQUE ("category", "key")`);
         await queryRunner.query(`ALTER TABLE "credit_accounts" ADD CONSTRAINT "uq_credit_accounts_tenant_user" UNIQUE ("tenant_id", "user_id")`);
