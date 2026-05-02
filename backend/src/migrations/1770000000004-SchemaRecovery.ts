@@ -50,6 +50,9 @@ export class SchemaRecovery1770000000004 implements MigrationInterface {
                 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'maintenance_logs_status_enum') THEN
                     CREATE TYPE "public"."maintenance_logs_status_enum" AS ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
                 END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lending_policy_system_config_compliance_level_enum') THEN
+                    CREATE TYPE "public"."lending_policy_system_config_compliance_level_enum" AS ENUM('basic', 'standard', 'strict', 'regulatory');
+                END IF;
                 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'kyc_role_requirements_role_enum') THEN
                     CREATE TYPE "public"."kyc_role_requirements_role_enum" AS ENUM('SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'CARGO_RECEIVER', 'TRUCK_OWNER', 'DRIVER', 'AGENT', 'LENDER', 'BROKER', 'FLEET_MANAGER', 'FLEET_DISPATCHER', 'FLEET_ACCOUNTANT', 'FLEET_SAFETY_OFFICER');
                 END IF;
@@ -63,6 +66,7 @@ export class SchemaRecovery1770000000004 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "permissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "resource" character varying(100) NOT NULL, "action" character varying(50) NOT NULL, "description" text, "category" character varying(50), "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_permissions_id" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "role_permissions" ("role_id" uuid NOT NULL, "permission_id" uuid NOT NULL, CONSTRAINT "PK_role_permissions" PRIMARY KEY ("role_id", "permission_id"))`);
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "role_inheritance" ("role_id" uuid NOT NULL, "inherits_from_role_id" uuid NOT NULL, CONSTRAINT "PK_role_inheritance" PRIMARY KEY ("role_id", "inherits_from_role_id"))`);
+        await queryRunner.query(`CREATE TABLE IF NOT EXISTS "user_permission_overrides" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "permission_id" uuid NOT NULL, "granted" boolean NOT NULL, "reason" text, "granted_by" uuid, "expires_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_user_permission_overrides_id" PRIMARY KEY ("id"))`);
         
         // Sessions & Core Monitoring
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "user_sessions" ("session_id" character varying(255) NOT NULL, "user_id" uuid NOT NULL, "ip_address" inet, "user_agent" text, "device_info" jsonb, "location" jsonb, "last_activity" timestamp DEFAULT CURRENT_TIMESTAMP, "expires_at" timestamp NOT NULL, "started_at" timestamp DEFAULT CURRENT_TIMESTAMP, "tenant_id" uuid NOT NULL, CONSTRAINT "PK_user_sessions_id" PRIMARY KEY ("session_id"))`);
