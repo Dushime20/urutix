@@ -48,17 +48,19 @@ const CargoOwnerLayout: React.FC = () => {
 
   return (
     <CargoOwnerLayoutProvider value={providerValue}>
-      <div className="h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300 overflow-hidden">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300">
         {!hideHeader && <DashboardHeader />}
         
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-8 custom-scrollbar">
-          <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 md:py-4 lg:px-6 overflow-x-hidden">
+        <main className="flex-1 flex flex-col">
+          <div className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 py-2 md:py-4 lg:px-6 w-full overflow-x-hidden">
             <Outlet />
           </div>
+          {!hideHeader && <DashboardFooter />}
+          {/* Mobile Spacer for Bottom Nav */}
+          <div className="h-28 lg:hidden" />
         </main>
         
         <MobileBottomNav />
-        <DashboardFooter />
       </div>
     </CargoOwnerLayoutProvider>
   );

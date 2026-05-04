@@ -434,25 +434,25 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, []);
 
   return (
-    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100] transition-colors duration-300">
+    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:py-3 lg:py-4 sticky top-0 z-[100] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-1.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
+              className="xl:hidden p-1.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
             <div className="flex items-center flex-shrink-0 cursor-pointer px-1" onClick={() => navigate('/')}>
-              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-7 sm:h-10 md:h-14 lg:h-18 max-w-none w-auto object-contain transition-all" />
+              <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-7 sm:h-8 md:h-10 lg:h-12 max-w-none w-auto object-contain transition-all" />
             </div>
 
-            <div className="hidden lg:flex flex-1 items-center relative min-w-0 h-full">
+            <div className="hidden xl:flex flex-1 items-center relative min-w-0 h-full">
               {/* Intelligent Nav Items with Density Management */}
               <div
                 ref={navRef}
-                className="flex items-center gap-1 xl:gap-3 ml-2 xl:ml-8 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap"
+                className="flex items-center gap-0.5 xl:gap-2 ml-1 xl:ml-4 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap"
               >
                 {navItems.map(item => {
                   const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -538,7 +538,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-auto">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
             <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
               <LanguageSwitcher />
               <div className="hidden sm:block">
@@ -639,7 +639,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                   console.log('📱 Backdrop clicked - closing mobile menu');
                   setShowMobileMenu(false);
                 }}
-                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm lg:hidden z-[999998]"
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm xl:hidden z-[999998]"
               />
 
               {/* Drawer Panel */}
@@ -660,7 +660,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 onAnimationComplete={(definition) => {
                   console.log('📱 Drawer animation COMPLETED:', definition);
                 }}
-                className="fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-slate-900 shadow-2xl lg:hidden z-[999999] flex flex-col border-r border-slate-200 dark:border-slate-800"
+                className="fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-slate-900 shadow-2xl xl:hidden z-[999999] flex flex-col border-r border-slate-200 dark:border-slate-800"
               >
                 {/* Header Section */}
                 <div className="flex-shrink-0 p-5 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/30">

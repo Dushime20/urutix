@@ -614,34 +614,34 @@ const CargoOwnerDashboard = () => {
       <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 md:p-8 lg:p-10 transition-colors duration-300">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 dark:from-blue-900/10 to-transparent pointer-events-none"></div>
         <div className="relative z-10">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
-            <div className="max-w-2xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
+            <div className="max-w-full lg:max-w-2xl">
               <div className="flex items-center gap-2 mb-2 md:mb-3">
                 <div className="bg-[#345E85]/10 dark:bg-primary-900/30 text-[#345E85] dark:text-primary-400 p-1.5 rounded-lg border border-[#345E85]/10 dark:border-primary-800">
                   <Activity className="w-4 h-4" />
                 </div>
                 <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] dark:text-primary-400">System_Summary</h2>
               </div>
-              <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-3 md:mb-4">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-3 md:mb-4">
                 Neural <span className="text-[#345E85] dark:text-primary-400">Insights</span>
               </h1>
               <p className="text-xs md:text-base lg:text-lg text-slate-500 dark:text-slate-400 font-medium mb-4 md:mb-6 leading-relaxed">
                 Aggregated logistics intelligence for {stats.activeCargos} active missions. Optimized with AI matching protocols and real-time capital management.
               </p>
 
-              <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="px-3 md:px-6 lg:px-8 py-2 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[9px] md:text-[10px] lg:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-1.5 md:gap-2"
+                  className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-[10px] lg:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
-                  <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                  <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   Add Cargo
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/analytics')}
-                  className="px-3 md:px-6 lg:px-8 py-2 md:py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[9px] md:text-[10px] lg:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-1.5 md:gap-2 shadow-sm"
+                  className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-[10px] lg:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
+                  <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   Analytics
                 </button>
               </div>
@@ -649,13 +649,13 @@ const CargoOwnerDashboard = () => {
 
             <div className="flex flex-col gap-3 md:gap-4">
               {/* Achievements / Status Summary */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 shadow-inner transition-colors duration-300">
+              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 md:p-6 shadow-inner transition-colors duration-300 w-full lg:w-auto">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Zap className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-xl font-black text-slate-900 dark:text-slate-100">{formatNumber(stats.efficiencyScore)}%</div>
+                    <div className="text-lg md:text-xl font-black text-slate-900 dark:text-slate-100">{formatNumber(stats.efficiencyScore)}%</div>
                     <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Efficiency</div>
                   </div>
                 </div>
@@ -684,41 +684,41 @@ const CargoOwnerDashboard = () => {
       </section>
 
       {/* 2. Key Performance Indicators - Circular Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 place-items-center bg-white dark:bg-slate-900 p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 place-items-center bg-white dark:bg-slate-900 p-4 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
         {[
-          { icon: Package, label: 'TOTAL_PAYLOAD', value: stats.totalCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/cargos/list') },
-          { icon: Truck, label: 'ACTIVE_MISSIONS', value: stats.activeCargos, colorClass: 'bg-blue-50 text-[#345E85]', secondaryColor: 'text-[#345E85]', onClick: () => navigate('/dashboard/tracking') },
-          { icon: CheckCircle, label: 'PROTOCOL_RATE', value: `${formatNumber(stats.onTimeDeliveryRate)}%`, colorClass: 'bg-primary-50 text-primary-500', secondaryColor: 'text-primary-500', onClick: undefined },
-          { icon: Clock, label: 'DRAFT_SCOOPES', value: stats.incompleteCargos, colorClass: 'bg-rose-50 text-rose-600', secondaryColor: 'text-rose-600', onClick: () => navigate('/dashboard/cargos/list?status=DRAFT') },
+          { icon: Package, label: 'TOTAL_PAYLOAD', value: stats.totalCargos, colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400', secondaryColor: 'text-[#345E85] dark:text-blue-400', onClick: () => navigate('/dashboard/cargos/list') },
+          { icon: Truck, label: 'ACTIVE_MISSIONS', value: stats.activeCargos, colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400', secondaryColor: 'text-[#345E85] dark:text-blue-400', onClick: () => navigate('/dashboard/tracking') },
+          { icon: CheckCircle, label: 'PROTOCOL_RATE', value: `${formatNumber(stats.onTimeDeliveryRate)}%`, colorClass: 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400', secondaryColor: 'text-primary-500 dark:text-primary-400', onClick: undefined },
+          { icon: Clock, label: 'DRAFT_SCOOPES', value: stats.incompleteCargos, colorClass: 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400', secondaryColor: 'text-rose-600 dark:text-rose-400', onClick: () => navigate('/dashboard/cargos/list?status=DRAFT') },
         ].map(({ icon: Icon, label, value, colorClass, secondaryColor, onClick }) => (
           <div
             key={label}
             onClick={onClick}
-            className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''} w-full`}
+            className={`flex flex-col items-center group ${!!onClick ? 'cursor-pointer' : ''} w-full`}
           >
-            <div className="relative w-full aspect-square max-w-[140px] md:max-w-[160px] rounded-full bg-white dark:bg-slate-800 border-[6px] md:border-[8px] border-slate-50 dark:border-slate-700 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-600 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50">
+            <div className="relative w-full aspect-square max-w-[120px] sm:max-w-[140px] md:max-w-[160px] rounded-full bg-white dark:bg-slate-800 border-[4px] sm:border-[6px] md:border-[8px] border-slate-50 dark:border-slate-700 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-600 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
                 <circle
                   cx="50%" cy="50%" r="44%"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="3"
+                  strokeWidth="2"
                   className={`opacity-10 transition-all duration-1000 ${secondaryColor}`}
                   strokeDasharray="100 100"
                   strokeDashoffset="25"
                 />
               </svg>
-              <div className={`p-1.5 rounded-xl mb-1.5 bg-slate-50 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600 transition-all duration-500 shadow-sm ${colorClass}`}>
-                <Icon size={14} />
+              <div className={`p-1 md:p-1.5 rounded-lg md:rounded-xl mb-1 md:mb-1.5 bg-slate-50 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600 transition-all duration-500 shadow-sm ${colorClass}`}>
+                <Icon className="w-3 h-3 md:w-4 md:h-4" />
               </div>
               <div className="flex flex-col items-center px-2 w-full overflow-hidden">
-                <span className="text-lg font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-none">
+                <span className="text-sm sm:text-lg font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center leading-none">
                   {value}
                 </span>
               </div>
             </div>
-            <div className="mt-3 text-center px-1">
-              <p className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">
+            <div className="mt-2 md:mt-3 text-center px-1">
+              <p className="text-[7px] sm:text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors duration-300 line-clamp-1">
                 {label}
               </p>
             </div>
@@ -805,40 +805,47 @@ const CargoOwnerDashboard = () => {
         </div>
 
         {/* Mobile-only List View for Recent Activity */}
-        <div className="md:hidden divide-y divide-slate-50">
+        {/* Mobile-only List View for Recent Activity - Modern Premium Cards */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
           {recentCargoActivity.length === 0 ? (
-            <div className="px-7 py-12 text-center">
+            <div className="px-7 py-16 text-center">
               <div className="flex flex-col items-center gap-3">
-                <div className="size-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
-                  <Package className="w-5 h-5 text-slate-300 dark:text-slate-600" />
+                <div className="size-14 bg-slate-50 dark:bg-slate-800 rounded-[1.5rem] flex items-center justify-center">
+                  <Package className="w-6 h-6 text-slate-300 dark:text-slate-600" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No activity yet</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">No activity yet</p>
               </div>
             </div>
           ) : (
             recentCargoActivity.map(tx => (
               <div 
                 key={tx.id} 
-                className="p-5 active:bg-slate-50 dark:active:bg-slate-800 transition-colors"
+                className="p-5 active:bg-slate-50 dark:active:bg-slate-800/50 transition-all cursor-pointer relative group"
                 onClick={() => handleCargoRowClick(tx.fullCargo)}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0">
-                      <span className="text-xs font-black">{tx.logo}</span>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="size-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0 shadow-sm border border-slate-50 dark:border-slate-700">
+                      <span className="text-sm font-black text-[#345E85] dark:text-primary-400">{tx.logo}</span>
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 leading-tight">{tx.name}</h4>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{tx.type}</p>
+                      <h4 className="text-[13px] font-black text-slate-900 dark:text-slate-100 leading-tight mb-0.5">{tx.name}</h4>
+                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{tx.type}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${tx.statusColor}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em] border ${tx.statusColor}`}>
                     {tx.status}
                   </span>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-                  <span className="text-[10px] font-medium text-slate-400">{tx.date}</span>
-                  <span className="text-sm font-black text-[#345E85]">{formatCurrency(tx.amount)}</span>
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50 dark:border-slate-800/50">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-slate-300 dark:text-slate-600" />
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{tx.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-black text-[#345E85] dark:text-primary-400">{formatCurrency(tx.amount)}</span>
+                    <ArrowUpRight className="w-3 h-3 text-slate-300 dark:text-slate-600" />
+                  </div>
                 </div>
               </div>
             ))
@@ -1006,7 +1013,7 @@ const CargoOwnerDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                       <XAxis
                         dataKey="name"
-                        tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8', textTransform: 'uppercase' }}
+                        tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
                         axisLine={false}
                         tickLine={false}
                         interval={chartPeriod === '30' ? 4 : 0}
@@ -1162,7 +1169,7 @@ const CargoOwnerDashboard = () => {
                     <div
                       key={label}
                       onClick={onClick}
-                      className={`flex flex-col items-center group ${onClick ? 'cursor-pointer' : ''}`}
+                      className={`flex flex-col items-center group ${!!onClick ? 'cursor-pointer' : ''}`}
                     >
                       <div className="relative w-36 h-36 rounded-full bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-900 flex flex-col items-center justify-center transition-all duration-500 hover:shadow-xl shadow-sm">
                         <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
@@ -1206,9 +1213,9 @@ const CargoOwnerDashboard = () => {
       {/* Modern Welcome Section */}
       <div className="bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300 overflow-x-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 md:gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">
+              <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -1225,26 +1232,26 @@ const CargoOwnerDashboard = () => {
                   : 'Welcome to your dashboard'}
               </p>
             </div>
-            {/* Action Buttons - Hidden for CARGO_RECEIVER role */}
+            {/* Action Buttons - Optimized for Mobile Flow */}
             {user?.role !== 'CARGO_RECEIVER' && (
-              <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 md:gap-3">
+              <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center justify-center lg:justify-end gap-2 md:gap-3 mt-4 lg:mt-0 w-full lg:w-auto">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl transition-all duration-300 font-black text-xs md:text-sm hover:bg-slate-800 dark:hover:bg-primary-700"
+                  className="col-span-2 sm:col-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl transition-all duration-300 font-black text-xs md:text-sm hover:bg-slate-800 dark:hover:bg-primary-700 shadow-lg shadow-blue-500/10 active:scale-95"
                 >
                   <Zap className="w-4 h-4 md:w-5 md:h-5" />
                   QUICK CREATE
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/loan-requests')}
-                  className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-[#358c9c] dark:bg-teal-600 text-white rounded-lg hover:bg-[#2c7380] dark:hover:bg-teal-700 transition-colors duration-300 font-medium shadow-sm text-xs md:text-sm"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-white dark:bg-slate-800 text-[#358c9c] dark:text-teal-400 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-teal-100 dark:hover:border-teal-900 transition-all duration-300 font-black text-[10px] md:text-sm shadow-sm active:scale-95"
                 >
                   <CreditCard className="w-4 h-4 md:w-5 md:h-5" />
                   Financing
                 </button>
                 <button
                   onClick={() => navigate('/cargo-owner/cargos/create')}
-                  className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-300 font-medium shadow-sm text-xs md:text-sm"
+                  className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300 font-black text-[10px] md:text-sm shadow-sm active:scale-95"
                 >
                   <Plus className="w-4 h-4 md:w-5 md:h-5" />
                   Full Form
