@@ -10,7 +10,7 @@ import {
   StatsCardSkeleton,
   FormSkeleton,
   GridSkeleton,
-  SectionLoading as SkeletonSectionLoading,
+  CenterLoader,
 } from './LoadingSkeletons';
 
 // ============================================================================
@@ -83,7 +83,7 @@ const ModernLoader: React.FC<ModernLoaderProps> = ({
       
       case 'section':
       default:
-        return <SkeletonSectionLoading className={className} />;
+        return <CenterLoader className={className} />;
     }
   };
 
