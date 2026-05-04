@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tantml:invoke>
+<invoke name="useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
+import ModernLoader from '../../components/common/ModernLoader';
 import {
   FaCreditCard,
   FaSearch,
@@ -230,12 +231,7 @@ const TenantSubscriptions: React.FC = () => {
   if (isLoading) {
     return (
       <AdminPageLayout title={<TranslatedText text="Tenant Subscriptions" />} description={<TranslatedText text="Manage all tenant subscriptions" />}>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-slate-600"><TranslatedText text="Loading subscriptions..." /></p>
-          </div>
-        </div>
+        <ModernLoader isLoading={true} type="page" showStats={true} />
       </AdminPageLayout>
     );
   }

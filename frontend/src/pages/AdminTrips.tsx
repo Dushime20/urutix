@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAllTrips, fetchTenants, cancelTrip } from '../services/adminApi';
 import toast from 'react-hot-toast';
+import ModernLoader from '../components/common/ModernLoader';
 import {
   FaTruck, FaEdit, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaMapMarkerAlt,
@@ -310,10 +311,7 @@ const AdminTrips: React.FC = () => {
     >
       {/* Loading and Error States */}
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-sm text-slate-400"><TranslatedText text="Loading trips..." /></span>
-        </div>
+        <ModernLoader isLoading={true} type="page" showStats={true} />
       )}
 
       {error && (
