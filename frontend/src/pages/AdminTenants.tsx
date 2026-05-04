@@ -7,7 +7,7 @@ import {
   fetchEnrichedTenants,
   getTenantById,
   updateTenant,
-  deactivateTenant
+  deleteTenant
 } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import TenantSettingsModal from '../components/TenantSettingsModal';
@@ -141,18 +141,18 @@ const AdminTenants: React.FC = () => {
   }, [tenantsError]);
 
   const deleteMutation = useMutation({
-    mutationFn: (tenantId: string) => deactivateTenant(tenantId),
+    mutationFn: (tenantId: string) => deleteTenant(tenantId, 'Deleted by admin'),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-tenants'] });
       qc.invalidateQueries({ queryKey: ['active-tenants'] });
       qc.invalidateQueries({ queryKey: ['tenants'] });
       qc.invalidateQueries({ queryKey: ['enriched-tenants'] });
-      toast.success('Tenant successfully decommissioned');
+      toast.success('Tenant deleted successfully');
       setShowDeleteModal(false);
       setTenantToDelete(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to decommission tenant');
+      toast.error(error?.response?.data?.message || 'Failed to delete tenant');
     }
   });
 
@@ -734,7 +734,7 @@ const AdminTenants: React.FC = () => {
                             handleDeleteTenant(tenant);
                           }}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                          title="Decommission Tenant"
+                          title="Delete Tenant"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -881,8 +881,8 @@ const AdminTenants: React.FC = () => {
             <div className="p-8 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Modify Active Node</h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Tenant Configuration Sequence</p>
+                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Edit Tenant</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Update Tenant Information</p>
                 </div>
                 <button
                   onClick={() => {
@@ -900,14 +900,14 @@ const AdminTenants: React.FC = () => {
             {isLoadingTenantDetails ? (
               <div className="p-20 flex flex-col items-center justify-center">
                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hydrating Protocol Data...</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Tenant Data...</span>
               </div>
             ) : (
               <div className="p-8 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Tenant Identity *
+                      Tenant Name *
                     </label>
                     <input
                       type="text"
@@ -920,7 +920,7 @@ const AdminTenants: React.FC = () => {
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Network Subdomain *
+                      Subdomain *
                     </label>
                     <div className="relative">
                       <input
@@ -955,7 +955,7 @@ const AdminTenants: React.FC = () => {
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Registry Email *
+                      Contact Email *
                     </label>
                     <input
                       type="email"
@@ -970,7 +970,7 @@ const AdminTenants: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Operational Contact
+                      Contact Phone
                     </label>
                     <input
                       type="tel"
@@ -983,7 +983,7 @@ const AdminTenants: React.FC = () => {
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Web Presence
+                      Website URL
                     </label>
                     <input
                       type="url"
@@ -997,7 +997,7 @@ const AdminTenants: React.FC = () => {
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Node Narrative
+                    Description
                   </label>
                   <textarea
                     className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
@@ -1011,7 +1011,7 @@ const AdminTenants: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Physical Base
+                      Address
                     </label>
                     <input
                       type="text"
@@ -1052,7 +1052,7 @@ const AdminTenants: React.FC = () => {
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Jurisdiction
+                      Country
                     </label>
                     <input
                       type="text"
@@ -1090,7 +1090,7 @@ const AdminTenants: React.FC = () => {
                 }}
                 className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all"
               >
-                DISCARD CHANGES
+                CANCEL
               </button>
               <button
                 onClick={handleUpdateTenant}
@@ -1098,7 +1098,7 @@ const AdminTenants: React.FC = () => {
                 className="px-8 py-3 text-[10px] font-black bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-3"
               >
                 {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                <span>{isUpdating ? 'SYNCING...' : 'SYNC CONFIGURATION'}</span>
+                <span>{isUpdating ? 'UPDATING...' : 'UPDATE TENANT'}</span>
               </button>
             </div>
           </div>
@@ -1291,7 +1291,7 @@ const AdminTenants: React.FC = () => {
                     className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-rose-200 hover:bg-rose-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Trash2 className="text-slate-400 group-hover:text-rose-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-rose-600">Decommission</span>
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-rose-600">Delete</span>
                   </button>
                 </div>
               </div>
@@ -1380,9 +1380,9 @@ const AdminTenants: React.FC = () => {
               <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-100">
                 <AlertTriangle className="text-rose-600" size={40} />
               </div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-2">Decommission Node</h2>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-2">Delete Tenant</h2>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed px-4">
-                You are about to transition <span className="text-gray-900">{tenantToDelete.name}</span> to a decommissioned state. This will suspend all operational protocols and access.
+                Are you sure you want to delete <span className="text-gray-900">{tenantToDelete.name}</span>? This will deactivate the tenant and suspend all access.
               </p>
             </div>
 
@@ -1394,7 +1394,7 @@ const AdminTenants: React.FC = () => {
                 }}
                 className="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-white transition-all"
               >
-                Abort
+                Cancel
               </button>
               <button
                 onClick={confirmDelete}
@@ -1406,7 +1406,7 @@ const AdminTenants: React.FC = () => {
                 ) : (
                   <Trash2 size={14} />
                 )}
-                Confirm Delete
+                Delete Tenant
               </button>
             </div>
           </div>

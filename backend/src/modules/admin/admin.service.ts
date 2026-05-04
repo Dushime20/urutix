@@ -966,6 +966,7 @@ export class AdminService {
     const where = tenantId ? ({ tenantId } as any) : ({} as any);
     const trips = await this.tripRepo.find({
       where,
+      relations: ['load', 'load.pickupLocation', 'load.deliveryLocation', 'truck', 'driver', 'driver.profile'],
       take: 500,
       order: { createdAt: 'DESC' } as any,
     });

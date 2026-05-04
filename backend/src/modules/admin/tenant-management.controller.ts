@@ -3,6 +3,7 @@ import {
   Get,
   Put,
   Post,
+  Delete,
   Param,
   Body,
   Query,
@@ -150,8 +151,17 @@ export class TenantManagementController {
       type: 'object',
       properties: {
         name: { type: 'string' },
+        subdomain: { type: 'string' },
+        domain: { type: 'string' },
         contactEmail: { type: 'string' },
         contactPhone: { type: 'string' },
+        description: { type: 'string' },
+        address: { type: 'string' },
+        city: { type: 'string' },
+        state: { type: 'string' },
+        country: { type: 'string' },
+        postalCode: { type: 'string' },
+        websiteUrl: { type: 'string' },
         maxUsers: { type: 'number' },
         maxTrucks: { type: 'number' },
         maxDrivers: { type: 'number' },
@@ -240,6 +250,59 @@ export class TenantManagementController {
     );
 
     return { message: 'Tenant status updated successfully' };
+  }
+
+  /**
+   * Delete tenant (soft delete)
+   * Requirement 2.6: Deactivate tenant and prevent access
+   */
+  @Delete(':tenantId')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('admin:manage_tenants')
+  @ApiOperation({
+    summary: 'Delete tenant',
+    description: 'Soft deletes a tenant by setting status to inactive and logging the action',
+  })
+  @ApiParam({
+    name: 'tenantId',
+    type: String,
+    description: 'Tenant ID',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', description: 'Reason for deletion' },
+      },
+    },
+    required: false,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tenant deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant not found',
+  })
+  async deleteTenant(
+    @Param('tenantId') tenantId: string,
+    @Body('reason') reason?: string,
+    @Request() req?: any,
+  ) {
+    const actorUserId = req?.user?.userId;
+    const ipAddress = req?.ip;
+    const userAgent = req?.headers['user-agent'];
+
+    await this.tenantManagementService.deleteTenant(
+      tenantId,
+      actorUserId,
+      reason,
+      ipAddress,
+      userAgent,
+    );
+
+    return { message: 'Tenant deleted successfully' };
   }
 
   /**

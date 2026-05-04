@@ -375,7 +375,11 @@ export const getTenantById = (tenantId: string) =>
     .then(res => res.data);
 
 export const updateTenant = (tenantId: string, data: any) =>
-  api.patch<any>(`/admin/tenants/${tenantId}`, data)
+  api.put<any>(`/admin/tenants/${tenantId}`, data)
+    .then(res => res.data);
+
+export const deleteTenant = (tenantId: string, reason?: string) =>
+  api.delete<any>(`/admin/tenant-management/${tenantId}`, { data: { reason } })
     .then(res => res.data);
 
 export const createTenant = (data: any) =>
@@ -392,4 +396,18 @@ export const updateTenantRoute = (routeId: string, data: any) =>
 
 export const deleteTenantRoute = (routeId: string) =>
   api.delete<any>(`/admin/routes/${routeId}`)
+    .then(res => res.data);
+
+
+// Trip management
+export const updateTripStatus = (tripId: string, status: string, reason?: string) =>
+  api.patch<any>(`/admin/trips/${tripId}/status`, { status, reason })
+    .then(res => res.data);
+
+export const cancelTrip = (tripId: string, reason: string) =>
+  api.patch<any>(`/admin/trips/${tripId}/cancel`, { reason })
+    .then(res => res.data);
+
+export const assignTripDriver = (tripId: string, driverId: string) =>
+  api.patch<any>(`/admin/trips/${tripId}/assign-driver`, { driverId })
     .then(res => res.data);

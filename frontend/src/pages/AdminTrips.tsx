@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchAllTrips, fetchTenants } from '../services/adminApi';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchAllTrips, fetchTenants, cancelTrip } from '../services/adminApi';
+import toast from 'react-hot-toast';
 import {
   FaTruck, FaEdit, FaSearch, FaDownload,
   FaEye, FaCheck, FaTimes, FaMapMarkerAlt,
@@ -70,6 +71,22 @@ const AdminTrips: React.FC = () => {
     queryFn: fetchTenants
   });
 
+  const qc = useQueryClient();
+
+  // Cancel trip mutation
+  const cancelTripMutation = useMutation({
+    mutationFn: (data: { tripId: string; reason: string }) => cancelTrip(data.tripId, data.reason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-all-trips'] });
+      toast.success('Trip cancelled successfully');
+      setShowCancelModal(false);
+      setTripToCancel(null);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to cancel trip');
+    }
+  });
+
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -81,255 +98,75 @@ const AdminTrips: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [tripToCancel, setTripToCancel] = useState<Trip | null>(null);
 
   // Use API data or fallback to mock data for demonstration
-  const mockTrips: Trip[] = [
-    {
-      id: '1',
-      reference: 'TRP-2024-001',
-      status: 'in_progress',
-      tenantId: '1',
-      tenantName: 'TransCorp Rwanda',
-      driverName: 'Jean Baptiste Uwimana',
-      truckNumber: 'RWD-123-ABC',
-      routeName: 'Kigali-Dar es Salaam Express',
-      origin: 'Kigali, Rwanda',
-      destination: 'Dar es Salaam, Tanzania',
-      cargoType: 'Electronics',
-      cargoWeight: 15.5,
-      cargoVolume: 25.3,
-      cargoTitle: 'Electronics Shipment',
-      isFragile: true,
-      loadValue: 2500000,
-      numberOfPieces: 120,
-      numberOfPallets: 8,
-      packagingType: 'Palletized',
-      distance: 1456,
-      estimatedDuration: 18,
-      startTime: '2024-08-09T06:00:00Z',
-      priority: 'high',
-      revenue: 2500000,
-      fuelCost: 250000,
-      tollCost: 45000,
-      progress: 65,
-      currentLocation: 'Mwanza, Tanzania',
-      delay: 0,
-      notes: 'High priority electronics shipment - fragile items',
-      createdAt: '2024-08-08T14:30:00Z',
-      updatedAt: '2024-08-09T10:15:00Z'
-    },
-    {
-      id: '2',
-      reference: 'TRP-2024-002',
-      status: 'completed',
-      tenantId: '2',
-      tenantName: 'Logistics Pro',
-      driverName: 'Mary Johnson Mukamana',
-      truckNumber: 'KEN-456-DEF',
-      routeName: 'Nairobi-Mombasa Corridor',
-      origin: 'Nairobi, Kenya',
-      destination: 'Mombasa, Kenya',
-      cargoType: 'Consumer Goods',
-      cargoWeight: 22.3,
-      cargoVolume: 45.2,
-      cargoTitle: 'Consumer Products',
-      numberOfPallets: 15,
-      packagingType: 'Palletized',
-      distance: 485,
-      estimatedDuration: 6,
-      actualDuration: 6.5,
-      startTime: '2024-08-08T08:00:00Z',
-      endTime: '2024-08-08T14:30:00Z',
-      priority: 'medium',
-      revenue: 850000,
-      fuelCost: 85000,
-      tollCost: 15000,
-      progress: 100,
-      currentLocation: 'Mombasa, Kenya',
-      delay: 0.5,
-      notes: 'Delivered successfully with minor delay due to traffic',
-      createdAt: '2024-08-07T16:45:00Z',
-      updatedAt: '2024-08-08T14:30:00Z'
-    },
-    {
-      id: '3',
-      reference: 'TRP-2024-003',
-      status: 'scheduled',
-      tenantId: '3',
-      tenantName: 'Enterprise Freight',
-      driverName: 'David Wilson Ndahiro',
-      truckNumber: 'NGR-789-GHI',
-      routeName: 'Lagos-Abuja Highway',
-      origin: 'Lagos, Nigeria',
-      destination: 'Abuja, Nigeria',
-      cargoType: 'Food Products',
-      cargoWeight: 18.7,
-      cargoVolume: 38.5,
-      cargoTitle: 'Perishable Food Items',
-      requiresRefrigeration: true,
-      numberOfPallets: 12,
-      packagingType: 'Refrigerated',
-      distance: 760,
-      estimatedDuration: 8,
-      startTime: '2024-08-10T05:00:00Z',
-      priority: 'low',
-      revenue: 1200000,
-      fuelCost: 120000,
-      tollCost: 25000,
-      progress: 0,
-      currentLocation: 'Lagos, Nigeria',
-      delay: 0,
-      notes: 'Scheduled for early morning departure - perishable goods',
-      createdAt: '2024-08-09T11:20:00Z',
-      updatedAt: '2024-08-09T11:20:00Z'
-    },
-    {
-      id: '4',
-      reference: 'TRP-2024-004',
-      status: 'delayed',
-      tenantId: '1',
-      tenantName: 'TransCorp Rwanda',
-      driverName: 'Alice Mutoni Gasana',
-      truckNumber: 'RWD-321-XYZ',
-      routeName: 'Kampala City Distribution',
-      origin: 'Kampala Central, Uganda',
-      destination: 'Kampala Suburbs, Uganda',
-      cargoType: 'Medical Supplies',
-      cargoWeight: 5.2,
-      cargoVolume: 8.1,
-      cargoTitle: 'Urgent Medical Supplies',
-      isFragile: true,
-      isHazardous: true,
-      loadValue: 1800000,
-      numberOfPieces: 45,
-      packagingType: 'Crate',
-      distance: 45,
-      estimatedDuration: 2,
-      startTime: '2024-08-09T14:00:00Z',
-      priority: 'high',
-      revenue: 180000,
-      fuelCost: 15000,
-      tollCost: 0,
-      progress: 25,
-      currentLocation: 'Kampala Traffic Jam',
-      delay: 1.5,
-      notes: 'Delayed due to heavy traffic in city center - urgent medical supplies',
-      createdAt: '2024-08-09T12:30:00Z',
-      updatedAt: '2024-08-09T15:45:00Z'
-    },
-    {
-      id: '5',
-      reference: 'TRP-2024-005',
-      status: 'in_progress',
-      tenantId: '2',
-      tenantName: 'Logistics Pro',
-      driverName: 'Peter Hakizimana',
-      truckNumber: 'TZA-567-JKL',
-      routeName: 'Dodoma-Mwanza Industrial Route',
-      origin: 'Dodoma, Tanzania',
-      destination: 'Mwanza, Tanzania',
-      cargoType: 'Construction Materials',
-      cargoWeight: 35.8,
-      distance: 425,
-      estimatedDuration: 5,
-      startTime: '2024-08-09T11:00:00Z',
-      priority: 'medium',
-      revenue: 750000,
-      fuelCost: 95000,
-      tollCost: 18000,
-      progress: 45,
-      currentLocation: 'Singida, Tanzania',
-      delay: 0,
-      notes: 'Heavy construction materials - driving carefully',
-      createdAt: '2024-08-09T09:00:00Z',
-      updatedAt: '2024-08-09T14:00:00Z'
-    },
-    {
-      id: '6',
-      reference: 'TRP-2024-006',
-      status: 'scheduled',
-      tenantId: '1',
-      tenantName: 'TransCorp Rwanda',
-      driverName: 'Sarah Nyirahabimana',
-      truckNumber: 'RWD-890-MNO',
-      routeName: 'Butare-Gitarama Academic Route',
-      origin: 'Butare (Huye), Rwanda',
-      destination: 'Gitarama (Muhanga), Rwanda',
-      cargoType: 'Educational Materials',
-      cargoWeight: 8.4,
-      distance: 75,
-      estimatedDuration: 1.5,
-      startTime: '2024-08-10T09:00:00Z',
-      priority: 'medium',
-      revenue: 120000,
-      fuelCost: 18000,
-      tollCost: 5000,
-      progress: 0,
-      currentLocation: 'Butare, Rwanda',
-      delay: 0,
-      notes: 'University books and supplies delivery',
-      createdAt: '2024-08-09T17:00:00Z',
-      updatedAt: '2024-08-09T17:00:00Z'
-    },
-    {
-      id: '7',
-      reference: 'TRP-2024-007',
-      status: 'completed',
-      tenantId: '3',
-      tenantName: 'Enterprise Freight',
-      driverName: 'Emmanuel Nshimiyimana',
-      truckNumber: 'UGA-234-PQR',
-      routeName: 'Entebbe-Jinja Express',
-      origin: 'Entebbe, Uganda',
-      destination: 'Jinja, Uganda',
-      cargoType: 'Textiles',
-      cargoWeight: 12.1,
-      distance: 125,
-      estimatedDuration: 2,
-      actualDuration: 1.8,
-      startTime: '2024-08-09T07:30:00Z',
-      endTime: '2024-08-09T09:18:00Z',
-      priority: 'low',
-      revenue: 195000,
-      fuelCost: 35000,
-      tollCost: 8000,
-      progress: 100,
-      currentLocation: 'Jinja, Uganda',
-      delay: 0,
-      notes: 'Early delivery - excellent performance',
-      createdAt: '2024-08-09T06:00:00Z',
-      updatedAt: '2024-08-09T09:20:00Z'
-    },
-    {
-      id: '8',
-      reference: 'TRP-2024-008',
-      status: 'cancelled',
-      tenantId: '1',
-      tenantName: 'TransCorp Rwanda',
-      driverName: 'Joseph Bizimungu',
-      truckNumber: 'RWD-456-STU',
-      routeName: 'Gisenyi-Ruhengeri Border Route',
-      origin: 'Gisenyi (Rubavu), Rwanda',
-      destination: 'Ruhengeri (Musanze), Rwanda',
-      cargoType: 'Agricultural Products',
-      cargoWeight: 28.5,
-      distance: 65,
-      estimatedDuration: 1.2,
-      startTime: '2024-08-09T16:00:00Z',
-      priority: 'low',
-      revenue: 85000,
-      fuelCost: 22000,
-      tollCost: 3000,
-      progress: 0,
-      currentLocation: 'Gisenyi, Rwanda',
-      delay: 0,
-      notes: 'Cancelled due to vehicle mechanical issues - rescheduled',
-      createdAt: '2024-08-09T15:00:00Z',
-      updatedAt: '2024-08-09T16:30:00Z'
-    }
-  ];
+  const mockTrips: Trip[] = [];
 
-  const allTrips = Array.isArray(trips) && trips.length > 0 ? trips : mockTrips;
+  // Transform backend trip data to frontend format
+  const transformTrip = (backendTrip: any): Trip => {
+    const status = backendTrip.status?.toLowerCase().replace('_', '_') || 'scheduled';
+    const plannedStart = new Date(backendTrip.plannedStartTime || backendTrip.createdAt);
+    const plannedEnd = new Date(backendTrip.plannedEndTime || backendTrip.estimatedEndTime || Date.now());
+    const actualStart = backendTrip.actualStartTime ? new Date(backendTrip.actualStartTime) : null;
+    const actualEnd = backendTrip.actualEndTime ? new Date(backendTrip.actualEndTime) : null;
+    
+    // Calculate progress
+    let progress = 0;
+    if (status === 'completed') {
+      progress = 100;
+    } else if (status === 'in_progress' && actualStart) {
+      const now = Date.now();
+      const totalDuration = plannedEnd.getTime() - plannedStart.getTime();
+      const elapsed = now - actualStart.getTime();
+      progress = Math.min(95, Math.max(5, Math.round((elapsed / totalDuration) * 100)));
+    }
+
+    return {
+      id: backendTrip.id,
+      reference: backendTrip.tripNumber || `TRP-${backendTrip.id.slice(0, 8)}`,
+      status: status as any,
+      tenantId: backendTrip.tenantId,
+      tenantName: backendTrip.tenant?.name || 'N/A',
+      driverName: backendTrip.driver ? `${backendTrip.driver.firstName || ''} ${backendTrip.driver.lastName || ''}`.trim() || 'Unassigned' : 'Unassigned',
+      truckNumber: backendTrip.truck?.licensePlate || backendTrip.truck?.truckNumber || 'N/A',
+      routeName: backendTrip.load?.routeName || `${backendTrip.load?.pickupLocation?.city || 'Origin'} - ${backendTrip.load?.deliveryLocation?.city || 'Destination'}`,
+      origin: backendTrip.load?.pickupLocation?.city || backendTrip.load?.pickupLocation?.address || 'N/A',
+      destination: backendTrip.load?.deliveryLocation?.city || backendTrip.load?.deliveryLocation?.address || 'N/A',
+      cargoType: backendTrip.load?.cargoType || 'General Cargo',
+      cargoWeight: backendTrip.load?.weight || 0,
+      cargoVolume: backendTrip.load?.volume,
+      cargoTitle: backendTrip.load?.title || backendTrip.load?.cargoType,
+      cargoDescription: backendTrip.load?.description,
+      loadValue: backendTrip.load?.value,
+      isFragile: backendTrip.load?.isFragile,
+      isHazardous: backendTrip.load?.isHazardous,
+      requiresRefrigeration: backendTrip.load?.requiresRefrigeration,
+      numberOfPieces: backendTrip.load?.numberOfPieces,
+      numberOfPallets: backendTrip.load?.numberOfPallets,
+      packagingType: backendTrip.load?.packagingType,
+      distance: backendTrip.totalDistance || backendTrip.distance || 0,
+      estimatedDuration: (plannedEnd.getTime() - plannedStart.getTime()) / (1000 * 60 * 60), // hours
+      actualDuration: actualStart && actualEnd ? (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60) : undefined,
+      startTime: backendTrip.actualStartTime || backendTrip.plannedStartTime,
+      endTime: backendTrip.actualEndTime,
+      createdAt: backendTrip.createdAt,
+      updatedAt: backendTrip.updatedAt,
+      priority: backendTrip.load?.priority || 'medium',
+      revenue: backendTrip.agreedPrice || 0,
+      fuelCost: backendTrip.fuelCost || 0,
+      tollCost: backendTrip.tollsCost || 0,
+      progress,
+      currentLocation: backendTrip.currentLocation || (status === 'completed' ? backendTrip.load?.deliveryLocation?.city : backendTrip.load?.pickupLocation?.city),
+      delay: 0,
+      notes: backendTrip.notes
+    };
+  };
+
+  const allTrips = Array.isArray(trips) && trips.length > 0 
+    ? trips.map(transformTrip)
+    : mockTrips;
 
   // Get tenants for dropdown
   const tenants: Tenant[] = tenantsData?.tenants || [];
@@ -690,12 +527,22 @@ const AdminTrips: React.FC = () => {
                                 setShowDetailsModal(true);
                               }}
                               className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-all"
+                              title="View Details"
                             >
                               <FaEye size={16} />
                             </button>
-                            <button className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl transition-all">
-                              <FaEdit size={16} />
-                            </button>
+                            {trip.status !== 'completed' && trip.status !== 'cancelled' && (
+                              <button 
+                                onClick={() => {
+                                  setTripToCancel(trip);
+                                  setShowCancelModal(true);
+                                }}
+                                className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all"
+                                title="Cancel Trip"
+                              >
+                                <FaTimes size={16} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -929,6 +776,54 @@ const AdminTrips: React.FC = () => {
                 className="px-10 py-3 bg-gray-900 dark:bg-blue-600 hover:bg-gray-800 dark:hover:bg-blue-700 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-gray-900/20 dark:shadow-blue-600/20 transition-all hover:-translate-y-0.5"
               >
                 <TranslatedText text="Dismiss Panel" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Trip Modal */}
+      {showCancelModal && tripToCancel && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-md border border-white/20 dark:border-slate-800">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-rose-50 dark:bg-rose-900/20 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-100 dark:border-rose-800/30">
+                <FaExclamationTriangle className="text-rose-600 dark:text-rose-400" size={40} />
+              </div>
+              <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase mb-2">Cancel Trip</h2>
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed px-4">
+                Are you sure you want to cancel trip <span className="text-gray-900 dark:text-white">{tripToCancel.reference}</span>? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="p-8 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex gap-4">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setTripToCancel(null);
+                }}
+                className="flex-1 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border border-gray-200 dark:border-slate-800 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all"
+              >
+                Keep Trip
+              </button>
+              <button
+                onClick={() => {
+                  if (tripToCancel) {
+                    cancelTripMutation.mutate({
+                      tripId: tripToCancel.id,
+                      reason: 'Cancelled by admin'
+                    });
+                  }
+                }}
+                disabled={cancelTripMutation.isPending}
+                className="flex-1 py-4 text-[10px] font-black bg-rose-600 text-white rounded-2xl hover:bg-rose-700 transition-all uppercase tracking-widest shadow-lg shadow-rose-200 dark:shadow-rose-900/20 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {cancelTripMutation.isPending ? (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <FaTimes size={14} />
+                )}
+                {cancelTripMutation.isPending ? 'Cancelling...' : 'Cancel Trip'}
               </button>
             </div>
           </div>

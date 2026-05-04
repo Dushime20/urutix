@@ -304,6 +304,19 @@ export class TenantManagementService {
       }
     }
 
+    // Check for duplicate subdomain if subdomain is being updated
+    if (updates.subdomain !== undefined && updates.subdomain !== tenant.subdomain) {
+      const existingTenant = await this.tenantRepository.findOne({
+        where: { subdomain: updates.subdomain },
+      });
+      
+      if (existingTenant && existingTenant.id !== tenantId) {
+        throw new BadRequestException(
+          `A tenant with subdomain ${updates.subdomain} already exists`
+        );
+      }
+    }
+
     // Track changes for logging
     const changes: Record<string, { old: any; new: any }> = {};
 
@@ -311,6 +324,16 @@ export class TenantManagementService {
     if (updates.name !== undefined && updates.name !== tenant.name) {
       changes.name = { old: tenant.name, new: updates.name };
       tenant.name = updates.name;
+    }
+
+    if (updates.subdomain !== undefined && updates.subdomain !== tenant.subdomain) {
+      changes.subdomain = { old: tenant.subdomain, new: updates.subdomain };
+      tenant.subdomain = updates.subdomain;
+    }
+
+    if (updates.domain !== undefined && updates.domain !== tenant.domain) {
+      changes.domain = { old: tenant.domain, new: updates.domain };
+      tenant.domain = updates.domain;
     }
 
     if (updates.contactEmail !== undefined && updates.contactEmail !== tenant.contactEmail) {
@@ -321,6 +344,41 @@ export class TenantManagementService {
     if (updates.contactPhone !== undefined && updates.contactPhone !== tenant.contactPhone) {
       changes.contactPhone = { old: tenant.contactPhone, new: updates.contactPhone };
       tenant.contactPhone = updates.contactPhone;
+    }
+
+    if (updates.description !== undefined && updates.description !== tenant.description) {
+      changes.description = { old: tenant.description, new: updates.description };
+      tenant.description = updates.description;
+    }
+
+    if (updates.address !== undefined && updates.address !== tenant.address) {
+      changes.address = { old: tenant.address, new: updates.address };
+      tenant.address = updates.address;
+    }
+
+    if (updates.city !== undefined && updates.city !== tenant.city) {
+      changes.city = { old: tenant.city, new: updates.city };
+      tenant.city = updates.city;
+    }
+
+    if (updates.state !== undefined && updates.state !== tenant.state) {
+      changes.state = { old: tenant.state, new: updates.state };
+      tenant.state = updates.state;
+    }
+
+    if (updates.country !== undefined && updates.country !== tenant.country) {
+      changes.country = { old: tenant.country, new: updates.country };
+      tenant.country = updates.country;
+    }
+
+    if (updates.postalCode !== undefined && updates.postalCode !== tenant.postalCode) {
+      changes.postalCode = { old: tenant.postalCode, new: updates.postalCode };
+      tenant.postalCode = updates.postalCode;
+    }
+
+    if (updates.websiteUrl !== undefined && updates.websiteUrl !== tenant.websiteUrl) {
+      changes.websiteUrl = { old: tenant.websiteUrl, new: updates.websiteUrl };
+      tenant.websiteUrl = updates.websiteUrl;
     }
 
     if (updates.maxUsers !== undefined && updates.maxUsers !== tenant.maxUsers) {
@@ -460,6 +518,56 @@ export class TenantManagementService {
     }
 
     this.logger.log(`Tenant ${tenantId} status set to ${newStatus}`);
+  }
+
+  /**
+   * Delete tenant (soft delete)
+   * Requirement 2.6: Deactivate tenant and prevent access
+   */
+  async deleteTenant(
+    tenantId: string,
+    actorUserId?: string,
+    reason?: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<void> {
+    this.logger.log(`Deleting tenant ${tenantId}`);
+
+    const tenant = await this.tenantRepository.findOne({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant ${tenantId} not found`);
+    }
+
+    const oldStatus = tenant.status;
+    const newStatus = TenantStatus.DEACTIVATED;
+
+    // Soft delete: set status to DEACTIVATED
+    tenant.status = newStatus;
+    tenant.isActive = false;
+    tenant.suspendedAt = new Date();
+    tenant.suspendedReason = reason || 'Deleted by admin';
+
+    await this.tenantRepository.save(tenant);
+
+    // Log activity for deletion
+    await this.logTenantStatusChange(
+      tenantId,
+      tenant.name,
+      oldStatus,
+      newStatus,
+      actorUserId,
+      reason || 'Tenant deleted',
+      ipAddress,
+      userAgent
+    );
+
+    // Terminate all active sessions for tenant users
+    await this.terminateTenantUserSessions(tenantId);
+
+    this.logger.log(`Tenant ${tenantId} deleted (soft delete)`);
   }
 
   /**
