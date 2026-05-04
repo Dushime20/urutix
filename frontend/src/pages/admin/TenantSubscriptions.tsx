@@ -46,6 +46,8 @@ interface TenantSubscription {
   };
   creditBalance: number;
   totalRevenue: number;
+  paidAmount: number;
+  totalAmount: number;
   createdAt: string;
 }
 
@@ -346,7 +348,10 @@ const TenantSubscriptions: React.FC = () => {
                     Credits
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Revenue
+                    Paid Amount
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Total Amount
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Period End
@@ -359,7 +364,7 @@ const TenantSubscriptions: React.FC = () => {
               <tbody className="divide-y divide-slate-200">
                 {filteredSubscriptions.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <FaCreditCard className="text-5xl text-slate-300 mb-4" />
                         <p className="text-slate-600 font-medium">No subscriptions found</p>
@@ -420,7 +425,12 @@ const TenantSubscriptions: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-green-600">
-                          ${(subscription.totalRevenue || 0).toFixed(2)}
+                          ${(subscription.paidAmount || 0).toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-blue-600">
+                          ${(subscription.totalAmount || 0).toFixed(2)}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -562,9 +572,21 @@ const TenantSubscriptions: React.FC = () => {
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Total Revenue</div>
+                      <div className="text-sm text-slate-600">Paid Amount</div>
                       <div className="text-2xl font-bold text-green-600">
-                        ${(selectedSubscription.totalRevenue || 0).toFixed(2)}
+                        ${(selectedSubscription.paidAmount || 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-600">Total Amount</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        ${(selectedSubscription.totalAmount || 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-600">Outstanding</div>
+                      <div className="text-2xl font-bold text-orange-600">
+                        ${((selectedSubscription.totalAmount || 0) - (selectedSubscription.paidAmount || 0)).toFixed(2)}
                       </div>
                     </div>
                   </div>

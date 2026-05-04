@@ -205,11 +205,47 @@ export class SubscriptionService {
           console.warn(`Could not get credit account for subscription ${sub.id}:`, error.message);
         }
 
+        // Calculate paid amount from payments table
+        let paidAmount = 0;
+        try {
+          const paymentsResult = await this.paymentRepository
+            .createQueryBuilder('payment')
+            .select('SUM(payment.amount)', 'total')
+            .where('payment.tenantId = :tenantId', { tenantId: sub.tenantId })
+            .andWhere('payment.paymentType = :paymentType', { paymentType: 'subscription' })
+            .andWhere('payment.status = :status', { status: 'completed' })
+            .andWhere('payment.metadata::jsonb @> :metadata', { 
+              metadata: JSON.stringify({ subscriptionId: sub.id }) 
+            })
+            .getRawOne();
+          
+          paidAmount = Number(paymentsResult?.total || 0);
+        } catch (error) {
+          console.warn(`Could not calculate paid amount for subscription ${sub.id}:`, error.message);
+        }
+
+        // Calculate total amount based on plan and billing cycle
+        let totalAmount = 0;
+        if (sub.plan) {
+          if (sub.plan.pricePerCredit && sub.plan.pricePerCredit > 0) {
+            // Credit-based pricing
+            const creditsToGrant = sub.plan.creditCostPerPartner || sub.plan.totalCredits || 0;
+            totalAmount = creditsToGrant === -1 ? 0 : Number(sub.plan.pricePerCredit) * creditsToGrant;
+          } else {
+            // Fixed pricing
+            totalAmount = sub.billingCycle === 'monthly' 
+              ? Number(sub.plan.priceMonthly || 0)
+              : Number(sub.plan.priceYearly || 0);
+          }
+        }
+
         return {
           ...sub,
           tenantName: sub.tenant?.name || 'Unknown',
           creditBalance,
-          totalRevenue: 0,
+          totalRevenue: paidAmount,
+          paidAmount,
+          totalAmount,
         };
       })
     );
