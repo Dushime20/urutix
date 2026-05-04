@@ -11,7 +11,7 @@ import { TranslatedText } from "../translated-text";
 import { useTranslation } from "../../hooks/useTranslation";
 import FilterSelect from "@/components/common/FilterSelect";
 import { tenantApi } from '../../services/tenantApi';
-import { loadsApi } from '../../services/loadsApi';
+import { loadsAPI } from '../../services/load';
 
 interface CargoAnalyticsProps {
   tenantId?: string;
@@ -34,7 +34,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
   // Fetch loads from backend
   const { data: loadsResponse, isLoading: loadsLoading } = useQuery({
     queryKey: ['loads', tenantId, selectedFilter, searchTerm],
-    queryFn: () => loadsApi.getLoads({
+    queryFn: () => loadsAPI.getAll({
       page: 1,
       limit: 100,
       status: selectedFilter || undefined,
@@ -44,7 +44,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     staleTime: 30000,
   });
 
-  const loads = loadsResponse?.data || [];
+  const loads = loadsResponse?.data?.data || [];
   const cargoData = cargoMetrics || {
     summary: {
       totalLoads: 0,
