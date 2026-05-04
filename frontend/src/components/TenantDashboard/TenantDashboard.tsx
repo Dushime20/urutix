@@ -39,7 +39,6 @@ import FleetOverview from './FleetOverview';
 import CargoAnalytics from './CargoAnalytics';
 import FinancialMetrics from './FinancialMetrics';
 import OperationalInsights from './OperationalInsights';
-import PerformanceMetrics from './PerformanceMetrics';
 import RecentActivity from './RecentActivity';
 import LowCreditPartners from './LowCreditPartners';
 import SkeletonDashboard from './SkeletonDashboard';
@@ -378,33 +377,6 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     ]
   };
 
-  const performanceData = {
-    labels: ['Revenue', 'Shipments', 'Fleet Util.', 'Fuel Eff.', 'On-Time', 'Satisfaction'],
-    datasets: [
-      {
-        label: 'Performance Metrics',
-        data: [
-          (data.metrics.totalRevenue / 15000000) * 100,
-          (data.metrics.totalShipments / 1500) * 100,
-          data.metrics.averageLoadUtilization,
-          (data.metrics.fuelEfficiency / 10) * 100,
-          data.metrics.onTimeDelivery,
-          (data.metrics.customerSatisfaction / 5) * 100,
-        ],
-        backgroundColor: [
-          'rgba(99, 102, 241, 0.85)',
-          'rgba(16, 185, 129, 0.85)',
-          'rgba(245, 158, 11, 0.85)',
-          'rgba(239, 68, 68, 0.85)',
-          'rgba(139, 92, 246, 0.85)',
-          'rgba(20, 184, 166, 0.85)',
-        ],
-        borderRadius: 8,
-        barThickness: 12,
-      }
-    ]
-  };
-
   return (
     <div className={`min-h-screen bg-white dark:bg-slate-950 ${className}`}>
       {/* Header */}
@@ -522,32 +494,6 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 
               {/* Truck Owner Performance Highlights */}
               <TruckOwnerPerformance tenantId={tenantId} />
-
-              {/* Performance Metrics */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
-              >
-                <div className="mb-8">
-                  <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Operational Health" /></h3>
-                  <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Performance Radar" /></h4>
-                </div>
-                <div className="h-80">
-                  <Bar data={performanceData} options={{
-                    ...chartOptions,
-                    indexAxis: 'y' as const,
-                    plugins: {
-                      ...chartOptions.plugins,
-                      legend: { display: false }
-                    }
-                  }} />
-                </div>
-              </motion.div>
-
-              {/* Detailed Performance Metrics */}
-              <PerformanceMetrics tenantId={tenantId} />
 
               {/* Recent Activity */}
               <RecentActivity 
