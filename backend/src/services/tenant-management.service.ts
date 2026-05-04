@@ -53,8 +53,17 @@ export interface TenantFilters {
 
 export interface TenantUpdate {
   name?: string;
+  subdomain?: string;
+  domain?: string;
   contactEmail?: string;
   contactPhone?: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  websiteUrl?: string;
   settings?: Record<string, any>;
   maxUsers?: number;
   maxTrucks?: number;
@@ -521,17 +530,18 @@ export class TenantManagementService {
   }
 
   /**
-   * Delete tenant (soft delete)
+   * Delete tenant via admin endpoint (soft delete)
    * Requirement 2.6: Deactivate tenant and prevent access
+   * Includes full logging and session termination
    */
-  async deleteTenant(
+  async adminDeleteTenant(
     tenantId: string,
     actorUserId?: string,
     reason?: string,
     ipAddress?: string,
     userAgent?: string
   ): Promise<void> {
-    this.logger.log(`Deleting tenant ${tenantId}`);
+    this.logger.log(`Admin deleting tenant ${tenantId}`);
 
     const tenant = await this.tenantRepository.findOne({
       where: { id: tenantId },
@@ -567,7 +577,7 @@ export class TenantManagementService {
     // Terminate all active sessions for tenant users
     await this.terminateTenantUserSessions(tenantId);
 
-    this.logger.log(`Tenant ${tenantId} deleted (soft delete)`);
+    this.logger.log(`Tenant ${tenantId} deleted by admin (soft delete)`);
   }
 
   /**

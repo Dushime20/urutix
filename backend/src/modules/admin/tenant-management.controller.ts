@@ -294,7 +294,7 @@ export class TenantManagementController {
     const ipAddress = req?.ip;
     const userAgent = req?.headers['user-agent'];
 
-    await this.tenantManagementService.deleteTenant(
+    await this.tenantManagementService.adminDeleteTenant(
       tenantId,
       actorUserId,
       reason,
