@@ -1,8 +1,8 @@
 import React from 'react';
-import { DashboardLoading } from '../common/LoadingSkeletons';
+import { DashboardSkeleton } from '../common/LoadingSkeletons';
 
 const SkeletonDashboard: React.FC = () => {
-    return <DashboardLoading />;
+    return <DashboardSkeleton />;
 };
 
 export default SkeletonDashboard;

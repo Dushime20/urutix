@@ -1,6 +1,6 @@
 import React from 'react';
-import { DashboardLoading } from '../common/LoadingSkeletons';
+import { DashboardSkeleton } from '../common/LoadingSkeletons';
 
 export const DriverSkeleton: React.FC = () => {
-  return <DashboardLoading />;
+  return <DashboardSkeleton />;
 };
