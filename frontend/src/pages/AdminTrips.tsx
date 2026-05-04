@@ -112,6 +112,10 @@ const AdminTrips: React.FC = () => {
     const actualStart = backendTrip.actualStartTime ? new Date(backendTrip.actualStartTime) : null;
     const actualEnd = backendTrip.actualEndTime ? new Date(backendTrip.actualEndTime) : null;
     
+    // Get pickup and delivery locations from the locations array
+    const pickupLocation = backendTrip.load?.locations?.find((loc: any) => loc.type === 'PICKUP');
+    const deliveryLocation = backendTrip.load?.locations?.find((loc: any) => loc.type === 'DELIVERY');
+    
     // Calculate progress
     let progress = 0;
     if (status === 'completed') {
@@ -131,9 +135,9 @@ const AdminTrips: React.FC = () => {
       tenantName: backendTrip.tenant?.name || 'N/A',
       driverName: backendTrip.driver ? `${backendTrip.driver.firstName || ''} ${backendTrip.driver.lastName || ''}`.trim() || 'Unassigned' : 'Unassigned',
       truckNumber: backendTrip.truck?.licensePlate || backendTrip.truck?.truckNumber || 'N/A',
-      routeName: backendTrip.load?.routeName || `${backendTrip.load?.pickupLocation?.city || 'Origin'} - ${backendTrip.load?.deliveryLocation?.city || 'Destination'}`,
-      origin: backendTrip.load?.pickupLocation?.city || backendTrip.load?.pickupLocation?.address || 'N/A',
-      destination: backendTrip.load?.deliveryLocation?.city || backendTrip.load?.deliveryLocation?.address || 'N/A',
+      routeName: backendTrip.load?.routeName || `${pickupLocation?.city || 'Origin'} - ${deliveryLocation?.city || 'Destination'}`,
+      origin: pickupLocation?.city || pickupLocation?.address || 'N/A',
+      destination: deliveryLocation?.city || deliveryLocation?.address || 'N/A',
       cargoType: backendTrip.load?.cargoType || 'General Cargo',
       cargoWeight: backendTrip.load?.weight || 0,
       cargoVolume: backendTrip.load?.volume,
@@ -158,7 +162,7 @@ const AdminTrips: React.FC = () => {
       fuelCost: backendTrip.fuelCost || 0,
       tollCost: backendTrip.tollsCost || 0,
       progress,
-      currentLocation: backendTrip.currentLocation || (status === 'completed' ? backendTrip.load?.deliveryLocation?.city : backendTrip.load?.pickupLocation?.city),
+      currentLocation: backendTrip.currentLocation || (status === 'completed' ? deliveryLocation?.city : pickupLocation?.city),
       delay: 0,
       notes: backendTrip.notes
     };
