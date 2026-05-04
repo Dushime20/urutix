@@ -247,4 +247,23 @@ export class TenantDashboardController {
       timestamp: new Date().toISOString(),
     };
   }
+
+  @Get(':tenantId/cargo')
+  @ApiOperation({ summary: 'Get cargo metrics for tenant' })
+  @ApiParam({ name: 'tenantId', description: 'Tenant ID' })
+  @ApiQuery({ name: 'timeRange', description: 'Time range (7d, 30d, 90d)', required: false })
+  @ApiOkResponse({ description: 'Cargo metrics retrieved successfully' })
+  async getCargoMetrics(
+    @Param('tenantId') tenantId: string,
+    @Query('timeRange') timeRange: string = '7d',
+  ): Promise<ApiResponseDto<any>> {
+    const metrics = await this.tenantDashboardService.getCargoMetrics(tenantId, timeRange);
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Cargo metrics retrieved successfully',
+      data: metrics,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }

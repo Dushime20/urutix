@@ -11,6 +11,7 @@ import logoUrutiXBackground from '../assets/logo-urutix.svg';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../components/translated-text';
+import { useTranslation } from '../hooks/useTranslation';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -19,6 +20,7 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 const ForgotPassword = () => {
+  const { tSync } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -31,14 +33,15 @@ const ForgotPassword = () => {
   const onSubmit = async (values: ForgotPasswordFormData) => {
     try {
       setIsLoading(true);
-      await authAPI.forgotPassword(values.email);
+      const response = await authAPI.forgotPassword(values.email);
       setEmailSent(true);
-      toast.success('Password reset email sent! Please check your inbox.');
+      toast.success(response.data?.message || tSync('Password reset email sent! Please check your inbox.'));
     } catch (error: any) {
       console.error('Forgot password error:', error);
       // Even on error, show success message for security (don't reveal if email exists)
       setEmailSent(true);
-      toast.success('If an account exists with this email, a password reset link has been sent.');
+      const errorMessage = error.response?.data?.message || tSync('If an account exists with this email, a password reset link has been sent.');
+      toast.success(errorMessage);
     } finally {
       setIsLoading(false);
     }

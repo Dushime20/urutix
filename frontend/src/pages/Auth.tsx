@@ -14,6 +14,7 @@ import { tenantAPI } from '../services/api';
 import type { Tenant } from '../types/tenant';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../components/translated-text';
+import { useTranslation } from '../hooks/useTranslation';
 
 
 // Zod schemas
@@ -49,6 +50,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const Auth = () => {
+  const { tSync } = useTranslation();
   const { login, register: authRegister } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -100,9 +102,9 @@ const Auth = () => {
   useEffect(() => {
     if (tenantsError) {
       console.error('❌ Failed to fetch tenants for signup:', tenantsError);
-      toast.error('Unable to load companies. Please refresh or contact support.');
+      toast.error(tSync('Unable to load companies. Please refresh or contact support.'));
     }
-  }, [tenantsError]);
+  }, [tenantsError, tSync]);
 
   const tenants = tenantsData || [];
 
@@ -208,11 +210,11 @@ const Auth = () => {
         }
       } else {
         // The login function already shows an error toast, but we can add more context
-        setError('Login failed: Please check your credentials and try again. If the problem persists, the user may not exist in the database.');
+        setError(tSync('Login failed. Please check your credentials and try again.'));
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Invalid email or password';
+      const errorMessage = error?.response?.data?.message || error?.message || tSync('Invalid email or password');
       setError(errorMessage);
       console.error('Full error details:', {
         status: error?.response?.status,
@@ -232,8 +234,9 @@ const Auth = () => {
       // Validate tenant selection for both CARGO_OWNER and TRUCK_OWNER
       // selectedTenant should be set when user selects from dropdown
       if (!selectedTenant || !values.companyName) {
-        setError('Please select a company from the dropdown');
-        registerForm.setError('companyName', { message: 'Please select a company from the dropdown' });
+        const errorMsg = tSync('Please select a company from the dropdown');
+        setError(errorMsg);
+        registerForm.setError('companyName', { message: errorMsg });
         setIsLoading(false);
         return;
       }
@@ -254,7 +257,7 @@ const Auth = () => {
       if (user) {
         // Redirect CARGO_OWNER to login page
         if (user.role === 'CARGO_OWNER') {
-          toast.success('Registration successful! Please log in.');
+          // Success toast is already handled in AuthContext.register
           setIsLogin(true); // Switch to login form
           registerForm.reset(); // Clear registration form
           setSelectedTenant(null); // Clear selected tenant
@@ -282,10 +285,10 @@ const Auth = () => {
             break;
         }
       } else {
-        setError('Registration failed: No token received');
+        setError(tSync('Registration failed. Please try again.'));
       }
     } catch (error: any) {
-      setError(error?.response?.data?.message || 'Registration failed. Please try again.');
+      setError(error?.response?.data?.message || tSync('Registration failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -379,7 +382,7 @@ const Auth = () => {
                     onBlur={(e) => {
                       const emailValue = e.target.value.trim();
                       if (emailValue && !emailValue.includes('@')) {
-                        setLoginEmailError('Email must contain an @ sign');
+                        setLoginEmailError(tSync('Email must contain an @ sign'));
                       } else {
                         setLoginEmailError(null);
                       }
@@ -533,7 +536,7 @@ const Auth = () => {
                     {selectedUserType === 'CARGO_OWNER' && (
                       <div>
                         <label htmlFor="companyName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-                          Select your company <span className="text-red-500">*</span>
+                          <TranslatedText text="Select your company" /> <span className="text-red-500">*</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
@@ -542,8 +545,8 @@ const Auth = () => {
                           </div>
                         ) : tenants.length === 0 ? (
                           <div className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-yellow-50">
-                            <p className="text-xs text-yellow-800 font-medium">No companies available</p>
-                            <p className="text-xs text-yellow-700 mt-1">Please contact support to activate a company account.</p>
+                            <p className="text-xs text-yellow-800 font-medium"><TranslatedText text="No companies available" /></p>
+                            <p className="text-xs text-yellow-700 mt-1"><TranslatedText text="Please contact support to activate a company account." /></p>
                           </div>
                         ) : (
                           <>
@@ -606,7 +609,7 @@ const Auth = () => {
                             <div className="flex items-center space-x-1.5">
                               <CheckCircle className="h-3.5 w-3.5 text-green-600" />
                               <span className="text-xs text-green-800">
-                                Company selected: {selectedTenant.name}
+                                <TranslatedText text="Company selected" />: {selectedTenant.name}
                                 {selectedTenant.city && ` • ${selectedTenant.city}`}
                                 {selectedTenant.country && ` • ${selectedTenant.country}`}
                               </span>
@@ -615,7 +618,7 @@ const Auth = () => {
                         )}
                         {tenants.length === 0 && !isLoadingTenants && (
                           <p className="mt-1 text-xs text-amber-600">
-                            No companies available. Please contact support.
+                            <TranslatedText text="No companies available. Please contact support." />
                           </p>
                         )}
                       </div>
@@ -625,7 +628,7 @@ const Auth = () => {
                     {selectedUserType === 'TRUCK_OWNER' && (
                       <div>
                         <label htmlFor="companyName" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-                          Select your company <span className="text-red-500">*</span>
+                          <TranslatedText text="Select your company" /> <span className="text-red-500">*</span>
                         </label>
                         {isLoadingTenants ? (
                           <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 flex items-center space-x-2">
@@ -634,8 +637,8 @@ const Auth = () => {
                           </div>
                         ) : tenants.length === 0 ? (
                           <div className="w-full px-3 py-2 text-sm border border-yellow-300 rounded-lg bg-yellow-50">
-                            <p className="text-xs text-yellow-800 font-medium">No companies available</p>
-                            <p className="text-xs text-yellow-700 mt-1">Please contact support to activate a company account.</p>
+                            <p className="text-xs text-yellow-800 font-medium"><TranslatedText text="No companies available" /></p>
+                            <p className="text-xs text-yellow-700 mt-1"><TranslatedText text="Please contact support to activate a company account." /></p>
                           </div>
                         ) : (
                           <>
@@ -698,7 +701,7 @@ const Auth = () => {
                             <div className="flex items-center space-x-1.5">
                               <CheckCircle className="h-3.5 w-3.5 text-green-600" />
                               <span className="text-xs text-green-800">
-                                Company selected: {selectedTenant.name}
+                                <TranslatedText text="Company selected" />: {selectedTenant.name}
                                 {selectedTenant.city && ` • ${selectedTenant.city}`}
                                 {selectedTenant.country && ` • ${selectedTenant.country}`}
                               </span>
@@ -707,7 +710,7 @@ const Auth = () => {
                         )}
                         {tenants.length === 0 && !isLoadingTenants && (
                           <p className="mt-1 text-xs text-amber-600">
-                            No companies available. Please contact support.
+                            <TranslatedText text="No companies available. Please contact support." />
                           </p>
                         )}
                       </div>

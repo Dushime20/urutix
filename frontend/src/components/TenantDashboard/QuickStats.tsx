@@ -11,7 +11,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 interface Metrics {
   totalRevenue: number;
   totalShipments: number;
-  activeFleet: number;
+  activeTrucks: number;
   onTimeDelivery: number;
   customerSatisfaction: number;
   fuelEfficiency: number;
@@ -61,7 +61,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
     },
     {
       title: 'Active Trucks',
-      value: (metrics?.activeFleet || 0).toString(),
+      value: (metrics?.activeTrucks || 0).toString(),
       icon: Truck,
       themeColor: 'text-primary-600 dark:text-primary-400',
       borderColor: 'border-primary-100 dark:border-primary-900/30',
@@ -143,7 +143,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
 
             <div className="flex flex-col">
               <span className={`text-4xl font-black ${stat.themeColor} tracking-tight leading-none mb-1.5`}>
-                {stat.title === 'Fuel Efficiency' ? `${metrics?.fuelEfficiency || 0} ${tSync('km/L')}` : stat.value}
+                {stat.value}
               </span>
               <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 whitespace-nowrap uppercase tracking-[0.2em]">
                 <TranslatedText text={stat.title} />

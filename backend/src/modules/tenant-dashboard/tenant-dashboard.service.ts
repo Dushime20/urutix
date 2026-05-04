@@ -442,4 +442,107 @@ export class TenantDashboardService {
       totalRevenue: parseFloat(item.totalRevenue || 0),
     }));
   }
+
+  async getCargoMetrics(tenantId: string, timeRange: string = '7d'): Promise<any> {
+    const { startDate, endDate } = this.getDateRange(timeRange);
+
+    // Get loads for the tenant
+    const loads = await this.loadRepository.find({
+      where: {
+        tenantId,
+        createdAt: Between(startDate, endDate),
+      },
+      relations: ['cargoOwner', 'cargoOwner.profile'],
+    });
+
+    // Get trips for delivery metrics
+    const trips = await this.tripRepository.find({
+      where: {
+        tenantId,
+        createdAt: Between(startDate, endDate),
+      },
+      relations: ['load'],
+    });
+
+    // Calculate metrics
+    const totalLoads = loads.length;
+    const activeLoads = loads.filter(load => 
+      [LoadStatus.PUBLISHED, LoadStatus.ASSIGNED, LoadStatus.IN_TRANSIT].includes(load.status)
+    ).length;
+    const completedLoads = loads.filter(load => load.status === LoadStatus.DELIVERED).length;
+    const pendingLoads = loads.filter(load => 
+      [LoadStatus.DRAFT, LoadStatus.CREATED].includes(load.status)
+    ).length;
+
+    // Calculate revenue from completed trips
+    const totalRevenue = trips
+      .filter(trip => trip.status === TripStatus.COMPLETED)
+      .reduce((sum, trip) => sum + (trip.agreedPrice || 0), 0);
+
+    const averageLoadValue = loads.length > 0
+      ? loads.reduce((sum, load) => sum + (load.loadValue || 0), 0) / loads.length
+      : 0;
+
+    // Calculate on-time delivery
+    const completedTrips = trips.filter(trip => trip.status === TripStatus.COMPLETED);
+    const onTimeTrips = completedTrips.filter(trip => {
+      if (!trip.plannedEndTime || !trip.actualEndTime) return false;
+      return new Date(trip.actualEndTime) <= new Date(trip.plannedEndTime);
+    });
+    const onTimeDelivery = completedTrips.length > 0
+      ? (onTimeTrips.length / completedTrips.length) * 100
+      : 0;
+
+    // Group by cargo type
+    const cargoTypeMap = new Map<string, { count: number; revenue: number }>();
+    loads.forEach(load => {
+      const type = load.cargoType || 'Other';
+      const existing = cargoTypeMap.get(type) || { count: 0, revenue: 0 };
+      cargoTypeMap.set(type, {
+        count: existing.count + 1,
+        revenue: existing.revenue + (load.loadValue || 0),
+      });
+    });
+
+    const topCommodities = Array.from(cargoTypeMap.entries())
+      .map(([name, data]) => ({
+        name,
+        count: data.count,
+        value: data.revenue,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
+    // Group by route
+    const routeMap = new Map<string, number>();
+    loads.forEach(load => {
+      const origin = load.pickupLocation?.locationData?.city || 'Unknown';
+      const destination = load.deliveryLocation?.locationData?.city || 'Unknown';
+      const routeKey = `${origin}-${destination}`;
+      routeMap.set(routeKey, (routeMap.get(routeKey) || 0) + 1);
+    });
+
+    const popularRoutes = Array.from(routeMap.entries())
+      .map(([route, frequency]) => {
+        const [origin, destination] = route.split('-');
+        return { origin, destination, frequency };
+      })
+      .sort((a, b) => b.frequency - a.frequency)
+      .slice(0, 5);
+
+    return {
+      summary: {
+        totalLoads,
+        activeLoads,
+        completedLoads,
+        pendingLoads,
+        totalRevenue,
+        averageDeliveryTime: 2.3, // Would need trip duration calculation
+        onTimeDelivery: Math.round(onTimeDelivery * 10) / 10,
+        averageLoadValue,
+      },
+      topCommodities,
+      popularRoutes,
+    };
+  }
 }

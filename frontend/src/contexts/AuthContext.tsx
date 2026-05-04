@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { identifyUser, resetUser, captureEvent } from '../utils/posthog';
 import { authAPI } from '../services/api';
 import { getApiBaseUrl } from '../config/environment';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Debug helper
 const debugUserData = (userData: any, source: string) => {
@@ -77,6 +78,7 @@ interface AuthProviderProps {
 
 // Function declaration for AuthProvider (Fast Refresh compatible)
 export function AuthProvider({ children }: AuthProviderProps) {
+  const { tSync } = useTranslation();
   const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -132,7 +134,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Only show the session expired toast once
     if (!sessionExpiredToastShown.current) {
       sessionExpiredToastShown.current = true;
-      toast.error('Session expired. Please login again.');
+      toast.error(tSync('Session expired. Please login again.'));
     }
   };
 
@@ -389,13 +391,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       
-      toast.success('Logged in successfully');
+      const successMessage = response.data?.message || tSync('Logged in successfully');
+      toast.success(successMessage);
       return { user: userData };
     } catch (error: any) {
       console.error('Login: Error occurred:', error);
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
-      toast.error(error.response?.data?.message || 'Login failed');
+      const errorMessage = error.response?.data?.message || tSync('Login failed');
+      toast.error(errorMessage);
       return null;
     }
   };
@@ -419,6 +423,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       sessionExpiredToastShown.current = false;
       
       persistUser(userData);
+      
       identifyUser(userData);
       captureEvent('user_role_selected', {
           user_id: userData.id,
@@ -427,13 +432,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       setIsLoading(false);
       setIsLoggingIn(false);
-      toast.success('Logged in successfully');
+      const successMessage = response.data?.message || tSync('Logged in successfully');
+      toast.success(successMessage);
       return userData;
     } catch (error: any) {
       console.error('Select Role Error:', error);
       setIsLoading(false);
       setIsLoggingIn(false);
-      toast.error(error.response?.data?.message || 'Role selection failed');
+      const errorMessage = error.response?.data?.message || tSync('Role selection failed');
+      toast.error(errorMessage);
       return null;
     }
   };
@@ -471,17 +478,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
       
-      const message = registeredUser.status === 'ACTIVE'
-        ? 'Registration successful!'
-        : 'Registration successful! Please check your email to verify your account.';
-
+      const message = response.data?.message || (registeredUser.status === 'ACTIVE'
+        ? tSync('Registration successful!')
+        : tSync('Registration successful! Please check your email to verify your account.'));
+  
       toast.success(message);
       return registeredUser;
     } catch (error: any) {
       console.error('Register: Error occurred:', error);
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const errorMessage = error.response?.data?.message || tSync('Registration failed');
+      toast.error(errorMessage);
       return null;
     }
   };
@@ -515,7 +523,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(false);
     setIsInitialized(false);
     delete axios.defaults.headers.common['Authorization'];
-    toast.success('Logged out successfully');
+    toast.success(tSync('Logged out successfully'));
   };
 
   const updateProfile = async (profileData: Partial<User>): Promise<boolean> => {
@@ -528,11 +536,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       const updatedUser = response.data.user;
       persistUser(updatedUser);
-      toast.success('Profile updated successfully');
+      const successMessage = response.data?.message || tSync('Profile updated successfully');
+      toast.success(successMessage);
       return true;
     } catch (error: any) {
       console.error('Profile update error:', error);
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      const errorMessage = error.response?.data?.message || tSync('Failed to update profile');
+      toast.error(errorMessage);
       return false;
     }
   };

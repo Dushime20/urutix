@@ -11,6 +11,7 @@ import logoUrutiXBackground from '../assets/logo-urutix.svg';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../components/translated-text';
+import { useTranslation } from '../hooks/useTranslation';
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -28,6 +29,7 @@ const resetPasswordSchema = z.object({
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 const ResetPassword = () => {
+  const { tSync } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -75,22 +77,22 @@ const ResetPassword = () => {
   // Check if token exists
   useEffect(() => {
     if (!token) {
-      toast.error('Invalid or missing reset token');
+      toast.error(tSync('Invalid or missing reset token'));
       navigate('/auth');
     }
-  }, [token, navigate]);
+  }, [token, navigate, tSync]);
 
   const onSubmit = async (values: ResetPasswordFormData) => {
     if (!token) {
-      toast.error('Invalid reset token');
+      toast.error(tSync('Invalid reset token'));
       return;
     }
 
     try {
       setIsLoading(true);
-      await authAPI.resetPassword(token, values.password, values.confirmPassword);
+      const response = await authAPI.resetPassword(token, values.password, values.confirmPassword);
       setResetSuccess(true);
-      toast.success('Password reset successfully!');
+      toast.success(response.data?.message || tSync('Password reset successfully!'));
 
       // Redirect to login after 3 seconds
       setTimeout(() => {
@@ -98,7 +100,7 @@ const ResetPassword = () => {
       }, 3000);
     } catch (error: any) {
       console.error('Reset password error:', error);
-      const errorMessage = error?.response?.data?.message || 'Failed to reset password. The link may have expired.';
+      const errorMessage = error?.response?.data?.message || tSync('Failed to reset password. The link may have expired.');
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

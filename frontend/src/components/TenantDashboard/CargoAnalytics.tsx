@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useQuery } from '@tanstack/react-query';
 import {
   Box, Truck, MapPin as FaMapMarkerAlt, Clock, CheckCircle,
   AlertTriangle, Route, DollarSign, Search, Filter,
@@ -9,155 +10,118 @@ import { Line, Bar } from "react-chartjs-2";
 import { TranslatedText } from "../translated-text";
 import { useTranslation } from "../../hooks/useTranslation";
 import FilterSelect from "@/components/common/FilterSelect";
+import { tenantApi } from '../../services/tenantApi';
+import { loadsApi } from '../../services/loadsApi';
 
 interface CargoAnalyticsProps {
   tenantId?: string;
 }
 
-const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
+const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
   const { tSync } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [timeRange, setTimeRange] = useState("7d");
 
-  // Mock cargo data - in real app, this would come from API
-  const cargoData = useMemo(() => ({
+  // Fetch cargo metrics from backend
+  const { data: cargoMetrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['cargoMetrics', tenantId, timeRange],
+    queryFn: () => tenantApi.getCargoMetrics(tenantId || 'default-tenant', timeRange),
+    enabled: !!tenantId,
+    staleTime: 30000,
+  });
+
+  // Fetch loads from backend
+  const { data: loadsResponse, isLoading: loadsLoading } = useQuery({
+    queryKey: ['loads', tenantId, selectedFilter, searchTerm],
+    queryFn: () => loadsApi.getLoads({
+      page: 1,
+      limit: 100,
+      status: selectedFilter || undefined,
+      search: searchTerm || undefined,
+    }),
+    enabled: !!tenantId,
+    staleTime: 30000,
+  });
+
+  const loads = loadsResponse?.data || [];
+  const cargoData = cargoMetrics || {
     summary: {
-      totalLoads: 1247,
-      activeLoads: 47,
-      completedLoads: 1189,
-      pendingLoads: 11,
-      totalRevenue: 12500000,
-      averageDeliveryTime: 2.3,
-      onTimeDelivery: 94.2,
+      totalLoads: 0,
+      activeLoads: 0,
+      completedLoads: 0,
+      pendingLoads: 0,
+      totalRevenue: 0,
+      averageDeliveryTime: 0,
+      onTimeDelivery: 0,
+      averageLoadValue: 0,
     },
-    trends: {
-      weekly: [45, 67, 52, 89, 76, 98, 84],
-      monthly: [234, 267, 289, 312, 298, 345, 378, 356, 389, 412, 398, 445],
-      revenue: [1250000, 1890000, 1500000, 2500000, 2200000, 3000000, 2800000],
-    },
-    loads: [
-      {
-        id: 'L-2024-001',
-        cargoType: 'Electronics',
-        origin: 'Kigali',
-        destination: 'Huye',
-        status: 'completed',
-        weight: '2.5 tons',
-        value: 450000,
-        driver: 'John Doe',
-        truck: 'T-001',
-        pickupDate: '2024-01-20',
-        deliveryDate: '2024-01-22',
-        revenue: 125000
-      },
-      {
-        id: 'L-2024-002',
-        cargoType: 'Agricultural',
-        origin: 'Musanze',
-        destination: 'Kigali',
-        status: 'in-transit',
-        weight: '5.0 tons',
-        value: 320000,
-        driver: 'Jane Smith',
-        truck: 'T-002',
-        pickupDate: '2024-01-23',
-        deliveryDate: '2024-01-25',
-        revenue: 180000
-      },
-      {
-        id: 'L-2024-003',
-        cargoType: 'Construction',
-        origin: 'Huye',
-        destination: 'Musanze',
-        status: 'pending',
-        weight: '8.0 tons',
-        value: 680000,
-        driver: 'Mike Johnson',
-        truck: 'T-003',
-        pickupDate: '2024-01-26',
-        deliveryDate: '2024-01-28',
-        revenue: 220000
-      },
-      {
-        id: 'L-2024-004',
-        cargoType: 'Textiles',
-        origin: 'Kigali',
-        destination: 'Rubavu',
-        status: 'completed',
-        weight: '1.5 tons',
-        value: 280000,
-        driver: 'Sarah Wilson',
-        truck: 'T-004',
-        pickupDate: '2024-01-18',
-        deliveryDate: '2024-01-19',
-        revenue: 95000
-      },
-      {
-        id: 'L-2024-005',
-        cargoType: 'Machinery',
-        origin: 'Rubavu',
-        destination: 'Kigali',
-        status: 'in-transit',
-        weight: '12.0 tons',
-        value: 1200000,
-        driver: 'David Brown',
-        truck: 'T-005',
-        pickupDate: '2024-01-24',
-        deliveryDate: '2024-01-27',
-        revenue: 350000
-      },
-    ],
-    cargoTypes: [
-      { type: 'Electronics', count: 234, revenue: 3200000 },
-      { type: 'Agricultural', count: 456, revenue: 2800000 },
-      { type: 'Construction', count: 189, revenue: 2100000 },
-      { type: 'Textiles', count: 167, revenue: 1800000 },
-      { type: 'Machinery', count: 89, revenue: 1500000 },
-      { type: 'Other', count: 112, revenue: 1100000 },
-    ]
-  }), []);
+    topCommodities: [],
+    popularRoutes: [],
+  };
+
+  // Calculate weekly trends from loads data
+  const weeklyTrends = useMemo(() => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const shipments = new Array(7).fill(0);
+    const revenue = new Array(7).fill(0);
+
+    loads.forEach((load: any) => {
+      const date = new Date(load.createdAt);
+      const dayIndex = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+      shipments[dayIndex]++;
+      revenue[dayIndex] += load.loadValue || 0;
+    });
+
+    return { shipments, revenue };
+  }, [loads]);
 
   const filteredLoads = useMemo(() => {
-    let filtered = cargoData.loads;
+    let filtered = loads;
 
     if (selectedFilter) {
-      filtered = filtered.filter(load => load.status === selectedFilter);
+      filtered = filtered.filter((load: any) => load.status.toLowerCase() === selectedFilter.toLowerCase());
     }
 
     if (searchTerm) {
-      filtered = filtered.filter(load =>
-        load.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.cargoType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.destination.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((load: any) =>
+        load.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.cargoType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.pickupLocation?.locationData?.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        load.deliveryLocation?.locationData?.city?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     return filtered;
-  }, [cargoData.loads, selectedFilter, searchTerm]);
+  }, [loads, selectedFilter, searchTerm]);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status?.toLowerCase();
+    switch (normalizedStatus) {
       case 'draft': return 'text-slate-500 bg-slate-50 border-slate-100';
       case 'created': return 'text-primary-600 bg-primary-50 border-primary-100';
       case 'published': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'completed': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'in-transit': return 'text-sky-600 bg-sky-50 border-sky-100';
-      case 'pending': return 'text-amber-600 bg-amber-50 border-amber-100';
+      case 'completed':
+      case 'delivered': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+      case 'in-transit':
+      case 'in_transit': return 'text-sky-600 bg-sky-50 border-sky-100';
+      case 'assigned': return 'text-amber-600 bg-amber-50 border-amber-100';
       case 'cancelled': return 'text-rose-600 bg-rose-50 border-rose-100';
       default: return 'text-slate-500 bg-slate-50 border-slate-100 dark:bg-slate-900/50';
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status?.toLowerCase();
+    switch (normalizedStatus) {
       case 'draft': return <FaSave className="w-3 h-3" />;
       case 'created': return <FaCheck className="w-3 h-3" />;
       case 'published': return <FaRocket className="w-3 h-3" />;
-      case 'completed': return <CheckCircle className="w-3 h-3" />;
-      case 'in-transit': return <Truck className="w-3 h-3" />;
-      case 'pending': return <Clock className="w-3 h-3" />;
+      case 'completed':
+      case 'delivered': return <CheckCircle className="w-3 h-3" />;
+      case 'in-transit':
+      case 'in_transit': return <Truck className="w-3 h-3" />;
+      case 'assigned': return <Clock className="w-3 h-3" />;
       case 'cancelled': return <AlertTriangle className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
     }
@@ -187,7 +151,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
     datasets: [
       {
         label: 'Shipments',
-        data: cargoData.trends.weekly,
+        data: weeklyTrends.shipments,
         borderColor: '#6366f1',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         borderWidth: 3,
@@ -206,7 +170,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
     datasets: [
       {
         label: 'Revenue (RWF)',
-        data: cargoData.trends.revenue,
+        data: weeklyTrends.revenue,
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         borderWidth: 3,
@@ -221,11 +185,11 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
   };
 
   const cargoTypeData = {
-    labels: cargoData.cargoTypes.map(item => item.type),
+    labels: cargoData.topCommodities.map(item => item.name),
     datasets: [
       {
         label: 'Revenue by Cargo Type',
-        data: cargoData.cargoTypes.map(item => item.revenue),
+        data: cargoData.topCommodities.map(item => item.value),
         backgroundColor: [
           '#2D5173', // Navy
           'rgba(16, 185, 129, 0.8)',
@@ -280,6 +244,28 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredLoads.slice(start, start + itemsPerPage);
   }, [filteredLoads, currentPage]);
+
+  // Show loading state
+  if (metricsLoading || loadsLoading) {
+    return (
+      <div className="space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded mb-2"></div>
+                <div className="h-8 bg-gray-200 dark:bg-slate-800 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600 dark:text-slate-400"><TranslatedText text="Loading cargo data..." /></p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
@@ -425,48 +411,56 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-50 dark:divide-slate-800">
-              {paginatedLoads.map((load) => (
-                <tr key={load.id} className="hover:bg-primary-50/10 dark:hover:bg-primary-900/10 transition-colors">
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <span className="text-sm font-black text-slate-800 dark:text-slate-100">{load.id}</span>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{tSync(load.cargoType)}</span>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FaMapMarkerAlt className="w-3.5 h-3.5 text-primary-400 mr-2.5" />
-                      <div>
-                        <div className="text-[13px] font-black text-slate-800 dark:text-slate-200">{tSync(load.origin)}</div>
-                        <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">→ {tSync(load.destination)}</div>
+              {paginatedLoads.map((load: any) => {
+                const origin = load.pickupLocation?.locationData?.city || load.pickupLocation?.locationData?.name || 'Unknown';
+                const destination = load.deliveryLocation?.locationData?.city || load.deliveryLocation?.locationData?.name || 'Unknown';
+                const weight = load.weight ? `${load.weight} kg` : 'N/A';
+                const driver = load.assignedDriver ? `${load.assignedDriver.firstName || ''} ${load.assignedDriver.lastName || ''}`.trim() : 'Unassigned';
+                const truck = load.assignedTruck?.plateNumber || 'N/A';
+                
+                return (
+                  <tr key={load.id} className="hover:bg-primary-50/10 dark:hover:bg-primary-900/10 transition-colors">
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <span className="text-sm font-black text-slate-800 dark:text-slate-100">{load.id}</span>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{tSync(load.cargoType || 'General')}</span>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaMapMarkerAlt className="w-3.5 h-3.5 text-primary-400 mr-2.5" />
+                        <div>
+                          <div className="text-[13px] font-black text-slate-800 dark:text-slate-200">{tSync(origin)}</div>
+                          <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">→ {tSync(destination)}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(load.status)} dark:bg-slate-900/50`}>
-                      {getStatusIcon(load.status)}
-                      <span className="ml-1.5">{tSync(load.status)}</span>
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
-                    {load.weight}
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-sm font-black text-slate-800 dark:text-slate-100">
-                    {formatFullCurrency(load.revenue)}
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{load.driver}</span>
-                      <span className="text-[11px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{load.truck}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-right">
-                    <button className="p-2 text-slate-400 dark:text-slate-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg transition-all">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(load.status)} dark:bg-slate-900/50`}>
+                        {getStatusIcon(load.status)}
+                        <span className="ml-1.5">{tSync(load.status)}</span>
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                      {weight}
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap text-sm font-black text-slate-800 dark:text-slate-100">
+                      {formatFullCurrency(load.loadValue || 0)}
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{driver}</span>
+                        <span className="text-[11px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{truck}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap text-right">
+                      <button className="p-2 text-slate-400 dark:text-slate-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg transition-all">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

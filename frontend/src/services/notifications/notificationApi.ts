@@ -39,6 +39,7 @@ export interface Notification {
   createdAt: string;
   updatedAt: string;
   deleted_at?: string;
+  isRead?: boolean;
 }
 
 export interface NotificationAttachment {
