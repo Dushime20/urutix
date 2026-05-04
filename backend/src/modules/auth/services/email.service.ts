@@ -113,8 +113,31 @@ export class EmailService {
     this.logger.log('========== EMAIL SERVICE INITIALIZATION COMPLETE ==========');
   }
 
+  /**
+   * Get frontend URL - REQUIRED, no fallback
+   * Throws error if FRONTEND_URL is not set in environment
+   */
+  private getFrontendUrl(): string {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    
+    if (!frontendUrl) {
+      const errorMessage = 
+        '❌ CRITICAL ERROR: FRONTEND_URL environment variable is not set!\n' +
+        '❌ This is REQUIRED for email links to work correctly.\n' +
+        '❌ Please add FRONTEND_URL to your .env file:\n' +
+        '❌   For development: FRONTEND_URL=http://localhost:5173\n' +
+        '❌   For production: FRONTEND_URL=http://38.242.224.199:5173\n' +
+        '❌   Or use your domain: FRONTEND_URL=https://yourdomain.com';
+      
+      this.logger.error(errorMessage);
+      throw new Error('FRONTEND_URL environment variable is required but not set');
+    }
+    
+    return frontendUrl;
+  }
+
   async sendVerificationEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const frontendUrl = this.getFrontendUrl();
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
@@ -146,7 +169,7 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const frontendUrl = this.getFrontendUrl();
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
