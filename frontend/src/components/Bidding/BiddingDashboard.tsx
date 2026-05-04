@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Gavel,
   Users,
@@ -107,11 +107,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    loadDashboardStats();
-  }, []);
-
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     setLoading(true);
     try {
       const response = await biddingAPI.getDashboardStats();
@@ -122,7 +118,11 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadDashboardStats();
+  }, [loadDashboardStats]);
 
   const renderCargoOwnerStats = () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">

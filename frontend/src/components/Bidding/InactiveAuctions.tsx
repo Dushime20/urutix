@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
 import { RefreshCw, RotateCcw, Calendar, DollarSign, Package, MapPin, AlertCircle } from 'lucide-react';
@@ -32,11 +32,7 @@ const InactiveAuctions: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [reactivating, setReactivating] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadInactiveAuctions();
-  }, []);
-
-  const loadInactiveAuctions = async () => {
+  const loadInactiveAuctions = useCallback(async () => {
     try {
       setLoading(true);
       const response = await biddingAPI.getInactiveAuctions();
@@ -47,7 +43,11 @@ const InactiveAuctions: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadInactiveAuctions();
+  }, [loadInactiveAuctions]);
 
   const handleReactivate = async (auctionId: string) => {
     try {
