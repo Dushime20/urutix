@@ -210,12 +210,12 @@ export class SubscriptionService {
         try {
           const paymentsResult = await this.paymentRepository
             .createQueryBuilder('payment')
-            .select('SUM(payment.amount)', 'total')
+            .select('COALESCE(SUM(payment.amount), 0)', 'total')
             .where('payment.tenantId = :tenantId', { tenantId: sub.tenantId })
-            .andWhere('payment.paymentType = :paymentType', { paymentType: 'subscription' })
-            .andWhere('payment.status = :status', { status: 'completed' })
-            .andWhere('payment.metadata::jsonb @> :metadata', { 
-              metadata: JSON.stringify({ subscriptionId: sub.id }) 
+            .andWhere('payment.paymentType = :paymentType', { paymentType: PaymentType.SUBSCRIPTION })
+            .andWhere('payment.status = :status', { status: PaymentStatus.COMPLETED })
+            .andWhere("payment.metadata->>'subscriptionId' = :subscriptionId", { 
+              subscriptionId: sub.id 
             })
             .getRawOne();
           
