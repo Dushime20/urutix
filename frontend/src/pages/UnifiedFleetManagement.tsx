@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { cn } from '../utils/cn';
 import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
+import ModernLoader from '../components/common/ModernLoader';
 
 const UnifiedFleetManagement: React.FC = () => {
   const { user: _user } = useAuth(); // Keep for potential future use or context check
@@ -268,9 +269,8 @@ const UnifiedFleetManagement: React.FC = () => {
           </div>
 
           {loadingTrucks ? (
-            <div className="text-center py-12">
-              <FaSpinner className="w-8 h-8 text-primary-500 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Loading trucks...</p>
+            <div className="relative min-h-[300px]">
+              <ModernLoader isLoading={true} text="Cataloging_Fleet" containerRelative={true} />
             </div>
           ) : trucks.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -389,9 +389,8 @@ const UnifiedFleetManagement: React.FC = () => {
           </div>
 
           {loadingTrips ? (
-            <div className="text-center py-12">
-              <FaSpinner className="w-8 h-8 text-primary-500 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Loading active trips...</p>
+            <div className="relative min-h-[300px]">
+              <ModernLoader isLoading={true} text="Synchronizing_Missions" containerRelative={true} />
             </div>
           ) : activeTrips.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg">

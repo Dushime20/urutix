@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from './DashboardLayout';
+import ModernLoader from '../common/ModernLoader';
 
 const BrokerLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -22,7 +23,9 @@ const BrokerLayout: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
-  if (isLoading || !user) return null;
+  if (isLoading || !user) {
+    return <ModernLoader isLoading={true} text="Initializing_Session" />;
+  }
 
   // Check if we're on the index dashboard route
   const isDashboardIndex = location.pathname === '/dashboard/broker' || 

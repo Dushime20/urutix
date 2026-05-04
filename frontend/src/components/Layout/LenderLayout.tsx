@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from './DashboardLayout';
+import ModernLoader from '../common/ModernLoader';
 
 const LenderLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -15,7 +16,9 @@ const LenderLayout: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
-  if (isLoading || !user || user.role !== 'LENDER') return null;
+  if (isLoading || !user || user.role !== 'LENDER') {
+    return <ModernLoader isLoading={isLoading || !user} text="Initializing_Session" />;
+  }
   return (
     <DashboardLayout>
       <Outlet />

@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { FaBell, FaUser, FaSearch, FaSignOutAlt, FaCog } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import MobileBottomNav from './MobileBottomNav';
+import ModernLoader from '../common/ModernLoader';
 
 const RoleBasedLayout: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -39,12 +40,8 @@ const RoleBasedLayout: React.FC = () => {
 
   // Show loading while checking authentication
   if (isLoading) {
-    console.log('RoleBasedLayout: Showing loading spinner');
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    );
+    console.log('RoleBasedLayout: Showing modern loader');
+    return <ModernLoader isLoading={true} text="Initializing_Session" />;
   }
 
   // Don't render if not authenticated

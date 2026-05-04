@@ -5,6 +5,7 @@ import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
 import { CargoOwnerLayoutProvider } from '../../contexts/CargoOwnerLayoutContext';
+import ModernLoader from '../common/ModernLoader';
 
 const CargoOwnerLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -42,24 +43,16 @@ const CargoOwnerLayout: React.FC = () => {
   };
 
   if (isLoading || !user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
-        <div className="w-16 h-16 relative">
-          <div className="absolute inset-0 border-4 border-slate-100 dark:border-slate-800 rounded-2xl"></div>
-          <div className="absolute inset-0 border-4 border-[#345E85] dark:border-primary-500 rounded-2xl border-t-transparent animate-spin"></div>
-        </div>
-        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Loading_Protocol</p>
-      </div>
-    );
+    return <ModernLoader isLoading={true} text="Initializing_Session" />;
   }
 
   return (
     <CargoOwnerLayoutProvider value={providerValue}>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300">
+      <div className="h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300 overflow-hidden">
         {!hideHeader && <DashboardHeader />}
         
-        <main className="flex-1 pb-32 lg:pb-12">
-          <div className="max-w-7xl mx-auto px-1.5 sm:px-4 py-4 md:py-8 lg:px-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 lg:pb-8 custom-scrollbar">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 md:py-4 lg:px-6 overflow-x-hidden">
             <Outlet />
           </div>
         </main>

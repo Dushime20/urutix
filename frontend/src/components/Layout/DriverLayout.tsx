@@ -8,17 +8,29 @@ import { TacticalMissionOverlay } from '../DriverDashboard/TacticalMissionOverla
 import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
 import { useNavigate } from 'react-router-dom';
+import ModernLoader from '../common/ModernLoader';
 import { PostTripChecklistModal } from '../DriverDashboard/PostTripChecklistModal';
 import toast from 'react-hot-toast';
 import { cn } from '../../utils/cn';
 import { IncidentReportModal } from '../DriverDashboard/IncidentReportModal';
 
 const DriverLayout: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [driverId, setDriverId] = useState<string>('');
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/auth');
+    }
+  }, [isLoading, user, navigate]);
+
+  if (isLoading || !user) {
+    return <ModernLoader isLoading={true} text="Initializing_Mission" />;
+  }
 
   // Fetch driverId based on encrypted session email/userId
   const { data: currentDriverProfile } = useQuery({
@@ -101,7 +113,7 @@ const DriverLayout: React.FC = () => {
         }}
         tripId={currentTrip?.id}
         tripNumber={currentTrip?.tripNumber}
-        cargoTitle={currentTrip?.load?.title || currentTrip?.load?.cargoType}
+        cargoTitle={currentTrip?.cargo?.description || currentTrip?.cargo?.type}
         truckId={currentTrip?.truck?.id}
         truckPlate={currentTrip?.truck?.plateNumber}
         driverId={driverId}

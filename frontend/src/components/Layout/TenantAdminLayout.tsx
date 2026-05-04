@@ -5,6 +5,7 @@ import { AdminLayoutProvider } from '../../contexts/AdminLayoutContext';
 import DashboardLayout from './DashboardLayout';
 import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
+import ModernLoader from '../common/ModernLoader';
 
 const TenantAdminLayoutContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -38,7 +39,9 @@ const TenantAdminLayoutContent: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
-  if (isLoading || !user || user.role !== 'TENANT_ADMIN') return null;
+  if (isLoading || !user || user.role !== 'TENANT_ADMIN') {
+    return <ModernLoader isLoading={isLoading || !user} text="Initializing_Tenant_Space" />;
+  }
 
   // Check if we're on the index dashboard route
   const isDashboardIndex = location.pathname.startsWith('/tenant-admin') && (

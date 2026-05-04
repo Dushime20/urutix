@@ -609,45 +609,45 @@ const CargoOwnerDashboard = () => {
     return list;
   }, [stats.incompleteCargos, matchingData.matchRecommendations]);
   const renderOverview = () => (
-    <div className="space-y-4 md:space-y-8 pb-10">
+    <div className="space-y-4 md:space-y-6">
       {/* 1. Hero / Performance Overview */}
-      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-12 mb-4 md:mb-8 transition-colors duration-300">
+      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 md:p-8 lg:p-10 transition-colors duration-300">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 dark:from-blue-900/10 to-transparent pointer-events-none"></div>
         <div className="relative z-10">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
             <div className="max-w-2xl">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2 md:mb-3">
                 <div className="bg-[#345E85]/10 dark:bg-primary-900/30 text-[#345E85] dark:text-primary-400 p-1.5 rounded-lg border border-[#345E85]/10 dark:border-primary-800">
                   <Activity className="w-4 h-4" />
                 </div>
                 <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] dark:text-primary-400">System_Summary</h2>
               </div>
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-5">
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-3 md:mb-4">
                 Neural <span className="text-[#345E85] dark:text-primary-400">Insights</span>
               </h1>
-              <p className="text-xs md:text-lg text-slate-500 dark:text-slate-400 font-medium mb-6 md:mb-8 leading-relaxed">
+              <p className="text-xs md:text-base lg:text-lg text-slate-500 dark:text-slate-400 font-medium mb-4 md:mb-6 leading-relaxed">
                 Aggregated logistics intelligence for {stats.activeCargos} active missions. Optimized with AI matching protocols and real-time capital management.
               </p>
 
-              <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:gap-4">
+              <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="px-4 md:px-8 py-3 md:py-4 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3"
+                  className="px-3 md:px-6 lg:px-8 py-2 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[9px] md:text-[10px] lg:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-1.5 md:gap-2"
                 >
-                  <Plus className="w-3 h-3 md:w-4 md:w-4" />
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" />
                   Add Cargo
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/analytics')}
-                  className="px-4 md:px-8 py-3 md:py-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-sm"
+                  className="px-3 md:px-6 lg:px-8 py-2 md:py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[9px] md:text-[10px] lg:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-1.5 md:gap-2 shadow-sm"
                 >
-                  <BarChart3 className="w-3 h-3 md:w-4 md:w-4" />
-                  Visual Analytics
+                  <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
+                  Analytics
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 md:gap-4">
               {/* Achievements / Status Summary */}
               <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 shadow-inner transition-colors duration-300">
                 <div className="flex items-center gap-4 mb-4">
@@ -659,7 +659,7 @@ const CargoOwnerDashboard = () => {
                     <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Efficiency</div>
                   </div>
                 </div>
-                <div className="h-2 w-48 bg-white dark:bg-slate-700 rounded-full overflow-hidden shadow-sm">
+                <div className="h-2 w-full max-w-[12rem] bg-white dark:bg-slate-700 rounded-full overflow-hidden shadow-sm">
                   <div
                     className="h-full bg-gradient-to-r from-blue-400 to-indigo-600 dark:from-blue-500 dark:to-indigo-700 rounded-full"
                     style={{ width: `${stats.efficiencyScore}%` }}
@@ -1201,14 +1201,14 @@ const CargoOwnerDashboard = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 overflow-x-hidden">
 
       {/* Modern Welcome Section */}
-      <div className="bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-slate-100">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -1219,7 +1219,7 @@ const CargoOwnerDashboard = () => {
                   return `${greeting}, ${firstName}`;
                 })()}
               </h1>
-              <p className="mt-1 text-gray-600 dark:text-slate-400">
+              <p className="mt-1 text-sm md:text-base text-gray-600 dark:text-slate-400">
                 {stats.totalCargos > 0
                   ? `${stats.activeCargos} active shipment${stats.activeCargos !== 1 ? 's' : ''} • ${stats.completedCargos} completed`
                   : 'Welcome to your dashboard'}
@@ -1227,26 +1227,26 @@ const CargoOwnerDashboard = () => {
             </div>
             {/* Action Buttons - Hidden for CARGO_RECEIVER role */}
             {user?.role !== 'CARGO_RECEIVER' && (
-              <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 md:gap-3">
                 <button
                   onClick={() => setShowQuickActionFlow(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-2xl transition-all duration-300 font-black text-sm hover:bg-slate-800 dark:hover:bg-primary-700"
+                  className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl transition-all duration-300 font-black text-xs md:text-sm hover:bg-slate-800 dark:hover:bg-primary-700"
                 >
-                  <Zap className="w-5 h-5" />
+                  <Zap className="w-4 h-4 md:w-5 md:h-5" />
                   QUICK CREATE
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/loan-requests')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#358c9c] dark:bg-teal-600 text-white rounded-lg hover:bg-[#2c7380] dark:hover:bg-teal-700 transition-colors duration-300 font-medium shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-[#358c9c] dark:bg-teal-600 text-white rounded-lg hover:bg-[#2c7380] dark:hover:bg-teal-700 transition-colors duration-300 font-medium shadow-sm text-xs md:text-sm"
                 >
-                  <CreditCard className="w-5 h-5" />
-                  Request Financing
+                  <CreditCard className="w-4 h-4 md:w-5 md:h-5" />
+                  Financing
                 </button>
                 <button
                   onClick={() => navigate('/cargo-owner/cargos/create')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-300 font-medium shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-300 font-medium shadow-sm text-xs md:text-sm"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4 md:w-5 md:h-5" />
                   Full Form
                 </button>
               </div>
@@ -1258,7 +1258,7 @@ const CargoOwnerDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {activeTab === 'Overview' && renderOverview()}
         {activeTab === 'All Cargos' && <UnifiedCargoManagement />}
         {activeTab === 'Contracts' && <CargoOwnerContracts />}

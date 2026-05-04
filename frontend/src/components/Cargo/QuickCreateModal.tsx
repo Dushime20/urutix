@@ -295,7 +295,6 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
 
       toast.success('Cargo created successfully!');
 
-      onClose();
       // Reset form
       setFormData({
         title: '',
@@ -310,7 +309,12 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
       });
       setPickupCoords(null);
       setDeliveryCoords(null);
+      
+      // Call onSuccess first to reload data
       if (onSuccess) onSuccess(cargoId);
+      
+      // Then close the modal
+      onClose();
     } catch (error: any) {
       toast.error(error.message || 'Failed to create cargo');
     } finally {

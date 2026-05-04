@@ -5,6 +5,7 @@ import DashboardLayout from './DashboardLayout';
 import { HelpCenter } from '../FleetDashboard/HelpCenter';
 import FleetOwnerOnboarding from '../FleetDashboard/FleetOwnerOnboarding';
 import { FloatingHelpButton } from '../FleetDashboard/FloatingHelpButton';
+import ModernLoader from '../common/ModernLoader';
 
 const FleetOwnerLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -56,7 +57,9 @@ const FleetOwnerLayout: React.FC = () => {
     setShowOnboarding(false);
   };
 
-  if (isLoading || !user) return null;
+  if (isLoading || !user) {
+    return <ModernLoader isLoading={true} text="Initializing_Session" />;
+  }
 
   // Check if we're on a route that manages its own layout (like dashboard index or load board)
   const isSelfAndLayout = location.pathname === '/dashboard/fleet' ||

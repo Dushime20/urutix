@@ -14,6 +14,7 @@ const AdminHistory = lazy(() => import("@/pages/AdminHistory"));
 import { cn } from "@/utils/cn";
 import { TranslatedText } from "@/components/translated-text";
 import logoUrutiX from "@/assets/logo-urutix.svg";
+import ModernLoader from "@/components/common/ModernLoader";
 
 type TabType = "analytics" | "reports" | "history";
 
@@ -76,7 +77,7 @@ const UnifiedAnalyticsManagement = () => {
   // For history, we'll use the admin history component
   const renderHistoryContent = () => {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+      <Suspense fallback={<ModernLoader isLoading={true} text="Retrieving_Audit_Logs" containerRelative={true} />}>
         <AdminHistory />
       </Suspense>
     );
@@ -142,12 +143,12 @@ const UnifiedAnalyticsManagement = () => {
         {/* Main Content Container */}
         <div className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 sm:p-8 md:p-12">
           {activeTab === "analytics" && (
-            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+            <Suspense fallback={<ModernLoader isLoading={true} text="Calibrating_Metrics" containerRelative={true} />}>
               <Analytics />
             </Suspense>
           )}
           {activeTab === "reports" && (
-            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+            <Suspense fallback={<ModernLoader isLoading={true} text="Compiling_Reports" containerRelative={true} />}>
               <FinancialReportsPage />
             </Suspense>
           )}

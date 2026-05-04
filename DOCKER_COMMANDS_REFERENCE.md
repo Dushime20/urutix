@@ -90,6 +90,15 @@ docker-compose -f docker-compose.dev.yml restart postgres
 
 ### Executing Commands in Development Containers
 
+# Start development environment
+docker-compose -f docker-compose.dev.yml up -d
+
+# Check status
+docker-compose -f docker-compose.dev.yml ps
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
+
 ```bash
 # Backend commands
 docker-compose -f docker-compose.dev.yml exec backend npm run db:migrate

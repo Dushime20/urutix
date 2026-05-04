@@ -49,22 +49,25 @@ export class AdminController {
   @ApiOperation({ summary: 'Get platform KPIs' })
   @ApiOkResponse({ description: 'KPI metrics retrieved' })
   getKpi(@Request() req) {
-    // Super admins see all KPIs, tenant admins see only their tenant's KPIs
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    // Super admins and admins see all KPIs, tenant admins see only their tenant's KPIs
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
     return this.adminService.getKpi(tenantId);
   }
 
   @Get('analytics/overview')
   @ApiOperation({ summary: 'Get global overview analytics' })
   getAnalyticsOverview(@Request() req) {
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
     return this.adminService.getAnalyticsOverview(tenantId);
   }
 
   @Get('analytics/cargo')
   @ApiOperation({ summary: 'Get cargo ecosystem analytics' })
   getCargoAnalytics(@Request() req) {
-    const tenantId = (req.user.role === 'SUPER_ADMIN' || !req.user.tenantId)
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = (isGlobalAdmin || !req.user.tenantId)
       ? undefined
       : req.user.tenantId;
     return this.adminService.getCargoAnalytics(tenantId);
@@ -73,7 +76,8 @@ export class AdminController {
   @Get('analytics/fleet')
   @ApiOperation({ summary: 'Get fleet logistics analytics' })
   getFleetAnalytics(@Request() req) {
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
     return this.adminService.getFleetAnalytics(tenantId);
   }
 
@@ -87,7 +91,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Get admin analytics overview' })
   @ApiOkResponse({ description: 'Analytics data retrieved' })
   getAnalytics(@Request() req) {
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
     return this.adminService.getAnalytics(tenantId);
   }
 
@@ -102,8 +107,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Financial overview' })
   @ApiOkResponse({ description: 'Financials retrieved' })
   getFinancials(@Request() req) {
-    // Super admins see all financials, tenant admins see only their tenant's financials
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    // Super admins and admins see all financials, tenant admins see only their tenant's financials
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
     return this.adminService.getFinancials(tenantId);
   }
 
@@ -111,7 +117,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Get escrow accounts overview (admin)' })
   @ApiOkResponse({ description: 'Escrow data retrieved' })
   getEscrow(@Request() req) {
-    const tenantId = req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId;
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
     return this.adminService.getEscrow(tenantId);
   }
 
