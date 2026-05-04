@@ -190,19 +190,13 @@ const TenantSubscriptions: React.FC = () => {
       description: 'In trial period',
     },
     {
-      label: 'Monthly Revenue',
+      label: 'Total Revenue',
       value: `$${Number(subscriptions.reduce((sum, s) => {
-        if ((s.status === 'active' || s.status === 'trial') && s.plan) {
-          const monthlyPrice = s.billingCycle === 'monthly'
-            ? (Number(s.plan.priceMonthly) || 0)
-            : ((Number(s.plan.priceYearly) || 0) / 12);
-          return sum + monthlyPrice;
-        }
-        return sum;
+        return sum + (s.paidAmount || 0);
       }, 0)).toFixed(2)}`,
       icon: FaChartLine,
       color: 'from-purple-500 to-purple-600',
-      description: 'Recurring revenue',
+      description: 'Total payments received',
     },
   ];
 

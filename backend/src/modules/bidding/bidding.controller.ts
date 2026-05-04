@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -590,17 +591,44 @@ export class BiddingController {
     @Body() createAuctionDto: CreateAuctionDto,
     @Request() req: any,
   ): Promise<Auction> {
-    console.log('Creating auction with data:', createAuctionDto);
-    console.log('User info:', req.user);
-    if (!req.user) {
-      throw new Error('User not authenticated');
+    try {
+      console.log('Creating auction with data:', createAuctionDto);
+      console.log('User info:', req.user);
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
+      return await this.biddingService.createAuction(
+        createAuctionDto,
+        req.user.userId,
+        req.user.tenantId,
+        req.user.role as UserRole,
+      );
+    } catch (error) {
+      // Log the error for debugging
+      console.error('Error creating auction:', error);
+      
+      // Handle specific database errors
+      if (error.code === '23505') { // PostgreSQL unique constraint violation
+        if (error.constraint?.includes('REL_')) {
+          throw new BadRequestException(
+            'An auction already exists for this load. Please delete the existing auction first or use a different load.'
+          );
+        }
+        throw new BadRequestException(
+          'Duplicate entry detected. This auction may already exist.'
+        );
+      }
+      
+      // Re-throw known NestJS exceptions
+      if (error.status) {
+        throw error;
+      }
+      
+      // Handle unknown errors with a user-friendly message
+      throw new BadRequestException(
+        error.message || 'Failed to create auction. Please check your input and try again.'
+      );
     }
-    return this.biddingService.createAuction(
-      createAuctionDto,
-      req.user.userId,
-      req.user.tenantId,
-      req.user.role as UserRole,
-    );
   }
 
   @Delete('auctions/:auctionId')
@@ -713,6 +741,61 @@ export class BiddingController {
     return this.biddingService.getWatchedAuctions(
       req.user.userId,
       req.user.tenantId,
+    );
+  }
+
+  @Get('auctions/inactive')
+  @ApiOperation({ 
+    summary: 'Get inactive (soft-deleted) auctions',
+    description: 'Retrieve all soft-deleted auctions that can be reactivated'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Inactive auctions retrieved successfully',
+  })
+  async getInactiveAuctions(
+    @Request() req,
+  ): Promise<Auction[]> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    return this.biddingService.getInactiveAuctions(
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role as UserRole,
+    );
+  }
+
+  @Post('auctions/:auctionId/reactivate')
+  @ApiOperation({ 
+    summary: 'Reactivate a soft-deleted auction',
+    description: 'Restore a previously deleted auction'
+  })
+  @ApiParam({ name: 'auctionId', description: 'ID of the auction to reactivate' })
+  @ApiResponse({
+    status: 200,
+    description: 'Auction reactivated successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Auction not found or not deleted',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'No permission to reactivate this auction',
+  })
+  async reactivateAuction(
+    @Param('auctionId') auctionId: string,
+    @Request() req,
+  ): Promise<Auction> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    return this.biddingService.reactivateAuction(
+      auctionId,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role as UserRole,
     );
   }
 

@@ -806,7 +806,7 @@ export class BiddingService {
     });
 
     if (!load) {
-      throw new NotFoundException('Load not found');
+      throw new NotFoundException(`Load with ID "${createAuctionDto.loadId}" not found. Please verify the load ID and try again.`);
     }
 
     // 2. Validate permissions based on role
@@ -828,14 +828,14 @@ export class BiddingService {
 
         if (hasActiveContract) {
           throw new ForbiddenException(
-            'Cannot create auction: Load is managed by a broker. The broker must create the auction.',
+            'Cannot create auction: This load is currently managed by a broker. The assigned broker must create the auction.',
           );
         }
       }
 
       // Verify cargo owner owns the load
       if (load.cargoOwnerId !== cargoOwnerId) {
-        throw new ForbiddenException('You do not have permission to create an auction for this load');
+        throw new ForbiddenException('You do not have permission to create an auction for this load. Only the load owner can create auctions.');
       }
     }
     // CASE B: Broker
@@ -843,7 +843,7 @@ export class BiddingService {
       // cargoOwnerId in this context is the broker's userId when called by broker
       if (!load.brokerId || load.brokerId !== cargoOwnerId) {
         throw new ForbiddenException(
-          'Broker is not assigned to this load',
+          'You are not assigned as the broker for this load. Only the assigned broker can create auctions.',
         );
       }
 
@@ -857,24 +857,33 @@ export class BiddingService {
 
       if (!hasActiveContract) {
         throw new ForbiddenException(
-          'Broker must have an active contract to create auctions for this load',
+          'Cannot create auction: You must have an active contract to create auctions for this load.',
         );
       }
     }
 
     if (![LoadStatus.CREATED, LoadStatus.PUBLISHED, LoadStatus.ASSIGNED].includes(load.status)) {
       throw new BadRequestException(
-        'Load must be created, published or assigned to create an auction',
+        `Cannot create auction: Load status is "${load.status}". Load must be in CREATED, PUBLISHED, or ASSIGNED status to create an auction.`,
       );
     }
 
-    // Check if auction already exists
+    // Check if auction already exists (including soft-deleted ones)
     const existingAuction = await this.auctionRepository.findOne({
       where: { loadId: createAuctionDto.loadId },
+      withDeleted: true, // Include soft-deleted auctions
     });
 
     if (existingAuction) {
-      throw new BadRequestException('Auction already exists for this load');
+      // If auction exists and is NOT deleted, provide helpful error message
+      if (!existingAuction.deletedAt) {
+        throw new BadRequestException(
+          `An auction already exists for this load (Auction ID: ${existingAuction.id}, Status: ${existingAuction.status}). Please delete the existing auction first or use a different load.`
+        );
+      }
+      
+      // If auction was soft-deleted, hard delete it to allow creating a new one
+      await this.auctionRepository.remove(existingAuction);
     }
 
     // Determine auction status based on start time
@@ -1174,6 +1183,106 @@ export class BiddingService {
       where: ids.map((id) => ({ id })),
       relations: ['load'],
     });
+  }
+
+  async getInactiveAuctions(
+    userId: string,
+    tenantId: string,
+    userRole?: UserRole,
+  ): Promise<Auction[]> {
+    const queryBuilder = this.auctionRepository
+      .createQueryBuilder('auction')
+      .leftJoinAndSelect('auction.load', 'load')
+      .where('auction.deletedAt IS NOT NULL')
+      .withDeleted(); // Include soft-deleted records
+
+    // Filter by permissions
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      // Cargo owners see their own deleted auctions
+      queryBuilder.andWhere('load.cargoOwnerId = :userId', { userId });
+      queryBuilder.andWhere('load.tenantId = :tenantId', { tenantId });
+    } else if (userRole === UserRole.BROKER) {
+      // Brokers see deleted auctions for loads they manage
+      queryBuilder.andWhere('load.brokerId = :userId', { userId });
+    } else if (userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN) {
+      // Admins see all deleted auctions in their tenant
+      queryBuilder.andWhere('load.tenantId = :tenantId', { tenantId });
+    }
+
+    queryBuilder.orderBy('auction.deletedAt', 'DESC');
+
+    return queryBuilder.getMany();
+  }
+
+  async reactivateAuction(
+    auctionId: string,
+    userId: string,
+    tenantId: string,
+    userRole?: UserRole,
+  ): Promise<Auction> {
+    // Find the soft-deleted auction
+    const auction = await this.auctionRepository.findOne({
+      where: { id: auctionId },
+      relations: ['load'],
+      withDeleted: true, // Include soft-deleted records
+    });
+
+    if (!auction) {
+      throw new NotFoundException('Auction not found');
+    }
+
+    if (!auction.deletedAt) {
+      throw new BadRequestException('Auction is not deleted and cannot be reactivated');
+    }
+
+    // Verify permissions
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      if (auction.load.tenantId !== tenantId) {
+        throw new NotFoundException('Auction not found');
+      }
+      if (auction.load.cargoOwnerId !== userId) {
+        throw new ForbiddenException('You do not have permission to reactivate this auction');
+      }
+    } else if (userRole === UserRole.BROKER) {
+      if (!auction.load.brokerId || auction.load.brokerId !== userId) {
+        throw new ForbiddenException('You are not assigned as the broker for this load');
+      }
+    } else if (userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('You do not have permission to reactivate auctions');
+    }
+
+    // Check if another active auction exists for this load
+    const existingActiveAuction = await this.auctionRepository.findOne({
+      where: { loadId: auction.loadId },
+    });
+
+    if (existingActiveAuction) {
+      throw new BadRequestException(
+        `Cannot reactivate: An active auction already exists for this load (Auction ID: ${existingActiveAuction.id}). Please delete the active auction first.`
+      );
+    }
+
+    // Restore the auction by setting deletedAt to null
+    await this.auctionRepository.restore(auctionId);
+
+    // Update auction status based on dates
+    const now = new Date();
+    const auctionEnd = new Date(auction.auctionEnd);
+    
+    if (auctionEnd < now) {
+      // Auction has expired, set to CLOSED
+      auction.status = AuctionStatus.CLOSED;
+    } else {
+      // Auction is still valid, set to ACTIVE or SCHEDULED
+      const auctionStart = new Date(auction.auctionStart);
+      auction.status = auctionStart <= now ? AuctionStatus.ACTIVE : AuctionStatus.SCHEDULED;
+    }
+
+    auction.deletedAt = null;
+    auction.cancelledAt = null;
+    auction.cancellationReason = null;
+
+    return this.auctionRepository.save(auction);
   }
 
   async getMyBids(userId: string, _tenantId: string, role?: string): Promise<Bid[]> {

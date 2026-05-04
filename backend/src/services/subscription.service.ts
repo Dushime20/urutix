@@ -205,7 +205,7 @@ export class SubscriptionService {
           console.warn(`Could not get credit account for subscription ${sub.id}:`, error.message);
         }
 
-        // Calculate paid amount from payments table
+        // Calculate paid amount from completed payments
         let paidAmount = 0;
         try {
           const paymentsResult = await this.paymentRepository
@@ -224,15 +224,18 @@ export class SubscriptionService {
           console.warn(`Could not calculate paid amount for subscription ${sub.id}:`, error.message);
         }
 
-        // Calculate total amount based on plan and billing cycle
+        // Calculate total subscription value (what they purchased)
+        // This is based on credits purchased × price per credit
         let totalAmount = 0;
         if (sub.plan) {
-          if (sub.plan.pricePerCredit && sub.plan.pricePerCredit > 0) {
-            // Credit-based pricing
-            const creditsToGrant = sub.plan.creditCostPerPartner || sub.plan.totalCredits || 0;
-            totalAmount = creditsToGrant === -1 ? 0 : Number(sub.plan.pricePerCredit) * creditsToGrant;
-          } else {
-            // Fixed pricing
+          if (sub.plan.pricePerCredit && Number(sub.plan.pricePerCredit) > 0) {
+            // Credit-based pricing - calculate from credits granted
+            const creditsGranted = sub.plan.creditCostPerPartner || sub.plan.totalCredits || 0;
+            if (creditsGranted > 0) {
+              totalAmount = Number(sub.plan.pricePerCredit) * creditsGranted;
+            }
+          } else if (sub.plan.priceMonthly || sub.plan.priceYearly) {
+            // Fixed subscription pricing
             totalAmount = sub.billingCycle === 'monthly' 
               ? Number(sub.plan.priceMonthly || 0)
               : Number(sub.plan.priceYearly || 0);
@@ -243,7 +246,7 @@ export class SubscriptionService {
           ...sub,
           tenantName: sub.tenant?.name || 'Unknown',
           creditBalance,
-          totalRevenue: paidAmount,
+          totalRevenue: paidAmount, // Keep for backward compatibility
           paidAmount,
           totalAmount,
         };

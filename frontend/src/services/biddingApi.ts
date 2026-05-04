@@ -153,6 +153,13 @@ export const biddingAPI = {
   getWatchedAuctions: () => 
     api.get('/bidding/auctions/watched'),
 
+  // Inactive auctions management
+  getInactiveAuctions: () => 
+    api.get('/bidding/auctions/inactive'),
+
+  reactivateAuction: (auctionId: string) => 
+    api.post(`/bidding/auctions/${auctionId}/reactivate`),
+
   // Real-time updates (WebSocket endpoints)
   subscribeToAuction: (auctionId: string) => 
     api.post(`/bidding/auctions/${auctionId}/subscribe`),

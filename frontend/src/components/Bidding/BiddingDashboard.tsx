@@ -18,6 +18,7 @@ import MyAuctions from './MyAuctions';
 import BidHistory from './BidHistory';
 import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
+import InactiveAuctions from './InactiveAuctions';
 import { cn } from '@/utils/cn';
 import { useLocation } from 'react-router-dom';
 
@@ -253,6 +254,18 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             <BarChart3 size={14} />
             Analytics
           </button>
+          <button
+            onClick={() => setActiveTab('inactive')}
+            className={cn(
+              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              activeTab === 'inactive'
+                ? "bg-slate-600 text-white shadow-xl shadow-slate-900/10"
+                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+            )}
+          >
+            <HistoryIcon size={14} />
+            Inactive
+          </button>
         </nav>
       </div>
 
@@ -260,6 +273,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         {activeTab === 'my-auctions' && <MyAuctions />}
         {activeTab === 'create' && <CreateAuction />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
+        {activeTab === 'inactive' && <InactiveAuctions />}
       </div>
     </div>
   );
