@@ -7,7 +7,7 @@ import {
 import {
   X, Truck, User, MapPin, Calendar, Shield, CheckCircle2,
   AlertTriangle, Clock, Building2, Phone, Mail,
-  Activity, Wrench, Circle,
+  Activity, Wrench, Circle, Hash,
 } from 'lucide-react';
 import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
