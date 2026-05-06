@@ -47,24 +47,27 @@ export class CreditController {
       // For TENANT_ADMIN: Get user account (operational credits) + tenant-level account (revenue data)
       // For TRUCK_OWNER: Get user account only
       // For others: Get tenant-level account
-      if (userRole === 'TENANT_ADMIN') {
-        // Get tenant admin's user account for operational credits
-        const userBalance = await this.creditService.getCreditBalance(tenantId, userId);
-        
-        // Get tenant-level account for revenue tracking
+      if (userRole === 'TENANT_ADMIN' || userRole === 'ADMIN') {
+        // For TENANT_ADMIN / ADMIN: always use the TENANT-level account.
+        // Subscriptions and system grants are credited to the tenant account
+        // (userId = null), so that is the authoritative source of truth.
         const tenantBalance = await this.creditService.getCreditBalance(tenantId, undefined);
-        
-        // Merge both: operational credits from user account + revenue data from tenant account
+
         const balance = {
-          ...userBalance,
-          revenueFromPartnerSales: tenantBalance.revenueFromPartnerSales,
-          totalPartnersSold: tenantBalance.totalPartnersSold,
-          creditsAllocatedToPartners: tenantBalance.creditsAllocatedToPartners,
-          creditsAvailableForAllocation: userBalance.currentBalance - (tenantBalance.creditsAllocatedToPartners || 0),
+          ...tenantBalance,
+          // creditsAvailableForAllocation is already set by getCreditBalance when userId is undefined,
+          // but recalculate here for clarity
+          creditsAvailableForAllocation:
+            (tenantBalance.currentBalance || 0) - (tenantBalance.creditsAllocatedToPartners || 0),
         };
-        
-        console.log(`[CreditController] Balance for TENANT_ADMIN ${userId}:`, balance.currentBalance, 'Revenue:', balance.revenueFromPartnerSales);
-        
+
+        console.log(
+          `[CreditController] Balance for ${userRole} ${userId} (tenant ${tenantId}):`,
+          balance.currentBalance,
+          '| Revenue:', balance.revenueFromPartnerSales,
+          '| Allocated:', balance.creditsAllocatedToPartners,
+        );
+
         return {
           success: true,
           data: balance,
@@ -161,9 +164,12 @@ export class CreditController {
     const tenantBalance = await this.creditService.getCreditBalance(tenantId, undefined);
     console.log('[getTransactionSummary] tenantBalance:', JSON.stringify(tenantBalance, null, 2));
 
-    // Create summary using tenant-level balance
+    // Create summary using tenant-level balance.
+    // totalPurchased = lifetimeEarned (all credits ever granted/purchased),
+    // NOT currentBalance (which decreases as credits are spent).
     const summary = {
-      totalPurchased: tenantBalance.currentBalance || 0,
+      totalPurchased: tenantBalance.lifetimeEarned || 0,
+      currentBalance: tenantBalance.currentBalance || 0,
       creditsSold: tenantBalance.creditsAllocatedToPartners || 0,
       partnersSold: tenantBalance.totalPartnersSold || 0,
       revenue: Number(tenantBalance.revenueFromPartnerSales) || 0,

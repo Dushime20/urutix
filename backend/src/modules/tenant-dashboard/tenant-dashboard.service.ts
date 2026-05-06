@@ -333,12 +333,14 @@ export class TenantDashboardService {
       });
     });
 
-    // Get recent bids
-    const recentBids = await this.bidRepository.find({
-      where: { truckOwnerId: tenantId }, // Assuming tenantId here is the truckOwnerId
-      order: { createdAt: 'DESC' },
-      take: Math.ceil(limit / 3),
-    });
+    // Get recent bids — join through loads to filter by tenantId
+    const recentBids = await this.bidRepository
+      .createQueryBuilder('bid')
+      .innerJoin('loads', 'load', 'bid.loadId = load.id')
+      .where('load.tenantId = :tenantId', { tenantId })
+      .orderBy('bid.createdAt', 'DESC')
+      .take(Math.ceil(limit / 3))
+      .getMany();
 
     recentBids.forEach((bid) => {
       activities.push({
