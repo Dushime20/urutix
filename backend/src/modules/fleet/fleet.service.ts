@@ -431,7 +431,7 @@ export class FleetService {
     }
   }
 
-  async findOneTruck(id: string, tenantId: string, userId?: string): Promise<Truck> {
+  async findOneTruck(id: string, tenantId: string, userId?: string, userRole?: string): Promise<Truck> {
     const truck = await this.truckRepository.findOne({
       where: { id, tenantId },
       relations: ['owner'],
@@ -439,6 +439,11 @@ export class FleetService {
 
     if (!truck) {
       throw new NotFoundException('Truck not found');
+    }
+
+    // TENANT_ADMIN and ADMIN can access all trucks in their tenant
+    if (userRole && this.shouldShowTenantWideData(userRole)) {
+      return truck;
     }
 
     // Enforce multi-tenancy: if userId is provided, ensure the truck belongs to this user
@@ -454,12 +459,18 @@ export class FleetService {
     updateTruckDto: Partial<CreateTruckDto>,
     tenantId: string,
     userId: string,
+    userRole?: string,
   ): Promise<Truck> {
-    const truck = await this.findOneTruck(id, tenantId, userId);
+    const truck = await this.findOneTruck(id, tenantId, userId, userRole);
 
-    // Additional ownership check (redundant but explicit)
-    if (truck.ownerId !== userId) {
-      throw new ForbiddenException('You can only update your own trucks');
+    // TENANT_ADMIN and ADMIN can update any truck in their tenant
+    if (userRole && this.shouldShowTenantWideData(userRole)) {
+      // Allow update
+    } else {
+      // Additional ownership check for non-admin users
+      if (truck.ownerId !== userId) {
+        throw new ForbiddenException('You can only update your own trucks');
+      }
     }
 
     // Safely update only provided fields
@@ -553,11 +564,18 @@ export class FleetService {
     id: string,
     tenantId: string,
     userId: string,
+    userRole?: string,
   ): Promise<void> {
-    const truck = await this.findOneTruck(id, tenantId);
+    const truck = await this.findOneTruck(id, tenantId, userId, userRole);
 
-    if (truck.ownerId !== userId) {
-      throw new ForbiddenException('You can only delete your own trucks');
+    // TENANT_ADMIN and ADMIN can delete any truck in their tenant
+    if (userRole && this.shouldShowTenantWideData(userRole)) {
+      // Allow delete
+    } else {
+      // Additional ownership check for non-admin users
+      if (truck.ownerId !== userId) {
+        throw new ForbiddenException('You can only delete your own trucks');
+      }
     }
 
     if (truck.status !== VehicleStatus.AVAILABLE) {
@@ -576,8 +594,9 @@ export class FleetService {
     address: string | undefined,
     tenantId: string,
     userId: string,
+    userRole?: string,
   ): Promise<Truck> {
-    const truck = await this.findOneTruck(id, tenantId, userId);
+    const truck = await this.findOneTruck(id, tenantId, userId, userRole);
 
     // Update location
     truck.currentLocation = {
@@ -3327,5 +3346,16 @@ export class FleetService {
     if (rank <= 10 && safetyScore >= 90) return 'PRO';
     if (safetyScore >= 80) return 'MASTER';
     return 'STARTER';
+  }
+
+  /**
+   * Determines if user should see tenant-wide data or only their own
+   * TENANT_ADMIN and ADMIN see all tenant data
+   * Other roles see only their own data
+   */
+  private shouldShowTenantWideData(userRole: string): boolean {
+    return userRole === 'TENANT_ADMIN' || 
+           userRole === 'ADMIN' || 
+           userRole === 'SUPER_ADMIN';
   }
 }

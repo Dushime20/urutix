@@ -359,6 +359,7 @@ export class FleetController {
       updateTruckDto,
       req.user.tenantId,
       req.user.userId,
+      req.user.role,
     );
 
     return {
@@ -397,7 +398,7 @@ export class FleetController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async removeTruck(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    await this.fleetService.removeTruck(id, req.user.tenantId, req.user.userId);
+    await this.fleetService.removeTruck(id, req.user.tenantId, req.user.userId, req.user.role);
     return {
       message: 'Truck deleted successfully',
     };
@@ -468,6 +469,7 @@ export class FleetController {
         locationDto.address,
         req.user.tenantId,
         req.user.userId,
+        req.user.role,
       );
 
       return {

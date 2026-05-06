@@ -206,11 +206,19 @@ export class LoadsV2Service {
 
   /**
    * Find loads by user
+   * For TENANT_ADMIN/ADMIN: shows ALL tenant loads
+   * For CARGO_OWNER: shows only their own loads
    */
   async findByUser(
     queryDto: LoadQueryV2Dto,
     user: User,
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
+    // For tenant admins, show ALL tenant loads (don't filter by cargoOwnerId)
+    if (this.shouldShowTenantWideData(user)) {
+      return this.findAll(queryDto, user);
+    }
+    
+    // For cargo owners, show only their own loads
     const userQuery = { ...queryDto, cargoOwnerId: user.id };
     return this.findAll(userQuery, user);
   }
@@ -1053,15 +1061,22 @@ export class LoadsV2Service {
   }
 
   private async validateViewPermissions(load: Load, user: User): Promise<void> {
-    // Allow viewing if user is cargo owner, admin, or if load is published
+    // Allow viewing if user is super admin or agent
     if (user.role === 'SUPER_ADMIN' || user.role === 'AGENT') {
       return;
     }
 
+    // Allow TENANT_ADMIN and ADMIN to view all loads in their tenant
+    if (this.shouldShowTenantWideData(user) && load.tenantId === user.tenantId) {
+      return;
+    }
+
+    // Allow cargo owner to view their own loads
     if (load.cargoOwnerId === user.id) {
       return;
     }
 
+    // Allow viewing published loads
     if ([LoadStatus.CREATED, LoadStatus.PUBLISHED].includes(load.status)) {
       return;
     }
@@ -1105,7 +1120,13 @@ export class LoadsV2Service {
       `IsMetadataOnly: ${isMetadataOnly}, AssignedTruckId: ${load.assignedTruckId}`
     );
 
+    // Super admin and agent can update anything
     if (user.role === 'SUPER_ADMIN' || user.role === 'AGENT') {
+      return;
+    }
+
+    // TENANT_ADMIN and ADMIN can update all loads in their tenant
+    if (this.shouldShowTenantWideData(user) && load.tenantId === user.tenantId) {
       return;
     }
 
@@ -1508,5 +1529,16 @@ export class LoadsV2Service {
       [LoadStatus.CANCELLED]: LoadStatusV2.CANCELLED,
     };
     return mapping[status] || LoadStatusV2.DRAFT;
+  }
+
+  /**
+   * Determines if user should see tenant-wide data or only their own
+   * TENANT_ADMIN and ADMIN see all tenant data
+   * Other roles see only their own data
+   */
+  private shouldShowTenantWideData(user: User): boolean {
+    return user.role === 'TENANT_ADMIN' || 
+           user.role === 'ADMIN' || 
+           user.role === 'SUPER_ADMIN';
   }
 }
