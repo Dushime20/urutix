@@ -18,6 +18,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import StatCard from '../../components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import ModernLoader from '../../components/common/ModernLoader';
 
 interface CreditTransaction {
   id: string;
@@ -214,10 +215,7 @@ const TruckOwnerCredits: React.FC = () => {
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {isLoading ? (
               <div className="p-20 text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent"></div>
-                <p className="mt-4 text-sm font-bold text-slate-400 dark:text-slate-600">
-                  <TranslatedText text="Loading transactions..." />
-                </p>
+                <ModernLoader isLoading={true} type="list" containerRelative={false} />
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="p-20 text-center">

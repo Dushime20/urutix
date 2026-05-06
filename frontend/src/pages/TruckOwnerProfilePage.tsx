@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { authAPI, fleetAPI } from '../services/api';
 import { documentApi } from '../services/documents/documentApi';
 import { useAuth } from '../contexts/AuthContext';
+import ModernLoader from '../components/common/ModernLoader';
 import { 
   User, 
   Building, 
@@ -340,15 +341,7 @@ const TruckOwnerProfilePage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <Box className="min-h-[500px] flex flex-col items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin mb-6 mx-auto" />
-          <Typography variant="h6" className="text-slate-800 font-bold tracking-tight">Loading Profile...</Typography>
-          <Typography variant="body2" className="text-slate-500">Retrieving account information</Typography>
-        </motion.div>
-      </Box>
-    );
+    return <ModernLoader isLoading={true} type="page" />;
   }
 
   if (!profile) return null;

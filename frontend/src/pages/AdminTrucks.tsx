@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  FaTruck, FaUsers, FaMapMarkerAlt, FaCalendarAlt, FaSpinner,
+  FaTruck, FaUsers, FaMapMarkerAlt, FaCalendarAlt,
   FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaTrash
 } from 'react-icons/fa';
 import {
@@ -13,6 +13,7 @@ import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminTruck } from '../services/adminApi';
+import ModernLoader from '../components/common/ModernLoader';
 
 // ── Truck Detail Modal ────────────────────────────────────────────────────────
 
@@ -333,10 +334,7 @@ const AdminTrucks: React.FC = () => {
         title="Truck Management"
         description="Monitor and manage all trucks across the platform"
       >
-        <div className="flex items-center justify-center h-64">
-          <FaSpinner className="animate-spin text-4xl text-indigo-600" />
-          <span className="ml-3 text-lg text-gray-600">Loading trucks data...</span>
-        </div>
+        <ModernLoader type="table" />
       </AdminPageLayout>
     );
   }

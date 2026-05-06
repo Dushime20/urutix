@@ -18,6 +18,7 @@ import {
 import { motion } from 'framer-motion';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import ModernLoader from '../../components/common/ModernLoader';
 
 interface UserBalance {
     id: string;
@@ -233,8 +234,7 @@ const TruckOwnerBilling: React.FC = () => {
                 </div>
                  {isLoading ? (
                     <div className="p-32 text-center">
-                        <div className="w-16 h-16 border-4 border-primary-50 dark:border-primary-900/20 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin mx-auto mb-6"></div>
-                        <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]"><TranslatedText text="Loading Partners" />...</p>
+                        <ModernLoader isLoading={true} type="table" containerRelative={false} />
                     </div>
                 ) : filteredBalances.length === 0 ? (
                     <div className="p-20 text-center">

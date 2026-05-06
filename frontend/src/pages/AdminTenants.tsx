@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface Tenant {
   id: string;
@@ -617,10 +618,7 @@ const AdminTenants: React.FC = () => {
       {/* Tenants Table */}
       <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         {isLoadingTenants ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-sm text-gray-600">Loading tenants...</span>
-          </div>
+          <ModernLoader type="table" />
         ) : tenantsError ? (
           <div className="p-8 text-center">
             <div className="text-red-600 mb-3">
@@ -898,10 +896,7 @@ const AdminTenants: React.FC = () => {
             </div>
 
             {isLoadingTenantDetails ? (
-              <div className="p-20 flex flex-col items-center justify-center">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Tenant Data...</span>
-              </div>
+              <ModernLoader type="page" />
             ) : (
               <div className="p-8 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1455,10 +1450,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
           <CreditCard className="text-purple-600" size={14} />
           Billing & Subscription
         </h3>
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading subscription...</span>
-        </div>
+        <ModernLoader isLoading={true} type="section" containerRelative={false} />
       </div>
     );
   }

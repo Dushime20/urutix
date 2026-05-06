@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  FaBox, FaMapMarkerAlt, FaCalendarAlt, FaSpinner, FaWeight,
+  FaBox, FaMapMarkerAlt, FaCalendarAlt, FaWeight,
   FaSearch, FaDownload, FaEye, FaTrash, FaDollarSign,
 } from 'react-icons/fa';
 import {
@@ -14,6 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminLoad } from '../services/adminApi';
 import toast from 'react-hot-toast';
+import ModernLoader from '../components/common/ModernLoader';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -380,10 +381,7 @@ const AdminLoads: React.FC = () => {
 
   if (loading) return (
     <AdminPageLayout title="Load Management" description="Monitor and manage all cargo loads">
-      <div className="flex items-center justify-center h-64 gap-3">
-        <FaSpinner className="animate-spin text-3xl text-indigo-600" />
-        <span className="text-gray-600">Loading loads...</span>
-      </div>
+      <ModernLoader type="table" />
     </AdminPageLayout>
   );
 

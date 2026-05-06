@@ -224,9 +224,8 @@ const AdminHistory: React.FC = () => {
 
         <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
           {logsLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-[#345E85] mx-auto"></div>
-              <p className="mt-4 text-sm text-gray-500">Loading activity logs...</p>
+            <div className="py-12">
+              <ModernLoader type="list" />
             </div>
           ) : filteredLogs.length === 0 ? (
             <div className="text-center py-12">

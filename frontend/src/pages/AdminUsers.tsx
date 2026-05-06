@@ -23,6 +23,7 @@ import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermis
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface User {
   id: string;
@@ -522,11 +523,8 @@ const AdminUsers: React.FC = () => {
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                   {isLoadingUsers ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
-                          <span className="text-sm text-gray-500 dark:text-slate-400"><TranslatedText text="Loading users..." /></span>
-                        </div>
+                      <td colSpan={6} className="px-6 py-0">
+                        <ModernLoader isLoading={true} type="table" rows={10} columns={6} />
                       </td>
                     </tr>
                   ) : pagedUsers.length === 0 ? (

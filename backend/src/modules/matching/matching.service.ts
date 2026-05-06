@@ -33,6 +33,8 @@ import { User, UserRole } from '../../entities/user.entity';
 import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreditService } from '../../services/credit.service';
+import { Route } from '../../entities/route.entity';
+import { RouteTruck } from '../../entities/route-truck.entity';
 
 // Enhanced matching algorithms
 import { HungarianAlgorithm } from './algorithms/hungarian.algorithm';
@@ -121,12 +123,13 @@ export enum MatchingAlgorithm {
 }
 
 // =====================================================
-// SIMPLIFIED MATCHING CRITERIA (5 Core Factors)
+// SIMPLIFIED MATCHING CRITERIA (6 Core Factors)
 // 1. Capacity - Weight/volume matching
 // 2. Equipment - Required equipment compatibility  
-// 3. Distance/Route - Proximity and route optimization
+// 3. Distance - Proximity to pickup location
 // 4. GPS Tracking - GPS availability for monitoring
 // 5. Availability - Truck availability status
+// 6. Route - Route compatibility (origin/destination match)
 // =====================================================
 
 export interface MatchingFactors {
@@ -135,14 +138,16 @@ export interface MatchingFactors {
   distanceScore: number;      // Proximity to pickup location
   gpsTrackingScore: number;   // GPS availability for monitoring
   availabilityScore: number;  // Truck availability status
+  routeScore: number;         // Route compatibility (origin/destination match)
 }
 
 export interface DynamicWeights {
-  capacity: number;         // Default: 30%
-  equipment: number;        // Default: 25%
-  distance: number;         // Default: 20%
+  capacity: number;         // Default: 25%
+  equipment: number;        // Default: 20%
+  distance: number;         // Default: 15%
   gpsTracking: number;      // Default: 10%
   availability: number;     // Default: 15%
+  route: number;            // Default: 15%
 }
 
 @Injectable()
@@ -186,6 +191,10 @@ export class MatchingService {
     private readonly tenantSubscriptionRepository: Repository<TenantSubscription>,
     @InjectRepository(SubscriptionPlan)
     private readonly subscriptionPlanRepository: Repository<SubscriptionPlan>,
+    @InjectRepository(Route)
+    private readonly routeRepository: Repository<Route>,
+    @InjectRepository(RouteTruck)
+    private readonly routeTruckRepository: Repository<RouteTruck>,
     // Enhanced services for consolidated matching
     private readonly cacheService: CacheService,
     private readonly marketIntelligence: MarketIntelligenceService,
@@ -198,7 +207,7 @@ export class MatchingService {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
     this.topsisAlgorithm = new TopsisAlgorithm();
-    this.logger.log('🚀 Consolidated MatchingService initialized (v3.0)');
+    this.logger.log('🚀 Consolidated MatchingService initialized (v3.1 - Route Matching Enabled)');
   }
 
   async findMatches(
@@ -1715,16 +1724,16 @@ export class MatchingService {
       }
 
       // =====================================================
-      // CALCULATE 5 CORE SCORING FACTORS
+      // CALCULATE 6 CORE SCORING FACTORS
       // =====================================================
 
-      // 1. CAPACITY SCORE - Weight & volume utilization (30%)
+      // 1. CAPACITY SCORE - Weight & volume utilization (25%)
       const capacityScore = this.calculateCapacityScore(truck, load);
 
-      // 2. EQUIPMENT SCORE - Required equipment compatibility (25%)
+      // 2. EQUIPMENT SCORE - Required equipment compatibility (20%)
       const equipmentScore = this.calculateEquipmentScore(truck, load);
 
-      // 3. DISTANCE SCORE - Proximity to pickup location (20%)
+      // 3. DISTANCE SCORE - Proximity to pickup location (15%)
       // Uses relative scoring: closest truck among all candidates gets highest score
       const distanceScore = this.calculateDistanceScore(load, truck, criteria, allTruckDistances);
 
@@ -1734,16 +1743,20 @@ export class MatchingService {
       // 5. AVAILABILITY SCORE - Truck availability status (15%)
       const availabilityScore = this.calculateAvailabilityScore(truck);
 
+      // 6. ROUTE SCORE - Route compatibility (origin/destination match) (15%)
+      const routeScore = await this.calculateRouteScore(truck, load);
+
       // Get dynamic weights based on load requirements
       const weights = this.getDynamicWeights(load);
 
-      // Calculate weighted overall score using 5 core factors
+      // Calculate weighted overall score using 6 core factors
       const overallScore =
         capacityScore * weights.capacity +
         equipmentScore * weights.equipment +
         distanceScore * weights.distance +
         gpsTrackingScore * weights.gpsTracking +
-        availabilityScore * weights.availability;
+        availabilityScore * weights.availability +
+        routeScore * weights.route;
 
       // Calculate supporting metrics using ROUTE distance (pickup → delivery), not truck-to-pickup
       const pickup = load.pickupLocation?.locationData?.coordinates;
@@ -1778,11 +1791,11 @@ export class MatchingService {
         }
       }
 
-      // Generate match reason based on 5 core factors
+      // Generate match reason based on 6 core factors
       const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
       const matchReason = this.generateSimplifiedMatchReason(
         truck, load, capacityScore, equipmentScore, distanceScore,
-        gpsTrackingScore, availabilityScore, distanceKm, utilization
+        gpsTrackingScore, availabilityScore, routeScore, distanceKm, utilization
       );
 
       const confidence = Math.min(overallScore * 1.1, 1.0);
@@ -1797,6 +1810,7 @@ export class MatchingService {
         distanceScore,
         gpsTrackingScore,
         availabilityScore,
+        routeScore,
         distanceKm: Math.round(distanceKm * 10) / 10,
         estimatedCost: Math.round(estimatedCost * 100) / 100,
         estimatedRevenue: Math.round(estimatedRevenue * 100) / 100,
@@ -1841,12 +1855,13 @@ export class MatchingService {
     criteria: MatchRequestDto,
   ): Promise<MatchingFactors> {
     try {
-      // SIMPLIFIED: Calculate 5 core scoring factors
+      // SIMPLIFIED: Calculate 6 core scoring factors
       const capacityScore = this.calculateCapacityScore(truck, load);
       const equipmentScore = this.calculateEquipmentScore(truck, load);
       const distanceScore = this.calculateDistanceScore(load, truck, criteria);
       const gpsTrackingScore = this.calculateGpsTrackingScore(truck, load);
       const availabilityScore = this.calculateAvailabilityScore(truck);
+      const routeScore = await this.calculateRouteScore(truck, load);
 
       return {
         capacityScore: capacityScore || 0,
@@ -1854,6 +1869,7 @@ export class MatchingService {
         distanceScore: distanceScore || 0,
         gpsTrackingScore: gpsTrackingScore || 0,
         availabilityScore: availabilityScore || 0,
+        routeScore: routeScore || 0,
       };
     } catch (error) {
       this.logger.error('Error in calculateMatchingFactors:', error);
@@ -1864,6 +1880,7 @@ export class MatchingService {
         distanceScore: 0,
         gpsTrackingScore: 0,
         availabilityScore: 0,
+        routeScore: 0,
       };
     }
   }
@@ -2028,7 +2045,7 @@ export class MatchingService {
     }
   }
 
-  private calculateRouteScore(truck: Truck, load: Load): number {
+  private calculateRouteClearanceScore(truck: Truck, load: Load): number {
     try {
       if (!truck || !load) return 0.5;
 
@@ -2048,7 +2065,7 @@ export class MatchingService {
 
       return score;
     } catch (error) {
-      console.error('Error in calculateRouteScore:', error);
+      console.error('Error in calculateRouteClearanceScore:', error);
       return 0.5; // Default score on error
     }
   }
@@ -2203,8 +2220,162 @@ export class MatchingService {
   }
 
   // =====================================================
+  // ROUTE SCORE (Core Criteria #6)
+  // Evaluates route compatibility between truck routes and cargo route
+  // =====================================================
+  private async calculateRouteScore(truck: Truck, load: Load): Promise<number> {
+    try {
+      let score = 0.5; // Base score (neutral if no route data)
+
+      // If load doesn't have origin/destination, return neutral score
+      if (!load.origin || !load.destination) {
+        this.logger.debug(`Load ${load.id} has no origin/destination - returning neutral route score`);
+        return score;
+      }
+
+      // Get truck's assigned routes from route_trucks table
+      const truckRoutes = await this.routeTruckRepository.find({
+        where: { truckId: truck.id, tenantId: truck.tenantId },
+        relations: ['route'],
+      });
+
+      // If truck has no assigned routes, return neutral score
+      if (!truckRoutes || truckRoutes.length === 0) {
+        this.logger.debug(`Truck ${truck.plateNumber} has no assigned routes - returning neutral route score`);
+        return score;
+      }
+
+      // Extract load origin and destination
+      const loadOrigin = load.origin.city || load.origin.address;
+      const loadDestination = load.destination.city || load.destination.address;
+
+      this.logger.debug(`Comparing load route: ${loadOrigin} → ${loadDestination}`);
+
+      // Check each truck route for compatibility
+      let bestRouteScore = 0;
+      for (const truckRoute of truckRoutes) {
+        if (!truckRoute.route) continue;
+
+        const route = truckRoute.route;
+        this.logger.debug(`Checking truck route: ${route.origin} → ${route.destination}`);
+
+        let routeScore = 0;
+
+        // 1. EXACT MATCH: Origin and destination match exactly (1.0 score)
+        const originMatch = this.compareLocations(loadOrigin, route.origin);
+        const destinationMatch = this.compareLocations(loadDestination, route.destination);
+
+        if (originMatch && destinationMatch) {
+          routeScore = 1.0;
+          this.logger.debug(`✅ Exact route match found!`);
+        }
+        // 2. PARTIAL MATCH: Either origin or destination matches (0.7 score)
+        else if (originMatch || destinationMatch) {
+          routeScore = 0.7;
+          this.logger.debug(`✅ Partial route match (${originMatch ? 'origin' : 'destination'} matches)`);
+        }
+        // 3. ROUTE TYPE COMPATIBILITY: Check if route type is suitable for cargo
+        else {
+          // Check route type compatibility
+          const routeTypeScore = this.calculateRouteTypeCompatibility(route, load);
+          routeScore = routeTypeScore * 0.5; // Max 0.5 for route type only
+          this.logger.debug(`Route type compatibility: ${routeTypeScore.toFixed(2)}`);
+        }
+
+        // Keep the best matching route score
+        if (routeScore > bestRouteScore) {
+          bestRouteScore = routeScore;
+        }
+      }
+
+      this.logger.debug(`Best route score for truck ${truck.plateNumber}: ${bestRouteScore.toFixed(2)}`);
+      return bestRouteScore;
+    } catch (error) {
+      this.logger.error(`Error calculating route score: ${error.message}`);
+      return 0.5; // Return neutral score on error
+    }
+  }
+
+  /**
+   * Compare two location strings for similarity
+   * Returns true if locations match (case-insensitive, partial match)
+   */
+  private compareLocations(location1: string, location2: string): boolean {
+    if (!location1 || !location2) return false;
+
+    const loc1 = location1.toLowerCase().trim();
+    const loc2 = location2.toLowerCase().trim();
+
+    // Exact match
+    if (loc1 === loc2) return true;
+
+    // Partial match (one contains the other)
+    if (loc1.includes(loc2) || loc2.includes(loc1)) return true;
+
+    // Extract city names and compare (handle "City, State" format)
+    const city1 = loc1.split(',')[0].trim();
+    const city2 = loc2.split(',')[0].trim();
+    if (city1 === city2) return true;
+
+    return false;
+  }
+
+  /**
+   * Calculate route type compatibility score
+   * Different route types (highway, city, rural, mixed) suit different cargo types
+   */
+  private calculateRouteTypeCompatibility(route: Route, load: Load): number {
+    let score = 0.5; // Base compatibility
+
+    // Calculate cargo route distance if origin/destination available
+    let cargoDistance = 0;
+    if (load.origin && load.destination && 
+        load.origin.lat && load.origin.lng && 
+        load.destination.lat && load.destination.lng) {
+      cargoDistance = this.calculateHaversineDistance(
+        load.origin.lat, load.origin.lng,
+        load.destination.lat, load.destination.lng
+      );
+    }
+
+    // Highway routes are good for long-distance, time-critical cargo
+    if (route.routeType === 'highway') {
+      if (load.isTimeCritical || load.urgencyLevel === UrgencyLevel.CRITICAL) {
+        score += 0.3;
+      }
+      if (cargoDistance > 200) {
+        score += 0.2;
+      }
+    }
+
+    // City routes are good for local deliveries
+    if (route.routeType === 'city') {
+      if (cargoDistance > 0 && cargoDistance < 50) {
+        score += 0.3;
+      }
+      if (load.requiresForklift || load.requiresLoadingDock) {
+        score += 0.2; // City routes often have better loading facilities
+      }
+    }
+
+    // Rural routes may have limitations
+    if (route.routeType === 'rural') {
+      if (load.isHazardous || load.requiresRefrigeration) {
+        score -= 0.2; // Rural routes may lack emergency services
+      }
+    }
+
+    // Mixed routes are versatile
+    if (route.routeType === 'mixed') {
+      score += 0.2; // Bonus for versatility
+    }
+
+    return Math.max(0, Math.min(score, 1.0));
+  }
+
+  // =====================================================
   // SIMPLIFIED MATCH REASON GENERATOR
-  // Generates human-readable match explanation based on 5 core criteria
+  // Generates human-readable match explanation based on 6 core criteria
   // =====================================================
   private generateSimplifiedMatchReason(
     truck: Truck,
@@ -2214,6 +2385,7 @@ export class MatchingService {
     distanceScore: number,
     gpsTrackingScore: number,
     availabilityScore: number,
+    routeScore: number,
     distanceKm: number,
     utilization: string,
   ): string {
@@ -2264,6 +2436,15 @@ export class MatchingService {
       reasons.push('Available soon');
     } else if (availabilityScore >= 0.5) {
       reasons.push('Available within hours');
+    }
+
+    // 6. Route compatibility
+    if (routeScore >= 0.9) {
+      reasons.push('Perfect route match');
+    } else if (routeScore >= 0.7) {
+      reasons.push('Good route compatibility');
+    } else if (routeScore >= 0.5) {
+      reasons.push('Route compatible');
     }
 
     // Add special equipment mentions
@@ -2320,14 +2501,17 @@ export class MatchingService {
   // =====================================================
   // SIMPLIFIED DYNAMIC WEIGHTS (5 Core Criteria)
   // =====================================================
+  // SIMPLIFIED DYNAMIC WEIGHTS (6 Core Criteria)
+  // =====================================================
   private getDynamicWeights(load: Load): DynamicWeights {
-    // Base weights for 5 core criteria (must sum to 1.0)
+    // Base weights for 6 core criteria (must sum to 1.0)
     const baseWeights: DynamicWeights = {
-      capacity: 0.25,      // 25% - Can truck carry the load? (Hard filter already applied)
-      equipment: 0.25,     // 25% - Required equipment for cargo type
-      distance: 0.25,      // 25% - Proximity to pickup location (Increased importance)
+      capacity: 0.25,      // 25% - Can truck carry the load?
+      equipment: 0.20,     // 20% - Required equipment for cargo type
+      distance: 0.15,      // 15% - Proximity to pickup location
       gpsTracking: 0.10,   // 10% - GPS availability for tracking
       availability: 0.15,  // 15% - Is truck available now?
+      route: 0.15,         // 15% - Route compatibility (origin/destination match)
     };
 
     // Adjust weights based on cargo characteristics
@@ -2343,7 +2527,7 @@ export class MatchingService {
       // Refrigerated cargo: Equipment is critical
       baseWeights.equipment += 0.10;
       baseWeights.capacity -= 0.05;
-      baseWeights.distance -= 0.05;
+      baseWeights.route -= 0.05;
     }
 
     if (load.isTimeCritical || load.urgencyLevel === UrgencyLevel.CRITICAL) {
@@ -2351,12 +2535,19 @@ export class MatchingService {
       baseWeights.availability += 0.10;
       baseWeights.distance += 0.05;
       baseWeights.capacity -= 0.10;
-      baseWeights.equipment -= 0.05;
+      baseWeights.route -= 0.05;
     }
 
     if (load.requiresGpsMonitoring) {
       // GPS monitoring required: GPS score becomes more important
       baseWeights.gpsTracking += 0.10;
+      baseWeights.distance -= 0.05;
+      baseWeights.route -= 0.05;
+    }
+
+    // If load has specific origin/destination, route matching becomes more important
+    if (load.origin && load.destination) {
+      baseWeights.route += 0.10;
       baseWeights.distance -= 0.05;
       baseWeights.capacity -= 0.05;
     }
@@ -2382,7 +2573,8 @@ export class MatchingService {
       factors.equipmentScore * weights.equipment +
       factors.distanceScore * weights.distance +
       factors.gpsTrackingScore * weights.gpsTracking +
-      factors.availabilityScore * weights.availability
+      factors.availabilityScore * weights.availability +
+      factors.routeScore * weights.route
     );
   }
 
@@ -2417,10 +2609,11 @@ export class MatchingService {
   ): number {
     let probability = 0.7; // Base probability
 
-    // Adjust based on 5 core factors
+    // Adjust based on 6 core factors
     if (factors.capacityScore >= 0.9) probability += 0.1;
     if (factors.equipmentScore >= 0.8) probability += 0.1;
     if (factors.distanceScore >= 0.8) probability += 0.05;
+    if (factors.routeScore >= 0.8) probability += 0.05;
     if (factors.gpsTrackingScore >= 0.7) probability += 0.05;
     if (factors.availabilityScore >= 0.9) probability += 0.05;
 

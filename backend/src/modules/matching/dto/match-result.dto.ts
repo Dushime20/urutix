@@ -17,7 +17,7 @@ export class MatchResultDto {
   overallScore: number; // 0-1 scale
 
   // =====================================================
-  // 5 CORE MATCHING CRITERIA SCORES
+  // 6 CORE MATCHING CRITERIA SCORES
   // =====================================================
 
   @IsNumber()
@@ -34,6 +34,9 @@ export class MatchResultDto {
 
   @IsNumber()
   availabilityScore: number; // 0-1 scale - Truck availability status
+
+  @IsNumber()
+  routeScore: number; // 0-1 scale - Route compatibility (origin/destination match)
 
   // =====================================================
   // LEGACY SCORES (Optional - kept for backward compatibility)
@@ -144,17 +147,13 @@ export class MatchResultDto {
 
   @IsOptional()
   @IsNumber()
-  routeScore?: number; // 0-1 scale
-
-  @IsOptional()
-  @IsNumber()
   timeScore?: number; // 0-1 scale
 
   @IsOptional()
   @IsNumber()
   experienceScore?: number; // 0-1 scale
 
-  // NOTE: availabilityScore is now a core criteria, not optional
+  // NOTE: availabilityScore and routeScore are now core criteria, not optional
 
   @IsOptional()
   @IsNumber()

@@ -5,6 +5,7 @@ import { brokerAPI, type BrokerStatistics, type BrokerLoad } from '../../service
 import DashboardHeader from '../../components/Layout/DashboardHeader';
 import DashboardFooter from '../../components/Layout/DashboardFooter';
 import { motion, AnimatePresence } from 'framer-motion';
+import ModernLoader from '../../components/common/ModernLoader';
 import {
   AreaChart,
   Area,
@@ -81,12 +82,7 @@ const BrokerDashboard: React.FC = () => {
   }, [recentLoads, activeTab]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-8 bg-[#FDFDFF]">
-        <div className="w-16 h-16 border-t-2 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-400">Loading Dashboard...</p>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="dashboard" />;
   }
 
   return (

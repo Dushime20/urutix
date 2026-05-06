@@ -25,8 +25,10 @@ export class TenantGuard implements CanActivate {
       throw new UnauthorizedException('User not found in request');
     }
 
-    // Super admins and admins can access any tenant without restrictions
-    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') {
+    // ONLY Super admins can access any tenant without restrictions
+    // ADMIN and TENANT_ADMIN must access their own tenant only
+    if (user.role === 'SUPER_ADMIN') {
+      console.log(`[TenantGuard] SuperAdmin access granted for user ${user.id} to any tenant`);
       return true;
     }
 
@@ -37,10 +39,16 @@ export class TenantGuard implements CanActivate {
       throw new BadRequestException('Tenant ID is required');
     }
 
-    // Regular users can only access their own tenant
+    // Log the tenant access attempt
+    console.log(`[TenantGuard] User ${user.id} (role: ${user.role}, tenant: ${user.tenantId}) attempting to access tenant ${requestTenantId}`);
+
+    // ALL users (including ADMIN and TENANT_ADMIN) can only access their own tenant
     if (user.tenantId !== requestTenantId) {
-      throw new ForbiddenException('Access denied for this tenant');
+      console.error(`[TenantGuard] CROSS-TENANT ACCESS DENIED: User ${user.id} (role: ${user.role}, tenant: ${user.tenantId}) tried to access tenant ${requestTenantId}`);
+      throw new ForbiddenException('Access denied: You can only access your own tenant data');
     }
+
+    console.log(`[TenantGuard] Access granted: User ${user.id} (role: ${user.role}) accessing their own tenant ${requestTenantId}`);
 
     // Check tenant status - only ACTIVE tenants can access the system
     try {

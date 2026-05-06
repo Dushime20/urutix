@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FaUsers, FaTruck, FaBox, FaRoute, FaBuilding, FaChartLine,
   FaCreditCard, FaHistory, FaShieldAlt, FaGavel, FaMoneyBillWave,
-  FaHandshake, FaFileInvoiceDollar, FaSpinner
+  FaHandshake, FaFileInvoiceDollar
 } from 'react-icons/fa';
 import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,7 @@ import type { AdminKPI, AdminAnalytics, AdminFinancials } from '../services/admi
 import ModernStatCard from '../components/Admin/ModernStatCard';
 import ModernNavCard from '../components/Admin/ModernNavCard';
 import { motion } from 'framer-motion';
+import ModernLoader from '../components/common/ModernLoader';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -161,10 +162,7 @@ const AdminDashboard: React.FC = () => {
         title="Super Admin Dashboard"
         description="Manage all aspects of the Urutix platform"
       >
-        <div className="flex items-center justify-center h-64">
-          <FaSpinner className="animate-spin text-4xl text-indigo-600" />
-          <span className="ml-3 text-lg text-gray-600">Loading dashboard data...</span>
-        </div>
+        <ModernLoader type="dashboard" />
       </AdminPageLayout>
     );
   }
