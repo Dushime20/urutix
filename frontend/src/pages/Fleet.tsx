@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Filter, Search, Eye, Edit, Trash2, Truck, User, MapPin } from 'lucide-react';
 import { fleetApi } from '../services/fleetApi';
+import ModernLoader from '../components/common/ModernLoader';
 
 const Fleet = () => {
   const [activeTab, setActiveTab] = useState<'trucks' | 'drivers'>('trucks');

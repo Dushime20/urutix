@@ -28,6 +28,7 @@ import {
 
 import toast from 'react-hot-toast';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import ModernLoader from '../components/common/ModernLoader';
 import type { Cargo } from '../types/cargo';
 import StatCard from '../components/EnliteUI/Cards/StatCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
@@ -357,11 +358,7 @@ const FleetBidsPage: React.FC = () => {
 
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="page" />;
   }
 
   return (

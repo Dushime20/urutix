@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaStar, FaStarHalfAlt, FaRegStar, FaUsers, FaHandshake, FaShieldAlt } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface Rating {
   id: string;
@@ -167,11 +168,7 @@ const UserRatings: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-500"></div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="page" />;
   }
 
   return (

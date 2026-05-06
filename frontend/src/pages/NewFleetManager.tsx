@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoUrutiX from '../assets/logo-urutix.svg';
 import { ProtectedAction } from '../components/common/ProtectedAction';
+import ModernLoader from '../components/common/ModernLoader';
 
 // Types
 interface Vehicle {
@@ -466,11 +467,7 @@ const NewFleetManager: React.FC = () => {
 
 
     if (loading) {
-        return (
-            <div className="min-h-screen bg-[#f6f6f8] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
+        return <ModernLoader isLoading={true} type="page" />;
     }
 
     return (

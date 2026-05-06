@@ -5,6 +5,7 @@ import { fleetApi } from '../services/fleetApi';
 import { FaTimes, FaStar, FaRegStar, FaUser, FaArrowRight, FaClock } from 'react-icons/fa';
 import { Grid, Table, Clock, Search, Filter, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ModernLoader from '../components/common/ModernLoader';
 
 const TruckBidsPage: React.FC = () => {
 	const [auctions, setAuctions] = useState<any[]>([]);
@@ -516,10 +517,7 @@ const TruckBidsPage: React.FC = () => {
 				{view === 'cards' ? (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{loading ? (
-							<div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500">
-								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-								<p className="font-medium">Searching specifically for high-value loads...</p>
-							</div>
+							<ModernLoader isLoading={true} type="cards" items={6} columns={3} />
 						) : filtered.length === 0 ? (
 							<div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
 								<div className="size-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">

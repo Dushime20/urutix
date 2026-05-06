@@ -3,6 +3,7 @@ import { FaSearch, FaSortAmountUp, FaSortAmountDown } from 'react-icons/fa';
 import { Grid, Table } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { biddingAPI } from '../services/biddingApi';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface Bid {
   id: string;
@@ -137,11 +138,7 @@ const MyBidsPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="list" items={8} />;
   }
 
   return (

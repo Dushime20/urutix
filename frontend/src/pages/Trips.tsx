@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Filter, Search, Eye, Edit, Trash2, Truck, User, MapPin, Calendar } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import ModernLoader from '../components/common/ModernLoader';
 
 const Trips = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,11 +46,7 @@ const Trips = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="table" rows={10} columns={7} />;
   }
 
   if (error) {

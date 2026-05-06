@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import logoUrutiX from '../assets/urutiX Logistics Logo (1).svg';
 import toast from 'react-hot-toast';
 import { FleetFormEnhanced as FleetForm } from '../components/FleetDashboard/FleetFormEnhanced';
+import ModernLoader from '../components/common/ModernLoader';
 
 // Fix Leaflet icons
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -209,11 +210,7 @@ const FleetOwnerDashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
   }
 
   // --- UI COMPONENTS ---

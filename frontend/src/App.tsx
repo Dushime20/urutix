@@ -26,6 +26,7 @@ import TenantPasswordSetup from './pages/TenantPasswordSetup';
 import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 import CargoOwnerPasswordSetup from './pages/CargoOwnerPasswordSetup';
+import TruckOwnerPasswordSetup from './pages/TruckOwnerPasswordSetup';
 
 // Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
 // Analytics pages
@@ -214,6 +215,7 @@ function App() {
                     <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
                     <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
                     <Route path="/cargo-owner/setup-password" element={<CargoOwnerPasswordSetup />} />
+                    <Route path="/truck-owner/setup-password" element={<TruckOwnerPasswordSetup />} />
 
                     {/* Cargo Owner Routes */}
                     <Route path="/dashboard" element={<CargoOwnerLayout />}>

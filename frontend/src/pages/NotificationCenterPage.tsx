@@ -3,6 +3,7 @@ import { Bell, Check, CheckCheck, Trash2, Filter, Search, X } from 'lucide-react
 import { useNotifications } from '../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import ModernLoader from '../components/common/ModernLoader';
 
 const NotificationCenterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -166,9 +167,7 @@ const NotificationCenterPage: React.FC = () => {
         {/* Notifications List */}
         <div className="space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center p-12 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
+            <ModernLoader isLoading={true} type="list" items={10} />
           ) : filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow-sm border border-gray-200">
               <Bell size={64} className="text-gray-300 mb-4" />

@@ -25,6 +25,7 @@ import {
     Droplets,
     Fuel
 } from 'lucide-react';
+import ModernLoader from '../components/common/ModernLoader';
 
 const SmartBookingsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -353,10 +354,7 @@ const SmartBookingsPage: React.FC = () => {
 
                 {/* Content Area */}
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-                        <p className="text-gray-500 font-medium">Loading requests...</p>
-                    </div>
+                    <ModernLoader isLoading={true} type="cards" items={6} columns={2} />
                 ) : filteredBookings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-200 rounded-2xl border-dashed">
                         <div className="bg-gray-50 p-6 rounded-full mb-4">

@@ -28,6 +28,7 @@ import UserRatings from './UserRatings';
 import UserRewards from './UserRewards';
 import UserScoring from './UserScoring';
 import type { Driver } from '../services/fleetApi';
+import ModernLoader from '../components/common/ModernLoader';
 import toast from 'react-hot-toast';
 
 const UnifiedDriverManagement: React.FC = () => {
@@ -156,12 +157,7 @@ const UnifiedDriverManagement: React.FC = () => {
   };
 
   if (authLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-        <p className="text-gray-500">Loading user data...</p>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="page" showStats={true} />;
   }
 
   if (!user) {

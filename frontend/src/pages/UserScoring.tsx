@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaChartLine, FaShieldAlt, FaCreditCard, FaHandshake, FaTruck, FaComments, FaStar } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface UserScore {
   id: string;
@@ -159,11 +160,7 @@ const UserScoring: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="page" showStats={true} />;
   }
 
   return (

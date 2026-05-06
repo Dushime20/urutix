@@ -21,6 +21,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { cn } from '../utils/cn';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface Trip {
   id: string;
@@ -264,14 +265,7 @@ const TripManagement: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#345E85] mx-auto"></div>
-          <p className="mt-4 text-slate-500 font-medium">Loading trips...</p>
-        </div>
-      </div>
-    );
+    return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
   }
 
   const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
