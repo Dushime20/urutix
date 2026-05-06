@@ -1285,15 +1285,34 @@ export class BiddingService {
     return this.auctionRepository.save(auction);
   }
 
-  async getMyBids(userId: string, _tenantId: string, role?: string): Promise<Bid[]> {
+  async getMyBids(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
+    // TENANT_ADMIN and ADMIN see ALL bids in their tenant
+    if (role === UserRole.TENANT_ADMIN || role === UserRole.ADMIN || role === 'TENANT_ADMIN' || role === 'ADMIN') {
+      return this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+        .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+        .where('load.tenantId = :tenantId', { tenantId })
+        .orderBy('bid.createdAt', 'DESC')
+        .getMany();
+    }
+    
     // For truck owners, return their submitted bids
     if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
-      return this.bidRepository.find({
-        where: { truckOwnerId: userId },
-        relations: ['load', 'truckOwner', 'truckOwner.profile'],
-        order: { createdAt: 'DESC' },
-      });
+      return this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+        .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+        .where('bid.truckOwnerId = :userId', { userId })
+        .andWhere('load.tenantId = :tenantId', { tenantId })
+        .orderBy('bid.createdAt', 'DESC')
+        .getMany();
     }
+    
     // For cargo owners, return bids on their loads
     return this.bidRepository
       .createQueryBuilder('bid')
@@ -1303,6 +1322,7 @@ export class BiddingService {
       .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
       .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
       .where('load.cargoOwnerId = :userId', { userId })
+      .andWhere('load.tenantId = :tenantId', { tenantId })
       .orderBy('bid.createdAt', 'DESC')
       .getMany();
   }
@@ -1316,14 +1336,35 @@ export class BiddingService {
   }
 
   async getBidHistory(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
+    // TENANT_ADMIN and ADMIN see ALL bids in their tenant
+    if (role === UserRole.TENANT_ADMIN || role === UserRole.ADMIN || role === 'TENANT_ADMIN' || role === 'ADMIN') {
+      return this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+        .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+        .where('load.tenantId = :tenantId', { tenantId })
+        .orderBy('bid.createdAt', 'DESC')
+        .getMany();
+    }
+    
     // For truck owners, return their submitted bids
     if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
-      return this.bidRepository.find({
-        where: { truckOwnerId: userId },
-        relations: ['load', 'load.cargoOwner', 'load.cargoOwner.profile', 'truckOwner', 'truckOwner.profile'],
-        order: { createdAt: 'DESC' },
-      });
+      return this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+        .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+        .where('bid.truckOwnerId = :userId', { userId })
+        .andWhere('load.tenantId = :tenantId', { tenantId })
+        .orderBy('bid.createdAt', 'DESC')
+        .getMany();
     }
+    
     // For cargo owners, return bids on their loads/auctions
     return this.bidRepository
       .createQueryBuilder('bid')
@@ -1339,12 +1380,46 @@ export class BiddingService {
   }
 
   async getDashboardStats(userId: string, tenantId: string, role?: string) {
+    // TENANT_ADMIN and ADMIN see ALL tenant stats
+    if (role === UserRole.TENANT_ADMIN || role === UserRole.ADMIN || role === 'TENANT_ADMIN' || role === 'ADMIN') {
+      const allBids = await this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .where('load.tenantId = :tenantId', { tenantId })
+        .getMany();
+
+      const totalBids = allBids.length;
+      const activeBids = allBids.filter(b => b.status === BidStatus.PENDING).length;
+      const wonBids = allBids.filter(b => b.status === BidStatus.ACCEPTED).length;
+      const totalValue = allBids
+        .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
+        .reduce((sum, b) => sum + (parseFloat(String(b.bidAmount)) || 0), 0);
+
+      const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
+
+      // Total unique auctions in the tenant
+      const uniqueAuctions = new Set(allBids.map(b => b.loadId)).size;
+
+      // Calculate trends (last 7 days)
+      const trends = this.calculateBidTrends(allBids);
+
+      return {
+        totalAuctions: uniqueAuctions,
+        activeBids,
+        totalValue,
+        successRate,
+        trends
+      };
+    }
+    
     if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
       // Truck Owner Stats
-      const myBids = await this.bidRepository.find({
-        where: { truckOwnerId: userId },
-        relations: ['load'],
-      });
+      const myBids = await this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .where('bid.truckOwnerId = :userId', { userId })
+        .andWhere('load.tenantId = :tenantId', { tenantId })
+        .getMany();
 
       const totalBids = myBids.length;
       const activeBids = myBids.filter(b => b.status === BidStatus.PENDING).length;
