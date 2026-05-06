@@ -141,8 +141,8 @@ export class CreditController {
 
     console.log('[getTransactionSummary] tenantId:', tenantId, 'userId:', userId, 'role:', userRole);
 
-    // Only for TENANT_ADMIN
-    if (userRole !== 'TENANT_ADMIN') {
+    // Only for TENANT_ADMIN and ADMIN
+    if (userRole !== 'TENANT_ADMIN' && userRole !== 'ADMIN') {
       // For other roles, return their own transactions
       const result = await this.creditService.getTransactionHistory(tenantId, { userId });
       return {
@@ -157,16 +157,13 @@ export class CreditController {
     // Get ALL transactions in the tenant (don't filter by userId)
     const result = await this.creditService.getTransactionHistory(tenantId, {});
 
-    // Get credit balance with revenue data
-    const userBalance = await this.creditService.getCreditBalance(tenantId, userId);
-    console.log('[getTransactionSummary] userBalance:', JSON.stringify(userBalance, null, 2));
-    
-    const tenantBalance = await this.creditService.getCreditBalance(tenantId, null);
+    // Get tenant-level credit balance (userId = undefined)
+    const tenantBalance = await this.creditService.getCreditBalance(tenantId, undefined);
     console.log('[getTransactionSummary] tenantBalance:', JSON.stringify(tenantBalance, null, 2));
 
-    // Create summary
+    // Create summary using tenant-level balance
     const summary = {
-      totalPurchased: userBalance.currentBalance || 0,
+      totalPurchased: tenantBalance.currentBalance || 0,
       creditsSold: tenantBalance.creditsAllocatedToPartners || 0,
       partnersSold: tenantBalance.totalPartnersSold || 0,
       revenue: Number(tenantBalance.revenueFromPartnerSales) || 0,
