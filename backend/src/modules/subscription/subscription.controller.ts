@@ -70,12 +70,24 @@ export class SubscriptionController {
   }
 
   @Get('my-subscriptions')
-  @ApiOperation({ summary: 'Get subscriptions purchased by authenticated user' })
-  @ApiResponse({ status: 200, description: 'Returns user subscriptions' })
+  @ApiOperation({ summary: 'Get subscriptions purchased by authenticated user or all tenant subscriptions for admins' })
+  @ApiResponse({ status: 200, description: 'Returns user subscriptions or all tenant subscriptions for admins' })
   async getMySubscriptions(@Request() req) {
     const tenantId = req.user.tenantId;
     const userId = req.user.id;
-    const subscriptions = await this.subscriptionService.getSubscriptionHistory(tenantId, userId);
+    const userRole = req.user.role;
+    
+    // TENANT_ADMIN and ADMIN see ALL tenant subscriptions
+    // Other users see only their own subscriptions
+    const shouldShowAllTenantSubscriptions = 
+      userRole === 'TENANT_ADMIN' || 
+      userRole === 'ADMIN' || 
+      userRole === 'SUPER_ADMIN';
+    
+    const subscriptions = await this.subscriptionService.getSubscriptionHistory(
+      tenantId, 
+      shouldShowAllTenantSubscriptions ? undefined : userId
+    );
     
     // Enrich with available credits for each subscription
     const enrichedSubscriptions = await Promise.all(

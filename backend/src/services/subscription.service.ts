@@ -152,6 +152,8 @@ export class SubscriptionService {
 
   /**
    * Get tenant's or user's subscription history
+   * If userId is undefined, returns ALL subscriptions for the tenant (for admins)
+   * If userId is provided, returns only that user's subscriptions
    */
   async getSubscriptionHistory(tenantId: string, userId?: string): Promise<TenantSubscription[]> {
     const queryBuilder = this.tenantSubscriptionRepository
@@ -159,11 +161,12 @@ export class SubscriptionService {
       .leftJoinAndSelect('subscription.plan', 'plan')
       .where('subscription.tenantId = :tenantId', { tenantId });
 
-    if (userId) {
+    // If userId is explicitly provided, filter by that user
+    // If userId is undefined, show ALL tenant subscriptions (for admins)
+    if (userId !== undefined) {
       queryBuilder.andWhere('subscription.userId = :userId', { userId });
-    } else {
-      queryBuilder.andWhere('subscription.userId IS NULL');
     }
+    // Note: Removed the "userId IS NULL" filter to show ALL subscriptions when userId is undefined
 
     queryBuilder.orderBy('subscription.createdAt', 'DESC');
 
