@@ -58,6 +58,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     },
     topCommodities: [],
     popularRoutes: [],
+    cargoTypes: [], // Add default empty array for cargoTypes
   };
 
   // Calculate weekly trends from loads data
@@ -339,7 +340,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
           </div>
           <div className="px-4 py-1.5 bg-gray-50 dark:bg-slate-800 rounded-full border border-gray-100 dark:border-slate-700">
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              <TranslatedText text="Total" />: {formatCurrency(cargoData.cargoTypes.reduce((sum, item) => sum + item.revenue, 0))}
+              <TranslatedText text="Total" />: {formatCurrency((cargoData.cargoTypes || []).reduce((sum, item) => sum + item.revenue, 0))}
             </span>
           </div>
         </div>
