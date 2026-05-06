@@ -124,9 +124,10 @@ export class CreditService {
       response.creditsAvailableForAllocation = account.currentBalance - (account.creditsAllocatedToPartners || 0);
     }
 
-    // Calculate earning statistics from transactions
+    // Calculate earning statistics from transactions linked to THIS account
+    // Filter by creditAccountId (not userId) because userId is commented out on most transactions
     const transactions = await this.creditTransactionRepository.find({
-      where: { tenantId, userId: userId || IsNull() },
+      where: { creditAccountId: account.id },
       select: ['type', 'amount', 'description', 'referenceType'],
     });
 
@@ -1018,8 +1019,8 @@ export class CreditService {
     const tenantCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTenant);
     const truckOwnerCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTruckOwner);
 
-    // Get both accounts
-    const tenantAdminAccount = await this.getOrCreateCreditAccount(dto.tenantId, dto.tenantAdminUserId);
+    // Get both accounts — tenant side always uses tenant-level account (userId = null)
+    const tenantAdminAccount = await this.getOrCreateCreditAccount(dto.tenantId, undefined);
     const truckOwnerAccount = await this.getOrCreateCreditAccount(dto.tenantId, dto.truckOwnerUserId);
 
     // Validate both have sufficient credits
@@ -1035,10 +1036,10 @@ export class CreditService {
       );
     }
 
-    // 1. Deduct from tenant admin (operational cost)
+    // 1. Deduct from tenant-level account (operational cost)
     const tenantTransaction = await this.deductCredits({
       tenantId: dto.tenantId,
-      userId: dto.tenantAdminUserId,
+      userId: undefined, // Tenant-level account
       amount: tenantCreditsNeeded,
       description: `Bid accepted - operational cost for "${dto.loadTitle}" (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTenant} credits/ton)`,
       referenceType: dto.referenceType ?? 'BID',
@@ -1069,13 +1070,13 @@ export class CreditService {
       },
     });
 
-    // 3. Grant tenant admin the credits that truck owner paid (revenue/earning)
+    // 3. Grant revenue back to tenant-level account (truck owner paid for the job)
     const tenantEarningTransaction = await this.grantBonusCredits(
       dto.tenantId,
       truckOwnerCreditsNeeded,
       `Bid revenue from "${dto.loadTitle}" - earned from truck owner payment (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
       null, // No expiry
-      dto.tenantAdminUserId,
+      undefined, // Tenant-level account
     );
 
     // Calculate net result for tenant admin

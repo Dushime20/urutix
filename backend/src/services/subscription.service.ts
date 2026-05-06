@@ -320,7 +320,7 @@ export class SubscriptionService {
       plan.includedCredits,
       savedSubscription.id,
       currentPeriodEnd,
-      dto.userId,
+      undefined, // Always credit tenant-level account (userId = null) — all credits belong to the company
     );
 
     if (!dto.userId) {
@@ -396,14 +396,14 @@ export class SubscriptionService {
       startTrial: false,
     });
 
-    // Grant credits based on plan type
+    // Grant credits based on plan type — always to tenant-level account
     if (creditsToGrant > 0) {
       await this.creditService.grantSubscriptionCredits(
         data.tenantId,
         creditsToGrant,
         subscription.id,
         subscription.currentPeriodEnd,
-        data.userId,
+        undefined, // Always credit tenant-level account (userId = null)
       );
     }
 
@@ -507,7 +507,7 @@ export class SubscriptionService {
         proratedCredits,
         `Prorated credits for upgrade to ${newPlan.name}`,
         subscription.currentPeriodEnd,
-        subscription.userId,
+        undefined, // Always credit tenant-level account on upgrade
       );
     }
 
@@ -659,7 +659,7 @@ export class SubscriptionService {
       subscription.plan.includedCredits,
       subscription.id,
       subscription.currentPeriodEnd,
-      subscription.userId,
+      undefined, // Always credit tenant-level account on renewal
     );
 
     return updatedSubscription;
