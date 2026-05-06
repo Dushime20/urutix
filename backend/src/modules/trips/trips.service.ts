@@ -299,29 +299,16 @@ export class TripsService {
         return;
       }
 
-      // Get tenant admin's active subscription plan
-      let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+      // Get tenant subscription plan (always tenant-level, userId = null)
+      const tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
         where: {
           tenantId,
-          userId: IsNull(), // Tenant-level subscription
+          userId: IsNull(), // All subscriptions are tenant-level
           status: SubscriptionStatus.ACTIVE,
         },
         relations: ['plan'],
         order: { createdAt: 'DESC' },
       });
-
-      // Fallback: try user-level subscription for tenant admin
-      if (!tenantAdminSubscription) {
-        tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-          where: {
-            tenantId,
-            userId: tenantAdminUser.id,
-            status: SubscriptionStatus.ACTIVE,
-          },
-          relations: ['plan'],
-          order: { createdAt: 'DESC' },
-        });
-      }
 
       if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
         this.logger.warn(`[TripsService] No active subscription plan for tenant ${tenantId}, skipping credit deduction`);
@@ -340,7 +327,6 @@ export class TripsService {
 
       await this.creditService.consumeCreditsForBid({
         tenantId,
-        tenantAdminUserId: tenantAdminUser.id,
         truckOwnerUserId: trip.truck.ownerId,
         cargoWeightTons,
         creditsPerTonTenant,
@@ -348,7 +334,7 @@ export class TripsService {
         bidId: tripId,
         loadId: trip.loadId,
         loadTitle: trip.load.title,
-        referenceType: 'TRIP', // stored as referenceType in credit_transactions for idempotency lookup
+        referenceType: 'TRIP',
       });
 
       this.logger.log(`[TripsService] Credit deduction successful for trip ${tripId}`);

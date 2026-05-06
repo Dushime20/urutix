@@ -116,18 +116,10 @@ export class CreditMarketplaceService {
       throw new NotFoundException('Credit marketplace is not configured for this tenant');
     }
 
-    // Get tenant admin's available credits
-    const tenantAdmin = await this.userRepository.findOne({
-      where: { id: settings.tenantAdminUserId },
-    });
-
-    if (!tenantAdmin) {
-      throw new NotFoundException('Tenant admin not found');
-    }
-
+    // Get tenant-level available credits (not individual admin's account)
     const creditAccount = await this.creditService.getOrCreateCreditAccount(
       tenantId,
-      settings.tenantAdminUserId,
+      undefined, // Tenant-level account (userId = null)
     );
 
     return {
@@ -167,10 +159,10 @@ export class CreditMarketplaceService {
       );
     }
 
-    // Check tenant admin's available balance
+    // Check tenant-level balance (all credits belong to the company, not individual admin)
     const tenantAdminAccount = await this.creditService.getOrCreateCreditAccount(
       dto.tenantId,
-      settings.tenantAdminUserId,
+      undefined, // Tenant-level account (userId = null)
     );
 
     if (tenantAdminAccount.currentBalance < dto.creditAmount) {
@@ -195,10 +187,10 @@ export class CreditMarketplaceService {
       throw new BadRequestException('Payment processing failed');
     }
 
-    // Transfer credits from tenant admin to truck owner
+    // Transfer credits from tenant-level account to truck owner
     await this.transferCredits({
       tenantId: dto.tenantId,
-      fromUserId: settings.tenantAdminUserId,
+      fromUserId: null, // Tenant-level account (userId = null)
       toUserId: dto.truckOwnerUserId,
       creditAmount: dto.creditAmount,
       totalAmount,
@@ -254,7 +246,7 @@ export class CreditMarketplaceService {
    */
   private async transferCredits(params: {
     tenantId: string;
-    fromUserId: string;
+    fromUserId: string | null; // null = tenant-level account
     toUserId: string;
     creditAmount: number;
     totalAmount: number;
@@ -262,24 +254,24 @@ export class CreditMarketplaceService {
   }): Promise<void> {
     const { tenantId, fromUserId, toUserId, creditAmount, totalAmount, paymentTransactionId } = params;
 
-    // Deduct credits from tenant admin
+    // Deduct credits from tenant-level account
     await this.creditService.deductCredits({
       tenantId,
-      userId: fromUserId,
+      userId: fromUserId || undefined, // undefined = tenant-level account
       amount: creditAmount,
       description: `Marketplace sale: ${creditAmount} credits sold to truck owner`,
       referenceType: 'MARKETPLACE_SALE',
-      referenceId: null, // Marketplace transactions don't have UUID reference
+      referenceId: null,
       calculationDetails: {
         creditAmount,
         totalAmount,
         pricePerCredit: totalAmount / creditAmount,
         buyerUserId: toUserId,
-        paymentTransactionId, // Store in metadata instead
+        paymentTransactionId,
       },
     });
 
-    // Grant credits to truck owner
+    // Grant credits to truck owner's personal account
     await this.creditService.grantBonusCredits(
       tenantId,
       creditAmount,
@@ -288,8 +280,8 @@ export class CreditMarketplaceService {
       toUserId,
     );
 
-    // Update marketplace revenue tracking
-    await this.updateMarketplaceRevenue(tenantId, fromUserId, totalAmount, creditAmount);
+    // Update marketplace revenue tracking on tenant-level account
+    await this.updateMarketplaceRevenue(tenantId, null, totalAmount, creditAmount);
   }
 
   /**
@@ -297,13 +289,12 @@ export class CreditMarketplaceService {
    */
   private async updateMarketplaceRevenue(
     tenantId: string,
-    tenantAdminUserId: string,
+    _tenantAdminUserId: string | null, // unused — always update tenant-level account
     revenue: number,
     creditsSold: number,
   ): Promise<void> {
-    const account = await this.creditService.getOrCreateCreditAccount(tenantId, tenantAdminUserId);
+    const account = await this.creditService.getOrCreateCreditAccount(tenantId, undefined);
 
-    // Update revenue tracking fields
     await this.creditService['creditAccountRepository'].update(account.id, {
       revenueFromMarketplaceSales: Number(account.revenueFromMarketplaceSales || 0) + revenue,
       totalCreditsSoldMarketplace: (account.totalCreditsSoldMarketplace || 0) + creditsSold,
@@ -314,8 +305,8 @@ export class CreditMarketplaceService {
   /**
    * Get marketplace sales statistics
    */
-  async getMarketplaceStats(tenantId: string, tenantAdminUserId: string): Promise<any> {
-    const account = await this.creditService.getOrCreateCreditAccount(tenantId, tenantAdminUserId);
+  async getMarketplaceStats(tenantId: string, _tenantAdminUserId: string): Promise<any> {
+    const account = await this.creditService.getOrCreateCreditAccount(tenantId, undefined);
 
     return {
       totalRevenue: Number(account.revenueFromMarketplaceSales || 0),

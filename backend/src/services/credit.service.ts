@@ -1005,7 +1005,6 @@ export class CreditService {
    */
   async consumeCreditsForBid(dto: {
     tenantId: string;
-    tenantAdminUserId: string;
     truckOwnerUserId: string;
     cargoWeightTons: number;
     creditsPerTonTenant: number;
@@ -1013,7 +1012,7 @@ export class CreditService {
     bidId: string;
     loadId: string;
     loadTitle: string;
-    referenceType?: string; // defaults to 'BID'; pass 'TRIP' for trip-start deductions
+    referenceType?: string;
   }): Promise<{ tenantTransaction: CreditTransaction; truckOwnerTransaction: CreditTransaction; tenantEarningTransaction: CreditTransaction }> {
     // Calculate credits needed
     const tenantCreditsNeeded = Math.ceil(dto.cargoWeightTons * dto.creditsPerTonTenant);

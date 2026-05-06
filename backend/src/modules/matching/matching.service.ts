@@ -696,29 +696,16 @@ export class MatchingService {
         throw new NotFoundException('Tenant admin not found for this tenant');
       }
 
-      // Get tenant admin's subscription plan to determine credit rates
-      let tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
+      // Get tenant subscription plan to determine credit rates (always tenant-level)
+      const tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
         where: { 
           tenantId, 
-          userId: IsNull(), // Tenant-level subscription
+          userId: IsNull(), // All subscriptions are tenant-level
           status: SubscriptionStatus.ACTIVE 
         },
         relations: ['plan'],
         order: { createdAt: 'DESC' },
       });
-
-      // If no tenant-level subscription, try user-level subscription
-      if (!tenantAdminSubscription) {
-        tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-          where: { 
-            tenantId, 
-            userId: tenantAdminUser.id,
-            status: SubscriptionStatus.ACTIVE 
-          },
-          relations: ['plan'],
-          order: { createdAt: 'DESC' },
-        });
-      }
 
       if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
         throw new BadRequestException(
