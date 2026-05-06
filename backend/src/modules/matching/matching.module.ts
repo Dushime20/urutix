@@ -12,6 +12,8 @@ import { RateLimit } from './entities/rate-limit.entity';
 import { User } from '../../entities/user.entity';
 import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
+import { Route } from '../../entities/route.entity';
+import { RouteTruck } from '../../entities/route-truck.entity';
 import { CreditService } from '../../services/credit.service';
 import { CreditAccount } from '../../entities/credit-account.entity';
 import { CreditTransaction } from '../../entities/credit-transaction.entity';
@@ -37,7 +39,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     TypeOrmModule.forFeature([
       Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch,
       User, TenantSubscription, SubscriptionPlan, CreditAccount, CreditTransaction,
-      FeatureCreditCost,
+      FeatureCreditCost, Route, RouteTruck,
     ]),
     EventEmitterModule.forRoot(),
     ConfigModule,
