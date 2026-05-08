@@ -886,7 +886,9 @@ export class BiddingService {
       await this.auctionRepository.remove(existingAuction);
     }
 
-    // Determine auction status based on start time
+    // Determine auction status based on start time.
+    // auctionStart is always sent as a UTC ISO string from the frontend,
+    // so this comparison is timezone-safe.
     const now = new Date();
     const auctionStart = createAuctionDto.auctionStart
       ? new Date(createAuctionDto.auctionStart)
@@ -902,6 +904,74 @@ export class BiddingService {
     });
 
     return this.auctionRepository.save(auction);
+  }
+
+  async updateAuction(
+    auctionId: string,
+    updates: Partial<CreateAuctionDto>,
+    cargoOwnerId: string,
+    tenantId: string,
+    userRole?: UserRole,
+  ): Promise<Auction> {
+    const auction = await this.auctionRepository.findOne({
+      where: { id: auctionId },
+      relations: ['load'],
+    });
+
+    if (!auction) {
+      throw new NotFoundException('Auction not found');
+    }
+
+    // Role-based validation
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      if (auction.load.tenantId !== tenantId) {
+        throw new NotFoundException('Auction not found');
+      }
+      if (auction.load.cargoOwnerId !== cargoOwnerId) {
+        throw new ForbiddenException('You do not have permission to edit this auction');
+      }
+    } else if (userRole === UserRole.BROKER) {
+      if (!auction.load.brokerId || auction.load.brokerId !== cargoOwnerId) {
+        throw new ForbiddenException('Broker is not assigned to this load');
+      }
+    }
+
+    if (auction.status === AuctionStatus.CLOSED || auction.status === AuctionStatus.CANCELLED) {
+      throw new BadRequestException(`Cannot edit a ${auction.status.toLowerCase()} auction`);
+    }
+
+    // Only allow editing certain fields
+    const allowedUpdates: Partial<Auction> = {};
+    if (updates.auctionEnd !== undefined) {
+      const newEnd = new Date(updates.auctionEnd);
+      if (newEnd <= new Date()) {
+        throw new BadRequestException('Auction end time must be in the future');
+      }
+      allowedUpdates.auctionEnd = newEnd;
+    }
+    if (updates.auctionStart !== undefined && auction.status === AuctionStatus.SCHEDULED) {
+      allowedUpdates.auctionStart = new Date(updates.auctionStart);
+      // Re-evaluate status — auctionStart is a UTC ISO string so comparison is timezone-safe
+      allowedUpdates.status = allowedUpdates.auctionStart <= new Date()
+        ? AuctionStatus.ACTIVE
+        : AuctionStatus.SCHEDULED;
+    }
+    if (updates.reservePrice !== undefined) {
+      allowedUpdates.reservePrice = updates.reservePrice;
+    }
+    if (updates.minimumBidIncrement !== undefined) {
+      allowedUpdates.minimumBidIncrement = updates.minimumBidIncrement;
+    }
+    if (updates.maximumBidAmount !== undefined) {
+      allowedUpdates.maximumBidAmount = updates.maximumBidAmount;
+    }
+
+    await this.auctionRepository.update(auctionId, allowedUpdates);
+
+    return this.auctionRepository.findOne({
+      where: { id: auctionId },
+      relations: ['load'],
+    });
   }
 
   async deleteAuction(

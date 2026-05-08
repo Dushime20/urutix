@@ -127,12 +127,21 @@ const CreateAuction: React.FC = () => {
     }
 
     try {
-      // Submit auction creation using biddingAPI
+      // Convert datetime-local values (which are in local time, no timezone) to proper ISO strings.
+      // new Date() on a datetime-local string treats it as UTC, which causes wrong status
+      // assignment on the backend. We must convert to UTC-aware ISO strings explicitly.
+      const toISOString = (localDatetime: string): string => {
+        if (!localDatetime) return '';
+        // datetime-local format: "YYYY-MM-DDTHH:mm" — no timezone
+        // Create a Date using the local interpretation, then convert to ISO (UTC)
+        return new Date(localDatetime).toISOString();
+      };
+
       const auctionData = {
         loadId: formData.loadId,
         auctionType: formData.auctionType as 'REVERSE' | 'FORWARD' | 'DUTCH' | 'SEALED',
-        auctionStart: formData.auctionStart,
-        auctionEnd: formData.auctionEnd,
+        auctionStart: toISOString(formData.auctionStart),
+        auctionEnd: toISOString(formData.auctionEnd),
         reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
       };
 

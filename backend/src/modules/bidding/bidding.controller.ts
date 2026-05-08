@@ -631,6 +631,33 @@ export class BiddingController {
     }
   }
 
+  @Put('auctions/:auctionId')
+  @ApiOperation({
+    summary: 'Update an auction',
+    description: 'Cargo owners or brokers can update a SCHEDULED or ACTIVE auction (end time, reserve price, bid increments).',
+  })
+  @ApiParam({ name: 'auctionId', description: 'ID of the auction to update' })
+  @ApiResponse({ status: 200, description: 'Auction updated successfully' })
+  @ApiResponse({ status: 400, description: 'Cannot update a closed/cancelled auction' })
+  @ApiResponse({ status: 403, description: 'No permission to update this auction' })
+  @ApiResponse({ status: 404, description: 'Auction not found' })
+  async updateAuction(
+    @Param('auctionId') auctionId: string,
+    @Body() updates: Partial<CreateAuctionDto>,
+    @Request() req: any,
+  ): Promise<Auction> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    return this.biddingService.updateAuction(
+      auctionId,
+      updates,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role as UserRole,
+    );
+  }
+
   @Delete('auctions/:auctionId')
   @ApiOperation({
     summary: 'Delete an auction',

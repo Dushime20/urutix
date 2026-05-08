@@ -12,6 +12,12 @@ import {
     RefreshCw,
     Star,
     Trash2,
+    Eye,
+    Pencil,
+    Calendar,
+    Package,
+    TrendingDown,
+    Info,
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
@@ -81,6 +87,20 @@ const MyAuctions: React.FC = () => {
     const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const { confirm, DialogComponent } = useConfirmDialog();
+
+    // View Details modal state
+    const [viewAuction, setViewAuction] = useState<Auction | null>(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+
+    // Edit modal state
+    const [editAuction, setEditAuction] = useState<Auction | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editForm, setEditForm] = useState({
+        auctionEnd: '',
+        reservePrice: '',
+        minimumBidIncrement: '',
+    });
+    const [savingEdit, setSavingEdit] = useState(false);
 
     useEffect(() => {
         loadAuctions();
@@ -169,6 +189,53 @@ const MyAuctions: React.FC = () => {
         } catch (error) {
             console.error('Failed to delete auction:', error);
             toast.error('Failed to delete auction', { id: 'deleteAuction' });
+        }
+    };
+
+    const handleOpenEdit = (auction: Auction, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditAuction(auction);
+        // Pre-fill form with current values
+        const endDate = auction.auctionEnd
+            ? new Date(auction.auctionEnd).toISOString().slice(0, 16)
+            : '';
+        setEditForm({
+            auctionEnd: endDate,
+            reservePrice: auction.reservePrice != null ? String(auction.reservePrice) : '',
+            minimumBidIncrement: '',
+        });
+        setShowEditModal(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editAuction) return;
+        setSavingEdit(true);
+        try {
+            const payload: Record<string, any> = {};
+            if (editForm.auctionEnd) payload.auctionEnd = new Date(editForm.auctionEnd).toISOString();
+            if (editForm.reservePrice !== '') payload.reservePrice = parseFloat(editForm.reservePrice);
+            if (editForm.minimumBidIncrement !== '') payload.minimumBidIncrement = parseFloat(editForm.minimumBidIncrement);
+
+            await biddingAPI.updateAuction(editAuction.id, payload);
+            toast.success('Auction updated successfully');
+            setShowEditModal(false);
+            setEditAuction(null);
+            loadAuctions();
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Failed to update auction';
+            toast.error(msg);
+        } finally {
+            setSavingEdit(false);
+        }
+    };
+
+    const handleOpenView = (auction: Auction, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setViewAuction(auction);
+        setShowViewModal(true);
+        // Also load bids for this auction if not already loaded
+        if (!auctionBids[auction.id]) {
+            loadBidsForAuction(auction);
         }
     };
 
@@ -346,6 +413,22 @@ const MyAuctions: React.FC = () => {
 
                                      {/* Bid Count and Actions */}
                                     <div className="flex items-center gap-4 shrink-0">
+                                        {auction.status !== 'CLOSED' && auction.status !== 'CANCELLED' && (
+                                            <button
+                                                onClick={(e) => handleOpenEdit(auction, e)}
+                                                className="hidden sm:flex w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-colors border border-blue-100 dark:border-blue-900/30 items-center justify-center"
+                                                title="Edit Auction"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={(e) => handleOpenView(auction, e)}
+                                            className="hidden sm:flex w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700 items-center justify-center"
+                                            title="View Details"
+                                        >
+                                            <Eye size={14} />
+                                        </button>
                                         {auction.status !== 'CLOSED' && (
                                             <button
                                                 onClick={(e) => handleDeleteAuction(auction.id, e)}
@@ -512,6 +595,285 @@ const MyAuctions: React.FC = () => {
                 </div>
             )}
             {DialogComponent}
+
+            {/* View Details Modal */}
+            {showViewModal && viewAuction && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-100 dark:border-slate-800">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                                    <Info size={18} className="text-[#345E85] dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase italic">
+                                        Auction Details
+                                    </h2>
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                        ID: {viewAuction.id.slice(0, 8)}...
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowViewModal(false)}
+                                className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-6 py-5 space-y-5">
+                            {/* Status & Type */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <span className={cn(
+                                    "px-3 py-1 rounded-lg text-[10px] font-black uppercase border",
+                                    getStatusBadge(viewAuction.status)
+                                )}>
+                                    {viewAuction.status}
+                                </span>
+                                <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase bg-slate-900 dark:bg-slate-950 text-white dark:text-slate-300 border border-slate-800">
+                                    {viewAuction.auctionType}
+                                </span>
+                                {viewAuction.status === 'ACTIVE' && (
+                                    <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                                        Live
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Load Info */}
+                            {viewAuction.load && (
+                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2">
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <Package size={12} /> Load Information
+                                    </p>
+                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase italic">
+                                        {viewAuction.load.title || 'Untitled Load'}
+                                    </p>
+                                    {viewAuction.load.description && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{viewAuction.load.description}</p>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-3 mt-2">
+                                        {viewAuction.load.weight && (
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Weight</p>
+                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{viewAuction.load.weight} kg</p>
+                                            </div>
+                                        )}
+                                        {(viewAuction.load.offeredPrice || viewAuction.load.loadValue) && (
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Load Value</p>
+                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                    {formatCurrency(viewAuction.load.offeredPrice || viewAuction.load.loadValue)}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timing */}
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Calendar size={12} /> Schedule
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Start</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{formatDate(viewAuction.auctionStart)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">End</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{formatDate(viewAuction.auctionEnd)}</p>
+                                    </div>
+                                </div>
+                                {viewAuction.status === 'ACTIVE' && (
+                                    <p className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1">
+                                        <Clock size={12} />
+                                        {getTimeRemaining(viewAuction.auctionEnd)}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Pricing */}
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                    <DollarSign size={12} /> Pricing
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reserve Price</p>
+                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            {viewAuction.reservePrice ? formatCurrency(viewAuction.reservePrice) : '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Current Best Bid</p>
+                                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                            {viewAuction.currentBestBid ? formatCurrency(viewAuction.currentBestBid) : '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bid Stats */}
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                                    <TrendingDown size={12} /> Bid Activity
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Bids</p>
+                                        <p className="text-2xl font-black text-[#345E85] dark:text-blue-400">{viewAuction.totalBids || 0}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pending Bids</p>
+                                        <p className="text-2xl font-black text-amber-500">
+                                            {(auctionBids[viewAuction.id] || []).filter(b => b.status === 'PENDING').length}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                            {viewAuction.status !== 'CLOSED' && viewAuction.status !== 'CANCELLED' && (
+                                <button
+                                    onClick={(e) => {
+                                        setShowViewModal(false);
+                                        handleOpenEdit(viewAuction, e);
+                                    }}
+                                    className="px-4 py-2 rounded-xl bg-[#345E85] text-white text-xs font-black uppercase tracking-widest hover:bg-[#2a4d6e] transition-colors flex items-center gap-2"
+                                >
+                                    <Pencil size={13} />
+                                    Edit Auction
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setShowViewModal(false)}
+                                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Auction Modal */}
+            {showEditModal && editAuction && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                                    <Pencil size={18} className="text-[#345E85] dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase italic">
+                                        Edit Auction
+                                    </h2>
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate max-w-[200px]">
+                                        {editAuction.load?.title || `#${editAuction.id.slice(0, 8)}`}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="px-6 py-5 space-y-4">
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                You can update the end time, reserve price, and bid increment. Start time can only be changed for scheduled auctions.
+                            </p>
+
+                            {/* Auction End */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                                    Auction End Time *
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={editForm.auctionEnd}
+                                    onChange={e => setEditForm(f => ({ ...f, auctionEnd: e.target.value }))}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 dark:focus:ring-blue-500/30"
+                                />
+                            </div>
+
+                            {/* Reserve Price */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                                    Reserve Price (USD)
+                                </label>
+                                <div className="relative">
+                                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="e.g. 3000.00"
+                                        value={editForm.reservePrice}
+                                        onChange={e => setEditForm(f => ({ ...f, reservePrice: e.target.value }))}
+                                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 dark:focus:ring-blue-500/30"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Min Bid Increment */}
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                                    Minimum Bid Increment (USD)
+                                </label>
+                                <div className="relative">
+                                    <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="e.g. 50.00"
+                                        value={editForm.minimumBidIncrement}
+                                        onChange={e => setEditForm(f => ({ ...f, minimumBidIncrement: e.target.value }))}
+                                        className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 dark:focus:ring-blue-500/30"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                disabled={savingEdit}
+                                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                disabled={savingEdit || !editForm.auctionEnd}
+                                className="px-4 py-2 rounded-xl bg-[#345E85] text-white text-xs font-black uppercase tracking-widest hover:bg-[#2a4d6e] transition-colors flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {savingEdit ? (
+                                    <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                    <Check size={13} />
+                                )}
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
