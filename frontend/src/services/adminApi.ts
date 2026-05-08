@@ -287,6 +287,8 @@ export const createTenantUser = (tenantId: string, data: {
     .then(res => res.data);
 
 export const updateUser = (userId: string, data: {
+  email?: string;
+  tenantId?: string;
   firstName?: string;
   lastName?: string;
   phone?: string;

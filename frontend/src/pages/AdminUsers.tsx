@@ -212,6 +212,8 @@ const AdminUsers: React.FC = () => {
     mutationFn: () => {
       if (!editingUserId) throw new Error('No user to update');
       return updateUser(editingUserId, {
+        email: editEmail.trim(),
+        tenantId: editTenantId,
         firstName: editFirstName.trim(),
         lastName: editLastName.trim(),
         phone: editPhone.trim() || undefined,
@@ -276,6 +278,7 @@ const AdminUsers: React.FC = () => {
   const handleEditUser = (user: User) => {
     setEditingUserId(user.id);
     setEditEmail(user.email);
+    setEditTenantId(user.tenantId);
     setEditTenantName(user.tenantName || 'N/A');
     setEditFirstName(user.firstName || '');
     setEditLastName(user.lastName || '');
@@ -849,17 +852,34 @@ const AdminUsers: React.FC = () => {
               </div>
 
               <div className="p-3 space-y-3">
-                {/* Read-only user info */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-gray-600">Email:</span>
-                      <span className="ml-2 font-medium text-gray-900">{editEmail}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Tenant:</span>
-                      <span className="ml-2 font-medium text-gray-900">{editTenantName}</span>
-                    </div>
+                {/* Editable Email and Tenant */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Enter email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Tenant *
+                    </label>
+                    <select
+                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      value={editTenantId}
+                      onChange={(e) => setEditTenantId(e.target.value)}
+                    >
+                      {tenants.map((tenant) => (
+                        <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -963,7 +983,7 @@ const AdminUsers: React.FC = () => {
                     <div>
                       <h4 className="font-semibold text-primary-900 text-xs">Update Information</h4>
                       <p className="text-[10px] text-primary-700 mt-0.5">
-                        Changes will be saved immediately. Email and tenant cannot be changed from this form.
+                        Changes will be saved immediately. All fields can be edited.
                       </p>
                     </div>
                   </div>

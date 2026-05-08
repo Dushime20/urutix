@@ -987,6 +987,8 @@ export class AdminService {
   async updateUser(
     userId: string,
     updateData: {
+      email?: string;
+      tenantId?: string;
       firstName?: string;
       lastName?: string;
       phone?: string;
@@ -1005,6 +1007,12 @@ export class AdminService {
     }
 
     // Update user fields
+    if (updateData.email !== undefined) {
+      user.email = updateData.email;
+    }
+    if (updateData.tenantId !== undefined) {
+      user.tenantId = updateData.tenantId;
+    }
     if (updateData.phone !== undefined) {
       user.phone = updateData.phone;
     }

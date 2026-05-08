@@ -181,6 +181,8 @@ export class AdminController {
   updateUser(
     @Param('userId') userId: string,
     @Body() updateData: {
+      email?: string;
+      tenantId?: string;
       firstName?: string;
       lastName?: string;
       phone?: string;
