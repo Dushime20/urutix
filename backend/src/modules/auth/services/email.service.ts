@@ -169,35 +169,110 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.getFrontendUrl();
-    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+    this.logger.log('========== PASSWORD RESET EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send password reset email to: ${email}`);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
+
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
       this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
       this.configService.get<string>('SMTP_USER') ||
       'noreply@urutix.com';
 
-    this.logger.log(`Sending password reset email to ${email}`);
-    this.logger.log(`Reset URL: ${resetUrl}`);
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+
+    this.logger.log('SMTP Configuration Check:');
+    this.logger.log(`  SMTP_HOST: ${smtpHost ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_USER: ${smtpUser ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  SMTP_PASS: ${smtpPass ? 'SET' : 'NOT SET'}`);
+    this.logger.log(`  Transporter exists: ${this.transporter ? 'YES' : 'NO'}`);
+    this.logger.log(`  Reset URL: ${resetUrl}`);
+    this.logger.log(`  From Address: ${fromAddress}`);
 
     if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send password reset email...');
       try {
-        await this.transporter.sendMail({
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const plainTextContent = `
+Reset your UrutiX password
+
+You requested a password reset. Click the link below to set a new password:
+
+${resetUrl}
+
+This link will expire in 1 hour.
+
+If you didn't request a password reset, you can safely ignore this email.
+
+The UrutiX Team
+        `.trim();
+
+        const mailOptions = {
           from: fromAddress,
-          to: email,
+          to: email.trim().toLowerCase(),
           subject: 'Reset your password - UrutiX',
+          text: plainTextContent,
           html: this.getPasswordResetEmailTemplate(resetUrl),
-        });
-        this.logger.log(`Password reset email sent successfully to ${email}`);
-      } catch (error) {
-        this.logger.error(`Failed to send password reset email: ${error.message}`);
+        };
+
+        this.logger.log('📧 Mail options:', JSON.stringify({
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+        }, null, 2));
+
+        this.logger.log('📧 Attempting to send password reset email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+
+        this.logger.log('📧 Email send result:', JSON.stringify({
+          messageId: result.messageId,
+          accepted: result.accepted,
+          rejected: result.rejected || [],
+          response: result.response,
+        }, null, 2));
+
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Password reset email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Password reset email was rejected by server`);
+          this.logger.error(`❌ Rejected recipients:`, result.rejected);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Password reset email sent but no acceptance/rejection info available`);
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send password reset email to ${email}`);
+        this.logger.error(`❌ Error message: ${error.message}`);
+        if (error.code) this.logger.error(`❌ Error code: ${error.code}`);
+        if (error.response) this.logger.error(`❌ Error response: ${error.response}`);
+        if (error.responseCode) this.logger.error(`❌ Error response code: ${error.responseCode}`);
+        if (error.command) this.logger.error(`❌ Failed command: ${error.command}`);
+        this.logger.error(`❌ Full error:`, JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        // Re-throw so the caller knows the email failed
         throw error;
       }
     } else {
-      this.logger.warn(
-        `SMTP not configured. Email would be sent to ${email} with URL: ${resetUrl}`,
-      );
+      this.logger.error('❌ SMTP NOT CONFIGURED! Password reset email cannot be sent.');
+      this.logger.error('❌ To fix: Add these to your .env file:');
+      this.logger.error('   SMTP_HOST=smtp.gmail.com');
+      this.logger.error('   SMTP_PORT=465');
+      this.logger.error('   SMTP_USER=your-email@gmail.com');
+      this.logger.error('   SMTP_PASS=your-app-password');
+      this.logger.error('   FRONTEND_URL=http://localhost:5173');
+      throw new Error('SMTP not configured. Cannot send password reset email.');
     }
+    this.logger.log('========== PASSWORD RESET EMAIL SERVICE CALL END ==========');
+  }
   }
 
   async sendDriverPasswordSetupEmail(

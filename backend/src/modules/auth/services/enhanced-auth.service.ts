@@ -865,7 +865,17 @@ export class EnhancedAuthService {
 
       // Generate password reset token
       const resetToken = await this.generatePasswordResetToken(email);
-      await this.emailService.sendPasswordResetEmail(email, resetToken);
+
+      try {
+        await this.emailService.sendPasswordResetEmail(email, resetToken);
+      } catch (emailError) {
+        // Log the email failure but don't expose it to the user.
+        // The token is saved in DB — user can retry the forgot password flow.
+        this.logger.error(
+          `Failed to send password reset email to ${email}: ${emailError.message}`,
+          emailError.stack,
+        );
+      }
 
       // Log password reset request
       await this.logAuditEvent('PASSWORD_RESET_REQUESTED', user.id, {
