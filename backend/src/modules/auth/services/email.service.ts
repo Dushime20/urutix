@@ -273,7 +273,6 @@ The UrutiX Team
     }
     this.logger.log('========== PASSWORD RESET EMAIL SERVICE CALL END ==========');
   }
-  }
 
   async sendDriverPasswordSetupEmail(
     email: string,
