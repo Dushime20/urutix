@@ -43,31 +43,15 @@ oldservices/**/logs/
 *.mp4
 frontend/public/*.mp4
 
-# Documentation and status files (excluding README.md and CHANGELOG.md)
-*_STATUS.md
-*_SUMMARY.md
-*_COMPLETE.md
-*_FIX.md
-*_IMPLEMENTATION.md
-*_GUIDE.md
-*_README.md
-*_CHECKLIST.md
-AUCTION_*.md
-BIDDING_*.md
-CREDIT_*.md
-FLEET_*.md
-LOAD_*.md
-PROFESSIONAL_*.md
-QUICK_*.md
-START_HERE.md
-TASK_*.md
-TYPESCRIPT_*.md
-VISUAL_*.md
-AI_*.md
-DEPLOYMENT_CHECKLIST.md
-IMPLEMENTATION_*.md
-FILES_CHANGED_SUMMARY.md
-FINAL_SUMMARY.md
-CHANGES_SUMMARY.md
-COMPLETE_*.md
-backend/BIDDING_SERVICE_VALIDATION_PATCH.md
+# Documentation and status files (excluding README.md and important docs)
+# Exclude all .md files in root except specific ones
+/*.md
+!README.md
+!CHANGELOG.md
+!LICENSE.md
+!CONTRIBUTING.md
+
+# Exclude .md files in backend
+backend/*.md
+backend/**/*.md
+!backend/README.md
