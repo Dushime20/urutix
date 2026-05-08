@@ -86,6 +86,7 @@ const AdminUsers: React.FC = () => {
 
   // Edit form state
   const [editEmail, setEditEmail] = useState('');
+  const [editTenantId, setEditTenantId] = useState('');
   const [editTenantName, setEditTenantName] = useState('');
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
