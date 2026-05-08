@@ -91,7 +91,6 @@ const AdminUsers: React.FC = () => {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editCompanyName, setEditCompanyName] = useState('');
   const [editRole, setEditRole] = useState<string>('');
   const [editStatus, setEditStatus] = useState<string>('');
 
@@ -218,7 +217,6 @@ const AdminUsers: React.FC = () => {
         firstName: editFirstName.trim(),
         lastName: editLastName.trim(),
         phone: editPhone.trim() || undefined,
-        companyName: editCompanyName.trim() || undefined,
         role: editRole,
         status: editStatus
       });
@@ -284,7 +282,6 @@ const AdminUsers: React.FC = () => {
     setEditFirstName(user.firstName || '');
     setEditLastName(user.lastName || '');
     setEditPhone(user.phone || '');
-    setEditCompanyName(user.profile?.companyName || user.companyName || '');
     setEditRole(user.role);
     setEditStatus(user.status);
     setShowEditModal(true);
@@ -912,32 +909,17 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="Enter phone number"
-                      value={editPhone}
-                      onChange={(e) => setEditPhone(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="Enter company name"
-                      value={editCompanyName}
-                      onChange={(e) => setEditCompanyName(e.target.value)}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Enter phone number"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
