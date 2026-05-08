@@ -280,7 +280,7 @@ const AdminUsers: React.FC = () => {
     setEditFirstName(user.firstName || '');
     setEditLastName(user.lastName || '');
     setEditPhone(user.phone || '');
-    setEditCompanyName(user.companyName || '');
+    setEditCompanyName(user.profile?.companyName || user.companyName || '');
     setEditRole(user.role);
     setEditStatus(user.status);
     setShowEditModal(true);

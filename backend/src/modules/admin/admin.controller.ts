@@ -175,6 +175,47 @@ export class AdminController {
     return this.adminService.listAllUsers(tenantId);
   }
 
+  @Patch('users/:userId')
+  @ApiOperation({ summary: 'Update user information (admin)' })
+  @ApiOkResponse({ description: 'User updated successfully' })
+  updateUser(
+    @Param('userId') userId: string,
+    @Body() updateData: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      companyName?: string;
+      role?: string;
+      status?: string;
+    },
+  ) {
+    return this.adminService.updateUser(userId, updateData);
+  }
+
+  @Delete('users/:userId')
+  @ApiOperation({ summary: 'Delete a user (admin)' })
+  @ApiOkResponse({ description: 'User deleted successfully' })
+  deleteUser(@Param('userId') userId: string) {
+    return this.adminService.deleteUser(userId);
+  }
+
+  @Patch('users/:userId/activate')
+  @ApiOperation({ summary: 'Activate a user (admin)' })
+  @ApiOkResponse({ description: 'User activated successfully' })
+  activateUser(@Param('userId') userId: string) {
+    return this.adminService.activateUser(userId);
+  }
+
+  @Patch('users/:userId/suspend')
+  @ApiOperation({ summary: 'Suspend a user (admin)' })
+  @ApiOkResponse({ description: 'User suspended successfully' })
+  suspendUser(
+    @Param('userId') userId: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.suspendUser(userId, body.reason);
+  }
+
   // Create tenant
   @Post('tenants')
   @ApiOperation({

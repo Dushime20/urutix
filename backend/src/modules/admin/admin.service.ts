@@ -984,6 +984,110 @@ export class AdminService {
     return { users };
   }
 
+  async updateUser(
+    userId: string,
+    updateData: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      companyName?: string;
+      role?: string;
+      status?: string;
+    },
+  ) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Update user fields
+    if (updateData.phone !== undefined) {
+      user.phone = updateData.phone;
+    }
+    if (updateData.role !== undefined) {
+      user.role = updateData.role as any;
+    }
+    if (updateData.status !== undefined) {
+      user.status = updateData.status as any;
+    }
+
+    // Update profile fields
+    if (user.profile) {
+      if (updateData.firstName !== undefined) {
+        user.profile.firstName = updateData.firstName;
+      }
+      if (updateData.lastName !== undefined) {
+        user.profile.lastName = updateData.lastName;
+      }
+      if (updateData.companyName !== undefined) {
+        user.profile.companyName = updateData.companyName;
+      }
+    }
+
+    await this.userRepo.save(user);
+
+    return {
+      success: true,
+      message: 'User updated successfully',
+      user,
+    };
+  }
+
+  async deleteUser(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    await this.userRepo.remove(user);
+
+    return {
+      success: true,
+      message: 'User deleted successfully',
+    };
+  }
+
+  async activateUser(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.status = 'ACTIVE' as any;
+    await this.userRepo.save(user);
+
+    return {
+      success: true,
+      message: 'User activated successfully',
+      user,
+    };
+  }
+
+  async suspendUser(userId: string, reason?: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.status = 'SUSPENDED' as any;
+    await this.userRepo.save(user);
+
+    // TODO: Log suspension reason in audit log
+
+    return {
+      success: true,
+      message: 'User suspended successfully',
+      user,
+    };
+  }
+
   /**
    * Get subscription plan limits
    */
