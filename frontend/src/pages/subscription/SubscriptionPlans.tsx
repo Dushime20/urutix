@@ -417,11 +417,11 @@ const SubscriptionPlans: React.FC = () => {
                     </div>
                     {!isUnlimited && (
                       <div className="mt-4 space-y-2">
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                        <p className="text-sm font-bold text-slate-600 uppercase tracking-widest">
                           Total: {plan.totalCredits.toLocaleString()} credits
                         </p>
-                        <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-                          <FaLightbulb className="text-emerald-500 w-3 h-3" />
+                        <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-widest shadow-sm">
+                          <FaLightbulb className="text-emerald-500 w-4 h-4" />
                           Package: ${totalAmount.toFixed(2)}
                         </div>
                       </div>

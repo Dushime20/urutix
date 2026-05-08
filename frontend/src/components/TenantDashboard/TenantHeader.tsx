@@ -27,6 +27,7 @@ import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import LanguageSwitcher from '../LanguageSwitcher';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
+import ThemeToggle from '../Theme/ThemeToggle';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -345,6 +346,15 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                     >
                       <FaCog size={14} className="text-slate-400" /> <TranslatedText text="Settings" />
                     </button>
+                    <div className="border-t border-gray-50 dark:border-slate-800 my-1"></div>
+                    <div className="px-3 py-2.5">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          <TranslatedText text="Theme" />
+                        </span>
+                      </div>
+                      <ThemeToggle />
+                    </div>
                     <div className="border-t border-gray-50 dark:border-slate-800 my-1"></div>
                     <button
                       onClick={handleLogout}
