@@ -55,3 +55,6 @@ frontend/public/*.mp4
 backend/*.md
 backend/**/*.md
 !backend/README.md
+
+# PowerShell scripts
+*.ps1
