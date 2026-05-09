@@ -11,7 +11,7 @@ import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationService } from '../notifications/services/notification.service';
-import { NotificationType, NotificationCategory, NotificationChannel, EntityType } from '../../entities/notification.entity';
+import { NotificationType, NotificationCategory, NotificationChannel, NotificationPriority, EntityType } from '../../entities/notification.entity';
 import { CreditService } from '../../services/credit.service';
 import { UserRole } from '../../entities/user.entity';
 import { SubscriptionStatus } from '../../entities/tenant-subscription.entity';
@@ -402,13 +402,17 @@ export class TripsService {
         type: NotificationType.GENERAL,
         category: NotificationCategory.FINANCIAL,
         channel: NotificationChannel.IN_APP,
+        priority: NotificationPriority.HIGH,
+        entityType: EntityType.TRIP,
+        entityId: trip.id,
         actionUrl: '/dashboard/payments',
         actionText: 'Make Payment',
+        templateId: 'cargo-loaded-notification',
         metadata: {
           entityType: EntityType.TRIP,
           entityId: trip.id,
         },
-      } as any);
+      });
     } catch (error) {
       console.error('Error in sendLoadedNotification:', error);
     }
@@ -466,13 +470,17 @@ export class TripsService {
           type: NotificationType.TRIP_COMPLETED,
           category: NotificationCategory.TRIP,
           channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          entityType: EntityType.TRIP,
+          entityId: trip.id,
           actionUrl: `/dashboard/trips/${trip.id}`,
           actionText: 'View Trip Details',
+          templateId: 'trip-completed-notification',
           metadata: {
             entityType: EntityType.TRIP,
             entityId: trip.id,
           },
-        } as any);
+        });
       }
       
       console.log(`Sent completion notifications for trip ${tripId} to ${notifications.length} recipients`);
@@ -592,18 +600,19 @@ export class TripsService {
       type: NotificationType.PAYMENT,
       category: NotificationCategory.FINANCIAL,
       channel: NotificationChannel.IN_APP,
-      priority: 'HIGH' as any,
+      priority: NotificationPriority.HIGH,
       entityType: EntityType.TRIP,
       entityId: tripId,
       actionUrl: `/dashboard/credits`,
       actionText: 'View Credit Balance',
+      templateId: 'credit-deduction-notification',
       metadata: {
         tripId,
         tripNumber,
         creditsDeducted: truckOwnerCreditsDeducted,
         role: 'TRUCK_OWNER',
       },
-    } as any);
+    });
 
     // ── 2. Notify Tenant Admin ─────────────────────────────────────────────
     await this.notificationService.createNotification({
@@ -614,11 +623,12 @@ export class TripsService {
       type: NotificationType.PAYMENT,
       category: NotificationCategory.FINANCIAL,
       channel: NotificationChannel.IN_APP,
-      priority: 'HIGH' as any,
+      priority: NotificationPriority.HIGH,
       entityType: EntityType.TRIP,
       entityId: tripId,
       actionUrl: `/dashboard/credits`,
       actionText: 'View Credit Balance',
+      templateId: 'credit-deduction-notification',
       metadata: {
         tripId,
         tripNumber,
@@ -626,7 +636,7 @@ export class TripsService {
         creditsEarned: truckOwnerCreditsDeducted,
         role: 'TENANT_ADMIN',
       },
-    } as any);
+    });
 
     this.logger.log(`[TripsService] Credit deduction in-app notifications sent for trip ${tripId}`);
 
@@ -792,16 +802,19 @@ export class TripsService {
         type: NotificationType.DRIVER_ASSIGNMENT,
         category: NotificationCategory.TRIP,
         channel: NotificationChannel.IN_APP,
-        priority: 'HIGH' as any,
+        priority: NotificationPriority.HIGH,
+        entityType: EntityType.TRIP,
+        entityId: trip.id,
         actionUrl: `/dashboard/driver/trips?tripId=${trip.id}`,
         actionText: 'View Trip',
+        templateId: 'driver-assignment-notification',
         metadata: {
           tripId: trip.id,
           tripNumber: trip.tripNumber,
           entityType: EntityType.TRIP,
           entityId: trip.id,
         },
-      } as any);
+      });
 
       this.logger.log(`[TripsService] In-app notification sent to driver ${driverId} for trip ${trip.id}`);
 

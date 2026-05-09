@@ -111,9 +111,11 @@ export class CreateNotificationDto {
   @ApiProperty({
     description: 'Template ID',
     example: 'trip-started-email',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  templateId: string;
+  templateId?: string;
 
   @ApiProperty({
     description: 'Notification subject',
