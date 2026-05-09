@@ -89,6 +89,13 @@ export class Bid {
       loadingAssistance?: boolean;
       unloadingAssistance?: boolean;
     };
+    validationMetadata?: {
+      competitive?: boolean;
+      competitiveLevel?: string;
+      warning?: string;
+      message?: string;
+      validatedAt?: string;
+    };
   };
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })

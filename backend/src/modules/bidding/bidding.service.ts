@@ -26,6 +26,7 @@ import { LoadContract, ContractStatus } from '../../entities/load-contract.entit
 import { NotificationService } from '../notifications/notification.service';
 import { NotificationType, EntityType, NotificationCategory, NotificationChannel } from '../../entities/notification.entity';
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
+import { BidValidationService } from './services/bid-validation.service';
 import { CreditService } from '../../services/credit.service';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
@@ -65,6 +66,13 @@ export interface CreateBidDto {
       loadingAssistance?: boolean;
       unloadingAssistance?: boolean;
     };
+    validationMetadata?: {
+      competitive?: boolean;
+      competitiveLevel?: string;
+      warning?: string;
+      message?: string;
+      validatedAt?: string;
+    };
   };
   isAutoBid?: boolean;
   isCounterOffer?: boolean;
@@ -79,6 +87,20 @@ export interface CreateAuctionDto {
   reservePrice?: number;
   minimumBidIncrement?: number;
   maximumBidAmount?: number;
+  
+  // Professional Auction Type Fields
+  targetPrice?: number;           // REVERSE: Shipper's goal price
+  maxBudget?: number;             // REVERSE: Hidden maximum budget
+  startingPrice?: number;         // FORWARD/DUTCH: Starting price
+  marketRate?: number;            // ALL: Reference market price
+  dropInterval?: number;          // DUTCH: Seconds between price drops
+  dropAmount?: number;            // DUTCH: Amount to drop each interval
+  bidVisibility?: string;         // SEALED: 'HIDDEN' | 'VISIBLE_AFTER_DEADLINE' | 'VISIBLE'
+  allowBidRevision?: boolean;     // SEALED: Allow bid revision before deadline
+  selectionCriteria?: string;     // SEALED: 'LOWEST_BID' | 'BEST_VALUE' | 'WEIGHTED_SCORE'
+  autoExtend?: boolean;           // ALL: Auto-extend auction on late bids
+  minimumBidDecrement?: number;   // REVERSE: Minimum bid decrease amount
+  
   auctionRules?: {
     allowCounterOffers?: boolean;
     allowBidModifications?: boolean;
@@ -135,6 +157,7 @@ export class BiddingService {
     private readonly biddingIntelligence: BiddingIntelligenceService,
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly bidValidationService: BidValidationService,
   ) { }
 
   async createBid(
@@ -197,41 +220,34 @@ export class BiddingService {
       await this.auctionRepository.save(auction);
     }
 
-    // Validate bid amount
-    if (createBidDto.bidAmount <= 0) {
-      throw new BadRequestException('Bid amount must be greater than 0');
+    // Validate bid amount using professional validation service
+    const validationResult = this.bidValidationService.validateBid(
+      createBidDto.bidAmount,
+      auction
+    );
+
+    if (!validationResult.valid) {
+      throw new BadRequestException(validationResult.message || 'Invalid bid amount');
     }
 
-    if (auction.reservePrice && createBidDto.bidAmount < auction.reservePrice) {
-      throw new BadRequestException(
-        `Bid amount must be at least ${auction.reservePrice}`,
-      );
-    }
+    // Log validation result for analytics
+    console.log('[BiddingService] Bid validation result:', {
+      bidAmount: createBidDto.bidAmount,
+      auctionType: auction.auctionType,
+      competitive: validationResult.competitive,
+      competitiveLevel: validationResult.competitiveLevel,
+      message: validationResult.message,
+      warning: validationResult.warning
+    });
 
-    if (
-      auction.maximumBidAmount &&
-      createBidDto.bidAmount > auction.maximumBidAmount
-    ) {
-      throw new BadRequestException(
-        `Bid amount cannot exceed ${auction.maximumBidAmount}`,
-      );
-    }
-
-    // Check minimum bid increment
-    if (auction.minimumBidIncrement) {
-      const currentHighestBid = await this.getCurrentHighestBid(
-        createBidDto.loadId,
-      );
-      if (
-        currentHighestBid &&
-        createBidDto.bidAmount <=
-        currentHighestBid + auction.minimumBidIncrement
-      ) {
-        throw new BadRequestException(
-          `Bid must be at least ${auction.minimumBidIncrement} more than current highest bid`,
-        );
-      }
-    }
+    // Store validation metadata with bid for later analysis
+    const validationMetadata = {
+      competitive: validationResult.competitive,
+      competitiveLevel: validationResult.competitiveLevel,
+      warning: validationResult.warning,
+      message: validationResult.message,
+      validatedAt: new Date().toISOString()
+    };
 
     // Validate advance payment percentage if provided
     if (createBidDto.advancePaymentPercentage !== undefined && createBidDto.advancePaymentPercentage !== null) {
@@ -323,6 +339,11 @@ export class BiddingService {
       requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined
         ? createBidDto.requireAdvancePayment
         : true, // Default to true if not specified
+      // Store validation metadata in bid details
+      bidDetails: {
+        ...createBidDto.bidDetails,
+        validationMetadata  // Add validation result to bid details
+      }
     });
 
     // Calculate success probability and risk assessment
@@ -1500,17 +1521,26 @@ export class BiddingService {
 
       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
 
-      // For truck owners, 'totalAuctions' implies auctions they participated in
-      const uniqueAuctions = new Set(myBids.map(b => b.loadId)).size;
+      // Get available active auctions for truck owners to bid on
+      const activeAuctions = await this.auctionRepository
+        .createQueryBuilder('auction')
+        .leftJoinAndSelect('auction.load', 'load')
+        .where('auction.status = :status', { status: AuctionStatus.ACTIVE })
+        .andWhere('load.tenantId = :tenantId', { tenantId })
+        .getMany();
+
+      // Auctions they've already participated in
+      const participatedAuctions = new Set(myBids.map(b => b.loadId)).size;
 
       // Calculate trends (last 7 days)
       const trends = this.calculateBidTrends(myBids);
 
       return {
-        totalAuctions: uniqueAuctions,
-        activeBids,
-        totalValue,
-        successRate,
+        totalAuctions: activeAuctions.length, // Available auctions to bid on
+        participatedAuctions, // Auctions they've already bid on
+        activeBids, // My active bids
+        totalValue, // Total value of my bids
+        successRate, // My win rate
         trends
       };
     } else {

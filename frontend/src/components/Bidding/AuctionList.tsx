@@ -546,10 +546,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           <div className="py-6 border-y border-slate-50 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col items-start gap-1">
-                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pricing</span>
-                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 italic">
-                  {auction.currentHighestBid ? formatCurrency(auction.currentHighestBid) : '$-.--'}
+                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  {auction.currentHighestBid ? 'Current Bid' : 'Starting Price'}
                 </span>
+                <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 italic">
+                  {auction.currentHighestBid 
+                    ? formatCurrency(auction.currentHighestBid) 
+                    : auction.load?.offeredPrice 
+                      ? formatCurrency(Number(auction.load.offeredPrice))
+                      : auction.reservePrice 
+                        ? formatCurrency(Number(auction.reservePrice))
+                        : '$-.--'}
+                </span>
+                {!auction.currentHighestBid && auction.reservePrice && auction.load?.offeredPrice && (
+                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500">
+                    Reserve: {formatCurrency(Number(auction.reservePrice))}
+                  </span>
+                )}
               </div>
               <div className="text-right">
                 <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Payload</span>
@@ -744,8 +757,10 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         <td className="px-6 py-4">
                           {auction.currentHighestBid ? (
                             <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
+                          ) : auction.load?.offeredPrice ? (
+                            <div className="text-sm font-black text-blue-600 dark:text-blue-400">{formatCurrency(Number(auction.load.offeredPrice))}</div>
                           ) : (
-                            <div className="text-xs font-bold text-gray-300 dark:text-slate-700 italic uppercase">No bids</div>
+                            <div className="text-xs font-bold text-gray-300 dark:text-slate-700 italic uppercase">No price</div>
                           )}
                           <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
                         </td>

@@ -162,7 +162,7 @@ const AdminDashboard: React.FC = () => {
         title="Super Admin Dashboard"
         description="Manage all aspects of the Urutix platform"
       >
-        <ModernLoader type="dashboard" />
+        <ModernLoader isLoading={true} type="dashboard" />
       </AdminPageLayout>
     );
   }

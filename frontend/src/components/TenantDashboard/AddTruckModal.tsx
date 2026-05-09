@@ -67,8 +67,10 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
 
   const createTruckMutation = useMutation({
     mutationFn: (data: CreateTruckDto) => fleetApi.createTruck(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trucks'] });
+    onSuccess: async (createdTruck) => {
+      // Invalidate and refetch trucks query to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ['trucks'] });
+      await queryClient.refetchQueries({ queryKey: ['trucks'] });
       toast.success(tSync('Truck added successfully'));
       onClose();
       resetForm();

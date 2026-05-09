@@ -206,11 +206,14 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const handleEditSubmit = async (data: any) => {
     if (!selectedTruck) return;
     try {
-      await fleetApi.updateTruck(selectedTruck.id, data);
+      const updatedTruck = await fleetApi.updateTruck(selectedTruck.id, data);
+      console.log('✅ Truck updated successfully:', updatedTruck);
       toast.success(`Truck ${selectedTruck.plateNumber} updated successfully`);
       setShowEditModal(false);
       setSelectedTruck(null);
-      loadData();
+      
+      // Wait for data refresh to complete
+      await loadData();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to update truck');
     }

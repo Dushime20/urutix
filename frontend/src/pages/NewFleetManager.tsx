@@ -419,6 +419,7 @@ const NewFleetManager: React.FC = () => {
             let truck;
             if (formMode === 'create') {
                 truck = await fleetApi.createTruck(data);
+                console.log('✅ Truck created successfully:', truck);
                 toast.success('Truck registered successfully!');
             } else if (editingTruck) {
                 truck = await fleetApi.updateTruck(editingTruck.id, data);
@@ -426,7 +427,10 @@ const NewFleetManager: React.FC = () => {
             }
             setShowTruckForm(false);
             setEditingTruck(null);
-            loadFleetData(); // Refresh data
+            
+            // Wait for data refresh to complete before returning
+            await loadFleetData();
+            
             return truck;
         } catch (error) {
             console.error('Error saving truck:', error);
@@ -450,7 +454,8 @@ const NewFleetManager: React.FC = () => {
     const handleSubmitDriver = async (data: any) => {
         try {
             if (driverFormMode === 'create') {
-                await fleetApi.createDriver(data);
+                const createdDriver = await fleetApi.createDriver(data);
+                console.log('✅ Driver created successfully:', createdDriver);
                 toast.success('Driver registered successfully!');
             } else if (editingDriver) {
                 await fleetApi.updateDriver(editingDriver.id, data);
@@ -458,7 +463,9 @@ const NewFleetManager: React.FC = () => {
             }
             setShowDriverModal(false);
             setEditingDriver(null); // Clear editing state
-            loadFleetData(); // Refresh data
+            
+            // Wait for data refresh to complete
+            await loadFleetData();
         } catch (error) {
             console.error('Error saving driver:', error);
             toast.error('Failed to save driver. Please try again.');

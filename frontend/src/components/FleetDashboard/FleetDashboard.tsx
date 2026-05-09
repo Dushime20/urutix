@@ -331,9 +331,11 @@ export const FleetDashboard: React.FC = () => {
       let newFleetItem: LocalFleetItem;
       if (formType === 'trucks') {
         const created = await fleetApi.createTruck(fleetData as any);
+        console.log('✅ Truck created successfully:', created);
         newFleetItem = normalizeTruck(created);
       } else if (formType === 'drivers') {
         const created = await fleetApi.createDriver(fleetData);
+        console.log('✅ Driver created successfully:', created);
         newFleetItem = normalizeDriver(created);
       } else {
         throw new Error('Unsupported fleet type');
@@ -344,6 +346,9 @@ export const FleetDashboard: React.FC = () => {
       if (location.pathname.includes('/create')) {
         navigate('/dashboard/fleet');
       }
+      
+      // Trigger refresh to ensure data is up to date
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       console.error('Error creating fleet item:', error);
       throw error;

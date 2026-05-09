@@ -198,54 +198,23 @@ COMMENT ON TABLE feature_credit_costs IS 'Defines credit cost for each platform 
 COMMENT ON COLUMN feature_credit_costs.plan_multipliers IS 'JSON object with plan-specific multipliers: {"starter": 1.0, "professional": 1.0, "enterprise": 0.8}';
 
 -- ============================================================================
+-- ============================================================================
 -- 8. UPDATE PAYMENTS TABLE (add subscription type if not exists)
+-- SAFE: wrapped in exception handler
 -- ============================================================================
-DO $$ 
+DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_type t 
-    JOIN pg_enum e ON t.oid = e.enumtypid  
-    WHERE t.typname = 'payment_type_enum' 
-    AND e.enumlabel = 'SUBSCRIPTION'
-  ) THEN
-    -- Add SUBSCRIPTION to payment_type enum if it doesn't exist
-    ALTER TYPE payment_type_enum ADD VALUE IF NOT EXISTS 'SUBSCRIPTION';
+  IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_type_enum') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_type t
+      JOIN pg_enum e ON t.oid = e.enumtypid
+      WHERE t.typname = 'payment_type_enum'
+      AND e.enumlabel = 'SUBSCRIPTION'
+    ) THEN
+      ALTER TYPE payment_type_enum ADD VALUE IF NOT EXISTS 'SUBSCRIPTION';
+    END IF;
   END IF;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Skipping payment_type_enum: % (TypeORM handles it)', SQLERRM;
 END $$;
-
--- ============================================================================
--- 9. ADD SUBSCRIPTION FIELDS TO TENANTS TABLE (if not exists)
--- ============================================================================
-DO $$ 
-BEGIN
-  -- Add subscription_tier column if it doesn't exist
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'tenants' AND column_name = 'subscription_tier'
-  ) THEN
-    ALTER TABLE tenants ADD COLUMN subscription_tier VARCHAR(50) DEFAULT 'trial';
-  END IF;
-
-  -- Add credits_balance column if it doesn't exist
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'tenants' AND column_name = 'credits_balance'
-  ) THEN
-    ALTER TABLE tenants ADD COLUMN credits_balance INTEGER DEFAULT 0;
-  END IF;
-END $$;
-
--- ============================================================================
--- MIGRATION TRACKING
--- ============================================================================
-INSERT INTO migrations (name, executed_at) 
-VALUES ('006_subscription_credit_system', NOW())
-ON CONFLICT (name) DO NOTHING;
-
--- ============================================================================
--- SUCCESS MESSAGE
--- ============================================================================
-DO $$ 
-BEGIN
-  RAISE NOTICE 'Migration 006: Subscription & Credit System tables created successfully';
-END $$;
+-- Migration tracking handled by schema_migrations table

@@ -100,7 +100,8 @@ const UnifiedDriverManagement: React.FC = () => {
     setShowDriverForm(false);
     setEditingDriver(null);
     if (activeTab === 'my-drivers') {
-      loadDrivers();
+      // Trigger refresh when closing from my-drivers tab
+      setDriversListRefreshKey(prev => prev + 1);
     }
   };
 
@@ -111,10 +112,12 @@ const UnifiedDriverManagement: React.FC = () => {
       if (editingDriver) {
         await fleetApi.updateDriver(editingDriver.id, data);
         driverId = editingDriver.id;
+        console.log('✅ Driver updated successfully:', driverId);
         toast.success('Driver updated successfully!');
       } else {
         const createdDriver = await fleetApi.createDriver(data);
         driverId = createdDriver.id;
+        console.log('✅ Driver created successfully:', createdDriver);
         toast.success('Driver added successfully!');
       }
 
@@ -147,6 +150,12 @@ const UnifiedDriverManagement: React.FC = () => {
         toast.success('All documents uploaded successfully!');
       }
 
+      // Wait for data refresh to complete
+      await loadDrivers();
+      
+      // Trigger DriversList component refresh
+      setDriversListRefreshKey(prev => prev + 1);
+      
       handleDriverFormClose();
       setActiveTab('my-drivers');
       navigate('/dashboard/fleet/drivers');

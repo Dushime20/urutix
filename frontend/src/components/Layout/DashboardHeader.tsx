@@ -609,7 +609,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                       </>
                     )}
                   </div>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
+                  <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1 pb-1">
+                    <div className="px-4 py-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                          <TranslatedText text="Theme" />
+                        </span>
+                      </div>
+                      <ThemeToggle />
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-1">
                     <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors flex items-center gap-3">
                       <LogOut size={14} /> <TranslatedText text="Sign Out" />
                     </button>

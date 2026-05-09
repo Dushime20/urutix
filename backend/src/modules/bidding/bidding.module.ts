@@ -19,6 +19,7 @@ import { CreditTransaction } from '../../entities/credit-transaction.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { BiddingService } from './bidding.service';
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
+import { BidValidationService } from './services/bid-validation.service';
 import { BiddingController } from './bidding.controller';
 import { NotificationModule } from '../notifications/notification.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
@@ -48,9 +49,9 @@ import { CreditService } from '../../services/credit.service';
     NotificationModule,
     AnalyticsModule,
   ],
-  providers: [BiddingService, BiddingIntelligenceService, CreditService],
+  providers: [BiddingService, BiddingIntelligenceService, BidValidationService, CreditService],
   controllers: [BiddingController],
-  exports: [BiddingService, BiddingIntelligenceService],
+  exports: [BiddingService, BiddingIntelligenceService, BidValidationService],
 })
 export class BiddingModule {
   constructor() {

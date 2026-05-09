@@ -386,10 +386,10 @@ export class SubscriptionService {
       throw new BadRequestException('Payment processing failed');
     }
 
-    // Create subscription with userId to track who purchased it
+    // Create subscription at tenant-level (userId = null) so it applies to the whole tenant
     const subscription = await this.createSubscription({
       tenantId: data.tenantId,
-      userId: data.userId,
+      userId: null, // Tenant-level subscription, not tied to a specific user
       planId: data.planId,
       billingCycle: BillingCycle.MONTHLY,
       paymentMethodId: paymentResult.transactionId,

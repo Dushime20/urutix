@@ -528,6 +528,13 @@ export class LoadsV2Service {
         updatedAt: new Date(),
       };
 
+      // Remove getter-only properties that cannot be set directly
+      // These are computed from the locations array
+      delete updateData.pickupLocation;
+      delete updateData.deliveryLocation;
+      delete updateData.pickupDateFromLocations;
+      delete updateData.deliveryDateFromLocations;
+
       // Handle metadata updates - merge with existing metadata
       if (updateLoadDto.metadata) {
         updateData.metadata = {

@@ -23,7 +23,8 @@ import {
   List,
   Gavel,
   ArrowRight,
-  ShieldAlert
+  ShieldAlert,
+  TrendingUp
 } from 'lucide-react';
 
 import toast from 'react-hot-toast';
@@ -38,6 +39,28 @@ import { FleetHeader } from '../components/FleetDashboard/FleetHeader';
 import { FleetFooter } from '../components/FleetDashboard/FleetFooter';
 import QuickBidModal from '../components/Fleet/QuickBidModal';
 import logoUrutiX from '../assets/logo-urutix.png';
+import { biddingAPI } from '../services/biddingApi';
+
+interface AuctionWithLoad {
+  id: string;
+  loadId: string;
+  auctionType: string;
+  status: string;
+  auctionStart: string;
+  auctionEnd: string;
+  reservePrice: string;
+  minimumBidIncrement: string | null;
+  maximumBidAmount: string | null;
+  totalBids: number;
+  uniqueBidders: number;
+  currentHighestBid: string | null;
+  winningBidId: string | null;
+  winningBidderId: string | null;
+  awardedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  load: any; // The load object from your JSON
+}
 
 interface CargoBid extends Cargo {
   bidStatus?: 'pending' | 'accepted' | 'rejected';
@@ -48,6 +71,11 @@ interface CargoBid extends Cargo {
   cargoOwnerCompany?: string;
   distance?: number;
   estimatedDuration?: number;
+  auctionId?: string;
+  auctionType?: string;
+  auctionEnd?: string;
+  reservePrice?: number;
+  totalBids?: number;
 }
 
 const FleetBidsPage: React.FC = () => {
@@ -63,159 +91,91 @@ const FleetBidsPage: React.FC = () => {
   const [bidCargo, setBidCargo] = useState<CargoBid | null>(null);
   const { confirm, DialogComponent } = useConfirmDialog();
 
-  // Generate dummy cargo bids based on the Cargo interface
-  const generateDummyBids = (): CargoBid[] => {
-    const cargoTypes = [
-      { type: 'ELECTRONICS', title: 'Electronics Shipment', requiresRefrigeration: false, isFragile: true },
-      { type: 'AGRICULTURAL', title: 'Agricultural Products', requiresRefrigeration: true, isFragile: false },
-      { type: 'CONSTRUCTION', title: 'Construction Materials', requiresRefrigeration: false, isFragile: false },
-      { type: 'FOOD_BEVERAGES', title: 'Food & Beverages', requiresRefrigeration: true, isFragile: false },
-      { type: 'TEXTILES', title: 'Textiles & Clothing', requiresRefrigeration: false, isFragile: false },
-      { type: 'MACHINERY', title: 'Machinery & Equipment', requiresRefrigeration: false, isFragile: true },
-      { type: 'PHARMACEUTICALS', title: 'Pharmaceuticals', requiresRefrigeration: true, isFragile: true },
-      { type: 'FURNITURE', title: 'Furniture & Home Goods', requiresRefrigeration: false, isFragile: true },
-    ];
-
-    const origins = [
-      { city: 'Nairobi', address: 'Industrial Area, Nairobi' },
-      { city: 'Mombasa', address: 'Port of Mombasa, Mombasa' },
-      { city: 'Kisumu', address: 'Kisumu Industrial Park, Kisumu' },
-      { city: 'Nakuru', address: 'Nakuru CBD, Nakuru' },
-      { city: 'Eldoret', address: 'Eldoret Industrial Area, Eldoret' },
-    ];
-
-    const destinations = [
-      { city: 'Mombasa', address: 'Port of Mombasa, Mombasa' },
-      { city: 'Nairobi', address: 'Westlands, Nairobi' },
-      { city: 'Kisumu', address: 'Kisumu CBD, Kisumu' },
-      { city: 'Nakuru', address: 'Nakuru Industrial Area, Nakuru' },
-      { city: 'Eldoret', address: 'Eldoret CBD, Eldoret' },
-    ];
-
-    const owners = [
-      { name: 'John Kamau', company: 'ABC Logistics Ltd', phone: '+254712345678', email: 'john.kamau@abclogistics.com' },
-      { name: 'Mary Wanjiku', company: 'XYZ Transport Co', phone: '+254723456789', email: 'mary.w@xyztransport.com' },
-      { name: 'Peter Ochieng', company: 'Global Shipping Inc', phone: '+254734567890', email: 'peter.o@globalshipping.com' },
-      { name: 'Sarah Muthoni', company: 'Kenya Cargo Services', phone: '+254745678901', email: 'sarah.m@kenyacargo.com' },
-      { name: 'David Kipchoge', company: 'East Africa Freight', phone: '+254756789012', email: 'david.k@eastafricafreight.com' },
-    ];
-
-    const prices = [50000, 75000, 100000, 125000, 150000, 180000, 200000, 250000];
-    const weights = [5000, 7500, 10000, 12500, 15000, 20000, 25000, 30000];
-    const volumes = [100, 150, 200, 250, 300, 400, 500, 600];
-
-    const now = new Date();
-    const bids: CargoBid[] = [];
-
-    for (let i = 0; i < 12; i++) {
-      const cargoType = cargoTypes[i % cargoTypes.length];
-      const origin = origins[i % origins.length];
-      const destination = destinations[(i + 2) % destinations.length];
-      const owner = owners[i % owners.length];
-      const price = prices[i % prices.length];
-      const weight = weights[i % weights.length];
-      const volume = volumes[i % volumes.length];
-
-      // Ensure origin and destination are different
-      const dest = destination.city === origin.city
-        ? destinations[(i + 3) % destinations.length]
-        : destination;
-
-      const pickupDate = new Date(now.getTime() + (i + 1) * 24 * 60 * 60 * 1000);
-      const deliveryDate = new Date(pickupDate.getTime() + (2 + i % 3) * 24 * 60 * 60 * 1000);
-
-      bids.push({
-        id: `cargo-bid-${i + 1}`,
-        bidId: `bid-${i + 1}`,
-        title: cargoType.title,
-        description: `Transport ${cargoType.title.toLowerCase()} from ${origin.city} to ${dest.city}. ${i % 3 === 0 ? 'Urgent delivery required.' : 'Standard delivery.'}`,
-        weight,
-        volume,
-        cargoType: cargoType.type,
-        pickupLocationId: `loc-pickup-${i + 1}`,
-        deliveryLocationId: `loc-delivery-${i + 1}`,
-        pickupDate: pickupDate.toISOString(),
-        deliveryDate: deliveryDate.toISOString(),
-        status: 'PUBLISHED',
-        loadValue: price * 1.5,
-        offeredPrice: price,
-        currencyCode: 'KES',
-        isFragile: cargoType.isFragile,
-        isHazardous: i % 4 === 0,
-        requiresRefrigeration: cargoType.requiresRefrigeration,
-        contactInfo: {
-          phone: owner.phone,
-          email: owner.email,
-        },
-        autoMatchEnabled: true,
-        matchingCriteria: {},
-        publishedAt: new Date(now.getTime() - i * 2 * 60 * 60 * 1000).toISOString(),
-        rating: 4.5 + (i % 5) * 0.1,
-        viewCount: 10 + i * 5,
-        createdAt: new Date(now.getTime() - i * 3 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(now.getTime() - i * 2 * 60 * 60 * 1000).toISOString(),
-        bidStatus: i % 3 === 0 ? 'pending' : i % 3 === 1 ? 'accepted' : 'rejected', // Adjusted logic for distribution
-        cargoOwnerName: owner.name,
-        cargoOwnerPhone: owner.phone,
-        cargoOwnerEmail: owner.email,
-        cargoOwnerCompany: owner.company,
-        distance: 200 + (i % 5) * 100,
-        estimatedDuration: 4 + (i % 4) * 2,
-        length: 6 + (i % 3),
-        width: 2.4,
-        height: 2.6,
-        urgencyLevel: i % 4 === 0 ? 'HIGH' : i % 4 === 1 ? 'CRITICAL' : 'NORMAL',
-        isTimeCritical: i % 3 === 0,
-        numberOfPallets: 10 + (i % 10),
-        packagingType: i % 2 === 0 ? 'PALLETIZED' : 'LOOSE',
-        requiresGpsMonitoring: i % 2 === 0,
-        requiresTemperatureMonitoring: cargoType.requiresRefrigeration,
-        temperatureMin: cargoType.requiresRefrigeration ? 2 : undefined,
-        temperatureMax: cargoType.requiresRefrigeration ? 8 : undefined,
-        pickupLocation: {
-          id: `loc-pickup-${i + 1}`,
-          name: `Pickup Location ${i + 1}`,
-          address: origin.address,
-          coordinates: {
-            latitude: -1.2921 + (i * 0.01),
-            longitude: 36.8219 + (i * 0.01),
-          },
-          locationType: 'WAREHOUSE',
-        },
-        deliveryLocation: {
-          id: `loc-delivery-${i + 1}`,
-          name: `Delivery Location ${i + 1}`,
-          address: dest.address,
-          coordinates: {
-            latitude: -4.0435 + (i * 0.01),
-            longitude: 39.6682 + (i * 0.01),
-          },
-          locationType: 'WAREHOUSE',
-        },
-        cargoOwner: {
-          id: `owner-${i + 1}`,
-          email: owner.email,
-          profile: {
-            firstName: owner.name.split(' ')[0],
-            lastName: owner.name.split(' ')[1] || '',
-            companyName: owner.company,
-          },
-        },
-      });
-    }
-
-    return bids;
-  };
-
   const loadBids = useCallback(async () => {
     setLoading(true);
     try {
-      // In a real app, this would fetch from API
-      // For now, use dummy data
-      const dummyBids = generateDummyBids();
-      setBids(dummyBids);
+      // Fetch auctions from API
+      const response = await biddingAPI.getAuctions({ status: 'ACTIVE' });
+      console.log('✅ Auctions loaded:', response.data);
+      
+      const auctions: AuctionWithLoad[] = response.data || [];
+      
+      // Transform auctions to CargoBid format
+      const transformedBids: CargoBid[] = auctions.map((auction) => {
+        const load = auction.load;
+        const pickupLoc = load.locations?.find((loc: any) => loc.type === 'PICKUP');
+        const deliveryLoc = load.locations?.find((loc: any) => loc.type === 'DELIVERY');
+        
+        return {
+          id: load.id,
+          auctionId: auction.id,
+          bidId: auction.id,
+          title: load.title,
+          description: load.description,
+          weight: parseFloat(load.weight),
+          volume: parseFloat(load.volume || '0'),
+          cargoType: load.cargoType,
+          pickupLocationId: pickupLoc?.id || '',
+          deliveryLocationId: deliveryLoc?.id || '',
+          pickupDate: load.pickupDate,
+          deliveryDate: load.deliveryDate,
+          status: load.status,
+          loadValue: parseFloat(load.loadValue),
+          offeredPrice: parseFloat(load.offeredPrice),
+          currencyCode: load.currencyCode || 'USD',
+          isFragile: load.isFragile,
+          isHazardous: load.isHazardous,
+          requiresRefrigeration: load.requiresRefrigeration,
+          contactInfo: load.contactInfo || {},
+          autoMatchEnabled: load.autoMatchEnabled,
+          matchingCriteria: load.matchingCriteria || {},
+          publishedAt: load.publishedAt,
+          rating: parseFloat(load.rating || '0'),
+          viewCount: load.viewCount || 0,
+          createdAt: load.createdAt,
+          updatedAt: load.updatedAt,
+          bidStatus: auction.status === 'ACTIVE' ? 'pending' : 'accepted',
+          cargoOwnerName: `${load.cargoOwner?.profile?.firstName || ''} ${load.cargoOwner?.profile?.lastName || ''}`.trim(),
+          cargoOwnerPhone: load.cargoOwner?.phone || '',
+          cargoOwnerEmail: load.cargoOwner?.email || '',
+          cargoOwnerCompany: load.cargoOwner?.profile?.companyName || '',
+          length: parseFloat(load.length || '0'),
+          width: parseFloat(load.width || '0'),
+          height: parseFloat(load.height || '0'),
+          urgencyLevel: load.urgencyLevel,
+          isTimeCritical: load.isTimeCritical,
+          numberOfPallets: load.numberOfPallets || 0,
+          packagingType: load.packagingType,
+          requiresGpsMonitoring: load.requiresGpsMonitoring,
+          requiresTemperatureMonitoring: load.requiresTemperatureMonitoring,
+          temperatureMin: parseFloat(load.temperatureMin || '0'),
+          temperatureMax: parseFloat(load.temperatureMax || '0'),
+          pickupLocation: pickupLoc ? {
+            id: pickupLoc.id,
+            name: pickupLoc.locationData?.name || '',
+            address: pickupLoc.locationData?.address || '',
+            coordinates: pickupLoc.locationData?.coordinates || { latitude: 0, longitude: 0 },
+            locationType: 'WAREHOUSE',
+          } : undefined,
+          deliveryLocation: deliveryLoc ? {
+            id: deliveryLoc.id,
+            name: deliveryLoc.locationData?.name || '',
+            address: deliveryLoc.locationData?.address || '',
+            coordinates: deliveryLoc.locationData?.coordinates || { latitude: 0, longitude: 0 },
+            locationType: 'WAREHOUSE',
+          } : undefined,
+          cargoOwner: load.cargoOwner,
+          auctionType: auction.auctionType,
+          auctionEnd: auction.auctionEnd,
+          reservePrice: parseFloat(auction.reservePrice),
+          totalBids: auction.totalBids,
+        };
+      });
+      
+      console.log('✅ Transformed bids:', transformedBids);
+      setBids(transformedBids);
     } catch (error: any) {
-      console.error('Error loading bids:', error);
+      console.error('❌ Error loading bids:', error);
       toast.error('Failed to load cargo bids');
       setBids([]);
     } finally {
@@ -399,32 +359,32 @@ const FleetBidsPage: React.FC = () => {
         {/* Stats Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Active"
-            value={bids.filter(b => b.bidStatus === 'pending').length}
+            title="Active Offers"
+            value={bids.filter(b => b.bidStatus === 'pending' || b.auctionType === 'REVERSE').length}
             icon={<Gavel />}
             color="primary"
-            subtitle="Awaiting action"
+            subtitle="Available bids"
           />
           <StatCard
-            title="Accepted"
-            value={bids.filter(b => b.bidStatus === 'accepted').length}
-            icon={<CheckCircle />}
+            title="Live Bids"
+            value={bids.reduce((acc, b) => acc + (b.totalBids || 0), 0)}
+            icon={<TrendingUp />}
             color="success"
-            subtitle="Secured"
+            subtitle="Total bids placed"
           />
           <StatCard
-            title="Rejected"
-            value={bids.filter(b => b.bidStatus === 'rejected').length}
-            icon={<XCircle />}
-            color="error" // Will map to error/rose
-            subtitle="Passed"
-          />
-          <StatCard
-            title="Value"
+            title="Total Volume"
             value={formatCurrency(bids.reduce((acc, curr) => acc + (curr.offeredPrice || 0), 0))}
             icon={<DollarSign />}
             color="info"
-            subtitle="Potential"
+            subtitle="Combined value"
+          />
+          <StatCard
+            title="Win Rate"
+            value={`${bids.length > 0 ? Math.round((bids.filter(b => b.bidStatus === 'accepted').length / bids.length) * 100) : 0}%`}
+            icon={<CheckCircle />}
+            color="success"
+            subtitle="Success rate"
           />
         </div>
 
@@ -567,8 +527,15 @@ const FleetBidsPage: React.FC = () => {
 
                     <div className="pt-4 mt-auto border-t border-slate-50 flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Price</span>
-                        <span className="text-lg font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pricing</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-lg font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
+                          {bid.reservePrice && (
+                            <span className="text-xs font-medium text-slate-400">
+                              Reserve: {formatCurrency(bid.reservePrice, bid.currencyCode)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -707,15 +674,24 @@ const FleetBidsPage: React.FC = () => {
                         {getStatusIcon(selectedBid.bidStatus)}
                       </span>
                       <div>
-                        <p className="text-xs font-black uppercase tracking-widest opacity-60 mb-1">Current Status</p>
-                        <p className="text-xl font-black tracking-tight">{selectedBid.bidStatus?.toUpperCase()}</p>
+                        <p className="text-xs font-black uppercase tracking-widest opacity-60 mb-1">Auction Type</p>
+                        <p className="text-xl font-black tracking-tight">{selectedBid.auctionType || 'REVERSE'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-8">
                       <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Price</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Offered Price</p>
                         <p className="text-2xl font-black tracking-tight">{formatCurrency(selectedBid.offeredPrice || 0, selectedBid.currencyCode)}</p>
                       </div>
+                      {selectedBid.reservePrice && (
+                        <>
+                          <div className="h-10 w-px bg-current opacity-20 hidden md:block" />
+                          <div className="text-right hidden md:block">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Reserve Price</p>
+                            <p className="text-lg font-bold tracking-tight opacity-80">{formatCurrency(selectedBid.reservePrice, selectedBid.currencyCode)}</p>
+                          </div>
+                        </>
+                      )}
                       <div className="h-10 w-px bg-current opacity-20 hidden md:block" />
                       <div className="text-right hidden md:block">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Cargo Value</p>

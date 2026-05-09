@@ -141,15 +141,19 @@ const UnifiedFleetManagement: React.FC = () => {
         await fleetApi.updateTruck(editingTruck.id, truckData);
         toast.success('Truck updated successfully');
       } else {
-        await fleetApi.createTruck(truckData);
+        const createdTruck = await fleetApi.createTruck(truckData);
+        console.log('✅ Truck created successfully:', createdTruck);
         toast.success('Truck created successfully');
       }
       setShowTruckForm(false);
       setEditingTruck(null);
-      // Refresh trucks list
-      loadTrucks();
+      
+      // Refresh trucks list - wait for it to complete
+      await loadTrucks();
+      
       // Trigger TrucksList component refresh
       setTrucksListRefreshKey(prev => prev + 1);
+      
       // Switch to my trucks tab to see the new/updated truck
       setActiveTab('my-trucks');
     } catch (error: any) {

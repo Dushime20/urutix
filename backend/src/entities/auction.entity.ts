@@ -69,6 +69,52 @@ export class Auction {
   @Column('decimal', { precision: 15, scale: 2, nullable: true })
   maximumBidAmount?: number;
 
+  // Professional Auction Type Fields
+  
+  // REVERSE AUCTION: Target price (shipper's goal)
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  targetPrice?: number;
+
+  // REVERSE AUCTION: Maximum budget (hidden ceiling)
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  maxBudget?: number;
+
+  // FORWARD/DUTCH AUCTION: Starting price
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  startingPrice?: number;
+
+  // ALL TYPES: Market reference price
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  marketRate?: number;
+
+  // DUTCH AUCTION: Drop interval in seconds
+  @Column('int', { nullable: true })
+  dropInterval?: number;
+
+  // DUTCH AUCTION: Amount to drop each interval
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  dropAmount?: number;
+
+  // SEALED BID: Bid visibility control
+  @Column('varchar', { length: 50, nullable: true, default: 'HIDDEN' })
+  bidVisibility?: string; // 'HIDDEN' | 'VISIBLE_AFTER_DEADLINE' | 'VISIBLE'
+
+  // SEALED BID: Allow bid revision before deadline
+  @Column('boolean', { default: false })
+  allowBidRevision?: boolean;
+
+  // SEALED BID: Winner selection criteria
+  @Column('varchar', { length: 50, nullable: true, default: 'LOWEST_BID' })
+  selectionCriteria?: string; // 'LOWEST_BID' | 'BEST_VALUE' | 'WEIGHTED_SCORE'
+
+  // ALL TYPES: Auto-extend auction on late bids
+  @Column('boolean', { default: false })
+  autoExtend?: boolean;
+
+  // REVERSE AUCTION: Minimum bid decrement
+  @Column('decimal', { precision: 15, scale: 2, nullable: true })
+  minimumBidDecrement?: number;
+
   @Column('int', { default: 0 })
   totalBids: number;
 

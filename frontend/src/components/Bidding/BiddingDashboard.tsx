@@ -94,6 +94,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalAuctions: 0,
+    participatedAuctions: 0,
     activeBids: 0,
     totalValue: 0,
     successRate: 0,
@@ -166,13 +167,20 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   );
 
   const renderTruckOwnerStats = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
       <StatsCard
         title="Active Offers"
         value={stats.totalAuctions}
         icon={Gavel}
         colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
         secondaryColor="text-[#345E85] dark:text-blue-400"
+      />
+      <StatsCard
+        title="My Auctions"
+        value={stats.participatedAuctions || 0}
+        icon={HistoryIcon}
+        colorClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+        secondaryColor="text-indigo-600 dark:text-indigo-400"
       />
       <StatsCard
         title="Live Bids"

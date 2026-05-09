@@ -1119,6 +1119,13 @@ export class LoadsService {
         ...updateLoadDto,
       };
 
+      // Remove getter-only properties that cannot be set directly
+      // These are computed from the locations array
+      delete (sanitizedUpdate as any).pickupLocation;
+      delete (sanitizedUpdate as any).deliveryLocation;
+      delete (sanitizedUpdate as any).pickupDateFromLocations;
+      delete (sanitizedUpdate as any).deliveryDateFromLocations;
+
       if (sanitizedUpdate.packagingType !== undefined) {
         sanitizedUpdate.packagingType = this.normalizePackagingType(
           sanitizedUpdate.packagingType as any,

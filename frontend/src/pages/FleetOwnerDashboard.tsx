@@ -192,11 +192,14 @@ const FleetOwnerDashboard: React.FC = () => {
 
   const handleSubmitTruck = useCallback(async (data: any) => {
     try {
-      await fleetApi.createTruck(data);
+      const createdTruck = await fleetApi.createTruck(data);
+      console.log('✅ Truck created successfully:', createdTruck);
       toast.success('Truck added successfully!');
       setShowTruckForm(false);
       setEditingTruck(null);
-      loadDashboardData(); // Refresh stats
+      
+      // Wait for dashboard data refresh to complete
+      await loadDashboardData();
     } catch (error) {
       console.error('Error creating truck:', error);
       toast.error('Failed to add truck. Please try again.');

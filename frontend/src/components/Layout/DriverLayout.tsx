@@ -28,10 +28,6 @@ const DriverLayout: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
-  if (isLoading || !user) {
-    return <ModernLoader isLoading={true} text="Initializing_Mission" />;
-  }
-
   // Fetch driverId based on encrypted session email/userId
   const { data: currentDriverProfile } = useQuery({
     queryKey: ['driver-me', user?.id],
@@ -67,6 +63,10 @@ const DriverLayout: React.FC = () => {
     queryFn: () => driverApi.getDriverProfile(driverId),
     enabled: !!driverId,
   });
+
+  if (isLoading || !user) {
+    return <ModernLoader isLoading={true} text="Initializing_Mission" />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">

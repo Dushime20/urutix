@@ -618,7 +618,7 @@ const AdminTenants: React.FC = () => {
       {/* Tenants Table */}
       <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
         {isLoadingTenants ? (
-          <ModernLoader type="table" />
+          <ModernLoader isLoading={true} type="table" />
         ) : tenantsError ? (
           <div className="p-8 text-center">
             <div className="text-red-600 mb-3">
@@ -896,7 +896,7 @@ const AdminTenants: React.FC = () => {
             </div>
 
             {isLoadingTenantDetails ? (
-              <ModernLoader type="page" />
+              <ModernLoader isLoading={true} type="page" />
             ) : (
               <div className="p-8 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

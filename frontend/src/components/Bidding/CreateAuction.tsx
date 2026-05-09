@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Gavel, Loader2, AlertCircle, CheckCircle2, X, PlusCircle, Info, Calendar, DollarSign, Settings, Truck, ArrowRight } from 'lucide-react';
+import { Gavel, Loader2, AlertCircle, CheckCircle2, X, PlusCircle, Info, Calendar, DollarSign, Settings, Truck, ArrowRight, TrendingDown, Clock, Zap } from 'lucide-react';
 import { loadsAPI } from '../../services/load';
 import { biddingAPI } from '../../services/biddingApi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import AuctionTypeSelector, { AuctionType } from './AuctionTypeSelector';
 
 interface Cargo {
   id: string;
@@ -25,10 +26,27 @@ const CreateAuction: React.FC = () => {
   const [loadingCargos, setLoadingCargos] = useState(false);
   const [formData, setFormData] = useState({
     loadId: '',
-    auctionType: 'REVERSE',
+    auctionType: 'REVERSE' as AuctionType,
     auctionStart: '',
     auctionEnd: '',
     reservePrice: '',
+    // REVERSE auction fields
+    targetPrice: '',
+    maxBudget: '',
+    minimumBidDecrement: '',
+    // FORWARD auction fields
+    startingPrice: '',
+    minimumBidIncrement: '',
+    // DUTCH auction fields
+    dropInterval: '60',
+    dropAmount: '',
+    // SEALED auction fields
+    bidVisibility: 'HIDDEN',
+    allowBidRevision: false,
+    selectionCriteria: 'LOWEST_BID',
+    // Common fields
+    marketRate: '',
+    autoExtend: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,13 +155,35 @@ const CreateAuction: React.FC = () => {
         return new Date(localDatetime).toISOString();
       };
 
-      const auctionData = {
+      const auctionData: any = {
         loadId: formData.loadId,
-        auctionType: formData.auctionType as 'REVERSE' | 'FORWARD' | 'DUTCH' | 'SEALED',
+        auctionType: formData.auctionType,
         auctionStart: toISOString(formData.auctionStart),
         auctionEnd: toISOString(formData.auctionEnd),
         reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
       };
+
+      // Add type-specific fields
+      if (formData.auctionType === 'REVERSE') {
+        if (formData.targetPrice) auctionData.targetPrice = parseFloat(formData.targetPrice);
+        if (formData.maxBudget) auctionData.maxBudget = parseFloat(formData.maxBudget);
+        if (formData.minimumBidDecrement) auctionData.minimumBidDecrement = parseFloat(formData.minimumBidDecrement);
+      } else if (formData.auctionType === 'FORWARD') {
+        if (formData.startingPrice) auctionData.startingPrice = parseFloat(formData.startingPrice);
+        if (formData.minimumBidIncrement) auctionData.minimumBidIncrement = parseFloat(formData.minimumBidIncrement);
+      } else if (formData.auctionType === 'DUTCH') {
+        if (formData.startingPrice) auctionData.startingPrice = parseFloat(formData.startingPrice);
+        if (formData.dropInterval) auctionData.dropInterval = parseInt(formData.dropInterval);
+        if (formData.dropAmount) auctionData.dropAmount = parseFloat(formData.dropAmount);
+      } else if (formData.auctionType === 'SEALED') {
+        auctionData.bidVisibility = formData.bidVisibility;
+        auctionData.allowBidRevision = formData.allowBidRevision;
+        auctionData.selectionCriteria = formData.selectionCriteria;
+      }
+
+      // Add common optional fields
+      if (formData.marketRate) auctionData.marketRate = parseFloat(formData.marketRate);
+      auctionData.autoExtend = formData.autoExtend;
 
       await biddingAPI.createAuction(auctionData);
 
@@ -151,10 +191,22 @@ const CreateAuction: React.FC = () => {
       setSuccess('Auction created successfully!');
       setFormData({
         loadId: '',
-        auctionType: 'REVERSE',
+        auctionType: 'REVERSE' as AuctionType,
         auctionStart: '',
         auctionEnd: '',
         reservePrice: '',
+        targetPrice: '',
+        maxBudget: '',
+        minimumBidDecrement: '',
+        startingPrice: '',
+        minimumBidIncrement: '',
+        dropInterval: '60',
+        dropAmount: '',
+        bidVisibility: 'HIDDEN',
+        allowBidRevision: false,
+        selectionCriteria: 'LOWEST_BID',
+        marketRate: '',
+        autoExtend: false,
       });
 
       // Reload cargos to refresh the list
@@ -253,45 +305,327 @@ const CreateAuction: React.FC = () => {
               )}
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Auction Strategy</label>
-              <div className="relative group">
-                <select
-                  value={formData.auctionType}
-                  onChange={(e) => handleInputChange('auctionType', e.target.value)}
-                  required
-                  className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
-                >
-                  <option value="REVERSE" className="dark:bg-slate-900">Reverse Auction (Descending)</option>
-                  <option value="FORWARD" className="dark:bg-slate-900">Forward Auction (Ascending)</option>
-                  <option value="DUTCH" className="dark:bg-slate-900">Dutch Auction (Fast-Drop)</option>
-                  <option value="SEALED" className="dark:bg-slate-900">Sealed Bid (Confidential)</option>
-                </select>
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors">
-                  <Settings size={20} />
-                </div>
-              </div>
+            {/* Auction Type Selector */}
+            <div className="md:col-span-2 space-y-6">
+              <AuctionTypeSelector
+                selected={formData.auctionType}
+                onChange={(type) => handleInputChange('auctionType', type)}
+              />
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Reserve Valuation</label>
-              <div className="relative group">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.reservePrice}
-                  onChange={(e) => handleInputChange('reservePrice', e.target.value)}
-                  placeholder="ENTER PRICE"
-                   className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                />
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
-                  <DollarSign size={20} />
+            {/* REVERSE Auction Fields */}
+            {formData.auctionType === 'REVERSE' && (
+              <>
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Reserve Price (Minimum) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.reservePrice}
+                      onChange={(e) => handleInputChange('reservePrice', e.target.value)}
+                      placeholder="MINIMUM ACCEPTABLE"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-             <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Timing: Start Bound</label>
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Target Price (Your Goal) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.targetPrice}
+                      onChange={(e) => handleInputChange('targetPrice', e.target.value)}
+                      placeholder="YOUR GOAL PRICE"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <TrendingDown size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Max Budget (Hidden)
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.maxBudget}
+                      onChange={(e) => handleInputChange('maxBudget', e.target.value)}
+                      placeholder="MAXIMUM YOU CAN PAY"
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Min Bid Decrement
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.minimumBidDecrement}
+                      onChange={(e) => handleInputChange('minimumBidDecrement', e.target.value)}
+                      placeholder="MINIMUM DECREASE"
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* FORWARD Auction Fields */}
+            {formData.auctionType === 'FORWARD' && (
+              <>
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Starting Price (Entry Point) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.startingPrice}
+                      onChange={(e) => handleInputChange('startingPrice', e.target.value)}
+                      placeholder="STARTING BID"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Reserve Price (Min to Win) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.reservePrice}
+                      onChange={(e) => handleInputChange('reservePrice', e.target.value)}
+                      placeholder="MINIMUM TO WIN"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Min Bid Increment
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.minimumBidIncrement}
+                      onChange={(e) => handleInputChange('minimumBidIncrement', e.target.value)}
+                      placeholder="MINIMUM INCREASE"
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* DUTCH Auction Fields */}
+            {formData.auctionType === 'DUTCH' && (
+              <>
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Starting Price (High) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.startingPrice}
+                      onChange={(e) => handleInputChange('startingPrice', e.target.value)}
+                      placeholder="HIGH START PRICE"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Reserve Price (Floor) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.reservePrice}
+                      onChange={(e) => handleInputChange('reservePrice', e.target.value)}
+                      placeholder="FLOOR PRICE"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Drop Interval (Seconds) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      value={formData.dropInterval}
+                      onChange={(e) => handleInputChange('dropInterval', e.target.value)}
+                      placeholder="60"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <Clock size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Drop Amount *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.dropAmount}
+                      onChange={(e) => handleInputChange('dropAmount', e.target.value)}
+                      placeholder="AMOUNT PER DROP"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <Zap size={20} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* SEALED Auction Fields */}
+            {formData.auctionType === 'SEALED' && (
+              <>
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Reserve Price (Minimum) *
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.reservePrice}
+                      onChange={(e) => handleInputChange('reservePrice', e.target.value)}
+                      placeholder="MINIMUM ACCEPTABLE"
+                      required
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all uppercase italic h-[60px] pl-14 placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                    />
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <DollarSign size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Bid Visibility
+                  </label>
+                  <div className="relative group">
+                    <select
+                      value={formData.bidVisibility}
+                      onChange={(e) => handleInputChange('bidVisibility', e.target.value)}
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
+                    >
+                      <option value="HIDDEN">Hidden Until Deadline</option>
+                      <option value="VISIBLE_AFTER_DEADLINE">Visible After Deadline</option>
+                      <option value="VISIBLE">Visible to All</option>
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <Settings size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
+                    Selection Criteria
+                  </label>
+                  <div className="relative group">
+                    <select
+                      value={formData.selectionCriteria}
+                      onChange={(e) => handleInputChange('selectionCriteria', e.target.value)}
+                      className="w-full px-6 py-4 text-sm font-black bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-gray-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-[#345E85] dark:focus:border-blue-900 transition-all appearance-none cursor-pointer uppercase italic h-[60px]"
+                    >
+                      <option value="LOWEST_BID">Lowest Bid</option>
+                      <option value="BEST_VALUE">Best Value</option>
+                      <option value="WEIGHTED_SCORE">Weighted Score</option>
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-600">
+                      <Settings size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowBidRevision}
+                      onChange={(e) => setFormData(prev => ({ ...prev, allowBidRevision: e.target.checked }))}
+                      className="w-5 h-5 rounded border-slate-300 dark:border-slate-700 text-[#345E85] focus:ring-[#345E85]"
+                    />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                      Allow Bid Revision
+                    </span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {/* Common Fields - Timing */}
+            <div className="space-y-3">
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Timing: Start Bound *</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
@@ -307,7 +641,7 @@ const CreateAuction: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Timing: End Bound</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Timing: End Bound *</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
@@ -321,6 +655,21 @@ const CreateAuction: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Auto-Extend Option */}
+            <div className="md:col-span-2 space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.autoExtend}
+                  onChange={(e) => setFormData(prev => ({ ...prev, autoExtend: e.target.checked }))}
+                  className="w-5 h-5 rounded border-slate-300 dark:border-slate-700 text-[#345E85] focus:ring-[#345E85]"
+                />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Auto-Extend Auction on Late Bids
+                </span>
+              </label>
+            </div>
           </div>
 
           <div className="mt-16 pt-10 border-t border-slate-50 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-6">
@@ -329,10 +678,22 @@ const CreateAuction: React.FC = () => {
               onClick={() => {
                 setFormData({
                   loadId: '',
-                  auctionType: 'REVERSE',
+                  auctionType: 'REVERSE' as AuctionType,
                   auctionStart: '',
                   auctionEnd: '',
                   reservePrice: '',
+                  targetPrice: '',
+                  maxBudget: '',
+                  minimumBidDecrement: '',
+                  startingPrice: '',
+                  minimumBidIncrement: '',
+                  dropInterval: '60',
+                  dropAmount: '',
+                  bidVisibility: 'HIDDEN',
+                  allowBidRevision: false,
+                  selectionCriteria: 'LOWEST_BID',
+                  marketRate: '',
+                  autoExtend: false,
                 });
                 setError(null);
                 setSuccess(null);

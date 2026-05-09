@@ -206,9 +206,13 @@ export class TripsService {
       updateTripStatusDto.status === TripStatus.IN_PROGRESS &&
       oldStatus === TripStatus.PLANNED
     ) {
-      this.deductCreditsForTripStart(savedTrip.id, tenantId).catch(err =>
-        this.logger.error(`Credit deduction failed for trip ${savedTrip.id}: ${err.message}`, err.stack),
-      );
+      this.logger.log(`[TripsService] Trip ${savedTrip.id} status changed from PLANNED to IN_PROGRESS - initiating credit deduction`);
+      this.deductCreditsForTripStart(savedTrip.id, tenantId).catch(err => {
+        this.logger.error(`❌ [TripsService] Credit deduction FAILED for trip ${savedTrip.id}: ${err.message}`, err.stack);
+        // TODO: Add to retry queue or alert system
+      });
+    } else {
+      this.logger.log(`[TripsService] Trip ${savedTrip.id} status changed from ${oldStatus} to ${updateTripStatusDto.status} - no credit deduction needed`);
     }
 
     // Send notification if status changed to IN_PROGRESS (Loaded)
@@ -270,13 +274,16 @@ export class TripsService {
   }
 
   private async deductCreditsForTripStart(tripId: string, tenantId: string): Promise<void> {
+    this.logger.log(`[TripsService] 🔄 Starting credit deduction process for trip ${tripId}`);
+    
     try {
       // IDEMPOTENCY GUARD: bail out if credits were already deducted for this trip
       const alreadyCharged = await this.creditService.isTripAlreadyCharged(tripId, tenantId);
       if (alreadyCharged) {
-        this.logger.warn(`[TripsService] Credits already deducted for trip ${tripId} — skipping duplicate deduction`);
+        this.logger.warn(`[TripsService] ⚠️ Credits already deducted for trip ${tripId} — skipping duplicate deduction`);
         return;
       }
+      this.logger.log(`[TripsService] ✓ Idempotency check passed for trip ${tripId}`);
 
       // Load trip with related load and truck
       const trip = await this.tripRepository.findOne({
@@ -285,9 +292,10 @@ export class TripsService {
       });
 
       if (!trip || !trip.load || !trip.truck) {
-        this.logger.warn(`[TripsService] Cannot deduct credits for trip ${tripId}: missing load or truck`);
+        this.logger.error(`[TripsService] ❌ Cannot deduct credits for trip ${tripId}: missing load or truck. Trip: ${!!trip}, Load: ${!!trip?.load}, Truck: ${!!trip?.truck}`);
         return;
       }
+      this.logger.log(`[TripsService] ✓ Trip ${tripId} loaded with relations - Load: ${trip.load.title}, Truck: ${trip.truck.id}`);
 
       // Get tenant admin user
       const tenantAdminUser = await this.userRepository.findOne({
@@ -295,9 +303,10 @@ export class TripsService {
       });
 
       if (!tenantAdminUser) {
-        this.logger.warn(`[TripsService] Tenant admin not found for tenant ${tenantId}, skipping credit deduction`);
+        this.logger.error(`[TripsService] ❌ Tenant admin not found for tenant ${tenantId}, skipping credit deduction`);
         return;
       }
+      this.logger.log(`[TripsService] ✓ Tenant admin found: ${tenantAdminUser.email}`);
 
       // Get tenant subscription plan (always tenant-level, userId = null)
       const tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
@@ -311,19 +320,22 @@ export class TripsService {
       });
 
       if (!tenantAdminSubscription || !tenantAdminSubscription.plan) {
-        this.logger.warn(`[TripsService] No active subscription plan for tenant ${tenantId}, skipping credit deduction`);
+        this.logger.error(`[TripsService] ❌ No active subscription plan for tenant ${tenantId}, skipping credit deduction`);
         return;
       }
+      this.logger.log(`[TripsService] ✓ Active subscription found: ${tenantAdminSubscription.plan.name}`);
 
       const cargoWeightTons = trip.load.weight / 1000; // kg → tons
       const creditsPerTonTenant = Number(tenantAdminSubscription.plan.creditsPerTonTenant);
       const creditsPerTonTruckOwner = Number(tenantAdminSubscription.plan.creditsPerTonTruckOwner);
 
-      this.logger.log(`[TripsService] Trip ${tripId} started - deducting credits:`);
+      this.logger.log(`[TripsService] 💰 Trip ${tripId} credit calculation:`);
       this.logger.log(`  - Cargo weight: ${cargoWeightTons.toFixed(2)} tons`);
       this.logger.log(`  - Subscription plan: ${tenantAdminSubscription.plan.name}`);
       this.logger.log(`  - Tenant admin rate: ${creditsPerTonTenant} credits/ton`);
       this.logger.log(`  - Truck owner rate: ${creditsPerTonTruckOwner} credits/ton`);
+      this.logger.log(`  - Tenant admin will pay: ${Math.ceil(cargoWeightTons * creditsPerTonTenant)} credits`);
+      this.logger.log(`  - Truck owner will pay: ${Math.ceil(cargoWeightTons * creditsPerTonTruckOwner)} credits`);
 
       await this.creditService.consumeCreditsForBid({
         tenantId,
@@ -337,11 +349,13 @@ export class TripsService {
         referenceType: 'TRIP',
       });
 
-      this.logger.log(`[TripsService] Credit deduction successful for trip ${tripId}`);
+      this.logger.log(`[TripsService] ✅ Credit deduction successful for trip ${tripId}`);
 
       // Send credit deduction notifications to truck owner and tenant admin
       const tenantCreditsDeducted = Math.ceil(cargoWeightTons * creditsPerTonTenant);
       const truckOwnerCreditsDeducted = Math.ceil(cargoWeightTons * creditsPerTonTruckOwner);
+      
+      this.logger.log(`[TripsService] 📧 Sending credit deduction notifications for trip ${tripId}`);
       this.sendCreditDeductionNotifications({
         tenantId,
         tenantAdminUser,
@@ -353,10 +367,12 @@ export class TripsService {
         tenantCreditsDeducted,
         truckOwnerCreditsDeducted,
       }).catch(err =>
-        this.logger.error(`Credit notification failed for trip ${tripId}: ${err.message}`, err.stack),
+        this.logger.error(`❌ Credit notification failed for trip ${tripId}: ${err.message}`, err.stack),
       );
+      
+      this.logger.log(`[TripsService] ✅ Credit deduction process completed for trip ${tripId}`);
     } catch (error) {
-      this.logger.error(`[TripsService] Credit deduction failed for trip ${tripId}: ${error.message}`, error.stack);
+      this.logger.error(`[TripsService] ❌ Credit deduction EXCEPTION for trip ${tripId}: ${error.message}`, error.stack);
       // We do NOT re-throw here — the trip status has already been saved.
       // A failed credit deduction should be logged and handled separately (e.g. retry queue).
     }
@@ -577,6 +593,8 @@ export class TripsService {
       category: NotificationCategory.FINANCIAL,
       channel: NotificationChannel.IN_APP,
       priority: 'HIGH' as any,
+      entityType: EntityType.TRIP,
+      entityId: tripId,
       actionUrl: `/dashboard/credits`,
       actionText: 'View Credit Balance',
       metadata: {
@@ -584,8 +602,6 @@ export class TripsService {
         tripNumber,
         creditsDeducted: truckOwnerCreditsDeducted,
         role: 'TRUCK_OWNER',
-        entityType: EntityType.TRIP,
-        entityId: tripId,
       },
     } as any);
 
@@ -599,6 +615,8 @@ export class TripsService {
       category: NotificationCategory.FINANCIAL,
       channel: NotificationChannel.IN_APP,
       priority: 'HIGH' as any,
+      entityType: EntityType.TRIP,
+      entityId: tripId,
       actionUrl: `/dashboard/credits`,
       actionText: 'View Credit Balance',
       metadata: {
@@ -607,8 +625,6 @@ export class TripsService {
         creditsDeducted: tenantCreditsDeducted,
         creditsEarned: truckOwnerCreditsDeducted,
         role: 'TENANT_ADMIN',
-        entityType: EntityType.TRIP,
-        entityId: tripId,
       },
     } as any);
 
