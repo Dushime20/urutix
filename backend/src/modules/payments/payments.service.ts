@@ -615,7 +615,7 @@ export class PaymentsService {
               });
 
               // If recipient is truck owner, emit specific event
-              if (recipient && (recipient.role === 'TRUCK_OWNER' || recipient.role === 'FLEET_OWNER')) {
+              if (recipient && (recipient.role === 'TRUCK_OWNER' || recipient.role === 'FLEET_MANAGER')) {
                 this.eventEmitter.emit('payment.truck.owner.received', {
                   paymentId: updated.id,
                   recipientId,
