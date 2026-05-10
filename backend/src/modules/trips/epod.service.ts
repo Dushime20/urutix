@@ -29,6 +29,7 @@ import {
 } from '../../entities/notification.entity';
 import { EmailService } from '../auth/services/email.service';
 import { SubmitEpodDto } from './dto/submit-epod.dto';
+import { TripCompletionService } from './services/trip-completion.service';
 
 @Injectable()
 export class EpodService {
@@ -56,6 +57,7 @@ export class EpodService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tripCompletionService: TripCompletionService,
   ) {
     this.uploadDir = this.configService.get<string>('UPLOAD_DIR', './uploads');
   }
@@ -148,6 +150,13 @@ export class EpodService {
       })
       .catch(err => this.logger.error(`Invoice generation failed for trip ${tripId}: ${err.message}`, err.stack));
 
+    // 8.1. Create pending payment for cargo owner (NEW)
+    this.tripCompletionService.handleTripCompletion(tripId, tenantId, 'EPOD_SUBMISSION')
+      .then(result => {
+        this.logger.log(`Created pending payment ${result.payment.id} for trip ${tripId}`);
+      })
+      .catch(err => this.logger.error(`Pending payment creation failed for trip ${tripId}: ${err.message}`, err.stack));
+
     // 9. Emit trip.completed event — triggers TripNotificationListener and CargoNotificationListener
     //    which send in-app + push notifications to cargo owner, truck owner, and driver.
     //    sendEpodNotifications() adds the ePOD-specific "View ePOD & Invoice" action link.
@@ -218,7 +227,19 @@ export class EpodService {
     }
     epod.status = EpodStatus.CONFIRMED;
     epod.confirmedAt = new Date();
-    return this.epodRepository.save(epod);
+    
+    const confirmedEpod = await this.epodRepository.save(epod);
+    
+    // Handle cargo receiver confirmation - create/update pending payment
+    if (epod.tripId) {
+      this.tripCompletionService.handleCargoReceiverConfirmation(epod.tripId, tenantId, epod.cargoOwnerId)
+        .then(payment => {
+          this.logger.log(`Updated payment ${payment.id} with cargo receiver confirmation`);
+        })
+        .catch(err => this.logger.error(`Failed to handle cargo receiver confirmation: ${err.message}`, err.stack));
+    }
+    
+    return confirmedEpod;
   }
 
   // ── Invoice generation ─────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { CargoInspection, InspectionStatus } from '../../entities/cargo-inspection.entity';
 import { EmailService } from '../auth/services/email.service';
 import { ConfigService } from '@nestjs/config';
+import { TripCompletionService } from '../trips/services/trip-completion.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { CreateReceiverDto } from './dto/create-receiver.dto';
@@ -37,6 +38,7 @@ export class ReceiversService {
     private readonly cargoInspectionRepository: Repository<CargoInspection>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly tripCompletionService: TripCompletionService,
   ) {}
 
   /**
@@ -692,7 +694,32 @@ export class ReceiversService {
       });
     }
 
-    return await this.cargoInspectionRepository.save(inspection);
+    const savedInspection = await this.cargoInspectionRepository.save(inspection);
+
+    // If inspection is completed successfully, trigger cargo receiver confirmation
+    // This will create/update the pending payment for the cargo owner
+    if (inspectionStatus === InspectionStatus.COMPLETED) {
+      // Find the trip associated with this cargo to trigger payment creation
+      const Trip = this.cargoInspectionRepository.manager.getRepository('Trip');
+      const trip = await Trip.findOne({
+        where: { loadId: cargoId },
+        select: ['id', 'tenantId'],
+      });
+
+      if (trip) {
+        this.tripCompletionService.handleCargoReceiverConfirmation(trip.id, trip.tenantId, receiverId)
+          .then(payment => {
+            this.logger.log(`Created/updated payment ${payment.id} after cargo inspection completion`);
+          })
+          .catch(err => {
+            this.logger.error(`Failed to handle cargo receiver confirmation after inspection: ${err.message}`, err.stack);
+          });
+      } else {
+        this.logger.warn(`No trip found for cargo ${cargoId} during inspection completion`);
+      }
+    }
+
+    return savedInspection;
   }
 
   /**

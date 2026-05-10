@@ -46,6 +46,9 @@ export enum PaymentType {
 @Index(['tenantId', 'tripId', 'status'])
 @Index(['paymentMethod', 'paymentType'])
 @Index(['createdAt', 'processedAt'])
+@Index(['payeeId'])
+@Index(['payerId', 'payeeId'])
+@Index(['tenantId', 'payeeId'])
 export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -61,6 +64,9 @@ export class Payment {
 
   @Column('uuid')
   payerId: string;
+
+  @Column('uuid', { nullable: true })
+  payeeId?: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;

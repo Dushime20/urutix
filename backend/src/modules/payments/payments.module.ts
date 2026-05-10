@@ -12,6 +12,7 @@ import { Truck } from '../../entities/truck.entity';
 
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
+import { PendingPaymentsController } from './controllers/pending-payments.controller';
 import { PaymentProcessingService } from './services/payment-processing.service';
 import { EscrowService } from './services/escrow.service';
 import { AuditService } from './services/audit.service';
@@ -59,7 +60,7 @@ import { TripsModule } from '../trips/trips.module';
     PaymentCalculationService,
     RateLimitGuard,
   ],
-  controllers: [PaymentsController],
+  controllers: [PaymentsController, PendingPaymentsController],
   exports: [
     PaymentsService,
     PaymentProcessingService,
