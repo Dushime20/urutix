@@ -1063,6 +1063,9 @@ export class BiddingService {
     if ((role === UserRole.BROKER || role === 'BROKER') && userId) {
       // Brokers see auctions in their tenant OR auctions for loads they manage
       queryBuilder.where('(load.tenantId = :tenantId OR load.brokerId = :userId)', { tenantId, userId });
+    } else if ((role === UserRole.CARGO_OWNER || role === 'CARGO_OWNER') && userId) {
+      // Cargo owners only see auctions for their own loads
+      queryBuilder.where('load.tenantId = :tenantId AND load.cargoOwnerId = :userId', { tenantId, userId });
     } else {
       queryBuilder.where('load.tenantId = :tenantId', { tenantId });
     }
