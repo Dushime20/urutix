@@ -308,13 +308,12 @@ export class TripsService {
       }
       this.logger.log(`[TripsService] ✓ Tenant admin found: ${tenantAdminUser.email}`);
 
-      // Get tenant subscription plan (always tenant-level, userId = null)
+      // Get tenant subscription plan (tenant-level first, fallback to any active subscription)
       const tenantAdminSubscription = await this.tenantSubscriptionRepository.findOne({
-        where: {
-          tenantId,
-          userId: IsNull(), // All subscriptions are tenant-level
-          status: SubscriptionStatus.ACTIVE,
-        },
+        where: [
+          { tenantId, userId: IsNull(), status: SubscriptionStatus.ACTIVE },
+          { tenantId, status: SubscriptionStatus.ACTIVE },
+        ],
         relations: ['plan'],
         order: { createdAt: 'DESC' },
       });

@@ -1025,7 +1025,7 @@ export class CreditService {
     // Validate both have sufficient credits
     if (tenantAdminAccount.currentBalance < tenantCreditsNeeded) {
       throw new BadRequestException(
-        `Tenant admin has insufficient credits. Required: ${tenantCreditsNeeded}, Available: ${tenantAdminAccount.currentBalance}`,
+        `Tenant has insufficient credits. Required: ${tenantCreditsNeeded}, Available: ${tenantAdminAccount.currentBalance}`,
       );
     }
 
