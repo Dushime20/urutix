@@ -236,7 +236,7 @@ const AdminBorrowersPage: React.FC = () => {
           )
           .map((user: any) => {
             // Find associated lender (default to first lender if not specified)
-            const lender = lendersData.find((l: any) => l.id === user.lenderId) || lendersData[0] || {
+            const lender: any = lendersData.find((l: any) => l.id === user.lenderId) || lendersData[0] || {
               id: '1',
               name: 'Default Lender',
               type: 'bank',

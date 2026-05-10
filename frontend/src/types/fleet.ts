@@ -341,12 +341,24 @@ export interface FleetItem {
   insurancePolicy?: string; // Added for form compatibility
   insuranceExpiry?: string; // Added for form compatibility
   roadworthyCertExpiry?: string; // Added for form compatibility
+  maxLength?: number | string;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
 
   // Equipment and capabilities
   hasRefrigeration?: boolean;
   hasLiftGate?: boolean;
   hasGps?: boolean;
+  hasGPS?: boolean;
   hasHazmatPermit?: boolean;
+  isActive?: boolean;
+  hasForklift?: boolean;
+  hasCrane?: boolean;
+  hasLoadingDock?: boolean;
+  maxLoadingTime?: number | string;
+  maxUnloadingTime?: number | string;
+  lastMaintenanceDate?: string | Date;
+  nextMaintenanceDate?: string | Date;
 
   // Advanced capabilities
   cargoCapabilities?: {
@@ -517,6 +529,9 @@ export interface FleetItem {
     hasCrane?: boolean;
     hasTailLift?: boolean;
     hasSideLift?: boolean;
+    hasLoadingDock?: boolean;
+    maxLoadingTime?: number | string;
+    maxUnloadingTime?: number | string;
   };
   securityFeatures?: {
     hasGps?: boolean;
@@ -554,6 +569,19 @@ export interface FleetItem {
     hasEngineMonitoring?: boolean;
     hasFuelMonitoring?: boolean;
     hasMaintenanceAlerts?: boolean;
+    hasLeakDetection?: boolean;
+    hasOverfillProtection?: boolean;
+    hasEmergencyShutdown?: boolean;
+    hasFireSuppression?: boolean;
+    hasExplosionProof?: boolean;
+    hasCorrosionResistant?: boolean;
+    hasStainlessSteel?: boolean;
+    hasAluminum?: boolean;
+    hasCarbonSteel?: boolean;
+    hasFiberglass?: boolean;
+    hasPlastic?: boolean;
+    hasComposite?: boolean;
+    hasInsulated?: boolean;
   };
 
   certifications?: {

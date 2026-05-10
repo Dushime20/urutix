@@ -44,7 +44,37 @@ export interface Truck {
     assignmentDate: string;
     status: string;
   }>;
+  assignedDrivers?: DriverAssignment[];
+  registrationNumber?: string;
+  registrationExpiry?: string;
+  insurancePolicy?: string;
+  insuranceExpiry?: string;
+  roadworthyCertExpiry?: string;
+  trailerType?: string;
+  maxLength?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  hasRefrigeration?: boolean;
+  hasLiftGate?: boolean;
+  hasGps?: boolean;
+  hasGPS?: boolean;
+  hasHazmatPermit?: boolean;
+  isActive?: boolean;
+  totalRevenue?: number;
+  totalTrips?: number;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
 }
+
+export interface DriverAssignment {
+  driverId: string;
+  driverName?: string;
+  assignmentDate?: string;
+  status?: string;
+  notes?: string;
+}
+
+export type FleetItem = Truck;
 
 export interface Driver {
   id: string;
@@ -67,6 +97,8 @@ export interface Driver {
   hireDate?: string;
   terminationDate?: string;
   currentTruckId?: string;
+  currentTripId?: string;
+  locationUpdatedAt?: string;
   tenantId: string;
   experienceYears?: number;
   experience?: number; // Years of driving experience
@@ -77,12 +109,15 @@ export interface Driver {
   onTimeDeliveryRate?: number;
   hoursWorkedThisWeek?: number;
   hoursWorkedThisMonth?: number;
+  consecutiveDrivingHours?: number;
+  lastBreakTime?: string;
   medicalCertExpiry?: string;
   drugTestDate?: string;
   backgroundCheckDate?: string;
   trainingCompletionDate?: string;
   hourlyRate?: number;
   mileageRate?: number;
+  totalEarnings?: number;
   driverNotes?: string; // Additional notes about the driver
   emergencyContact?: {
     name?: string;
@@ -520,6 +555,16 @@ export const fleetApi = {
     await api.delete(`/fleet/drivers/${id}`);
   },
 
+  getDriverDocuments: async (driverId: string): Promise<any[]> => {
+    const response = await api.get(`/fleet/drivers/${driverId}/documents`);
+    return response.data.data || response.data.documents || response.data || [];
+  },
+
+  addDriverDocument: async (driverId: string, data: any): Promise<any> => {
+    const response = await api.post(`/fleet/drivers/${driverId}/documents`, data);
+    return response.data.data || response.data || [];
+  },
+
   // Truck owner operations
   getTruckOwners: async (): Promise<TruckOwner[]> => {
     const response = await api.get<{ users: TruckOwner[] }>('/admin/users');
@@ -529,8 +574,18 @@ export const fleetApi = {
   },
 
   // Assignment operations
-  assignDriverToTruck: async (truckId: string, driverId: string): Promise<void> => {
-    await api.post(`/fleet/trucks/${truckId}/assign-driver`, { driverId });
+  assignDriverToTruck: async (
+    truckId: string, 
+    driverIdOrData: string | { driverId: string; notes?: string }, 
+    maybeData?: { notes?: string }
+  ): Promise<void> => {
+    let payload;
+    if (typeof driverIdOrData === 'string') {
+      payload = { driverId: driverIdOrData, ...maybeData };
+    } else {
+      payload = driverIdOrData;
+    }
+    await api.post(`/fleet/trucks/${truckId}/assign-driver`, payload);
   },
 
   unassignDriverFromTruck: async (truckId: string): Promise<void> => {
@@ -650,6 +705,20 @@ export const fleetApi = {
     }
   },
 
+  assignTruckToRoute: async (
+    truckId: string, 
+    routeIdOrData: string | { routeId: string; startDate?: string; notes?: string },
+    maybeData?: { startDate?: string; notes?: string }
+  ): Promise<void> => {
+    let payload;
+    if (typeof routeIdOrData === 'string') {
+      payload = { routeId: routeIdOrData, ...maybeData };
+    } else {
+      payload = routeIdOrData;
+    }
+    await api.post(`/fleet/trucks/${truckId}/assign-route`, payload);
+  },
+
   assignRouteToTruck: async (truckId: string, routeId: string): Promise<void> => {
     await api.post(`/fleet/trucks/${truckId}/assign-route`, { routeId });
   },
@@ -666,6 +735,11 @@ export const fleetApi = {
       throw new Error('Failed to add compliance record');
     }
     return compliance;
+  },
+
+  getComplianceHistory: async (truckId: string): Promise<ComplianceRecord[]> => {
+    const response = await api.get(`/fleet/trucks/${truckId}/compliance`);
+    return response.data.data || response.data.compliance || response.data || [];
   },
 
   // ===== MAINTENANCE =====

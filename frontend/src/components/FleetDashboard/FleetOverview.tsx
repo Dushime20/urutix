@@ -1,4 +1,4 @@
-﻿// init
+// init
 
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ interface FleetOverviewProps {
   loading: boolean;
   trips?: any[];
   onRefresh?: () => void;
+  onAddTruck?: () => void;
+  onAddDriver?: () => void;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -569,7 +571,7 @@ function PerformanceScorecard({ analytics, trucks, drivers }: { analytics: any; 
 export const FleetOverview: React.FC<FleetOverviewProps> = ({
   trucks, drivers, analytics, loading, onRefresh,
   onAddTruck, onAddDriver,
-}: FleetOverviewProps & { onAddTruck?: () => void; onAddDriver?: () => void }) => {
+}) => {
   const navigate = useNavigate();
 
   // Derived fleet stats

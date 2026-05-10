@@ -119,7 +119,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                 dueDate: newDocExpiry, // Expiry
                 lastChecked: newDocIssueDate, // Issue Date
                 nextCheck: newDocExpiry, // Renewal Date
-                status: 'COMPLIANT',
+                status: 'COMPLIANT' as const,
                 responsibleParty: 'Fleet Manager',
                 notes: newDocNotes,
                 documentation: documentUrls // Attach uploaded file URL(s)

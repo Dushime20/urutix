@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Payments from "@/pages/Payments";
 import PendingPaymentsPage from "@/pages/Payments/PendingPaymentsPage";
+import EnhancedPendingPaymentsSection from "@/pages/Payments/components/EnhancedPendingPaymentsSection";
 import TransactionHistoryPage from "@/pages/Payments/TransactionHistoryPage";
 import FleetPaymentsManagement from "@/pages/FleetPayments/FleetPaymentsManagement";
 import EnhancedLoanRequestsPage from "@/pages/EnhancedLoanRequestsPage";
@@ -232,7 +233,7 @@ const UnifiedFinancialManagement = () => {
                 <FinancialDashboard />
               </Suspense>
             )}
-            {activeTab === "pending-payments" && <PendingPaymentsPage />}
+            {activeTab === "pending-payments" && <EnhancedPendingPaymentsSection />}
             {activeTab === "transaction-history" && <TransactionHistoryPage />}
             {activeTab === "payments" && (
               location.pathname.includes("/fleet") ? (
