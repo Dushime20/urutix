@@ -57,6 +57,8 @@ import OnboardingTour from '../components/Onboarding/OnboardingTour';
 import { useOnboardingStore, useShouldShowOnboarding } from '../stores/onboardingStore';
 import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
+import PendingDeliveriesList from '../components/CargoReceiver/PendingDeliveriesList';
+import CargoOwnerEpodDashboard from '../components/CargoOwner/CargoOwnerEpodDashboard';
 import { formatNumber, formatCurrency } from '../utils/formatNumber';
 
 const Dashboard = () => {
@@ -1264,10 +1266,18 @@ const CargoOwnerDashboard = () => {
         </div>
       </div>
 
+      {/* Cargo Receiver: Pending Deliveries Section */}
+      {user?.role === 'CARGO_RECEIVER' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <PendingDeliveriesList />
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {activeTab === 'Overview' && renderOverview()}
         {activeTab === 'All Cargos' && <UnifiedCargoManagement />}
+        {activeTab === 'ePOD Reports' && <CargoOwnerEpodDashboard />}
         {activeTab === 'Contracts' && <CargoOwnerContracts />}
         {activeTab === 'Transactions' && <UnifiedFinancialManagement />}
         {activeTab === 'Analytics' && <UnifiedAnalyticsManagement />}

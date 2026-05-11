@@ -159,9 +159,9 @@ const AdminTrips: React.FC = () => {
       createdAt: backendTrip.createdAt,
       updatedAt: backendTrip.updatedAt,
       priority: backendTrip.load?.priority || 'medium',
-      revenue: backendTrip.agreedPrice || 0,
-      fuelCost: backendTrip.fuelCost || 0,
-      tollCost: backendTrip.tollsCost || 0,
+      revenue: Number(backendTrip.agreedPrice) || 0,
+      fuelCost: Number(backendTrip.fuelCost) || 0,
+      tollCost: Number(backendTrip.tollsCost) || 0,
       progress,
       currentLocation: backendTrip.currentLocation || (status === 'completed' ? deliveryLocation?.city : pickupLocation?.city),
       delay: 0,
@@ -255,7 +255,10 @@ const AdminTrips: React.FC = () => {
 
   const formatDistance = (km: number) => `${(km || 0).toLocaleString()} km`;
   const formatWeight = (kg: number) => `${((kg || 0) / 1000).toFixed(1)} t`;
-  const formatCurrency = (val: number) => `$${(val || 0).toLocaleString()}`;
+  const formatCurrency = (val: number) => {
+    const numVal = Number(val) || 0;
+    return `$${numVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
   const formatDateTime = (dateStr: string | null | undefined) => {
     if (!dateStr) return '---';
     return new Date(dateStr).toLocaleString();

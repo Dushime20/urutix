@@ -146,10 +146,27 @@ export interface AdminHealth {
 
 export interface AdminDispute {
   id: string;
-  title: string;
-  status: string;
   tenantId: string;
+  tripId: string;
+  raisedById: string;
+  status: 'OPEN' | 'RESOLVED' | 'ESCALATED' | 'REJECTED';
+  reason: string;
+  resolution?: string;
   createdAt: string;
+  updatedAt: string;
+  raisedBy?: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+  };
+  trip?: {
+    id: string;
+    tripNumber?: string;
+    agreedPrice?: number;
+    status?: string;
+  };
 }
 
 export interface AdminAuditLog {
@@ -216,6 +233,9 @@ export const adminAPI = {
   // Audit and monitoring
   getDisputes: (tenantId?: string) => 
     api.get<{ disputes: AdminDispute[] }>('/admin/disputes', { params: tenantId ? { tenantId } : {} }),
+
+  updateDisputeStatus: (id: string, status: string, resolution?: string) =>
+    api.patch<{ dispute: AdminDispute }>(`/admin/disputes/${id}`, { status, resolution }),
   
   getAuditLogs: (tenantId?: string) => 
     api.get<{ logs: AdminAuditLog[] }>('/admin/audit', { params: tenantId ? { tenantId } : {} }),

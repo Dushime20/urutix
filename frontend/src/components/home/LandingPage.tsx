@@ -1,0 +1,503 @@
+﻿import { useState } from "react"
+import { Link } from "react-router-dom"
+import { motion } from "framer-motion"
+import {
+  Phone, Mail, MapPin, ChevronRight, ArrowRight,
+  Truck, Package, Plane, CheckCircle2,
+  Facebook, Twitter, Linkedin, Instagram, Menu, X,
+  TrendingUp, Users, Globe, LayoutDashboard
+} from "lucide-react"
+import logoUrutiX from "../../assets/urutiX Logistics Logo (1).svg"
+import { useAuth } from "@/contexts/AuthContext"
+
+// ─── Role → dashboard route map ───────────────────────────────────────────────
+const ROLE_DASHBOARD: Record<string, string> = {
+  CARGO_OWNER:  "/dashboard",
+  TRUCK_OWNER:  "/dashboard/fleet",
+  FLEET_OWNER:  "/dashboard/fleet",
+  DRIVER:       "/dashboard/driver",
+  ADMIN:        "/admin",
+  SUPER_ADMIN:  "/admin",
+  TENANT_ADMIN: "/tenant-admin",
+  LENDER:       "/lender",
+  BROKER:       "/dashboard/broker",
+  MANAGER:      "/dashboard",
+  AGENT:        "/dashboard",
+  USER:         "/dashboard",
+}
+
+// ─── HERO SECTION ─────────────────────────────────────────────────────────────
+function Navbar() {
+  const [open, setOpen] = useState(false)
+  const { user } = useAuth()
+  const dashboardPath = user ? (ROLE_DASHBOARD[user.role] ?? "/dashboard") : null
+
+  return (
+    <header style={{ backgroundColor: "#0D3D4A" }} className="fixed top-0 left-0 right-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16">
+        <Link to="/">
+          <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert" />
+        </Link>
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-white/80">
+          {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
+            <a key={n} href={`#${n.toLowerCase()}`} className="hover:text-white transition-colors">{n}</a>
+          ))}
+        </nav>
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-2 text-white/70 text-sm">
+            <Phone className="w-4 h-4 text-orange-400" />
+            <span>+1 800 123 4567</span>
+          </div>
+          {dashboardPath ? (
+            <Link
+              to={dashboardPath}
+              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold px-5 py-2.5 rounded transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold px-5 py-2.5 rounded transition-colors"
+            >
+              START NOW
+            </Link>
+          )}
+        </div>
+        <button onClick={() => setOpen(!open)} className="md:hidden text-white">
+          {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+      {open && (
+        <div style={{ backgroundColor: "#0D3D4A" }} className="md:hidden px-6 pb-4 flex flex-col gap-3">
+          {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
+            <a key={n} href={`#${n.toLowerCase()}`} className="text-white/80 text-sm py-1">{n}</a>
+          ))}
+          {dashboardPath ? (
+            <Link
+              to={dashboardPath}
+              className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white text-sm font-bold px-5 py-2.5 rounded text-center mt-2"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </Link>
+          ) : (
+            <Link to="/auth" className="bg-orange-500 text-white text-sm font-bold px-5 py-2.5 rounded text-center mt-2">
+              START NOW
+            </Link>
+          )}
+        </div>
+      )}
+    </header>
+  )
+}
+
+function Hero() {
+  return (
+    <section
+      className="relative overflow-hidden pt-16"
+      style={{ backgroundColor: "#0D3D4A", minHeight: "580px" }}
+    >
+      {/* Diagonal bottom clip */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-24 bg-white"
+        style={{ clipPath: "polygon(0 100%, 100% 100%, 100% 0)" }}
+      />
+
+      {/* Ship image — top right */}
+      <div className="absolute top-0 right-0 w-1/2 h-full overflow-hidden opacity-40">
+        <div
+          className="w-full h-full"
+          style={{
+            background: "url('https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=800') center/cover no-repeat",
+          }}
+        />
+      </div>
+
+      {/* Dark overlay on right */}
+      <div
+        className="absolute top-0 right-0 w-1/2 h-full"
+        style={{ background: "linear-gradient(to right, #0D3D4A 0%, transparent 60%)" }}
+      />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-32">
+        {/* Centered text */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-2xl mx-auto"
+        >
+          <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-3">
+            Logistics Transport Solutions
+          </p>
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
+            Welcome To UrutiX Cargo<br />Transport Services
+          </h1>
+          <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-lg mx-auto">
+            We are your most trusted partner for smart cargo management tools,
+            logistics solutions, and a clear view of your entire supply chain.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link
+              to="/auth"
+              className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-white font-bold px-7 py-3 rounded text-sm transition-colors"
+            >
+              EXPLORE SERVICES <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Truck image — bottom left, large circle */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.9, delay: 0.3 }}
+        className="absolute z-20"
+        style={{
+          bottom: "-90px",
+          left: "-40px",
+          width: "480px",
+          height: "480px",
+        }}
+      >
+        {/* Outer ring */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{ border: "3px solid rgba(249,115,22,0.35)" }}
+        />
+        {/* Second ring */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            inset: "14px",
+            border: "2px solid rgba(255,255,255,0.1)",
+          }}
+        />
+        {/* Image circle */}
+        <div
+          className="absolute rounded-full overflow-hidden"
+          style={{
+            inset: "24px",
+            backgroundImage: "url('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=700')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      </motion.div>
+    </section>
+  )
+}
+
+// ─── PARTNER STRIP ────────────────────────────────────────────────────────────
+function PartnerStrip() {
+  const partners = [
+    { name: "Logistics Co", icon: <Truck className="w-5 h-5" /> },
+    { name: "FreightPro", icon: <Package className="w-5 h-5" /> },
+    { name: "AirCargo", icon: <Plane className="w-5 h-5" /> },
+    { name: "TruckLines", icon: <Truck className="w-5 h-5" /> },
+    { name: "GlobalShip", icon: <Globe className="w-5 h-5" /> },
+  ]
+  return (
+    <section className="bg-white py-10 mt-36">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="flex flex-wrap items-center justify-center gap-10 lg:gap-16">
+          {partners.map((p) => (
+            <div key={p.name} className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors cursor-default">
+              <span className="text-orange-400">{p.icon}</span>
+              <span className="text-sm font-bold uppercase tracking-wider">{p.name}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1 text-orange-500 font-bold text-sm cursor-pointer hover:text-orange-400">
+            <span>View All</span>
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── FEATURE SECTION ──────────────────────────────────────────────────────────
+function FeatureSection() {
+  return (
+    <section id="services" className="bg-white py-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Left */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="inline-block bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded mb-4">
+              SERVICES
+            </span>
+            <h2 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-4" style={{ color: "#0D3D4A" }}>
+              We'll keep your items<br />damage free
+            </h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-8">
+              UrutiX Smart Logistics ensures the safest handling and transport of
+              your cargo with advanced monitoring, vetted carriers, and
+              end-to-end visibility across every route.
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-8">
+              {[
+                "Secure Shipping", "Climate Control",
+                "Fast Delivery", "Smart Tracking",
+                "Real-time Updates", "Insurance Cover",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                  <span className="text-gray-700 text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/auth"
+                className="inline-flex items-center gap-2 text-white text-sm font-bold px-6 py-3 rounded transition-colors"
+                style={{ backgroundColor: "#0D3D4A" }}
+              >
+                GET STARTED
+              </Link>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-800">4.9 / 5.0</p>
+                  <p className="text-xs text-gray-400">Customer Rating</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right — stacked images with orange badge */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="relative"
+          >
+            {/* Main image */}
+            <div
+              className="rounded-2xl overflow-hidden w-full aspect-[4/3]"
+              style={{
+                background: "url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600') center/cover no-repeat",
+              }}
+            />
+            {/* Small overlapping image */}
+            <div
+              className="absolute -bottom-6 -left-6 w-40 h-28 rounded-xl overflow-hidden"
+              style={{
+                background: "url('https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=300') center/cover no-repeat",
+              }}
+            />
+            {/* Orange badge */}
+            <div
+              className="absolute bottom-4 right-4 text-white rounded-xl px-4 py-3 text-center"
+              style={{ backgroundColor: "#F97316" }}
+            >
+              <p className="text-3xl font-extrabold leading-none">20</p>
+              <p className="text-xs font-semibold mt-0.5">Years of<br />Experience</p>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── STATS BAR ────────────────────────────────────────────────────────────────
+function StatsBar() {
+  const stats = [
+    { icon: <TrendingUp className="w-8 h-8" />, value: "50k", label: "Maritime Freight\nTransportation" },
+    { icon: <Truck className="w-8 h-8" />, value: "25k", label: "Land Freight\nTransportation" },
+    { icon: <Globe className="w-8 h-8" />, value: "25+", label: "Countries\nWorldwide" },
+    { icon: <Package className="w-8 h-8" />, value: "125", label: "Train Freight\nTransportation" },
+  ]
+  return (
+    <section style={{ backgroundColor: "#0D3D4A" }} className="py-14">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          {stats.map((s, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="flex items-center gap-4"
+            >
+              <div className="text-orange-400 flex-shrink-0">{s.icon}</div>
+              <div>
+                <p className="text-3xl font-extrabold text-white leading-none">{s.value}</p>
+                <p className="text-white/50 text-xs mt-1 whitespace-pre-line leading-tight">{s.label}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── SERVICES GRID ────────────────────────────────────────────────────────────
+function ServicesGrid() {
+  const services = [
+    {
+      img: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500",
+      category: "MARITIME",
+      title: "Maritime Freight Transportation",
+      desc: "Global sea freight solutions with full container and bulk cargo options across major shipping lanes.",
+    },
+    {
+      img: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500",
+      category: "LAND",
+      title: "Land Freight Transportation",
+      desc: "Reliable road and rail freight across the continent with real-time GPS tracking and driver communication.",
+    },
+    {
+      img: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=500",
+      category: "TRAIN",
+      title: "Train Freight Transportation",
+      desc: "Cost-effective rail freight for bulk shipments with scheduled routes and guaranteed delivery windows.",
+    },
+  ]
+  return (
+    <section id="projects" className="py-20" style={{ backgroundColor: "#F0F4F8" }}>
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <span className="inline-block bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded mb-4">
+            OUR SERVICES
+          </span>
+          <h2 className="text-3xl lg:text-4xl font-extrabold" style={{ color: "#0D3D4A" }}>
+            Wide Variety of Logistics Services
+          </h2>
+          <p className="text-gray-500 text-sm mt-3 max-w-xl mx-auto">
+            From sea to land to rail, UrutiX delivers end-to-end logistics solutions
+            tailored to your cargo needs.
+          </p>
+        </div>
+
+        {/* Cards */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {services.map((svc, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.12 }}
+              className="bg-white rounded-2xl overflow-hidden group"
+            >
+              {/* Image */}
+              <div className="relative overflow-hidden h-48">
+                <div
+                  className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+                  style={{ background: `url('${svc.img}') center/cover no-repeat` }}
+                />
+                <div className="absolute bottom-3 left-3">
+                  <span className="bg-orange-500 text-white text-[10px] font-bold px-2.5 py-1 rounded">
+                    {svc.category}
+                  </span>
+                </div>
+              </div>
+              {/* Content */}
+              <div className="p-5">
+                <h3 className="font-bold text-base mb-2" style={{ color: "#0D3D4A" }}>
+                  {svc.title}
+                </h3>
+                <p className="text-gray-500 text-xs leading-relaxed mb-4">{svc.desc}</p>
+                <Link
+                  to="/auth"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-400 transition-colors"
+                >
+                  LEARN MORE <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── FOOTER ───────────────────────────────────────────────────────────────────
+function Footer() {
+  return (
+    <footer id="contact" style={{ backgroundColor: "#0D3D4A" }} className="pt-14 pb-6">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+          <div>
+            <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert mb-4" />
+            <p className="text-white/40 text-sm leading-relaxed mb-5">
+              Africa's smart logistics platform connecting shippers and carriers with AI-powered efficiency.
+            </p>
+            <div className="flex gap-3">
+              {[Facebook, Twitter, Linkedin, Instagram].map((Icon, i) => (
+                <a key={i} href="#" className="w-8 h-8 rounded flex items-center justify-center text-white/40 hover:text-white hover:bg-orange-500 transition-all" style={{ backgroundColor: "rgba(255,255,255,0.07)" }}>
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-white text-sm font-bold mb-4">Services</p>
+            <ul className="space-y-2">
+              {["Maritime Freight","Land Freight","Train Freight","Air Cargo","Warehousing"].map(item => (
+                <li key={item}><a href="#" className="text-white/40 text-sm hover:text-white/70 transition-colors">{item}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-white text-sm font-bold mb-4">Company</p>
+            <ul className="space-y-2">
+              {["About Us","Our Team","Careers","News & Blog","Partners"].map(item => (
+                <li key={item}><a href="#" className="text-white/40 text-sm hover:text-white/70 transition-colors">{item}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-white text-sm font-bold mb-4">Contact</p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" /><span className="text-white/40 text-sm">Kigali, Rwanda · Nairobi, Kenya</span></li>
+              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-orange-400" /><a href="tel:+250700000000" className="text-white/40 text-sm hover:text-white/70">+250 700 000 000</a></li>
+              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-orange-400" /><a href="mailto:hello@urutix.com" className="text-white/40 text-sm hover:text-white/70">hello@urutix.com</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-white/30 text-xs">© {new Date().getFullYear()} UrutiX Smart Logistics. All rights reserved.</p>
+          <div className="flex gap-5">
+            {["Privacy Policy","Terms of Service","Cookies"].map(item => (
+              <a key={item} href="#" className="text-white/30 text-xs hover:text-white/60 transition-colors">{item}</a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+// ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
+export function LandingPage() {
+  return (
+    <div className="min-h-screen font-sans antialiased">
+      <Navbar />
+      <Hero />
+      <PartnerStrip />
+      <FeatureSection />
+      <StatsBar />
+      <ServicesGrid />
+      <Footer />
+    </div>
+  )
+}

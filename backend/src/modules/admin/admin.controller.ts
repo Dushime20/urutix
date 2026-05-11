@@ -133,7 +133,19 @@ export class AdminController {
   @ApiOperation({ summary: 'List disputes' })
   @ApiOkResponse({ description: 'Disputes retrieved' })
   getDisputes(@Request() req) {
-    return this.adminService.getDisputes(req.user.tenantId);
+    const isGlobalAdmin = req.user.role === 'SUPER_ADMIN' || req.user.role === 'ADMIN';
+    const tenantId = isGlobalAdmin ? undefined : req.user.tenantId;
+    return this.adminService.getDisputes(tenantId);
+  }
+
+  @Patch('disputes/:id')
+  @ApiOperation({ summary: 'Update dispute status (admin)' })
+  @ApiOkResponse({ description: 'Dispute updated' })
+  updateDisputeStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string; resolution?: string },
+  ) {
+    return this.adminService.updateDisputeStatus(id, body.status, body.resolution);
   }
 
   @Get('audit')

@@ -5,7 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Trip } from './trip.entity';
+import { User } from './user.entity';
+import { Driver } from './driver.entity';
 
 export enum EpodStatus {
   PENDING   = 'PENDING',   // submitted, awaiting cargo-owner confirmation
@@ -27,11 +32,23 @@ export class Epod {
   @Column('uuid')
   tripId: string;
 
+  @ManyToOne(() => Trip, { nullable: true })
+  @JoinColumn({ name: 'tripId' })
+  trip?: Trip;
+
   @Column('uuid')
   driverId: string;
 
+  @ManyToOne(() => Driver, { nullable: true })
+  @JoinColumn({ name: 'driverId' })
+  driver?: Driver;
+
   @Column('uuid')
   cargoOwnerId: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'cargoOwnerId' })
+  cargoOwner?: User;
 
   // ── Recipient ──────────────────────────────────────────────────────────────
   @Column({ length: 200 })
@@ -78,6 +95,14 @@ export class Epod {
   /** Timestamp when cargo owner confirmed */
   @Column('timestamp with time zone', { nullable: true })
   confirmedAt?: Date;
+
+  /** Timestamp when cargo owner disputed */
+  @Column('timestamp with time zone', { nullable: true })
+  disputedAt?: Date;
+
+  /** Reason for dispute */
+  @Column({ type: 'text', nullable: true })
+  disputeReason?: string;
 
   /** Auto-generated invoice ID linked to this ePOD */
   @Column('uuid', { nullable: true })

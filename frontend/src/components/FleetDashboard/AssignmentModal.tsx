@@ -34,7 +34,17 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
         firstName: '',
         lastName: '',
         email: '',
-        licenseNumber: ''
+        phone: '',
+        dateOfBirth: '',
+        address: '',
+        licenseNumber: '',
+        licenseIssueDate: '',
+        licenseExpiry: '',
+        licenseState: '',
+        licenseCountry: 'USA',
+        employmentType: 'FULL_TIME' as const,
+        hireDate: new Date().toISOString().split('T')[0],
+        experience: 0
     });
     const [refreshKey, setRefreshKey] = useState(0); // Added for re-fetching data after invite/assign
 
@@ -105,13 +115,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
             const newDriver = await fleetApi.createDriver({
                 ...inviteFormData,
                 status: 'ACTIVE',
-                availabilityStatus: 'AVAILABLE',
-                // Add required dummy/default dates for initial creation
-                dateOfBirth: '1990-01-01',
-                licenseIssueDate: new Date().toISOString().split('T')[0],
-                licenseExpiry: new Date(Date.now() + 31536000000).toISOString().split('T')[0], // +1 year
-                hireDate: new Date().toISOString().split('T')[0],
-                experience: 0
+                availabilityStatus: 'AVAILABLE'
             });
 
             toast.success(`Invitation sent to ${inviteFormData.email}`);
@@ -122,7 +126,22 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
 
             setRefreshKey(prev => prev + 1);
             setViewMode('active');
-            setInviteFormData({ firstName: '', lastName: '', email: '', licenseNumber: '' });
+            setInviteFormData({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                dateOfBirth: '',
+                address: '',
+                licenseNumber: '',
+                licenseIssueDate: '',
+                licenseExpiry: '',
+                licenseState: '',
+                licenseCountry: 'USA',
+                employmentType: 'FULL_TIME' as const,
+                hireDate: new Date().toISOString().split('T')[0],
+                experience: 0
+            });
         } catch (error: any) {
             toast.error(error?.response?.data?.message || 'Failed to invite driver');
         } finally {
@@ -384,51 +403,189 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                     ) : (
                                         /* Invite New Driver Form */
                                         <form onSubmit={handleInviteAndAssign} className="space-y-4">
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">First Name</label>
-                                                    <input
-                                                        required
-                                                        type="text"
-                                                        value={inviteFormData.firstName}
-                                                        onChange={(e) => setInviteFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                                                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
-                                                        placeholder="Enter Name"
-                                                    />
+                                            {/* Personal Information Section */}
+                                            <div className="space-y-3">
+                                                <h4 className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Personal Information</h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">First Name *</label>
+                                                        <input
+                                                            required
+                                                            type="text"
+                                                            value={inviteFormData.firstName}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                            placeholder="John"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Last Name *</label>
+                                                        <input
+                                                            required
+                                                            type="text"
+                                                            value={inviteFormData.lastName}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                            placeholder="Doe"
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-1.5">
-                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Last Name</label>
+                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Email Address *</label>
                                                     <input
                                                         required
-                                                        type="text"
-                                                        value={inviteFormData.lastName}
-                                                        onChange={(e) => setInviteFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                                                        type="email"
+                                                        value={inviteFormData.email}
+                                                        onChange={(e) => setInviteFormData(prev => ({ ...prev, email: e.target.value }))}
                                                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
-                                                        placeholder="Enter Surname"
+                                                        placeholder="driver@example.com"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Phone Number *</label>
+                                                        <input
+                                                            required
+                                                            type="tel"
+                                                            value={inviteFormData.phone}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                            placeholder="+1 (555) 123-4567"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Date of Birth *</label>
+                                                        <input
+                                                            required
+                                                            type="date"
+                                                            value={inviteFormData.dateOfBirth}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                                                            max={new Date(Date.now() - 567648000000).toISOString().split('T')[0]} // 18 years ago
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Address *</label>
+                                                    <textarea
+                                                        required
+                                                        value={inviteFormData.address}
+                                                        onChange={(e) => setInviteFormData(prev => ({ ...prev, address: e.target.value }))}
+                                                        rows={2}
+                                                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all resize-none"
+                                                        placeholder="Street address, City, State, ZIP"
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Email Address</label>
-                                                <input
-                                                    required
-                                                    type="email"
-                                                    value={inviteFormData.email}
-                                                    onChange={(e) => setInviteFormData(prev => ({ ...prev, email: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
-                                                    placeholder="driver@example.com"
-                                                />
+
+                                            {/* License Information Section */}
+                                            <div className="space-y-3 pt-2">
+                                                <h4 className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">License Information</h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License Number *</label>
+                                                        <input
+                                                            required
+                                                            type="text"
+                                                            value={inviteFormData.licenseNumber}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                            placeholder="DL-XXXXXX"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License Expiry *</label>
+                                                        <input
+                                                            required
+                                                            type="date"
+                                                            value={inviteFormData.licenseExpiry}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseExpiry: e.target.value }))}
+                                                            min={new Date().toISOString().split('T')[0]} // Must be future date
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License State *</label>
+                                                        <input
+                                                            required
+                                                            type="text"
+                                                            value={inviteFormData.licenseState}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseState: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                            placeholder="CA, TX, NY, etc."
+                                                            maxLength={50}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License Country *</label>
+                                                        <input
+                                                            required
+                                                            type="text"
+                                                            value={inviteFormData.licenseCountry}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseCountry: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                            placeholder="USA"
+                                                            maxLength={50}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License Issue Date *</label>
+                                                    <input
+                                                        required
+                                                        type="date"
+                                                        value={inviteFormData.licenseIssueDate}
+                                                        onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseIssueDate: e.target.value }))}
+                                                        max={new Date().toISOString().split('T')[0]} // Must be past date
+                                                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">License Number</label>
-                                                <input
-                                                    required
-                                                    type="text"
-                                                    value={inviteFormData.licenseNumber}
-                                                    onChange={(e) => setInviteFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
-                                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
-                                                    placeholder="DL-XXXXXX"
-                                                />
+
+                                            {/* Employment Details Section */}
+                                            <div className="space-y-3 pt-2">
+                                                <h4 className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Employment Details</h4>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Employment Type *</label>
+                                                        <select
+                                                            required
+                                                            value={inviteFormData.employmentType}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, employmentType: e.target.value as any }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                        >
+                                                            <option value="FULL_TIME">Full-Time</option>
+                                                            <option value="PART_TIME">Part-Time</option>
+                                                            <option value="CONTRACT">Contract</option>
+                                                            <option value="OWNER_OPERATOR">Owner-Operator</option>
+                                                            <option value="FREELANCE">Freelance</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Hire Date *</label>
+                                                        <input
+                                                            required
+                                                            type="date"
+                                                            value={inviteFormData.hireDate}
+                                                            onChange={(e) => setInviteFormData(prev => ({ ...prev, hireDate: e.target.value }))}
+                                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 transition-colors">Years of Experience</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="50"
+                                                        value={inviteFormData.experience}
+                                                        onChange={(e) => setInviteFormData(prev => ({ ...prev, experience: parseInt(e.target.value) || 0 }))}
+                                                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                                                        placeholder="0"
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="pt-4">
                                                 <button

@@ -334,7 +334,7 @@ const AdminTrucks: React.FC = () => {
         title="Truck Management"
         description="Monitor and manage all trucks across the platform"
       >
-        <ModernLoader type="table" />
+        <ModernLoader isLoading={loading} type="table" />
       </AdminPageLayout>
     );
   }

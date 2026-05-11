@@ -274,6 +274,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/trucks">Fleet</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/fleet-manager">Manage</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/drivers">Drivers</a>
+              <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/epod-reports">ePOD Reports</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/maintenance">Maintenance</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/fuel">Fuel</a>
               <a className="text-white/60 hover:text-white text-sm font-semibold transition-all" href="/dashboard/fleet/bids">Load Board</a>
@@ -385,6 +386,7 @@ const FleetOwnerDashboard: React.FC = () => {
               <a href="/dashboard/fleet/trucks" className="hover:text-white px-3 py-2">Fleet</a>
               <a href="/fleet-manager" className="hover:text-white px-3 py-2">Manage</a>
               <a href="/dashboard/fleet/drivers" className="hover:text-white px-3 py-2">Drivers</a>
+              <a href="/dashboard/fleet/epod-reports" className="hover:text-white px-3 py-2">ePOD Reports</a>
               <a href="/dashboard/fleet/maintenance" className="hover:text-white px-3 py-2">Maintenance</a>
               <a href="/dashboard/fleet/fuel" className="hover:text-white px-3 py-2">Fuel</a>
               <a href="/dashboard/fleet/bids" className="hover:text-white px-3 py-2">Load Board</a>

@@ -23,6 +23,7 @@ import {
 import { FaShieldAlt } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface Route {
   id: string;
@@ -413,7 +414,7 @@ const AdminRoutes: React.FC = () => {
 
   // Loading state
   if (routesLoading || tenantsLoading) {
-    return <ModernLoader type="table" />;
+    return <ModernLoader isLoading={true} type="table" />;
   }
 
   // Error state

@@ -40,6 +40,7 @@ import { MessengerModule } from './modules/messenger/messenger.module';
 import { MultiModalModule } from './modules/multi-modal/multi-modal.module';
 import { EventsModule } from './modules/events/events.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { CargoOwnerModule } from './modules/cargo-owner/cargo-owner.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
@@ -91,6 +92,7 @@ import { UserSession } from './entities/user-session.entity';
     EventsModule,
     PaymentsModule,
     MaintenanceModule,
+    CargoOwnerModule,
   ],
   controllers: [AppController],
   providers: [

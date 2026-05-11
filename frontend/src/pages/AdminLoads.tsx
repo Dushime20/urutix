@@ -1,4 +1,4 @@
-﻿// init
+// init
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -381,7 +381,7 @@ const AdminLoads: React.FC = () => {
 
   if (loading) return (
     <AdminPageLayout title="Load Management" description="Monitor and manage all cargo loads">
-      <ModernLoader type="table" />
+      <ModernLoader isLoading={true} type="table" />
     </AdminPageLayout>
   );
 
@@ -405,12 +405,12 @@ const AdminLoads: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Loads',  value: stats.total,     color: 'border-blue-500',   icon: FaBox,        iconColor: 'text-blue-500' },
-            { label: 'Active',       value: stats.active,    color: 'border-indigo-500', icon: FaBox,        iconColor: 'text-indigo-500' },
-            { label: 'Completed',    value: stats.completed, color: 'border-green-500',  icon: FaBox,        iconColor: 'text-green-500' },
-            { label: 'Cancelled',    value: stats.cancelled, color: 'border-red-500',    icon: FaBox,        iconColor: 'text-red-500' },
+            { label: 'Total Loads',  value: stats.total,     color: 'bg-blue-50',   icon: FaBox,        iconColor: 'text-blue-500' },
+            { label: 'Active',       value: stats.active,    color: 'bg-indigo-50', icon: FaBox,        iconColor: 'text-indigo-500' },
+            { label: 'Completed',    value: stats.completed, color: 'bg-green-50',  icon: FaBox,        iconColor: 'text-green-500' },
+            { label: 'Cancelled',    value: stats.cancelled, color: 'bg-red-50',    icon: FaBox,        iconColor: 'text-red-500' },
           ].map(s => (
-            <div key={s.label} className={`bg-white rounded-xl shadow-sm p-5 border-l-4 ${s.color} flex items-center justify-between`}>
+            <div key={s.label} className={`${s.color} rounded-xl shadow-sm p-5 flex items-center justify-between`}>
               <div>
                 <p className="text-sm text-gray-500 font-medium">{s.label}</p>
                 <p className="text-3xl font-black text-gray-900 mt-1">{s.value}</p>

@@ -776,11 +776,32 @@ export class AdminService {
 
   async getDisputes(tenantId: string) {
     const disputes = await this.disputeRepo.find({
-      where: { tenantId } as any,
-      take: 50,
+      where: tenantId ? ({ tenantId } as any) : {},
+      relations: ['raisedBy', 'trip'],
+      take: 200,
       order: { createdAt: 'DESC' } as any,
     });
     return { disputes };
+  }
+
+  async updateDisputeStatus(
+    disputeId: string,
+    status: string,
+    resolution?: string,
+  ) {
+    const dispute = await this.disputeRepo.findOne({
+      where: { id: disputeId } as any,
+      relations: ['raisedBy', 'trip'],
+    });
+    if (!dispute) {
+      throw new Error('Dispute not found');
+    }
+    (dispute as any).status = status;
+    if (resolution) {
+      (dispute as any).resolution = resolution;
+    }
+    const saved = await this.disputeRepo.save(dispute);
+    return { dispute: saved };
   }
 
   async getAudit(tenantId: string) {
@@ -966,7 +987,7 @@ export class AdminService {
     const where = tenantId ? ({ tenantId } as any) : ({} as any);
     const trips = await this.tripRepo.find({
       where,
-      relations: ['load', 'truck', 'driver', 'driver.profile'],
+      relations: ['load', 'truck', 'driver'],
       take: 500,
       order: { createdAt: 'DESC' } as any,
     });

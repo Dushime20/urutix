@@ -66,6 +66,8 @@ const BuyCredits = lazy(() => import('./pages/truck-owner/BuyCredits'));
 const CargoHelpSupport = lazy(() => import('./pages/CargoHelpSupport'));
 const FleetHelpSupport = lazy(() => import('./pages/FleetHelpSupport'));
 const DriverHelpSupport = lazy(() => import('./pages/DriverHelpSupport'));
+const TruckOwnerEpodDashboard = lazy(() => import('./components/FleetDashboard/TruckOwnerEpodDashboard'));
+const CargoOwnerEpodDashboard = lazy(() => import('./components/CargoOwner/CargoOwnerEpodDashboard'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AnalyticsManagement'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminTrucks = lazy(() => import('./pages/AdminTrucks'));
@@ -275,6 +277,7 @@ function App() {
                       <Route path="escrow-management/:bookingId" element={<EscrowManagement />} />
                       <Route path="trip-tracking/:tripId" element={<TripTracking />} />
                       <Route path="delivery-confirmation/:tripId" element={<DeliveryConfirmation />} />
+                      <Route path="epod-reports" element={<CargoOwnerEpodDashboard />} />
                       <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
                       <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
                     </Route>
@@ -347,6 +350,7 @@ function App() {
                       <Route path="trucks" element={<FleetDashboard />} />
                       <Route path="trucks/:truckId/records" element={<TruckRecordsPage />} />
                       <Route path="drivers" element={<FleetDashboard />} />
+                      <Route path="epod-reports" element={<TruckOwnerEpodDashboard />} />
                       <Route path="analytics" element={<FleetAnalytics />} />
                       <Route path="reports" element={<FleetAnalytics />} />
                       <Route path="safety" element={<FleetSafety />} />
