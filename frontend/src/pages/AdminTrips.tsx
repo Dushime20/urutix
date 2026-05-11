@@ -112,12 +112,55 @@ const AdminTrips: React.FC = () => {
     const plannedEnd = new Date(backendTrip.plannedEndTime || backendTrip.estimatedEndTime || Date.now());
     const actualStart = backendTrip.actualStartTime ? new Date(backendTrip.actualStartTime) : null;
     const actualEnd = backendTrip.actualEndTime ? new Date(backendTrip.actualEndTime) : null;
-    
-    // Get pickup and delivery locations from the locations array
-    const pickupLocation = backendTrip.load?.locations?.find((loc: any) => loc.type === 'PICKUP');
-    const deliveryLocation = backendTrip.load?.locations?.find((loc: any) => loc.type === 'DELIVERY');
-    
-    // Calculate progress
+
+    // ── Resolve origin / destination ──────────────────────────────────────────
+    // Priority 1: load.origin / load.destination (direct jsonb columns)
+    // Priority 2: load.locations array (PICKUP / DELIVERY entries)
+    // Priority 3: fallback 'N/A'
+
+    const loadOrigin = backendTrip.load?.origin;       // { city, address, lat, lng, ... }
+    const loadDest   = backendTrip.load?.destination;  // { city, address, lat, lng, ... }
+
+    const pickupFromLocations  = backendTrip.load?.locations?.find((l: any) => l.type === 'PICKUP');
+    const deliveryFromLocations = backendTrip.load?.locations?.find((l: any) => l.type === 'DELIVERY');
+
+    const resolveLabel = (direct: any, fromArr: any): string => {
+      if (direct?.city)    return direct.city;
+      if (direct?.address) return direct.address;
+      if (fromArr?.locationData?.city)    return fromArr.locationData.city;
+      if (fromArr?.locationData?.address) return fromArr.locationData.address;
+      return 'N/A';
+    };
+
+    const originLabel      = resolveLabel(loadOrigin, pickupFromLocations);
+    const destinationLabel = resolveLabel(loadDest,   deliveryFromLocations);
+
+    // ── Calculate distance from coordinates ───────────────────────────────────
+    const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    let calculatedDistance = Number(backendTrip.totalDistance) || Number(backendTrip.distance) || 0;
+
+    if (!calculatedDistance) {
+      const oLat = loadOrigin?.lat ?? pickupFromLocations?.locationData?.lat;
+      const oLng = loadOrigin?.lng ?? pickupFromLocations?.locationData?.lng;
+      const dLat = loadDest?.lat   ?? deliveryFromLocations?.locationData?.lat;
+      const dLng = loadDest?.lng   ?? deliveryFromLocations?.locationData?.lng;
+
+      if (oLat && oLng && dLat && dLng) {
+        calculatedDistance = Math.round(haversineKm(oLat, oLng, dLat, dLng));
+      }
+    }
+
+    // ── Calculate progress ────────────────────────────────────────────────────
     let progress = 0;
     if (status === 'completed') {
       progress = 100;
@@ -134,11 +177,13 @@ const AdminTrips: React.FC = () => {
       status: status as any,
       tenantId: backendTrip.tenantId,
       tenantName: backendTrip.tenant?.name || 'N/A',
-      driverName: backendTrip.driver ? `${backendTrip.driver.firstName || ''} ${backendTrip.driver.lastName || ''}`.trim() || 'Unassigned' : 'Unassigned',
+      driverName: backendTrip.driver
+        ? `${backendTrip.driver.firstName || ''} ${backendTrip.driver.lastName || ''}`.trim() || 'Unassigned'
+        : 'Unassigned',
       truckNumber: backendTrip.truck?.licensePlate || backendTrip.truck?.truckNumber || 'N/A',
-      routeName: backendTrip.load?.routeName || `${pickupLocation?.city || 'Origin'} - ${deliveryLocation?.city || 'Destination'}`,
-      origin: pickupLocation?.city || pickupLocation?.address || 'N/A',
-      destination: deliveryLocation?.city || deliveryLocation?.address || 'N/A',
+      routeName: backendTrip.load?.routeName || `${originLabel} → ${destinationLabel}`,
+      origin: originLabel,
+      destination: destinationLabel,
       cargoType: backendTrip.load?.cargoType || 'General Cargo',
       cargoWeight: backendTrip.load?.weight || 0,
       cargoVolume: backendTrip.load?.volume,
@@ -151,9 +196,11 @@ const AdminTrips: React.FC = () => {
       numberOfPieces: backendTrip.load?.numberOfPieces,
       numberOfPallets: backendTrip.load?.numberOfPallets,
       packagingType: backendTrip.load?.packagingType,
-      distance: backendTrip.totalDistance || backendTrip.distance || 0,
-      estimatedDuration: (plannedEnd.getTime() - plannedStart.getTime()) / (1000 * 60 * 60), // hours
-      actualDuration: actualStart && actualEnd ? (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60) : undefined,
+      distance: calculatedDistance,
+      estimatedDuration: (plannedEnd.getTime() - plannedStart.getTime()) / (1000 * 60 * 60),
+      actualDuration: actualStart && actualEnd
+        ? (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60 * 60)
+        : undefined,
       startTime: backendTrip.actualStartTime || backendTrip.plannedStartTime,
       endTime: backendTrip.actualEndTime,
       createdAt: backendTrip.createdAt,
@@ -163,9 +210,10 @@ const AdminTrips: React.FC = () => {
       fuelCost: Number(backendTrip.fuelCost) || 0,
       tollCost: Number(backendTrip.tollsCost) || 0,
       progress,
-      currentLocation: backendTrip.currentLocation || (status === 'completed' ? deliveryLocation?.city : pickupLocation?.city),
+      currentLocation: backendTrip.currentLocation ||
+        (status === 'completed' ? destinationLabel : originLabel),
       delay: 0,
-      notes: backendTrip.notes
+      notes: backendTrip.notes,
     };
   };
 

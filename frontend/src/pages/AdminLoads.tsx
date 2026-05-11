@@ -94,16 +94,16 @@ const LoadDetailModal: React.FC<LoadDetailModalProps> = ({ load, onClose }) => {
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+        <div className="flex items-center justify-between px-6 py-5 bg-primary-800 text-white">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
               <Package size={22} className="text-white" />
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight">
                 {load.title || 'Load Details'}
               </h2>
-              <p className="text-orange-100 text-sm">
+              <p className="text-primary-200 text-sm">
                 {[origin, destination].filter(Boolean).join(' → ') || 'Route not specified'}
               </p>
             </div>
