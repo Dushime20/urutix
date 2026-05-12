@@ -15,9 +15,11 @@ import {
   TrendingUp,
   Shield,
   Loader2,
-  Box
+  Box,
+  Map as MapIcon
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import MapLocationPicker from '@/components/FleetDashboard/MapLocationPicker';
 
 const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
   <div className="flex flex-col items-center group">
@@ -62,6 +64,7 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editing, setEditing] = useState<Route | null>(null);
+  const [mapPicker, setMapPicker] = useState<'origin' | 'destination' | null>(null);
   const [formData, setFormData] = useState<Partial<Route>>({
     name: '',
     origin: '',
@@ -414,23 +417,45 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Origin Point</label>
-                  <input
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-700 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
-                    value={formData.origin || ''}
-                    onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
-                    placeholder="DEPARTURE NODE"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-700 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
+                      value={formData.origin || ''}
+                      onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                      placeholder="DEPARTURE NODE"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMapPicker('origin')}
+                      title="Pick on map"
+                      className="px-4 py-4 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-emerald-600 dark:text-emerald-400 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest flex-shrink-0"
+                    >
+                      <MapIcon size={16} />
+                      <span className="hidden sm:inline">Map</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Destination</label>
-                  <input
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-700 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
-                    value={formData.destination || ''}
-                    onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                    placeholder="ARRIVAL NODE"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#0f172a] dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-700 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
+                      value={formData.destination || ''}
+                      onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                      placeholder="ARRIVAL NODE"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMapPicker('destination')}
+                      title="Pick on map"
+                      className="px-4 py-4 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800 rounded-2xl text-red-500 dark:text-red-400 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest flex-shrink-0"
+                    >
+                      <MapIcon size={16} />
+                      <span className="hidden sm:inline">Map</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Distance Magnitude (KM)</label>
@@ -483,6 +508,30 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
         </div>
       )}
       {DialogComponent}
+
+      {/* Map Location Pickers */}
+      <MapLocationPicker
+        isOpen={mapPicker === 'origin'}
+        onClose={() => setMapPicker(null)}
+        title="Select Origin Point"
+        color="#10b981"
+        initialValue={formData.origin || ''}
+        onConfirm={(name) => {
+          setFormData((prev) => ({ ...prev, origin: name }));
+          setMapPicker(null);
+        }}
+      />
+      <MapLocationPicker
+        isOpen={mapPicker === 'destination'}
+        onClose={() => setMapPicker(null)}
+        title="Select Destination"
+        color="#ef4444"
+        initialValue={formData.destination || ''}
+        onConfirm={(name) => {
+          setFormData((prev) => ({ ...prev, destination: name }));
+          setMapPicker(null);
+        }}
+      />
     </div>
   );
 };
