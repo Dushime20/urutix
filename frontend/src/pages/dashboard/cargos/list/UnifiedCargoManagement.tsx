@@ -1127,6 +1127,7 @@ const UnifiedCargoManagement = () => {
         isModalOpen && selectedLoad && (
           <CargoDetailsModal
             cargoId={selectedLoad.id}
+            cargoData={selectedLoad}
             isOpen={isModalOpen}
             onClose={handleCloseModal}
           />

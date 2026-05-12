@@ -64,11 +64,31 @@ interface CargoDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   cargoId: string | null;
+  cargoData?: any; // Pass full cargo object from list to avoid extra fetch
 }
 
 import BottomSheet from '@/components/common/BottomSheet';
 
-const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps) => {
+// Helper: safe date format
+const fmtDate = (d: any) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// Helper: extract lat/lng from GeoJSON or plain object
+const extractCoords = (loc: any): { lat: number; lng: number } | null => {
+  if (!loc?.coordinates) return null;
+  const c = loc.coordinates;
+  if (Array.isArray(c.coordinates) && c.coordinates.length >= 2) {
+    return { lng: c.coordinates[0], lat: c.coordinates[1] };
+  }
+  if (c.latitude != null && c.longitude != null) return { lat: c.latitude, lng: c.longitude };
+  if (c.lat != null && c.lng != null) return { lat: c.lat, lng: c.lng };
+  return null;
+};
+
+const CargoDetailsModal = ({ isOpen, onClose, cargoId, cargoData: propCargoData }: CargoDetailsModalProps) => {
   const { user } = useAuth();
   const { confirm, DialogComponent } = useConfirmDialog();
   const [activeTab, setActiveTab] = useState('overview');
@@ -80,14 +100,20 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
     queryFn: async () => {
       if (user?.role === 'CARGO_RECEIVER') {
         const res = await receiverService.getCargoForInspection(cargoId!);
-        return { data: res.cargo };
+        return { data: { load: res.cargo } };
       }
       return loadsAPI.getById(cargoId!);
     },
-    enabled: !!cargoId,
+    // Skip fetch if we already have the full cargo object from the list
+    enabled: !!cargoId && !propCargoData,
     retry: 1,
   });
-  const cargo = response?.data;
+
+  // Use passed cargoData first, then try all known response shapes
+  const cargo = propCargoData
+    ?? response?.data?.load
+    ?? response?.data?.data
+    ?? response?.data;
 
   const { data: documentsData, isLoading: documentsLoading, refetch: refetchDocuments } = useQuery({
     queryKey: ['documents', cargoId, user?.role],
@@ -240,328 +266,157 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
-                      {/* Cargo Information */}
+                      {/* ── Cargo Information ─────────────────────────── */}
                       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-lg font-black text-[#0f172a] tracking-tight">Cargo Information</h3>
+                        <div className="flex items-center justify-between mb-5">
+                          <h3 className="text-base font-black text-[#0f172a] tracking-tight flex items-center gap-2">
+                            <Package className="w-4 h-4 text-[#345E85]" />
+                            Cargo Information
+                          </h3>
                           <div className="text-[#345E85]">{getCargoTypeIcon(cargo.cargoType)}</div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <h4 className="text-md font-medium text-gray-900 mb-2">{cargo.title}</h4>
-                            <p className="text-gray-600 mb-4">{cargo.description || 'No description provided'}</p>
+                        <p className="text-sm text-slate-600 mb-5 leading-relaxed">
+                          {cargo.description || <span className="italic text-slate-400">No description provided</span>}
+                        </p>
 
-                            <div className="space-y-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-blue-50 rounded-xl">
-                                  <Package className="w-4 h-4 text-[#345E85]" />
-                                </div>
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                  Type: {getCargoTypeDisplayName(cargo.cargoType)}
-                                </span>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { icon: Package,    label: 'Type',          value: getCargoTypeDisplayName(cargo.cargoType) },
+                            { icon: Weight,     label: 'Weight',        value: formatWeight(cargo.weight) },
+                            { icon: Volume,     label: 'Volume',        value: formatVolume(cargo.volume) },
+                            { icon: DollarSign, label: 'Cargo Value',   value: formatCurrency(cargo.loadValue, cargo.currencyCode) },
+                            { icon: TrendingUp, label: 'Offered Price', value: formatCurrency(cargo.offeredPrice, cargo.currencyCode) },
+                            { icon: Shield,     label: 'Insurance',     value: formatCurrency(cargo.insuranceValue, cargo.currencyCode) },
+                            { icon: Zap,        label: 'Urgency',       value: cargo.urgencyLevel || 'NORMAL' },
+                            { icon: Globe,      label: 'Currency',      value: cargo.currencyCode || 'USD' },
+                          ].map(({ icon: Icon, label, value }) => (
+                            <div key={label} className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl">
+                              <div className="p-1.5 bg-white rounded-xl shadow-sm flex-shrink-0">
+                                <Icon className="w-3.5 h-3.5 text-[#345E85]" />
                               </div>
-
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-blue-50 rounded-xl">
-                                  <Weight className="w-4 h-4 text-[#345E85]" />
-                                </div>
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                  Weight: {formatWeight(cargo.weight)}
-                                </span>
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+                                <p className="text-xs font-bold text-[#0f172a] truncate">{value}</p>
                               </div>
-
-                              {cargo.volume && (
-                                <div className="flex items-center space-x-3">
-                                  <div className="p-2 bg-blue-50 rounded-xl">
-                                    <Volume className="w-4 h-4 text-[#345E85]" />
-                                  </div>
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                    Volume: {formatVolume(cargo.volume)}
-                                  </span>
-                                </div>
-                              )}
-
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-blue-50 rounded-xl">
-                                  <DollarSign className="w-4 h-4 text-[#345E85]" />
-                                </div>
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                  Value: {formatCurrency(cargo.loadValue, cargo.currencyCode)}
-                                </span>
-                              </div>
-
-                              {cargo.offeredPrice && (
-                                <div className="flex items-center space-x-3">
-                                  <div className="p-2 bg-blue-50 rounded-xl">
-                                    <TrendingUp className="w-4 h-4 text-[#345E85]" />
-                                  </div>
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                    Offered Price: {formatCurrency(cargo.offeredPrice, cargo.currencyCode)}
-                                  </span>
-                                </div>
-                              )}
-
-                              {cargo.urgencyLevel && (
-                                <div className="flex items-center space-x-3">
-                                  <div className="p-2 bg-blue-50 rounded-xl">
-                                    <Zap className="w-4 h-4 text-[#345E85]" />
-                                  </div>
-                                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                    Urgency: <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${getUrgencyColor(cargo.urgencyLevel)}`}>
-                                      {cargo.urgencyLevel}
-                                    </span>
-                                  </span>
-                                </div>
-                              )}
                             </div>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium text-gray-900 mb-3">Special Requirements</h4>
-                            <div className="space-y-2">
-                              {getSpecialRequirements(cargo).length > 0 ? (
-                                getSpecialRequirements(cargo).map((req, index) => (
-                                  <div key={index} className="flex items-center space-x-2">
-                                    <AlertTriangle className="w-4 h-4 text-orange-500" />
-                                    <span className="text-sm text-gray-600">{req}</span>
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-sm text-gray-500">No special requirements</p>
-                              )}
-                            </div>
-
-                            {/* Additional Cargo Details */}
-                            {(cargo.length || cargo.width || cargo.height) && (
-                              <div className="mt-4">
-                                <h4 className="font-medium text-gray-900 mb-2">Dimensions</h4>
-                                <div className="space-y-1 text-sm text-gray-600">
-                                  {cargo.length && <div>Length: {cargo.length} cm</div>}
-                                  {cargo.width && <div>Width: {cargo.width} cm</div>}
-                                  {cargo.height && <div>Height: {cargo.height} cm</div>}
-                                  {cargo.isStackable && <div className="text-green-600">✓ Stackable</div>}
-                                </div>
-                              </div>
-                            )}
-
-                            {(cargo.temperatureMin || cargo.temperatureMax) && (
-                              <div className="mt-4">
-                                <h4 className="font-medium text-gray-900 mb-2">Temperature Range</h4>
-                                <div className="text-sm text-gray-600">
-                                  {cargo.temperatureMin}°C - {cargo.temperatureMax}°C
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          ))}
                         </div>
                       </div>
 
-                      {/* Locations */}
+                      {/* ── Special Requirements ──────────────────────── */}
                       <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-                        <h3 className="text-lg font-black text-[#0f172a] tracking-tight mb-6 flex items-center">
-                          <MapPin className="w-5 h-5 mr-3 text-[#345E85]" />
+                        <h3 className="text-base font-black text-[#0f172a] tracking-tight flex items-center gap-2 mb-4">
+                          <AlertTriangle className="w-4 h-4 text-orange-500" />
+                          Special Requirements
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { key: 'isFragile',                       label: '🫙 Fragile' },
+                            { key: 'isHazardous',                     label: '☢️ Hazardous' },
+                            { key: 'requiresRefrigeration',           label: '❄️ Refrigeration' },
+                            { key: 'isTimeCritical',                  label: '⏱ Time Critical' },
+                            { key: 'requiresGpsMonitoring',           label: '📡 GPS Monitoring' },
+                            { key: 'requiresTemperatureMonitoring',   label: '🌡 Temp Monitoring' },
+                            { key: 'requiresLowClearanceRoute',       label: '🚧 Low Clearance' },
+                            { key: 'requiresEscortVehicle',           label: '🚔 Escort Vehicle' },
+                            { key: 'requiresPreShipmentInspection',   label: '🔍 Pre-Shipment Inspection' },
+                            { key: 'requiresDeliveryInspection',      label: '✅ Delivery Inspection' },
+                            { key: 'requiresPhotographicDocumentation', label: '📷 Photo Documentation' },
+                          ].filter(r => cargo[r.key]).map(r => (
+                            <span key={r.key} className="px-3 py-1.5 bg-orange-50 border border-orange-200 text-orange-700 rounded-xl text-[10px] font-black uppercase tracking-wider">
+                              {r.label}
+                            </span>
+                          ))}
+                          {[
+                            'isFragile','isHazardous','requiresRefrigeration','isTimeCritical',
+                            'requiresGpsMonitoring','requiresTemperatureMonitoring','requiresLowClearanceRoute',
+                            'requiresEscortVehicle','requiresPreShipmentInspection','requiresDeliveryInspection',
+                            'requiresPhotographicDocumentation',
+                          ].every(k => !cargo[k]) && (
+                            <span className="text-sm text-slate-400 italic">No special requirements</span>
+                          )}
+                        </div>
+
+                        {/* Loading / Unloading instructions */}
+                        {(cargo.loadingInstructions || cargo.unloadingInstructions) && (
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {cargo.loadingInstructions && (
+                              <div className="p-3 bg-slate-50 rounded-2xl">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Loading Instructions</p>
+                                <p className="text-xs text-slate-700">{cargo.loadingInstructions}</p>
+                              </div>
+                            )}
+                            {cargo.unloadingInstructions && (
+                              <div className="p-3 bg-slate-50 rounded-2xl">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Unloading Instructions</p>
+                                <p className="text-xs text-slate-700">{cargo.unloadingInstructions}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ── Route Intelligence ────────────────────────── */}
+                      <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                        <h3 className="text-base font-black text-[#0f172a] tracking-tight flex items-center gap-2 mb-5">
+                          <Navigation className="w-4 h-4 text-[#345E85]" />
                           Route Intelligence
                         </h3>
 
-                        {(() => {
-                          const enrichedDetails = getEnrichedLocationDetails(cargo);
-                          return (
-                            <div className="space-y-4">
-                              {/* Enhanced OSM Location Data */}
-                              {enrichedDetails && (
-                                <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                  <div className="flex items-center space-x-2 mb-3">
-                                    <Globe className="w-4 h-4 text-blue-600" />
-                                    <span className="text-sm font-medium text-blue-800">Real Location Data (OpenStreetMap)</span>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Pickup Location Enhanced */}
-                                    {enrichedDetails.pickup && (
-                                      <div className="space-y-3">
-                                        <div className="flex items-center space-x-2">
-                                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                          <h4 className="font-medium text-gray-900">Pickup Location</h4>
-                                        </div>
-
-                                        <div className="space-y-2 text-sm">
-                                          <div><strong>Address:</strong> {enrichedDetails.pickup.fullAddress || enrichedDetails.pickup.address}</div>
-                                          {enrichedDetails.pickup.administrativeAreas && (
-                                            <>
-                                              <div><strong>District:</strong> {enrichedDetails.pickup.administrativeAreas.district}</div>
-                                              <div><strong>Province:</strong> {enrichedDetails.pickup.administrativeAreas.province}</div>
-                                              <div><strong>Country:</strong> {enrichedDetails.pickup.administrativeAreas.county}</div>
-                                            </>
-                                          )}
-                                          {enrichedDetails.pickup.locationCategory && (
-                                            <div><strong>Category:</strong> {enrichedDetails.pickup.locationCategory}</div>
-                                          )}
-                                          {enrichedDetails.pickup.accessType && (
-                                            <div><strong>Access Type:</strong> {enrichedDetails.pickup.accessType}</div>
-                                          )}
-                                          {enrichedDetails.pickup.securityLevel && (
-                                            <div><strong>Security:</strong> {enrichedDetails.pickup.securityLevel}</div>
-                                          )}
-                                          {enrichedDetails.pickup.specialInstructions && (
-                                            <div><strong>Instructions:</strong> {enrichedDetails.pickup.specialInstructions}</div>
-                                          )}
-                                        </div>
-
-                                        {/* Nearby POIs for Pickup */}
-                                        {enrichedDetails.pickup.nearbyPOIs && (
-                                          <div className="mt-3 pt-3 border-t border-blue-200">
-                                            <div className="text-xs font-medium text-blue-800 mb-2">Nearby Points of Interest:</div>
-                                            <div className="text-xs text-gray-600 space-y-1">
-                                              {enrichedDetails.pickup.nearbyPOIs.transportHubs?.length > 0 && (
-                                                <div>• {enrichedDetails.pickup.nearbyPOIs.transportHubs.length} transport hubs</div>
-                                              )}
-                                              {enrichedDetails.pickup.nearbyPOIs.commercialAreas?.length > 0 && (
-                                                <div>• {enrichedDetails.pickup.nearbyPOIs.commercialAreas.length} commercial areas</div>
-                                              )}
-                                              {enrichedDetails.pickup.nearbyPOIs.serviceFacilities?.length > 0 && (
-                                                <div>• {enrichedDetails.pickup.nearbyPOIs.serviceFacilities.length} service facilities</div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {/* Delivery Location Enhanced */}
-                                    {enrichedDetails.delivery && (
-                                      <div className="space-y-3">
-                                        <div className="flex items-center space-x-2">
-                                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                          <h4 className="font-medium text-gray-900">Delivery Location</h4>
-                                        </div>
-
-                                        <div className="space-y-2 text-sm">
-                                          <div><strong>Address:</strong> {enrichedDetails.delivery.fullAddress || enrichedDetails.delivery.address}</div>
-                                          {enrichedDetails.delivery.administrativeAreas && (
-                                            <>
-                                              <div><strong>District:</strong> {enrichedDetails.delivery.administrativeAreas.district}</div>
-                                              <div><strong>Province:</strong> {enrichedDetails.delivery.administrativeAreas.province}</div>
-                                              <div><strong>Country:</strong> {enrichedDetails.delivery.administrativeAreas.county}</div>
-                                            </>
-                                          )}
-                                          {enrichedDetails.delivery.locationCategory && (
-                                            <div><strong>Category:</strong> {enrichedDetails.delivery.locationCategory}</div>
-                                          )}
-                                          {enrichedDetails.delivery.accessType && (
-                                            <div><strong>Access Type:</strong> {enrichedDetails.delivery.accessType}</div>
-                                          )}
-                                          {enrichedDetails.delivery.securityLevel && (
-                                            <div><strong>Security:</strong> {enrichedDetails.delivery.securityLevel}</div>
-                                          )}
-                                          {enrichedDetails.delivery.specialInstructions && (
-                                            <div><strong>Instructions:</strong> {enrichedDetails.delivery.specialInstructions}</div>
-                                          )}
-                                        </div>
-
-                                        {/* Nearby POIs for Delivery */}
-                                        {enrichedDetails.delivery.nearbyPOIs && (
-                                          <div className="mt-3 pt-3 border-t border-blue-200">
-                                            <div className="text-xs font-medium text-blue-800 mb-2">Nearby Points of Interest:</div>
-                                            <div className="text-xs text-gray-600 space-y-1">
-                                              {enrichedDetails.delivery.nearbyPOIs.transportHubs?.length > 0 && (
-                                                <div>• {enrichedDetails.delivery.nearbyPOIs.transportHubs.length} transport hubs</div>
-                                              )}
-                                              {enrichedDetails.delivery.nearbyPOIs.commercialAreas?.length > 0 && (
-                                                <div>• {enrichedDetails.delivery.nearbyPOIs.commercialAreas.length} commercial areas</div>
-                                              )}
-                                              {enrichedDetails.delivery.nearbyPOIs.serviceFacilities?.length > 0 && (
-                                                <div>• {enrichedDetails.delivery.nearbyPOIs.serviceFacilities.length} service facilities</div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Pickup */}
+                          {(() => {
+                            const loc = cargo.pickupLocation;
+                            const coords = extractCoords(loc);
+                            return (
+                              <div className="border border-emerald-100 bg-emerald-50/40 rounded-2xl p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0" />
+                                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Pickup Location</span>
                                 </div>
-                              )}
-
-                              {/* Original Location Data (Fallback) */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Pickup Location */}
-                                <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                                  <div className="flex items-center space-x-2 mb-3">
-                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <h4 className="font-medium text-gray-900">Pickup Location</h4>
-                                  </div>
-
-                                  <div className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <MapPin className="w-4 h-4 text-gray-400" />
-                                      <span className="text-sm text-gray-600">
-                                        {cargo.pickupLocation?.address || cargo.pickupLocation?.name || 'Address not specified'}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center space-x-2">
-                                      <Calendar className="w-4 h-4 text-gray-400" />
-                                      <span className="text-sm text-gray-600">
-                                        Date: {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified'}
-                                      </span>
-                                    </div>
-
-                                    {cargo.pickupLocation?.coordinates && (
-                                      <div className="text-xs text-gray-500 font-mono">
-                                        {(() => {
-                                          const c = cargo.pickupLocation.coordinates;
-                                          // GeoJSON: coordinates[0]=lng, coordinates[1]=lat
-                                          const lng = Array.isArray(c.coordinates) ? c.coordinates[0] : c.longitude ?? c.lng;
-                                          const lat = Array.isArray(c.coordinates) ? c.coordinates[1] : c.latitude ?? c.lat;
-                                          return lat != null && lng != null
-                                            ? `📍 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`
-                                            : null;
-                                        })()}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Delivery Location */}
-                                <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                                  <div className="flex items-center space-x-2 mb-3">
-                                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                    <h4 className="font-medium text-gray-900">Delivery Location</h4>
-                                  </div>
-
-                                  <div className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <MapPin className="w-4 h-4 text-gray-400" />
-                                      <span className="text-sm text-gray-600">
-                                        {cargo.deliveryLocation?.address || cargo.deliveryLocation?.name || 'Address not specified'}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center space-x-2">
-                                      <Calendar className="w-4 h-4 text-gray-400" />
-                                      <span className="text-sm text-gray-600">
-                                        Date: {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified'}
-                                      </span>
-                                    </div>
-
-                                    {cargo.deliveryLocation?.coordinates && (
-                                      <div className="text-xs text-gray-500 font-mono">
-                                        {(() => {
-                                          const c = cargo.deliveryLocation.coordinates;
-                                          const lng = Array.isArray(c.coordinates) ? c.coordinates[0] : c.longitude ?? c.lng;
-                                          const lat = Array.isArray(c.coordinates) ? c.coordinates[1] : c.latitude ?? c.lat;
-                                          return lat != null && lng != null
-                                            ? `📍 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`
-                                            : null;
-                                        })()}
-                                      </div>
-                                    )}
-                                  </div>
+                                <p className="text-sm font-bold text-[#0f172a] mb-1 leading-snug">
+                                  {loc?.address || loc?.name || <span className="text-slate-400 font-normal italic">Not specified</span>}
+                                </p>
+                                {coords && (
+                                  <p className="text-[10px] text-slate-400 font-mono mt-1">
+                                    📍 {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-emerald-100">
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                  <span className="text-xs text-slate-600 font-medium">{fmtDate(cargo.pickupDate)}</span>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })()}
+                            );
+                          })()}
+
+                          {/* Delivery */}
+                          {(() => {
+                            const loc = cargo.deliveryLocation;
+                            const coords = extractCoords(loc);
+                            return (
+                              <div className="border border-red-100 bg-red-50/40 rounded-2xl p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0" />
+                                  <span className="text-[10px] font-black text-red-700 uppercase tracking-widest">Delivery Location</span>
+                                </div>
+                                <p className="text-sm font-bold text-[#0f172a] mb-1 leading-snug">
+                                  {loc?.address || loc?.name || <span className="text-slate-400 font-normal italic">Not specified</span>}
+                                </p>
+                                {coords && (
+                                  <p className="text-[10px] text-slate-400 font-mono mt-1">
+                                    📍 {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-red-100">
+                                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                  <span className="text-xs text-slate-600 font-medium">{fmtDate(cargo.deliveryDate)}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </div>
 
@@ -587,15 +442,19 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Created</span>
-                              <p className="text-xs font-black text-[#0f172a]">
-                                {cargo.createdAt ? new Date(cargo.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
-                              </p>
+                              <p className="text-xs font-black text-[#0f172a]">{fmtDate(cargo.createdAt)}</p>
                             </div>
                             <div>
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Updated</span>
-                              <p className="text-xs font-black text-[#0f172a]">
-                                {cargo.updatedAt ? new Date(cargo.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
-                              </p>
+                              <p className="text-xs font-black text-[#0f172a]">{fmtDate(cargo.updatedAt)}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pickup Date</span>
+                              <p className="text-xs font-black text-[#0f172a]">{fmtDate(cargo.pickupDate)}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Delivery Date</span>
+                              <p className="text-xs font-black text-[#0f172a]">{fmtDate(cargo.deliveryDate)}</p>
                             </div>
                           </div>
 
