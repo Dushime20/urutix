@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
     ports:
-      - "${REDIS_PORT:-6380}:6379"
+      - "6399:6379"
     volumes:
       - redis_data:/data
     networks:
