@@ -100,9 +100,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Neural Overview', path: `${basePath}/analytics` },
             { label: 'Operational Insights', path: `${basePath}/analytics/operational` },
-            { label: 'Market Intelligence', path: `${basePath}/analytics/advanced` },
-            { label: 'Capital Management', path: `${basePath}/financial` },
-            { label: 'Freight Credits', path: `${basePath}/loan-requests` },
             { label: 'Invoice Vault', path: `${basePath}/invoices` },
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
           ]
