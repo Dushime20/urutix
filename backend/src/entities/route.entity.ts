@@ -42,6 +42,26 @@ export class Route {
   @Column({ length: 100 })
   destination: string;
 
+  // ── Exact geo-coordinates for origin ──────────────────────────────────────
+  @Column('decimal', { precision: 10, scale: 7, nullable: true, name: 'origin_lat' })
+  originLat?: number;
+
+  @Column('decimal', { precision: 10, scale: 7, nullable: true, name: 'origin_lng' })
+  originLng?: number;
+
+  @Column({ length: 255, nullable: true, name: 'origin_address' })
+  originAddress?: string;
+
+  // ── Exact geo-coordinates for destination ─────────────────────────────────
+  @Column('decimal', { precision: 10, scale: 7, nullable: true, name: 'destination_lat' })
+  destinationLat?: number;
+
+  @Column('decimal', { precision: 10, scale: 7, nullable: true, name: 'destination_lng' })
+  destinationLng?: number;
+
+  @Column({ length: 255, nullable: true, name: 'destination_address' })
+  destinationAddress?: string;
+
   @Column('decimal', { precision: 10, scale: 2 })
   distance: number; // in kilometers
 

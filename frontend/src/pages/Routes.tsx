@@ -65,10 +65,20 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editing, setEditing] = useState<Route | null>(null);
   const [mapPicker, setMapPicker] = useState<'origin' | 'destination' | null>(null);
+
+  // Store exact coordinates for origin and destination
+  const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [formData, setFormData] = useState<Partial<Route>>({
     name: '',
     origin: '',
     destination: '',
+    originLat: undefined,
+    originLng: undefined,
+    originAddress: undefined,
+    destinationLat: undefined,
+    destinationLng: undefined,
+    destinationAddress: undefined,
     distance: 0,
     estimatedTime: 0,
     status: 'active',
@@ -96,10 +106,18 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
 
   const resetForm = () => {
     setEditing(null);
+    setOriginCoords(null);
+    setDestinationCoords(null);
     setFormData({
       name: '',
       origin: '',
       destination: '',
+      originLat: undefined,
+      originLng: undefined,
+      originAddress: undefined,
+      destinationLat: undefined,
+      destinationLng: undefined,
+      destinationAddress: undefined,
       distance: 0,
       estimatedTime: 0,
       status: 'active',
@@ -516,8 +534,21 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
         title="Select Origin Point"
         color="#10b981"
         initialValue={formData.origin || ''}
-        onConfirm={(name) => {
-          setFormData((prev) => ({ ...prev, origin: name }));
+        onConfirm={(name, lat, lng) => {
+          setFormData((prev) => {
+            const newData: Partial<Route> = {
+              ...prev,
+              origin: name,
+              originLat: lat,
+              originLng: lng,
+              originAddress: name,
+            };
+            if (destinationCoords) {
+              newData.distance = haversineKm(lat, lng, destinationCoords.lat, destinationCoords.lng);
+            }
+            return newData;
+          });
+          setOriginCoords({ lat, lng });
           setMapPicker(null);
         }}
       />
@@ -527,8 +558,21 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
         title="Select Destination"
         color="#ef4444"
         initialValue={formData.destination || ''}
-        onConfirm={(name) => {
-          setFormData((prev) => ({ ...prev, destination: name }));
+        onConfirm={(name, lat, lng) => {
+          setFormData((prev) => {
+            const newData: Partial<Route> = {
+              ...prev,
+              destination: name,
+              destinationLat: lat,
+              destinationLng: lng,
+              destinationAddress: name,
+            };
+            if (originCoords) {
+              newData.distance = haversineKm(originCoords.lat, originCoords.lng, lat, lng);
+            }
+            return newData;
+          });
+          setDestinationCoords({ lat, lng });
           setMapPicker(null);
         }}
       />

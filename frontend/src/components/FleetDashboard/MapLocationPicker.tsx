@@ -137,7 +137,9 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
 
   const handleConfirm = () => {
     if (!markerPos) return;
-    onConfirm(locationName || searchQuery, markerPos[0], markerPos[1]);
+    // Store full address + exact coordinates so the backend has the precise location
+    const fullLocation = `${locationName} (${markerPos[0].toFixed(6)}, ${markerPos[1].toFixed(6)})`;
+    onConfirm(fullLocation, markerPos[0], markerPos[1]);
     onClose();
   };
 
@@ -241,15 +243,18 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
             {/* Selected location preview */}
             <div className="flex-1 min-w-0">
               {markerPos ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-start gap-2">
                   <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
                     style={{ backgroundColor: color }}
                   />
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{locationName}</p>
                     <p className="text-[10px] text-gray-400 font-mono">
-                      {markerPos[0].toFixed(5)}, {markerPos[1].toFixed(5)}
+                      {markerPos[0].toFixed(6)}, {markerPos[1].toFixed(6)}
+                    </p>
+                    <p className="text-[9px] text-gray-300 dark:text-gray-600 mt-0.5 truncate">
+                      Saves as: {locationName} ({markerPos[0].toFixed(6)}, {markerPos[1].toFixed(6)})
                     </p>
                   </div>
                 </div>

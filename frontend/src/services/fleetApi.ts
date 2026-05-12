@@ -145,6 +145,13 @@ export interface Route {
   name: string;
   origin: string;
   destination: string;
+  // Exact geo-coordinates stored in DB
+  originLat?: number;
+  originLng?: number;
+  originAddress?: string;
+  destinationLat?: number;
+  destinationLng?: number;
+  destinationAddress?: string;
   distance: number; // in kilometers
   estimatedTime: number; // in hours
   routeType?: 'highway' | 'city' | 'rural' | 'mixed';
