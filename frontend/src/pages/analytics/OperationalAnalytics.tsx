@@ -18,110 +18,106 @@ import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { EnhancedTable, type Column } from '../../components/EnliteUI/Tables/EnhancedTable';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi } from '../../services/analyticsApi';
+import DataCard from '../../components/EnliteUI/Cards/DataCard';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+// ── Currency ──────────────────────────────────────────────────────────────────
+const CURRENCY_SYMBOL = '$';
+const fmtMoney = (v: number | null | undefined) => {
+  if (v == null || isNaN(v)) return `${CURRENCY_SYMBOL}—`;
+  return `${CURRENCY_SYMBOL}${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+};
+const fmtPct  = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : `${v.toFixed(1)}%`;
+const fmtNum  = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : v.toLocaleString('en-US');
+const fmtHrs  = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : `${v.toFixed(1)} h`;
+// ─────────────────────────────────────────────────────────────────────────────
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
+interface TabPanelProps { children?: React.ReactNode; index: number; value: number; }
+function TabPanel({ children, value, index, ...other }: TabPanelProps) {
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`operational-tabpanel-${index}`}
-      aria-labelledby={`operational-tab-${index}`}
-      {...other}
-    >
+    <div role="tabpanel" hidden={value !== index} {...other}>
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
 
-import DataCard from '../../components/EnliteUI/Cards/DataCard';
-
 export const OperationalAnalytics: React.FC = () => {
   const { user } = useAuth();
   const [tabValue, setTabValue] = useState(0);
 
-  // Fetch operational analytics data
   const { data: performanceData, isLoading: performanceLoading, error: performanceError } = useQuery({
     queryKey: ['analytics', 'operational', 'performance', user?.tenantId],
     queryFn: () => analyticsApi.getOperationalPerformance(),
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 2,
   });
 
   const { data: routeData, isLoading: routeLoading } = useQuery({
     queryKey: ['analytics', 'operational', 'routes', user?.tenantId],
     queryFn: () => analyticsApi.getRoutePerformance(),
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 2,
   });
 
   const { data: carrierData, isLoading: carrierLoading } = useQuery({
     queryKey: ['analytics', 'operational', 'carriers', user?.tenantId],
     queryFn: () => analyticsApi.getCarrierPerformance(),
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 2,
   });
 
   const { data: benchmarkData, isLoading: benchmarkLoading } = useQuery({
     queryKey: ['analytics', 'operational', 'benchmarks', user?.tenantId],
     queryFn: () => analyticsApi.getIndustryBenchmarks(),
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 2,
   });
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
 
   if (performanceError) {
     return (
       <div className="p-6">
         <Alert severity="error" sx={{ borderRadius: '12px' }}>
-          Failed to load operational analytics: {(performanceError as any).message}
+          Failed to load operational analytics: {(performanceError as any)?.message ?? 'Unknown error'}
         </Alert>
       </div>
     );
   }
 
-  // Route performance table columns
+  // ── Table columns ───────────────────────────────────────────────────────────
   const routeColumns: Column[] = [
-    { key: 'route', label: 'TRANSIT ROUTE', width: '200px' },
-    { key: 'shipmentCount', label: 'VOLUME', width: '100px', align: 'right' },
-    { key: 'averageCost', label: 'AVG COST', width: '120px', align: 'right', render: (value: number) => `₦${value?.toLocaleString()}` },
-    { key: 'onTimeRate', label: 'O.T.P %', width: '100px', align: 'right', render: (value: number) => `${value?.toFixed(1)}%` },
-    { key: 'averageTransitTime', label: 'TIME (HRS)', width: '140px', align: 'right', render: (value: number) => value?.toFixed(1) },
+    { key: 'route',               label: 'TRANSIT ROUTE',  width: '200px' },
+    { key: 'shipmentCount',       label: 'VOLUME',         width: '100px', align: 'right', render: (v) => fmtNum(v) },
+    { key: 'averageCost',         label: `AVG COST (${CURRENCY_SYMBOL})`, width: '140px', align: 'right', render: (v) => fmtMoney(v) },
+    { key: 'onTimeRate',          label: 'ON-TIME %',      width: '110px', align: 'right', render: (v) => fmtPct(v) },
+    { key: 'averageTransitTime',  label: 'TRANSIT TIME',   width: '130px', align: 'right', render: (v) => fmtHrs(v) },
   ];
 
-  // Carrier performance table columns
   const carrierColumns: Column[] = [
-    { key: 'carrierId', label: 'PROVIDER ID', width: '150px' },
-    { key: 'totalShipments', label: 'FLOW', width: '100px', align: 'right' },
-    { key: 'onTimeRate', label: 'O.T.P %', width: '100px', align: 'right', render: (value: number) => `${value?.toFixed(1)}%` },
-    { key: 'averageRating', label: 'RATING', width: '100px', align: 'right', render: (value: number) => value?.toFixed(1) },
-    { key: 'reliabilityScore', label: 'TRUST INDEX', width: '100px', align: 'right', render: (value: number) => `${value}/100` },
-    { key: 'recommendation', label: 'STATUS', width: '120px' },
+    { key: 'carrierId',       label: 'PROVIDER ID',  width: '150px' },
+    { key: 'totalShipments',  label: 'SHIPMENTS',    width: '110px', align: 'right', render: (v) => fmtNum(v) },
+    { key: 'onTimeRate',      label: 'ON-TIME %',    width: '110px', align: 'right', render: (v) => fmtPct(v) },
+    { key: 'averageRating',   label: 'RATING',       width: '100px', align: 'right', render: (v) => v?.toFixed(1) ?? '—' },
+    { key: 'reliabilityScore',label: 'TRUST INDEX',  width: '120px', align: 'right', render: (v) => v != null ? `${v}/100` : '—' },
+    { key: 'recommendation',  label: 'STATUS',       width: '130px' },
   ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Performance Summary Matrix */}
+
+      {/* ── Performance Summary ─────────────────────────────────────────────── */}
       {performanceLoading ? (
         <Grid container spacing={3}>
-           {[1,2,3,4].map(i => (
-             <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-               <div className="h-32 bg-white rounded-3xl border border-slate-100 animate-pulse" />
-             </Grid>
-           ))}
+          {[1,2,3,4].map(i => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+              <div className="h-32 bg-white rounded-3xl border border-slate-100 animate-pulse" />
+            </Grid>
+          ))}
         </Grid>
-      ) : performanceData && (
+      ) : performanceData ? (
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="TOTAL SHIPMENTS"
-              value={performanceData.totalShipments}
+              value={fmtNum(performanceData.totalShipments)}
               subtitle="TOTAL COMPLETED"
               icon={<ShippingIcon />}
               color="primary"
@@ -130,7 +126,7 @@ export const OperationalAnalytics: React.FC = () => {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="ON-TIME RATE"
-              value={`${performanceData.onTimeRate?.toFixed(1) || 0}%`}
+              value={fmtPct(performanceData.onTimeRate)}
               subtitle="ON-TIME PERFORMANCE"
               icon={<ScheduleIcon />}
               color="success"
@@ -138,8 +134,8 @@ export const OperationalAnalytics: React.FC = () => {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              title="CARRIERS"
-              value={performanceData.activeCarriers}
+              title="ACTIVE CARRIERS"
+              value={fmtNum(performanceData.activeCarriers)}
               subtitle="ACTIVE PROVIDERS"
               icon={<CarrierIcon />}
               color="secondary"
@@ -148,112 +144,104 @@ export const OperationalAnalytics: React.FC = () => {
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               title="EFFICIENCY"
-              value={`${performanceData.efficiencyScore?.toFixed(0) || 0}/100`}
+              value={performanceData.efficiencyScore != null ? `${performanceData.efficiencyScore.toFixed(0)}/100` : '—'}
               subtitle="OVERALL RATING"
               icon={<TrendingUpIcon />}
               color="warning"
             />
           </Grid>
         </Grid>
+      ) : (
+        <div className="p-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200 text-center">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            No performance data available yet. Complete shipments to see metrics.
+          </p>
+        </div>
       )}
 
-      {/* Operational Performance Details */}
-      <DataCard
-        title="OPERATIONAL PERFORMANCE"
-        subtitle="View details for routes and carriers"
-      >
+      {/* ── Detail Tabs ─────────────────────────────────────────────────────── */}
+      <DataCard title="OPERATIONAL PERFORMANCE" subtitle="Routes, carriers and market comparison">
         <Box sx={{ mt: 2 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'slate.100', mb: 3 }}>
-            <Tabs 
-              value={tabValue} 
-              onChange={handleTabChange} 
-              sx={{
-                '& .MuiTab-root': {
-                  fontSize: '9px',
-                  fontWeight: '900',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  minHeight: '48px',
-                  color: 'slate.400'
-                }
-              }}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+            <Tabs
+              value={tabValue}
+              onChange={(_, v) => setTabValue(v)}
+              sx={{ '& .MuiTab-root': { fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', minHeight: '48px' } }}
             >
-              <Tab label="Route performance" />
-              <Tab label="Carrier analysis" />
-              <Tab label="Market comparison" />
+              <Tab label="Route Performance" />
+              <Tab label="Carrier Analysis" />
+              <Tab label="Market Comparison" />
             </Tabs>
           </Box>
 
+          {/* Route Performance */}
           <TabPanel value={tabValue} index={0}>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Route Performance Details</h5>
-              </div>
+              <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Route Performance Details</h5>
               <EnhancedTable
                 data={routeData || []}
                 columns={routeColumns}
                 loading={routeLoading}
-                emptyMessage="No route data available in current cycle"
+                emptyMessage="No route data available yet"
               />
             </div>
           </TabPanel>
 
+          {/* Carrier Analysis */}
           <TabPanel value={tabValue} index={1}>
             <div className="space-y-4">
-               <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Carrier Performance Details</h5>
+              <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Carrier Performance Details</h5>
               <EnhancedTable
                 data={carrierData || []}
                 columns={carrierColumns}
                 loading={carrierLoading}
-                emptyMessage="No provider data available in current cycle"
+                emptyMessage="No carrier data available yet"
               />
             </div>
           </TabPanel>
 
+          {/* Market Comparison */}
           <TabPanel value={tabValue} index={2}>
             <div className="space-y-6">
               <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Market Comparison</h5>
               {benchmarkLoading ? (
-                <Box display="flex" justifyContent="center" p={4}>
-                  <CircularProgress size={24} />
-                </Box>
+                <Box display="flex" justifyContent="center" p={4}><CircularProgress size={24} /></Box>
               ) : benchmarkData ? (
                 <Grid container spacing={3}>
+                  {/* Your performance */}
                   <Grid size={{ xs: 12, md: 6 }}>
                     <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-                      <h6 className="text-[10px] font-black text-[#345E85] uppercase mb-4 tracking-widest">Internal Performance</h6>
+                      <h6 className="text-[10px] font-black text-[#345E85] uppercase mb-4 tracking-widest">Your Performance</h6>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">Avg Cost</span>
-                          <span className="text-[11px] font-black text-slate-900">₦{benchmarkData.userPerformance?.averageCost?.toLocaleString() || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">On-time arrival</span>
-                          <span className="text-[11px] font-black text-slate-900">{benchmarkData.userPerformance?.onTimeRate?.toFixed(1) || 0}%</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">Average time</span>
-                          <span className="text-[11px] font-black text-slate-900">{benchmarkData.userPerformance?.averageTransitTime?.toFixed(1) || 0} H</span>
-                        </div>
+                        {[
+                          { label: 'Avg Cost',     value: fmtMoney(benchmarkData.userPerformance?.averageCost) },
+                          { label: 'On-Time Rate', value: fmtPct(benchmarkData.userPerformance?.onTimeRate) },
+                          { label: 'Avg Transit',  value: fmtHrs(benchmarkData.userPerformance?.averageTransitTime) },
+                          { label: 'Shipments',    value: fmtNum(benchmarkData.userPerformance?.totalShipments) },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex justify-between items-center">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">{label}</span>
+                            <span className="text-[11px] font-black text-slate-900">{value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </Grid>
+                  {/* Market standard */}
                   <Grid size={{ xs: 12, md: 6 }}>
                     <div className="p-5 rounded-2xl bg-[#345E85]/5 border border-[#345E85]/10">
                       <h6 className="text-[10px] font-black text-[#345E85] uppercase mb-4 tracking-widest">Market Standard</h6>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-[#345E85] uppercase opacity-60">Avg Cost</span>
-                          <span className="text-[11px] font-black text-[#345E85]">₦{benchmarkData.marketBenchmarks?.averageCost?.toLocaleString() || 0}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-[#345E85] uppercase opacity-60">On-time arrival</span>
-                          <span className="text-[11px] font-black text-[#345E85]">{benchmarkData.marketBenchmarks?.onTimeRate?.toFixed(1) || 0}%</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-[#345E85] uppercase opacity-60">Average time</span>
-                          <span className="text-[11px] font-black text-[#345E85]">{benchmarkData.marketBenchmarks?.averageTransitTime?.toFixed(1) || 0} H</span>
-                        </div>
+                        {[
+                          { label: 'Avg Cost',     value: fmtMoney(benchmarkData.marketBenchmarks?.averageCost) },
+                          { label: 'On-Time Rate', value: fmtPct(benchmarkData.marketBenchmarks?.onTimeRate) },
+                          { label: 'Avg Transit',  value: fmtHrs(benchmarkData.marketBenchmarks?.averageTransitTime) },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex justify-between items-center">
+                            <span className="text-[9px] font-bold text-[#345E85] uppercase opacity-60">{label}</span>
+                            <span className="text-[11px] font-black text-[#345E85]">{value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </Grid>
