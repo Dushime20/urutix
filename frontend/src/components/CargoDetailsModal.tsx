@@ -495,20 +495,28 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                                     <div className="flex items-center space-x-2">
                                       <MapPin className="w-4 h-4 text-gray-400" />
                                       <span className="text-sm text-gray-600">
-                                        {cargo.pickupLocation?.address || 'Address not specified'}
+                                        {cargo.pickupLocation?.address || cargo.pickupLocation?.name || 'Address not specified'}
                                       </span>
                                     </div>
 
                                     <div className="flex items-center space-x-2">
                                       <Calendar className="w-4 h-4 text-gray-400" />
                                       <span className="text-sm text-gray-600">
-                                        Date: {new Date(cargo.pickupDate).toLocaleDateString()}
+                                        Date: {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified'}
                                       </span>
                                     </div>
 
                                     {cargo.pickupLocation?.coordinates && (
-                                      <div className="text-xs text-gray-500">
-                                        Coordinates: {cargo.pickupLocation?.coordinates?.latitude?.toFixed(4)}, {cargo.pickupLocation?.coordinates?.longitude?.toFixed(4)}
+                                      <div className="text-xs text-gray-500 font-mono">
+                                        {(() => {
+                                          const c = cargo.pickupLocation.coordinates;
+                                          // GeoJSON: coordinates[0]=lng, coordinates[1]=lat
+                                          const lng = Array.isArray(c.coordinates) ? c.coordinates[0] : c.longitude ?? c.lng;
+                                          const lat = Array.isArray(c.coordinates) ? c.coordinates[1] : c.latitude ?? c.lat;
+                                          return lat != null && lng != null
+                                            ? `📍 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`
+                                            : null;
+                                        })()}
                                       </div>
                                     )}
                                   </div>
@@ -525,20 +533,30 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                                     <div className="flex items-center space-x-2">
                                       <MapPin className="w-4 h-4 text-gray-400" />
                                       <span className="text-sm text-gray-600">
-                                        {cargo.deliveryLocation?.address || 'Address not specified'}
+                                        {cargo.deliveryLocation?.address || cargo.deliveryLocation?.name || 'Address not specified'}
                                       </span>
                                     </div>
 
                                     <div className="flex items-center space-x-2">
                                       <Calendar className="w-4 h-4 text-gray-400" />
                                       <span className="text-sm text-gray-600">
-                                        Date: {new Date(cargo.deliveryDate).toLocaleDateString()}
+                                        Date: {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not specified'}
                                       </span>
                                     </div>
 
                                     {cargo.deliveryLocation?.coordinates && (
-                                      <div className="text-xs text-gray-500">
-                                        Coordinates: {cargo.deliveryLocation?.coordinates?.latitude?.toFixed(4)}, {cargo.deliveryLocation?.coordinates?.longitude?.toFixed(4)}
+                                      <div className="text-xs text-gray-500 font-mono">
+                                        {(() => {
+                                          const c = cargo.deliveryLocation.coordinates;
+                                          const lng = Array.isArray(c.coordinates) ? c.coordinates[0] : c.longitude ?? c.lng;
+                                          const lat = Array.isArray(c.coordinates) ? c.coordinates[1] : c.latitude ?? c.lat;
+                                          return lat != null && lng != null
+                                            ? `📍 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`
+                                            : null;
+                                        })()}
+                                      </div>
+                                    )}
+                                  </div>ordinates: {cargo.deliveryLocation?.coordinates?.latitude?.toFixed(4)}, {cargo.deliveryLocation?.coordinates?.longitude?.toFixed(4)}
                                       </div>
                                     )}
                                   </div>
@@ -572,26 +590,16 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Created</span>
-                              <p className="text-xs font-black text-[#0f172a]">{new Date(cargo.createdAt).toLocaleDateString()}</p>
+                              <p className="text-xs font-black text-[#0f172a]">
+                                {cargo.createdAt ? new Date(cargo.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+                              </p>
                             </div>
                             <div>
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Updated</span>
-                              <p className="text-xs font-black text-[#0f172a]">{new Date(cargo.updatedAt).toLocaleDateString()}</p>
+                              <p className="text-xs font-black text-[#0f172a]">
+                                {cargo.updatedAt ? new Date(cargo.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+                              </p>
                             </div>
-                          </div>
-
-                          <div>
-                            <span className="text-sm text-gray-600">Created</span>
-                            <p className="text-sm font-medium text-gray-900">
-                              {new Date(cargo.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-
-                          <div>
-                            <span className="text-sm text-gray-600">Last Updated</span>
-                            <p className="text-sm font-medium text-gray-900">
-                              {new Date(cargo.updatedAt).toLocaleDateString()}
-                            </p>
                           </div>
 
                           {cargo.viewCount > 0 && (
