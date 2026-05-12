@@ -556,9 +556,6 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId }: CargoDetailsModalProps)
                                         })()}
                                       </div>
                                     )}
-                                  </div>ordinates: {cargo.deliveryLocation?.coordinates?.latitude?.toFixed(4)}, {cargo.deliveryLocation?.coordinates?.longitude?.toFixed(4)}
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                               </div>
