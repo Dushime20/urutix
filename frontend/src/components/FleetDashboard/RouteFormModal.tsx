@@ -8,12 +8,14 @@ import {
   FileText,
   Save,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Map as MapIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fleetApi } from '../../services/fleetApi';
 import type { Route } from '../../services/fleetApi';
 import { toast } from 'react-hot-toast';
+import MapLocationPicker from './MapLocationPicker';
 
 interface RouteFormModalProps {
   isOpen: boolean;
@@ -53,6 +55,9 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Map picker state
+  const [mapPickerOpen, setMapPickerOpen] = useState<'origin' | 'destination' | null>(null);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -252,17 +257,28 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
                 <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Origin *
                 </label>
-                <div className="relative group">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
-                  <input
-                    type="text"
-                    value={formData.origin}
-                    onChange={(e) => handleInputChange('origin', e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
-                      errors.origin ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
-                    }`}
-                    placeholder="e.g., Nairobi"
-                  />
+                <div className="relative group flex gap-2">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="text"
+                      value={formData.origin}
+                      onChange={(e) => handleInputChange('origin', e.target.value)}
+                      className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                        errors.origin ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
+                      }`}
+                      placeholder="e.g., Nairobi"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMapPickerOpen('origin')}
+                    title="Pick on map"
+                    className="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-600 dark:text-emerald-400 transition-all flex items-center gap-1.5 text-xs font-bold flex-shrink-0"
+                  >
+                    <MapIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Map</span>
+                  </button>
                 </div>
                 {errors.origin && (
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
@@ -276,17 +292,28 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
                 <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1 transition-colors">
                   Destination *
                 </label>
-                <div className="relative group">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors" />
-                  <input
-                    type="text"
-                    value={formData.destination}
-                    onChange={(e) => handleInputChange('destination', e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
-                      errors.destination ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
-                    }`}
-                    placeholder="e.g., Mombasa"
-                  />
+                <div className="relative group flex gap-2">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600 group-focus-within:text-red-500 transition-colors" />
+                    <input
+                      type="text"
+                      value={formData.destination}
+                      onChange={(e) => handleInputChange('destination', e.target.value)}
+                      className={`w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800/50 border rounded-lg text-sm font-bold text-gray-900 dark:text-gray-100 focus:ring-4 focus:ring-blue-600/10 dark:focus:ring-blue-500/10 focus:border-blue-600 dark:focus:border-blue-500 outline-none transition-all ${
+                        errors.destination ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-700'
+                      }`}
+                      placeholder="e.g., Mombasa"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMapPickerOpen('destination')}
+                    title="Pick on map"
+                    className="px-3 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800 rounded-lg text-red-500 dark:text-red-400 transition-all flex items-center gap-1.5 text-xs font-bold flex-shrink-0"
+                  >
+                    <MapIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Map</span>
+                  </button>
                 </div>
                 {errors.destination && (
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-widest px-1">
@@ -296,6 +323,30 @@ export const RouteFormModal: React.FC<RouteFormModalProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Map Location Pickers */}
+            <MapLocationPicker
+              isOpen={mapPickerOpen === 'origin'}
+              onClose={() => setMapPickerOpen(null)}
+              title="Select Origin"
+              color="#10b981"
+              initialValue={formData.origin}
+              onConfirm={(name) => {
+                handleInputChange('origin', name);
+                setMapPickerOpen(null);
+              }}
+            />
+            <MapLocationPicker
+              isOpen={mapPickerOpen === 'destination'}
+              onClose={() => setMapPickerOpen(null)}
+              title="Select Destination"
+              color="#ef4444"
+              initialValue={formData.destination}
+              onConfirm={(name) => {
+                handleInputChange('destination', name);
+                setMapPickerOpen(null);
+              }}
+            />
 
             {/* Distance and Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
