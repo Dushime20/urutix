@@ -187,21 +187,20 @@ function Hero() {
           className="text-center max-w-2xl mx-auto"
         >
           <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-3">
-            Logistics Transport Solutions
+            <TranslatedText text="Logistics Transport Solutions" />
           </p>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
-            Welcome To UrutiX Cargo<br />Transport Services
+            <TranslatedText text="Welcome To UrutiX Cargo Transport Services" />
           </h1>
           <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-lg mx-auto">
-            We are your most trusted partner for smart cargo management tools,
-            logistics solutions, and a clear view of your entire supply chain.
+            <TranslatedText text="We are your most trusted partner for smart cargo management tools, logistics solutions, and a clear view of your entire supply chain." />
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link
               to="/auth"
               className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-white font-bold px-7 py-3 rounded text-sm transition-colors"
             >
-              EXPLORE SERVICES <ArrowRight className="w-4 h-4" />
+              <TranslatedText text="Explore Services" /> <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </motion.div>
@@ -264,11 +263,13 @@ function PartnerStrip() {
           {partners.map((p) => (
             <div key={p.name} className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors cursor-default">
               <span className="text-orange-400">{p.icon}</span>
-              <span className="text-sm font-bold uppercase tracking-wider">{p.name}</span>
+              <span className="text-sm font-bold uppercase tracking-wider">
+                <TranslatedText text={p.name} />
+              </span>
             </div>
           ))}
           <div className="flex items-center gap-1 text-orange-500 font-bold text-sm cursor-pointer hover:text-orange-400">
-            <span>View All</span>
+            <TranslatedText text="View All" />
             <ArrowRight className="w-4 h-4" />
           </div>
         </div>
@@ -291,15 +292,13 @@ function FeatureSection() {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-block bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded mb-4">
-              SERVICES
+              <TranslatedText text="Services" />
             </span>
             <h2 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-4" style={{ color: "#0D3D4A" }}>
-              We'll keep your items<br />damage free
+              <TranslatedText text="We'll keep your items damage free" />
             </h2>
             <p className="text-gray-500 text-sm leading-relaxed mb-8">
-              UrutiX Smart Logistics ensures the safest handling and transport of
-              your cargo with advanced monitoring, vetted carriers, and
-              end-to-end visibility across every route.
+              <TranslatedText text="UrutiX Smart Logistics ensures the safest handling and transport of your cargo with advanced monitoring, vetted carriers, and end-to-end visibility across every route." />
             </p>
             <div className="grid grid-cols-2 gap-3 mb-8">
               {[
@@ -309,7 +308,7 @@ function FeatureSection() {
               ].map((item) => (
                 <div key={item} className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                  <span className="text-gray-700 text-sm">{item}</span>
+                  <span className="text-gray-700 text-sm"><TranslatedText text={item} /></span>
                 </div>
               ))}
             </div>
@@ -319,7 +318,7 @@ function FeatureSection() {
                 className="inline-flex items-center gap-2 text-white text-sm font-bold px-6 py-3 rounded transition-colors"
                 style={{ backgroundColor: "#0D3D4A" }}
               >
-                GET STARTED
+                <TranslatedText text="Get Started" />
               </Link>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -327,7 +326,7 @@ function FeatureSection() {
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-800">4.9 / 5.0</p>
-                  <p className="text-xs text-gray-400">Customer Rating</p>
+                  <p className="text-xs text-gray-400"><TranslatedText text="Customer Rating" /></p>
                 </div>
               </div>
             </div>
@@ -361,7 +360,7 @@ function FeatureSection() {
               style={{ backgroundColor: "#F97316" }}
             >
               <p className="text-3xl font-extrabold leading-none">20</p>
-              <p className="text-xs font-semibold mt-0.5">Years of<br />Experience</p>
+              <p className="text-xs font-semibold mt-0.5"><TranslatedText text="Years of Experience" /></p>
             </div>
           </motion.div>
         </div>
@@ -373,10 +372,10 @@ function FeatureSection() {
 // ─── STATS BAR ────────────────────────────────────────────────────────────────
 function StatsBar() {
   const stats = [
-    { icon: <TrendingUp className="w-8 h-8" />, value: "50k", label: "Maritime Freight\nTransportation" },
-    { icon: <Truck className="w-8 h-8" />, value: "25k", label: "Land Freight\nTransportation" },
-    { icon: <Globe className="w-8 h-8" />, value: "25+", label: "Countries\nWorldwide" },
-    { icon: <Package className="w-8 h-8" />, value: "125", label: "Train Freight\nTransportation" },
+    { icon: <TrendingUp className="w-8 h-8" />, value: "50k", label: "Maritime Freight Transportation" },
+    { icon: <Truck className="w-8 h-8" />, value: "25k", label: "Land Freight Transportation" },
+    { icon: <Globe className="w-8 h-8" />, value: "25+", label: "Countries Worldwide" },
+    { icon: <Package className="w-8 h-8" />, value: "125", label: "Train Freight Transportation" },
   ]
   return (
     <section style={{ backgroundColor: "#0D3D4A" }} className="py-14">
@@ -394,7 +393,9 @@ function StatsBar() {
               <div className="text-orange-400 flex-shrink-0">{s.icon}</div>
               <div>
                 <p className="text-3xl font-extrabold text-white leading-none">{s.value}</p>
-                <p className="text-white/50 text-xs mt-1 whitespace-pre-line leading-tight">{s.label}</p>
+                <p className="text-white/50 text-xs mt-1 leading-tight">
+                  <TranslatedText text={s.label} />
+                </p>
               </div>
             </motion.div>
           ))}
@@ -409,19 +410,19 @@ function ServicesGrid() {
   const services = [
     {
       img: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=500",
-      category: "MARITIME",
+      category: "Maritime",
       title: "Maritime Freight Transportation",
       desc: "Global sea freight solutions with full container and bulk cargo options across major shipping lanes.",
     },
     {
       img: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500",
-      category: "LAND",
+      category: "Land",
       title: "Land Freight Transportation",
       desc: "Reliable road and rail freight across the continent with real-time GPS tracking and driver communication.",
     },
     {
       img: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=500",
-      category: "TRAIN",
+      category: "Train",
       title: "Train Freight Transportation",
       desc: "Cost-effective rail freight for bulk shipments with scheduled routes and guaranteed delivery windows.",
     },
@@ -432,14 +433,13 @@ function ServicesGrid() {
         {/* Header */}
         <div className="text-center mb-12">
           <span className="inline-block bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded mb-4">
-            OUR SERVICES
+            <TranslatedText text="Our Services" />
           </span>
           <h2 className="text-3xl lg:text-4xl font-extrabold" style={{ color: "#0D3D4A" }}>
-            Wide Variety of Logistics Services
+            <TranslatedText text="Wide Variety of Logistics Services" />
           </h2>
           <p className="text-gray-500 text-sm mt-3 max-w-xl mx-auto">
-            From sea to land to rail, UrutiX delivers end-to-end logistics solutions
-            tailored to your cargo needs.
+            <TranslatedText text="From sea to land to rail, UrutiX delivers end-to-end logistics solutions tailored to your cargo needs." />
           </p>
         </div>
 
@@ -462,21 +462,23 @@ function ServicesGrid() {
                 />
                 <div className="absolute bottom-3 left-3">
                   <span className="bg-orange-500 text-white text-[10px] font-bold px-2.5 py-1 rounded">
-                    {svc.category}
+                    <TranslatedText text={svc.category} />
                   </span>
                 </div>
               </div>
               {/* Content */}
               <div className="p-5">
                 <h3 className="font-bold text-base mb-2" style={{ color: "#0D3D4A" }}>
-                  {svc.title}
+                  <TranslatedText text={svc.title} />
                 </h3>
-                <p className="text-gray-500 text-xs leading-relaxed mb-4">{svc.desc}</p>
+                <p className="text-gray-500 text-xs leading-relaxed mb-4">
+                  <TranslatedText text={svc.desc} />
+                </p>
                 <Link
                   to="/auth"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-400 transition-colors"
                 >
-                  LEARN MORE <ChevronRight className="w-3.5 h-3.5" />
+                  <TranslatedText text="Learn More" /> <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </motion.div>
@@ -496,7 +498,7 @@ function Footer() {
           <div>
             <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert mb-4" />
             <p className="text-white/40 text-sm leading-relaxed mb-5">
-              Africa's smart logistics platform connecting shippers and carriers with AI-powered efficiency.
+              <TranslatedText text="Africa's smart logistics platform connecting shippers and carriers with AI-powered efficiency." />
             </p>
             <div className="flex gap-3">
               {[Facebook, Twitter, Linkedin, Instagram].map((Icon, i) => (
@@ -507,23 +509,23 @@ function Footer() {
             </div>
           </div>
           <div>
-            <p className="text-white text-sm font-bold mb-4">Services</p>
+            <p className="text-white text-sm font-bold mb-4"><TranslatedText text="Services" /></p>
             <ul className="space-y-2">
               {["Maritime Freight","Land Freight","Train Freight","Air Cargo","Warehousing"].map(item => (
-                <li key={item}><a href="#" className="text-white/40 text-sm hover:text-white/70 transition-colors">{item}</a></li>
+                <li key={item}><a href="#" className="text-white/40 text-sm hover:text-white/70 transition-colors"><TranslatedText text={item} /></a></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-white text-sm font-bold mb-4">Company</p>
+            <p className="text-white text-sm font-bold mb-4"><TranslatedText text="Company" /></p>
             <ul className="space-y-2">
               {["About Us","Our Team","Careers","News & Blog","Partners"].map(item => (
-                <li key={item}><a href="#" className="text-white/40 text-sm hover:text-white/70 transition-colors">{item}</a></li>
+                <li key={item}><a href="#" className="text-white/40 text-sm hover:text-white/70 transition-colors"><TranslatedText text={item} /></a></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-white text-sm font-bold mb-4">Contact</p>
+            <p className="text-white text-sm font-bold mb-4"><TranslatedText text="Contact" /></p>
             <ul className="space-y-3">
               <li className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" /><span className="text-white/40 text-sm">Kigali, Rwanda · Nairobi, Kenya</span></li>
               <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-orange-400" /><a href="tel:+250700000000" className="text-white/40 text-sm hover:text-white/70">+250 700 000 000</a></li>
@@ -532,10 +534,14 @@ function Footer() {
           </div>
         </div>
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-white/30 text-xs">© {new Date().getFullYear()} UrutiX Smart Logistics. All rights reserved.</p>
+          <p className="text-white/30 text-xs">
+            © {new Date().getFullYear()} UrutiX Smart Logistics. <TranslatedText text="All rights reserved." />
+          </p>
           <div className="flex gap-5">
             {["Privacy Policy","Terms of Service","Cookies"].map(item => (
-              <a key={item} href="#" className="text-white/30 text-xs hover:text-white/60 transition-colors">{item}</a>
+              <a key={item} href="#" className="text-white/30 text-xs hover:text-white/60 transition-colors">
+                <TranslatedText text={item} />
+              </a>
             ))}
           </div>
         </div>

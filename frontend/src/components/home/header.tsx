@@ -182,7 +182,7 @@ export function Header() {
                   </div>
                   <div className="py-6 space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-500">Language</span>
+                      <span className="text-sm font-medium text-slate-500"><TranslatedText text="Language" /></span>
                       <LanguageSwitcher />
                     </div>
                     {isAuthenticated ? (
