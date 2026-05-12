@@ -9,6 +9,8 @@ import {
 } from "lucide-react"
 import logoUrutiX from "../../assets/urutiX Logistics Logo (1).svg"
 import { useAuth } from "@/contexts/AuthContext"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { TranslatedText } from "@/components/translated-text"
 
 // ─── Role → dashboard route map ───────────────────────────────────────────────
 const ROLE_DASHBOARD: Record<string, string> = {
@@ -40,7 +42,9 @@ function Navbar() {
         </Link>
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-white/80">
           {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
-            <a key={n} href={`#${n.toLowerCase()}`} className="hover:text-white transition-colors">{n}</a>
+            <a key={n} href={`#${n.toLowerCase()}`} className="hover:text-white transition-colors">
+              <TranslatedText text={n} />
+            </a>
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-4">
@@ -48,20 +52,21 @@ function Navbar() {
             <Phone className="w-4 h-4 text-orange-400" />
             <span>+1 800 123 4567</span>
           </div>
+          <LanguageSwitcher variant="light" />
           {dashboardPath ? (
             <Link
               to={dashboardPath}
               className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold px-5 py-2.5 rounded transition-colors"
             >
               <LayoutDashboard className="w-4 h-4" />
-              Dashboard
+              <TranslatedText text="Dashboard" />
             </Link>
           ) : (
             <Link
               to="/auth"
               className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold px-5 py-2.5 rounded transition-colors"
             >
-              START NOW
+              <TranslatedText text="Start Now" />
             </Link>
           )}
         </div>
@@ -69,25 +74,77 @@ function Navbar() {
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
+
+      {/* Mobile Menu — full height, 70% width, slides in from left */}
       {open && (
-        <div style={{ backgroundColor: "#0D3D4A" }} className="md:hidden px-6 pb-4 flex flex-col gap-3">
-          {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
-            <a key={n} href={`#${n.toLowerCase()}`} className="text-white/80 text-sm py-1">{n}</a>
-          ))}
-          {dashboardPath ? (
-            <Link
-              to={dashboardPath}
-              className="inline-flex items-center justify-center gap-2 bg-orange-500 text-white text-sm font-bold px-5 py-2.5 rounded text-center mt-2"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Link>
-          ) : (
-            <Link to="/auth" className="bg-orange-500 text-white text-sm font-bold px-5 py-2.5 rounded text-center mt-2">
-              START NOW
-            </Link>
-          )}
-        </div>
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            onClick={() => setOpen(false)}
+          />
+          {/* Drawer */}
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "tween", duration: 0.25 }}
+            style={{ backgroundColor: "#0D3D4A", width: "70%" }}
+            className="fixed top-0 left-0 h-full z-50 flex flex-col md:hidden shadow-2xl"
+          >
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-6 h-16 border-b border-white/10 flex-shrink-0">
+              <Link to="/" onClick={() => setOpen(false)}>
+                <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert" />
+              </Link>
+              <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Nav links */}
+            <nav className="flex-1 flex flex-col px-6 pt-6 gap-1 overflow-y-auto">
+              {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
+                <a
+                  key={n}
+                  href={`#${n.toLowerCase()}`}
+                  onClick={() => setOpen(false)}
+                  className="text-white/80 hover:text-white text-base font-medium py-3 border-b border-white/10 transition-colors"
+                >
+                  <TranslatedText text={n} />
+                </a>
+              ))}
+
+              {/* Language switcher row */}
+              <div className="flex items-center justify-between py-3 border-b border-white/10">
+                <span className="text-white/50 text-sm"><TranslatedText text="Language" /></span>
+                <LanguageSwitcher variant="light" />
+              </div>
+            </nav>
+
+            {/* CTA button pinned to bottom */}
+            <div className="px-6 pb-8 flex-shrink-0">
+              {dashboardPath ? (
+                <Link
+                  to={dashboardPath}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold py-3.5 rounded transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <TranslatedText text="Dashboard" />
+                </Link>
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center w-full bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold py-3.5 rounded transition-colors"
+                >
+                  <TranslatedText text="Start Now" />
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        </>
       )}
     </header>
   )
