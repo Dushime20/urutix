@@ -789,64 +789,6 @@ const SubscriptionPlans: React.FC = () => {
                     key={subscription.id}
                     className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all"
                   >
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-16 h-16 rounded-[20px] flex items-center justify-center ${
-                          subscription.status === 'active' ? 'bg-emerald-50' :
-                          subscription.status === 'cancelled' ? 'bg-slate-50' :
-                          'bg-yellow-50'
-                        }`}>
-                          <FaCrown className={`text-2xl ${
-                            subscription.status === 'active' ? 'text-emerald-500' :
-                            subscription.status === 'cancelled' ? 'text-slate-400' :
-                            'text-yellow-500'
-                          }`} />
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                            {subscription.plan?.name || 'Unknown Plan'}
-                          </h3>
-                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                            {subscription.plan?.description}
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${
-                        subscription.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                        subscription.status === 'cancelled' ? 'bg-slate-50 text-slate-600 border border-slate-200' :
-                        'bg-yellow-50 text-yellow-700 border border-yellow-100'
-                      }`}>
-                        {subscription.status}
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-6 mb-6">
-                      <div className="bg-slate-50/50 rounded-[20px] p-5 border border-slate-100">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                          Billing Cycle
-                        </div>
-                        <div className="text-lg font-black text-slate-900 capitalize">
-                          {subscription.billingCycle}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50/50 rounded-[20px] p-5 border border-slate-100">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                          Current Period
-                        </div>
-                        <div className="text-sm font-bold text-slate-700">
-                          {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="bg-slate-50/50 rounded-[20px] p-5 border border-slate-100">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                          Auto Renew
-                        </div>
-                        <div className="text-lg font-black text-slate-900">
-                          {subscription.autoRenew ? 'Yes' : 'No'}
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Marketplace Performance Chart */}
                     <div className="bg-white rounded-[24px] p-6 border border-slate-100">
                       <div className="flex items-center justify-between mb-6">
