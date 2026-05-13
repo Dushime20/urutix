@@ -29,7 +29,7 @@ interface User {
   id: string;
   email: string;
   phone?: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'BROKER' | 'AGENT' | 'LENDER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'BROKER' | 'AGENT' | 'LENDER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER';
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED';
   tenantId: string;
   tenantName?: string;
@@ -82,7 +82,7 @@ const AdminUsers: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN'>('CARGO_OWNER');
+  const [role, setRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN' | 'BROKER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER'>('CARGO_OWNER');
 
   // Edit form state
   const [editEmail, setEditEmail] = useState('');
@@ -470,10 +470,17 @@ const AdminUsers: React.FC = () => {
                   <option value="ADMIN">ADMIN</option>
                   <option value="TENANT_ADMIN">TENANT ADMIN</option>
                   <option value="CARGO_OWNER">CARGO OWNER</option>
+                  <option value="CARGO_RECEIVER">CARGO RECEIVER</option>
                   <option value="TRUCK_OWNER">TRUCK OWNER</option>
                   <option value="DRIVER">DRIVER</option>
+                  <option value="BROKER">BROKER</option>
                   <option value="AGENT">AGENT</option>
                   <option value="LENDER">LENDER</option>
+                  <option value="CUSTOMS_OFFICER">CUSTOMS OFFICER</option>
+                  <option value="FLEET_MANAGER">FLEET MANAGER</option>
+                  <option value="FLEET_DISPATCHER">FLEET DISPATCHER</option>
+                  <option value="FLEET_ACCOUNTANT">FLEET ACCOUNTANT</option>
+                  <option value="FLEET_SAFETY_OFFICER">FLEET SAFETY OFFICER</option>
                 </select>
 
                 <select
@@ -723,12 +730,19 @@ const AdminUsers: React.FC = () => {
                       value={role}
                       onChange={(e) => setRole(e.target.value as any)}
                     >
+                      <option value="TENANT_ADMIN">TENANT ADMIN</option>
                       <option value="CARGO_OWNER">CARGO OWNER</option>
+                      <option value="CARGO_RECEIVER">CARGO RECEIVER</option>
                       <option value="TRUCK_OWNER">TRUCK OWNER</option>
                       <option value="DRIVER">DRIVER</option>
+                      <option value="BROKER">BROKER</option>
                       <option value="AGENT">AGENT</option>
                       <option value="LENDER">LENDER</option>
-                      <option value="TENANT_ADMIN">TENANT ADMIN</option>
+                      <option value="CUSTOMS_OFFICER">CUSTOMS OFFICER</option>
+                      <option value="FLEET_MANAGER">FLEET MANAGER</option>
+                      <option value="FLEET_DISPATCHER">FLEET DISPATCHER</option>
+                      <option value="FLEET_ACCOUNTANT">FLEET ACCOUNTANT</option>
+                      <option value="FLEET_SAFETY_OFFICER">FLEET SAFETY OFFICER</option>
                     </select>
                   </div>
                 </div>

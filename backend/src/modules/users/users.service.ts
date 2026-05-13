@@ -59,6 +59,7 @@ export class UsersService {
       UserRole.FLEET_DISPATCHER,
       UserRole.FLEET_ACCOUNTANT,
       UserRole.FLEET_SAFETY_OFFICER,
+      UserRole.CUSTOMS_OFFICER,
     ];
 
     return validTenantRoles.includes(role);
@@ -233,6 +234,14 @@ export class UsersService {
           firstName,
           lastName,
           tenantName,
+          token,
+        );
+        break;
+      case UserRole.CUSTOMS_OFFICER:
+        await this.emailService.sendCustomsOfficerPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
           token,
         );
         break;

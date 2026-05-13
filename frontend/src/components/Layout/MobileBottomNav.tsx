@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Package, Bell, User, PlusCircle, Activity, DollarSign, MessageSquare } from 'lucide-react';
+import { Home, Package, Bell, User, PlusCircle, Activity, DollarSign, MessageSquare, ShieldCheck, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { cn } from '../../utils/cn';
@@ -19,12 +19,17 @@ const MobileBottomNav: React.FC = () => {
     const { unreadCount } = useNotifications();
 
     // Base navigation items for all users
+    const homePath = user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : '/dashboard';
     const navItems: NavItem[] = [
-        { icon: Home, label: 'Home', path: '/dashboard' },
+        { icon: Home, label: 'Home', path: homePath },
     ];
 
     // Role-specific primary actions
-    if (user?.role === 'CARGO_OWNER' || user?.role === 'CARGO_RECEIVER') {
+    if (user?.role === 'CUSTOMS_OFFICER') {
+        navItems.push({ icon: ShieldCheck, label: 'Inspections', path: '/dashboard/customs/inspections' });
+        navItems.push({ icon: Search, label: 'Search', path: '/dashboard/customs/search' });
+        navItems.push({ icon: Activity, label: 'Flagged', path: '/dashboard/customs/flagged' });
+    } else if (user?.role === 'CARGO_OWNER' || user?.role === 'CARGO_RECEIVER') {
         navItems.push({ icon: Package, label: 'Cargos', path: user.role === 'CARGO_OWNER' ? '/dashboard/cargos/list' : '/cargo-owner/cargos/my-cargos' });
         navItems.push({ icon: PlusCircle, label: 'Create', path: '/dashboard/cargos/create' });
     } else if (user?.role === 'DRIVER') {
@@ -43,7 +48,8 @@ const MobileBottomNav: React.FC = () => {
 
     // Common items — Bell gets the live unread count
     navItems.push({ icon: Bell, label: 'Alerts', path: '/dashboard/notifications', count: unreadCount > 0 ? unreadCount : undefined });
-    navItems.push({ icon: User, label: 'Profile', path: '/dashboard/settings' });
+    const profilePath = user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : '/dashboard/settings';
+    navItems.push({ icon: User, label: 'Profile', path: profilePath });
 
     // Ensure we only show 5 items max for better UI
     const finalItems = navItems.slice(0, 5);

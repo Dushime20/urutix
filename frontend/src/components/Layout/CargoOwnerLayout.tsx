@@ -18,7 +18,7 @@ const CargoOwnerLayout: React.FC = () => {
   useEffect(() => {
     if (!isLoading && !user) {
       navigate('/auth', { state: { from: location } });
-    } else if (!isLoading && user && !['CARGO_OWNER', 'CARGO_RECEIVER', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    } else if (!isLoading && user && !['CARGO_OWNER', 'CARGO_RECEIVER', 'ADMIN', 'SUPER_ADMIN', 'CUSTOMS_OFFICER'].includes(user.role)) {
       // Redirect to their own dashboard if they hit this by mistake
       if (user.role === 'TRUCK_OWNER' || user.role === 'CARRIER') {
         navigate('/dashboard/fleet');

@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import ContextualHelp from '../Help/ContextualHelp';
@@ -293,6 +293,34 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       ];
     }
 
+    if (user?.role === 'CUSTOMS_OFFICER') {
+      return [
+        { label: 'Dashboard', path: '/dashboard/customs', icon: Home },
+        {
+          label: 'Inspections',
+          path: '/dashboard/customs/inspections',
+          icon: ClipboardList,
+          subItems: [
+            { label: 'All Inspections', path: '/dashboard/customs/inspections' },
+            { label: 'New Inspection', path: '/dashboard/customs/inspections/new' },
+            { label: 'Flagged Cargo', path: '/dashboard/customs/flagged' },
+            { label: 'Cleared Shipments', path: '/dashboard/customs/cleared' },
+          ]
+        },
+        {
+          label: 'Operations',
+          path: '/dashboard/customs/search',
+          icon: Activity,
+          subItems: [
+            { label: 'Truck Search', path: '/dashboard/customs/search' },
+            { label: 'Checkpoints', path: '/dashboard/customs/checkpoints' },
+            { label: 'Analytics', path: '/dashboard/customs/analytics' },
+            { label: 'Audit Log', path: '/dashboard/customs/audit' },
+          ]
+        },
+      ];
+    }
+
     if (user?.role === 'TENANT_ADMIN') {
       return [
         { label: 'Command Desk', path: '/tenant-admin', icon: Home },
@@ -441,7 +469,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
-            <div className="flex items-center flex-shrink-0 cursor-pointer px-1" onClick={() => navigate('/')}>
+            <div className="flex items-center flex-shrink-0 cursor-pointer px-1" onClick={() => navigate(user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : user?.role === 'LENDER' ? '/lender' : user?.role === 'BROKER' ? '/dashboard/broker' : user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? '/admin' : user?.role === 'TENANT_ADMIN' ? '/tenant-admin' : '/dashboard')}>
               <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-7 sm:h-8 md:h-10 lg:h-12 max-w-none w-auto object-contain transition-all" />
             </div>
 
@@ -569,6 +597,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                           user?.role === 'TENANT_ADMIN' ? '/tenant-admin/settings' :
                           user?.role === 'BROKER' ? '/dashboard/broker/profile' :
                           user?.role === 'TRUCK_OWNER' ? '/dashboard/fleet/settings' :
+                          user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' :
                           '/dashboard/settings'}
                       onClick={() => setShowUserMenu(false)}
                       className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"

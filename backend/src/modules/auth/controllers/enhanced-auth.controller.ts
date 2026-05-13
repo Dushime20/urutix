@@ -791,6 +791,40 @@ export class EnhancedAuthController {
     }
   }
 
+  @Post('customs-officer/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(EnhancedRateLimitGuard)
+  @ApiOperation({
+    summary: 'Set up customs officer password',
+    description: 'Set password for a customs officer account using the token received via email',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid token or validation error',
+  })
+  async setupCustomsOfficerPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Customs officer password setup attempt from IP: ${clientIp}`);
+
+      const result = await this.authService.setupCustomsOfficerPassword(
+        setupPasswordDto,
+        clientIp,
+      );
+
+      this.logger.log(`Customs officer password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      const clientIp = this.getClientIp(req);
+      this.logger.error(
+        `Customs officer password setup failed from IP: ${clientIp}: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')

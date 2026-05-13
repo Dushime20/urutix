@@ -91,6 +91,8 @@ export const authAPI = {
     api.post('/auth/lender/setup-password', data),
   setupReceiverPassword: (data: { token: string; password: string; confirmPassword: string }) =>
     api.post('/auth/receiver/setup-password', data),
+  setupCustomsOfficerPassword: (data: { token: string; password: string; confirmPassword: string }) =>
+    api.post('/auth/customs-officer/setup-password', data),
   forgotPassword: (email: string) =>
     api.post('/auth/forgot-password', { email }),
   resetPassword: (token: string, password: string, confirmPassword: string) =>

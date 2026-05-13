@@ -58,6 +58,9 @@ const RoleSelectionPage = () => {
                     case 'BROKER':
                         navigate('/dashboard/broker');
                         break;
+                    case 'CUSTOMS_OFFICER':
+                        navigate('/dashboard/customs');
+                        break;
                     default:
                         navigate('/dashboard');
                         break;

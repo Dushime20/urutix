@@ -1267,6 +1267,99 @@ This link will expire in 7 days.
     this.logger.log('========== AGENT EMAIL SERVICE CALL END ==========');
   }
 
+  async sendCustomsOfficerPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    token: string,
+  ): Promise<void> {
+    this.logger.log('========== CUSTOMS OFFICER EMAIL SERVICE CALLED ==========');
+    this.logger.log(`Attempting to send customs officer password setup email to: ${email}`);
+
+    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const baseUrl = frontendUrl.replace(/\/$/, '');
+    const setupUrl = `${baseUrl}/customs-officer/setup-password?token=${token}`;
+
+    this.logger.log(`📧 Customs Officer password setup URL: ${setupUrl}`);
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') ||
+      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
+      this.configService.get<string>('SMTP_USER') ||
+      'noreply@urutix.com';
+
+    if (this.transporter) {
+      this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
+      try {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error(`Invalid email format: ${email}`);
+        }
+
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #345E85;">Welcome to UrutiX, ${firstName}!</h2>
+            <p>Your Customs Officer account has been created on the UrutiX platform. To get started, please set up your password by clicking the link below:</p>
+            <a href="${setupUrl}" style="display: inline-block; padding: 12px 24px; background-color: #345E85; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">
+              Set Up Your Password
+            </a>
+            <p>After setting your password, you'll be able to log in and access your Customs Officer dashboard to:</p>
+            <ul>
+              <li>Search and inspect incoming vehicles and shipments</li>
+              <li>Manage cargo inspection workflows</li>
+              <li>Flag high-risk and restricted goods</li>
+              <li>Manage border checkpoint records</li>
+              <li>Access inspection reports and audit logs</li>
+            </ul>
+            <p>If you didn't expect this email, please contact your administrator or ignore this message.</p>
+            <p style="color: #888;">This link will expire in 7 days.</p>
+          </div>
+        `;
+
+        const plainTextContent = `
+Welcome to UrutiX, ${firstName}!
+
+Your Customs Officer account has been created. To get started, please set up your password by clicking the link below:
+
+${setupUrl}
+
+After setting your password, you'll be able to log in and access your Customs Officer dashboard.
+
+If you didn't expect this email, please contact your administrator or ignore this message.
+
+This link will expire in 7 days.
+        `.trim();
+
+        const mailOptions = {
+          from: fromAddress,
+          to: email.trim().toLowerCase(),
+          subject: `Set up your UrutiX Customs Officer Account Password`,
+          text: plainTextContent,
+          html: htmlContent,
+        };
+
+        this.logger.log('📧 Attempting to send email via SMTP...');
+        const result = await this.transporter.sendMail(mailOptions);
+
+        if (result.accepted && result.accepted.length > 0) {
+          this.logger.log(`✅ Customs officer password setup email sent successfully to ${email}`);
+          this.logger.log(`✅ Message ID: ${result.messageId}`);
+        } else if (result.rejected && result.rejected.length > 0) {
+          this.logger.error(`❌ Email was rejected by server`);
+          throw new Error(`Email was rejected: ${result.rejected.join(', ')}`);
+        } else {
+          this.logger.warn(`⚠️ Email sent but no acceptance/rejection info available`);
+        }
+      } catch (error: any) {
+        this.logger.error(`❌ Failed to send customs officer password setup email to ${email}`);
+        this.logger.error(`❌ Error: ${error.message}`);
+        throw error;
+      }
+    } else {
+      this.logger.error('❌ SMTP transporter is not configured. Email will not be sent.');
+    }
+    this.logger.log('========== CUSTOMS OFFICER EMAIL SERVICE CALL END ==========');
+  }
+
   /**
    * Generic email sending method for any service to use.
    * Sends via the configured SMTP transporter with proper from/replyTo headers.

@@ -308,7 +308,7 @@ export class EnhancedAuthService {
           
           // Additional status checks that were previously done
            if (
-            (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER) &&
+            (user.role === UserRole.DRIVER || user.role === UserRole.TENANT_ADMIN || user.role === UserRole.LENDER || user.role === UserRole.CUSTOMS_OFFICER) &&
             user.status === UserStatus.PENDING_VERIFICATION
           ) {
              // This logic throws inside the loop, effectively stopping authentication for this user
@@ -316,7 +316,8 @@ export class EnhancedAuthService {
             const roleName =
               user.role === UserRole.DRIVER ? 'driver' :
                 user.role === UserRole.TENANT_ADMIN ? 'tenant admin' :
-                  'lender';
+                  user.role === UserRole.CUSTOMS_OFFICER ? 'customs officer' :
+                    'lender';
             
             this.logger.warn(
               `Login attempt for ${roleName} with pending verification: ${normalizedEmail} from IP: ${clientIp}`,
@@ -324,7 +325,8 @@ export class EnhancedAuthService {
             const accountType =
               user.role === UserRole.DRIVER ? 'driver' :
                 user.role === UserRole.TENANT_ADMIN ? 'tenant' :
-                  'lender';
+                  user.role === UserRole.CUSTOMS_OFFICER ? 'customs officer' :
+                    'lender';
             throw new UnauthorizedException(
               `Your ${accountType} account is pending password setup. Please check your email and click the link to set up your password first.`,
             );
@@ -1231,6 +1233,66 @@ export class EnhancedAuthService {
       return { message: 'Password set successfully. You can now log in.' };
     } catch (error) {
       this.logger.error(`Receiver password setup failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async setupCustomsOfficerPassword(
+    setupPasswordDto: SetupDriverPasswordDto,
+    clientIp?: string,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const { token, password, confirmPassword } = setupPasswordDto;
+
+      this.validatePasswordStrength(password);
+
+      if (password !== confirmPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
+
+      const setupTokenRecord = await this.passwordResetTokenRepository.findOne({
+        where: { token, used: false },
+      });
+
+      if (!setupTokenRecord) {
+        throw new BadRequestException('Invalid or expired setup token');
+      }
+
+      if (setupTokenRecord.expiresAt < new Date()) {
+        throw new BadRequestException('Setup token has expired');
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { email: setupTokenRecord.email },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (user.role !== UserRole.CUSTOMS_OFFICER) {
+        throw new BadRequestException('This token is only valid for customs officer accounts');
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 14);
+      user.passwordHash = hashedPassword;
+      user.status = UserStatus.ACTIVE;
+      user.loginAttempts = 0;
+      user.lockedUntil = undefined;
+      await this.userRepository.save(user);
+
+      setupTokenRecord.used = true;
+      await this.passwordResetTokenRepository.save(setupTokenRecord);
+
+      await this.logAuditEvent('CUSTOMS_OFFICER_PASSWORD_SETUP_COMPLETED', user.id, {
+        email: user.email,
+        clientIp,
+      });
+
+      this.logger.log(`Customs officer password setup completed for: ${user.email} from IP: ${clientIp}`);
+      return { message: 'Password set successfully. You can now log in.' };
+    } catch (error) {
+      this.logger.error(`Customs officer password setup failed: ${error.message}`);
       throw error;
     }
   }

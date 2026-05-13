@@ -129,6 +129,8 @@ import { NotificationLog } from './../entities/notification-log.entity';
 import { CargoOwnerAnalytics } from './../entities/cargo-owner-analytics.entity';
 import { AnalyticsInsights } from './../entities/analytics-insights.entity';
 import { Message } from './../entities/message.entity';
+import { CustomsInspection } from './../entities/customs-inspection.entity';
+import { CustomsCheckpoint } from './../entities/customs-checkpoint.entity';
 
 import { config } from 'dotenv';
 config();
@@ -275,6 +277,9 @@ export const databaseConfig: TypeOrmModuleOptions = {
     MaintenanceLog,
     // Messenger entities
     Message,
+    // Customs entities
+    CustomsInspection,
+    CustomsCheckpoint,
   ],
   synchronize: process.env.DB_SYNCHRONIZE === 'true',
   autoLoadEntities: false,
@@ -419,6 +424,9 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     MaintenanceLog,
     // Messenger entities
     Message,
+    // Customs entities
+    CustomsInspection,
+    CustomsCheckpoint,
   ],
   synchronize: true,
   autoLoadEntities: false,

@@ -27,6 +27,7 @@ import LenderPasswordSetup from './pages/LenderPasswordSetup';
 import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 import CargoOwnerPasswordSetup from './pages/CargoOwnerPasswordSetup';
 import TruckOwnerPasswordSetup from './pages/TruckOwnerPasswordSetup';
+import CustomsOfficerPasswordSetup from './pages/CustomsOfficerPasswordSetup';
 
 // Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
 // Analytics pages
@@ -150,6 +151,18 @@ const LenderNotificationsPage = lazy(() => import('./pages/LenderNotificationsPa
 const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
 const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
 
+// Customs Officer Pages
+const CustomsDashboard = lazy(() => import('./pages/customs/CustomsDashboard'));
+const TruckSearchPage = lazy(() => import('./pages/customs/TruckSearchPage'));
+const InspectionsPage = lazy(() => import('./pages/customs/InspectionsPage'));
+const InspectionDetailPage = lazy(() => import('./pages/customs/InspectionDetailPage'));
+const NewInspectionPage = lazy(() => import('./pages/customs/NewInspectionPage'));
+const FlaggedCargoPage = lazy(() => import('./pages/customs/FlaggedCargoPage'));
+const ClearedShipmentsPage = lazy(() => import('./pages/customs/ClearedShipmentsPage'));
+const CheckpointsPage = lazy(() => import('./pages/customs/CheckpointsPage'));
+const CustomsAnalyticsPage = lazy(() => import('./pages/customs/CustomsAnalyticsPage'));
+const CustomsAuditPage = lazy(() => import('./pages/customs/CustomsAuditPage'));
+
 // Broker Pages
 const SimpleBrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
 
@@ -218,6 +231,7 @@ function App() {
                     <Route path="/receiver/setup-password" element={<ReceiverPasswordSetup />} />
                     <Route path="/cargo-owner/setup-password" element={<CargoOwnerPasswordSetup />} />
                     <Route path="/truck-owner/setup-password" element={<TruckOwnerPasswordSetup />} />
+                    <Route path="/customs-officer/setup-password" element={<CustomsOfficerPasswordSetup />} />
 
                     {/* Cargo Owner Routes */}
                     <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -540,6 +554,22 @@ function App() {
                       <Route path="performance" element={<PerformanceAnalytics />} />
                       <Route path="payouts" element={<PayoutsPage />} />
                     </Route>
+
+                    {/* Customs Officer Routes */}
+                    <Route path="/dashboard/customs" element={<CargoOwnerLayout />}>
+                      <Route index element={<CustomsDashboard />} />
+                      <Route path="search" element={<TruckSearchPage />} />
+                      <Route path="inspections" element={<InspectionsPage />} />
+                      <Route path="inspections/new" element={<NewInspectionPage />} />
+                      <Route path="inspections/:id" element={<InspectionDetailPage />} />
+                      <Route path="flagged" element={<FlaggedCargoPage />} />
+                      <Route path="cleared" element={<ClearedShipmentsPage />} />
+                      <Route path="checkpoints" element={<CheckpointsPage />} />
+                      <Route path="analytics" element={<CustomsAnalyticsPage />} />
+                      <Route path="audit" element={<CustomsAuditPage />} />
+                      <Route path="reports" element={<CustomsAuditPage />} />
+                    </Route>
+                    <Route path="/customs" element={<Navigate to="/dashboard/customs" replace />} />
 
                     {/* Alias: support /dashboard/admin by redirecting to /admin */}
                     <Route path="/dashboard/admin/*" element={<Navigate to="/admin" replace />} />
