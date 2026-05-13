@@ -148,11 +148,11 @@ export class TenantDashboardService {
 
     // Calculate metrics
     const operationalRevenue = payments.reduce(
-      (sum, payment) => sum + (payment.amount || 0),
+      (sum, payment) => sum + (Number(payment.amount) || 0),
       0,
     );
     const partnerSalesRevenue = tenantCreditAccount 
-      ? Number(tenantCreditAccount.revenueFromPartnerSales) 
+      ? Number(tenantCreditAccount.revenueFromPartnerSales) || 0
       : 0;
     const totalRevenue = operationalRevenue + partnerSalesRevenue;
     const totalShipments = loads.length;
@@ -218,11 +218,12 @@ export class TenantDashboardService {
         startDate,
         endDate,
       })
-      .andWhere('payment.status = :status', { status: 'completed' })
+      .andWhere('payment.status = :status', { status: PaymentStatus.COMPLETED })
       .groupBy('DATE(payment.createdAt)')
       .getRawMany();
 
     // Get trips grouped by day for fleet utilization
+    // Also count active trucks per day using agreedPrice as a proxy for active trips
     const tripsByDay = await this.tripRepository
       .createQueryBuilder('trip')
       .select('DATE(trip.createdAt)', 'date')
@@ -235,6 +236,11 @@ export class TenantDashboardService {
       .groupBy('DATE(trip.createdAt)')
       .getRawMany();
 
+    // Get total trucks for utilization calculation
+    const totalTrucks = await this.truckRepository.count({
+      where: { tenantId },
+    });
+
     // Map data to arrays
     const revenue = days.map((day) => {
       const payment = paymentsByDay.find((p) => p.date === day);
@@ -246,9 +252,12 @@ export class TenantDashboardService {
       return load ? parseInt(load.count) || 0 : 0;
     });
 
+    // Fleet utilization: (active trips on that day / total trucks) * 100
     const fleetUtilization = days.map((day) => {
       const trip = tripsByDay.find((t) => t.date === day);
-      return trip ? Math.min(parseInt(trip.count) * 20, 100) : 0; // Mock calculation
+      if (!trip || totalTrucks === 0) return 0;
+      const activeTrips = parseInt(trip.count) || 0;
+      return Math.min(Math.round((activeTrips / totalTrucks) * 100), 100);
     });
 
     const fuelEfficiency = days.map(() => 8.5); // Mock constant value
