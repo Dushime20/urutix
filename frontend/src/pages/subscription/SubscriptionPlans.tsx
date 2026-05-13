@@ -783,12 +783,9 @@ const SubscriptionPlans: React.FC = () => {
                 </div>
               </div>
             ) : subscriptionsData?.data?.length > 0 ? (
-              <div className="grid gap-6">
-                {subscriptionsData.data.map((subscription: any) => (
-                  <div
-                    key={subscription.id}
-                    className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all"
-                  >
+              <div className="space-y-6">
+                {/* Single instance — stats and chart are global, not per-subscription */}
+                <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                     {/* Marketplace Performance Chart */}
                     <div className="bg-white rounded-[24px] p-6 border border-slate-100">
                       <div className="flex items-center justify-between mb-6">
@@ -967,7 +964,6 @@ const SubscriptionPlans: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                ))}
               </div>
             ) : (
               <div className="bg-white rounded-[32px] p-12 text-center border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
