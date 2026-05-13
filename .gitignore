@@ -58,3 +58,15 @@ backend/**/*.md
 
 # PowerShell scripts
 *.ps1
+
+# Debug and utility scripts
+backend/configure-docker-only.js
+backend/debug-password-reset.js
+backend/find-user-docker.js
+backend/find-user.js
+backend/fix-driver-password-docker.js
+backend/fix-driver-password.js
+backend/fix-notification-entitytype.js
+backend/test-login-api.js
+backend/test-login-debug.js
+backend/test-login-direct.js
