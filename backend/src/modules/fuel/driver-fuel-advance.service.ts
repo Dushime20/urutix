@@ -39,7 +39,7 @@ export class DriverFuelAdvanceService {
     async getAdvance(id: string, tenantId: string): Promise<DriverFuelAdvance> {
         const advance = await this.advanceRepository.findOne({
             where: { id, tenantId },
-            relations: ['driver', 'trip', 'approver'],
+            relations: ['driver', 'trip', 'trip.load', 'approver'],
         });
 
         if (!advance) {
@@ -164,6 +164,7 @@ export class DriverFuelAdvanceService {
             .createQueryBuilder('advance')
             .leftJoinAndSelect('advance.driver', 'driver')
             .leftJoinAndSelect('advance.trip', 'trip')
+            .leftJoinAndSelect('trip.load', 'load')
             .where('advance.tenantId = :tenantId', { tenantId })
             .andWhere('advance.status = :status', { status: DriverFuelAdvanceStatus.PENDING })
             .andWhere('driver.employerId = :employerId', { employerId })
@@ -179,6 +180,7 @@ export class DriverFuelAdvanceService {
             .createQueryBuilder('advance')
             .leftJoinAndSelect('advance.driver', 'driver')
             .leftJoinAndSelect('advance.trip', 'trip')
+            .leftJoinAndSelect('trip.load', 'load')
             .leftJoinAndSelect('advance.approver', 'approver')
             .where('advance.tenantId = :tenantId', { tenantId })
             .andWhere('driver.employerId = :employerId', { employerId })

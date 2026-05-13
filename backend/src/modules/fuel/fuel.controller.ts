@@ -70,6 +70,21 @@ export class FuelController {
         private readonly fuelLogRepository: Repository<FuelLog>,
     ) { }
 
+    // ── HELPERS ─────────────────────────────────────────────────────────────
+
+    private mapAdvanceTrip(advance: any): any {
+        if (!advance.trip) return advance;
+        const load = advance.trip.load;
+        return {
+            ...advance,
+            trip: {
+                ...advance.trip,
+                origin:      load?.origin      ? { city: load.origin.city      || load.origin.address      || null } : null,
+                destination: load?.destination ? { city: load.destination.city || load.destination.address || null } : null,
+            },
+        };
+    }
+
     // ── WALLET ENDPOINTS ────────────────────────────────────────────────────
 
     @Get('wallets/my-wallet')
@@ -451,14 +466,14 @@ export class FuelController {
     @ApiOperation({ summary: 'Get pending advances for drivers employed by the logged-in truck owner' })
     async getPendingAdvancesForMyDrivers(@GetTenant() tenantId: string, @Request() req) {
         const advances = await this.advanceService.getPendingAdvancesForEmployer(req.user.userId, tenantId);
-        return { success: true, data: advances };
+        return { success: true, data: advances.map(a => this.mapAdvanceTrip(a)) };
     }
 
     @Get('advances/my-drivers/all')
     @ApiOperation({ summary: 'Get all advances (all statuses) for drivers employed by the logged-in truck owner' })
     async getAllAdvancesForMyDrivers(@GetTenant() tenantId: string, @Request() req) {
         const advances = await this.advanceService.getAllAdvancesForEmployer(req.user.userId, tenantId);
-        return { success: true, data: advances };
+        return { success: true, data: advances.map(a => this.mapAdvanceTrip(a)) };
     }
 
     @Get('advances/stats/overview')
@@ -493,7 +508,7 @@ export class FuelController {
     @ApiOperation({ summary: 'Get advance by ID' })
     async getAdvance(@Param('id') id: string, @GetTenant() tenantId: string) {
         const advance = await this.advanceService.getAdvance(id, tenantId);
-        return { success: true, data: advance };
+        return { success: true, data: this.mapAdvanceTrip(advance) };
     }
 
     @Put('advances/:id/approve')
