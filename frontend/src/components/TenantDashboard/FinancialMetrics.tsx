@@ -561,28 +561,101 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-              {/* Credit Allocation Summary for Tenant Admin */}
+              {/* Credit Balance Summary for Tenant Admin */}
               {creditBalance && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  {/* Total Credits Purchased */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                  {/* Current Balance */}
                   <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center justify-between mb-4">
                       <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-[18px]">
-                        <Package className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <Wallet className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                       </div>
                     </div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Total Credits Purchased" />
+                      <TranslatedText text="Current Balance" />
                     </p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {(creditBalance.currentBalance || 0).toLocaleString()}
+                      {(creditBalance.currentBalance ?? 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="From subscription" />
+                      <TranslatedText text="Credits available to use" />
                     </p>
                   </div>
 
-                  {/* Credits Allocated (Reserved for Partner Plans) */}
+                  {/* Subscription Credits */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-[18px]">
+                        <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Subscription Credits" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {(creditBalance.subscriptionCredits ?? 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="From active subscription plan" />
+                    </p>
+                  </div>
+
+                  {/* Bonus Credits */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-[18px]">
+                        <Activity className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Bonus Credits" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {(creditBalance.bonusCredits ?? 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="Earned from marketplace & bids" />
+                    </p>
+                  </div>
+
+                  {/* Lifetime Spent */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-rose-50 dark:bg-rose-900/20 rounded-[18px]">
+                        <CheckCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Lifetime Spent" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {(creditBalance.lifetimeSpent ?? 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="Total credits consumed" />
+                    </p>
+                  </div>
+
+                  {/* Available for Allocation */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-[18px]">
+                        <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Available for Allocation" />
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {(creditBalance.creditsAvailableForAllocation ?? creditBalance.currentBalance ?? 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                      <TranslatedText text="Can be assigned to partners" />
+                    </p>
+                  </div>
+
+                  {/* Allocated to Partners */}
                   <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center justify-between mb-4">
                       <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-[18px]">
@@ -590,51 +663,54 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                       </div>
                     </div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Credits Allocated" />
+                      <TranslatedText text="Allocated to Partners" />
                     </p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {creditAllocation.totalAllocated.toLocaleString()}
+                      {(creditBalance.creditsAllocatedToPartners ?? 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="Reserved for partner plans" />
+                      <TranslatedText text="Assigned to truck owners" />
                     </p>
                   </div>
 
-                  {/* Credits Sold (Actually Purchased by Truck Owners) */}
+                  {/* Lifetime Earned */}
                   <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-[18px]">
-                        <Users className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                      <div className="p-3 bg-teal-50 dark:bg-teal-900/20 rounded-[18px]">
+                        <TrendingUp className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                       </div>
                     </div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Credits Sold" />
+                      <TranslatedText text="Lifetime Earned" />
                     </p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {creditAllocation.totalSold.toLocaleString()}
+                      {(creditBalance.lifetimeEarned ?? 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="To" /> {transactionSummary?.partnersSold || creditBalance?.totalPartnersSold || 0} <TranslatedText text="truck owners" />
+                      <TranslatedText text="Total credits ever received" />
                     </p>
                   </div>
 
-                  {/* Unallocated Credits */}
+                  {/* Next Refresh */}
                   <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-[18px]">
-                        <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      <div className="p-3 bg-sky-50 dark:bg-sky-900/20 rounded-[18px]">
+                        <Calendar className="w-6 h-6 text-sky-600 dark:text-sky-400" />
                       </div>
                     </div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Unallocated Credits" />
+                      <TranslatedText text="Next Refresh" />
                     </p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {creditAllocation.unallocated.toLocaleString()}
+                    <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                      {creditBalance.nextRefreshDate
+                        ? new Date(creditBalance.nextRefreshDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : '—'}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="Available for new plans" />
+                      <TranslatedText text="Subscription credit renewal" />
                     </p>
                   </div>
+
                 </div>
               )}
 
