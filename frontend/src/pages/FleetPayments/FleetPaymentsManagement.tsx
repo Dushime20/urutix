@@ -1,14 +1,25 @@
 import { useState } from 'react';
-import { TrendingDown, AlertCircle, History } from 'lucide-react';
+import { TrendingDown, AlertCircle, History, Wallet } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import ReceivedPaymentsPage from './ReceivedPaymentsPage';
 import FleetPendingPaymentsPage from './FleetPendingPaymentsPage';
 import FleetTransactionHistoryPage from './FleetTransactionHistoryPage';
+import DriverAdvanceRequestsPage from './DriverAdvanceRequestsPage';
+import { useQuery } from '@tanstack/react-query';
+import { fuelApi } from '../../services/fuelApi';
 
-type SubTabType = 'received' | 'pending' | 'history';
+type SubTabType = 'received' | 'pending' | 'history' | 'advances';
 
 const FleetPaymentsManagement = () => {
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>('received');
+
+  const { data: advanceStats } = useQuery({
+    queryKey: ['fleet-advance-stats'],
+    queryFn: () => fuelApi.getAdvanceStats(),
+    refetchInterval: 30000,
+  });
+
+  const pendingAdvanceCount = advanceStats?.pendingCount ?? 0;
 
   const subTabs = [
     {
@@ -29,6 +40,13 @@ const FleetPaymentsManagement = () => {
       icon: History,
       description: 'Completed transactions',
     },
+    {
+      id: 'advances' as SubTabType,
+      label: 'Driver Advances',
+      icon: Wallet,
+      description: 'Advance requests from drivers',
+      badge: pendingAdvanceCount > 0 ? pendingAdvanceCount : undefined,
+    },
   ];
 
   return (
@@ -44,7 +62,7 @@ const FleetPaymentsManagement = () => {
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
                 className={cn(
-                  "flex-1 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300",
+                  "flex-1 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 relative",
                   isActive
                     ? "bg-white text-blue-600 shadow-md border border-slate-200"
                     : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
@@ -53,6 +71,11 @@ const FleetPaymentsManagement = () => {
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                {(tab as any).badge ? (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-sm">
+                    {(tab as any).badge}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -64,6 +87,7 @@ const FleetPaymentsManagement = () => {
         {activeSubTab === 'received' && <ReceivedPaymentsPage />}
         {activeSubTab === 'pending' && <FleetPendingPaymentsPage />}
         {activeSubTab === 'history' && <FleetTransactionHistoryPage />}
+        {activeSubTab === 'advances' && <DriverAdvanceRequestsPage />}
       </div>
     </div>
   );

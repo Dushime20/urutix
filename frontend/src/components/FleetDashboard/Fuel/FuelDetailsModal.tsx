@@ -20,6 +20,49 @@ import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const FilePreview: React.FC<{ url?: string; label: string; fallbackIcon: React.ReactNode }> = ({ url, label, fallbackIcon }) => {
+    const isPdf = url?.toLowerCase().endsWith('.pdf');
+    return (
+        <div className="aspect-[16/9] bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 relative group overflow-hidden transition-all shadow-sm">
+            {url ? (
+                isPdf ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                        <FileText size={36} className="text-blue-400" />
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">{label} (PDF)</p>
+                        <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                        >
+                            <ExternalLink size={12} /> Open File
+                        </a>
+                    </div>
+                ) : (
+                    <>
+                        <img src={url} alt={label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
+                            <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-xl hover:scale-110 transition-transform shadow-xl"
+                            >
+                                <ExternalLink size={16} />
+                            </a>
+                        </div>
+                    </>
+                )
+            ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-3">
+                    {fallbackIcon}
+                    <p className="text-[9px] font-black uppercase tracking-widest">No capture identified</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 interface FuelDetailsModalProps {
     log: FuelEntry | null;
     isOpen: boolean;
@@ -216,48 +259,16 @@ const FuelDetailsModal: React.FC<FuelDetailsModalProps> = ({ log, isOpen, onClos
                                             Visual Evidence
                                         </h4>
                                         <div className="grid grid-cols-1 gap-6">
-                                            {/* Receipt Photo */}
+                                            {/* Receipt */}
                                             <div className="space-y-3">
                                                 <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Fuel Receipt</p>
-                                                <div className="aspect-[16/9] bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 relative group overflow-hidden transition-all shadow-sm">
-                                                    {log.receiptUrl ? (
-                                                        <>
-                                                            <img src={log.receiptUrl} alt="Receipt" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
-                                                                <button className="p-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-xl hover:scale-110 transition-transform shadow-xl">
-                                                                    <ExternalLink size={16} />
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-3">
-                                                            <FileText size={32} />
-                                                            <p className="text-[9px] font-black uppercase tracking-widest">No capture identified</p>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <FilePreview url={log.receiptUrl} label="Receipt" fallbackIcon={<FileText size={32} />} />
                                             </div>
 
-                                            {/* Odometer Photo */}
+                                            {/* Odometer */}
                                             <div className="space-y-3">
                                                 <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">Odometer Verification</p>
-                                                <div className="aspect-[16/9] bg-[#fafafa] dark:bg-slate-950 rounded-[2rem] border border-gray-100 dark:border-slate-800 relative group overflow-hidden transition-all shadow-sm">
-                                                    {log.odometerImageUrl ? (
-                                                        <>
-                                                            <img src={log.odometerImageUrl} alt="Odometer" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 bg-slate-900/60 dark:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
-                                                                <button className="p-3 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-xl hover:scale-110 transition-transform shadow-xl">
-                                                                    <ExternalLink size={16} />
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-3">
-                                                            <Camera size={32} />
-                                                            <p className="text-[9px] font-black uppercase tracking-widest">No capture identified</p>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <FilePreview url={log.odometerImageUrl} label="Odometer" fallbackIcon={<Camera size={32} />} />
                                             </div>
                                         </div>
                                     </div>

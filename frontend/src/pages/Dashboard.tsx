@@ -152,9 +152,18 @@ const CargoOwnerDashboard = () => {
     loading: false,
   });
 
-  // Credit balance for Financial Overview
-  const [creditBalance, setCreditBalance] = useState<{ currentBalance: number; loading: boolean }>({
-    currentBalance: 0,
+  // Financial summary for Financial Overview (cargo owner payments)
+  const [financialSummary, setFinancialSummary] = useState<{
+    paidCount: number;
+    paidTotal: number;
+    pendingCount: number;
+    pendingTotal: number;
+    loading: boolean;
+  }>({
+    paidCount: 0,
+    paidTotal: 0,
+    pendingCount: 0,
+    pendingTotal: 0,
     loading: true,
   });
 
@@ -391,17 +400,42 @@ const CargoOwnerDashboard = () => {
 
     fetchLoadedCargos();
 
-    // Fetch credit balance for Financial Overview
-    const fetchCreditBalance = async () => {
+    // Fetch payment summary for Financial Overview (cargo owner: paid & pending)
+    const fetchPaymentSummary = async () => {
       try {
-        const res = await api.get('/credits/balance');
-        const balance = res.data?.data ?? res.data;
-        setCreditBalance({ currentBalance: Number(balance?.currentBalance) || 0, loading: false });
+        const [completedRes, pendingRes] = await Promise.allSettled([
+          api.get('/payments', { params: { status: 'completed', limit: 100 } }),
+          api.get('/payments', { params: { status: 'pending', limit: 100 } }),
+        ]);
+
+        const completedPayments: any[] =
+          completedRes.status === 'fulfilled'
+            ? (completedRes.value.data?.payments ?? [])
+            : [];
+        const pendingPayments: any[] =
+          pendingRes.status === 'fulfilled'
+            ? (pendingRes.value.data?.payments ?? [])
+            : [];
+
+        const paidTotal = completedPayments.reduce(
+          (sum: number, p: any) => sum + (Number(p.amount) || 0), 0
+        );
+        const pendingTotal = pendingPayments.reduce(
+          (sum: number, p: any) => sum + (Number(p.amount) || 0), 0
+        );
+
+        setFinancialSummary({
+          paidCount: completedPayments.length,
+          paidTotal,
+          pendingCount: pendingPayments.length,
+          pendingTotal,
+          loading: false,
+        });
       } catch {
-        setCreditBalance(prev => ({ ...prev, loading: false }));
+        setFinancialSummary(prev => ({ ...prev, loading: false }));
       }
     };
-    fetchCreditBalance();
+    fetchPaymentSummary();
   }, [user]);
 
   // Calculate cargo statistics with competitive metrics
@@ -1165,8 +1199,8 @@ const CargoOwnerDashboard = () => {
                 {/* Circular cards row */}
                 <div className="grid grid-cols-2 gap-6 place-items-center bg-slate-50/50 dark:bg-slate-800/50 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700">
                   {[
-                    { icon: CreditCard, label: 'Available Balance', value: creditBalance.loading ? '...' : `${creditBalance.currentBalance.toLocaleString()} TRX`, sub: `Total cargo value: ${formatCurrency(stats.totalValue)}`, colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400', secondaryColor: 'text-[#345E85] dark:text-blue-400', onClick: () => navigate('/dashboard/credits') },
-                    { icon: AlertCircle, label: 'Accounts Payable', value: paymentData.pendingPayments, sub: `Value: ${formatCurrency(paymentData.totalAmount)}`, colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400', secondaryColor: 'text-amber-500 dark:text-amber-400', onClick: () => navigate('/dashboard/financial') },
+                    { icon: CheckCircle, label: 'Paid Transactions', value: financialSummary.loading ? '...' : `${financialSummary.paidCount} paid`, sub: `Total: ${formatCurrency(financialSummary.paidTotal)}`, colorClass: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400', secondaryColor: 'text-emerald-600 dark:text-emerald-400', onClick: () => navigate('/dashboard/financial') },
+                    { icon: AlertCircle, label: 'Pending Payments', value: financialSummary.loading ? '...' : `${financialSummary.pendingCount} pending`, sub: `Total: ${formatCurrency(financialSummary.pendingTotal)}`, colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400', secondaryColor: 'text-amber-500 dark:text-amber-400', onClick: () => navigate('/dashboard/financial') },
                   ].map(({ icon: Icon, label, value, sub, colorClass, secondaryColor, onClick }) => (
                     <div
                       key={label}

@@ -94,7 +94,13 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                 isFullTank: true, // Backend doesn't store this yet?
                 jurisdiction: 'N/A', // Mapping required if needed
                 status: log.status.toLowerCase() as any,
-                notes: log.notes
+                notes: log.notes,
+                receiptUrl: (log as any).metadata?.receiptFileUrl
+                    ? `http://localhost:3005${(log as any).metadata.receiptFileUrl}`
+                    : undefined,
+                odometerImageUrl: (log as any).metadata?.odometerVerificationFileUrl
+                    ? `http://localhost:3005${(log as any).metadata.odometerVerificationFileUrl}`
+                    : undefined,
             }));
 
             setLogs(mappedLogs);

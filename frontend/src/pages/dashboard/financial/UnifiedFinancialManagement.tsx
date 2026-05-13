@@ -9,7 +9,10 @@ import {
   Wallet,
   AlertCircle,
   History,
+  Banknote,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { fuelApi } from "@/services/fuelApi";
 import Payments from "@/pages/Payments";
 import PendingPaymentsPage from "@/pages/Payments/PendingPaymentsPage";
 import EnhancedPendingPaymentsSection from "@/pages/Payments/components/EnhancedPendingPaymentsSection";
@@ -27,10 +30,11 @@ import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
 
-type TabType = "overview" | "payments" | "pending-payments" | "transaction-history" | "payment" | "expenses" | "loans" | "cost-analysis" | "financial-info";
+type TabType = "overview" | "payments" | "pending-payments" | "transaction-history" | "payment" | "expenses" | "loans" | "cost-analysis" | "financial-info" | "driver-advances";
 
 const FinancialDashboard = lazy(() => import("@/pages/dashboard/financial/FinancialDashboard"));
 const ExpenseManagement = lazy(() => import("@/components/FinancialManagement/ExpenseManagement"));
+const DriverAdvanceRequestsPage = lazy(() => import("@/pages/FleetPayments/DriverAdvanceRequestsPage"));
 
 const UnifiedFinancialManagement = () => {
   const location = useLocation();
@@ -52,6 +56,14 @@ const UnifiedFinancialManagement = () => {
   };
 
   const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
+
+  const { data: advanceStats } = useQuery({
+    queryKey: ['fleet-advance-stats-hub'],
+    queryFn: () => fuelApi.getAdvanceStats(),
+    enabled: location.pathname.includes('/fleet'),
+    refetchInterval: 30000,
+  });
+  const pendingAdvanceCount: number = advanceStats?.pendingCount ?? 0;
 
   // Update tab when route changes
   useEffect(() => {
@@ -89,6 +101,8 @@ const UnifiedFinancialManagement = () => {
       navigate(`${basePath}/expenses`, { replace: true });
     } else if (tab === "financial-info") {
       navigate(`${basePath}/financial-info`, { replace: true });
+    } else if (tab === "driver-advances") {
+      // No dedicated route — stay on current financial route, just switch tab state
     } else {
       // For cargo-owner and dashboard, use /payments; for others (like fleet), use /financial
       if (basePath === "/cargo-owner" || basePath === "/dashboard") {
@@ -161,6 +175,14 @@ const UnifiedFinancialManagement = () => {
       icon: DollarSign,
       description: "Manage cargo-based loan requests",
     }] : []),
+    // Driver Advances tab — fleet/truck owners only
+    ...(location.pathname.includes("/fleet") ? [{
+      id: "driver-advances" as TabType,
+      label: "Driver Advances",
+      icon: Banknote,
+      description: "Advance requests from your drivers",
+      badge: pendingAdvanceCount > 0 ? pendingAdvanceCount : undefined,
+    }] : []),
   ];
 
   return (
@@ -190,10 +212,6 @@ const UnifiedFinancialManagement = () => {
           </div>
 
           <div className="flex items-center justify-between md:justify-end gap-3 bg-slate-50 dark:bg-slate-900/50 p-1.5 sm:p-2 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-inner w-full md:w-auto">
-            <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex-1 md:flex-none">
-              <div className="text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Balance</div>
-              <div className="text-base sm:text-lg font-black text-[#0f172a] dark:text-white">$42,500.00</div>
-            </div>
             <button className="p-3 sm:p-4 bg-[#345E85] dark:bg-blue-600 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/10 flex-shrink-0">
               <Plus className="w-5 h-5" />
             </button>
@@ -211,7 +229,7 @@ const UnifiedFinancialManagement = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "px-4 sm:px-6 py-2.5 sm:py-3 rounded-[1.25rem] sm:rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+                    "px-4 sm:px-6 py-2.5 sm:py-3 rounded-[1.25rem] sm:rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start relative",
                     isActive
                       ? "bg-white dark:bg-slate-800 text-[#345E85] dark:text-blue-400 shadow-md border border-slate-200 dark:border-slate-700"
                       : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
@@ -219,6 +237,11 @@ const UnifiedFinancialManagement = () => {
                 >
                   <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <TranslatedText text={tab.label} />
+                  {(tab as any).badge ? (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full flex items-center justify-center shadow-sm">
+                      {(tab as any).badge}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -258,6 +281,11 @@ const UnifiedFinancialManagement = () => {
               </Suspense>
             )}
             {activeTab === "loans" && <EnhancedLoanRequestsPage />}
+            {activeTab === "driver-advances" && (
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+                <DriverAdvanceRequestsPage />
+              </Suspense>
+            )}
             {activeTab === "financial-info" && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
                 <FinancialInformation />

@@ -313,6 +313,11 @@ export const fuelApi = {
         return response.data.data;
     },
 
+    getAllAdvancesForMyDrivers: async () => {
+        const response = await api.get('/fuel/advances/my-drivers/all');
+        return response.data.data;
+    },
+
     getAdvanceStats: async () => {
         const response = await api.get('/fuel/advances/stats/overview');
         return response.data.data;

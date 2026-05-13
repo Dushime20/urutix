@@ -10,7 +10,13 @@ import {
     UseGuards,
     Request,
     InternalServerErrorException,
+    UseInterceptors,
+    UploadedFiles,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import {
     ApiTags,
     ApiOperation,
@@ -22,14 +28,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
-import { UserRole } from '../../entities/user.entity';
+import { UserRole, User } from '../../entities/user.entity';
 import { Driver } from '../../entities/driver.entity';
 import { Trip } from '../../entities/trip.entity';
+import { FuelLog } from '../../entities/fuel-log.entity';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { FuelService } from './fuel.service';
 import { FuelWalletService } from './fuel-wallet.service';
 import { DriverFuelAdvanceService } from './driver-fuel-advance.service';
 import { CreateFuelLogDto, UpdateFuelLogDto, GetFuelLogsDto } from './dto/fuel-log.dto';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationType, NotificationCategory, NotificationChannel, NotificationPriority, EntityType } from '../../entities/notification.entity';
 
 @ApiTags('Fuel Management')
 @ApiBearerAuth('JWT-auth')
@@ -50,10 +59,15 @@ export class FuelController {
         private readonly fuelService: FuelService,
         private readonly fuelWalletService: FuelWalletService,
         private readonly advanceService: DriverFuelAdvanceService,
+        private readonly notificationService: NotificationService,
         @InjectRepository(Driver)
         private readonly driverRepository: Repository<Driver>,
         @InjectRepository(Trip)
         private readonly tripRepository: Repository<Trip>,
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>,
+        @InjectRepository(FuelLog)
+        private readonly fuelLogRepository: Repository<FuelLog>,
     ) { }
 
     // ── WALLET ENDPOINTS ────────────────────────────────────────────────────
@@ -115,35 +129,73 @@ export class FuelController {
     @Post('logs')
     @ApiOperation({
         summary: 'Create a new fuel log',
-        description: 'Log a fuel transaction for a truck',
+        description: 'Log a fuel transaction for a truck. Accepts multipart/form-data for file uploads.',
     })
-    @ApiResponse({
-        status: 201,
-        description: 'Fuel log created successfully',
-        schema: {
-            example: {
-                success: true,
-                data: {
-                    id: 'fuel-log-uuid',
-                    truckId: 'truck-uuid',
-                    driverId: 'driver-uuid',
-                    fuelDate: '2026-01-20T14:30:00Z',
-                    gallons: 50.5,
-                    pricePerGallon: 4.20,
-                    totalCost: 212.10,
-                    location: 'Shell #402, TX',
-                    status: 'PENDING',
-                },
+    @UseInterceptors(
+        FileFieldsInterceptor(
+            [
+                { name: 'receiptFile', maxCount: 1 },
+                { name: 'odometerVerificationFile', maxCount: 1 },
+            ],
+            {
+                storage: diskStorage({
+                    destination: (_req, _file, cb) => {
+                        const uploadPath = join(process.cwd(), 'uploads', 'fuel-logs');
+                        if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
+                        cb(null, uploadPath);
+                    },
+                    filename: (_req, file, cb) => {
+                        const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+                        cb(null, `${unique}${extname(file.originalname)}`);
+                    },
+                }),
+                limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
             },
-        },
-    })
+        ),
+    )
     async createFuelLog(
-        @Body() createDto: CreateFuelLogDto,
+        @Body() body: Record<string, any>,
+        @UploadedFiles() files: { receiptFile?: Express.Multer.File[]; odometerVerificationFile?: Express.Multer.File[] },
         @GetTenant() tenantId: string,
         @Request() req,
     ) {
-        const userId = req.user.id || req.user.sub;
+        const userId = req.user.userId || req.user.id || req.user.sub;
+
+        // Multipart form fields arrive as strings — coerce numeric fields
+        const createDto: CreateFuelLogDto = {
+            truckId: body.truckId,
+            driverId: body.driverId || undefined,
+            fuelDate: body.fuelDate,
+            gallons: parseFloat(body.gallons),
+            pricePerGallon: parseFloat(body.pricePerGallon),
+            location: body.location,
+            odometer: body.odometer ? parseFloat(body.odometer) : undefined,
+            receiptNumber: body.receiptNumber || undefined,
+            paymentMethod: body.paymentMethod || undefined,
+            notes: body.notes || undefined,
+        };
+
         const fuelLog = await this.fuelService.createFuelLog(createDto, tenantId, userId);
+
+        // Persist uploaded file paths in metadata
+        const receiptPath = files?.receiptFile?.[0]?.filename
+            ? `/uploads/fuel-logs/${files.receiptFile[0].filename}`
+            : null;
+        const odometerPath = files?.odometerVerificationFile?.[0]?.filename
+            ? `/uploads/fuel-logs/${files.odometerVerificationFile[0].filename}`
+            : null;
+
+        if (receiptPath || odometerPath) {
+            fuelLog.metadata = {
+                ...(fuelLog.metadata || {}),
+                receiptFileUrl: receiptPath,
+                odometerVerificationFileUrl: odometerPath,
+            };
+            await this.fuelLogRepository.update(
+                { id: fuelLog.id, tenantId },
+                { metadata: fuelLog.metadata },
+            );
+        }
 
         return {
             success: true,
@@ -331,6 +383,60 @@ export class FuelController {
             resolvedTripId,
             body.notes,
         );
+
+        // Notify truck owner (employer) — in-app + email
+        try {
+            if (driver.employerId) {
+                const employer = await this.userRepository.findOne({
+                    where: { id: driver.employerId, tenantId },
+                    relations: ['profile'],
+                });
+                if (employer) {
+                    const driverName = `${driver.firstName} ${driver.lastName}`.trim();
+                    const amountFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(body.advanceAmount);
+                    const tripRef = resolvedTripId ? ` for trip #${advance.trip?.tripNumber || resolvedTripId.slice(0, 8)}` : '';
+
+                    // In-app notification
+                    await this.notificationService.createNotification({
+                        userId: employer.id,
+                        tenantId,
+                        type: NotificationType.PAYMENT_RECEIVED,
+                        priority: NotificationPriority.HIGH,
+                        category: NotificationCategory.DRIVER,
+                        channel: NotificationChannel.IN_APP,
+                        subject: `💰 Driver Advance Request — ${amountFmt}`,
+                        content: `${driverName} has requested a cash advance of ${amountFmt}${tripRef}. Please review and approve or reject.`,
+                        actionUrl: '/fleet/payments?tab=advances',
+                        actionText: 'Review Request',
+                        entityType: EntityType.DRIVER,
+                        entityId: advance.id,
+                        metadata: { advanceId: advance.id, driverId: driver.id, driverName, amount: body.advanceAmount },
+                    });
+
+                    // Email notification
+                    if (employer.email) {
+                        await this.notificationService.createNotification({
+                            userId: employer.id,
+                            tenantId,
+                            type: NotificationType.PAYMENT_RECEIVED,
+                            priority: NotificationPriority.HIGH,
+                            category: NotificationCategory.DRIVER,
+                            channel: NotificationChannel.EMAIL,
+                            subject: `Driver Advance Request — ${amountFmt}`,
+                            content: `Hi${employer.profile ? ` ${employer.profile.firstName}` : ''},\n\nYour driver ${driverName} has submitted a cash advance request of ${amountFmt}${tripRef}.\n\nReason: ${body.notes || 'No reason provided'}\n\nPlease log in to review and take action.`,
+                            recipientEmail: employer.email,
+                            actionUrl: '/fleet/payments?tab=advances',
+                            actionText: 'Review Request',
+                            entityType: EntityType.DRIVER,
+                            entityId: advance.id,
+                        });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('[FuelController] Failed to notify truck owner of advance request:', err.message);
+        }
+
         return { success: true, data: advance };
     }
 
@@ -345,6 +451,13 @@ export class FuelController {
     @ApiOperation({ summary: 'Get pending advances for drivers employed by the logged-in truck owner' })
     async getPendingAdvancesForMyDrivers(@GetTenant() tenantId: string, @Request() req) {
         const advances = await this.advanceService.getPendingAdvancesForEmployer(req.user.userId, tenantId);
+        return { success: true, data: advances };
+    }
+
+    @Get('advances/my-drivers/all')
+    @ApiOperation({ summary: 'Get all advances (all statuses) for drivers employed by the logged-in truck owner' })
+    async getAllAdvancesForMyDrivers(@GetTenant() tenantId: string, @Request() req) {
+        const advances = await this.advanceService.getAllAdvancesForEmployer(req.user.userId, tenantId);
         return { success: true, data: advances };
     }
 

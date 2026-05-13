@@ -171,6 +171,21 @@ export class DriverFuelAdvanceService {
             .getMany();
     }
 
+    async getAllAdvancesForEmployer(
+        employerId: string,
+        tenantId: string,
+    ): Promise<DriverFuelAdvance[]> {
+        return await this.advanceRepository
+            .createQueryBuilder('advance')
+            .leftJoinAndSelect('advance.driver', 'driver')
+            .leftJoinAndSelect('advance.trip', 'trip')
+            .leftJoinAndSelect('advance.approver', 'approver')
+            .where('advance.tenantId = :tenantId', { tenantId })
+            .andWhere('driver.employerId = :employerId', { employerId })
+            .orderBy('advance.advanceDate', 'DESC')
+            .getMany();
+    }
+
     async getAdvanceStats(tenantId: string): Promise<any> {
         const advances = await this.advanceRepository.find({
             where: { tenantId },
