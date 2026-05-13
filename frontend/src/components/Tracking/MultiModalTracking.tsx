@@ -51,6 +51,21 @@ const MultiModalTracking: React.FC = () => {
     fetchShipments();
   }, []);
 
+  // Filter shipments by active tab
+  const filteredShipments = shipments.filter(s => {
+    const status = s.status?.toUpperCase();
+    const matchesSearch = !searchQuery || 
+      s.shipmentNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.load?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    if (activeTab === 'TRANSIT')   return status === 'IN_TRANSIT' || status === 'ACTIVE';
+    if (activeTab === 'PLANNING')  return status === 'PLANNING' || status === 'PENDING' || status === 'CREATED';
+    if (activeTab === 'COMPLETED') return status === 'COMPLETED' || status === 'DELIVERED';
+    return true;
+  });
+
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case 'SEA': return <Ship className="w-5 h-5 text-blue-500" />;
@@ -119,20 +134,32 @@ const MultiModalTracking: React.FC = () => {
                  </div>
 
                  <div className="flex items-center gap-2 p-1 bg-slate-50 rounded-2xl">
-                    {['TRANSIT', 'PLANNING', 'COMPLETED'].map((tab) => (
+                    {[
+                      { key: 'TRANSIT',   label: 'In Transit', count: shipments.filter(s => ['IN_TRANSIT','ACTIVE'].includes(s.status?.toUpperCase())).length },
+                      { key: 'PLANNING',  label: 'Planning',   count: shipments.filter(s => ['PLANNING','PENDING','CREATED'].includes(s.status?.toUpperCase())).length },
+                      { key: 'COMPLETED', label: 'Completed',  count: shipments.filter(s => ['COMPLETED','DELIVERED'].includes(s.status?.toUpperCase())).length },
+                    ].map(({ key, label, count }) => (
                       <button 
-                        key={tab}
-                        onClick={() => setActiveTab(tab as any)}
-                        className={`flex-1 py-2 text-[10px] font-black rounded-xl transition-all ${activeTab === tab ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        key={key}
+                        onClick={() => setActiveTab(key as any)}
+                        className={`flex-1 py-2 text-[10px] font-black rounded-xl transition-all flex flex-col items-center gap-0.5 ${activeTab === key ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                         {tab}
+                         <span>{label}</span>
+                         <span className={`text-[9px] font-black ${activeTab === key ? 'text-blue-400' : 'text-slate-300'}`}>{count}</span>
                       </button>
                     ))}
                  </div>
 
                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                     {loading ? [1,2,3].map(i => <div key={i} className="h-24 bg-slate-50/50 rounded-2xl animate-pulse" />) : 
-                     shipments.map((shipment) => (
+                     filteredShipments.length === 0 ? (
+                       <div className="py-10 text-center">
+                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                           No {activeTab.toLowerCase()} shipments
+                         </p>
+                       </div>
+                     ) :
+                     filteredShipments.map((shipment) => (
                        <motion.div 
                         key={shipment.id}
                         initial={{ opacity: 0, x: -10 }}

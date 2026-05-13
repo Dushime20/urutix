@@ -2,27 +2,32 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   MapPin,
-  Route,
   Navigation,
   Loader2,
   Plus,
 } from "lucide-react";
 // Dynamically import heavy page to reduce initial bundle size
 const Tracking = lazy(() => import("@/pages/Tracking"));
-import RoutesPage from "@/pages/Routes";
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Roles that should NOT see Route Planning (cargo owners track shipments, not plan fleet routes)
+const CARGO_OWNER_ROLES = ['CARGO_OWNER', 'RECEIVER', 'CARGO_RECEIVER'];
 
 type TabType = "tracking" | "routes";
 
 const UnifiedTrackingManagement = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isCargoOwnerRole = CARGO_OWNER_ROLES.includes(user?.role ?? '');
 
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
-    if (location.pathname.includes("/routes")) return "routes";
+    if (!isCargoOwnerRole && location.pathname.includes("/routes")) return "routes";
     return "tracking";
   };
 
@@ -58,6 +63,7 @@ const UnifiedTrackingManagement = () => {
     }
   };
 
+  // Cargo owners only see Live Tracking — Route Planning is a fleet/carrier function
   const tabs = [
     {
       id: "tracking" as TabType,
@@ -65,12 +71,12 @@ const UnifiedTrackingManagement = () => {
       icon: MapPin,
       description: "Real-time shipment tracking and monitoring",
     },
-    {
+    ...(!isCargoOwnerRole ? [{
       id: "routes" as TabType,
       label: "Route Planning",
-      icon: Route,
+      icon: Navigation,
       description: "Plan and optimize delivery routes",
-    },
+    }] : []),
   ];
 
   return (
@@ -142,9 +148,13 @@ const UnifiedTrackingManagement = () => {
                 <Tracking />
               </Suspense>
             )}
-            {activeTab === "routes" && (
+            {activeTab === "routes" && !isCargoOwnerRole && (
               <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
-                <RoutesPage />
+                {/* Lazy load RoutesPage only for fleet/carrier roles */}
+                {(() => {
+                  const RoutesPage = lazy(() => import("@/pages/Routes"));
+                  return <RoutesPage />;
+                })()}
               </Suspense>
             )}
           </div>
