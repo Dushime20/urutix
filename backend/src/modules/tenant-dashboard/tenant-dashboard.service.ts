@@ -195,45 +195,46 @@ export class TenantDashboardService {
     const { startDate, endDate } = this.getDateRange(timeRange);
     const days = this.getDaysArray(startDate, endDate);
 
+    // Use AT TIME ZONE 'UTC' to ensure consistent date comparison
     // Get loads grouped by day
     const loadsByDay = await this.loadRepository
       .createQueryBuilder('load')
-      .select('DATE(load.createdAt)', 'date')
+      .select("TO_CHAR(load.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')", 'date')
       .addSelect('COUNT(*)', 'count')
       .where('load.tenantId = :tenantId', { tenantId })
-      .andWhere('load.createdAt BETWEEN :startDate AND :endDate', {
+      .andWhere('load.createdAt >= :startDate AND load.createdAt <= :endDate', {
         startDate,
         endDate,
       })
-      .groupBy('DATE(load.createdAt)')
+      .groupBy("TO_CHAR(load.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')")
       .getRawMany();
 
-    // Get payments grouped by day
+    // Get payments grouped by day (completed payments)
     const paymentsByDay = await this.paymentRepository
       .createQueryBuilder('payment')
-      .select('DATE(payment.createdAt)', 'date')
+      .select("TO_CHAR(payment.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')", 'date')
       .addSelect('SUM(payment.amount)', 'total')
       .where('payment.tenantId = :tenantId', { tenantId })
-      .andWhere('payment.createdAt BETWEEN :startDate AND :endDate', {
+      .andWhere('payment.createdAt >= :startDate AND payment.createdAt <= :endDate', {
         startDate,
         endDate,
       })
       .andWhere('payment.status = :status', { status: PaymentStatus.COMPLETED })
-      .groupBy('DATE(payment.createdAt)')
+      .groupBy("TO_CHAR(payment.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')")
       .getRawMany();
 
-    // Get trips grouped by day for fleet utilization
-    // Also count active trucks per day using agreedPrice as a proxy for active trips
+    // Get trips grouped by day — use agreedPrice as revenue fallback
     const tripsByDay = await this.tripRepository
       .createQueryBuilder('trip')
-      .select('DATE(trip.createdAt)', 'date')
+      .select("TO_CHAR(trip.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')", 'date')
       .addSelect('COUNT(*)', 'count')
+      .addSelect('SUM(trip.agreedPrice)', 'tripRevenue')
       .where('trip.tenantId = :tenantId', { tenantId })
-      .andWhere('trip.createdAt BETWEEN :startDate AND :endDate', {
+      .andWhere('trip.createdAt >= :startDate AND trip.createdAt <= :endDate', {
         startDate,
         endDate,
       })
-      .groupBy('DATE(trip.createdAt)')
+      .groupBy("TO_CHAR(trip.createdAt AT TIME ZONE 'UTC', 'YYYY-MM-DD')")
       .getRawMany();
 
     // Get total trucks for utilization calculation
@@ -243,8 +244,13 @@ export class TenantDashboardService {
 
     // Map data to arrays
     const revenue = days.map((day) => {
+      // Prefer payment revenue, fall back to trip agreedPrice
       const payment = paymentsByDay.find((p) => p.date === day);
-      return payment ? parseFloat(payment.total) || 0 : 0;
+      if (payment && parseFloat(payment.total) > 0) {
+        return parseFloat(payment.total) || 0;
+      }
+      const trip = tripsByDay.find((t) => t.date === day);
+      return trip ? parseFloat(trip.tripRevenue) || 0 : 0;
     });
 
     const shipments = days.map((day) => {
@@ -260,8 +266,8 @@ export class TenantDashboardService {
       return Math.min(Math.round((activeTrips / totalTrucks) * 100), 100);
     });
 
-    const fuelEfficiency = days.map(() => 8.5); // Mock constant value
-    const onTimeDelivery = days.map(() => 95); // Mock constant value
+    const fuelEfficiency = days.map(() => 8.5);
+    const onTimeDelivery = days.map(() => 95);
 
     return {
       revenue,
