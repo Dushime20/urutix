@@ -4,11 +4,76 @@ import api from '../../services/api';
 import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
 import {
   ArrowLeft, Package, Truck, MapPin, ArrowRight,
-  ChevronDown, ChevronUp, DollarSign, Clock, Shield,
+  ChevronDown, ChevronUp, Shield,
   CheckCircle, Zap, RefreshCw, Navigation,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const CURRENCY_SYMBOL = '$';
+
+/** Haversine distance in km */
+const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
+/**
+ * Calculate real distance from load origin/destination coordinates.
+ * Falls back to matchDetails.distanceKm if coordinates are unavailable.
+ */
+const getDistance = (match: any): string => {
+  const load = match.load;
+  const details = match.matchDetails ?? match.match_details;
+
+  const oLat = load?.origin?.lat
+    ?? load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.coordinates?.latitude;
+  const oLng = load?.origin?.lng
+    ?? load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.coordinates?.longitude;
+  const dLat = load?.destination?.lat
+    ?? load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.coordinates?.latitude;
+  const dLng = load?.destination?.lng
+    ?? load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.coordinates?.longitude;
+
+  if (oLat != null && oLng != null && dLat != null && dLng != null) {
+    return `${haversineKm(oLat, oLng, dLat, dLng).toLocaleString()} km`;
+  }
+  if (details?.distanceKm != null) return `${Number(details.distanceKm).toLocaleString()} km`;
+  return '—';
+};
+
+/**
+ * Best available price:
+ * trip.agreedPrice > matchDetails.estimatedCost > matchDetails.recommendedPrice > load.offeredPrice
+ */
+const getPrice = (match: any): string => {
+  const details = match.matchDetails ?? match.match_details;
+  const trip = match.trip;
+
+  const val =
+    (trip?.agreedPrice != null ? Number(trip.agreedPrice) : null) ??
+    (details?.estimatedCost != null ? Number(details.estimatedCost) : null) ??
+    (details?.recommendedPrice != null ? Number(details.recommendedPrice) : null) ??
+    (match.load?.offeredPrice != null ? Number(match.load.offeredPrice) : null);
+
+  if (val == null || isNaN(val)) return '—';
+  return `${CURRENCY_SYMBOL}${val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+};
+
+const fmtDate = (d: any) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const AcceptedMatches: React.FC = () => {
   const navigate = useNavigate();
@@ -102,137 +167,166 @@ const AcceptedMatches: React.FC = () => {
       ) : (
         <div className="space-y-4">
           <AnimatePresence>
-            {sorted.map(match => (
-              <motion.div key={match.id}
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden"
-              >
-                {/* Status stripe */}
-                <div className={`h-1 w-full ${match.status === 'ACCEPTED' ? 'bg-emerald-400' : 'bg-primary-400'}`} />
+            {sorted.map(match => {
+              const details = match.matchDetails ?? match.match_details;
+              return (
+                <motion.div key={match.id}
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden"
+                >
+                  {/* Status stripe */}
+                  <div className={`h-1 w-full ${match.status === 'ACCEPTED' ? 'bg-emerald-400' : 'bg-primary-400'}`} />
 
-                <div className="p-6">
-                  {/* Top row */}
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                          match.status === 'ACCEPTED'
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                            : 'bg-primary-50 text-primary-500 border-primary-100'
-                        }`}>{match.status}</span>
-                        <span className="flex items-center gap-1 px-3 py-1 bg-primary-50 text-primary-500 rounded-full border border-primary-100 text-[9px] font-black uppercase tracking-widest">
-                          <Zap className="w-2.5 h-2.5 fill-current" /> Match {Math.round((match.score || 0) * 100)}%
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                          {new Date(match.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                  <div className="p-6">
+                    {/* Top row */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                            match.status === 'ACCEPTED'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                              : 'bg-primary-50 text-primary-500 border-primary-100'
+                          }`}>{match.status}</span>
+                          <span className="flex items-center gap-1 px-3 py-1 bg-primary-50 text-primary-500 rounded-full border border-primary-100 text-[9px] font-black uppercase tracking-widest">
+                            <Zap className="w-2.5 h-2.5 fill-current" /> Match {Math.round((match.score || 0) * 100)}%
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                            {fmtDate(match.createdAt)}
+                          </span>
+                        </div>
 
-                      <h3 className="text-xl font-black text-slate-900 tracking-tight mb-4">
-                        {match.load?.title || `Cargo ${match.loadId?.slice(0, 8)}`}
-                      </h3>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight mb-4">
+                          {match.load?.title || `Cargo ${match.loadId?.slice(0, 8)}`}
+                        </h3>
 
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Stat icon={<Package className="w-3.5 h-3.5 text-primary-400" />} label="Payload" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
-                        <Stat icon={<Truck className="w-3.5 h-3.5 text-primary-400" />} label="Truck" value={match.truck?.plateNumber || '—'} />
-                        <Stat icon={<Shield className="w-3.5 h-3.5 text-primary-400" />} label="Truck Owner" value={match.truck?.owner?.profile?.firstName ? `${match.truck.owner.profile.firstName} ${match.truck.owner.profile.lastName || ''}`.trim() : 'Unknown'} />
-                        <div className="col-span-2 lg:col-span-1 space-y-1">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Route</p>
-                          <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
-                            <MapPin className="w-3.5 h-3.5 text-primary-400 shrink-0" />
-                            <span className="truncate">{match.load?.origin?.city || 'Origin'}</span>
-                            <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
-                            <span className="truncate">{match.load?.destination?.city || 'Destination'}</span>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                          <Stat icon={<Package className="w-3.5 h-3.5 text-primary-400" />} label="Payload" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
+                          <Stat icon={<Truck className="w-3.5 h-3.5 text-primary-400" />} label="Truck" value={match.truck?.plateNumber || '—'} />
+                          <Stat icon={<Shield className="w-3.5 h-3.5 text-primary-400" />} label="Truck Owner" value={
+                            match.truck?.owner?.profile?.firstName
+                              ? `${match.truck.owner.profile.firstName} ${match.truck.owner.profile.lastName || ''}`.trim()
+                              : details?.ownerName || 'Unknown'
+                          } />
+                          <div className="col-span-2 lg:col-span-1 space-y-1">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Route</p>
+                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                              <MapPin className="w-3.5 h-3.5 text-primary-400 shrink-0" />
+                              <span className="truncate">
+                                {match.load?.origin?.city
+                                  || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
+                                  || 'Origin'}
+                              </span>
+                              <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
+                              <span className="truncate">
+                                {match.load?.destination?.city
+                                  || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
+                                  || 'Destination'}
+                              </span>
+                            </div>
                           </div>
                         </div>
+
+                        {/* View details toggle */}
+                        <button
+                          onClick={() => setExpandedId(expandedId === match.id ? null : match.id)}
+                          className="mt-4 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary-400 hover:text-primary-600 transition-colors"
+                        >
+                          {expandedId === match.id ? <ChevronDown className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          {expandedId === match.id ? 'Hide Details' : 'View Details'}
+                        </button>
+
+                        {/* Expanded details */}
+                        <AnimatePresence>
+                          {expandedId === match.id && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                              <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                                {/* Cargo Details */}
+                                <div className="space-y-2.5">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Cargo Details</p>
+                                  <DR label="Type" value={match.load?.cargoType || '—'} />
+                                  <DR label="Weight" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
+                                  <DR label="Agreed Price" value={getPrice(match)} highlight />
+                                  <DR label="Pickup" value={
+                                    match.load?.origin?.city
+                                    || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
+                                    || '—'
+                                  } />
+                                  <DR label="Delivery" value={
+                                    match.load?.destination?.city
+                                    || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
+                                    || '—'
+                                  } />
+                                  <DR label="Pickup Date" value={fmtDate(match.load?.pickupDate)} />
+                                  <DR label="Delivery Date" value={fmtDate(match.load?.deliveryDate)} />
+                                </div>
+
+                                {/* Truck Details */}
+                                <div className="space-y-2.5">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Truck Details</p>
+                                  <DR label="Plate" value={match.truck?.plateNumber || '—'} />
+                                  <DR label="Make / Model" value={`${match.truck?.make || ''} ${match.truck?.model || ''}`.trim() || '—'} />
+                                  <DR label="Type" value={match.truck?.truckType || '—'} />
+                                  <DR label="Capacity" value={`${Number(match.truck?.capacityWeight || 0).toLocaleString()} kg`} />
+                                  <DR label="GPS" value={match.truck?.hasGps ? '✅ Yes' : '❌ No'} />
+                                  <DR label="Refrigeration" value={match.truck?.hasRefrigeration ? '✅ Yes' : '❌ No'} />
+                                </div>
+
+                                {/* Match Info */}
+                                <div className="space-y-2.5">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Match Info</p>
+                                  <DR label="Score" value={`${Math.round((match.score || 0) * 100)}%`} highlight />
+                                  <DR label="Est. Cost" value={getPrice(match)} highlight />
+                                  <DR label="Distance" value={getDistance(match)} />
+                                  <DR label="Est. Delivery" value={details?.estimatedDeliveryTime ? `${details.estimatedDeliveryTime} hrs` : '—'} />
+                                  <DR label="Success Prob." value={details?.successProbability ? `${Math.round(details.successProbability * 100)}%` : '—'} />
+                                  {details?.matchReason && (
+                                    <div className="pt-2">
+                                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Match Reason</p>
+                                      <p className="text-[10px] text-slate-500 leading-relaxed">{details.matchReason}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
 
-                      {/* View details toggle */}
-                      <button
-                        onClick={() => setExpandedId(expandedId === match.id ? null : match.id)}
-                        className="mt-4 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary-400 hover:text-primary-600 transition-colors"
-                      >
-                        {expandedId === match.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        {expandedId === match.id ? 'Hide Details' : 'View Details'}
-                      </button>
-
-                      {/* Expanded details */}
-                      <AnimatePresence>
-                        {expandedId === match.id && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                            <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6">
-                              {/* Cargo */}
-                              <div className="space-y-2.5">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Cargo Details</p>
-                                <DR label="Type" value={match.load?.cargoType || '—'} />
-                                <DR label="Weight" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
-                                <DR label="Offered Price" value={match.load?.offeredPrice ? `$${Number(match.load.offeredPrice).toLocaleString()}` : '—'} highlight />
-                                <DR label="Pickup" value={match.load?.origin?.city || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city || '—'} />
-                                <DR label="Delivery" value={match.load?.destination?.city || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city || '—'} />
-                                <DR label="Pickup Date" value={match.load?.pickupDate ? new Date(match.load.pickupDate).toLocaleDateString() : '—'} />
-                                <DR label="Delivery Date" value={match.load?.deliveryDate ? new Date(match.load.deliveryDate).toLocaleDateString() : '—'} />
-                              </div>
-                              {/* Truck */}
-                              <div className="space-y-2.5">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Truck Details</p>
-                                <DR label="Plate" value={match.truck?.plateNumber || '—'} />
-                                <DR label="Make / Model" value={`${match.truck?.make || ''} ${match.truck?.model || ''}`.trim() || '—'} />
-                                <DR label="Type" value={match.truck?.truckType || '—'} />
-                                <DR label="Capacity" value={`${Number(match.truck?.capacityWeight || 0).toLocaleString()} kg`} />
-                                <DR label="GPS" value={match.truck?.hasGps ? '✅ Yes' : '❌ No'} />
-                                <DR label="Refrigeration" value={match.truck?.hasRefrigeration ? '✅ Yes' : '❌ No'} />
-                              </div>
-                              {/* Match */}
-                              <div className="space-y-2.5">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Match Info</p>
-                                <DR label="Score" value={`${Math.round((match.score || 0) * 100)}%`} highlight />
-                                <DR label="Est. Cost" value={match.match_details?.estimatedCost ? `$${Number(match.match_details.estimatedCost).toLocaleString()}` : '—'} />
-                                <DR label="Distance" value={match.match_details?.distanceKm ? `${match.match_details.distanceKm} km` : '—'} />
-                                {match.match_details?.matchReason && (
-                                  <div className="pt-2">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Match Reason</p>
-                                    <p className="text-[10px] text-slate-500 leading-relaxed">{match.match_details.matchReason}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </motion.div>
+                      {/* Actions */}
+                      <div className="flex flex-col gap-3 shrink-0">
+                        {match.status === 'ACCEPTED' && !match.trip && (
+                          <button
+                            onClick={() => handleCreateTrip(match.id)}
+                            disabled={processingId === match.id}
+                            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                          >
+                            {processingId === match.id
+                              ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</>
+                              : <><CheckCircle className="w-3.5 h-3.5" /> Start Trip</>
+                            }
+                          </button>
                         )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-3 shrink-0">
-                      {match.status === 'ACCEPTED' && !match.trip && (
-                        <button
-                          onClick={() => handleCreateTrip(match.id)}
-                          disabled={processingId === match.id}
-                          className="flex items-center justify-center gap-2 px-6 py-3 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
-                        >
-                          {processingId === match.id
-                            ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</>
-                            : <><CheckCircle className="w-3.5 h-3.5" /> Start Trip</>
-                          }
-                        </button>
-                      )}
-                      {match.status === 'ACCEPTED' && match.trip && (
-                        <button
-                          onClick={() => navigate('/dashboard/tracking')}
-                          className="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
-                        >
-                          <Navigation className="w-3.5 h-3.5" /> Track Trip
-                        </button>
-                      )}
-                      {match.status === 'REQUESTED' && (
-                        <div className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">
-                          Awaiting truck owner response
-                        </div>
-                      )}
+                        {match.status === 'ACCEPTED' && match.trip && (
+                          <button
+                            onClick={() => navigate('/dashboard/tracking')}
+                            className="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                          >
+                            <Navigation className="w-3.5 h-3.5" /> Track Trip
+                          </button>
+                        )}
+                        {match.status === 'REQUESTED' && (
+                          <div className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">
+                            Awaiting truck owner response
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
       )}
