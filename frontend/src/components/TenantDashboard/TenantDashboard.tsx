@@ -321,11 +321,29 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     return gradient;
   };
 
+  // Generate labels dynamically based on actual data length and timeRange
+  const buildLabels = (dataArray: number[], range: string): string[] => {
+    const len = dataArray?.length || 0;
+    if (len === 0) return [];
+    const now = new Date();
+    return Array.from({ length: len }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - (len - 1 - i));
+      if (range === '7d') {
+        return d.toLocaleDateString('en-US', { weekday: 'short' });
+      }
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+  };
+
+  const revenueLabels = buildLabels(data.trends.revenue, timeRange);
+  const fleetLabels   = buildLabels(data.trends.fleetUtilization, timeRange);
+
   const revenueData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: revenueLabels,
     datasets: [
       {
-        label: 'Revenue (RWF)',
+        label: 'Revenue',
         data: data.trends.revenue,
         borderColor: '#1e40af',
         backgroundColor: (context: any) => {
@@ -350,7 +368,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   };
 
   const fleetUtilizationData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: fleetLabels,
     datasets: [
       {
         label: 'Fleet Utilization (%)',
@@ -462,8 +480,18 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                       </button>
                     </div>
                   </div>
-                  <div className="h-72">
-                    <Line data={revenueData} options={chartOptions} />
+                  <div className="h-72 relative">
+                    {(!data.trends.revenue || data.trends.revenue.length === 0) ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mb-2">
+                          <Download className="w-5 h-5 text-slate-300" />
+                        </div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No revenue data yet</p>
+                        <p className="text-xs text-slate-300 mt-1">Complete trips to see revenue trends</p>
+                      </div>
+                    ) : (
+                      <Line data={revenueData} options={chartOptions} />
+                    )}
                   </div>
                 </motion.div>
 
@@ -483,8 +511,18 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                       <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider"><TranslatedText text="Avg:" /> {data.metrics.averageLoadUtilization}%</span>
                     </div>
                   </div>
-                  <div className="h-72">
-                    <Line data={fleetUtilizationData} options={chartOptions} />
+                  <div className="h-72 relative">
+                    {(!data.trends.fleetUtilization || data.trends.fleetUtilization.length === 0) ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mb-2">
+                          <Activity className="w-5 h-5 text-slate-300" />
+                        </div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No fleet data yet</p>
+                        <p className="text-xs text-slate-300 mt-1">Assign trucks to trips to see utilization</p>
+                      </div>
+                    ) : (
+                      <Line data={fleetUtilizationData} options={chartOptions} />
+                    )}
                   </div>
                 </motion.div>
               </div>
