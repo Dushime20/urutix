@@ -101,7 +101,7 @@ const SubscriptionPlans: React.FC = () => {
       const response = await api.get('/credits/balance');
       return response.data;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Fetch marketplace stats
@@ -112,6 +112,16 @@ const SubscriptionPlans: React.FC = () => {
       return response.data;
     },
     refetchInterval: 30000,
+  });
+
+  // Fetch credit transaction history for the trend chart
+  const { data: creditHistoryData } = useQuery({
+    queryKey: ['credit-transaction-history'],
+    queryFn: async () => {
+      const response = await api.get('/credits/transactions');
+      return response.data;
+    },
+    refetchInterval: 60000,
   });
 
   // Fetch partner plans created by tenant (kept for future use)
@@ -875,7 +885,11 @@ const SubscriptionPlans: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
-                            <span className="text-xs font-bold text-slate-600">Used</span>
+                            <span className="text-xs font-bold text-slate-600">Used in Ops</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-600"></div>
+                            <span className="text-xs font-bold text-slate-600">Earned</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
@@ -884,59 +898,96 @@ const SubscriptionPlans: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-4 mb-6">
+                      {/* ── 5 Stat Cards ── */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        {/* 1. Total Purchased Credits */}
                         <div className="bg-blue-50 border-2 border-blue-100 rounded-xl p-4">
                           <div className="text-[9px] font-black text-[#345E85] uppercase tracking-wider mb-1">Total Purchased</div>
                           <div className="text-2xl font-black text-slate-900">
-                            {subscription.plan?.totalCredits === -1 ? '∞' : subscription.plan?.totalCredits?.toLocaleString() || 0}
+                            {(() => {
+                              const bal = creditAccountData?.data;
+                              const total = (bal?.subscriptionCredits ?? 0) + (bal?.purchasedCredits ?? 0);
+                              return total.toLocaleString();
+                            })()}
                           </div>
+                          <div className="text-[9px] text-slate-500 mt-1">Subscription + top-ups</div>
                         </div>
+
+                        {/* 2. Sold via Marketplace */}
                         <div className="bg-emerald-50 border-2 border-emerald-100 rounded-xl p-4">
                           <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Sold via Marketplace</div>
                           <div className="text-2xl font-black text-slate-900">
-                            {marketplaceStatsData?.data?.totalCreditsSold?.toLocaleString() || '0'}
+                            {(marketplaceStatsData?.data?.totalCreditsSold ?? creditAccountData?.data?.creditsAllocatedToPartners ?? 0).toLocaleString()}
                           </div>
+                          <div className="text-[9px] text-slate-500 mt-1">Credits sold to partners</div>
                         </div>
+
+                        {/* 3. Used in Operations */}
                         <div className="bg-red-50 border-2 border-red-100 rounded-xl p-4">
                           <div className="text-[9px] font-black text-red-600 uppercase tracking-wider mb-1">Used in Operations</div>
                           <div className="text-2xl font-black text-slate-900">
-                            {creditAccountData?.data?.lifetimeSpent?.toLocaleString() || '0'}
+                            {(() => {
+                              const bal = creditAccountData?.data;
+                              // Operational usage = lifetime spent minus credits sold to partners
+                              const sold = marketplaceStatsData?.data?.totalCreditsSold ?? bal?.creditsAllocatedToPartners ?? 0;
+                              const ops = Math.max(0, (bal?.lifetimeSpent ?? 0) - sold);
+                              return ops.toLocaleString();
+                            })()}
                           </div>
+                          <div className="text-[9px] text-slate-500 mt-1">Deducted by cargo ops</div>
                         </div>
+
+                        {/* 4. Earned from Operations */}
+                        <div className="bg-amber-50 border-2 border-amber-100 rounded-xl p-4">
+                          <div className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-1">Earned from Operations</div>
+                          <div className="text-2xl font-black text-slate-900">
+                            {(creditAccountData?.data?.bonusCredits ?? 0).toLocaleString()}
+                          </div>
+                          <div className="text-[9px] text-slate-500 mt-1">Bonus from marketplace & bids</div>
+                        </div>
+
+                        {/* 5. Current Balance */}
                         <div className="bg-purple-50 border-2 border-purple-100 rounded-xl p-4">
                           <div className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-1">Current Balance</div>
                           <div className="text-2xl font-black text-slate-900">
-                            {creditAccountData?.data?.currentBalance?.toLocaleString() || '0'}
+                            {(creditAccountData?.data?.currentBalance ?? 0).toLocaleString()}
                           </div>
+                          <div className="text-[9px] text-slate-500 mt-1">Available to use now</div>
                         </div>
                       </div>
 
-                      {/* Area Chart */}
+                      {/* ── Trend Chart ── */}
                       <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                         <ResponsiveContainer width="100%" height={300}>
                           <AreaChart
                             data={(() => {
-                              const totalCredits = subscription.plan?.totalCredits || 0;
-                              const soldCredits = marketplaceStatsData?.data?.totalCreditsSold || 0;
-                              const usedCredits = creditAccountData?.data?.lifetimeSpent || 0;
-                              const days = 30;
-                              
-                              // Generate 30 days of data showing marketplace activity
-                              return Array.from({ length: days }, (_, i) => {
-                                const dayNumber = i + 1;
-                                const progressRatio = dayNumber / days;
-                                
-                                // Simulate gradual marketplace sales and usage
-                                const dailySold = Math.floor(soldCredits * progressRatio);
-                                const dailyUsed = Math.floor(usedCredits * progressRatio);
-                                const dailyBalance = totalCredits - dailySold - dailyUsed;
-                                
+                              // Use real transaction history if available
+                              const txns: any[] = creditHistoryData?.data ?? [];
+                              if (txns.length > 0) {
+                                // Build daily running balance from transactions (last 30)
+                                const sorted = [...txns].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                                return sorted.slice(-30).map((t: any) => ({
+                                  date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                  sold: t.type === 'PARTNER_SALE' || t.type === 'MARKETPLACE_SALE' ? Math.abs(t.amount) : 0,
+                                  used: t.type === 'CONSUMPTION' || t.type === 'DEDUCTION' ? Math.abs(t.amount) : 0,
+                                  earned: t.type === 'BONUS' || t.type === 'SUBSCRIPTION_GRANT' ? t.amount : 0,
+                                  balance: t.balanceAfter ?? 0,
+                                }));
+                              }
+                              // Fallback: simulate from totals over 30 days
+                              const soldTotal = marketplaceStatsData?.data?.totalCreditsSold ?? 0;
+                              const bal = creditAccountData?.data;
+                              const usedTotal = Math.max(0, (bal?.lifetimeSpent ?? 0) - soldTotal);
+                              const earnedTotal = bal?.bonusCredits ?? 0;
+                              const startBalance = (bal?.currentBalance ?? 0) + (bal?.lifetimeSpent ?? 0) - (bal?.bonusCredits ?? 0);
+                              return Array.from({ length: 30 }, (_, i) => {
+                                const r = (i + 1) / 30;
                                 return {
-                                  day: `Day ${dayNumber}`,
-                                  sold: dailySold,
-                                  used: dailyUsed,
-                                  balance: dailyBalance > 0 ? dailyBalance : 0,
-                                  date: new Date(Date.now() - (days - dayNumber) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                  date: new Date(Date.now() - (29 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                  sold: Math.floor(soldTotal * r),
+                                  used: Math.floor(usedTotal * r),
+                                  earned: Math.floor(earnedTotal * r),
+                                  balance: Math.max(0, startBalance - Math.floor((usedTotal + soldTotal) * r) + Math.floor(earnedTotal * r)),
                                 };
                               });
                             })()}
@@ -951,58 +1002,27 @@ const SubscriptionPlans: React.FC = () => {
                                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
                                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
                               </linearGradient>
+                              <linearGradient id="colorEarned" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                              </linearGradient>
                               <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                            <XAxis 
-                              dataKey="date" 
-                              stroke="#64748b"
-                              style={{ fontSize: '11px', fontWeight: 600 }}
-                              interval={4}
-                            />
-                            <YAxis 
-                              stroke="#64748b"
-                              style={{ fontSize: '11px', fontWeight: 600 }}
-                              tickFormatter={(value) => value.toLocaleString()}
-                            />
-                            <Tooltip 
-                              contentStyle={{
-                                backgroundColor: '#ffffff',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                              }}
+                            <XAxis dataKey="date" stroke="#64748b" style={{ fontSize: '11px', fontWeight: 600 }} interval={4} />
+                            <YAxis stroke="#64748b" style={{ fontSize: '11px', fontWeight: 600 }} tickFormatter={(v) => v.toLocaleString()} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px' }}
                               labelStyle={{ fontWeight: 'bold', marginBottom: '8px', color: '#1e293b' }}
-                              formatter={(value: any) => [value.toLocaleString() + ' credits', '']}
+                              formatter={(value: any, name: string) => [value.toLocaleString() + ' credits', name]}
                             />
-                            <Area 
-                              type="monotone" 
-                              dataKey="sold" 
-                              stroke="#10b981" 
-                              strokeWidth={2}
-                              fill="url(#colorSold)" 
-                              name="Credits Sold"
-                            />
-                            <Area 
-                              type="monotone" 
-                              dataKey="used" 
-                              stroke="#ef4444" 
-                              strokeWidth={2}
-                              fill="url(#colorUsed)" 
-                              name="Credits Used"
-                            />
-                            <Area 
-                              type="monotone" 
-                              dataKey="balance" 
-                              stroke="#3b82f6" 
-                              strokeWidth={2}
-                              fill="url(#colorBalance)" 
-                              name="Balance"
-                            />
+                            <Area type="monotone" dataKey="sold"    stroke="#10b981" strokeWidth={2} fill="url(#colorSold)"    name="Sold" />
+                            <Area type="monotone" dataKey="used"    stroke="#ef4444" strokeWidth={2} fill="url(#colorUsed)"    name="Used in Ops" />
+                            <Area type="monotone" dataKey="earned"  stroke="#f59e0b" strokeWidth={2} fill="url(#colorEarned)"  name="Earned" />
+                            <Area type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} fill="url(#colorBalance)" name="Balance" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -1012,9 +1032,10 @@ const SubscriptionPlans: React.FC = () => {
                         <div className="flex items-start gap-2">
                           <FaInfoCircle className="text-emerald-500 text-xs mt-0.5 shrink-0" />
                           <div className="text-[10px] text-slate-600 leading-relaxed">
-                            <span className="font-black">Marketplace Activity:</span> This chart shows your credit marketplace performance. 
-                            <span className="font-black text-emerald-700"> Sold</span> credits generate revenue (${marketplaceStatsData?.data?.totalRevenue?.toLocaleString() || '0'} total). 
-                            <span className="font-black text-red-700"> Used</span> credits are consumed during cargo operations.
+                            <span className="font-black">Credit Consumption Trend:</span> 
+                            <span className="font-black text-emerald-700"> Sold</span> = credits sold to partners via marketplace. 
+                            <span className="font-black text-red-700"> Used in Ops</span> = credits deducted by cargo operations. 
+                            <span className="font-black text-amber-700"> Earned</span> = bonus credits from marketplace & bid revenue (${ (marketplaceStatsData?.data?.totalRevenue ?? creditAccountData?.data?.revenueFromMarketplaceSales ?? 0).toLocaleString()} total).
                           </div>
                         </div>
                       </div>
