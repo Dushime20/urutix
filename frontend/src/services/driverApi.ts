@@ -64,6 +64,7 @@ export interface Trip {
     coordinates: [number, number];
   };
   scheduledDeparture: string;
+  estimatedDeparture: string;
   estimatedArrival: string;
   actualDeparture?: string;
   actualArrival?: string;
@@ -88,6 +89,8 @@ export interface Trip {
     model: string;
   };
   earnings: number;
+  pickupTime: string;
+  deliveryTime: string;
   notes?: string;
   pod?: {
     recipientName: string;
@@ -98,14 +101,27 @@ export interface Trip {
   };
 }
 
+// Haversine distance in km between two [lat, lng] pairs
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // Normalize a raw backend trip to the frontend Trip interface
 function normalizeTrip(raw: any): Trip {
   const load = raw.load || {};
 
   // Location data lives in load.locations array
   const locations: any[] = load.locations || [];
-  const pickupLoc = locations.find((l: any) => l.type === 'PICKUP')?.locationData || {};
-  const deliveryLoc = locations.find((l: any) => l.type === 'DELIVERY')?.locationData || {};
+  const pickupEntry = locations.find((l: any) => l.type === 'PICKUP');
+  const deliveryEntry = locations.find((l: any) => l.type === 'DELIVERY');
+  const pickupLoc = pickupEntry?.locationData || {};
+  const deliveryLoc = deliveryEntry?.locationData || {};
 
   // Fallback to direct trip relations if present
   const pickup = Object.keys(pickupLoc).length ? pickupLoc : (raw.pickupLocation || {});
@@ -136,7 +152,17 @@ function normalizeTrip(raw: any): Trip {
     estimatedArrival: raw.estimatedArrival || raw.plannedEndTime || '',
     actualDeparture: raw.actualStartTime,
     actualArrival: raw.actualEndTime,
-    distance: Number(raw.totalDistance || raw.distance || 0),
+    distance: (() => {
+      const d = Number(raw.totalDistance || raw.distance || 0);
+      if (d) return d;
+      const [lat1, lng1] = pickup.coordinates
+        ? [pickup.coordinates.latitude ?? pickup.coordinates[0], pickup.coordinates.longitude ?? pickup.coordinates[1]]
+        : [0, 0];
+      const [lat2, lng2] = delivery.coordinates
+        ? [delivery.coordinates.latitude ?? delivery.coordinates[0], delivery.coordinates.longitude ?? delivery.coordinates[1]]
+        : [0, 0];
+      return lat1 && lat2 ? Math.round(haversineKm(lat1, lng1, lat2, lng2)) : 0;
+    })(),
     estimatedDuration: Number(raw.duration || raw.estimatedDuration || 0),
     progress: Number(raw.progress || 0),
     currentLocation: raw.currentLocation,
@@ -157,6 +183,8 @@ function normalizeTrip(raw: any): Trip {
       ? { id: raw.truck.id, plateNumber: raw.truck.plateNumber, model: `${raw.truck.make || ''} ${raw.truck.model || ''}`.trim() }
       : { id: raw.truckId, plateNumber: '', model: '' },
     earnings: Number(raw.agreedPrice || 0),
+    pickupTime: pickupEntry?.scheduledDate || raw.plannedStartTime || load.pickupDate || '',
+    deliveryTime: deliveryEntry?.scheduledDate || raw.plannedEndTime || load.deliveryDate || '',
     notes: raw.notes,
     pod: load.metadata?.pod,
   };

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
   Package,
-  Zap,
   ArrowRight,
   TrendingUp
 } from 'lucide-react';
@@ -27,6 +26,8 @@ interface Trip {
   };
   scheduledDeparture: string;
   estimatedArrival: string;
+  pickupTime?: string;
+  deliveryTime?: string;
   distance: number;
   estimatedDuration: number;
   cargo: {
@@ -133,17 +134,21 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
                     <div className="flex gap-4">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#345E85] mt-2 flex-shrink-0" />
                       <div>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Origin</p>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Pickup</p>
                         <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{trip.origin.address}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{formatDateTime(trip.scheduledDeparture)}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                          {(trip.pickupTime || trip.scheduledDeparture) ? formatDateTime(trip.pickupTime || trip.scheduledDeparture) : 'TBD'}
+                        </p>
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#345E85] mt-2 flex-shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
                       <div>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Destination</p>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Delivery</p>
                         <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{trip.destination.address}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">ETA: {formatDateTime(trip.estimatedArrival)}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                          {(trip.deliveryTime || trip.estimatedArrival) ? formatDateTime(trip.deliveryTime || trip.estimatedArrival) : 'TBD'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -152,15 +157,11 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
                   <div className="flex flex-wrap gap-8 items-center border-t border-slate-50 pt-8 mt-auto">
                     <div className="flex items-center gap-2">
                       <TrendingUp size={14} className="text-[#345E85]" />
-                      <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{trip.distance} KM</span>
+                      <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{trip.distance ? Math.round(trip.distance) : '—'} KM</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Package size={14} className="text-[#345E85]" />
-                      <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{trip.cargo.weight} KG</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Zap size={14} className="text-[#345E85]" />
-                      <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">${trip.earnings} Earnings</span>
+                      <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest">{trip.cargo.weight.toLocaleString()} KG</span>
                     </div>
                   </div>
                 </div>

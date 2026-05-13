@@ -182,12 +182,29 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             </div>
                             <p className="text-xl font-black text-[#0f172a] uppercase tracking-tight">{trip.origin.city} to {trip.destination.city}</p>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-2 text-slate-400 mb-1">
-                              <Calendar size={14} />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Scheduled</span>
+                          <div className="text-right space-y-2">
+                            <div>
+                              <div className="flex items-center gap-2 text-slate-400 mb-0.5 justify-end">
+                                <Calendar size={12} />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Pickup</span>
+                              </div>
+                              <p className="text-xs font-black text-[#0f172a] uppercase tracking-tight">
+                                {(trip as any).pickupTime || trip.scheduledDeparture
+                                  ? new Date((trip as any).pickupTime || trip.scheduledDeparture).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+                                  : 'TBD'}
+                              </p>
                             </div>
-                            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{new Date(trip.scheduledDeparture).toLocaleDateString()}</p>
+                            <div>
+                              <div className="flex items-center gap-2 text-emerald-500 mb-0.5 justify-end">
+                                <Calendar size={12} />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Delivery</span>
+                              </div>
+                              <p className="text-xs font-black text-[#0f172a] uppercase tracking-tight">
+                                {(trip as any).deliveryTime || trip.estimatedArrival
+                                  ? new Date((trip as any).deliveryTime || trip.estimatedArrival).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+                                  : 'TBD'}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
@@ -209,16 +226,6 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <div>
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cargo Weight</p>
                               <p className="text-xs font-black text-slate-700 uppercase">{trip.cargo.weight} KG</p>
-                            </div>
-                          </div>
-                          <div className="w-px h-8 bg-slate-200 hidden md:block" />
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
-                              <Zap size={16} />
-                            </div>
-                            <div>
-                              <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Earnings</p>
-                              <p className="text-xs font-black text-emerald-700 uppercase">${trip.earnings}</p>
                             </div>
                           </div>
                         </div>
