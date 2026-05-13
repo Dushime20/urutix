@@ -227,6 +227,80 @@ export class PendingPaymentsController {
   }
 
   /**
+   * GET /pending-payments/truck-owner/completed
+   * Get completed payments received by truck owner (transaction history)
+   */
+  @Get('truck-owner/completed')
+  @Roles(UserRole.TRUCK_OWNER, UserRole.FLEET_MANAGER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get completed payments for truck owner',
+    description: 'Returns all completed payments received by the truck owner',
+  })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiOkResponse({ description: 'Completed payments retrieved successfully' })
+  async getCompletedPaymentsForTruckOwner(
+    @Request() req,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    const payments = await this.tripCompletionService.getCompletedPaymentsForTruckOwner(
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    const startIndex = offset || 0;
+    const endIndex = limit ? startIndex + limit : undefined;
+    const paginatedPayments = payments.slice(startIndex, endIndex);
+
+    const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return {
+      success: true,
+      message: 'Completed payments retrieved successfully',
+      data: {
+        payments: paginatedPayments.map(payment => ({
+          id: payment.id,
+          tripId: payment.tripId,
+          amount: Number(payment.amount),
+          currency: payment.currency,
+          processedAt: payment.processedAt,
+          status: payment.status,
+          paymentType: payment.paymentType,
+          paymentMethod: payment.paymentMethod,
+          description: payment.description,
+          referenceNumber: payment.referenceNumber,
+          createdAt: payment.createdAt,
+          trip: payment.trip ? {
+            id: payment.trip.id,
+            tripNumber: payment.trip.tripNumber,
+            status: payment.trip.status,
+            load: payment.trip.load ? {
+              id: payment.trip.load.id,
+              title: payment.trip.load.title,
+              origin: payment.trip.load.origin,
+              destination: payment.trip.load.destination,
+            } : null,
+          } : null,
+        })),
+        summary: {
+          totalPayments: payments.length,
+          totalAmount,
+          currency: paginatedPayments[0]?.currency || 'USD',
+        },
+        pagination: {
+          total: payments.length,
+          limit: limit || payments.length,
+          offset: startIndex,
+          hasMore: endIndex ? endIndex < payments.length : false,
+        },
+      },
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * GET /pending-payments/forecast
    * Get payment forecast for the next N days
    */

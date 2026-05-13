@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import {
   Download,
   Filter,
@@ -9,7 +10,12 @@ import {
   Wallet,
   Shield,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  Banknote,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Coins,
 } from 'lucide-react';
 import {
   XAxis,
@@ -21,14 +27,47 @@ import {
   AreaChart,
   PieChart,
   Pie,
-  Cell
+  Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { financialAPI } from '@/services/api';
+import { fuelApi } from '@/services/fuelApi';
+import { tenantApi } from '@/services/tenantApi';
 
 const FinancialDashboard: React.FC = () => {
+  const location = useLocation();
+  const isFleet = location.pathname.includes('/fleet');
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
+
+  // Fleet-specific data
+  const { data: advanceStats } = useQuery({
+    queryKey: ['fleet-advance-stats-overview'],
+    queryFn: () => fuelApi.getAdvanceStats(),
+    enabled: isFleet,
+    refetchInterval: 60000,
+  });
+
+  const { data: walletStats } = useQuery({
+    queryKey: ['fleet-wallet-stats-overview'],
+    queryFn: () => fuelApi.getWalletStats(),
+    enabled: isFleet,
+    refetchInterval: 60000,
+  });
+
+  const { data: creditBalance } = useQuery({
+    queryKey: ['fleet-credit-balance-overview'],
+    queryFn: () => tenantApi.getCreditBalance(),
+    enabled: isFleet,
+    refetchInterval: 60000,
+  });
+
+  const { data: recentAdvances } = useQuery({
+    queryKey: ['fleet-recent-advances-overview'],
+    queryFn: () => fuelApi.getAllAdvancesForMyDrivers(),
+    enabled: isFleet,
+    refetchInterval: 60000,
+  });
 
   // Fetch real performance metrics
   const { isLoading } = useQuery({
@@ -139,6 +178,16 @@ const FinancialDashboard: React.FC = () => {
     </motion.div>
   );
 
+  const advanceChartData = useMemo(() => {
+    if (!advanceStats) return [];
+    return [
+      { name: 'Pending',    value: advanceStats.pendingAmount   || 0, color: '#F59E0B' },
+      { name: 'Approved',   value: advanceStats.approvedAmount  || 0, color: '#10B981' },
+      { name: 'Reconciled', value: advanceStats.reconciledAmount|| 0, color: '#345E85' },
+      { name: 'Rejected',   value: advanceStats.rejectedAmount  || 0, color: '#EF4444' },
+    ].filter(d => d.value > 0);
+  }, [advanceStats]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-40 gap-4">
@@ -152,6 +201,196 @@ const FinancialDashboard: React.FC = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
+      {/* ── FLEET FINANCIAL OVERVIEW ── */}
+      {isFleet && (
+        <div className="space-y-8">
+          {/* Headline KPI row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              {
+                label: 'Credit Balance',
+                value: (creditBalance?.currentBalance ?? 0).toLocaleString(),
+                sub: 'Available credits',
+                icon: Coins,
+                color: 'text-violet-600',
+                bg: 'bg-violet-50 dark:bg-violet-900/20',
+                border: 'border-violet-100 dark:border-violet-800',
+              },
+              {
+                label: 'Total Advances Paid',
+                value: formatCurrency(advanceStats?.totalAdvanced || 0),
+                sub: `${advanceStats?.totalAdvances ?? 0} advances`,
+                icon: Banknote,
+                color: 'text-[#345E85]',
+                bg: 'bg-blue-50 dark:bg-blue-900/20',
+                border: 'border-blue-100 dark:border-blue-800',
+              },
+              {
+                label: 'Pending Advances',
+                value: formatCurrency(advanceStats?.pendingAmount || 0),
+                sub: `${advanceStats?.pendingCount ?? 0} awaiting approval`,
+                icon: Clock,
+                color: 'text-amber-600',
+                bg: 'bg-amber-50 dark:bg-amber-900/20',
+                border: 'border-amber-100 dark:border-amber-800',
+              },
+              {
+                label: 'Wallet Balance',
+                value: formatCurrency(walletStats?.totalBalance || 0),
+                sub: `${walletStats?.activeWallets ?? 0} active wallets`,
+                icon: Wallet,
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+                border: 'border-emerald-100 dark:border-emerald-800',
+              },
+            ].map(({ label, value, sub, icon: Icon, color, bg, border }) => (
+              <motion.div
+                key={label}
+                whileHover={{ y: -3 }}
+                className={cn('bg-white dark:bg-slate-900 rounded-[2rem] p-6 border shadow-sm flex items-start gap-4 transition-all', border)}
+              >
+                <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0', bg)}>
+                  <Icon size={20} className={color} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-1">{label}</p>
+                  <p className={cn('text-xl font-black tracking-tight', color)}>{value}</p>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 truncate">{sub}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Credit breakdown + Advance distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Credit breakdown */}
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-7 border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Credit Breakdown</h3>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Subscription · Purchased · Bonus</p>
+                </div>
+                <CreditCard className="text-[#345E85] dark:text-blue-400 w-5 h-5 opacity-40" />
+              </div>
+              <div className="space-y-4">
+                {[
+                  { label: 'Subscription Credits', value: creditBalance?.subscriptionCredits ?? 0, color: 'bg-violet-500', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
+                  { label: 'Purchased Credits',    value: creditBalance?.purchasedCredits    ?? 0, color: 'bg-[#345E85]', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
+                  { label: 'Bonus Credits',        value: creditBalance?.bonusCredits        ?? 0, color: 'bg-emerald-500', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
+                ].map(({ label, value, color, max }) => (
+                  <div key={label}>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{label}</span>
+                      <span className="text-[10px] font-black text-slate-900 dark:text-white">{value.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full transition-all duration-700', color)}
+                        style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Advance distribution pie */}
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-7 border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Advance Distribution</h3>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">By approval status</p>
+                </div>
+                <PieChartIcon className="text-[#345E85] dark:text-blue-400 w-5 h-5 opacity-40" />
+              </div>
+              {advanceChartData.length > 0 ? (
+                <div className="flex items-center gap-6">
+                  <ResponsiveContainer width="55%" height={180}>
+                    <PieChart>
+                      <Pie data={advanceChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={6} dataKey="value">
+                        {advanceChartData.map((entry, i) => <Cell key={i} fill={entry.color} stroke="none" />)}
+                      </Pie>
+                      <Tooltip formatter={(v: any) => formatCurrency(v)} contentStyle={{ borderRadius: '1rem', border: 'none', fontSize: '10px', fontWeight: 900 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex-1 space-y-3">
+                    {advanceChartData.map(({ name, value, color }) => (
+                      <div key={name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                          <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{name}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-900 dark:text-white">{formatCurrency(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[180px] text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">No advance data yet</div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent advances feed */}
+          <div className="bg-slate-900 dark:bg-gray-950 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-xl">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-tighter">Recent Driver Advances</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Latest advance requests from your drivers</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {(recentAdvances || []).slice(0, 6).length > 0 ? (recentAdvances || []).slice(0, 6).map((adv: any) => {
+                  const driverName = adv.driver ? `${adv.driver.firstName} ${adv.driver.lastName}` : 'Driver';
+                  const statusStyles: Record<string, string> = {
+                    PENDING:    'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                    APPROVED:   'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+                    REJECTED:   'bg-rose-500/20 text-rose-400 border-rose-500/30',
+                    RECONCILED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                  };
+                  const StatusIcon = adv.status === 'APPROVED' ? CheckCircle : adv.status === 'REJECTED' ? XCircle : Clock;
+                  return (
+                    <div key={adv.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                          <StatusIcon size={16} className="text-white/60 group-hover:text-white transition-colors" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-tight">{driverName}</p>
+                          <div className="flex items-center gap-3 mt-0.5 opacity-40">
+                            <span className="text-[9px] font-black uppercase tracking-widest">
+                              {adv.trip ? `${adv.trip.origin?.city || '?'} → ${adv.trip.destination?.city || '?'}` : 'No trip'}
+                            </span>
+                            <span className="w-1 h-1 bg-white rounded-full" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">{new Date(adv.advanceDate).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-lg font-black">{formatCurrency(Number(adv.advanceAmount))}</p>
+                        <span className={cn('inline-flex items-center h-6 px-3 rounded-lg text-[9px] font-black uppercase tracking-widest border', statusStyles[adv.status] || statusStyles.PENDING)}>
+                          {adv.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="text-center py-10 opacity-20 text-[10px] font-black uppercase tracking-widest">No advances recorded yet</div>
+                )}
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full -mr-48 -mt-48 blur-[100px] pointer-events-none" />
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+            <span className="text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em]">General Financial Analytics</span>
+            <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+          </div>
+        </div>
+      )}
       {/* Header Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50 dark:bg-gray-800/50 p-6 rounded-[2rem] border border-slate-100 dark:border-gray-700 shadow-sm transition-colors">
         <div className="flex gap-2 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-slate-100 dark:border-gray-700 shadow-inner overflow-x-auto scrollbar-hide">

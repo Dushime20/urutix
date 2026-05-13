@@ -261,4 +261,22 @@ export class TripCompletionService {
       order: { dueDate: 'ASC', createdAt: 'ASC' },
     });
   }
+
+  /**
+   * Get completed/received payments for truck owner transaction history
+   */
+  async getCompletedPaymentsForTruckOwner(
+    truckOwnerId: string,
+    tenantId: string,
+  ): Promise<Payment[]> {
+    return this.paymentRepository.find({
+      where: {
+        payeeId: truckOwnerId,
+        tenantId,
+        status: PaymentStatus.COMPLETED,
+      },
+      relations: ['trip', 'trip.load'],
+      order: { processedAt: 'DESC', createdAt: 'DESC' },
+    });
+  }
 }

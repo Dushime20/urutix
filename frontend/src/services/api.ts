@@ -195,6 +195,12 @@ export const paymentsAPI = {
   requestAdvance: (data: { tripId: string; amount: number; reason: string; urgency: string }) => 
     api.post('/payments/advance-request', data),
   getForecast: (params?: any) => api.get('/payments/forecast', { params }),
+  getTruckOwnerReceivedPayments: (params?: { limit?: number; offset?: number; status?: string }) =>
+    api.get('/pending-payments/truck-owner', { params }),
+  getTruckOwnerPendingPayments: (params?: { limit?: number; offset?: number }) =>
+    api.get('/pending-payments/cargo-owner', { params }),
+  getTruckOwnerCompletedPayments: (params?: { limit?: number; offset?: number }) =>
+    api.get('/pending-payments/truck-owner/completed', { params }),
 };
 
 // Locations API
