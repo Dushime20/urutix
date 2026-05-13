@@ -59,7 +59,7 @@ interface SubscriptionPlan {
 
 const SubscriptionPlans: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions'>('plans');
+  const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions' | 'marketplace'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -74,7 +74,6 @@ const SubscriptionPlans: React.FC = () => {
     phoneNumber: '',
     mobileProvider: 'mtn'
   });
-  const [managedTab, setManagedTab] = useState<'purchases' | 'partners'>('purchases');
 
   // Fetch plans
   const { data: plansData, isLoading } = useQuery({
@@ -253,6 +252,17 @@ const SubscriptionPlans: React.FC = () => {
             }`}
           >
             My Subscriptions
+          </button>
+          <button
+            onClick={() => setActiveTab('marketplace')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+              activeTab === 'marketplace'
+                ? 'bg-[#345E85] text-white shadow-lg'
+                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <FaStore className={activeTab === 'marketplace' ? 'text-white' : 'text-slate-400'} />
+            Marketplace
           </button>
         </div>
 
@@ -762,39 +772,10 @@ const SubscriptionPlans: React.FC = () => {
       </div>
       )}
 
-      {/* Subscriptions & Marketplace Tab */}
+      {/* My Subscriptions Tab — shows purchases + credit stats directly, no sub-tabs */}
       {activeTab === 'subscriptions' && (
         <div className="space-y-8">
-          {/* Sub-navigation Toggle */}
-          <div className="flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-2 border border-slate-100 shadow-sm flex items-center gap-2 w-fit">
-              <button
-                onClick={() => setManagedTab('purchases')}
-                className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  managedTab === 'purchases'
-                    ? 'bg-[#345E85] text-white shadow-lg'
-                    : 'text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                <FaCrown className={managedTab === 'purchases' ? 'text-white' : 'text-slate-400'} />
-                My Purchases
-              </button>
-              <button
-                onClick={() => setManagedTab('partners')}
-                className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  managedTab === 'partners'
-                    ? 'bg-[#345E85] text-white shadow-lg'
-                    : 'text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                <FaStore className={managedTab === 'partners' ? 'text-white' : 'text-slate-400'} />
-                Marketplace (Partners)
-              </button>
-            </div>
-          </div>
-
-          {managedTab === 'purchases' ? (
-            isLoadingSubscriptions ? (
+          {isLoadingSubscriptions ? (
               <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#345E85] mx-auto"></div>
@@ -958,38 +939,29 @@ const SubscriptionPlans: React.FC = () => {
 
                       {/* ── Trend Chart ── */}
                       <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        {(creditHistoryData?.data ?? []).length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                              <FaChartBar className="text-slate-300 text-xl" />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No transaction history yet</p>
+                            <p className="text-xs text-slate-300 mt-1">Chart will populate as credits are used</p>
+                          </div>
+                        ) : (
                         <ResponsiveContainer width="100%" height={300}>
                           <AreaChart
                             data={(() => {
-                              // Use real transaction history if available
+                              // Use real transaction history only — no simulation
                               const txns: any[] = creditHistoryData?.data ?? [];
-                              if (txns.length > 0) {
-                                // Build daily running balance from transactions (last 30)
-                                const sorted = [...txns].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-                                return sorted.slice(-30).map((t: any) => ({
-                                  date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                                  sold: t.type === 'PARTNER_SALE' || t.type === 'MARKETPLACE_SALE' ? Math.abs(t.amount) : 0,
-                                  used: t.type === 'CONSUMPTION' || t.type === 'DEDUCTION' ? Math.abs(t.amount) : 0,
-                                  earned: t.type === 'BONUS' || t.type === 'SUBSCRIPTION_GRANT' ? t.amount : 0,
-                                  balance: t.balanceAfter ?? 0,
-                                }));
-                              }
-                              // Fallback: simulate from totals over 30 days
-                              const soldTotal = marketplaceStatsData?.data?.totalCreditsSold ?? 0;
-                              const bal = creditAccountData?.data;
-                              const usedTotal = Math.max(0, (bal?.lifetimeSpent ?? 0) - soldTotal);
-                              const earnedTotal = bal?.bonusCredits ?? 0;
-                              const startBalance = (bal?.currentBalance ?? 0) + (bal?.lifetimeSpent ?? 0) - (bal?.bonusCredits ?? 0);
-                              return Array.from({ length: 30 }, (_, i) => {
-                                const r = (i + 1) / 30;
-                                return {
-                                  date: new Date(Date.now() - (29 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                                  sold: Math.floor(soldTotal * r),
-                                  used: Math.floor(usedTotal * r),
-                                  earned: Math.floor(earnedTotal * r),
-                                  balance: Math.max(0, startBalance - Math.floor((usedTotal + soldTotal) * r) + Math.floor(earnedTotal * r)),
-                                };
-                              });
+                              if (txns.length === 0) return [];
+                              const sorted = [...txns].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                              return sorted.slice(-30).map((t: any) => ({
+                                date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                sold: t.type === 'PARTNER_SALE' || t.type === 'MARKETPLACE_SALE' ? Math.abs(t.amount) : 0,
+                                used: t.type === 'CONSUMPTION' || t.type === 'DEDUCTION' ? Math.abs(t.amount) : 0,
+                                earned: t.type === 'BONUS' || t.type === 'SUBSCRIPTION_GRANT' ? t.amount : 0,
+                                balance: t.balanceAfter ?? 0,
+                              }));
                             })()}
                             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                           >
@@ -1025,6 +997,7 @@ const SubscriptionPlans: React.FC = () => {
                             <Area type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} fill="url(#colorBalance)" name="Balance" />
                           </AreaChart>
                         </ResponsiveContainer>
+                        )}
                       </div>
 
                       {/* Info Note */}
@@ -1044,7 +1017,7 @@ const SubscriptionPlans: React.FC = () => {
                     {/* Action Buttons */}
                     <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
                       <button
-                        onClick={() => setManagedTab('partners')}
+                        onClick={() => setActiveTab('marketplace')}
                         className="px-6 py-3.5 bg-slate-50 text-slate-700 rounded-2xl hover:bg-slate-100 transition-all font-bold text-[11px] uppercase tracking-widest flex items-center gap-2"
                       >
                         <FaStore className="text-xs" />
@@ -1072,10 +1045,14 @@ const SubscriptionPlans: React.FC = () => {
                   View Available Plans
                 </button>
               </div>
-            )
-          ) : (
-            <CreditMarketplace />
-          )}
+            )}
+        </div>
+      )}
+
+      {/* Marketplace Tab */}
+      {activeTab === 'marketplace' && (
+        <div className="space-y-8">
+          <CreditMarketplace />
         </div>
       )}
 
