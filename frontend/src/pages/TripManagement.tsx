@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Truck,
@@ -126,7 +126,9 @@ const TripManagement: React.FC = () => {
           deliveryLocation: getDeliveryLocation(),
           driverName: trip.driver ? `${trip.driver.firstName} ${trip.driver.lastName}` : 'Unassigned',
           truckPlate: trip.truck?.plateNumber || 'Unassigned',
-          pod: trip.load?.metadata?.pod || undefined
+          pod: trip.load?.metadata?.pod || undefined,
+          // Preserve full raw objects for the detail modal
+          _raw: trip,
         };
       });
     }
@@ -178,7 +180,7 @@ const TripManagement: React.FC = () => {
     if (!truckId) return;
     setLoadingDrivers(true);
     try {
-      // Fetch all drivers in tenant — response shape: { drivers: [...] }
+      // Fetch all drivers in tenant â€” response shape: { drivers: [...] }
       const driversRes = await api.get('/fleet/drivers');
       const body = driversRes.data;
       const allDrivers: any[] = Array.isArray(body?.drivers)
@@ -632,10 +634,12 @@ const TripManagement: React.FC = () => {
         </>
       )}
 
-      {/* Trip Details Modal - Restyled */}
+
+
+      {/* Trip Details Modal */}
       <Dialog open={!!selectedTrip} onOpenChange={(open) => !open && setSelectedTrip(null)}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
-          <DialogHeader className="p-8 pb-4 border-b border-slate-50 dark:border-slate-800">
+        <DialogContent className="max-w-3xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-slate-50 dark:border-slate-800">
             <DialogTitle className="flex items-center gap-3">
               <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-[#345E85] dark:text-blue-400">
                 <Route size={20} />
@@ -647,247 +651,306 @@ const TripManagement: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
 
-          {selectedTrip && (
-            <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
-              {/* Status Banner */}
-              <div className={cn(
-                "p-4 rounded-2xl border flex items-center justify-between",
-                selectedTrip.status === 'COMPLETED' ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" :
-                selectedTrip.status === 'IN_PROGRESS' ? "bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-400" :
-                "bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800 text-amber-700 dark:text-amber-400"
-              )}>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-white/80 dark:bg-slate-900/80 flex items-center justify-center border border-current">
-                    {getStatusIcon(selectedTrip.status)}
+          {selectedTrip && (() => {
+            const raw: any = (selectedTrip as any)._raw ?? {};
+            const load = raw.load ?? {};
+            const truck = raw.truck ?? {};
+            const driver = raw.driver ?? {};
+
+            const fmtD = (d: any) => {
+              if (!d) return '—';
+              const dt = new Date(d);
+              return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            };
+            const fmtDT = (d: any) => {
+              if (!d) return '—';
+              const dt = new Date(d);
+              return isNaN(dt.getTime()) ? '—' : dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            };
+            const fmtC = (v: any) => v != null && !isNaN(Number(v)) ? formatCurrency(Number(v)) : '—';
+
+            const pickupLoc = load.locations?.find((l: any) => l.type === 'PICKUP');
+            const deliveryLoc = load.locations?.find((l: any) => l.type === 'DELIVERY');
+            const pickupAddr = load.origin?.address || pickupLoc?.locationData?.address || selectedTrip.pickupLocation;
+            const deliveryAddr = load.destination?.address || deliveryLoc?.locationData?.address || selectedTrip.deliveryLocation;
+
+            return (
+              <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+
+                {/* Status Banner */}
+                <div className={cn(
+                  "p-4 rounded-2xl border flex items-center justify-between",
+                  selectedTrip.status === 'COMPLETED' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                  selectedTrip.status === 'IN_PROGRESS' ? "bg-blue-50 border-blue-100 text-blue-700" :
+                  "bg-amber-50 border-amber-100 text-amber-700"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-white/80 flex items-center justify-center border border-current">
+                      {getStatusIcon(selectedTrip.status)}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider opacity-60">Status</p>
+                      <p className="text-sm font-black">{selectedTrip.status.replace('_', ' ')}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider opacity-70">Current Status</p>
-                    <p className="text-sm font-black">{selectedTrip.status.replace('_', ' ')}</p>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black opacity-60 uppercase tracking-wider">Trip #</p>
+                    <p className="text-xs font-black">{selectedTrip.tripNumber}</p>
                   </div>
                 </div>
-                {selectedTrip.status === 'IN_PROGRESS' && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-white/50 dark:bg-slate-800/50 rounded-lg text-[10px] font-bold border border-current">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                    </span>
-                    LIVE
+
+                {/* ── Route & Schedule ── */}
+                <TSection title="Route & Schedule">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="relative pl-6 space-y-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                      <div className="relative">
+                        <div className="absolute -left-6 top-1 h-3 w-3 bg-white border-2 border-emerald-500 rounded-full" />
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Pickup</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{pickupAddr}</p>
+                        {pickupLoc?.locationData?.name && <p className="text-[10px] text-slate-400">{pickupLoc.locationData.name}</p>}
+                        <p className="text-[10px] text-slate-400 mt-0.5">📅 {fmtD(raw.plannedStartTime || load.pickupDate)}</p>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute -left-6 top-1 h-3 w-3 bg-white border-2 border-rose-500 rounded-full" />
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Delivery</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{deliveryAddr}</p>
+                        {deliveryLoc?.locationData?.name && <p className="text-[10px] text-slate-400">{deliveryLoc.locationData.name}</p>}
+                        <p className="text-[10px] text-slate-400 mt-0.5">📅 {fmtD(raw.plannedEndTime || load.deliveryDate)}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <DR label="Planned Start" value={fmtDT(raw.plannedStartTime)} />
+                      <DR label="Planned End" value={fmtDT(raw.plannedEndTime)} />
+                      <DR label="Actual Start" value={fmtDT(raw.actualStartTime)} />
+                      <DR label="Actual End" value={fmtDT(raw.actualEndTime)} />
+                      <DR label="ETA" value={fmtDT(raw.estimatedArrival ?? raw.eta)} />
+                      <DR label="Distance" value={raw.totalDistance ? `${raw.totalDistance} km` : raw.distance ? `${raw.distance} km` : '—'} />
+                      <DR label="Duration" value={raw.duration ? `${raw.duration} hrs` : '—'} />
+                      <DR label="Avg Speed" value={raw.averageSpeed ? `${raw.averageSpeed} km/h` : '—'} />
+                    </div>
                   </div>
-                )}
-              </div>
+                </TSection>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Route Information */}
-                <div className="space-y-6">
-                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Route Information</h3>
-                  <div className="relative pl-6 space-y-8 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
-                    <div className="relative">
-                      <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-full" />
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Pickup</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">{selectedTrip.pickupLocation}</p>
-                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">{formatDate(selectedTrip.plannedStartTime)}</p>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-rose-500 rounded-full" />
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Delivery</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">{selectedTrip.deliveryLocation}</p>
-                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1">{formatDate(selectedTrip.plannedEndTime)}</p>
-                    </div>
+                {/* ── Cargo ── */}
+                <TSection title="Cargo Information">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <DR label="Title" value={load.title || '—'} />
+                    <DR label="Type" value={load.cargoType || '—'} />
+                    <DR label="Load Type" value={load.loadType || '—'} />
+                    <DR label="Weight" value={load.weight ? `${Number(load.weight).toLocaleString()} kg` : '—'} />
+                    <DR label="Volume" value={load.volume ? `${load.volume} m³` : '—'} />
+                    <DR label="Urgency" value={load.urgencyLevel || '—'} />
+                    <DR label="Packaging" value={load.packagingType || '—'} />
+                    <DR label="Pieces" value={load.numberOfPieces ? String(load.numberOfPieces) : '—'} />
+                    <DR label="Pallets" value={load.numberOfPallets ? String(load.numberOfPallets) : '—'} />
+                    <DR label="Fragile" value={load.isFragile ? '⚠️ Yes' : 'No'} />
+                    <DR label="Hazardous" value={load.isHazardous ? '☢️ Yes' : 'No'} />
+                    <DR label="Refrigeration" value={load.requiresRefrigeration ? '❄️ Yes' : 'No'} />
+                    <DR label="GPS Monitoring" value={load.requiresGpsMonitoring ? '✅ Yes' : 'No'} />
+                    <DR label="Cargo Value" value={fmtC(load.loadValue)} />
+                    <DR label="Insurance Value" value={fmtC(load.insuranceValue)} />
                   </div>
-                </div>
+                  {(load.loadingInstructions || load.unloadingInstructions) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                      {load.loadingInstructions && <DR label="Loading Instructions" value={load.loadingInstructions} />}
+                      {load.unloadingInstructions && <DR label="Unloading Instructions" value={load.unloadingInstructions} />}
+                    </div>
+                  )}
+                </TSection>
 
-                {/* Fleet Allocation */}
-                <div className="space-y-6">
-                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Fleet & Financials</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                      <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm border border-slate-50 dark:border-slate-800">
-                        <Truck size={18} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Vehicle</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.truckPlate}</p>
+                {/* ── Vehicle & Driver ── */}
+                <TSection title="Vehicle & Driver">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Truck</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <DR label="Plate" value={truck.plateNumber || selectedTrip.truckPlate} />
+                        <DR label="Make / Model" value={`${truck.make || ''} ${truck.model || ''}`.trim() || '—'} />
+                        <DR label="Year" value={truck.year ? String(truck.year) : '—'} />
+                        <DR label="Type" value={truck.truckType || '—'} />
+                        <DR label="Fuel" value={truck.fuelType || '—'} />
+                        <DR label="Capacity" value={truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : '—'} />
+                        <DR label="Mileage" value={truck.mileage ? `${truck.mileage.toLocaleString()} km` : '—'} />
+                        <DR label="GPS" value={truck.hasGps ? '✅ Yes' : '❌ No'} />
+                        <DR label="Tracking" value={truck.hasTracking ? '✅ Yes' : '❌ No'} />
+                        <DR label="Insurance Exp." value={fmtD(truck.insuranceExpiry)} />
+                        <DR label="Reg. Expiry" value={fmtD(truck.registrationExpiry)} />
+                        <DR label="Roadworthy Exp." value={fmtD(truck.roadworthyCertExpiry)} />
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                      <div className="h-9 w-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm border border-slate-50 dark:border-slate-800">
-                        <User size={18} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Driver</p>
-                        {selectedTrip.driverName && selectedTrip.driverName !== 'Unassigned' ? (
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.driverName}</p>
-                        ) : (
-                          <div className="mt-1 space-y-3">
-                            <p className="text-xs font-bold text-amber-500">No driver assigned</p>
-
-                            {/* Toggle assign panel */}
-                            {!showAssignPanel && (
-                              <button
-                                onClick={async () => {
-                                  setShowAssignPanel(true);
-                                  await loadTruckDrivers(selectedTrip.truckId);
-                                }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#345E85] hover:bg-slate-800 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors"
-                              >
-                                <UserPlus size={11} /> Assign Driver
-                              </button>
-                            )}
-
-                            {/* Assignment panel */}
-                            {showAssignPanel && (
-                              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                  Select a driver for this trip
-                                </p>
-
-                                {loadingDrivers ? (
-                                  <div className="flex items-center gap-2 py-2">
-                                    <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#345E85] rounded-full animate-spin" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Loading drivers...</span>
-                                  </div>
-                                ) : truckDrivers.length === 0 ? (
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest py-1">
-                                    No drivers found for this truck
-                                  </p>
-                                ) : (
-                                  <div className="space-y-2">
-                                    {truckDrivers.map((d: any) => (
-                                      <label
-                                        key={d.id}
-                                        className={cn(
-                                          'flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all',
-                                          selectedDriverId === d.id
-                                            ? 'border-[#345E85] bg-[#345E85]/5 dark:bg-blue-900/10'
-                                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800'
-                                        )}
-                                      >
-                                        <input
-                                          type="radio"
-                                          name="driver"
-                                          value={d.id}
-                                          checked={selectedDriverId === d.id}
-                                          onChange={() => setSelectedDriverId(d.id)}
-                                          className="accent-[#345E85]"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
-                                            {d.firstName} {d.lastName}
-                                          </p>
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                            {d.status || d.availabilityStatus || 'Available'}
-                                          </p>
-                                        </div>
-                                      </label>
-                                    ))}
-                                  </div>
-                                )}
-
-                                <div className="flex gap-2 pt-1">
-                                  <button
-                                    onClick={handleAssignDriver}
-                                    disabled={!selectedDriverId || assigningDriver || loadingDrivers}
-                                    className="flex-1 py-2 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 disabled:cursor-not-allowed text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5"
-                                  >
-                                    {assigningDriver
-                                      ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Assigning...</>
-                                      : <><CheckCircle size={11} /> Confirm</>
-                                    }
-                                  </button>
-                                  <button
-                                    onClick={() => { setShowAssignPanel(false); setSelectedDriverId(''); setTruckDrivers([]); }}
-                                    className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors"
-                                  >
-                                    Cancel
-                                  </button>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Driver</p>
+                      {driver.firstName ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <DR label="Name" value={`${driver.firstName} ${driver.lastName}`} />
+                          <DR label="Phone" value={driver.phone || '—'} />
+                          <DR label="Email" value={driver.email || '—'} />
+                          <DR label="License No." value={driver.licenseNumber || '—'} />
+                          <DR label="License Exp." value={fmtD(driver.licenseExpiry)} />
+                          <DR label="Experience" value={driver.experience ? `${driver.experience} yrs` : '—'} />
+                          <DR label="Safety Score" value={driver.safetyScore ? `${driver.safetyScore}/100` : '—'} />
+                          <DR label="On-Time Rate" value={driver.onTimeDeliveryRate ? `${Number(driver.onTimeDeliveryRate).toFixed(1)}%` : '—'} />
+                          <DR label="Rating" value={driver.rating ? `${Number(driver.rating).toFixed(1)} ⭐` : '—'} />
+                          <DR label="Status" value={driver.availabilityStatus || driver.status || '—'} />
+                          <DR label="Hours This Week" value={driver.hoursWorkedThisWeek ? `${driver.hoursWorkedThisWeek} h` : '—'} />
+                          <DR label="Medical Cert Exp." value={fmtD(driver.medicalCertExpiry)} />
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-xs font-bold text-amber-500">No driver assigned</p>
+                          {!showAssignPanel ? (
+                            <button onClick={async () => { setShowAssignPanel(true); await loadTruckDrivers(selectedTrip.truckId); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#345E85] hover:bg-slate-800 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors">
+                              <UserPlus size={11} /> Assign Driver
+                            </button>
+                          ) : (
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                              {loadingDrivers ? (
+                                <div className="flex items-center gap-2 py-2">
+                                  <div className="w-3.5 h-3.5 border-2 border-slate-200 border-t-[#345E85] rounded-full animate-spin" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Loading...</span>
                                 </div>
+                              ) : truckDrivers.length === 0 ? (
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest py-1">No drivers found</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {truckDrivers.map((d: any) => (
+                                    <label key={d.id} className={cn('flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all', selectedDriverId === d.id ? 'border-[#345E85] bg-[#345E85]/5' : 'border-slate-200 hover:border-slate-300 bg-white')}>
+                                      <input type="radio" name="driver" value={d.id} checked={selectedDriverId === d.id} onChange={() => setSelectedDriverId(d.id)} className="accent-[#345E85]" />
+                                      <div>
+                                        <p className="text-xs font-black text-slate-900">{d.firstName} {d.lastName}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{d.status || 'Available'}</p>
+                                      </div>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="flex gap-2 pt-1">
+                                <button onClick={handleAssignDriver} disabled={!selectedDriverId || assigningDriver}
+                                  className="flex-1 py-2 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5">
+                                  {assigningDriver ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Assigning...</> : <><CheckCircle size={11} /> Confirm</>}
+                                </button>
+                                <button onClick={() => { setShowAssignPanel(false); setSelectedDriverId(''); setTruckDrivers([]); }}
+                                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest">Cancel</button>
                               </div>
-                            )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TSection>
+
+                {/* ── Financials ── */}
+                <TSection title="Financials">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <DR label="Agreed Price" value={formatCurrency(selectedTrip.agreedPrice)} highlight />
+                    <DR label="Currency" value={raw.currencyCode || 'USD'} />
+                    <DR label="Payment Terms" value={load.paymentTerms || '—'} />
+                    <DR label="Fuel Cost" value={fmtC(raw.fuelCost)} />
+                    <DR label="Tolls Cost" value={fmtC(raw.tollsCost)} />
+                    <DR label="Other Expenses" value={fmtC(raw.otherExpenses)} />
+                    <DR label="Total Cost" value={fmtC(raw.totalCost)} />
+                    <DR label="Profit Margin" value={raw.profitMargin ? `${raw.profitMargin}%` : '—'} />
+                    <DR label="Fuel Efficiency" value={raw.fuelEfficiency ? `${raw.fuelEfficiency} L/100km` : '—'} />
+                  </div>
+                </TSection>
+
+                {/* ── Performance ── */}
+                <TSection title="Performance & Feedback">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <DR label="On-Time Performance" value={raw.onTimePerformance ? `${raw.onTimePerformance}%` : '—'} />
+                    <DR label="Cargo Owner Rating" value={raw.cargoOwnerRating ? `${raw.cargoOwnerRating} ⭐` : '—'} />
+                    <DR label="Driver Rating" value={raw.driverRating ? `${raw.driverRating} ⭐` : '—'} />
+                    <DR label="Issues Reported" value={raw.issuesReported?.length ? String(raw.issuesReported.length) : '0'} />
+                  </div>
+                  {raw.notes && (
+                    <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Notes</p>
+                      <p className="text-xs text-slate-600 leading-relaxed">{raw.notes}</p>
+                    </div>
+                  )}
+                  {raw.cargoOwnerFeedback && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">Cargo Owner Feedback</p>
+                      <p className="text-xs text-blue-700 leading-relaxed">{raw.cargoOwnerFeedback}</p>
+                    </div>
+                  )}
+                </TSection>
+
+                {/* ── POD ── */}
+                {selectedTrip.pod && (
+                  <TSection title="Proof of Delivery" badge="VERIFIED">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="flex justify-between mb-3">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Recipient</p>
+                            <p className="text-sm font-bold text-slate-900">{selectedTrip.pod.recipientName}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Completed</p>
+                            <p className="text-xs font-bold text-slate-600">{new Date(selectedTrip.pod.completedAt).toLocaleString()}</p>
+                          </div>
+                        </div>
+                        {selectedTrip.pod.signatureBase64 && (
+                          <div className="space-y-1">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Signature</p>
+                            <div className="bg-white p-2 rounded-xl border border-slate-200">
+                              <img src={selectedTrip.pod.signatureBase64} alt="Signature" className="max-h-20 mx-auto object-contain" />
+                            </div>
                           </div>
                         )}
                       </div>
-                    </div>
-                    <div className="p-4 bg-[#345E85]/5 dark:bg-blue-900/10 rounded-2xl border border-[#345E85]/10 dark:border-blue-800/20">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Agreed Price</span>
-                        <span className="text-lg font-black text-[#345E85] dark:text-blue-400">{formatCurrency(selectedTrip.agreedPrice)}</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#345E85] dark:bg-blue-500 rounded-full w-3/4" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* POD Section */}
-              {selectedTrip.pod && (
-                <div className="pt-8 border-t border-slate-50 dark:border-slate-800 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Proof of Delivery</h3>
-                    <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black border border-emerald-100 dark:border-emerald-800 flex items-center gap-1">
-                      <CheckCircle size={12} /> VERIFIED
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                      <div className="flex justify-between mb-4">
-                        <div>
-                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Recipient</p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedTrip.pod.recipientName}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Completed</p>
-                          <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{new Date(selectedTrip.pod.completedAt).toLocaleString()}</p>
-                        </div>
-                      </div>
-                      
-                      {selectedTrip.pod.signatureBase64 && (
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Signature</p>
-                          <div className="bg-white p-2 rounded-xl border border-slate-200">
-                            <img 
-                              src={selectedTrip.pod.signatureBase64} 
-                              alt="Recipient Signature" 
-                              className="max-h-24 mx-auto object-contain"
-                            />
+                      {selectedTrip.pod.photoUrl && (
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Delivery Photo</p>
+                          <div className="bg-white p-1 rounded-xl border border-slate-200 overflow-hidden h-36">
+                            <img src={selectedTrip.pod.photoUrl} alt="Delivery Proof" className="w-full h-full object-cover rounded-lg" />
                           </div>
                         </div>
                       )}
                     </div>
+                  </TSection>
+                )}
 
-                    {selectedTrip.pod.photoUrl && (
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Delivery Photo</p>
-                        <div className="bg-white p-1 rounded-xl border border-slate-200 overflow-hidden h-40">
-                          <img 
-                            src={selectedTrip.pod.photoUrl} 
-                            alt="Delivery Proof" 
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                <div className="flex justify-end pt-4 border-t border-slate-50">
+                  <button onClick={() => { setSelectedTrip(null); setTruckDrivers([]); setSelectedDriverId(''); setShowAssignPanel(false); }}
+                    className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors">
+                    Close
+                  </button>
                 </div>
-              )}
-
-              {/* Footer Actions */}
-              <div className="flex justify-end pt-6 border-t border-slate-50">
-                <button
-                  onClick={() => { setSelectedTrip(null); setTruckDrivers([]); setSelectedDriverId(''); setShowAssignPanel(false); }}
-                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors"
-                >
-                  Close Details
-                </button>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
   );
 };
+
+// ── Helper sub-components ─────────────────────────────────────────────────────
+const TSection = ({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) => (
+  <div className="space-y-3">
+    <div className="flex items-center gap-3">
+      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</h3>
+      {badge && (
+        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black border border-emerald-100 flex items-center gap-1">
+          <CheckCircle size={10} /> {badge}
+        </span>
+      )}
+    </div>
+    <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+      {children}
+    </div>
+  </div>
+);
+
+const DR = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <div className="flex flex-col gap-0.5 py-1.5 border-b border-slate-100 last:border-0">
+    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+    <span className={`text-[11px] font-bold truncate ${highlight ? 'text-[#345E85]' : 'text-slate-800 dark:text-slate-200'}`}>{value}</span>
+  </div>
+);
 
 export default TripManagement;
