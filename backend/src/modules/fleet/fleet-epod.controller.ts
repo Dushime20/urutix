@@ -47,6 +47,7 @@ export class FleetEpodController {
   @Get()
   @Roles(UserRole.TRUCK_OWNER)
   @ApiOperation({ summary: 'Get all ePODs for truck owner' })
+  @ApiQuery({ name: 'tripId', required: false, description: 'Filter by trip ID' })
   @ApiQuery({ name: 'truckId', required: false, description: 'Filter by truck ID' })
   @ApiQuery({ name: 'driverId', required: false, description: 'Filter by driver ID' })
   @ApiQuery({ name: 'startDate', required: false, description: 'Filter by start date (ISO 8601)' })
@@ -57,6 +58,7 @@ export class FleetEpodController {
   @ApiOkResponse({ description: 'ePODs retrieved successfully' })
   async getFleetEpods(
     @Request() req,
+    @Query('tripId') tripId?: string,
     @Query('truckId') truckId?: string,
     @Query('driverId') driverId?: string,
     @Query('startDate') startDate?: string,
@@ -79,6 +81,10 @@ export class FleetEpodController {
       .andWhere('truck.ownerId = :userId', { userId }); // Only truck owner's trucks
 
     // Apply filters
+    if (tripId) {
+      query.andWhere('epod.tripId = :tripId', { tripId });
+    }
+
     if (truckId) {
       query.andWhere('trip.truckId = :truckId', { truckId });
     }

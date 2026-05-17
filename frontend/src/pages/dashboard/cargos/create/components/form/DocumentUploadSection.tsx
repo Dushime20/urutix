@@ -320,6 +320,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                             </div>
 
                             <button
+                                type="button"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleRemove(doc);

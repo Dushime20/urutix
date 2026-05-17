@@ -43,6 +43,12 @@ api.interceptors.request.use(
     console.log('Tenant ID:', tenantId || 'None');
     console.log('Subdomain:', subdomain || 'None');
     
+    // If sending FormData, remove the default Content-Type so axios auto-sets
+    // multipart/form-data with the correct boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('✅ Authorization header added');

@@ -2,10 +2,10 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  Package, Clock, MapPin, User, Truck, AlertCircle,
+  Package, Clock, MapPin, User, AlertCircle,
   CheckCircle2, Loader2, ChevronRight
 } from 'lucide-react';
-import { tripsAPI } from '../../services/api';
+import api from '../../services/api';
 
 interface PendingDeliveriesListProps {
   className?: string;
@@ -15,16 +15,11 @@ const PendingDeliveriesList: React.FC<PendingDeliveriesListProps> = ({ className
   // Fetch pending ePODs for cargo receiver
   const { data: epodsRes, isLoading, error } = useQuery({
     queryKey: ['cargo-receiver-pending-epods'],
-    queryFn: () => fetch('/api/cargo-owner/epods?status=PENDING', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        'Content-Type': 'application/json',
-      },
-    }).then(res => res.json()),
+    queryFn: () => api.get('/receivers/my/epods?status=PENDING').then(res => res.data),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const pendingEpods = epodsRes?.data || [];
+  const pendingEpods = epodsRes?.data?.epods || [];
 
   if (isLoading) {
     return (
@@ -97,7 +92,7 @@ const PendingDeliveriesList: React.FC<PendingDeliveriesListProps> = ({ className
             {pendingEpods.map((epod: any) => (
               <Link
                 key={epod.id}
-                to={`/delivery-confirmation/${epod.tripId}`}
+                to={`/dashboard/cargos/${epod.loadId}/inspect`}
                 className="block group"
               >
                 <div className="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-amber-300 dark:hover:border-amber-600 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-all duration-200">

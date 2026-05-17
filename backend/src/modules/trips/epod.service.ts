@@ -273,10 +273,15 @@ export class EpodService {
           })
         : null;
 
+      // Build cargo owner name with proper fallbacks
+      const profile = (cargoOwner as any).profile;
       const cargoOwnerName =
-        (cargoOwner as any).profile?.companyName ||
-        `${(cargoOwner as any).profile?.firstName || ''} ${(cargoOwner as any).profile?.lastName || ''}`.trim() ||
-        cargoOwner.email;
+        profile?.companyName ||
+        (profile?.firstName || profile?.lastName
+          ? `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()
+          : null) ||
+        cargoOwner.email ||
+        'Cargo Owner';
 
       const truckOwnerName =
         (truckOwner as any)?.profile?.companyName ||
@@ -304,6 +309,8 @@ export class EpodService {
         invoiceNumber,
         customerId: cargoOwner.id,
         customerName: cargoOwnerName,
+        senderId: truckOwner?.id,
+        senderName: truckOwnerName,
         tripId: trip.id,
         truckId: trip.truckId,
         driverId: trip.driverId,

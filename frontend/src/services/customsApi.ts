@@ -39,4 +39,6 @@ export const customsApi = {
 
   getCheckpoints: () => api.get('/customs/checkpoints'),
   createCheckpoint: (data: any) => api.post('/customs/checkpoints', data),
+
+  getMyInspections: () => api.get('/customs/my-inspections'),
 };

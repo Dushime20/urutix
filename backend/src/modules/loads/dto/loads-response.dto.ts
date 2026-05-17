@@ -343,6 +343,23 @@ export class LoadResponseDto {
     type: 'array',
   })
   enrichedLocations?: EnrichedLocation[];
+
+  @ApiProperty({
+    description: 'Documents attached to this load',
+    required: false,
+    type: 'array',
+  })
+  documents?: {
+    id: string;
+    documentType: string;
+    title?: string;
+    fileUrl: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    status: string;
+    createdAt: Date;
+  }[];
 }
 
 export class LoadsPaginatedResponseDto {

@@ -63,7 +63,7 @@ export class CargoOwnerEpodController {
   ) {}
 
   @Get()
-  @Roles(UserRole.CARGO_OWNER, UserRole.CARGO_RECEIVER)
+  @Roles(UserRole.CARGO_OWNER)
   @ApiOperation({ summary: 'Get all ePODs for cargo owner' })
   @ApiQuery({ name: 'loadId', required: false, description: 'Filter by load ID' })
   @ApiQuery({ name: 'startDate', required: false, description: 'Filter by start date (ISO 8601)' })
@@ -94,7 +94,7 @@ export class CargoOwnerEpodController {
       .leftJoinAndSelect('trip.driver', 'driver')
       .leftJoinAndSelect('trip.load', 'load')
       .where('epod.tenantId = :tenantId', { tenantId })
-      .andWhere('load.cargoOwnerId = :userId', { userId }); // Only cargo owner's loads
+      .andWhere('load.cargoOwnerId = :userId', { userId });
 
     // Apply filters
     if (loadId) {
@@ -127,11 +127,13 @@ export class CargoOwnerEpodController {
     const epods = await query.getMany();
 
     // Get invoices for payment status filtering
-    const epodIds = epods.map(e => e.id);
-    const invoices = await this.invoiceRepository
-      .createQueryBuilder('invoice')
-      .where('invoice.tripId IN (:...tripIds)', { tripIds: epods.map(e => e.tripId) })
-      .getMany();
+    const tripIds = epods.map(e => e.tripId);
+    const invoices = tripIds.length > 0
+      ? await this.invoiceRepository
+          .createQueryBuilder('invoice')
+          .where('invoice.tripId IN (:...tripIds)', { tripIds })
+          .getMany()
+      : [];
 
     const invoiceMap = new Map(invoices.map(inv => [inv.tripId, inv]));
 

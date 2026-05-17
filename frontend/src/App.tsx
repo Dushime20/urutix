@@ -151,6 +151,9 @@ const LenderNotificationsPage = lazy(() => import('./pages/LenderNotificationsPa
 const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
 const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
 
+// Cargo Owner: Customs Inspections
+const CargoCustomsInspectionsPage = lazy(() => import('./pages/dashboard/customs/CargoCustomsInspectionsPage'));
+
 // Customs Officer Pages
 const CustomsDashboard = lazy(() => import('./pages/customs/CustomsDashboard'));
 const TruckSearchPage = lazy(() => import('./pages/customs/TruckSearchPage'));
@@ -260,6 +263,7 @@ function App() {
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="inspections" element={<UnifiedTrackingManagement />} />
                       <Route path="multi-modal" element={<MultiModalTracking />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
                       <Route path="profile" element={<UnifiedAccountManagement />} />
@@ -281,6 +285,8 @@ function App() {
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
                       <Route path="receivers" element={<ReceiversPage />} />
+                      <Route path="customs-inspections" element={<CargoCustomsInspectionsPage />} />
+                      <Route path="customs-inspections/:id" element={<CargoCustomsInspectionsPage />} />
 
                       {/* Enhanced Transaction Flow Routes */}
                       <Route path="transaction-flow" element={<TransactionFlow />} />

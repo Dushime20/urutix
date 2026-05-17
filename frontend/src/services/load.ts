@@ -168,6 +168,12 @@ const sanitizeCargoPayload = (payload: ICargoBody) => {
 
   sanitized.locations = sanitizeLocations(sanitized.locations || []);
 
+  // Strip non-serializable / non-DTO fields before JSON serialization
+  delete sanitized.photos;
+  delete sanitized.aiSuggestions;
+  // documents are handled separately — extracted before sending
+  delete sanitized.documents;
+
   const contactInfo = sanitizeContactInfo(sanitized.contactInfo);
   if (contactInfo) {
     sanitized.contactInfo = contactInfo;
@@ -189,8 +195,25 @@ const sanitizeCargoPayload = (payload: ICargoBody) => {
 export const loadsAPI = {
   getAll: (params?: any) => api.get("/loads", { params }),
   getById: (id: string) => api.get(`/loads/${id}`),
-  create: (data: ICargoBody) =>
-    api.post<ICargoResponse>("/loads", sanitizeCargoPayload(data)).then((res) => res.data),
+  create: (data: ICargoBody) => {
+    // Extract pending File objects before sanitizing
+    const pendingFiles: File[] = ((data as any).documents || [])
+      .filter((d: any) => d.isPending && d.file instanceof File)
+      .map((d: any) => d.file as File);
+
+    const cleanPayload = sanitizeCargoPayload(data);
+
+    if (pendingFiles.length > 0) {
+      // Send as multipart/form-data: cargo JSON in `data`, files in `files`
+      const form = new FormData();
+      form.append('data', JSON.stringify(cleanPayload));
+      pendingFiles.forEach((file) => form.append('files', file));
+      return api.post<ICargoResponse>('/loads', form).then((res) => res.data);
+    }
+
+    // No files — plain JSON (backward compatible)
+    return api.post<ICargoResponse>('/loads', cleanPayload).then((res) => res.data);
+  },
   update: (id: string, data: any) =>
     api.patch(`/loads/${id}`, sanitizeCargoPayload(data)).then((res) => res.data),
   delete: (id: string) => api.delete(`/loads/${id}`),

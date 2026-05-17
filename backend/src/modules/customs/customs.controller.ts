@@ -142,6 +142,22 @@ export class CustomsController {
     return { success: true, data };
   }
 
+  // ─── Cargo Owner: My Inspections ──────────────────────────────────────────
+
+  @Get('my-inspections')
+  @Roles(
+    UserRole.CARGO_OWNER,
+    UserRole.CUSTOMS_OFFICER,
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+  )
+  @ApiOperation({ summary: 'Get all customs inspections on cargo owned by the current user' })
+  async getMyInspections(@Request() req) {
+    const data = await this.customsService.getInspectionsByCargoOwner(req.user.userId);
+    return { success: true, data };
+  }
+
   // ─── Checkpoints ──────────────────────────────────────────────────────────
 
   @Get('checkpoints')

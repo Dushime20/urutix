@@ -15,6 +15,11 @@ import {
   LayoutGrid,
   List,
   UserPlus,
+  FileText,
+  MapPin,
+  Phone,
+  Camera,
+  PenLine,
 } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import api from '../services/api';
@@ -65,6 +70,8 @@ const TripManagement: React.FC = () => {
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'desc' });
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [epod, setEpod] = useState<any>(null);
+  const [epodLoading, setEpodLoading] = useState(false);
 
   const { data: tripsData, isLoading: loading, error } = useQuery({
     queryKey: ['trips'],
@@ -213,6 +220,24 @@ const TripManagement: React.FC = () => {
     }
   };
 
+  const fetchEpodForTrip = async (tripId: string) => {
+    setEpodLoading(true);
+    setEpod(null);
+    try {
+      const res = await api.get(`/fleet/epods?tripId=${tripId}&limit=1`);
+      const list = res.data?.data?.epods ?? [];
+      if (list.length > 0) {
+        // Fetch full detail with signature + photos
+        const detail = await api.get(`/fleet/epods/${list[0].id}`);
+        setEpod(detail.data?.data?.epod ?? list[0]);
+      }
+    } catch {
+      // no ePOD found — leave null
+    } finally {
+      setEpodLoading(false);
+    }
+  };
+
   const handleAssignDriver = async () => {
     if (!selectedTrip || !selectedDriverId) return;
     setAssigningDriver(true);
@@ -225,6 +250,18 @@ const TripManagement: React.FC = () => {
       toast.error(err?.response?.data?.message || 'Failed to assign driver');
     } finally {
       setAssigningDriver(false);
+    }
+  };
+
+  const handleSelectTrip = (trip: Trip) => {
+    setSelectedTrip(trip);
+    setShowAssignPanel(false);
+    setSelectedDriverId('');
+    setTruckDrivers([]);
+    if (trip.status === 'COMPLETED') {
+      fetchEpodForTrip(trip.id);
+    } else {
+      setEpod(null);
     }
   };
 
@@ -523,7 +560,7 @@ const TripManagement: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => setSelectedTrip(trip)}
+                    onClick={() => handleSelectTrip(trip)}
                     className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
                     aria-label="View Details"
                   />
@@ -617,12 +654,23 @@ const TripManagement: React.FC = () => {
                           <div className="text-sm font-bold text-[#345E85] dark:text-blue-400">{formatCurrency(trip.agreedPrice)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <button
-                            onClick={() => setSelectedTrip(trip)}
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 transition-colors"
-                          >
-                            <Eye size={18} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {trip.status === 'COMPLETED' && (
+                              <button
+                                onClick={() => handleSelectTrip(trip)}
+                                title="View ePOD"
+                                className="p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                              >
+                                <FileText size={16} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleSelectTrip(trip)}
+                              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 transition-colors"
+                            >
+                              <Eye size={18} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -637,7 +685,7 @@ const TripManagement: React.FC = () => {
 
 
       {/* Trip Details Modal */}
-      <Dialog open={!!selectedTrip} onOpenChange={(open) => !open && setSelectedTrip(null)}>
+      <Dialog open={!!selectedTrip} onOpenChange={(open) => { if (!open) { setSelectedTrip(null); setEpod(null); } }}>
         <DialogContent className="max-w-3xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
           <DialogHeader className="p-6 pb-4 border-b border-slate-50 dark:border-slate-800">
             <DialogTitle className="flex items-center gap-3">
@@ -878,39 +926,131 @@ const TripManagement: React.FC = () => {
                   )}
                 </TSection>
 
-                {/* ── POD ── */}
-                {selectedTrip.pod && (
-                  <TSection title="Proof of Delivery" badge="VERIFIED">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="flex justify-between mb-3">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Recipient</p>
-                            <p className="text-sm font-bold text-slate-900">{selectedTrip.pod.recipientName}</p>
+                {/* ── ePOD ── */}
+                {selectedTrip.status === 'COMPLETED' && (
+                  <TSection title="Electronic Proof of Delivery (ePOD)" badge={epod ? epod.status : undefined}>
+                    {epodLoading ? (
+                      <div className="flex items-center justify-center gap-3 py-6">
+                        <div className="w-4 h-4 border-2 border-slate-200 border-t-[#345E85] rounded-full animate-spin" />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading ePOD...</span>
+                      </div>
+                    ) : !epod ? (
+                      <div className="flex flex-col items-center justify-center py-6 gap-2">
+                        <FileText size={28} className="text-slate-300" />
+                        <p className="text-xs font-bold text-slate-400">No ePOD submitted by driver yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Status + Meta */}
+                        <div className="flex flex-wrap gap-3">
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200">
+                            <span className={`w-2 h-2 rounded-full ${
+                              epod.status === 'CONFIRMED' ? 'bg-emerald-500' :
+                              epod.status === 'DISPUTED' ? 'bg-rose-500' : 'bg-amber-400'
+                            }`} />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{epod.status}</span>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Completed</p>
-                            <p className="text-xs font-bold text-slate-600">{new Date(selectedTrip.pod.completedAt).toLocaleString()}</p>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <Clock size={12} />
+                            <span>Submitted: {epod.submittedAt ? new Date(epod.submittedAt).toLocaleString() : '—'}</span>
                           </div>
+                          {epod.confirmedAt && (
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+                              <CheckCircle size={12} />
+                              <span>Confirmed: {new Date(epod.confirmedAt).toLocaleString()}</span>
+                            </div>
+                          )}
                         </div>
-                        {selectedTrip.pod.signatureBase64 && (
+
+                        {/* Recipient */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-start gap-2 p-3 bg-white rounded-xl border border-slate-100">
+                            <User size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Recipient</p>
+                              <p className="text-xs font-bold text-slate-800">{epod.recipientName || '—'}</p>
+                            </div>
+                          </div>
+                          {(epod.recipientPhone) && (
+                            <div className="flex items-start gap-2 p-3 bg-white rounded-xl border border-slate-100">
+                              <Phone size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Phone</p>
+                                <p className="text-xs font-bold text-slate-800">{epod.recipientPhone}</p>
+                              </div>
+                            </div>
+                          )}
+                          {epod.deliveryAddress && (
+                            <div className="flex items-start gap-2 p-3 bg-white rounded-xl border border-slate-100 col-span-2">
+                              <MapPin size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Delivery Address</p>
+                                <p className="text-xs font-bold text-slate-800">{epod.deliveryAddress}</p>
+                              </div>
+                            </div>
+                          )}
+                          {epod.deliveryCoordinates && (
+                            <div className="flex items-start gap-2 p-3 bg-white rounded-xl border border-slate-100 col-span-2">
+                              <MapPin size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">GPS Coordinates</p>
+                                <p className="text-xs font-bold text-slate-800">
+                                  {epod.deliveryCoordinates.latitude?.toFixed(5)}, {epod.deliveryCoordinates.longitude?.toFixed(5)}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Notes */}
+                        {epod.deliveryNotes && (
+                          <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Delivery Notes</p>
+                            <p className="text-xs text-amber-800 leading-relaxed">{epod.deliveryNotes}</p>
+                          </div>
+                        )}
+
+                        {/* Signature */}
+                        {epod.signatureFileUrl && (
                           <div className="space-y-1">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Signature</p>
-                            <div className="bg-white p-2 rounded-xl border border-slate-200">
-                              <img src={selectedTrip.pod.signatureBase64} alt="Signature" className="max-h-20 mx-auto object-contain" />
+                            <div className="flex items-center gap-2">
+                              <PenLine size={12} className="text-slate-400" />
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Recipient Signature</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl border border-slate-200">
+                              <img
+                                src={epod.signatureFileUrl.startsWith('http') ? epod.signatureFileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001'}/${epod.signatureFileUrl}`}
+                                alt="Signature"
+                                className="max-h-24 mx-auto object-contain"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Photos */}
+                        {epod.photoUrls?.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Camera size={12} className="text-slate-400" />
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Delivery Photos ({epod.photoUrls.length})</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              {epod.photoUrls.map((url: string, i: number) => (
+                                <a key={i} href={url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001'}/${url}`} target="_blank" rel="noreferrer">
+                                  <div className="h-24 rounded-xl overflow-hidden border border-slate-200 hover:border-[#345E85] transition-colors">
+                                    <img
+                                      src={url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001'}/${url}`}
+                                      alt={`Photo ${i + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                </a>
+                              ))}
                             </div>
                           </div>
                         )}
                       </div>
-                      {selectedTrip.pod.photoUrl && (
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Delivery Photo</p>
-                          <div className="bg-white p-1 rounded-xl border border-slate-200 overflow-hidden h-36">
-                            <img src={selectedTrip.pod.photoUrl} alt="Delivery Proof" className="w-full h-full object-cover rounded-lg" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </TSection>
                 )}
 

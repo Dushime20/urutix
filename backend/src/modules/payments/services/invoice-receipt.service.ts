@@ -11,6 +11,7 @@ import { Receipt, ReceiptStatus } from '../../../entities/receipt.entity';
 import { Trip } from '../../../entities/trip.entity';
 import { Load } from '../../../entities/load.entity';
 import { User } from '../../../entities/user.entity';
+import { Truck } from '../../../entities/truck.entity';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationCategory } from '../../../entities/notification.entity';
 
@@ -33,6 +34,8 @@ export class InvoiceReceiptService {
     private readonly loadRepository: Repository<Load>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -74,6 +77,26 @@ export class InvoiceReceiptService {
         throw new NotFoundException('Cargo owner not found');
       }
 
+      // Get truck owner info for sender
+      let senderId: string | undefined;
+      let senderName: string | undefined;
+      if (trip.truckId) {
+        const truck = await this.truckRepository.findOne({
+          where: { id: trip.truckId },
+          relations: ['owner', 'owner.profile'],
+        });
+        if (truck?.owner) {
+          senderId = truck.owner.id;
+          senderName =
+            truck.owner.profile?.companyName ||
+            (truck.owner.profile?.firstName || truck.owner.profile?.lastName
+              ? `${truck.owner.profile?.firstName || ''} ${truck.owner.profile?.lastName || ''}`.trim()
+              : null) ||
+            truck.owner.email ||
+            'Carrier';
+        }
+      }
+
       // Get lender info from payment metadata
       const lenderId = payment.metadata?.lenderId;
       const lender = lenderId
@@ -92,9 +115,13 @@ export class InvoiceReceiptService {
         customerId: cargoOwner.id,
         customerName:
           cargoOwner.profile?.companyName ||
-          `${cargoOwner.profile?.firstName || ''} ${cargoOwner.profile?.lastName || ''}`.trim() ||
+          (cargoOwner.profile?.firstName || cargoOwner.profile?.lastName
+            ? `${cargoOwner.profile?.firstName || ''} ${cargoOwner.profile?.lastName || ''}`.trim()
+            : null) ||
           cargoOwner.email ||
           'Cargo Owner',
+        senderId,
+        senderName,
         tripId: trip.id,
         issueDate: new Date(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now

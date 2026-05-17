@@ -16,6 +16,7 @@ import { Trip } from '../../entities/trip.entity';
 import { Truck } from '../../entities/truck.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { LocationsModule } from '../locations/locations.module';
+import { FileUploadModule } from '../file-upload/file-upload.module';
 import { MatchingModule } from '../matching/matching.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { BrokersModule } from '../brokers/brokers.module';
@@ -40,6 +41,7 @@ import { TenantGuard } from '../auth/guards/tenant.guard';
       UserProfile,
     ]),
     LocationsModule,
+    FileUploadModule,
     MatchingModule,
     EnhancedAuthModule,
     BrokersModule,

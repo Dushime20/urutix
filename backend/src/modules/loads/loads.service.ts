@@ -80,6 +80,7 @@ import {
 import { MatchingService } from '../matching/matching.service';
 import { MatchRequestDto } from '../matching/dto/match-request.dto';
 import { BrokersService } from '../brokers/brokers.service';
+import { FileUploadService } from '../file-upload/file-upload.service';
 
 export interface LoadsQueryOptions {
   page?: number;
@@ -192,6 +193,7 @@ export class LoadsService {
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
     @Optional() private readonly brokersService?: BrokersService, // Optional - BrokersService from BrokersModule
+    @Optional() private readonly fileUploadService?: FileUploadService,
   ) { }
 
   /**
@@ -971,8 +973,40 @@ export class LoadsService {
         });
       }
 
+      // Batch-fetch documents for all loaded IDs in one query
+      const loadIds = loads.map((l) => l.id);
+      let documentsByLoadId: Map<string, any[]> = new Map();
+      if (loadIds.length > 0) {
+        const docs = await this.documentRepository.find({
+          where: loadIds.map((entityId) => ({
+            entityType: EntityType.CARGO,
+            entityId,
+          })),
+          order: { createdAt: 'DESC' },
+        });
+        docs.forEach((doc) => {
+          if (!documentsByLoadId.has(doc.entityId)) {
+            documentsByLoadId.set(doc.entityId, []);
+          }
+          documentsByLoadId.get(doc.entityId)!.push(doc);
+        });
+      }
+
       // Transform Load entities to LoadResponseDto
-      const items = loads.map((load) => this.transformLoadToResponse(load));
+      const items = loads.map((load) => ({
+        ...this.transformLoadToResponse(load),
+        documents: (documentsByLoadId.get(load.id) || []).map((d) => ({
+          id: d.id,
+          documentType: d.documentType,
+          title: d.title,
+          fileUrl: d.fileUrl,
+          fileName: d.fileName,
+          fileSize: d.fileSize,
+          mimeType: d.mimeType,
+          status: d.status,
+          createdAt: d.createdAt,
+        })),
+      }));
 
       return {
         items,
@@ -1051,6 +1085,13 @@ export class LoadsService {
           (load.broker as any).profile = brokerProfile;
         }
       }
+
+      // Attach documents so the controller transform can include them
+      const loadDocuments = await this.documentRepository.find({
+        where: { entityType: EntityType.CARGO, entityId: id },
+        order: { createdAt: 'DESC' },
+      });
+      (load as any).documents = loadDocuments;
 
       return load;
     } catch (error) {
@@ -1692,19 +1733,39 @@ export class LoadsService {
     // Verify load exists and user has access
     await this.findOne(loadId, tenantId, userId);
 
+    // Use FileUploadService when available — handles both memory & disk storage
+    let fileName: string;
+    let fileUrl: string;
+    let thumbnailUrl: string;
+    if (this.fileUploadService) {
+      const uploadResult = await this.fileUploadService.uploadFile(
+        documentData.file,
+        'loads',
+      );
+      fileName = uploadResult.fileName;
+      fileUrl = uploadResult.fileUrl;
+      thumbnailUrl = uploadResult.thumbnailUrl || fileUrl;
+    } else {
+      // Fallback: file must already be on disk (diskStorage)
+      fileName = documentData.file.filename;
+      fileUrl = `/uploads/loads/${fileName}`;
+      thumbnailUrl = fileUrl;
+    }
+
     const document = this.documentRepository.create({
       entityType: EntityType.CARGO,
       entityId: loadId,
       documentType: documentData.type,
       category: DocumentCategory.OPERATIONAL,
       title: `Load Document - ${documentData.type}`,
-      description: documentData.description,
-      fileName: documentData.file.filename,
+      description: documentData.description || '',
+      fileName,
       originalFileName: documentData.file.originalname,
-      fileUrl: `/uploads/${documentData.file.filename}`, // This should be configured based on your file storage
+      fileUrl,
+      thumbnailUrl,
       fileSize: documentData.file.size,
       mimeType: documentData.file.mimetype,
-      fileExtension: documentData.file.filename.split('.').pop() || '',
+      fileExtension: fileName.split('.').pop() || '',
       uploadedBy: userId,
       tenantId,
       status: DocumentStatus.PENDING,
@@ -1715,8 +1776,8 @@ export class LoadsService {
       versions: [
         {
           version: 1,
-          fileUrl: `/uploads/${documentData.file.filename}`,
-          fileName: documentData.file.filename,
+          fileUrl,
+          fileName,
           fileSize: documentData.file.size,
           uploadedBy: userId,
           uploadedAt: new Date(),

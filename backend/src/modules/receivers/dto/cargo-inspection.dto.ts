@@ -40,5 +40,15 @@ export class SubmitCargoInspectionDto {
   @IsOptional()
   @IsString()
   overallNotes?: string;
+
+  @IsOptional()
+  @IsArray()
+  documents?: Array<{
+    id: string;
+    url: string;
+    type: 'photo' | 'document' | 'signature';
+    label?: string;
+    uploadedAt: string;
+  }>;
 }
 

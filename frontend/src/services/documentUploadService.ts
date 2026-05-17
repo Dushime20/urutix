@@ -15,7 +15,31 @@ export interface BulkUploadResult {
 }
 
 /**
- * Upload a single document for a cargo/load
+ * Map a frontend documentType string to a backend DocumentType enum value.
+ * The backend POST /loads/:loadId/documents endpoint requires the `type` field
+ * to be a valid DocumentType enum value.
+ */
+const toBackendDocumentType = (frontendType: string): string => {
+  const VALID_TYPES = new Set([
+    'DRIVER_LICENSE', 'DRIVER_MEDICAL_CERT', 'DRIVER_DRUG_TEST',
+    'DRIVER_BACKGROUND_CHECK', 'DRIVER_TRAINING_CERT', 'DRIVER_INSURANCE',
+    'VEHICLE_REGISTRATION', 'VEHICLE_INSURANCE', 'VEHICLE_INSPECTION',
+    'VEHICLE_MAINTENANCE', 'VEHICLE_PERMIT',
+    'CARGO_MANIFEST', 'CARGO_INSURANCE', 'CARGO_CUSTOMS', 'CARGO_WEIGHT_CERT',
+    'BUSINESS_LICENSE', 'BUSINESS_INSURANCE', 'BUSINESS_TAX_CERT', 'BUSINESS_PERMIT',
+    'USER_ID_PROOF', 'USER_ADDRESS_PROOF', 'USER_BANK_DETAILS',
+    'TRIP_PERMIT', 'TRIP_ROUTE_PLAN', 'TRIP_WEIGHT_TICKET', 'POD',
+    'INVOICE', 'RECEIPT', 'PAYMENT_PROOF', 'EXPENSE_RECEIPT',
+    'SAFETY_CERT', 'ENVIRONMENTAL_CERT', 'QUALITY_CERT',
+    'CONTRACT', 'AGREEMENT', 'POLICY', 'MANUAL', 'OTHER',
+  ]);
+  return VALID_TYPES.has(frontendType) ? frontendType : 'OTHER';
+};
+
+/**
+ * Upload a single document for a cargo/load.
+ * Uses the load-specific endpoint POST /loads/:loadId/documents which
+ * the backend controller already supports.
  */
 export const uploadCargoDocument = async (
   loadId: string,
@@ -23,50 +47,29 @@ export const uploadCargoDocument = async (
 ): Promise<DocumentUploadResult> => {
   try {
     const formData = new FormData();
-    
-    // Add file
+
     formData.append('file', document.file);
-    
-    // Add metadata
-    formData.append('entityType', 'CARGO');
-    formData.append('entityId', loadId);
-    formData.append('documentType', document.documentType);
-    formData.append('category', document.category);
-    formData.append('title', document.title);
-    formData.append('fileName', document.file.name);
-    formData.append('originalFileName', document.file.name);
-    formData.append('fileSize', document.file.size.toString());
-    formData.append('mimeType', document.file.type);
-    
-    // Add optional fields
+    formData.append('type', toBackendDocumentType(document.documentType));
+
     if (document.description) {
       formData.append('description', document.description);
     }
-    if (document.priority) {
-      formData.append('priority', document.priority);
-    }
-    if (document.issueDate) {
-      formData.append('issueDate', document.issueDate);
-    }
-    if (document.expiryDate) {
-      formData.append('expiryDate', document.expiryDate);
-    }
-    if (document.requiresRenewal !== undefined) {
-      formData.append('requiresRenewal', document.requiresRenewal.toString());
-    }
-    if (document.tags && document.tags.length > 0) {
-      formData.append('tags', JSON.stringify(document.tags));
-    }
 
-    const response = await api.post('/documents', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    // Pass title, category, priority as JSON metadata so they're preserved
+    const metadata: Record<string, any> = {
+      title: document.title,
+      category: document.category,
+      ...(document.priority && { priority: document.priority }),
+    };
+    formData.append('metadata', JSON.stringify(metadata));
+
+    const response = await api.post(`/loads/${loadId}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
 
     return {
       success: true,
-      documentId: response.data?.id || response.data?.data?.id,
+      documentId: response.data?.document?.id || response.data?.id,
     };
   } catch (error: any) {
     console.error('Error uploading document:', error);

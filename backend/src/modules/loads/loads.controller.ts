@@ -15,6 +15,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   BadRequestException,
   UnauthorizedException,
   ConflictException,
@@ -32,7 +33,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LoadsService } from './loads.service';
 import { CreateLoadDto } from './dto/create-load.dto';
@@ -83,6 +84,8 @@ export class LoadsController {
   @UseGuards(ThrottlerGuard, RolesGuard)
   @Roles(UserRole.CARGO_OWNER)
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @UseInterceptors(FilesInterceptor('files', 10))
   @ApiOperation({
     summary: 'Create Enhanced Cargo Load',
     description: `
@@ -142,9 +145,14 @@ export class LoadsController {
     `,
   })
   @ApiBody({
-    type: CreateLoadDto,
-    description:
-      'Enhanced cargo load data with comprehensive field specifications',
+    schema: {
+      type: 'object',
+      properties: {
+        data: { type: 'string', description: 'JSON-encoded CreateLoadDto' },
+        files: { type: 'array', items: { type: 'string', format: 'binary' }, description: 'Optional documents to attach' },
+      },
+    },
+    description: 'Cargo data as JSON string in `data` field, with optional `files` for documents',
   })
   @ApiResponse({
     status: 201,
@@ -164,13 +172,27 @@ export class LoadsController {
     description: 'Forbidden - User not found or access denied',
   })
   async create(
-    @Body() createLoadDto: CreateLoadDto,
+    @Body() body: any,
+    @UploadedFiles() files: Express.Multer.File[],
     @Req() req: Request,
   ): Promise<{ message: string; load: LoadResponseDto }> {
     try {
       console.log('Controller: Starting create load...');
       console.log('Controller: User ID:', req.user?.userId);
       console.log('Controller: Tenant ID:', req.user?.tenantId);
+
+      // Support both multipart/form-data (data field = JSON string) and application/json
+      let createLoadDto: CreateLoadDto;
+      if (body?.data && typeof body.data === 'string') {
+        try {
+          createLoadDto = JSON.parse(body.data);
+        } catch {
+          throw new BadRequestException('Invalid JSON in `data` field');
+        }
+      } else {
+        createLoadDto = body as CreateLoadDto;
+      }
+
       console.log('Controller: DTO:', JSON.stringify(createLoadDto, null, 2));
 
       // Validate user authentication
@@ -195,6 +217,31 @@ export class LoadsController {
         req.user.userId,
         req.user.tenantId,
       );
+
+      // Upload any documents that were attached alongside the cargo creation
+      console.log(`📎 Files received: ${files ? files.length : 0}`);
+      if (files && files.length > 0) {
+        files.forEach((f, i) => console.log(`  [${i}] ${f.originalname} size=${f.size} mimetype=${f.mimetype} buffer=${!!f.buffer} fieldname=${f.fieldname}`));
+      }
+      const uploadedDocuments = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          try {
+            const doc = await this.loadsService.uploadDocument(
+              load.id,
+              { type: DocumentType.OTHER, file },
+              req.user.userId,
+              req.user.tenantId,
+            );
+            uploadedDocuments.push(doc);
+          } catch (docErr) {
+            console.error(`❌ Failed to upload document ${file.originalname}:`, docErr.message, docErr.stack);
+          }
+        }
+        console.log(`✅ Uploaded ${uploadedDocuments.length}/${files.length} documents for load ${load.id}`);
+      } else {
+        console.log('⚠️  No files in request — FormData may not have been sent correctly');
+      }
 
       console.log('✅ Load created successfully:', load?.id);
       console.log('✅ Load locations count:', load?.locations?.length || 0);
@@ -2061,6 +2108,19 @@ export class LoadsController {
           return undefined;
         }
       })(),
+      documents: Array.isArray((load as any).documents)
+        ? (load as any).documents.map((d: any) => ({
+            id: d.id,
+            documentType: d.documentType,
+            title: d.title,
+            fileUrl: d.fileUrl,
+            fileName: d.fileName,
+            fileSize: d.fileSize,
+            mimeType: d.mimeType,
+            status: d.status,
+            createdAt: d.createdAt,
+          }))
+        : [],
     };
   }
 

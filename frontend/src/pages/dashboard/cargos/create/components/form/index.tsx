@@ -10,7 +10,6 @@ import {
   FaTruck,
   FaClock,
   FaCameraRetro,
-  FaCogs,
   FaRulerCombined,
   FaLocationArrow,
   FaCheck,
@@ -47,7 +46,6 @@ import RouteIntelligenceCard from "./RouteIntelligenceCard";
 import { getLocationSuggestions, type LocationIntelligence } from "@/services/enhancedCargoApi";
 import LocationIntelligenceCard from "./LocationIntelligenceCard";
 import DocumentUploadSection, { type PendingDocument } from "./DocumentUploadSection";
-import { uploadCargoDocumentsWithRetry } from "@/services/documentUploadService";
 import toast from "react-hot-toast";
 
 interface Location {
@@ -62,6 +60,7 @@ interface EnhancedCargoFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ICargoBody) => Promise<ICargoResponse>;
+  onSuccess?: () => void;
   initialData?: any;
   mode: "create" | "edit";
   onTruckSelected?: (truckMatch: any) => void;
@@ -79,6 +78,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onSuccess,
   initialData,
   onSaveDraft,
   onTruckSelected,
@@ -477,16 +477,27 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     }
   };
 
+  const [submitStatus, setSubmitStatus] = useState<string>("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSubmitStatus("Creating cargo...");
 
     try {
-      // Transform data to match backend expectations
+      // Validate documents are present (mandatory)
+      const pendingDocsCheck = (formData.documents || []).filter(
+        (doc: any) => 'isPending' in doc && doc.isPending
+      );
+      if (pendingDocsCheck.length === 0) {
+        setError("At least one cargo document is required. Please go back to the Documentation step and upload a document.");
+        setLoading(false);
+        return;
+      }
+
       const submissionData: ICargoBody = {
         ...(formData as any),
-        // Transform locations to match backend LoadLocationDto format
         locations: [
           {
             id:
@@ -512,7 +523,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
               accessInstructions: "",
             },
             scheduledDate: formData.pickupDate,
-            estimatedTime: formData.loadingTimeEstimate || 60, // Default 1 hour
+            estimatedTime: formData.loadingTimeEstimate || 60,
             requirements: {
               requiresForklift: formData.requiresForklift,
               requiresCrane: formData.requiresCrane,
@@ -547,7 +558,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
               accessInstructions: "",
             },
             scheduledDate: formData.deliveryDate,
-            estimatedTime: formData.unloadingTimeEstimate || 60, // Default 1 hour
+            estimatedTime: formData.unloadingTimeEstimate || 60,
             requirements: {
               requiresForklift: formData.requiresForklift,
               requiresCrane: formData.requiresCrane,
@@ -559,10 +570,8 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
             status: "PENDING" as const,
           },
         ],
-        // Ensure cargoType is a valid enum value
         cargoType:
           formData.cargoType === "ELECTRONICS" ? "FRAGILE" : formData.cargoType,
-        // Add missing fields that backend expects
         pickupDate: formData.pickupDate,
         deliveryDate: formData.deliveryDate,
         contactInfo: {
@@ -571,52 +580,41 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           contactEmail: formData.contactEmail,
         },
         matchingCriteria: {},
-      };
+        // Carry pending documents so loadsAPI.create() can extract File objects
+        documents: formData.documents || [],
+      } as any;
 
-      const result = await onSubmit(submissionData);
-
-      // Upload pending documents if any
+      // Single request: cargo + documents sent together as multipart/form-data
       const pendingDocs = (formData.documents || []).filter(
         (doc: any) => 'isPending' in doc && doc.isPending
       ) as PendingDocument[];
 
-      if (pendingDocs.length > 0 && result && result.id) {
-        try {
-          const uploadResult = await uploadCargoDocumentsWithRetry(
-            result.id,
-            pendingDocs,
-            2, // max retries
-            (current, total, status) => {
-              console.log(`Uploading documents: ${current}/${total} - ${status}`);
-            }
-          );
-
-          if (uploadResult.failed > 0) {
-            toast.error(
-              `${uploadResult.successful} of ${uploadResult.total} documents uploaded. ${uploadResult.failed} failed.`,
-              { duration: 5000 }
-            );
-          } else {
-            toast.success(`All ${uploadResult.successful} documents uploaded successfully!`);
-          }
-        } catch (uploadError) {
-          console.error('Failed to upload documents:', uploadError);
-          toast.error('Cargo created but some documents failed to upload');
-        }
+      if (pendingDocs.length > 0) {
+        setSubmitStatus(`Creating cargo & uploading ${pendingDocs.length} document${pendingDocs.length > 1 ? 's' : ''}...`);
       }
 
-      // If this is a create operation and truck selection is enabled, show truck selection modal
-      if (mode === "create" && showTruckSelection && result && result.id) {
+      const result = await onSubmit(submissionData);
+
+      toast.success(
+        pendingDocs.length > 0
+          ? `Cargo and ${pendingDocs.length} document${pendingDocs.length > 1 ? 's' : ''} saved successfully!`
+          : 'Cargo created successfully!'
+      );
+
+      // Step 3 — advance UI
+      if (mode === "create" && showTruckSelection && result?.id) {
         setCreatedCargoId(result.id);
         setCreatedCargoData(submissionData);
         setShowTruckSelectionModal(true);
       } else {
+        onSuccess?.();
         onClose();
       }
     } catch (err: any) {
       setError(err.message || "Failed to save cargo");
     } finally {
       setLoading(false);
+      setSubmitStatus("");
     }
   };
 
@@ -734,7 +732,166 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   }, [formData, pickupLocation, deliveryLocation, handleAutoSave, mode, onSaveDraft]);
   */
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // ─── Wizard steps (content steps + final Review) ───────────────────────────
+  const STEPS = [...sections, { id: "review", label: "Review & Submit", icon: FaCheck }];
+  const currentStepIndex = STEPS.findIndex((s) => s.id === activeSection);
+  const isFirstStep = currentStepIndex === 0;
+  const isReviewStep = activeSection === "review";
+  const isLastContentStep = currentStepIndex === STEPS.length - 2; // step before review
+
+  const goNext = () => {
+    if (currentStepIndex < STEPS.length - 1) {
+      // Validate documents are attached before allowing proceed to review
+      if (activeSection === "documents") {
+        const hasDocs = (formData.documents || []).length > 0;
+        if (!hasDocs) {
+          setError("At least one document is required. Please upload a cargo document before proceeding.");
+          return;
+        }
+        setError(null);
+      }
+      setActiveSection(STEPS[currentStepIndex + 1].id);
+    }
+  };
+
+  const goBack = () => {
+    if (currentStepIndex > 0) {
+      setActiveSection(STEPS[currentStepIndex - 1].id);
+    }
+  };
+
+  // ─── Review Panel ────────────────────────────────────────────────────────────
+  const ReviewRow = ({ label, value }: { label: string; value: any }) => {
+    if (value === undefined || value === null || value === "" || value === 0 || value === false) return null;
+    return (
+      <div className="flex items-start justify-between gap-4 py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 flex-shrink-0 w-40">{label}</span>
+        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 text-right">{String(value)}</span>
+      </div>
+    );
+  };
+
+  const ReviewSection = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
+        <div className="w-7 h-7 rounded-lg bg-[#345E85]/10 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-3.5 h-3.5 text-[#345E85] dark:text-blue-400" />
+        </div>
+        <span className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300">{title}</span>
+      </div>
+      <div className="px-5 py-3">{children}</div>
+    </div>
+  );
+
+  const renderReviewStep = () => (
+    <div className="space-y-4">
+      {/* Summary Banner */}
+      <div className="rounded-2xl p-5 flex items-center gap-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
+          <FaCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div>
+          <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Ready to Create</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Review all details carefully before submitting. You cannot undo this action.</p>
+        </div>
+        <div className="ml-auto text-right flex-shrink-0">
+          <div className="text-2xl font-black text-[#345E85] dark:text-blue-400">{completionPercentage}%</div>
+          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Complete</div>
+        </div>
+      </div>
+
+      {/* Basic Info */}
+      <ReviewSection title="Basic Information" icon={FaBox}>
+        <ReviewRow label="Title" value={formData.title} />
+        <ReviewRow label="Cargo Type" value={formData.cargoType} />
+        <ReviewRow label="Weight" value={formData.weight ? `${formData.weight} kg` : null} />
+        <ReviewRow label="Volume" value={formData.volume ? `${formData.volume} m³` : null} />
+        <ReviewRow label="Load Value" value={formData.loadValue ? `$${formData.loadValue.toLocaleString()}` : null} />
+        <ReviewRow label="Offered Price" value={formData.offeredPrice ? `$${formData.offeredPrice.toLocaleString()}` : null} />
+        <ReviewRow label="Description" value={formData.description} />
+        <ReviewRow label="Fragile" value={formData.isFragile ? "Yes" : null} />
+        <ReviewRow label="Hazardous" value={formData.isHazardous ? "Yes" : null} />
+        <ReviewRow label="Refrigeration" value={formData.requiresRefrigeration ? "Required" : null} />
+      </ReviewSection>
+
+      {/* Route */}
+      <ReviewSection title="Route & Dates" icon={FaLocationArrow}>
+        <ReviewRow label="Pickup Location" value={pickupLocation ? `${pickupLocation.name} — ${pickupLocation.address}` : null} />
+        <ReviewRow label="Delivery Location" value={deliveryLocation ? `${deliveryLocation.name} — ${deliveryLocation.address}` : null} />
+        <ReviewRow label="Pickup Date" value={formData.pickupDate} />
+        <ReviewRow label="Delivery Date" value={formData.deliveryDate} />
+      </ReviewSection>
+
+      {/* Dimensions */}
+      <ReviewSection title="Dimensions & Packaging" icon={FaRulerCombined}>
+        <ReviewRow label="Length" value={formData.length ? `${formData.length} m` : null} />
+        <ReviewRow label="Width" value={formData.width ? `${formData.width} m` : null} />
+        <ReviewRow label="Height" value={formData.height ? `${formData.height} m` : null} />
+        <ReviewRow label="Packaging Type" value={formData.packagingType} />
+        <ReviewRow label="Pieces" value={formData.numberOfPieces} />
+        <ReviewRow label="Pallets" value={formData.numberOfPallets} />
+        <ReviewRow label="Stackable" value={formData.isStackable ? "Yes" : null} />
+      </ReviewSection>
+
+      {/* Environmental */}
+      <ReviewSection title="Environmental Requirements" icon={FaThermometerHalf}>
+        <ReviewRow label="Temp Min" value={formData.temperatureMin !== undefined ? `${formData.temperatureMin}°C` : null} />
+        <ReviewRow label="Temp Max" value={formData.temperatureMax !== undefined ? `${formData.temperatureMax}°C` : null} />
+        <ReviewRow label="Hazmat Class" value={formData.hazmatClass} />
+        <ReviewRow label="Hazmat Number" value={formData.hazmatNumber} />
+        <ReviewRow label="Humidity Control" value={formData.requiresHumidityControl ? "Required" : null} />
+      </ReviewSection>
+
+      {/* Security */}
+      <ReviewSection title="Security & Insurance" icon={FaShieldAlt}>
+        <ReviewRow label="Insurance Value" value={formData.insuranceValue ? `$${formData.insuranceValue.toLocaleString()}` : null} />
+        <ReviewRow label="GPS Monitoring" value={formData.requiresGpsMonitoring ? "Required" : null} />
+        <ReviewRow label="Temp Monitoring" value={formData.requiresTemperatureMonitoring ? "Required" : null} />
+        <ReviewRow label="Emergency Contact" value={formData.emergencyContactInfo} />
+      </ReviewSection>
+
+      {/* Urgency */}
+      <ReviewSection title="Urgency & Timing" icon={FaClock}>
+        <ReviewRow label="Urgency Level" value={formData.urgencyLevel} />
+        <ReviewRow label="Max Transit" value={formData.maxTransitTime ? `${formData.maxTransitTime} hrs` : null} />
+        <ReviewRow label="Time Critical" value={formData.isTimeCritical ? "Yes" : null} />
+      </ReviewSection>
+
+      {/* Documents */}
+      {(formData.documents || []).length > 0 && (
+        <ReviewSection title="Documents" icon={FileText}>
+          {(formData.documents || []).map((doc: any, i: number) => (
+            <div key={doc.id || i} className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800 last:border-0 gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-3 h-3 text-[#345E85] dark:text-blue-400" />
+                </div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {doc.title || doc.file?.name || 'Document'}
+                </span>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex-shrink-0">
+                {doc.documentType || doc.category || '—'}
+              </span>
+            </div>
+          ))}
+        </ReviewSection>
+      )}
+
+      {/* Draft saved notice */}
+      {draftSaved && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+            <FaCheck className="text-blue-600 dark:text-blue-400 w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="font-bold text-blue-900 dark:text-blue-200 text-sm">Draft Saved</h4>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">Your progress is secure. Click <b>Create Cargo</b> below to publish.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -745,9 +902,10 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       className="p-0"
     >
       <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-none">
-        {/* Header - Ported from DialogHeader */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex-1 min-w-0">
+
+        {/* ── Header ──────────────────────────────────────────────────────────── */}
+        <div className="flex flex-col p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 gap-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
                 <FaBox className="w-5 h-5 text-[#345E85] dark:text-blue-400" />
@@ -761,615 +919,346 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                 </p>
               </div>
             </div>
-
-            {/* Progress Indicator - COMPACT */}
-            <div className="mt-4 max-w-md">
-              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#345E85] dark:text-blue-400 mb-1">
-                <span>Completion Status</span>
-                <span>{completionPercentage}%</span>
+            <div className="text-right">
+              <div className="text-xs font-black text-[#345E85] dark:text-blue-400 uppercase tracking-widest">
+                Step {currentStepIndex + 1} of {STEPS.length}
               </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
-                <div
-                  className="bg-[#345E85] h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${completionPercentage}%` }}
-                />
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                {STEPS[currentStepIndex]?.label}
               </div>
             </div>
           </div>
-          {/* Mobile Sidebar Toggle */}
-          <div className="flex items-center gap-2 mt-4 sm:mt-0">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 transition-colors"
-              aria-label="Toggle navigation"
-            >
-              <FaCogs className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </button>
+
+          {/* ── Progress Bar ─────────────────────────────────────────────────── */}
+          <div className="space-y-2">
+            {/* Step dots */}
+            <div className="hidden sm:flex items-center gap-1">
+              {STEPS.map((step, idx) => {
+                const StepIcon = step.icon;
+                const isDone = idx < currentStepIndex;
+                const isActive = idx === currentStepIndex;
+                return (
+                  <React.Fragment key={step.id}>
+                    <button
+                      type="button"
+                      onClick={() => idx < currentStepIndex && setActiveSection(step.id)}
+                      disabled={idx > currentStepIndex}
+                      title={step.label}
+                      className={`flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 transition-all duration-300 text-[10px] font-black border-2
+                        ${isDone ? 'bg-emerald-500 border-emerald-500 text-white cursor-pointer' : ''}
+                        ${isActive ? 'bg-[#345E85] border-[#345E85] text-white scale-110 shadow-md shadow-blue-900/20' : ''}
+                        ${!isDone && !isActive ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed' : ''}
+                      `}
+                    >
+                      {isDone ? <FaCheck className="w-2.5 h-2.5" /> : <StepIcon className="w-2.5 h-2.5" />}
+                    </button>
+                    {idx < STEPS.length - 1 && (
+                      <div className={`flex-1 h-0.5 rounded-full transition-all duration-500 ${idx < currentStepIndex ? 'bg-emerald-400' : 'bg-slate-100 dark:bg-slate-800'}`} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            {/* Thin bar for mobile */}
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+              <div
+                className="h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${((currentStepIndex) / (STEPS.length - 1)) * 100}%`, background: 'linear-gradient(90deg, #345E85, #10b981)' }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
-          {/* Sidebar Navigation */}
-          <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-64 bg-slate-50 dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 overflow-y-auto lg:sticky lg:top-0 flex-shrink-0 transition-colors duration-300`}>
-            <nav className="p-2 sm:p-3 space-y-1.5">
-              {sections.map((section) => {
-                const Icon = section.icon;
-                return (
+        {/* ── Form Content ─────────────────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-w-0" id="cargo-form-content">
+          <form id="cargo-form" onSubmit={handleSubmit} className="space-y-4 max-w-3xl mx-auto">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-start justify-between gap-3">
+                <p className="text-xs text-red-800 dark:text-red-400">{error}</p>
+                {isReviewStep && error.toLowerCase().includes("document") && (
                   <button
-                    key={section.id}
-                    onClick={() => {
-                      setActiveSection(section.id);
-                      setSidebarOpen(false); // Close sidebar on mobile after selection
-                    }}
-                    className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-left transition-all duration-300 ${activeSection === section.id
-                      ? "bg-[#345E85] dark:bg-primary-600 text-white"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold"
-                      }`}
-                    title={
-                      completedSections[section.id]
-                        ? "Section complete"
-                        : "Section incomplete"
-                    }
+                    type="button"
+                    onClick={() => { setActiveSection("documents"); setError(null); }}
+                    className="flex-shrink-0 text-xs font-bold text-red-700 dark:text-red-400 underline hover:no-underline"
                   >
-                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="text-xs font-medium truncate">{section.label}</span>
-                    {completedSections[section.id] ? (
-                      <span className="ml-auto text-green-500 dark:text-green-400 text-xs flex-shrink-0" title="Complete">
-                        &#10003;
-                      </span>
-                    ) : (
-                      <span
-                        className="ml-auto text-gray-300 dark:text-slate-600 text-xs flex-shrink-0"
-                        title="Incomplete"
-                      >
-                        &#9675;
-                      </span>
-                    )}
+                    Go to Documents →
                   </button>
-                );
-              })}
-            </nav>
-          </div>
+                )}
+              </div>
+            )}
 
-          {/* Form Content */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-w-0" id="cargo-form-content">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 transition-colors duration-300">
-                  <p className="text-xs text-red-800 dark:text-red-400">{error}</p>
+            {/* Photos Display */}
+            {photos.length > 0 && activeSection !== "review" && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center">
+                  <FaCameraRetro className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+                  Uploaded Photos ({photos.length})
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {photos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Cargo photo ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border-2 border-white shadow-md group-hover:shadow-lg transition-shadow"
+                      />
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Photos Display - Moved to Top */}
-              {photos.length > 0 && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm transition-colors duration-300">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center">
-                    <FaCameraRetro className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
-                    Uploaded Photos ({photos.length})
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Cargo photo ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border-2 border-white shadow-md group-hover:shadow-lg transition-shadow"
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all" />
-                      </div>
-                    ))}
-                  </div>
+            {/* AI Suggestions Display */}
+            {suggestions && activeSection !== "review" && (
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center">
+                  <FaCheck className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
+                  Applied AI Suggestions
+                </h4>
+                <div className="space-y-2">
+                  {suggestions.suggestions?.map((suggestion: any, index: number) => (
+                    <div key={index} className="flex items-start text-sm text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-lg p-2">
+                      <FaCheck className="w-4 h-4 mr-2 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                      <span>{suggestion.title}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* AI Suggestions Display - Moved to Top */}
-              {suggestions && (
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm transition-colors duration-300">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center">
-                    <FaCheck className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
-                    Applied AI Suggestions
-                  </h4>
-                  <div className="space-y-2">
-                    {suggestions.suggestions?.map(
-                      (suggestion: any, index: number) => (
-                        <div
-                          key={index}
-                          className="flex items-start text-sm text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-lg p-2 transition-colors duration-300"
-                        >
-                          <FaCheck className="w-4 h-4 mr-2 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                          <span>{suggestion.title}</span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
+            {/* ── Review Step ──────────────────────────────────────────────────── */}
+            {isReviewStep && renderReviewStep()}
 
-              {/* Basic Information Section */}
-              {activeSection === "basic" && (
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center">
-                    <FaBox className="w-4 h-4 mr-2" />
-                    Basic Information
-                  </h3>
+            {/* ── Basic Information ────────────────────────────────────────────── */}
+            {activeSection === "basic" && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center">
+                  <FaBox className="w-4 h-4 mr-2" />
+                  Basic Information
+                </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="title"
-                        className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5"
-                      >
-                        Cargo Title *
-                        <HelpTooltip
-                          content="Enter a clear, descriptive title for your cargo. This helps transporters quickly understand what they'll be shipping."
-                          title="Cargo Title"
-                        />
-                      </Label>
-                      <Input
-                        id="title"
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        required
-                        placeholder="Enter cargo title"
-                        className="text-sm w-full"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="cargoType"
-                        className="block text-xs font-medium text-gray-700 mb-1"
-                      >
-                        Cargo Type *
-                      </Label>
-                      <Select
-                        name="cargoType"
-                        value={formData.cargoType}
-                        onValueChange={(value) =>
-                          handleChange({
-                            target: { name: "cargoType", value },
-                          } as any)
-                        }
-                      >
-                        <SelectTrigger className="text-sm w-full">
-                          <SelectValue placeholder="Select cargo type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CARGO_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="weight"
-                        className="block text-xs font-medium text-gray-700 mb-1"
-                      >
-                        Weight (kg) *
-                      </Label>
-                      <Input
-                        id="weight"
-                        type="number"
-                        name="weight"
-                        value={formData.weight || ""}
-                        onChange={handleNumberChange}
-                        required
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter weight in kg"
-                        className="text-sm w-full"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="volume"
-                        className="block text-xs font-medium text-gray-700 mb-1"
-                      >
-                        Volume (m³)
-                      </Label>
-                      <Input
-                        id="volume"
-                        type="number"
-                        name="volume"
-                        value={formData.volume || ""}
-                        onChange={handleNumberChange}
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter volume in m³"
-                        className="text-sm w-full"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="loadValue"
-                        className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5"
-                      >
-                        Load Value ($) *
-                        <HelpTooltip
-                          content="The total declared value of your cargo. This is used for insurance purposes and helps determine appropriate pricing."
-                          title="Load Value"
-                        />
-                      </Label>
-                      <Input
-                        id="loadValue"
-                        type="number"
-                        name="loadValue"
-                        value={formData.loadValue || ""}
-                        onChange={handleNumberChange}
-                        required
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter load value"
-                        className="text-sm w-full"
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="offeredPrice"
-                        className="block text-xs font-medium text-gray-700 mb-1"
-                      >
-                        Offered Price ($)
-                      </Label>
-                      <Input
-                        id="offeredPrice"
-                        type="number"
-                        name="offeredPrice"
-                        value={formData.offeredPrice || ""}
-                        onChange={handleNumberChange}
-                        min="0"
-                        step="0.01"
-                        placeholder="Enter offered price"
-                        className="text-sm w-full"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="min-w-0">
+                    <Label htmlFor="title" className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                      Cargo Title *
+                      <HelpTooltip content="Enter a clear, descriptive title for your cargo. This helps transporters quickly understand what they'll be shipping." title="Cargo Title" />
+                    </Label>
+                    <Input id="title" type="text" name="title" value={formData.title} onChange={handleChange} required placeholder="Enter cargo title" className="text-sm w-full" />
                   </div>
 
                   <div className="min-w-0">
-                    <Label
-                      htmlFor="description"
-                      className="block text-xs font-medium text-gray-700 mb-1"
-                    >
-                      Description
-                    </Label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={formData.description || ""}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-0"
-                      placeholder="Enter cargo description"
-                    />
+                    <Label htmlFor="cargoType" className="block text-xs font-medium text-gray-700 mb-1">Cargo Type *</Label>
+                    <Select name="cargoType" value={formData.cargoType} onValueChange={(value) => handleChange({ target: { name: "cargoType", value } } as any)}>
+                      <SelectTrigger className="text-sm w-full"><SelectValue placeholder="Select cargo type" /></SelectTrigger>
+                      <SelectContent>{CARGO_TYPES.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}</SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="isFragile"
-                        checked={formData.isFragile}
-                        onChange={handleChange}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
-                      />
-                      <span className="text-xs text-gray-700">
-                        Fragile Cargo
-                      </span>
-                    </label>
+                  <div className="min-w-0">
+                    <Label htmlFor="weight" className="block text-xs font-medium text-gray-700 mb-1">Weight (kg) *</Label>
+                    <Input id="weight" type="number" name="weight" value={formData.weight || ""} onChange={handleNumberChange} required min="0" step="0.01" placeholder="Enter weight in kg" className="text-sm w-full" />
+                  </div>
 
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="isHazardous"
-                        checked={formData.isHazardous}
-                        onChange={handleChange}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
-                      />
-                      <span className="text-xs text-gray-700">
-                        Hazardous Materials
-                      </span>
-                    </label>
+                  <div className="min-w-0">
+                    <Label htmlFor="volume" className="block text-xs font-medium text-gray-700 mb-1">Volume (m³)</Label>
+                    <Input id="volume" type="number" name="volume" value={formData.volume || ""} onChange={handleNumberChange} min="0" step="0.01" placeholder="Enter volume in m³" className="text-sm w-full" />
+                  </div>
 
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        name="requiresRefrigeration"
-                        checked={formData.requiresRefrigeration}
-                        onChange={handleChange}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
-                      />
-                      <span className="text-xs text-gray-700">
-                        Requires Refrigeration
-                      </span>
-                    </label>
+                  <div className="min-w-0">
+                    <Label htmlFor="loadValue" className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                      Load Value ($) *
+                      <HelpTooltip content="The total declared value of your cargo. This is used for insurance purposes and helps determine appropriate pricing." title="Load Value" />
+                    </Label>
+                    <Input id="loadValue" type="number" name="loadValue" value={formData.loadValue || ""} onChange={handleNumberChange} required min="0" step="0.01" placeholder="Enter load value" className="text-sm w-full" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <Label htmlFor="offeredPrice" className="block text-xs font-medium text-gray-700 mb-1">Offered Price ($)</Label>
+                    <Input id="offeredPrice" type="number" name="offeredPrice" value={formData.offeredPrice || ""} onChange={handleNumberChange} min="0" step="0.01" placeholder="Enter offered price" className="text-sm w-full" />
                   </div>
                 </div>
-              )}
 
-              {/* Route Information Section */}
-              {activeSection === "route" && (
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center transition-colors duration-300">
-                    <FaLocationArrow className="w-4 h-4 mr-2" />
-                    Route Information
-                  </h3>
+                <div className="min-w-0">
+                  <Label htmlFor="description" className="block text-xs font-medium text-gray-700 mb-1">Description</Label>
+                  <textarea id="description" name="description" value={formData.description || ""} onChange={handleChange} rows={3} className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-0" placeholder="Enter cargo description" />
+                </div>
 
-                  {/* Location Selection */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center transition-colors duration-300">
-                      <FaMapMarkerAlt className="inline w-3.5 h-3.5 mr-1.5" />
-                      Locations *
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                      <LocationItem
-                        type="pickup"
-                        location={pickupLocation}
-                        isActive={activeLocation === "pickup"}
-                        onSelect={() => setActiveLocation("pickup")}
-                      />
-                      <LocationItem
-                        type="delivery"
-                        location={deliveryLocation}
-                        isActive={activeLocation === "delivery"}
-                        onSelect={() => setActiveLocation("delivery")}
-                      />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" name="isFragile" checked={formData.isFragile} onChange={handleChange} className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4" />
+                    <span className="text-xs text-gray-700">Fragile Cargo</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" name="isHazardous" checked={formData.isHazardous} onChange={handleChange} className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4" />
+                    <span className="text-xs text-gray-700">Hazardous Materials</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" name="requiresRefrigeration" checked={formData.requiresRefrigeration} onChange={handleChange} className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4" />
+                    <span className="text-xs text-gray-700">Requires Refrigeration</span>
+                  </label>
+                </div>
+              </div>
+            )}
 
-                    {/* Map */}
-                    <div className="h-48 sm:h-64 rounded-lg overflow-hidden border border-gray-300 dark:border-slate-700 w-full transition-colors duration-300">
-                      <MapContainer
-                        center={[0, 0]}
-                        zoom={2}
-                        style={{ height: "100%", width: "100%" }}
-                        scrollWheelZoom={true}
-                      >
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        <MapClickHandler onMapClick={handleMapClick} />
-
-                        {/* Pickup Marker */}
-                        {pickupLocation && (
-                          <Marker
-                            position={[
-                              pickupLocation.latitude,
-                              pickupLocation.longitude,
-                            ]}
-                            icon={createCustomIcon("#3B82F6")}
-                          />
-                        )}
-
-                        {/* Delivery Marker */}
-                        {deliveryLocation && (
-                          <Marker
-                            position={[
-                              deliveryLocation.latitude,
-                              deliveryLocation.longitude,
-                            ]}
-                            icon={createCustomIcon("#10B981")}
-                          />
-                        )}
-                      </MapContainer>
-                    </div>
-
-                    {/* Route Intelligence Widget */}
-                    <RouteIntelligenceCard insight={routeInsight} loading={isRouteLoading} />
-
-                    {/* Location Intelligence Widgets */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {pickupLocation && (
-                        <div>
-                          {loadingIntelligence && activeLocation === 'pickup' ? (
-                            <LocationIntelligenceCard intelligence={null} loading={true} />
-                          ) : (
-                            locationIntelligence.pickup && <LocationIntelligenceCard intelligence={locationIntelligence.pickup} />
-                          )}
-                        </div>
-                      )}
-                      {deliveryLocation && (
-                        <div>
-                          {loadingIntelligence && activeLocation === 'delivery' ? (
-                            <LocationIntelligenceCard intelligence={null} loading={true} />
-                          ) : (
-                            locationIntelligence.delivery && <LocationIntelligenceCard intelligence={locationIntelligence.delivery} />
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {activeLocation && (
-                      <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-lg transition-colors duration-300">
-                        <div className="text-sm text-yellow-800 dark:text-yellow-200 transition-colors duration-300">
-                          <FaMapPin className="inline w-4 h-4 mr-1" />
-                          Click on the map to set{" "}
-                          {activeLocation === "pickup"
-                            ? "pickup"
-                            : "delivery"}{" "}
-                          location
-                        </div>
+            {/* ── Route Information ────────────────────────────────────────────── */}
+            {activeSection === "route" && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center">
+                  <FaLocationArrow className="w-4 h-4 mr-2" />
+                  Route Information
+                </h3>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center">
+                    <FaMapMarkerAlt className="inline w-3.5 h-3.5 mr-1.5" />
+                    Locations *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <LocationItem type="pickup" location={pickupLocation} isActive={activeLocation === "pickup"} onSelect={() => setActiveLocation("pickup")} />
+                    <LocationItem type="delivery" location={deliveryLocation} isActive={activeLocation === "delivery"} onSelect={() => setActiveLocation("delivery")} />
+                  </div>
+                  <div className="h-48 sm:h-64 rounded-lg overflow-hidden border border-gray-300 dark:border-slate-700 w-full">
+                    <MapContainer center={[0, 0]} zoom={2} style={{ height: "100%", width: "100%" }} scrollWheelZoom={true}>
+                      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <MapClickHandler onMapClick={handleMapClick} />
+                      {pickupLocation && <Marker position={[pickupLocation.latitude, pickupLocation.longitude]} icon={createCustomIcon("#3B82F6")} />}
+                      {deliveryLocation && <Marker position={[deliveryLocation.latitude, deliveryLocation.longitude]} icon={createCustomIcon("#10B981")} />}
+                    </MapContainer>
+                  </div>
+                  <RouteIntelligenceCard insight={routeInsight} loading={isRouteLoading} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {pickupLocation && (
+                      <div>
+                        {loadingIntelligence && activeLocation === 'pickup' ? <LocationIntelligenceCard intelligence={null} loading={true} /> : (locationIntelligence.pickup && <LocationIntelligenceCard intelligence={locationIntelligence.pickup} />)}
+                      </div>
+                    )}
+                    {deliveryLocation && (
+                      <div>
+                        {loadingIntelligence && activeLocation === 'delivery' ? <LocationIntelligenceCard intelligence={null} loading={true} /> : (locationIntelligence.delivery && <LocationIntelligenceCard intelligence={locationIntelligence.delivery} />)}
                       </div>
                     )}
                   </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="pickupDate"
-                        className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 mb-2 transition-colors duration-300"
-                      >
-                        <FaCalendar className="inline w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
-                        Pickup Date *
-                      </Label>
-                      <Input
-                        id="pickupDate"
-                        type="date"
-                        name="pickupDate"
-                        value={formData.pickupDate}
-                        onChange={handleChange}
-                        required
-                        className="w-full text-sm"
-                      />
+                  {activeLocation && (
+                    <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-lg">
+                      <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <FaMapPin className="inline w-4 h-4 mr-1" />
+                        Click on the map to set {activeLocation === "pickup" ? "pickup" : "delivery"} location
+                      </div>
                     </div>
-
-                    <div className="min-w-0">
-                      <Label
-                        htmlFor="deliveryDate"
-                        className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 mb-2 transition-colors duration-300"
-                      >
-                        <FaCalendar className="inline w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
-                        Delivery Date *
-                      </Label>
-                      <Input
-                        id="deliveryDate"
-                        type="date"
-                        name="deliveryDate"
-                        value={formData.deliveryDate}
-                        onChange={handleChange}
-                        required
-                        className="w-full text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Import and use the form sections component */}
-              <CargoFormSections
-                formData={formData}
-                handleChange={handleChange}
-                handleNumberChange={handleNumberChange}
-                activeSection={activeSection}
-              />
-
-              {/* Documentation Section - MOVED FROM FOOTER TO TAB */}
-              {activeSection === "documents" && (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 dark:bg-slate-800 transition-colors duration-300">
-                      <FileText className="w-4 h-4 text-[#345E85] dark:text-blue-400 transition-colors duration-300" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-black text-[#0f172a] dark:text-slate-100 tracking-tight uppercase transition-colors duration-300">
-                        Documentation
-                      </h3>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider transition-colors duration-300">
-                        Upload Permits, Invoices & Photos
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800 shadow-none transition-colors duration-300">
-                    <DocumentUploadSection
-                      cargoId={createdCargoId || initialData?.id || null}
-                      documents={formData.documents || []}
-                      onDocumentsChange={(docs) => setFormData(prev => ({ ...prev, documents: docs }))}
-                      allowPendingDocuments={true}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Ready to Submit Indicator - Moved inside content área for better flow */}
-              {draftSaved && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-                    <FaCheck className="text-blue-600 dark:text-blue-400 w-4 h-4 transition-colors duration-300" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-blue-900 dark:text-blue-200 text-sm transition-colors duration-300">Draft Saved Successfully</h4>
-                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5 transition-colors duration-300">
-                      Your progress is secure. Once you're ready, click the <b>Submit</b> button below to publish this cargo.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Stepper Navigation & Form Actions */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-slate-800 transition-colors duration-300">
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const idx = sections.findIndex(
-                        (s) => s.id === activeSection
-                      );
-                      if (idx > 0) setActiveSection(sections[idx - 1].id);
-                    }}
-                    disabled={
-                      sections.findIndex((s) => s.id === activeSection) === 0
-                    }
-                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors duration-300"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const idx = sections.findIndex(
-                        (s) => s.id === activeSection
-                      );
-                      if (idx < sections.length - 1)
-                        setActiveSection(sections[idx + 1].id);
-                    }}
-                    disabled={
-                      sections.findIndex((s) => s.id === activeSection) ===
-                      sections.length - 1 || !completedSections[activeSection]
-                    }
-                    className="flex-1 sm:flex-initial px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-slate-700 rounded-lg text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors duration-300"
-                  >
-                    Next
-                  </button>
-                </div>
-                {/* Unified Footer Actions */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-                  {onSaveDraft && (
-                    <button
-                      type="button"
-                      onClick={handleSaveDraft}
-                      disabled={loading}
-                      className="w-full sm:w-auto px-6 py-2.5 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300 font-bold text-sm flex items-center justify-center gap-2"
-                    >
-                      <FaSave className="w-4 h-4" />
-                      <span>SAVE DRAFT</span>
-                    </button>
                   )}
-
-                  <div className="flex-1" />
-
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="w-full sm:w-auto px-6 py-2.5 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-sm duration-300">
-                    CANCEL
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full sm:w-auto px-10 py-2.5 bg-[#345E85] dark:bg-blue-600 text-white rounded-2xl transition-all font-black text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 hover:bg-slate-800 dark:hover:bg-blue-700 duration-300">
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>SAVING...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{mode === "create" ? "CREATE CARGO" : "UPDATE CARGO"}</span>
-                      </>
-                    )}
-                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="min-w-0">
+                    <Label htmlFor="pickupDate" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                      <FaCalendar className="inline w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                      Pickup Date *
+                    </Label>
+                    <Input id="pickupDate" type="date" name="pickupDate" value={formData.pickupDate} onChange={handleChange} required className="w-full text-sm" />
+                  </div>
+                  <div className="min-w-0">
+                    <Label htmlFor="deliveryDate" className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                      <FaCalendar className="inline w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                      Delivery Date *
+                    </Label>
+                    <Input id="deliveryDate" type="date" name="deliveryDate" value={formData.deliveryDate} onChange={handleChange} required className="w-full text-sm" />
+                  </div>
                 </div>
               </div>
-            </form>
+            )}
+
+            {/* ── Section Tabs (dimensions, environmental, loading, security, urgency, quality) */}
+            <CargoFormSections formData={formData} handleChange={handleChange} handleNumberChange={handleNumberChange} activeSection={activeSection} />
+
+            {/* ── Documentation ────────────────────────────────────────────────── */}
+            {activeSection === "documents" && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 dark:bg-slate-800">
+                    <FileText className="w-4 h-4 text-[#345E85] dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-[#0f172a] dark:text-slate-100 tracking-tight uppercase">Documentation</h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Upload Permits, Invoices & Photos</p>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <DocumentUploadSection
+                    cargoId={createdCargoId || initialData?.id || null}
+                    documents={formData.documents || []}
+                    onDocumentsChange={(docs) => setFormData(prev => ({ ...prev, documents: docs }))}
+                    allowPendingDocuments={true}
+                  />
+                </div>
+              </div>
+            )}
+
+          </form>
+        </div>
+
+        {/* ── Footer Navigation — sticky, always visible ───────────────────────── */}
+        <div className="flex-shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          {/* Left: Back + Draft */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={isFirstStep}
+              className="px-4 py-2.5 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 transition-all flex items-center gap-1.5"
+            >
+              ← Back
+            </button>
+            {onSaveDraft && (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={loading}
+                className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-xs flex items-center gap-1.5"
+              >
+                <FaSave className="w-3.5 h-3.5" />
+                Save Draft
+              </button>
+            )}
+          </div>
+
+          {/* Right: Cancel + Next/Create */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-xs"
+            >
+              Cancel
+            </button>
+
+            {!isReviewStep ? (
+              /* Next button — visible on all non-review steps */
+              <button
+                type="button"
+                onClick={goNext}
+                className="px-6 py-2.5 bg-[#345E85] dark:bg-blue-600 text-white rounded-xl font-black text-xs hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-md shadow-blue-900/15 flex items-center gap-1.5"
+              >
+                {isLastContentStep ? "Review →" : "Next →"}
+              </button>
+            ) : (
+              /* Create Cargo — targets the form by id, always reachable */
+              <button
+                type="submit"
+                form="cargo-form"
+                disabled={loading}
+                className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md shadow-emerald-900/20 transition-all"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+                    <span>{submitStatus || "SAVING..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <FaCheck className="w-3.5 h-3.5" />
+                    <span>{mode === "create" ? "CREATE CARGO" : "UPDATE CARGO"}</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

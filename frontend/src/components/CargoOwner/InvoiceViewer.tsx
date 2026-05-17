@@ -21,6 +21,8 @@ interface Invoice {
   invoiceNumber: string;
   customerId: string;
   customerName: string;
+  senderId?: string;
+  senderName?: string;
   tripId?: string;
   issueDate: string;
   dueDate: string;
@@ -218,7 +220,7 @@ const InvoiceViewer: React.FC = () => {
 
       {/* Invoice Detail Modal */}
       {selectedInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -236,7 +238,11 @@ const InvoiceViewer: React.FC = () => {
 
             <div className="p-6 space-y-6">
               {/* Invoice Details */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-3 gap-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">From (Sender)</h4>
+                  <p className="text-gray-900 font-medium">{selectedInvoice.senderName || 'Carrier'}</p>
+                </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Bill To</h4>
                   <p className="text-gray-900 font-medium">{selectedInvoice.customerName}</p>

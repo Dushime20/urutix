@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import { paymentsAPI } from '../../services/api';
 import FinancialOverview from './components/FinancialOverview';
 import PendingPaymentsSection from './components/PendingPaymentsSection';
+import PaymentModal from './components/PaymentModal';
+import PaymentDetailModal from './components/PaymentDetailModal';
 import type { 
   PendingPayment, 
   FinancialSummary,
@@ -16,6 +18,9 @@ import { calculateUrgency } from './utils';
 
 const PendingPaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Fetch all payments
   const { data: paymentsData, isLoading } = useQuery({
@@ -101,20 +106,44 @@ const PendingPaymentsPage = () => {
     };
   }, [paymentsData]);
 
+  // Find payment by ID
+  const findPaymentById = (id: string): PendingPayment | null => {
+    const allPayments = [
+      ...processedData.pending.overdue,
+      ...processedData.pending.dueSoon,
+      ...processedData.pending.pending,
+    ];
+    return allPayments.find(p => p.id === id) || null;
+  };
+
   // Handlers
   const handlePayNow = (paymentId: string) => {
-    toast.success('Opening payment modal...');
-    // TODO: Implement payment modal
+    const payment = findPaymentById(paymentId);
+    if (payment) {
+      setSelectedPayment(payment);
+      setShowPaymentModal(true);
+    }
   };
 
   const handleViewDetails = (id: string) => {
-    toast.success('Opening payment details...');
-    // TODO: Implement details modal
+    const payment = findPaymentById(id);
+    if (payment) {
+      setSelectedPayment(payment);
+      setShowDetailModal(true);
+    }
   };
 
   const handleRequestExtension = (paymentId: string) => {
     toast.success('Opening extension request...');
     // TODO: Implement extension request
+  };
+
+  const handlePaymentSuccess = () => {
+    // Refresh payments data
+    toast.success('Payment completed successfully!');
+    setShowPaymentModal(false);
+    setShowDetailModal(false);
+    setSelectedPayment(null);
   };
 
   return (
@@ -134,6 +163,32 @@ const PendingPaymentsPage = () => {
         onPayNow={handlePayNow}
         onViewDetails={handleViewDetails}
         onRequestExtension={handleRequestExtension}
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+
+      {/* Payment Detail Modal */}
+      <PaymentDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment}
+        onPayNow={(payment) => {
+          setSelectedPayment(payment);
+          setShowDetailModal(false);
+          setShowPaymentModal(true);
+        }}
       />
     </div>
   );

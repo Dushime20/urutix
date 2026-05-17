@@ -12,6 +12,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { Load } from '../../entities/load.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { CargoInspection, InspectionStatus } from '../../entities/cargo-inspection.entity';
+import { Epod, EpodStatus } from '../../entities/epod.entity';
 import { EmailService } from '../auth/services/email.service';
 import { ConfigService } from '@nestjs/config';
 import { TripCompletionService } from '../trips/services/trip-completion.service';
@@ -36,6 +37,8 @@ export class ReceiversService {
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     @InjectRepository(CargoInspection)
     private readonly cargoInspectionRepository: Repository<CargoInspection>,
+    @InjectRepository(Epod)
+    private readonly epodRepository: Repository<Epod>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly tripCompletionService: TripCompletionService,
@@ -663,6 +666,7 @@ export class ReceiversService {
           originalValue: item.originalValue,
           notes: item.notes || '',
         }));
+      inspection.documents = inspectionData.documents || [];
     } else {
       // Create new inspection - map DTO to entity format
       inspection = this.cargoInspectionRepository.create({
@@ -691,21 +695,37 @@ export class ReceiversService {
             originalValue: item.originalValue,
             notes: item.notes || '',
           })),
+        documents: inspectionData.documents || [],
       });
     }
 
     const savedInspection = await this.cargoInspectionRepository.save(inspection);
 
-    // If inspection is completed successfully, trigger cargo receiver confirmation
-    // This will create/update the pending payment for the cargo owner
+    // If inspection is completed successfully, update ePOD status and trigger payment
     if (inspectionStatus === InspectionStatus.COMPLETED) {
-      // Find the trip associated with this cargo to trigger payment creation
+      // Find the trip associated with this cargo to update ePOD and trigger payment
       const Trip = this.cargoInspectionRepository.manager.getRepository('Trip');
       const trip = await Trip.findOne({
         where: { loadId: cargoId },
         select: ['id', 'tenantId'],
       });
 
+      // Update ePOD status to CONFIRMED if trip exists
+      if (trip) {
+        const epod = await this.epodRepository.findOne({
+          where: { tripId: trip.id },
+          order: { submittedAt: 'DESC' },
+        });
+        
+        if (epod && epod.status === EpodStatus.PENDING) {
+          epod.status = EpodStatus.CONFIRMED;
+          epod.confirmedAt = new Date();
+          await this.epodRepository.save(epod);
+          this.logger.log(`ePOD ${epod.id} status updated to CONFIRMED after cargo inspection`);
+        }
+      }
+
+      // Trigger payment creation
       if (trip) {
         this.tripCompletionService.handleCargoReceiverConfirmation(trip.id, trip.tenantId, receiverId)
           .then(payment => {

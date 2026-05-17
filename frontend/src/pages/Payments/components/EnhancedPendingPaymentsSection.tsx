@@ -5,7 +5,6 @@ import {
   Clock, 
   DollarSign, 
   Calendar,
-  Truck,
   Package,
   CreditCard,
   CheckCircle,
@@ -13,12 +12,15 @@ import {
   RefreshCw,
   Filter,
   Eye,
-  ExternalLink
 } from 'lucide-react';
 import { pendingPaymentsApi, type PendingPayment, type PaymentSummary } from '@/services/pendingPaymentsApi';
+import type { PendingPayment as UIPendingPayment } from '../types';
+import { PaymentType, PaymentUrgency } from '../types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/utils/cn';
 import toast from 'react-hot-toast';
+import PaymentModal from './PaymentModal';
+import PaymentDetailModal from './PaymentDetailModal';
 
 interface EnhancedPendingPaymentsSectionProps {
   onPayNow?: (paymentId: string) => void;
@@ -35,6 +37,11 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'amount' | 'created'>('dueDate');
+  
+  // Modal states
+  const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Determine if user is cargo owner or truck owner
   const isCargoOwner = user?.role === 'CARGO_OWNER';
@@ -78,21 +85,71 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
     },
   });
 
+  const mapToUIPendingPayment = (payment: PendingPayment): UIPendingPayment => {
+    const now = new Date();
+    const dueDate = payment.dueDate ? new Date(payment.dueDate) : now;
+    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const urgency: PaymentUrgency =
+      daysUntilDue < 0
+        ? PaymentUrgency.OVERDUE
+        : daysUntilDue <= 7
+        ? PaymentUrgency.DUE_SOON
+        : PaymentUrgency.PENDING;
+
+    const typeMap: Record<string, PaymentType> = {
+      LOAN_REPAYMENT: PaymentType.LOAN_REPAYMENT,
+      LOAD_PAYMENT: PaymentType.LOAD_PAYMENT,
+      ADVANCE_PAYMENT: PaymentType.ADVANCE_PAYMENT,
+      REFUND: PaymentType.REFUND,
+    };
+
+    return {
+      id: payment.id,
+      type: typeMap[payment.paymentType] ?? PaymentType.LOAD_PAYMENT,
+      amount: payment.amount,
+      currency: payment.currency,
+      dueDate,
+      urgency,
+      description: payment.description,
+      referenceNumber: payment.referenceNumber,
+      createdAt: new Date(payment.createdAt),
+      relatedEntity: {
+        type: 'TRIP',
+        id: payment.tripId,
+        number: payment.trip?.tripNumber ?? payment.tripId.slice(-8),
+        name: payment.trip?.load?.title ?? undefined,
+      },
+    };
+  };
+
+  // Find payment by ID helper
+  const findPaymentById = (id: string): PendingPayment | null => {
+    return sortedPayments.find(p => p.id === id) || null;
+  };
+
   const handlePayNow = (paymentId: string) => {
-    if (onPayNow) {
-      onPayNow(paymentId);
-    } else {
-      processPaymentMutation.mutate(paymentId);
+    const payment = findPaymentById(paymentId);
+    if (payment) {
+      setSelectedPayment(payment);
+      setShowPaymentModal(true);
     }
   };
 
   const handleViewDetails = (paymentId: string) => {
-    if (onViewDetails) {
-      onViewDetails(paymentId);
-    } else {
-      // Default behavior - could navigate to payment details page
-      console.log('View payment details:', paymentId);
+    const payment = findPaymentById(paymentId);
+    if (payment) {
+      setSelectedPayment(payment);
+      setShowDetailModal(true);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    toast.success('Payment completed successfully!');
+    setShowPaymentModal(false);
+    setShowDetailModal(false);
+    setSelectedPayment(null);
+    // Refresh payments
+    queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
   };
 
   // Sort payments
@@ -433,6 +490,33 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
           </div>
         </div>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment ? mapToUIPendingPayment(selectedPayment) : null}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+
+      {/* Payment Detail Modal */}
+      <PaymentDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment ? mapToUIPendingPayment(selectedPayment) : null}
+        onPayNow={(payment) => {
+          const apiPayment = sortedPayments.find(p => p.id === payment.id) ?? null;
+          setSelectedPayment(apiPayment);
+          setShowDetailModal(false);
+          setShowPaymentModal(true);
+        }}
+      />
     </div>
   );
 };

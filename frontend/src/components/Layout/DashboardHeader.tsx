@@ -91,6 +91,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Receiver Directory', path: `${basePath}/receivers` },
             { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
             { label: 'Documents & Contracts', path: `${basePath}/documents` },
+            { label: 'Customs Inspections', path: `${basePath}/customs-inspections` },
           ]
         },
         {

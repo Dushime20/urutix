@@ -6,11 +6,16 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Epod } from '../../entities/epod.entity';
+import { CargoInspection } from '../../entities/cargo-inspection.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -18,11 +23,20 @@ import { UserRole } from '../../entities/user.entity';
 import { ReceiversService } from './receivers.service';
 import { CreateReceiverDto } from './dto/create-receiver.dto';
 import { AssignCargoDto } from './dto/assign-cargo.dto';
+import { Load } from '../../entities/load.entity';
 
 @Controller('receivers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReceiversController {
-  constructor(private readonly receiversService: ReceiversService) {}
+  constructor(
+    private readonly receiversService: ReceiversService,
+    @InjectRepository(Epod)
+    private readonly epodRepository: Repository<Epod>,
+    @InjectRepository(CargoInspection)
+    private readonly cargoInspectionRepository: Repository<CargoInspection>,
+    @InjectRepository(Load)
+    private readonly loadRepository: Repository<Load>,
+  ) {}
 
   /**
    * Create a new receiver
@@ -191,5 +205,133 @@ export class ReceiversController {
     const receiverId = req.user.userId;
     return this.receiversService.getCargoInspection(cargoId, receiverId);
   }
-}
 
+  /**
+   * Get ePODs for the logged-in receiver (loads assigned to them)
+   */
+  @Get('my/epods')
+  @Roles(UserRole.CARGO_RECEIVER)
+  async getMyEpods(
+    @Request() req: any,
+    @Query('status') status?: string,
+  ) {
+    const receiverId = req.user.userId;
+    const tenantId = req.user.tenantId;
+
+    const query = this.epodRepository
+      .createQueryBuilder('epod')
+      .leftJoinAndSelect('epod.trip', 'trip')
+      .leftJoinAndSelect('trip.load', 'load')
+      .leftJoinAndSelect('trip.truck', 'truck')
+      .leftJoinAndSelect('trip.driver', 'driver')
+      .where('epod.tenantId = :tenantId', { tenantId })
+      .andWhere('load.receiverId = :receiverId', { receiverId });
+
+    if (status) {
+      query.andWhere('epod.status = :status', { status });
+    }
+
+    query.orderBy('epod.submittedAt', 'DESC');
+
+    const epods = await query.getMany();
+
+    return {
+      success: true,
+      data: {
+        epods: epods.map(epod => ({
+          id: epod.id,
+          tripId: epod.tripId,
+          tripNumber: epod.trip?.tripNumber,
+          loadId: epod.trip?.loadId,
+          loadTitle: epod.trip?.load?.title,
+          truckNumber: epod.trip?.truck?.plateNumber,
+          driverName: epod.trip?.driver
+            ? `${epod.trip.driver.firstName} ${epod.trip.driver.lastName}`
+            : null,
+          recipientName: epod.recipientName,
+          recipientPhone: epod.recipientPhone,
+          status: epod.status,
+          submittedAt: epod.submittedAt,
+          confirmedAt: epod.confirmedAt,
+          deliveryCoordinates: epod.deliveryCoordinates,
+          deliveryNotes: epod.deliveryNotes,
+          signatureFileUrl: epod.signatureFileUrl,
+          photoUrls: epod.photoUrls,
+        })),
+      },
+    };
+  }
+
+  /**
+   * Get all cargo receiver inspections for loads owned by the current cargo owner
+   */
+  @Get('inspections/my-loads')
+  @Roles(UserRole.CARGO_OWNER)
+  async getMyLoadInspections(@Request() req: any) {
+    const cargoOwnerId = req.user.userId;
+    const tenantId = req.user.tenantId;
+
+    // Get all loads owned by this cargo owner that have been assigned to receivers
+    const loads = await this.loadRepository.find({
+      where: { cargoOwnerId, tenantId },
+      relations: ['receiver', 'receiver.profile'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // Get inspections for these loads
+    const loadIds = loads.map(l => l.id);
+    
+    let inspections: CargoInspection[] = [];
+    if (loadIds.length > 0) {
+      inspections = await this.cargoInspectionRepository
+        .createQueryBuilder('inspection')
+        .leftJoinAndSelect('inspection.load', 'load')
+        .leftJoinAndSelect('inspection.receiver', 'receiver')
+        .leftJoinAndSelect('receiver.profile', 'profile')
+        .where('inspection.loadId IN (:...loadIds)', { loadIds })
+        .orderBy('inspection.createdAt', 'DESC')
+        .getMany();
+    }
+
+    // Map inspections with load details
+    const mappedInspections = inspections.map(inspection => ({
+      id: inspection.id,
+      status: inspection.status,
+      loadId: inspection.loadId,
+      loadTitle: inspection.load?.title,
+      loadReference: inspection.load?.reference,
+      receiverId: inspection.receiverId,
+      receiverName: inspection.receiver?.profile
+        ? `${inspection.receiver.profile.firstName || ''} ${inspection.receiver.profile.lastName || ''}`.trim()
+        : null,
+      receiverEmail: inspection.receiver?.email,
+      receiverPhone: inspection.receiver?.phone,
+      checklist: inspection.checklist,
+      overallNotes: inspection.overallNotes,
+      allItemsVerified: inspection.allItemsVerified,
+      verifiedCount: inspection.verifiedCount,
+      totalItems: inspection.totalItems,
+      discrepancyCount: inspection.discrepancyCount,
+      discrepancies: inspection.discrepancies,
+      documents: inspection.documents || [],
+      completedAt: inspection.completedAt,
+      createdAt: inspection.createdAt,
+      updatedAt: inspection.updatedAt,
+    }));
+
+    return {
+      success: true,
+      data: {
+        inspections: mappedInspections,
+        total: mappedInspections.length,
+        summary: {
+          pending: mappedInspections.filter(i => i.status === 'PENDING').length,
+          inProgress: mappedInspections.filter(i => i.status === 'IN_PROGRESS').length,
+          completed: mappedInspections.filter(i => i.status === 'COMPLETED').length,
+          disputed: mappedInspections.filter(i => i.status === 'DISPUTED').length,
+          withDiscrepancies: mappedInspections.filter(i => i.discrepancyCount > 0).length,
+        },
+      },
+    };
+  }
+}

@@ -213,6 +213,8 @@ const CargoCreatePage: React.FC = () => {
         fetchDrafts(); // Refresh drafts list
       } else {
         // No draft: create a brand new cargo
+        const pendingDocs = ((submissionData as any).documents || []).filter((d: any) => d.isPending && d.file instanceof File);
+        console.log(`📎 [CreateCargo] Submitting with ${pendingDocs.length} pending file(s):`, pendingDocs.map((d: any) => d.file?.name));
         response = await loadsAPI.create(submissionData);
         createdLoadId = (response as any)?.id || (response as any)?.data?.id || (response as any)?.load?.id;
       }
@@ -221,12 +223,12 @@ const CargoCreatePage: React.FC = () => {
         ...submissionData,
         id: createdLoadId,
       });
-      setShowEnhancedForm(false);
 
-      // Show broker assignment step before journey selection
-      setShowBrokerAssignment(true);
-
-      return response as any;
+      // Always return a normalized object with id so document upload in the form works.
+      // Do NOT close the form here — the form's handleSubmit will call onClose() after
+      // all documents have finished uploading (Step 3). Closing here unmounts the
+      // component and aborts the document upload entirely.
+      return { ...(response as any), id: createdLoadId } as any;
     } catch (error) {
       const message = errorMessage(error);
       console.error("Cargo creation error:", message);
@@ -423,6 +425,9 @@ const CargoCreatePage: React.FC = () => {
         {/* Enhanced Cargo Form Modal */}
         <EnhancedCargoForm
           isOpen={showEnhancedForm}
+          onSuccess={() => {
+            setShowBrokerAssignment(true);
+          }}
           onClose={() => {
             setShowEnhancedForm(false);
             setSelectedTemplate(null);

@@ -133,6 +133,22 @@ const InspectionDetailPage: React.FC = () => {
         {/* Left: Details panels */}
         <div className="lg:col-span-2 space-y-5">
 
+          {/* Trade & Declaration */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+              <FileText size={13} /> Trade & Declaration
+            </h3>
+            <InfoRow label="Declaration No." value={ins.declarationNumber} />
+            <InfoRow label="Mode of Transport" value={ins.modeOfTransport} />
+            <InfoRow label="Country of Origin" value={ins.countryOfOrigin} />
+            <InfoRow label="AEO Number" value={ins.aeoNumber} />
+            <InfoRow label="Shipment Ref" value={ins.shipmentReference} />
+            <InfoRow label="Checkpoint" value={ins.checkpointName} />
+            {ins.estimatedReleaseAt && (
+              <InfoRow label="Est. Release" value={new Date(ins.estimatedReleaseAt).toLocaleString()} />
+            )}
+          </div>
+
           {/* Truck & Driver */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
@@ -158,6 +174,11 @@ const InspectionDetailPage: React.FC = () => {
             <InfoRow label="Actual Weight" value={ins.actualWeight != null ? `${ins.actualWeight} kg` : null} />
             <InfoRow label="Declared Qty" value={ins.declaredQuantity} />
             <InfoRow label="Actual Qty" value={ins.actualQuantity} />
+            <InfoRow label="Declared Value" value={ins.declaredValue != null ? `${ins.currency || 'USD'} ${Number(ins.declaredValue).toLocaleString()}` : null} />
+            <InfoRow label="Duty Amount" value={ins.dutyAmount != null ? `${ins.currency || 'USD'} ${Number(ins.dutyAmount).toLocaleString()}` : null} />
+            <InfoRow label="Tax Amount" value={ins.taxAmount != null ? `${ins.currency || 'USD'} ${Number(ins.taxAmount).toLocaleString()}` : null} />
+            {ins.imdgClass && <InfoRow label="IMDG Class" value={`Class ${ins.imdgClass}`} />}
+            {ins.unNumber && <InfoRow label="UN Number" value={ins.unNumber} />}
             {ins.hasDangerousGoods && (
               <div className="mt-2 flex items-center gap-2 text-xs font-bold text-rose-700 bg-rose-50 rounded-xl px-3 py-2">
                 <AlertTriangle size={13} /> DANGEROUS GOODS DECLARED
@@ -173,13 +194,42 @@ const InspectionDetailPage: React.FC = () => {
           {/* Route */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-              <MapPin size={13} /> Route & Checkpoint
+              <MapPin size={13} /> Route
             </h3>
             <InfoRow label="Origin Country" value={ins.originCountry} />
             <InfoRow label="Destination" value={ins.destinationCountry} />
-            <InfoRow label="Shipment Ref" value={ins.shipmentReference} />
-            <InfoRow label="Checkpoint" value={ins.checkpointName} />
           </div>
+
+          {/* Exam & Hold */}
+          {(ins.examType || ins.holdType || ins.inspectionChannel) && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                <ShieldCheck size={13} /> Inspection Classification
+              </h3>
+              {ins.examType && ins.examType !== 'NONE' && (
+                <div className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Exam Type</span>
+                  <span className={cn('text-xs font-black px-2 py-0.5 rounded-lg uppercase', {
+                    'bg-blue-100 text-blue-700': ins.examType === 'DOCUMENT',
+                    'bg-purple-100 text-purple-700': ins.examType === 'X_RAY',
+                    'bg-amber-100 text-amber-700': ins.examType === 'TAILGATE',
+                    'bg-rose-100 text-rose-700': ins.examType === 'INTENSIVE',
+                  })}>{ins.examType.replace(/_/g, ' ')}</span>
+                </div>
+              )}
+              {ins.holdType && ins.holdType !== 'NONE' && (
+                <div className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hold Type</span>
+                  <span className="text-xs font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg uppercase">{ins.holdType.replace(/_/g, ' ')}</span>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {ins.sanctionsScreened && <span className="text-[10px] font-black px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg">✅ Sanctions Screened</span>}
+                {ins.deniedPartyFlag && <span className="text-[10px] font-black px-2 py-1 bg-red-100 text-red-700 rounded-lg">🚫 Denied Party Match</span>}
+                {ins.aeoNumber && <span className="text-[10px] font-black px-2 py-1 bg-blue-50 text-blue-700 rounded-lg">AEO: {ins.aeoNumber}</span>}
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           {ins.inspectionNotes && (
@@ -201,7 +251,7 @@ const InspectionDetailPage: React.FC = () => {
 
         {/* Right: Actions panel */}
         <div className="space-y-5">
-          {/* Risk level */}
+          {/* Risk level + WCO Channel */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Risk Level</h3>
             <div className={cn('text-center py-3 rounded-xl font-black text-sm', {
@@ -212,6 +262,17 @@ const InspectionDetailPage: React.FC = () => {
             })}>
               {ins.riskLevel}
             </div>
+            {ins.inspectionChannel && (
+              <div className={cn('text-center py-2.5 rounded-xl font-black text-sm mt-2', {
+                'bg-emerald-50 text-emerald-700 border border-emerald-200': ins.inspectionChannel === 'GREEN',
+                'bg-amber-50 text-amber-700 border border-amber-200': ins.inspectionChannel === 'YELLOW',
+                'bg-rose-50 text-rose-700 border border-rose-200': ins.inspectionChannel === 'RED',
+              })}>
+                {ins.inspectionChannel === 'GREEN' && '🟢 Green Lane'}
+                {ins.inspectionChannel === 'YELLOW' && '🟡 Yellow Lane'}
+                {ins.inspectionChannel === 'RED' && '🔴 Red Lane'}
+              </div>
+            )}
           </div>
 
           {/* Action buttons */}

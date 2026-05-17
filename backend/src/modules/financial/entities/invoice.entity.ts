@@ -43,6 +43,12 @@ export class Invoice {
   customerName: string;
 
   @Column({ nullable: true })
+  senderId?: string; // Truck owner who sent the invoice
+
+  @Column({ nullable: true })
+  senderName?: string; // Truck owner name
+
+  @Column({ nullable: true })
   tripId?: string;
 
   @Column({ nullable: true })

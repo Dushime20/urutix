@@ -78,6 +78,15 @@ export class CargoInspection {
   @Column('timestamp with time zone', { nullable: true })
   completedAt?: Date;
 
+  @Column('jsonb', { nullable: true, default: [] })
+  documents?: Array<{
+    id: string;
+    url: string;
+    type: 'photo' | 'document' | 'signature';
+    label?: string;
+    uploadedAt: string;
+  }>;
+
   @CreateDateColumn()
   createdAt: Date;
 

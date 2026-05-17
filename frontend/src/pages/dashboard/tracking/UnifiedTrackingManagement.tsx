@@ -5,9 +5,11 @@ import {
   Navigation,
   Loader2,
   Plus,
+  ClipboardCheck,
 } from "lucide-react";
 // Dynamically import heavy page to reduce initial bundle size
 const Tracking = lazy(() => import("@/pages/Tracking"));
+const CargoOwnerInspections = lazy(() => import("./CargoOwnerInspections"));
 import { cn } from "@/utils/cn";
 import logoUrutiX from "@/assets/logo-urutix.svg";
 import { TranslatedText } from "@/components/translated-text";
@@ -16,7 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 // Roles that should NOT see Route Planning (cargo owners track shipments, not plan fleet routes)
 const CARGO_OWNER_ROLES = ['CARGO_OWNER', 'RECEIVER', 'CARGO_RECEIVER'];
 
-type TabType = "tracking" | "routes";
+type TabType = "tracking" | "inspections" | "routes";
 
 const UnifiedTrackingManagement = () => {
   const location = useLocation();
@@ -27,6 +29,7 @@ const UnifiedTrackingManagement = () => {
 
   // Determine initial tab based on route
   const getInitialTab = (): TabType => {
+    if (location.pathname.includes("/inspections")) return "inspections";
     if (!isCargoOwnerRole && location.pathname.includes("/routes")) return "routes";
     return "tracking";
   };
@@ -58,12 +61,14 @@ const UnifiedTrackingManagement = () => {
 
     if (tab === "routes") {
       navigate(`${basePath}/routes`, { replace: true });
+    } else if (tab === "inspections") {
+      navigate(`${basePath}/inspections`, { replace: true });
     } else {
       navigate(`${basePath}/tracking`, { replace: true });
     }
   };
 
-  // Cargo owners only see Live Tracking — Route Planning is a fleet/carrier function
+  // Cargo owners see Live Tracking and Delivery Inspections — Route Planning is a fleet/carrier function
   const tabs = [
     {
       id: "tracking" as TabType,
@@ -71,6 +76,12 @@ const UnifiedTrackingManagement = () => {
       icon: MapPin,
       description: "Real-time shipment tracking and monitoring",
     },
+    ...(isCargoOwnerRole ? [{
+      id: "inspections" as TabType,
+      label: "Delivery Inspections",
+      icon: ClipboardCheck,
+      description: "View cargo receiver inspection reports and feedback",
+    }] : []),
     ...(!isCargoOwnerRole ? [{
       id: "routes" as TabType,
       label: "Route Planning",
@@ -146,6 +157,16 @@ const UnifiedTrackingManagement = () => {
                 </div>
               }>
                 <Tracking />
+              </Suspense>
+            )}
+            {activeTab === "inspections" && isCargoOwnerRole && (
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center h-64 gap-4">
+                  <Loader2 className="animate-spin text-[#345E85]" size={32} />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Inspections...</p>
+                </div>
+              }>
+                <CargoOwnerInspections />
               </Suspense>
             )}
             {activeTab === "routes" && !isCargoOwnerRole && (

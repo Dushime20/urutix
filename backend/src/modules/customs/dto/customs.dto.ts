@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsEnum, IsBoolean, IsNumber, IsArray, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CustomsInspectionStatus, CustomsRiskLevel } from '../../../entities/customs-inspection.entity';
+import { CustomsInspectionStatus, CustomsRiskLevel, InspectionChannel, ExamType, HoldType } from '../../../entities/customs-inspection.entity';
 import { CheckpointType } from '../../../entities/customs-checkpoint.entity';
 
 export class CreateInspectionDto {
@@ -25,9 +25,25 @@ export class CreateInspectionDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() hasDangerousGoods?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isRestrictedGoods?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsEnum(CustomsRiskLevel) riskLevel?: CustomsRiskLevel;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(InspectionChannel) inspectionChannel?: InspectionChannel;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(ExamType) examType?: ExamType;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(HoldType) holdType?: HoldType;
+  @ApiPropertyOptional() @IsOptional() @IsString() declarationNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() countryOfOrigin?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() modeOfTransport?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() imdgClass?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() unNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() declaredValue?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() currency?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() dutyAmount?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() taxAmount?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() aeoNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() deniedPartyFlag?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() sanctionsScreened?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() checkpointId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() checkpointName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() inspectionNotes?: string;
+  @ApiPropertyOptional() @IsOptional() estimatedReleaseAt?: Date;
 }
 
 export class UpdateInspectionStatusDto {
@@ -38,6 +54,13 @@ export class UpdateInspectionStatusDto {
   @ApiPropertyOptional() @IsOptional() @IsString() rejectionReason?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() inspectionNotes?: string;
   @ApiPropertyOptional() @IsOptional() @IsEnum(CustomsRiskLevel) riskLevel?: CustomsRiskLevel;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(InspectionChannel) inspectionChannel?: InspectionChannel;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(ExamType) examType?: ExamType;
+  @ApiPropertyOptional() @IsOptional() @IsEnum(HoldType) holdType?: HoldType;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() dutyAmount?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() taxAmount?: number;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() deniedPartyFlag?: boolean;
+  @ApiPropertyOptional() @IsOptional() estimatedReleaseAt?: Date;
   @ApiPropertyOptional() @IsOptional() documentsVerified?: Record<string, boolean>;
   @ApiPropertyOptional() @IsOptional() @IsArray() evidenceUrls?: string[];
 }
