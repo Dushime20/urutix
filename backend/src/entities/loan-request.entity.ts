@@ -98,6 +98,92 @@ export class LoanRequest {
   @Column({ type: 'json', nullable: true })
   metadata: any;
 
+  // ── International standard fields ─────────────────────────────────────────
+
+  /** Human-readable loan reference number (e.g. LN-2024-000123) */
+  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
+  loan_number: string;
+
+  /** Loan purpose — IFRS 9 / Basel classification */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  purpose: string;
+
+  /** KYC verification confirmed before origination (AML/CTF compliance) */
+  @Column({ type: 'boolean', default: false })
+  kyc_verified: boolean;
+
+  /** ISO 4217 currency code */
+  @Column({ type: 'varchar', length: 3, default: 'RWF' })
+  currency: string;
+
+  /** Origination fee charged (% of approved_amount) — TILA disclosure */
+  @Column({ type: 'decimal', precision: 5, scale: 4, nullable: true })
+  origination_fee_rate: number;
+
+  /** Origination fee absolute amount */
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  origination_fee_amount: number;
+
+  /** Total cost of credit = interest_amount + origination_fee_amount */
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  total_cost_of_credit: number;
+
+  /** Annual Percentage Rate disclosed to borrower (TILA/CCD) */
+  @Column({ type: 'decimal', precision: 7, scale: 4, nullable: true })
+  apr: number;
+
+  /** Collateral description */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  collateral_description: string;
+
+  /** Collateral estimated value */
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  collateral_value: number;
+
+  /** Loan-to-Value ratio at origination */
+  @Column({ type: 'decimal', precision: 5, scale: 4, nullable: true })
+  ltv_ratio: number;
+
+  /** Grace period end date — late fees only accrue after this */
+  @Column({ type: 'date', nullable: true })
+  grace_period_end: Date;
+
+  /** Days past due — updated by scheduler, triggers delinquency/default logic */
+  @Column({ type: 'int', default: 0 })
+  days_past_due: number;
+
+  /** IFRS 9 staging: 1 = performing, 2 = underperforming, 3 = non-performing */
+  @Column({ type: 'int', default: 1 })
+  ifrs9_stage: number;
+
+  /** Composite risk score at origination (0-100, higher = lower risk) */
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  risk_score: number;
+
+  /** Risk tier at origination */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  risk_tier: string;
+
+  /** Probability of Default at origination */
+  @Column({ type: 'decimal', precision: 6, scale: 4, nullable: true })
+  pd_at_origination: number;
+
+  /** Loss Given Default at origination */
+  @Column({ type: 'decimal', precision: 6, scale: 4, nullable: true })
+  lgd_at_origination: number;
+
+  /** Expected Loss = PD × LGD × EAD */
+  @Column({ type: 'decimal', precision: 6, scale: 4, nullable: true })
+  expected_loss: number;
+
+  /** Date loan was fully repaid */
+  @Column({ type: 'timestamp', nullable: true })
+  repaid_at: Date;
+
+  /** Date loan was marked defaulted */
+  @Column({ type: 'timestamp', nullable: true })
+  defaulted_at: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

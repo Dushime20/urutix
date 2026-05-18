@@ -197,6 +197,11 @@ export class UpdateInterestRatePolicyDto extends CreateInterestRatePolicyDto {
 
 // Loan Limit Policy DTOs
 export class CreateLoanLimitPolicyDto extends BaseLendingPolicyDto {
+  @ApiPropertyOptional({ description: 'ISO 4217 currency code', example: 'RWF' })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
   @ApiProperty({ enum: BusinessType })
   @IsEnum(BusinessType)
   business_type: BusinessType;

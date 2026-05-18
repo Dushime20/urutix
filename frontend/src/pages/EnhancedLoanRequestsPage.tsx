@@ -31,6 +31,7 @@ interface LoanRequest {
   lender_id?: string; lender?: Lender; processing_fee: number; total_amount: number;
   monthly_payment?: number; loan_term_months: number;
   requested_split?: Array<{ type: string; id: string; amount: number }>;
+  rejection_reason?: string;
 }
 interface LoanAnalytics {
   totalRequests: number; pendingRequests: number; approvedRequests: number; rejectedRequests: number;
@@ -314,11 +315,24 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
                 onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value, trip_id: '' }))}
                 className={selectCls(true)} disabled={loadingCargos} required>
                 <option value="">{loadingCargos ? 'Loading your cargos…' : cargos.length === 0 ? 'No cargos found' : 'Select your cargo'}</option>
-                {cargos.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.loadNumber || c.id.slice(0, 8)} — {c.cargoType || 'Cargo'}{c.origin?.city ? ' · ' + (typeof c.origin.city === 'object' ? (c.origin.city.name || c.origin.city.address || '') : c.origin.city) : ''}
-                  </option>
-                ))}
+                {cargos.map((c: any) => {
+                  const originCity = typeof c.origin?.city === 'object'
+                    ? (c.origin.city.name || c.origin.city.address || '')
+                    : (c.origin?.city || '');
+                  const destCity = typeof c.destination?.city === 'object'
+                    ? (c.destination.city.name || c.destination.city.address || '')
+                    : (c.destination?.city || '');
+                  const route = originCity && destCity
+                    ? ` · ${originCity} → ${destCity}`
+                    : originCity ? ` · ${originCity}` : '';
+                  const label = c.title || c.loadNumber || `Cargo ${c.id.slice(0, 8)}`;
+                  const type = c.cargoType ? ` (${c.cargoType.charAt(0) + c.cargoType.slice(1).toLowerCase()})` : '';
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {label}{type}{route}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
@@ -669,11 +683,24 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
                 onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value, trip_id: '' }))}
                 className={selectCls(true)} disabled={loadingLoads} required>
                 <option value="">{loadingLoads ? 'Loading loads…' : loads.length === 0 ? 'No assigned loads found' : 'Select a load'}</option>
-                {loads.map((l: any) => (
-                  <option key={l.id} value={l.id}>
-                    {l.loadNumber || l.id.slice(0, 8)} — {l.cargoType || 'Cargo'}{l.origin?.city ? ' · ' + (typeof l.origin.city === 'object' ? (l.origin.city.name || l.origin.city.address || '') : l.origin.city) : ''}
-                  </option>
-                ))}
+                {loads.map((l: any) => {
+                  const originCity = typeof l.origin?.city === 'object'
+                    ? (l.origin.city.name || l.origin.city.address || '')
+                    : (l.origin?.city || '');
+                  const destCity = typeof l.destination?.city === 'object'
+                    ? (l.destination.city.name || l.destination.city.address || '')
+                    : (l.destination?.city || '');
+                  const route = originCity && destCity
+                    ? ` · ${originCity} → ${destCity}`
+                    : originCity ? ` · ${originCity}` : '';
+                  const label = l.title || l.loadNumber || `Cargo ${l.id.slice(0, 8)}`;
+                  const type = l.cargoType ? ` (${l.cargoType.charAt(0) + l.cargoType.slice(1).toLowerCase()})` : '';
+                  return (
+                    <option key={l.id} value={l.id}>
+                      {label}{type}{route}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
@@ -764,23 +791,20 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
             </div>
           </div>
 
-          {/* Date + Note */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Repayment Date <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
-              <div className="relative">
-                <CalendarDays size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="date" value={form.due_date} min={new Date().toISOString().split('T')[0]}
-                  onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
-              <input type="text" value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}
-                placeholder="e.g. Fuel advance for trip"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
-            </div>
+          {/* Note */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+            <input type="text" value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}
+              placeholder="e.g. Fuel advance for trip"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+          </div>
+
+          {/* Repayment terms notice */}
+          <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3">
+            <CalendarDays size={14} className="text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-[10px] text-blue-700 font-semibold leading-relaxed">
+              <span className="font-black uppercase tracking-wide">Repayment date & terms</span> are set by the lender upon approval, based on their policy (loan term, interest rate, grace period). You will be notified once terms are confirmed.
+            </p>
           </div>
 
           {error && <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><AlertTriangle size={14} className="flex-shrink-0" /> {error}</div>}
@@ -800,8 +824,9 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
   );
 };
 
-// ── Repay Button (now using EnhancedRepayButton) ────────────────────────────
-// Old RepayButton component removed - now using EnhancedRepayButton from components/Lending
+// ══════════════════════════════════════════════════════════════════════════════
+// BORROWER LOAN REQUESTS VIEW (Truck Owner / Cargo Owner)
+// ══════════════════════════════════════════════════════════════════════════════
 
 const TruckOwnerLoanRequestsView: React.FC<{
   requests: LoanRequest[];
@@ -813,6 +838,8 @@ const TruckOwnerLoanRequestsView: React.FC<{
   search: string;
   onSearchChange: (v: string) => void;
 }> = ({ requests, analytics, loading, error, onNewRequest, onRefresh, search, onSearchChange }) => {
+  const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
+
   const filtered = requests.filter(r =>
     r.id.toLowerCase().includes(search.toLowerCase()) ||
     r.purpose?.toLowerCase().includes(search.toLowerCase()) ||
@@ -996,18 +1023,27 @@ const TruckOwnerLoanRequestsView: React.FC<{
 
                     {/* Actions */}
                     <td className="px-6 py-4">
-                      {(req.status === 'approved' || req.status === 'disbursed') && (
-                        <EnhancedRepayButton 
-                          loanId={req.id} 
-                          amount={req.approved_amount ?? req.requested_amount}
-                          onRepaymentSuccess={onRefresh}
-                        />
-                      )}
-                      {req.status === 'rejected' && req.rejection_reason && (
-                        <span className="text-[10px] text-rose-500 font-semibold" title={req.rejection_reason}>
-                          Rejected
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelectedLoan(req)}
+                          title="View loan details & terms"
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-[#345E85] hover:text-white text-slate-500 transition-all"
+                        >
+                          <FileText size={13} />
+                        </button>
+                        {(req.status === 'approved' || req.status === 'disbursed') && (
+                          <EnhancedRepayButton 
+                            loanId={req.id} 
+                            amount={req.approved_amount ?? req.requested_amount}
+                            onRepaymentSuccess={onRefresh}
+                          />
+                        )}
+                        {req.status === 'rejected' && req.rejection_reason && (
+                          <span className="text-[10px] text-rose-500 font-semibold" title={req.rejection_reason}>
+                            Rejected
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                   </tr>
@@ -1017,6 +1053,13 @@ const TruckOwnerLoanRequestsView: React.FC<{
           </div>
         )}
       </div>
+
+      {selectedLoan && (
+        <LoanDetailModal
+          loan={selectedLoan}
+          onClose={() => setSelectedLoan(null)}
+        />
+      )}
     </div>
   );
 };
@@ -1040,13 +1083,11 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [lenderFilter] = useState<'all' | string>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<LoanRequest | null>(null);
+  const [pendingApprovalPayload, setPendingApprovalPayload] = useState<{ approvedAmount: number; loanTermMonths: number; dueDate: string } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card' | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [truckOwnerPhone, setTruckOwnerPhone] = useState<string | null>(null);
-  const [showPaymentDetailsModal, setShowPaymentDetailsModal] = useState(false);
-  const [selectedLoanForPaymentDetails, setSelectedLoanForPaymentDetails] = useState<LoanRequest | null>(null);
-  const [loanPayments, setLoanPayments] = useState<any[]>([]);
-  const [loadingPayments, setLoadingPayments] = useState(false);
+
   const [advancePaymentCalculations, setAdvancePaymentCalculations] = useState<Record<string, any>>({});
   const [loadingCalculations, setLoadingCalculations] = useState<Record<string, boolean>>({});
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -1280,7 +1321,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
         const [requestsResponse, analyticsData] = await Promise.all([
           lendingApi.getLenderLoanRequests(actualLenderId, statusFilter !== 'all' ? statusFilter : undefined, 1, 100),
-          lendingApi.getLenderAnalytics(actualLenderId, '12months').catch(() => null),
+          lendingApi.getLenderAnalytics(actualLenderId, 12).catch(() => null),
         ]);
 
         const requestsData = Array.isArray(requestsResponse) ? requestsResponse : (requestsResponse?.data || requestsResponse || []);
@@ -1357,13 +1398,15 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     fetchLoanRequests();
   }, [lenderId, accessToken, statusFilter, isTruckOwner, isCargoOwner, fetchTruckOwnerLoans, fetchCargoOwnerLoans]);
 
-  const handleApproveLoan = async (loanId: string, approvedAmount: number, interestRate: number) => {
-    try {
-      await lendingApi.approveLoanRequest(loanId, { approved_amount: approvedAmount, interest_rate: interestRate });
-      setRequests(prev => prev.map(req => req.id === loanId ? { ...req, status: 'approved' } : req));
-      const loan = requests.find(r => r.id === loanId);
-      if (loan) { setSelectedLoanForPayment({ ...loan, status: 'approved' }); setShowPaymentModal(true); fetchTruckOwnerPhoneNumber(loan); }
-    } catch (err: any) { alert('Failed to approve loan: ' + (err.message || 'Unknown error')); }
+  const handleApproveLoan = async (loanId: string, payload: { approvedAmount: number; loanTermMonths: number; dueDate: string }) => {
+    // Do NOT call the approve API yet — payment must happen first.
+    const loan = requests.find(r => r.id === loanId);
+    if (loan) {
+      setPendingApprovalPayload(payload);
+      setSelectedLoanForPayment({ ...loan, approved_amount: payload.approvedAmount, due_date: payload.dueDate, loan_term_months: payload.loanTermMonths });
+      setShowPaymentModal(true);
+      fetchTruckOwnerPhoneNumber(loan);
+    }
   };
 
   const handleRejectLoan = async (loanId: string, reason: string) => {
@@ -1408,17 +1451,31 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         setProcessingPayment(true);
         if (!truckOwnerPhone) { alert('Phone number required'); return; }
         const amount = selectedLoanForPayment.approved_amount || selectedLoanForPayment.requested_amount;
+        // Step 1: Disburse funds via mobile money
         const resp = await api.post('/payments/mobile-money/send', {
           receiverPhoneNumber: truckOwnerPhone.trim(), amount, currency: 'RWF',
           tripId: selectedLoanForPayment.trip_id,
           metadata: { isLenderPayment: true, lenderId: selectedLoanForPayment.lender_id, lenderName: user?.firstName || 'Lender', loanId: selectedLoanForPayment.id },
         });
         if (resp.data?.success) {
-          alert('Payment initiated!');
+          // Step 2: Payment succeeded — now officially approve the loan
+          if (pendingApprovalPayload) {
+            await lendingApi.approveLoanRequest(selectedLoanForPayment.id, {
+              approved_amount: pendingApprovalPayload.approvedAmount,
+              due_date: pendingApprovalPayload.dueDate,
+            });
+          }
+          // Step 3: Update UI
+          setRequests(prev => prev.map(r =>
+            r.id === selectedLoanForPayment.id
+              ? { ...r, status: 'disbursed', approved_amount: pendingApprovalPayload?.approvedAmount ?? r.approved_amount }
+              : r
+          ));
+          toast.success('Payment sent & loan approved!');
           setShowPaymentModal(false);
-          setRequests(prev => prev.map(r => r.id === selectedLoanForPayment.id ? { ...r, status: 'disbursed' } : r));
+          setPendingApprovalPayload(null);
         }
-      } catch (error: any) { alert('Payment failed: ' + (error.response?.data?.message || 'Error')); }
+      } catch (error: any) { toast.error('Payment failed: ' + (error.response?.data?.message || 'Error')); }
       finally { setProcessingPayment(false); }
     } else { alert('Card payment not implemented'); }
   };
@@ -1535,12 +1592,27 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col max-h-[80vh]">
             <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Complete <span className="text-blue-600">Payment</span></h3>
-                <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-50 rounded-xl"><FaTimes size={18} /></button>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Disburse <span className="text-blue-600">Funds</span></h3>
+                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-0.5">⚡ Payment required to approve loan</p>
+                </div>
+                <button onClick={() => { setShowPaymentModal(false); setPendingApprovalPayload(null); }} className="text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-50 rounded-xl"><FaTimes size={18} /></button>
               </div>
-              <div className="bg-slate-50 rounded-2xl p-6 mb-8 border border-slate-100">
+              <div className="bg-slate-50 rounded-2xl p-6 mb-6 border border-slate-100">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Disbursement Amount</p>
-                <p className="text-3xl font-black text-slate-900">RWF {selectedLoanForPayment.requested_amount.toLocaleString()}</p>
+                <p className="text-3xl font-black text-slate-900">RWF {(selectedLoanForPayment.approved_amount ?? selectedLoanForPayment.requested_amount).toLocaleString()}</p>
+                {pendingApprovalPayload && (
+                  <p className="text-[10px] text-slate-500 mt-2">
+                    Term: <span className="font-bold">{pendingApprovalPayload.loanTermMonths} months</span>
+                    {pendingApprovalPayload.dueDate && <> · Due: <span className="font-bold">{new Date(pendingApprovalPayload.dueDate).toLocaleDateString()}</span></>}
+                  </p>
+                )}
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-3 mb-6 flex items-start gap-3">
+                <span className="text-amber-500 mt-0.5 text-base">⚠</span>
+                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide leading-relaxed">
+                  Completing this payment will simultaneously approve & disburse the loan. This action cannot be undone.
+                </p>
               </div>
               <div className="space-y-4">
                 <button onClick={() => setPaymentMethod('momo')}
@@ -1561,10 +1633,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
                   </div>
                 )}
                 <div className="flex gap-3 mt-8">
-                  <button onClick={() => setShowPaymentModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                  <button onClick={() => { setShowPaymentModal(false); setPendingApprovalPayload(null); }} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
                   <button onClick={handleProcessPayment} disabled={!paymentMethod || processingPayment}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 py-4 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200 transition-all">
-                    {processingPayment ? 'Processing...' : 'Confirm Payment'}
+                    {processingPayment ? 'Processing...' : 'Approve & Disburse'}
                   </button>
                 </div>
               </div>

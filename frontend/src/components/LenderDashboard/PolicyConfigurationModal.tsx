@@ -51,14 +51,16 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
           icon: <Percent size={20} />,
           fields: [
             { key: 'name', label: 'Policy Name', type: 'text', required: true },
-            { key: 'riskLevel', label: 'Risk Level', type: 'select', options: ['low', 'medium', 'high', 'critical'], required: true },
-            { key: 'baseRate', label: 'Base Rate (%)', type: 'number', step: '0.1', required: true },
-            { key: 'minRate', label: 'Minimum Rate (%)', type: 'number', step: '0.1', required: true },
-            { key: 'maxRate', label: 'Maximum Rate (%)', type: 'number', step: '0.1', required: true },
-            { key: 'creditScore', label: 'Credit Score Factor', type: 'number', step: '0.1', group: 'adjustmentFactors' },
-            { key: 'loanHistory', label: 'Loan History Factor', type: 'number', step: '0.1', group: 'adjustmentFactors' },
-            { key: 'collateral', label: 'Collateral Factor', type: 'number', step: '0.1', group: 'adjustmentFactors' },
-            { key: 'businessType', label: 'Business Type Factor', type: 'number', step: '0.1', group: 'adjustmentFactors' }
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'riskLevel', label: 'Risk Level (determines which borrowers this policy applies to)', type: 'select', options: ['low', 'medium', 'high', 'critical'], required: true },
+            { key: 'baseRate', label: 'Base Rate (% p.a.) — starting point before risk adjustment', type: 'number', step: '0.01', required: true },
+            { key: 'minRate', label: 'Minimum Rate (% p.a.) — floor, never go below this', type: 'number', step: '0.01', required: true },
+            { key: 'maxRate', label: 'Maximum Rate (% p.a.) — ceiling for this risk tier', type: 'number', step: '0.01', required: true },
+            { key: 'originationFeeRate', label: 'Origination Fee Rate (%) — one-time processing fee on principal', type: 'number', step: '0.01' },
+            { key: 'creditScore', label: 'Credit Score Adjustment Factor (%)', type: 'number', step: '0.01', group: 'adjustmentFactors' },
+            { key: 'loanHistory', label: 'Loan History Adjustment Factor (%)', type: 'number', step: '0.01', group: 'adjustmentFactors' },
+            { key: 'collateral', label: 'Collateral Adjustment Factor (%)', type: 'number', step: '0.01', group: 'adjustmentFactors' },
+            { key: 'businessType', label: 'Business Type Adjustment Factor (%)', type: 'number', step: '0.01', group: 'adjustmentFactors' }
           ]
         };
       case 'loanLimits':
@@ -67,10 +69,11 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
           icon: <DollarSign size={20} />,
           fields: [
             { key: 'name', label: 'Policy Name', type: 'text', required: true },
+            { key: 'currency', label: 'Currency', type: 'select', options: ['RWF', 'USD', 'EUR', 'KES', 'UGX', 'TZS', 'BIF'], required: true },
             { key: 'businessType', label: 'Business Type', type: 'select', options: ['individual', 'sme', 'corporation', 'cooperative'], required: true },
-            { key: 'minAmount', label: 'Minimum Amount (RWF)', type: 'number', required: true },
-            { key: 'maxAmount', label: 'Maximum Amount (RWF)', type: 'number', required: true },
-            { key: 'creditScoreRequirement', label: 'Credit Score Requirement', type: 'number', required: true },
+            { key: 'minAmount', label: 'Minimum Amount', type: 'number', required: true },
+            { key: 'maxAmount', label: 'Maximum Amount', type: 'number', required: true },
+            { key: 'creditScoreRequirement', label: 'Min Credit Score', type: 'number', required: true },
             { key: 'collateralRequirement', label: 'Collateral Requirement (%)', type: 'number', required: true },
             { key: 'maxUtilization', label: 'Max Utilization (%)', type: 'number', required: true }
           ]
@@ -116,12 +119,17 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
           icon: <Calendar size={20} />,
           fields: [
             { key: 'name', label: 'Policy Name', type: 'text', required: true },
-            { key: 'frequency', label: 'Frequency', type: 'select', options: ['weekly', 'biweekly', 'monthly', 'quarterly', 'semi_annually', 'annually'], required: true },
-            { key: 'gracePeriod', label: 'Grace Period (days)', type: 'number', required: true },
-            { key: 'lateFee', label: 'Late Fee (RWF)', type: 'number', required: true },
-            { key: 'penaltyRate', label: 'Penalty Rate (%)', type: 'number', step: '0.1', required: true },
-            { key: 'maxExtensions', label: 'Max Extensions', type: 'number', required: true },
-            { key: 'defaultThreshold', label: 'Default Threshold (days)', type: 'number', required: true }
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'frequency', label: 'Payment Frequency — how often borrower repays', type: 'select', options: ['weekly', 'biweekly', 'monthly', 'quarterly', 'semi_annually', 'annually'], required: true },
+            { key: 'grace_period_days', label: 'Grace Period (days) — days after due date before late fee applies', type: 'number', required: true },
+            { key: 'late_fee_type', label: 'Late Fee Type', type: 'select', options: ['fixed_amount', 'percentage', 'compound_interest'], required: true },
+            { key: 'late_fee_amount', label: 'Late Fee Amount (fixed amount or % of outstanding)', type: 'number', step: '0.01', required: true },
+            { key: 'penalty_rate', label: 'Penalty Rate (% p.a.) — ongoing rate applied to overdue balance', type: 'number', step: '0.01', required: true },
+            { key: 'max_extensions', label: 'Max Extensions — times borrower can extend due date', type: 'number', required: true },
+            { key: 'default_threshold_days', label: 'Default Threshold (days) — days overdue before loan is classified as defaulted', type: 'number', required: true },
+            { key: 'early_payment_discount', label: 'Early Payment Discount (%) — optional discount for early settlement', type: 'number', step: '0.01' },
+            { key: 'allow_partial_payments', label: 'Allow Partial Payments', type: 'checkbox' },
+            { key: 'minimum_payment_percentage', label: 'Minimum Payment (% of total) — if partial payments allowed', type: 'number', step: '0.01' }
           ]
         };
       case 'cargoTypePolicies':

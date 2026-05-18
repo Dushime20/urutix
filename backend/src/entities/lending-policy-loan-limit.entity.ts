@@ -30,6 +30,9 @@ export class LendingPolicyLoanLimit {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ type: 'varchar', length: 3, default: 'RWF' })
+  currency: string;
+
   @Column({
     type: 'enum',
     enum: BusinessType,

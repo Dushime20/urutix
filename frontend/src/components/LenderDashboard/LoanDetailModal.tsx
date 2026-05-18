@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, DollarSign, Calendar, MapPin, Package, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, User, DollarSign, Calendar, MapPin, Package, FileText, AlertCircle, CheckCircle, TrendingUp, Percent, Receipt } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface LoanDetailModalProps {
@@ -164,6 +164,117 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
               )}
             </div>
           </div>
+
+          {/* Policy Terms — always rendered; values show '—' when not yet computed */}
+          {(() => {
+            const principal = loan.approved_amount || loan.requested_amount || 0;
+            // Resolve rate from top-level enriched field, loanTerms snapshot, or metadata
+            const rate: number | null =
+              loan.interest_rate ??
+              loan.loanTerms?.nominal_rate ??
+              loan.metadata?.interest_rate ??
+              null;
+            const termMonths: number | null = loan.loan_term_months ?? loan.metadata?.loan_term_months ?? null;
+            // originationFeeRate: sourced from immutable LoanTerms snapshot or metadata — never hardcoded
+            const originationFeeRate: number | null =
+              loan.loanTerms?.origination_fee_rate ??
+              loan.metadata?.origination_fee_rate ??
+              null;
+            // effective_annual_rate from loanTerms snapshot or top-level
+            const ear: number | null =
+              loan.effective_annual_rate ??
+              loan.loanTerms?.effective_annual_rate ??
+              loan.metadata?.effective_annual_rate ??
+              null;
+            const totalInterest = rate != null && termMonths != null
+              ? principal * (rate / 100) * (termMonths / 12) : null;
+            const originationFee = originationFeeRate != null
+              ? principal * (originationFeeRate / 100) : null;
+            const totalRepayable = totalInterest != null
+              ? principal + totalInterest + (originationFee ?? 0) : null;
+            const monthlyInstalment = totalRepayable != null && termMonths != null && termMonths > 0
+              ? totalRepayable / termMonths : null;
+            const fmtMoney = (n: number) => `USD ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const fmt = (n: number | null) => n != null ? fmtMoney(n) : '—';
+
+            return (
+              <div className="bg-gradient-to-br from-[#345E85]/5 to-indigo-50 dark:from-slate-800/50 dark:to-indigo-900/10 rounded-2xl p-6 border border-[#345E85]/10 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-3 bg-[#345E85]/10 dark:bg-blue-900/30 rounded-xl">
+                    <TrendingUp className="w-6 h-6 text-[#345E85] dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Loan Policy Terms</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Set by lender · Basel II / IFRS 9
+                    </p>
+                  </div>
+                </div>
+
+                {/* Rate row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                      <Percent className="w-2.5 h-2.5" /> Nominal Rate
+                    </p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white">
+                      {rate != null ? `${Number(rate).toFixed(2)}%` : '—'}
+                    </p>
+                    <p className="text-[9px] text-slate-400 mt-0.5">Per annum</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">APR / EAR</p>
+                    <p className="text-lg font-black text-[#345E85] dark:text-blue-400">
+                      {ear != null ? `${Number(ear).toFixed(2)}%` : '—'}
+                    </p>
+                    <p className="text-[9px] text-slate-400 mt-0.5">Monthly compounding</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Loan Term</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white">
+                      {termMonths != null ? `${termMonths} mo` : '—'}
+                    </p>
+                    <p className="text-[9px] text-slate-400 mt-0.5">{termMonths != null ? `${termMonths} instalments` : 'Pending approval'}</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Score</p>
+                    <p className={`text-lg font-black ${(loan.risk_score ?? 0) >= 75 ? 'text-emerald-600' : (loan.risk_score ?? 0) >= 55 ? 'text-amber-500' : 'text-rose-500'}`}>
+                      {loan.risk_score != null ? `${loan.risk_score}%` : '—'}
+                    </p>
+                    <p className="text-[9px] text-slate-400 mt-0.5 capitalize">{loan.risk_level ?? loan.metadata?.risk_level ?? 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Cost breakdown */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                    <Receipt className="w-3.5 h-3.5 text-slate-400" />
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cost Breakdown</p>
+                  </div>
+                  <div className="divide-y divide-slate-50 dark:divide-slate-700">
+                    {[
+                      { label: 'Principal (Disbursed)', value: fmtMoney(principal), colour: 'text-slate-900 dark:text-white' },
+                      { label: rate != null && termMonths != null ? `Interest (${rate}% × ${termMonths}m)` : 'Interest', value: fmt(totalInterest), colour: 'text-amber-600' },
+                      { label: originationFeeRate != null ? `Origination Fee (${originationFeeRate}%)` : 'Origination Fee', value: fmt(originationFee), colour: 'text-rose-500' },
+                    ].map(row => (
+                      <div key={row.label} className="flex justify-between items-center px-5 py-3">
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{row.label}</span>
+                        <span className={`text-sm font-black ${row.colour}`}>{row.value}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center px-5 py-4 bg-[#345E85]/5 dark:bg-blue-900/20">
+                      <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Total Repayable</span>
+                      <span className="text-2xl font-black text-[#345E85] dark:text-blue-400">{fmt(totalRepayable)}</span>
+                    </div>
+                    <div className="flex justify-between items-center px-5 py-3 border-t-2 border-dashed border-slate-100 dark:border-slate-700">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Monthly Instalment{termMonths != null ? ` × ${termMonths}` : ''}</span>
+                      <span className="text-base font-black text-[#345E85] dark:text-blue-400">{fmt(monthlyInstalment)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Cargo Information */}
           {(loan.cargo_type || loan.pickup_location || loan.delivery_location) && (

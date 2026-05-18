@@ -1,381 +1,380 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { lendingApi } from '../services/lending/lendingApi';
 import {
-  FaChartLine,
-  FaDollarSign,
-  FaExclamationTriangle,
-} from 'react-icons/fa';
-import { RotateCcw } from 'lucide-react';
-import PortfolioAnalyticsEnlite, { type LoanPerformance } from '../components/LenderDashboard/PortfolioAnalytics.enlite';
+  RotateCcw, TrendingUp, TrendingDown, Shield, AlertTriangle,
+  DollarSign, Activity, BarChart2, PieChart, ArrowUpRight,
+} from 'lucide-react';
 import ModernLoader from '../components/common/ModernLoader';
+import api from '../services/api';
 
-interface PortfolioData {
-  totalLoans: number;
-  totalValue: number;
-  activeLoans: number;
-  completedLoans: number;
-  defaultedLoans: number;
-  averageInterestRate: number;
-  averageLoanTerm: number;
-  totalInterestEarned: number;
-  portfolioYield: number;
-  riskScore: number;
-  diversificationScore: number;
-  monthlyGrowth: number;
-  collectionRate: number;
-}
+// ── RWF formatter (ISO 4217) ─────────────────────────────────────────────────
+const fmtRWF = (n: number): string => {
+  if (n >= 1_000_000_000) return `RWF ${(n / 1_000_000_000).toFixed(2)} B`;
+  if (n >= 1_000_000)     return `RWF ${(n / 1_000_000).toFixed(1)} M`;
+  if (n >= 1_000)         return `RWF ${(n / 1_000).toFixed(0)} K`;
+  return `RWF ${n.toLocaleString('en-RW')}`;
+};
 
-interface RiskMetrics {
-  lowRisk: number;
-  mediumRisk: number;
-  highRisk: number;
-  totalExposure: number;
-}
+const fmtPct = (n: number | null | undefined, decimals = 2): string =>
+  n != null ? `${Number(n).toFixed(decimals)}%` : '—';
 
-interface GeographicDistribution {
-  region: string;
-  loanCount: number;
-  totalValue: number;
-  averageRate: number;
-  defaultRate: number;
-}
+const riskColour = (level: string) =>
+  level === 'low'    ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
+  level === 'medium' ? 'text-amber-600 bg-amber-50 border-amber-100' :
+                       'text-rose-600 bg-rose-50 border-rose-100';
 
-interface CargoTypeAnalysis {
-  cargoType: string;
-  loanCount: number;
-  totalValue: number;
-  averageSize: number;
-  defaultRate: number;
-  averageRate: number;
-  riskLevel: 'low' | 'medium' | 'high';
-}
+// ── Sub-components ────────────────────────────────────────────────────────────
+const KpiCard: React.FC<{
+  label: string; value: string; sub?: string;
+  icon: React.ReactNode; trend?: number; accent?: boolean;
+}> = ({ label, value, sub, icon, trend, accent }) => (
+  <div className={`bg-white rounded-3xl border ${accent ? 'border-[#345E85]/20 shadow-blue-100' : 'border-slate-100'} shadow-sm p-6 flex flex-col gap-3`}>
+    <div className="flex items-center justify-between">
+      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${accent ? 'bg-[#345E85]/10 text-[#345E85]' : 'bg-slate-50 text-slate-500'}`}>
+        {icon}
+      </div>
+      {trend != null && (
+        <span className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${trend >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+          {trend >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+          {Math.abs(trend).toFixed(1)}%
+        </span>
+      )}
+    </div>
+    <div>
+      <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
+      {sub && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{sub}</p>}
+    </div>
+    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.18em]">{label}</p>
+  </div>
+);
 
+const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; sub?: string }> = ({ icon, title, sub }) => (
+  <div className="flex items-center gap-3 mb-5">
+    <div className="w-8 h-8 rounded-xl bg-[#345E85]/10 text-[#345E85] flex items-center justify-center">{icon}</div>
+    <div>
+      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">{title}</h3>
+      {sub && <p className="text-[10px] text-slate-400 font-bold">{sub}</p>}
+    </div>
+  </div>
+);
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 const PortfolioAnalyticsPage: React.FC = () => {
   const { user } = useAuth();
-  const [timeframe, setTimeframe] = useState<string>('12months');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [months, setMonths] = useState<number>(12);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [lenderId, setLenderId] = useState<string | null>(null);
 
-  // Real data from APIs
-  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
-  const [performanceData, setPerformanceData] = useState<LoanPerformance[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
-
-  // Check authentication and get lender ID from user context
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            Authentication Required
-          </h2>
-          <p className="text-gray-500">
-            Please log in to access the portfolio analytics page.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (user.role !== 'LENDER') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-500">
-            This page is only accessible to lenders.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const lenderId = user.id;
+  const load = useCallback(async (lid: string, m: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await lendingApi.getLenderAnalytics(lid, m);
+      setAnalytics(data);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Only fetch data if authenticated and user has proper access
-    if (!user || user.role !== 'LENDER') {
-      return;
-    }
+    if (!user || user.role !== 'LENDER') return;
+    // Resolve User UUID → Lender entity UUID
+    api.get('/lending/me/lender-id')
+      .then(r => {
+        const lid = r.data?.lenderId || user.id;
+        setLenderId(lid);
+        load(lid, months);
+      })
+      .catch(() => {
+        setLenderId(user.id);
+        load(user.id, months);
+      });
+  }, [user]);
 
-    const fetchPortfolioData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  useEffect(() => {
+    if (lenderId) load(lenderId, months);
+  }, [months, lenderId]);
 
-        // Fetch portfolio summary
-        const portfolioSummary = await lendingApi.getPortfolioSummary(lenderId);
+  if (!user) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <p className="text-slate-500 font-bold">Please log in to access analytics.</p>
+    </div>
+  );
 
-        // Fetch analytics data
-        const analytics = await lendingApi.getLenderAnalytics(lenderId, timeframe);
+  if (user.role !== 'LENDER') return (
+    <div className="flex items-center justify-center min-h-screen">
+      <p className="text-slate-500 font-bold">This page is only accessible to lenders.</p>
+    </div>
+  );
 
-        // Fetch trends data (the selected API!)
-        const trends = await lendingApi.getLenderTrends(lenderId, {
-          period: timeframe,
-          granularity: 'monthly',
-          metrics: ['disbursed', 'collected', 'defaults', 'netIncome']
-        });
+  if (loading) return <ModernLoader isLoading type="dashboard" showStats />;
 
-        // Transform API data to match component interfaces
-        setPortfolioData({
-          totalLoans: portfolioSummary.totalLoans || 0,
-          totalValue: portfolioSummary.totalValue || 0,
-          activeLoans: portfolioSummary.activeLoans || 0,
-          completedLoans: portfolioSummary.completedLoans || 0,
-          defaultedLoans: portfolioSummary.defaultedLoans || 0,
-          averageInterestRate: analytics.averageInterestRate || 0,
-          averageLoanTerm: analytics.averageLoanTerm || 0,
-          totalInterestEarned: analytics.totalInterestEarned || 0,
-          portfolioYield: analytics.portfolioYield || 0,
-          riskScore: analytics.riskScore || 0,
-          diversificationScore: analytics.diversificationScore || 0,
-          monthlyGrowth: analytics.monthlyGrowth || 0,
-          collectionRate: analytics.collectionRate || 0,
-        });
-
-        // Transform trends data for performance chart
-        if (trends && trends.monthlyData) {
-          setPerformanceData(trends.monthlyData.map((item: any) => ({
-            month: item.month,
-            disbursed: item.disbursed || 0,
-            collected: item.collected || 0,
-            defaults: item.defaults || 0,
-            netIncome: item.netIncome || 0,
-          })));
-        }
-
-        setAnalyticsData(analytics);
-
-      } catch (err: any) {
-        console.error('Error fetching portfolio data:', err);
-        setError(err.message || 'Failed to load portfolio data');
-
-        // Fallback to mock data if API fails
-        setPortfolioData({
-          totalLoans: 247,
-          totalValue: 12750000,
-          activeLoans: 156,
-          completedLoans: 78,
-          defaultedLoans: 13,
-          averageInterestRate: 9.2,
-          averageLoanTerm: 15.5,
-          totalInterestEarned: 1875000,
-          portfolioYield: 14.7,
-          riskScore: 7.3,
-          diversificationScore: 8.1,
-          monthlyGrowth: 8.5,
-          collectionRate: 94.7
-        });
-
-        setPerformanceData([
-          { month: 'Jan 2024', disbursed: 850000, collected: 720000, defaults: 15000, netIncome: 95000 },
-          { month: 'Feb 2024', disbursed: 920000, collected: 780000, defaults: 12000, netIncome: 105000 },
-          { month: 'Mar 2024', disbursed: 1100000, collected: 890000, defaults: 18000, netIncome: 125000 },
-          { month: 'Apr 2024', disbursed: 950000, collected: 820000, defaults: 10000, netIncome: 115000 },
-          { month: 'May 2024', disbursed: 1200000, collected: 950000, defaults: 22000, netIncome: 140000 },
-          { month: 'Jun 2024', disbursed: 1350000, collected: 1100000, defaults: 16000, netIncome: 165000 },
-          { month: 'Jul 2024', disbursed: 1250000, collected: 1050000, defaults: 19000, netIncome: 155000 },
-          { month: 'Aug 2024', disbursed: 1400000, collected: 1200000, defaults: 14000, netIncome: 180000 }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPortfolioData();
-  }, [user, lenderId, timeframe]);
-
-  // Loading state
-  if (loading) {
-    return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
-  }
-
-  // Error state
-  if (error && !portfolioData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FaExclamationTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Portfolio</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
+  if (error) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="text-center">
+        <AlertTriangle className="w-14 h-14 text-rose-500 mx-auto mb-4" />
+        <h2 className="text-lg font-black text-slate-900 mb-2 uppercase tracking-tight">Error Loading Analytics</h2>
+        <p className="text-slate-500 text-sm mb-5">{error}</p>
+        <button onClick={() => lenderId && load(lenderId, months)}
+          className="px-6 py-3 bg-[#345E85] text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#2a4d6d] transition-all">
+          Retry
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!portfolioData) {
-    return <div>No portfolio data available</div>;
-  }
+  if (!analytics) return null;
 
-  const formatCurrency = (amount: number): string => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)} M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)} K`;
-    }
-    return `$${amount.toLocaleString()} `;
-  };
+  const p = analytics.portfolio ?? {};
+  const trends: any[] = analytics.monthly_trends ?? [];
+  const risk = analytics.risk_distribution ?? {};
+  const cargo: any[] = analytics.cargo_breakdown ?? [];
+  const std = analytics.standards_summary ?? {};
+  const currency: string = analytics.currency ?? 'RWF';
 
-  const riskMetrics: RiskMetrics = {
-    lowRisk: 4250000,
-    mediumRisk: 5950000,
-    highRisk: 2550000,
-    totalExposure: 12750000
-  };
-
-  const geographicData: GeographicDistribution[] = analyticsData?.geographicDistribution || [
-    { region: 'West Coast', loanCount: 78, totalValue: 4200000, averageRate: 8.9, defaultRate: 3.8 },
-    { region: 'East Coast', loanCount: 65, totalValue: 3850000, averageRate: 9.1, defaultRate: 4.2 },
-    { region: 'Midwest', loanCount: 42, totalValue: 2100000, averageRate: 9.8, defaultRate: 2.9 },
-    { region: 'South', loanCount: 35, totalValue: 1650000, averageRate: 9.5, defaultRate: 3.5 },
-    { region: 'Southwest', loanCount: 27, totalValue: 950000, averageRate: 10.2, defaultRate: 5.1 }
-  ];
-
-  const cargoAnalysis: CargoTypeAnalysis[] = analyticsData?.cargoTypeAnalysis || [
-    { cargoType: 'Electronics', loanCount: 58, totalValue: 3200000, averageSize: 55172, defaultRate: 2.8, averageRate: 8.7, riskLevel: 'low' },
-    { cargoType: 'Automotive Parts', loanCount: 45, totalValue: 2750000, averageSize: 61111, defaultRate: 3.2, averageRate: 9.1, riskLevel: 'low' },
-    { cargoType: 'Industrial Machinery', loanCount: 32, totalValue: 2400000, averageSize: 75000, defaultRate: 4.1, averageRate: 9.8, riskLevel: 'medium' },
-    { cargoType: 'Construction Materials', loanCount: 38, totalValue: 1900000, averageSize: 50000, defaultRate: 5.8, averageRate: 10.5, riskLevel: 'medium' },
-    { cargoType: 'Perishable Goods', loanCount: 28, totalValue: 1200000, averageSize: 42857, defaultRate: 7.2, averageRate: 11.2, riskLevel: 'high' },
-    { cargoType: 'Chemicals', loanCount: 21, totalValue: 850000, averageSize: 40476, defaultRate: 8.9, averageRate: 12.1, riskLevel: 'high' },
-    { cargoType: 'Textiles', loanCount: 25, totalValue: 450000, averageSize: 18000, defaultRate: 6.4, averageRate: 10.8, riskLevel: 'medium' }
-  ];
+  // Bar chart max
+  const maxDisbursed = Math.max(...trends.map((t: any) => t.disbursed ?? 0), 1);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-      <div className="max-w-[1536px] mx-auto">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8">
+      <div className="max-w-[1536px] mx-auto space-y-10">
+
+        {/* ── Header ── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Portfolio Analytics</h1>
-            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
-              Real-time risk & performance intelligence engine
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Portfolio Analytics</h1>
+            <p className="text-slate-400 mt-1 uppercase text-[10px] font-black tracking-widest">
+              IFRS 9 · Basel II · Real-time · {currency}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-blue-100">
-              <FaChartLine size={14} /> Global Forecast
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
-            >
-              <RotateCcw size={14} /> Refresh Cycle
+            {/* Timeframe selector */}
+            {([3, 6, 12] as const).map(m => (
+              <button key={m} onClick={() => setMonths(m)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border
+                  ${months === m
+                    ? 'bg-[#345E85] text-white border-[#345E85] shadow-lg shadow-blue-100'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                {m}M
+              </button>
+            ))}
+            <button onClick={() => lenderId && load(lenderId, months)}
+              className="p-2 bg-white border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+              <RotateCcw className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <PortfolioAnalyticsEnlite
-          loading={loading}
-          portfolioData={portfolioData!}
-          performanceData={performanceData}
-          riskMetrics={riskMetrics}
-          geographicData={geographicData}
-          cargoAnalysis={cargoAnalysis}
-          timeframe={timeframe}
-          onTimeframeChange={(t) => setTimeframe(t)}
-          onExport={() => console.log('Exporting report...')}
-        >
-          {/* Custom Alpha Performance Engine */}
-          <div className="relative h-full w-full flex items-end">
-            <div className="h-[240px] w-full flex items-end justify-between relative px-2 group">
-              {/* Grid Lines */}
-              <div className="absolute inset-x-0 bottom-0 h-full flex flex-col justify-between pointer-events-none opacity-5">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="border-t border-slate-900 w-full" />
-                ))}
+        {/* ── KPI Row ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard label="Total Disbursed" value={fmtRWF(p.total_amount_disbursed ?? 0)}
+            sub={`${p.total_loans_issued ?? 0} loans issued`} icon={<DollarSign className="w-5 h-5" />} accent />
+          <KpiCard label="Outstanding Balance" value={fmtRWF(p.outstanding_balance ?? 0)}
+            sub="Active loan book" icon={<Activity className="w-5 h-5" />} />
+          <KpiCard label="Recovery Rate" value={fmtPct(p.recovery_rate)}
+            sub="Repaid / Disbursed" icon={<TrendingUp className="w-5 h-5" />}
+            trend={p.recovery_rate != null ? p.recovery_rate - 100 : undefined} />
+          <KpiCard label="Default Rate" value={fmtPct(p.default_rate)}
+            sub="Basel II PDr proxy" icon={<AlertTriangle className="w-5 h-5" />}
+            trend={p.default_rate != null ? -p.default_rate : undefined} />
+        </div>
+
+        {/* ── IFRS 9 + Basel II Standards Summary ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <SectionHeader icon={<Shield className="w-4 h-4" />}
+            title="IFRS 9 / Basel II Standards Summary"
+            sub={`Computed at ${analytics.computed_at ? new Date(analytics.computed_at).toLocaleString() : '—'}`} />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { label: 'ECL Estimate (IFRS 9)', value: fmtRWF(std.ifrs9_ecl_estimate ?? 0) },
+              { label: 'Avg PD', value: fmtPct(std.pd_average) },
+              { label: 'LGD Estimate', value: fmtPct(std.lgd_estimate) },
+              { label: 'Collection Rate', value: fmtPct(std.collection_rate) },
+              { label: 'NPL Ratio', value: fmtPct(std.npl_ratio) },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-slate-50 rounded-2xl px-4 py-4 border border-slate-100">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                <p className="text-lg font-black text-slate-900">{value}</p>
               </div>
+            ))}
+          </div>
 
-              {performanceData.slice(-8).map((data, index) => {
-                const maxValue = 1600000;
-                const disbursedHeight = (data.disbursed / maxValue) * 200;
-                const collectedHeight = (data.collected / maxValue) * 200;
+          {/* IFRS 9 Stage distribution bar */}
+          <div className="mt-5">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
+              IFRS 9 Stage Distribution — Outstanding Exposure
+            </p>
+            {(() => {
+              const total = (p.ifrs9_stage1 ?? 0) + (p.ifrs9_stage2 ?? 0) + (p.ifrs9_stage3 ?? 0);
+              if (total === 0) return <p className="text-xs text-slate-400">No active loans</p>;
+              const s1pct = (p.ifrs9_stage1 / total) * 100;
+              const s2pct = (p.ifrs9_stage2 / total) * 100;
+              const s3pct = (p.ifrs9_stage3 / total) * 100;
+              return (
+                <div>
+                  <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+                    <div className="bg-emerald-500 transition-all" style={{ width: `${s1pct}%` }} title={`Stage 1 (Performing): ${fmtRWF(p.ifrs9_stage1)}`} />
+                    <div className="bg-amber-400 transition-all"  style={{ width: `${s2pct}%` }} title={`Stage 2 (Watch): ${fmtRWF(p.ifrs9_stage2)}`} />
+                    <div className="bg-rose-500 transition-all"  style={{ width: `${s3pct}%` }} title={`Stage 3 (NPL): ${fmtRWF(p.ifrs9_stage3)}`} />
+                  </div>
+                  <div className="flex gap-4 mt-2">
+                    {[
+                      { label: 'Stage 1 · Performing', val: fmtRWF(p.ifrs9_stage1), pct: s1pct, cls: 'bg-emerald-500' },
+                      { label: 'Stage 2 · Watch',      val: fmtRWF(p.ifrs9_stage2), pct: s2pct, cls: 'bg-amber-400' },
+                      { label: 'Stage 3 · NPL',        val: fmtRWF(p.ifrs9_stage3), pct: s3pct, cls: 'bg-rose-500' },
+                    ].map(s => (
+                      <div key={s.label} className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full ${s.cls}`} />
+                        <span className="text-[9px] font-bold text-slate-500">{s.label}: <strong>{s.val}</strong> ({s.pct.toFixed(1)}%)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
 
-                return (
-                  <div key={index} className="flex flex-col items-center relative group/bar w-full max-w-[80px]">
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full mb-4 hidden group-hover/bar:block bg-slate-900 text-white p-3 rounded-xl z-20 min-w-[140px] shadow-2xl border border-slate-800 animate-in slide-in-from-bottom-2 duration-200">
-                      <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 border-b border-white/10 pb-1">{data.month}</div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-400 font-bold">OUT:</span>
-                          <span className="font-black text-white">{formatCurrency(data.disbursed)}</span>
+        {/* ── Monthly Trends Chart ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <SectionHeader icon={<BarChart2 className="w-4 h-4" />}
+            title="Monthly Cash Flow Trends"
+            sub={`Last ${months} months · ${currency}`} />
+          {trends.length === 0
+            ? <p className="text-sm text-slate-400 text-center py-12">No trend data available yet.</p>
+            : (
+              <div className="flex items-end gap-2 h-52 px-1">
+                {trends.map((t: any, i: number) => {
+                  const dH = Math.max((t.disbursed / maxDisbursed) * 180, 2);
+                  const cH = Math.max((t.collected / maxDisbursed) * 180, 2);
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] font-bold rounded-xl px-3 py-2 z-20 min-w-[130px] shadow-2xl gap-1 pointer-events-none">
+                        <span className="text-indigo-400 font-black uppercase tracking-widest border-b border-white/10 pb-1 mb-1">{t.month}</span>
+                        <span>Out: <strong>{fmtRWF(t.disbursed)}</strong></span>
+                        <span className="text-emerald-400">In: <strong>{fmtRWF(t.collected)}</strong></span>
+                        {t.defaults > 0 && <span className="text-rose-400">Default: <strong>{fmtRWF(t.defaults)}</strong></span>}
+                        <span className="text-amber-300">Net: <strong>{fmtRWF(t.net_income)}</strong></span>
+                      </div>
+                      <div className="flex items-end gap-0.5">
+                        <div className="w-3 bg-slate-800 rounded-t-sm transition-all duration-500 hover:bg-slate-700"
+                          style={{ height: `${dH}px` }} />
+                        <div className="w-3 bg-[#345E85] rounded-t-sm transition-all duration-500 hover:bg-[#2a4d6d]"
+                          style={{ height: `${cH}px` }} />
+                      </div>
+                      <span className="text-[8px] font-black text-slate-400 -rotate-45 origin-center whitespace-nowrap">
+                        {t.month?.split(' ')[0]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          <div className="flex gap-4 mt-4">
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-slate-800" /><span className="text-[10px] font-bold text-slate-500">Disbursed (Out)</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-[#345E85]" /><span className="text-[10px] font-bold text-slate-500">Collected (In)</span></div>
+          </div>
+        </div>
+
+        {/* ── Risk Distribution + Cargo Breakdown ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Risk Distribution */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader icon={<PieChart className="w-4 h-4" />}
+              title="Risk Distribution"
+              sub="Active loan exposure by risk tier" />
+            {risk.total_exposure === 0
+              ? <p className="text-sm text-slate-400 text-center py-8">No active exposure.</p>
+              : (
+                <div className="space-y-3">
+                  {[
+                    { label: 'Low Risk',    amount: risk.low_risk_amount,    count: risk.low_risk_count,    cls: 'bg-emerald-500', level: 'low' },
+                    { label: 'Medium Risk', amount: risk.medium_risk_amount, count: risk.medium_risk_count, cls: 'bg-amber-400',   level: 'medium' },
+                    { label: 'High Risk',   amount: risk.high_risk_amount,   count: risk.high_risk_count,   cls: 'bg-rose-500',    level: 'high' },
+                  ].map(r => {
+                    const pct = risk.total_exposure > 0 ? (r.amount / risk.total_exposure) * 100 : 0;
+                    return (
+                      <div key={r.label}>
+                        <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                          <span>{r.label} · {r.count} loans</span>
+                          <span>{fmtRWF(r.amount)} · {pct.toFixed(1)}%</span>
                         </div>
-                        <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-400 font-bold">IN:</span>
-                          <span className="font-black text-emerald-400">{formatCurrency(data.collected)}</span>
+                        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${r.cls} rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pt-3 border-t border-slate-100 flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <span>Total Exposure</span>
+                    <span className="text-slate-900">{fmtRWF(risk.total_exposure)}</span>
+                  </div>
+                </div>
+              )}
+          </div>
+
+          {/* Cargo Type Breakdown */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader icon={<Activity className="w-4 h-4" />}
+              title="Cargo Type Breakdown"
+              sub="Loan exposure & default rate by cargo" />
+            {cargo.length === 0
+              ? <p className="text-sm text-slate-400 text-center py-8">No cargo data yet.</p>
+              : (
+                <div className="space-y-2">
+                  {cargo.slice(0, 7).map((c: any) => (
+                    <div key={c.cargo_type} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`text-[9px] font-black px-2 py-1 rounded-lg border uppercase tracking-wider ${riskColour(c.risk_level)}`}>
+                          {c.risk_level}
+                        </span>
+                        <span className="text-xs font-black text-slate-700 truncate">{c.cargo_type}</span>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0 text-right">
+                        <div>
+                          <p className="text-[10px] font-black text-slate-900">{fmtRWF(c.total_value)}</p>
+                          <p className="text-[9px] text-slate-400 font-bold">{c.loan_count} loans</p>
+                        </div>
+                        <div className="w-16">
+                          <p className="text-[10px] font-black text-rose-500">{fmtPct(c.default_rate)} DR</p>
+                          <p className="text-[9px] text-slate-400 font-bold">{fmtPct(c.average_rate)} avg</p>
                         </div>
                       </div>
                     </div>
-
-                    {/* Bars Container */}
-                    <div className="flex items-end gap-1 mb-4 relative">
-                      <div
-                        className="w-4 bg-slate-900 rounded-sm transition-all duration-500 hover:bg-slate-800 group-hover/bar:opacity-100 group-hover:opacity-60 shadow-sm"
-                        style={{ height: `${disbursedHeight} px` }}
-                      />
-                      <div
-                        className="w-4 bg-[#345E85] rounded-sm transition-all duration-500 hover:bg-opacity-80 group-hover/bar:opacity-100 group-hover:opacity-60 shadow-sm"
-                        style={{ height: `${collectedHeight} px` }}
-                      />
-                    </div>
-
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter transform -rotate-12">{data.month.split(' ')[0]}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </PortfolioAnalyticsEnlite>
-
-        {/* Alpha Engine Insights */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 cursor-default group overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-6 w-6 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <FaChartLine className="h-3 w-3 text-emerald-600" />
-              </div>
-              <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Alpha Generator</h4>
-            </div>
-            <p className="text-slate-600 text-[11px] font-bold uppercase tracking-widest leading-relaxed line-clamp-3">
-              Electronics and automotive parts show consistently low default rates. Increasing exposure by 15% could yield an additional 2.4% alpha.
-            </p>
-          </div>
-          <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 cursor-default group overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-6 w-6 rounded-lg bg-amber-50 flex items-center justify-center">
-                <FaExclamationTriangle className="h-3 w-3 text-amber-600" />
-              </div>
-              <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Risk Variance</h4>
-            </div>
-            <p className="text-slate-600 text-[11px] font-bold uppercase tracking-widest leading-relaxed line-clamp-3">
-              Southwest region default volatility has increased by 5.1%. Recommendation: Implement secondary collateral requirements.
-            </p>
-          </div>
-          <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 cursor-default group overflow-hidden relative border-t-4 border-t-[#345E85]">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform" />
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-6 w-6 rounded-lg bg-blue-50 flex items-center justify-center">
-                <FaDollarSign className="h-3 w-3 text-[#345E85]" />
-              </div>
-              <h4 className="text-[10px] font-black text-[#345E85] uppercase tracking-[0.2em]">Expansion Vector</h4>
-            </div>
-            <p className="text-slate-600 text-[11px] font-bold uppercase tracking-widest leading-relaxed line-clamp-3">
-              West Coast and Midwest markets exhibit peak efficiency. System indicates high probability of successful scaling.
-            </p>
+                  ))}
+                </div>
+              )}
           </div>
         </div>
+
+        {/* ── Portfolio Composition ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <SectionHeader icon={<TrendingUp className="w-4 h-4" />}
+            title="Portfolio Composition"
+            sub="Loan lifecycle breakdown" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Total Repaid',       value: fmtRWF(p.total_amount_repaid ?? 0),    sub: 'Principal recovered',       cls: 'text-emerald-600' },
+              { label: 'Avg Loan Size',      value: fmtRWF(p.average_loan_size ?? 0),      sub: 'Per facility',               cls: 'text-[#345E85]' },
+              { label: 'Portfolio Yield',    value: fmtPct(p.portfolio_yield),              sub: 'Interest / Disbursed',       cls: 'text-amber-600' },
+              { label: 'Capital Adequacy',   value: fmtPct(p.capital_adequacy_ratio),       sub: 'Basel II proxy (Tier 1/RWA)', cls: 'text-purple-600' },
+            ].map(({ label, value, sub, cls }) => (
+              <div key={label} className="bg-slate-50 rounded-2xl px-5 py-4 border border-slate-100">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                <p className={`text-xl font-black ${cls}`}>{value}</p>
+                <p className="text-[9px] text-slate-400 font-bold mt-0.5">{sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );

@@ -20,12 +20,14 @@ import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
+import LoanApprovalModal from './LoanApprovalModal';
+import type { LoanApprovalPayload } from './LoanApprovalModal';
 
 interface LoanRequestsEnliteProps {
     loading: boolean;
     requests: any[];
     analytics: any;
-    onApprove: (id: string, amount: number, rate: number) => void;
+    onApprove: (id: string, payload: LoanApprovalPayload) => Promise<void>;
     onReject: (id: string, reason: string) => void;
     onViewDetails: (request: any) => void;
     onProcessPayment: (request: any) => void;
@@ -45,6 +47,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onExport
 }) => {
     const [showExportModal, setShowExportModal] = useState(false);
+    const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
 
     const handleExport = () => {
         setShowExportModal(true);
@@ -219,7 +222,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     {row.status === 'pending' && (
                         <>
                             <button
-                                onClick={() => onApprove(row.id, row.requested_amount, row.interest_rate || 10)}
+                                onClick={() => setApprovalLoan(row)}
                                 className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 transition-colors"
                                 title="Approve"
                             >
@@ -326,6 +329,17 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                 prepareData={prepareLoanRequestsForExport}
                 title="Export Loan Requests"
             />
+
+            {approvalLoan && (
+                <LoanApprovalModal
+                    loan={approvalLoan}
+                    onClose={() => setApprovalLoan(null)}
+                    onConfirm={async (loanId, payload) => {
+                        await onApprove(loanId, payload);
+                        setApprovalLoan(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

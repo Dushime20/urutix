@@ -179,7 +179,7 @@ export class AutoLoanGeneratorService {
     }
 
     // Additional checks for high-value cargo
-    if (cargoValue > 100000 && riskAssessment.risk_tier !== 'premium') {
+    if (cargoValue > 100000 && riskAssessment.risk_tier !== 'low') {
       return false;
     }
 

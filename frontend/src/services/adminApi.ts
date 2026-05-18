@@ -38,7 +38,8 @@ export interface AdminUser {
 
 export interface AdminTruck {
   id: string;
-  licensePlate: string;
+  plateNumber?: string;
+  licensePlate?: string;
   make?: string;
   model?: string;
   year?: number;

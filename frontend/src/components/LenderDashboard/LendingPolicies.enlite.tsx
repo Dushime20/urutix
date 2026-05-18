@@ -39,6 +39,7 @@ export interface InterestRatePolicy {
 export interface LoanLimitPolicy {
     id: string;
     name: string;
+    currency: string;
     businessType: 'individual' | 'sme' | 'corporation' | 'cooperative';
     minAmount: number;
     maxAmount: number;
@@ -76,12 +77,16 @@ export interface RiskAssessmentRule {
 export interface RepaymentPolicy {
     id: string;
     name: string;
-    frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+    frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi_annually' | 'annually';
     gracePeriod: number;
     lateFee: number;
+    lateFeeType?: string;
     penaltyRate: number;
     maxExtensions: number;
     defaultThreshold: number;
+    earlyPaymentDiscount?: number | null;
+    allowPartialPayments?: boolean;
+    minimumPaymentPercentage?: number | null;
     isActive: boolean;
 }
 
@@ -525,7 +530,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Late Fee</p>
-                                    <p className="text-[11px] font-bold text-rose-600">RWF {p.lateFee.toLocaleString()}</p>
+                                    <p className="text-[11px] font-bold text-rose-600">RWF {(p.lateFee ?? 0).toLocaleString()}</p>
                                 </div>
                             </div>
                         )
@@ -537,11 +542,11 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex gap-3">
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Rate</p>
-                                    <p className="text-[10px] font-bold">{p.penaltyRate}%</p>
+                                    <p className="text-[10px] font-bold">{p.penaltyRate ?? 0}%</p>
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Default</p>
-                                    <p className="text-[10px] font-bold">{p.defaultThreshold} days</p>
+                                    <p className="text-[10px] font-bold">{p.defaultThreshold ?? 0} days</p>
                                 </div>
                             </div>
                         )

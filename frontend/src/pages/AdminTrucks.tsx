@@ -51,6 +51,7 @@ interface TruckDetailModalProps {
 
 const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) => {
   const cfg = statusConfig[truck.status?.toUpperCase()] || { label: truck.status, bg: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-400' };
+  const plate = truck.plateNumber || truck.licensePlate;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -61,18 +62,25 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white">
+        <div className="flex items-center justify-between px-6 py-5 text-white" style={{ backgroundColor: '#2c5173' }}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
               <Truck size={22} className="text-white" />
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight">
-                {truck.licensePlate || 'Truck Details'}
+                {[truck.make, truck.model, truck.year].filter(Boolean).join(' ') || 'Truck Details'}
               </h2>
-              <p className="text-indigo-200 text-sm">
-                {[truck.make, truck.model, truck.year].filter(Boolean).join(' ') || 'Vehicle Details'}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                {plate && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-white text-xs font-black tracking-widest border border-white/30">
+                    <Hash size={10} />{plate}
+                  </span>
+                )}
+                <span className="text-indigo-200 text-xs">
+                  {truck.tenantName || 'Vehicle Details'}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -93,7 +101,11 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
           {/* Quick stats row */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
+            <div className="bg-slate-900 rounded-xl p-3 text-center col-span-1">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plate No.</p>
+              <p className="text-sm font-black text-white mt-1 tracking-widest">{plate || '—'}</p>
+            </div>
             <div className="bg-indigo-50 rounded-xl p-3 text-center">
               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Status</p>
               <p className="text-sm font-black text-indigo-700 mt-1">{cfg.label}</p>
@@ -110,7 +122,7 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
 
           {/* Vehicle Info */}
           <Section title="Vehicle Information">
-            <InfoRow label="License Plate"  value={truck.licensePlate}  icon={Hash} />
+            <InfoRow label="License Plate"  value={plate}  icon={Hash} />
             <InfoRow label="Make"           value={truck.make}          icon={Truck} />
             <InfoRow label="Model"          value={truck.model}         icon={Truck} />
             <InfoRow label="Year"           value={truck.year}          icon={Calendar} />
@@ -261,7 +273,7 @@ const AdminTrucks: React.FC = () => {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(truck =>
-        truck.licensePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (truck.plateNumber || truck.licensePlate)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         truck.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         truck.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         truck.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -535,7 +547,7 @@ const AdminTrucks: React.FC = () => {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {truck.licensePlate || 'N/A'}
+                              {truck.plateNumber || truck.licensePlate || 'N/A'}
                             </div>
                             <div className="text-sm text-gray-500">
                               {truck.make && truck.model ? `${truck.make} ${truck.model}` : 'Unknown Make/Model'}

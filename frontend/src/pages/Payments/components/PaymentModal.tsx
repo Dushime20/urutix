@@ -1,18 +1,7 @@
 import { useState } from 'react';
-import { 
-  CreditCard, 
-  X, 
-  Loader2, 
-  CheckCircle,
-  AlertCircle,
-  Truck,
-  Package,
-  Calendar,
-  DollarSign,
-  FileText
-} from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
+import { Dialog, DialogContent } from '@/components/ui/Dialog';
 import type { PendingPayment } from '../types';
 import { formatCurrency } from '../utils';
 import api from '@/services/api';
@@ -24,47 +13,80 @@ interface PaymentModalProps {
   onPaymentSuccess: () => void;
 }
 
+type PaymentMethod = 'card' | 'mobile_money';
+type MobileProvider = 'mtn' | 'airtel' | 'mpesa';
+
 interface PaymentFormData {
-  method: 'mpesa' | 'airtel_money' | 'bank_transfer' | 'credit_card' | 'paypal';
-  phoneNumber?: string;
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-  accountName?: string;
-  accountNumber?: string;
-  bankName?: string;
+  method: PaymentMethod;
+  cardNumber: string;
+  cardName: string;
+  expiryDate: string;
+  cvv: string;
+  phoneNumber: string;
+  mobileProvider: MobileProvider;
 }
 
 const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentModalProps) => {
-  const [step, setStep] = useState<'details' | 'method' | 'processing' | 'success' | 'error'>('details');
+  const [step, setStep] = useState<'form' | 'processing' | 'success' | 'error'>('form');
+  const [isMobileMoneyPending, setIsMobileMoneyPending] = useState(false);
   const [formData, setFormData] = useState<PaymentFormData>({
-    method: 'mpesa',
+    method: 'card',
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: '',
+    phoneNumber: '',
+    mobileProvider: 'mtn',
   });
-  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!payment) return null;
 
-  const handleMethodSelect = (method: PaymentFormData['method']) => {
-    setFormData(prev => ({ ...prev, method }));
-    setStep('processing');
-    processPayment(method);
-  };
+  const totalAmount = payment.amount + (payment.lateFee || 0);
 
-  const processPayment = async (method: string) => {
-    setIsProcessing(true);
-    
+  const handleConfirm = async () => {
+    if (formData.method === 'card') {
+      if (!formData.cardNumber || !formData.cardName || !formData.expiryDate || !formData.cvv) {
+        toast.error('Please fill in all card details');
+        return;
+      }
+    } else {
+      if (!formData.phoneNumber) {
+        toast.error('Please enter your phone number');
+        return;
+      }
+    }
+
+    setStep('processing');
+
     try {
-      // Call payment API
-      const response = await api.post(`/payments/process`, {
-        paymentId: payment.id,
-        method,
-        amount: payment.amount,
-        currency: payment.currency,
-      });
+      let response: any;
+
+      if (formData.method === 'mobile_money') {
+        response = await api.post(`/payments/mobile-money`, {
+          tripId: payment.relatedEntity?.id,
+          amount: totalAmount,
+          currency: payment.currency,
+          phoneNumber: formData.phoneNumber,
+          paymentType: 'trip_payment',
+          description: payment.description,
+          referenceNumber: payment.referenceNumber,
+          metadata: { provider: formData.mobileProvider },
+        });
+      } else {
+        response = await api.post(`/payments/${payment.id}/process`);
+      }
 
       if (response.data.success) {
+        const pending = formData.method === 'mobile_money' &&
+          response.data.data?.payment?.status === 'processing';
+        setIsMobileMoneyPending(pending);
+
         setStep('success');
-        toast.success('Payment processed successfully!');
+        toast.success(
+          pending
+            ? 'Mobile money request sent! Check your phone to confirm.'
+            : 'Payment processed successfully!'
+        );
         onPaymentSuccess();
       } else {
         throw new Error(response.data.message || 'Payment failed');
@@ -72,190 +94,322 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
     } catch (error: any) {
       console.error('Payment error:', error);
       setStep('error');
-      toast.error(error.message || 'Payment processing failed. Please try again.');
-    } finally {
-      setIsProcessing(false);
+      toast.error(
+        error.response?.data?.message || error.message || 'Payment processing failed. Please try again.'
+      );
     }
   };
 
   const handleRetry = () => {
-    setStep('details');
-    setFormData({ method: 'mpesa' });
+    setStep('form');
+    setFormData(prev => ({ ...prev, cardNumber: '', cardName: '', expiryDate: '', cvv: '', phoneNumber: '' }));
   };
 
-  const renderContent = () => {
-    switch (step) {
-      case 'details':
-        return (
-          <div className="space-y-6">
-            {/* Payment Summary */}
-            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">
-                Payment Summary
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Reference</span>
-                  <span className="text-sm font-bold text-slate-900">{payment.referenceNumber}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Description</span>
-                  <span className="text-sm font-medium text-slate-900 text-right max-w-[200px]">
-                    {payment.description}
-                  </span>
-                </div>
+  const handleClose = () => {
+    setStep('form');
+    setIsMobileMoneyPending(false);
+    setFormData({ method: 'card', cardNumber: '', cardName: '', expiryDate: '', cvv: '', phoneNumber: '', mobileProvider: 'mtn' });
+    onClose();
+  };
 
-                {payment.relatedEntity && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">{payment.relatedEntity.type}</span>
-                    <span className="text-sm font-bold text-slate-900">{payment.relatedEntity.number}</span>
-                  </div>
-                )}
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white rounded-3xl max-h-[90vh] flex flex-col">
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Due Date</span>
-                  <span className="text-sm font-medium text-slate-900">
-                    {payment.dueDate.toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric', 
-                      year: 'numeric' 
-                    })}
-                  </span>
-                </div>
-
-                <div className="pt-4 border-t border-slate-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-slate-900">Total Amount</span>
-                    <span className="text-2xl font-black text-[#345E85]">
-                      {formatCurrency(payment.amount, payment.currency)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Select Payment Method */}
-            <div>
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">
-                Select Payment Method
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { id: 'mpesa', name: 'M-Pesa', icon: '📱', color: 'bg-green-50 border-green-200 hover:border-green-400' },
-                  { id: 'airtel_money', name: 'Airtel Money', icon: '📱', color: 'bg-red-50 border-red-200 hover:border-red-400' },
-                  { id: 'bank_transfer', name: 'Bank Transfer', icon: '🏦', color: 'bg-blue-50 border-blue-200 hover:border-blue-400' },
-                  { id: 'credit_card', name: 'Credit Card', icon: '💳', color: 'bg-purple-50 border-purple-200 hover:border-purple-400' },
-                  { id: 'paypal', name: 'PayPal', icon: '💰', color: 'bg-indigo-50 border-indigo-200 hover:border-indigo-400' },
-                ].map((method) => (
-                  <button
-                    key={method.id}
-                    onClick={() => handleMethodSelect(method.id as PaymentFormData['method'])}
-                    disabled={isProcessing}
-                    className={`p-4 rounded-2xl border-2 transition-all hover:shadow-md flex flex-col items-center gap-2 ${method.color}`}
-                  >
-                    <span className="text-2xl">{method.icon}</span>
-                    <span className="text-xs font-bold text-slate-700">{method.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'processing':
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
+        {/* ── Processing state ── */}
+        {step === 'processing' && (
+          <div className="flex flex-col items-center justify-center py-20 px-8">
             <div className="relative mb-6">
               <div className="w-20 h-20 rounded-full bg-[#345E85]/10 flex items-center justify-center">
                 <Loader2 className="w-10 h-10 text-[#345E85] animate-spin" />
               </div>
               <div className="absolute inset-0 rounded-full border-4 border-[#345E85]/20 border-t-[#345E85] animate-spin" style={{ animationDuration: '1.5s' }} />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Processing Payment</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Processing Payment</h3>
             <p className="text-sm text-slate-500 text-center max-w-xs">
-              Please wait while we process your payment of {formatCurrency(payment.amount, payment.currency)}
+              Please wait while we securely process your payment of{' '}
+              <span className="font-bold text-slate-700">{formatCurrency(totalAmount, payment.currency)}</span>
             </p>
           </div>
-        );
+        )}
 
-      case 'success':
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
+        {/* ── Success state ── */}
+        {step === 'success' && (
+          <div className="flex flex-col items-center justify-center py-20 px-8">
             <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
               <CheckCircle className="w-10 h-10 text-emerald-600" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Payment Successful!</h3>
-            <p className="text-sm text-slate-500 text-center max-w-xs mb-6">
-              Your payment of {formatCurrency(payment.amount, payment.currency)} has been processed successfully.
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+              {isMobileMoneyPending ? 'Request Sent!' : 'Payment Successful!'}
+            </h3>
+            <p className="text-sm text-slate-500 text-center max-w-xs mb-8">
+              {isMobileMoneyPending
+                ? <>A payment prompt of <span className="font-bold text-slate-700">{formatCurrency(totalAmount, payment.currency)}</span> has been sent to your phone. Please approve it to complete the payment.</>
+                : <>Your payment of <span className="font-bold text-slate-700">{formatCurrency(totalAmount, payment.currency)}</span> has been processed successfully.</>
+              }
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="px-6 py-3 bg-[#345E85] text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all"
-              >
-                Done
-              </button>
-            </div>
+            <button
+              onClick={handleClose}
+              className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2a4d6d] transition-all border-b-4 border-indigo-900/20"
+            >
+              Done
+            </button>
           </div>
-        );
+        )}
 
-      case 'error':
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
+        {/* ── Error state ── */}
+        {step === 'error' && (
+          <div className="flex flex-col items-center justify-center py-20 px-8">
             <div className="w-20 h-20 rounded-full bg-rose-100 flex items-center justify-center mb-6">
               <AlertCircle className="w-10 h-10 text-rose-600" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Payment Failed</h3>
-            <p className="text-sm text-slate-500 text-center max-w-xs mb-6">
-              We couldn't process your payment. Please try again or use a different payment method.
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Payment Failed</h3>
+            <p className="text-sm text-slate-500 text-center max-w-xs mb-8">
+              We couldn't process your payment. Please try again or use a different method.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={handleRetry}
-                className="px-6 py-3 bg-[#345E85] text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all"
+                className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2a4d6d] transition-all border-b-4 border-indigo-900/20"
               >
                 Try Again
               </button>
               <button
-                onClick={onClose}
-                className="px-6 py-3 bg-slate-200 text-slate-700 rounded-2xl font-bold text-sm hover:bg-slate-300 transition-all"
+                onClick={handleClose}
+                className="px-8 py-4 bg-slate-100 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
               >
                 Cancel
               </button>
             </div>
           </div>
-        );
-    }
-  };
+        )}
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-white rounded-3xl">
-        <DialogHeader className="p-6 pb-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-black text-slate-900">
-              {step === 'details' && 'Make Payment'}
-              {step === 'processing' && 'Processing...'}
-              {step === 'success' && 'Success!'}
-              {step === 'error' && 'Payment Failed'}
-            </DialogTitle>
-            {step !== 'processing' && step !== 'success' && (
+        {/* ── Main form state ── */}
+        {step === 'form' && (
+          <>
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 bg-slate-50 shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Complete Your Payment</h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {payment.description || payment.referenceNumber}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+
+              {/* Order Summary */}
+              <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-100">
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-5">
+                  Order Summary
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-800/60 uppercase">Reference:</span>
+                    <span className="text-sm font-black text-blue-900">{payment.referenceNumber}</span>
+                  </div>
+                  {payment.relatedEntity && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-blue-800/60 uppercase">{payment.relatedEntity.type}:</span>
+                      <span className="text-sm font-black text-blue-900">{payment.relatedEntity.number}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-800/60 uppercase">Due Date:</span>
+                    <span className="text-sm font-black text-blue-900">
+                      {payment.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  {(payment.lateFee ?? 0) > 0 && (
+                    <div className="flex items-center justify-between text-rose-600">
+                      <span className="text-xs font-bold uppercase">Late Fee:</span>
+                      <span className="text-sm font-black">+{formatCurrency(payment.lateFee!, payment.currency)}</span>
+                    </div>
+                  )}
+                  <div className="pt-4 border-t-2 border-dashed border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-black text-blue-900 uppercase">Total Amount:</span>
+                      <span className="text-3xl font-black text-[#345E85]">
+                        {formatCurrency(totalAmount, payment.currency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                  Payment Method
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setFormData(prev => ({ ...prev, method: 'card' }))}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      formData.method === 'card'
+                        ? 'border-[#345E85] bg-blue-50'
+                        : 'border-slate-100 bg-white hover:border-slate-200'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-3xl mb-3">💳</div>
+                      <div className="text-xs font-black text-slate-900 uppercase tracking-widest">Credit Card</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setFormData(prev => ({ ...prev, method: 'mobile_money' }))}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      formData.method === 'mobile_money'
+                        ? 'border-[#345E85] bg-blue-50'
+                        : 'border-slate-100 bg-white hover:border-slate-200'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-3xl mb-3">📱</div>
+                      <div className="text-xs font-black text-slate-900 uppercase tracking-widest">Mobile Money</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card Form */}
+              {formData.method === 'card' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Card Number
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="XXXX XXXX XXXX XXXX"
+                      maxLength={19}
+                      value={formData.cardNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\s/g, '');
+                        const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                        setFormData(prev => ({ ...prev, cardNumber: formatted }));
+                      }}
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Cardholder Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. John Doe"
+                      value={formData.cardName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, cardName: e.target.value }))}
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        maxLength={5}
+                        value={formData.expiryDate}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, '');
+                          if (value.length >= 2) value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                          setFormData(prev => ({ ...prev, expiryDate: value }));
+                        }}
+                        className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                        CVV
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="CVV"
+                        maxLength={4}
+                        value={formData.cvv}
+                        onChange={(e) => setFormData(prev => ({ ...prev, cvv: e.target.value.replace(/\D/g, '') }))}
+                        className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Money Form */}
+              {formData.method === 'mobile_money' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Mobile Provider
+                    </label>
+                    <select
+                      value={formData.mobileProvider}
+                      onChange={(e) => setFormData(prev => ({ ...prev, mobileProvider: e.target.value as MobileProvider }))}
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none"
+                    >
+                      <option value="mtn">MTN Mobile Money</option>
+                      <option value="airtel">Airtel Money</option>
+                      <option value="mpesa">M-Pesa</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+250 7XX XXX XXX"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                    />
+                    <p className="text-xs text-slate-500 mt-2">
+                      You will receive a prompt on your phone to confirm the payment.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Security Notice */}
+              <div className="flex items-start gap-4 bg-emerald-50 rounded-2xl p-5 border-2 border-emerald-100">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-sm font-black text-emerald-900 mb-1 uppercase tracking-tight">
+                    Secure Payment Protocol
+                  </div>
+                  <p className="text-[11px] font-bold text-emerald-700 leading-relaxed">
+                    Your payment information is encrypted and secure. We never store your sensitive card details or PIN codes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t-2 border-slate-100 bg-slate-50 flex justify-between items-center gap-4 shrink-0">
               <button
-                onClick={onClose}
-                className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                onClick={handleClose}
+                className="px-8 py-4 text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-200 rounded-xl transition-all"
               >
-                <X className="w-5 h-5 text-slate-500" />
+                Back
               </button>
-            )}
-          </div>
-        </DialogHeader>
+              <button
+                onClick={handleConfirm}
+                className="flex-1 px-8 py-4 text-xs font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all uppercase tracking-widest border-b-4 border-indigo-900/20"
+              >
+                Confirm Payment · {formatCurrency(totalAmount, payment.currency)}
+              </button>
+            </div>
+          </>
+        )}
 
-        <div className="p-6 pt-4">
-          {renderContent()}
-        </div>
       </DialogContent>
     </Dialog>
   );

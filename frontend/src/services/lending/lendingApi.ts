@@ -22,6 +22,22 @@ export interface LoanRequest {
   lender?: Lender;
   disbursements?: LoanDisbursement[];
   repayments?: LoanRepayment[];
+  // Backend-enriched fields (added by getLenderLoanRequests service)
+  interest_rate?: number;
+  effective_annual_rate?: number;
+  risk_score?: number;
+  risk_level?: string;
+  loan_term_months?: number;
+  purpose?: string;
+  cargo_type?: string;
+  pickup_location?: string;
+  delivery_location?: string;
+  loanTerms?: {
+    nominal_rate?: number;
+    effective_annual_rate?: number;
+    risk_score?: number;
+    origination_fee_rate?: number;
+  };
 }
 
 export interface Beneficiary {
@@ -91,6 +107,11 @@ export interface LenderDashboardData {
 }
 
 export const lendingApi = {
+  resolveLenderId: async (): Promise<string> => {
+    const response = await api.get('/lending/me/lender-id');
+    return response.data.lenderId;
+  },
+
   // Loan requests
   createLoanRequest: async (data: CreateLoanRequestDto): Promise<LoanRequest> => {
     const response = await api.post('/lending/loan-requests', data);
@@ -292,10 +313,10 @@ export const lendingApi = {
     return response.data;
   },
 
-  // Analytics
-  getLenderAnalytics: async (lenderId: string, period: string = '30d') => {
+  // Analytics — full IFRS 9 / Basel II bundle
+  getLenderAnalytics: async (lenderId: string, months: number = 12) => {
     const response = await api.get(`/lending/lenders/${lenderId}/analytics`, {
-      params: { period }
+      params: { months }
     });
     return response.data;
   },
@@ -336,7 +357,7 @@ export const lendingApi = {
   // Portfolio management
   getPortfolioSummary: async (lenderId: string) => {
     const response = await api.get(`/lending/lenders/${lenderId}/portfolio/summary`);
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Loan operations
@@ -405,13 +426,9 @@ export const lendingApi = {
 
   // ==== ENHANCED APIS FOR COMPREHENSIVE LENDING ====
 
-  // Trends Analytics (Selected API)
-  getLenderTrends: async (lenderId: string, params?: {
-    period?: string;
-    granularity?: string;
-    metrics?: string[];
-  }) => {
-    const response = await api.get(`/lending/lenders/${lenderId}/trends`, { params });
+  // Monthly trends
+  getLenderTrends: async (lenderId: string, months: number = 12) => {
+    const response = await api.get(`/lending/lenders/${lenderId}/trends`, { params: { months } });
     return response.data;
   },
 
@@ -524,6 +541,21 @@ export const lendingApi = {
     return response.data;
   },
 
+  updateTeamMember: async (lenderId: string, userId: string, updateData: any): Promise<any> => {
+    const response = await api.patch(`/admin/lenders/${lenderId}/team/${userId}`, updateData);
+    return response.data;
+  },
+
+  removeTeamMember: async (lenderId: string, userId: string): Promise<any> => {
+    const response = await api.delete(`/admin/lenders/${lenderId}/team/${userId}`);
+    return response.data;
+  },
+
+  createLenderRole: async (lenderId: string, roleData: any): Promise<any> => {
+    const response = await api.post(`/admin/lenders/${lenderId}/roles`, roleData);
+    return response.data;
+  },
+
   // ===== COMPREHENSIVE LENDING POLICIES API =====
 
   // Get all policies for a lender
@@ -588,11 +620,15 @@ export const lendingApi = {
           id: policy.id,
           name: policy.name,
           frequency: policy.frequency,
-          gracePeriod: policy.grace_period,
-          lateFee: policy.late_fee,
-          penaltyRate: policy.penalty_rate,
-          maxExtensions: policy.max_extensions,
-          defaultThreshold: policy.default_threshold,
+          gracePeriod: policy.grace_period_days ?? policy.grace_period ?? 0,
+          lateFee: policy.late_fee_amount ?? policy.late_fee ?? 0,
+          lateFeeType: policy.late_fee_type ?? 'fixed_amount',
+          penaltyRate: policy.penalty_rate ?? 0,
+          maxExtensions: policy.max_extensions ?? 0,
+          defaultThreshold: policy.default_threshold_days ?? policy.default_threshold ?? 0,
+          earlyPaymentDiscount: policy.early_payment_discount ?? null,
+          allowPartialPayments: policy.allow_partial_payments ?? false,
+          minimumPaymentPercentage: policy.minimum_payment_percentage ?? null,
           isActive: policy.is_active,
           created_at: policy.created_at
         })) || [],
@@ -674,6 +710,7 @@ export const lendingApi = {
   // Loan Limit Policies
   createLoanLimitPolicy: async (lenderId: string, policyData: {
     name: string;
+    currency: string;
     businessType: string;
     minAmount: number;
     maxAmount: number;
@@ -683,6 +720,7 @@ export const lendingApi = {
   }) => {
     const response = await api.post(`/lending/policies/${lenderId}/loan-limits`, {
       name: policyData.name,
+      currency: policyData.currency,
       business_type: policyData.businessType,
       min_amount: policyData.minAmount,
       max_amount: policyData.maxAmount,
@@ -756,21 +794,31 @@ export const lendingApi = {
   // Repayment Policies
   createRepaymentPolicy: async (lenderId: string, policyData: {
     name: string;
+    description?: string;
     frequency: string;
-    gracePeriod: number;
-    lateFee: number;
-    penaltyRate: number;
-    maxExtensions: number;
-    defaultThreshold: number;
+    grace_period_days: number;
+    late_fee_type: string;
+    late_fee_amount: number;
+    penalty_rate: number;
+    max_extensions: number;
+    default_threshold_days: number;
+    early_payment_discount?: number;
+    allow_partial_payments?: boolean;
+    minimum_payment_percentage?: number;
   }) => {
     const response = await api.post(`/lending/policies/${lenderId}/repayment`, {
       name: policyData.name,
+      description: policyData.description,
       frequency: policyData.frequency,
-      grace_period: policyData.gracePeriod,
-      late_fee: policyData.lateFee,
-      penalty_rate: policyData.penaltyRate,
-      max_extensions: policyData.maxExtensions,
-      default_threshold: policyData.defaultThreshold,
+      grace_period_days: policyData.grace_period_days,
+      late_fee_type: policyData.late_fee_type,
+      late_fee_amount: policyData.late_fee_amount,
+      penalty_rate: policyData.penalty_rate,
+      max_extensions: policyData.max_extensions,
+      default_threshold_days: policyData.default_threshold_days,
+      early_payment_discount: policyData.early_payment_discount,
+      allow_partial_payments: policyData.allow_partial_payments,
+      minimum_payment_percentage: policyData.minimum_payment_percentage,
       priority: 1,
       is_active: true
     });

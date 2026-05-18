@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThan } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LoanRequest } from '../../../entities/loan-request.entity';
+import { LoanRequest, LoanRequestStatus } from '../../../entities/loan-request.entity';
 import { LoanRepayment } from '../../../entities/loan-repayment.entity';
 import { LoanDisbursement } from '../../../entities/loan-disbursement.entity';
 
@@ -38,6 +38,8 @@ export class RepaymentProcessorService {
     @InjectRepository(LoanDisbursement)
     private disbursementRepository: Repository<LoanDisbursement>,
     private eventEmitter: EventEmitter2,
+    @Inject(forwardRef(() => require('../lending.service').LendingService))
+    private lendingService: any,
   ) {}
 
   async calculateRepaymentSchedule(
@@ -162,26 +164,11 @@ export class RepaymentProcessorService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async processOverdueLoans(): Promise<void> {
     try {
-      this.logger.log('Processing overdue loans...');
-
-      const overdueLoans = await this.loanRequestRepository
-        .createQueryBuilder('loan')
-        .leftJoinAndSelect('loan.disbursements', 'disbursement')
-        .where('loan.status IN (:...statuses)', {
-          statuses: ['approved', 'disbursed'],
-        })
-        .andWhere('disbursement.created_at <= :overdueDate', {
-          overdueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-        })
-        .getMany();
-
-      for (const loan of overdueLoans) {
-        await this.processOverdueLoan(loan);
-      }
-
-      this.logger.log(`Processed ${overdueLoans.length} overdue loans`);
+      this.logger.log('Processing overdue loans via DelinquencyEngine...');
+      const result = await this.lendingService.runDelinquencyAndDefaultEngine();
+      this.logger.log(`DelinquencyEngine complete: ${JSON.stringify(result)}`);
     } catch (error) {
-      this.logger.error('Error processing overdue loans', error);
+      this.logger.error('Error in DelinquencyEngine', error);
     }
   }
 
@@ -290,8 +277,8 @@ export class RepaymentProcessorService {
     if (outstandingAmount <= 0) {
       // Loan fully repaid
       await this.loanRequestRepository.update(loan.id, {
-        status: 'REPAID' as any,
-        // repaid_at: new Date(), // TODO: Add this field to LoanRequest entity
+        status: LoanRequestStatus.REPAID,
+        repaid_at: new Date(),
       });
 
       this.eventEmitter.emit('loan.repaid', {
@@ -315,8 +302,8 @@ export class RepaymentProcessorService {
       if (daysOverdue > 90) {
         // Mark as defaulted
         await this.loanRequestRepository.update(loan.id, {
-          status: 'DEFAULTED' as any,
-          // defaulted_at: new Date(), // TODO: Add this field to LoanRequest entity
+          status: LoanRequestStatus.DEFAULTED,
+          defaulted_at: new Date(),
         });
 
         this.eventEmitter.emit('loan.defaulted', {

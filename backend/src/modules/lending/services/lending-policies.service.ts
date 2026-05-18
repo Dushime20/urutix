@@ -9,6 +9,7 @@ import { LendingPolicyRepayment } from '../../../entities/lending-policy-repayme
 import { LendingPolicyCargoType } from '../../../entities/lending-policy-cargo-type.entity';
 import { LendingPolicySystemConfig } from '../../../entities/lending-policy-system-config.entity';
 import { Lender } from '../../../entities/lender.entity';
+import { User, UserRole } from '../../../entities/user.entity';
 import {
   CreateInterestRatePolicyDto,
   UpdateInterestRatePolicyDto,
@@ -54,25 +55,57 @@ export class LendingPoliciesService {
     
     @InjectRepository(Lender)
     private lenderRepository: Repository<Lender>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   // ===== UTILITY METHODS =====
 
-  private async validateLenderExists(lenderId: string): Promise<void> {
-    try {
-      const lender = await this.lenderRepository.findOne({ where: { id: lenderId } });
-      if (!lender) {
-        this.logger.warn(`Lender with ID ${lenderId} not found`);
-        throw new NotFoundException(`Lender with ID ${lenderId} not found`);
-      }
-      this.logger.log(`Lender ${lenderId} validated successfully`);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error(`Error validating lender ${lenderId}:`, error);
-      throw new BadRequestException(`Failed to validate lender: ${error.message}`);
+  /**
+   * Resolve an incoming ID to a Lender entity ID.
+   * Accepts either a Lender entity UUID or a User UUID (LENDER role).
+   * Auto-creates the Lender record if the user exists but has no record yet.
+   * Returns the real lender entity ID to use for all policy operations.
+   */
+  async resolveLenderId(idFromRequest: string): Promise<string> {
+    // 1. Try direct lender entity lookup
+    let lender = await this.lenderRepository.findOne({ where: { id: idFromRequest } });
+    if (lender) return lender.id;
+
+    // 2. Try resolving as a User ID
+    const user = await this.userRepository.findOne({
+      where: { id: idFromRequest, role: UserRole.LENDER },
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        `No lender found for ID ${idFromRequest}. Ensure the user has the LENDER role.`,
+      );
     }
+
+    // 3. Find lender by matching contact_email
+    lender = await this.lenderRepository.findOne({ where: { contact_email: user.email } });
+
+    if (!lender) {
+      // 4. Auto-create lender record for this user
+      this.logger.log(`Auto-creating Lender record for user ${user.id} (${user.email})`);
+      lender = this.lenderRepository.create({
+        name: user.email,
+        contact_email: user.email,
+        status: 'active' as any,
+        tenant_id: user.tenantId,
+        api_key_hash: '',
+        metadata: {},
+      });
+      lender = await this.lenderRepository.save(lender);
+    }
+
+    return lender.id;
+  }
+
+  private async validateLenderExists(lenderId: string): Promise<string> {
+    return this.resolveLenderId(lenderId);
   }
 
   // ===== INTEREST RATE POLICIES =====
@@ -82,7 +115,7 @@ export class LendingPoliciesService {
     dto: CreateInterestRatePolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicyInterestRate> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     // Validate rate ranges
     if (dto.min_rate > dto.max_rate) {
@@ -94,7 +127,7 @@ export class LendingPoliciesService {
 
     const policy = this.interestRateRepository.create({
       ...dto,
-      lender_id: lenderId,
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 
@@ -186,7 +219,7 @@ export class LendingPoliciesService {
     dto: CreateLoanLimitPolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicyLoanLimit> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     if (dto.min_amount > dto.max_amount) {
       throw new BadRequestException('Minimum amount cannot be greater than maximum amount');
@@ -194,7 +227,8 @@ export class LendingPoliciesService {
 
     const policy = this.loanLimitRepository.create({
       ...dto,
-      lender_id: lenderId,
+      currency: dto.currency ?? 'RWF',
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 

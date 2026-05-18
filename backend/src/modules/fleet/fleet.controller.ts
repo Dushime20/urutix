@@ -50,6 +50,7 @@ import { Logger } from '@nestjs/common';
   UserRole.SUPER_ADMIN,
   UserRole.ADMIN,
   UserRole.TENANT_ADMIN,
+  UserRole.CARGO_OWNER,
   UserRole.TRUCK_OWNER,
   UserRole.FLEET_MANAGER,
   UserRole.FLEET_DISPATCHER,
