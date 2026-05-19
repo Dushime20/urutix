@@ -397,6 +397,8 @@ export class ReceiversService {
 
   /**
    * Get cargo details for inspection (for receiver users)
+   * Also returns the existing inspection if one exists, so the UI
+   * can show the correct status (COMPLETED vs PENDING).
    */
   async getCargoForInspection(cargoId: string, receiverId: string): Promise<any> {
     // Verify receiver exists
@@ -418,12 +420,30 @@ export class ReceiversService {
       throw new NotFoundException('Cargo not found or not assigned to you');
     }
 
+    // Fetch existing inspection so the UI shows the real status
+    const existingInspection = await this.cargoInspectionRepository.findOne({
+      where: { loadId: cargoId, receiverId },
+    });
+
     // Build inspection checklist from cargo details
     const checklist = this.buildInspectionChecklist(cargo);
 
     return {
       cargo,
       checklist,
+      // Include inspection status so the frontend knows if already completed
+      inspectionStatus: existingInspection?.status || 'PENDING',
+      inspection: existingInspection
+        ? {
+            id: existingInspection.id,
+            status: existingInspection.status,
+            completedAt: existingInspection.completedAt,
+            verifiedCount: existingInspection.verifiedCount,
+            totalItems: existingInspection.totalItems,
+            discrepancyCount: existingInspection.discrepancyCount,
+            allItemsVerified: existingInspection.allItemsVerified,
+          }
+        : null,
     };
   }
 
@@ -703,39 +723,42 @@ export class ReceiversService {
 
     // If inspection is completed successfully, update ePOD status and trigger payment
     if (inspectionStatus === InspectionStatus.COMPLETED) {
-      // Find the trip associated with this cargo to update ePOD and trigger payment
-      const Trip = this.cargoInspectionRepository.manager.getRepository('Trip');
-      const trip = await Trip.findOne({
-        where: { loadId: cargoId },
-        select: ['id', 'tenantId'],
-      });
+      // Find the ePOD directly via the load → trip join, avoiding fragile string-based repo lookup
+      try {
+        const epod = await this.epodRepository
+          .createQueryBuilder('epod')
+          .innerJoin('epod.trip', 'trip')
+          .where('trip.loadId = :loadId', { loadId: cargoId })
+          .andWhere('epod.status = :status', { status: EpodStatus.PENDING })
+          .orderBy('epod.submittedAt', 'DESC')
+          .getOne();
 
-      // Update ePOD status to CONFIRMED if trip exists
-      if (trip) {
-        const epod = await this.epodRepository.findOne({
-          where: { tripId: trip.id },
-          order: { submittedAt: 'DESC' },
-        });
-        
-        if (epod && epod.status === EpodStatus.PENDING) {
+        if (epod) {
           epod.status = EpodStatus.CONFIRMED;
           epod.confirmedAt = new Date();
           await this.epodRepository.save(epod);
           this.logger.log(`ePOD ${epod.id} status updated to CONFIRMED after cargo inspection`);
-        }
-      }
 
-      // Trigger payment creation
-      if (trip) {
-        this.tripCompletionService.handleCargoReceiverConfirmation(trip.id, trip.tenantId, receiverId)
-          .then(payment => {
-            this.logger.log(`Created/updated payment ${payment.id} after cargo inspection completion`);
-          })
-          .catch(err => {
-            this.logger.error(`Failed to handle cargo receiver confirmation after inspection: ${err.message}`, err.stack);
-          });
-      } else {
-        this.logger.warn(`No trip found for cargo ${cargoId} during inspection completion`);
+          // Trigger payment creation using the trip from the ePOD
+          this.tripCompletionService
+            .handleCargoReceiverConfirmation(epod.tripId, epod.tenantId, receiverId)
+            .then(payment => {
+              this.logger.log(`Created/updated payment ${payment.id} after cargo inspection completion`);
+            })
+            .catch(err => {
+              this.logger.error(
+                `Failed to handle cargo receiver confirmation after inspection: ${err.message}`,
+                err.stack,
+              );
+            });
+        } else {
+          this.logger.warn(
+            `No PENDING ePOD found for cargo ${cargoId} during inspection completion — may already be confirmed`,
+          );
+        }
+      } catch (err) {
+        this.logger.error(`Error updating ePOD status after inspection for cargo ${cargoId}:`, err);
+        // Non-fatal — inspection is already saved
       }
     }
 
