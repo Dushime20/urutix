@@ -364,6 +364,7 @@ const FleetBidsPage: React.FC = () => {
             icon={<Gavel />}
             color="primary"
             subtitle="Available bids"
+            variant="classic"
           />
           <StatCard
             title="Live Bids"
@@ -371,6 +372,7 @@ const FleetBidsPage: React.FC = () => {
             icon={<TrendingUp />}
             color="success"
             subtitle="Total bids placed"
+            variant="classic"
           />
           <StatCard
             title="Total Volume"
@@ -378,6 +380,7 @@ const FleetBidsPage: React.FC = () => {
             icon={<DollarSign />}
             color="info"
             subtitle="Combined value"
+            variant="classic"
           />
           <StatCard
             title="Win Rate"
@@ -385,6 +388,7 @@ const FleetBidsPage: React.FC = () => {
             icon={<CheckCircle />}
             color="success"
             subtitle="Success rate"
+            variant="classic"
           />
         </div>
 

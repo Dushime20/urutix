@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 interface Tenant {
@@ -523,7 +524,7 @@ const AdminTenants: React.FC = () => {
       actions={
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 text-sm font-bold"
+          className="bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary-700 transition-all duration-200 text-sm font-bold shadow-md shadow-primary-500/10"
         >
           <Plus size={16} />
           <span><TranslatedText text="Add Tenant" /></span>
@@ -532,32 +533,42 @@ const AdminTenants: React.FC = () => {
     >
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-                <Icon size={100} className="text-gray-900" />
-              </div>
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300 shadow-sm">
-                    <Icon size={18} />
-                  </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text={stat.label} /></p>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">{stat.value}</h3>
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none">Global platform metric</p>
-              </div>
-            </div>
-          );
-        })}
+        <StatCard
+          title={<TranslatedText text="Total Tenants" />}
+          value={tenants.length}
+          icon={<Building2 size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Registered" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Active Tenants" />}
+          value={tenants.filter((t: Tenant) => t.status === 'active').length}
+          icon={<Check size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Operational" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Total Users" />}
+          value={tenants.reduce((sum: number, t: Tenant) => sum + (t.userCount || 0), 0)}
+          icon={<Users size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="All Tenants" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Total Revenue" />}
+          value={`$${tenants.reduce((sum: number, t: Tenant) => sum + (t.revenue || 0), 0).toLocaleString()}`}
+          icon={<TrendingUp size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Aggregate" />}
+        />
       </div>
 
       {/* Filters and Search */}
-      <div className="p-6 border-b border-gray-100 bg-[#fafafa] rounded-xl border mb-10 flex flex-col md:flex-row gap-6 items-center justify-between">
+      <div className="p-6 bg-[#fafafa] rounded-xl border border-transparent mb-10 flex flex-col md:flex-row gap-6 items-center justify-between">
         <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           <div className="relative group">
             <input
@@ -565,13 +576,13 @@ const AdminTenants: React.FC = () => {
               placeholder="SEARCH TENANTS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-64 bg-white transition-all shadow-sm"
+              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-64 bg-white transition-all"
             />
-            <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-indigo-500 transition-colors w-3.5 h-3.5" />
+            <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-primary-500 transition-colors w-3.5 h-3.5" />
           </div>
 
           <select
-            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all font-black"
+            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white cursor-pointer hover:border-slate-300 transition-all font-black"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -583,7 +594,7 @@ const AdminTenants: React.FC = () => {
           </select>
 
           <select
-            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all font-black"
+            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white cursor-pointer hover:border-slate-300 transition-all font-black"
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
           >
@@ -597,8 +608,8 @@ const AdminTenants: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setUseEnrichedData(!useEnrichedData)}
-            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all shadow-sm ${useEnrichedData
-              ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'
+            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all ${useEnrichedData
+              ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-500'
               : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
               }`}
             title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
@@ -606,17 +617,17 @@ const AdminTenants: React.FC = () => {
             <Heart className="w-3 h-3" />
             {useEnrichedData ? 'Enhanced View' : 'Basic View'}
           </button>
-          <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all shadow-sm text-slate-600">
+          <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all text-slate-600">
             <Download className="w-3 h-3" /> Export
           </button>
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-gray-100/50 px-4 py-2.5 rounded-xl border border-gray-100">
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-gray-100/50 px-4 py-2.5 rounded-xl border border-transparent">
             {filteredTenants.length} TENANTS
           </div>
         </div>
       </div>
 
       {/* Tenants Table */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden border border-transparent">
         {isLoadingTenants ? (
           <ModernLoader isLoading={true} type="table" />
         ) : tenantsError ? (
@@ -665,7 +676,7 @@ const AdminTenants: React.FC = () => {
                   <tr key={tenant.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden relative bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-indigo-200">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm overflow-hidden relative bg-[#2c5173]">
                           <Building2 className="relative z-10 text-white" size={18} />
                         </div>
                         <div>
@@ -682,7 +693,7 @@ const AdminTenants: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getPlanColor(tenant.plan).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('700', '600')} border-indigo-100 shadow-sm`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getPlanColor(tenant.plan).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('700', '600')} border-[#2c5173]/20 shadow-sm`}>
                         {tenant.plan}
                       </span>
                     </td>
@@ -700,7 +711,7 @@ const AdminTenants: React.FC = () => {
                             setSelectedTenant(tenant);
                             setShowDetailsModal(true);
                           }}
-                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-indigo-100"
+                          className="p-2 text-[#2c5173] hover:bg-[#2c5173]/10 rounded-xl transition-all shadow-sm bg-white border border-[#2c5173]/20"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -710,7 +721,7 @@ const AdminTenants: React.FC = () => {
                             e.stopPropagation();
                             handleEditTenant(tenant);
                           }}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                          className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-[#2c5173]/10 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
@@ -721,7 +732,7 @@ const AdminTenants: React.FC = () => {
                             setSettingsTenantId(tenant.id);
                             setShowSettingsModal(true);
                           }}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                          className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-[#2c5173]/10 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
                           title="Settings"
                         >
                           <Settings className="w-4 h-4" />

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ModernLoader from '../../components/common/ModernLoader';
 import {
   FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
   FaEye, FaMapMarkerAlt, FaTools, FaCheckCircle, FaExclamationTriangle
@@ -7,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '../../services/tenantApi';
 import { TranslatedText } from '../../components/translated-text';
 import { FaCoins } from 'react-icons/fa';
+import { StatCard } from '../../components/EnliteUI';
 
 interface Truck {
   id: string;
@@ -24,6 +26,13 @@ interface Truck {
 }
 
 const FleetManagement: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [trucks] = useState<Truck[]>([
     {
       id: '1',
@@ -111,10 +120,14 @@ const FleetManagement: React.FC = () => {
 
   const currentBalance = balanceData?.currentBalance || 0;
 
+  if (loading) {
+    return <ModernLoader isLoading={true} type="page" showStats={true} />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Custom Header for Tenant Admin */}
-      <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
+      <div className="bg-white rounded-xl p-8 border border-transparent">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Fleet Management" /></h1>
@@ -123,7 +136,7 @@ const FleetManagement: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2">
+            <button className="px-6 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all font-bold text-sm flex items-center gap-2">
               <FaPlus className="text-xs" />
               <TranslatedText text="Add Truck" />
             </button>
@@ -132,7 +145,7 @@ const FleetManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl p-6 border border-transparent">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -141,20 +154,20 @@ const FleetManagement: React.FC = () => {
               placeholder="Search trucks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173]"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173]"
           >
             <option value=""><TranslatedText text="All Status" /></option>
             <option value="active"><TranslatedText text="Active" /></option>
             <option value="maintenance"><TranslatedText text="Maintenance" /></option>
             <option value="inactive"><TranslatedText text="Inactive" /></option>
           </select>
-          <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+          <button className="bg-[#2c5173]/10 hover:bg-[#2c5173]/20 text-[#2c5173] px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
             <FaFilter />
             <span><TranslatedText text="More Filters" /></span>
           </button>
@@ -167,53 +180,45 @@ const FleetManagement: React.FC = () => {
 
       {/* Fleet Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Trucks" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.length}</p>
-            </div>
-            <FaTruck className="text-blue-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Active" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'active').length}</p>
-            </div>
-            <FaCheckCircle className="text-green-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Maintenance" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{trucks.filter(t => t.status === 'maintenance').length}</p>
-            </div>
-            <FaTools className="text-yellow-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6 border-b-4 border-indigo-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Credit Balance" /></p>
-              <p className="text-2xl font-black text-indigo-600 leading-none tracking-tight">{currentBalance.toLocaleString()} <span className="text-xs">TRX</span></p>
-            </div>
-            <FaCoins className="text-indigo-500 text-3xl" />
-          </div>
-        </div>
+        <StatCard
+          title={<TranslatedText text="Total Trucks" />}
+          value={trucks.length}
+          icon={<FaTruck size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Active" />}
+          value={trucks.filter(t => t.status === 'active').length}
+          icon={<FaCheckCircle size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Maintenance" />}
+          value={trucks.filter(t => t.status === 'maintenance').length}
+          icon={<FaTools size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Credit Balance" />}
+          value={`${currentBalance.toLocaleString()} TRX`}
+          icon={<FaCoins size={22} />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Truck Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTrucks.map((truck) => (
-          <div key={truck.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+          <div key={truck.id} className="bg-white rounded-xl overflow-hidden border border-transparent transition-all">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <FaTruck className="text-white text-lg" />
+                  <div className="w-12 h-12 bg-[#2c5173]/10 rounded-xl flex items-center justify-center text-[#2c5173]">
+                    <FaTruck className="text-lg" />
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-gray-900 tracking-tight leading-none mb-1">{truck.plateNumber}</h3>
@@ -264,7 +269,7 @@ const FleetManagement: React.FC = () => {
               </div>
 
               <div className="flex space-x-2 mt-6">
-                <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center space-x-1">
+                <button className="flex-1 bg-[#2c5173] hover:bg-[#1e3850] text-white py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center space-x-1">
                   <FaEye />
                   <span>View</span>
                 </button>

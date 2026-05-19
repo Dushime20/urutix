@@ -27,6 +27,7 @@ import { fleetApi } from '../../services/fleetApi';
 import { driverApi } from '../../services/driverApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { CircularStatCard } from '../EnliteUI/Cards/StatCard';
 
 interface SafetyManagementProps {
   fleetId?: string;
@@ -473,46 +474,6 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
     inspections: inspectionsList.length
   };
 
-  const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
-    return (
-      <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-gray-900 border-[8px] border-gray-50 dark:border-gray-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-gray-100 dark:hover:border-gray-700">
-          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-            <circle
-              cx="80"
-              cy="80"
-              r="72"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray="452"
-              strokeDashoffset="350"
-              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
-            />
-          </svg>
-
-          <div className={cn("p-2 rounded-2xl mb-2 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:text-inherit transition-all duration-500", colorClass)}>
-            <Icon size={18} />
-          </div>
-
-          <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-            <span className="text-xl font-black text-gray-900 dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-              {value}
-            </span>
-          </div>
-
-          <div className="absolute inset-4 rounded-full border border-dashed border-gray-100 dark:border-gray-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
-        </div>
-
-        <div className="mt-4 text-center px-2">
-          <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
-            {title}
-          </p>
-        </div>
-      </div>
-    );
-  };
-
   const IncidentsContainer = () => {
     const { data: incidentsData, isLoading } = useQuery({
       queryKey: ['safety-incidents'],
@@ -622,21 +583,21 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
 
       {/* Safety Stat Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-slate-100 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <CircularStatsCard
+        <CircularStatCard
           title="Safety Score"
           value={`${safetyStats.safetyScore}%`}
           icon={Shield}
           colorClass="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400"
           secondaryColor="text-emerald-600 dark:text-emerald-400"
         />
-        <CircularStatsCard
+        <CircularStatCard
           title="Safety Incidents"
           value={safetyStats.incidents}
           icon={AlertTriangle}
           colorClass="bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400"
           secondaryColor="text-rose-600 dark:text-rose-400"
         />
-        <CircularStatsCard
+        <CircularStatCard
           title="Inspections Done"
           value={safetyStats.inspections}
           icon={ClipboardCheck}

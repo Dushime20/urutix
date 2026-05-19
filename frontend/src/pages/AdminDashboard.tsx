@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI } from '../services/adminApi';
 import type { AdminKPI, AdminAnalytics, AdminFinancials } from '../services/adminApi';
-import ModernStatCard from '../components/Admin/ModernStatCard';
+import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 import ModernNavCard from '../components/Admin/ModernNavCard';
 import { motion } from 'framer-motion';
 import ModernLoader from '../components/common/ModernLoader';
@@ -205,53 +205,54 @@ const AdminDashboard: React.FC = () => {
     >
       <div className="space-y-12">
         {/* Stats Overview */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          <ModernStatCard
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
             title="Total Users"
             value={kpiData?.users?.toLocaleString() || '0'}
-            icon={FaUsers}
-            trend={calculateGrowth(kpiData?.users || 0)}
-            color="blue"
-            delay={0.1}
+            icon={<FaUsers size={22} />}
+            trend={`${calculateGrowth(kpiData?.users || 0)}%`}
+            trendDirection="up"
+            color="primary"
+            loading={loading}
+            variant="classic"
           />
-
-          <ModernStatCard
+          <StatCard
             title="Active Trips"
             value={kpiData?.activeTrips?.toLocaleString() || '0'}
-            icon={FaTruck}
-            trend={calculateGrowth(kpiData?.activeTrips || 0)}
-            color="green"
-            delay={0.2}
+            icon={<FaTruck size={22} />}
+            trend={`${calculateGrowth(kpiData?.activeTrips || 0)}%`}
+            trendDirection="up"
+            color="primary"
+            loading={loading}
+            variant="classic"
           />
-
-          <ModernStatCard
+          <StatCard
             title="Engagement Score"
             value={`${kpiData?.engagement || '0'}%`}
-            icon={FaBox}
-            trend={calculateGrowth(kpiData?.engagement || 0)}
-            color="orange"
-            delay={0.3}
+            icon={<FaBox size={22} />}
+            trend={`${calculateGrowth(kpiData?.engagement || 0)}%`}
+            trendDirection="up"
+            color="primary"
+            loading={loading}
+            variant="classic"
           />
-
-          <ModernStatCard
+          <StatCard
             title="Revenue"
             value={`$${(financialData?.totalRevenue || 0).toLocaleString()}`}
-            icon={FaMoneyBillWave}
-            trend={calculateGrowth(financialData?.totalRevenue || 0)}
-            color="yellow"
-            delay={0.4}
+            icon={<FaMoneyBillWave size={22} />}
+            trend={`${calculateGrowth(financialData?.totalRevenue || 0)}%`}
+            trendDirection="up"
+            color="primary"
+            loading={loading}
+            variant="classic"
           />
-        </motion.div>
+        </div>
 
         {/* Navigation Cards */}
         <div>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="h-8 w-1.5 bg-indigo-600 rounded-full"></span>
+              <span className="h-8 w-1.5 bg-[#2c5173] rounded-full"></span>
               <TranslatedText text="Management Sections" />
             </h2>
             <div className="h-px flex-1 bg-gray-100 ml-6 hidden md:block"></div>

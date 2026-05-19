@@ -20,6 +20,7 @@ import { FuelAdvancesTab } from '../components/FleetDashboard/Fuel/FuelAdvancesT
 import { fuelApi } from '../services/fuelApi';
 import type { FuelEntry } from '../services/fleetApi';
 import { cn } from '../utils/cn';
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import DashboardHeader from '../components/Layout/DashboardHeader';
 import DashboardFooter from '../components/Layout/DashboardFooter';
 import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
@@ -118,46 +119,6 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
         return true;
     });
 
-    const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
-        return (
-            <div className="flex flex-col items-center group">
-                <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50">
-                    <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-                        <circle
-                            cx="80"
-                            cy="80"
-                            r="72"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3"
-                            strokeDasharray="452"
-                            strokeDashoffset="350"
-                            className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
-                        />
-                    </svg>
-
-                    <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-                        <Icon size={18} />
-                    </div>
-
-                    <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-                        <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-                            {value}
-                        </span>
-                    </div>
-
-                    <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
-                </div>
-
-                <div className="mt-4 text-center px-2">
-                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
-                        {title}
-                    </p>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <DetailedErrorBoundary>
             <div className={isEmbedded ? "w-full" : "min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-200"}>
@@ -207,28 +168,28 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                         animate={{ opacity: 1, y: 0 }}
                         className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-200"
                     >
-                        <CircularStatsCard
+                        <CircularStatCard
                             title="Total Spend"
                             value={`$${Number(stats?.totalCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                             icon={DollarSign}
                             colorClass="bg-blue-50 text-blue-600"
                             secondaryColor="text-blue-600"
                         />
-                        <CircularStatsCard
+                        <CircularStatCard
                             title="Fuel Volume"
                             value={`${Number(stats?.totalGallons || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} Gal`}
                             icon={Droplets}
                             colorClass="bg-emerald-50 text-emerald-600"
                             secondaryColor="text-emerald-600"
                         />
-                        <CircularStatsCard
+                        <CircularStatCard
                             title="Avg. MPG"
                             value={`${Number(stats?.avgMpg || 0).toFixed(1)} MPG`}
                             icon={TrendingUp}
                             colorClass="bg-primary-50 text-primary-500"
                             secondaryColor="text-primary-500"
                         />
-                        <CircularStatsCard
+                        <CircularStatCard
                             title="Fraud Alerts"
                             value={stats?.flaggedTransactions || 0}
                             icon={AlertTriangle}

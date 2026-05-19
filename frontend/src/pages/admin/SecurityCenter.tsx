@@ -28,6 +28,7 @@ import {
   Tab,
   Tabs,
 } from '@mui/material';
+import ModernLoader from '../../components/common/ModernLoader';
 import { TranslatedText } from '../../components/translated-text';
 import {
   Refresh as RefreshIcon,
@@ -311,8 +312,8 @@ const SecurityCenter: React.FC = () => {
 
   if (loading && securityEvents.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box p={3}>
+        <ModernLoader isLoading={true} type="page" showStats={true} />
       </Box>
     );
   }
@@ -351,40 +352,44 @@ const SecurityCenter: React.FC = () => {
 
       {/* Summary Cards */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={<TranslatedText text="Security Events" />}
             value={securityEvents.length.toString()}
             trend="stable"
             color="primary"
             icon={<SecurityIcon />}
+            variant="classic"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={<TranslatedText text="Failed Logins" />}
             value={failedLogins.length.toString()}
             trend={failedLogins.length > 10 ? 'up' : 'stable'}
             color={failedLogins.length > 10 ? 'warning' : 'success'}
             icon={<ErrorIcon />}
+            variant="classic"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={<TranslatedText text="Active Sessions" />}
             value={activeSessions.length.toString()}
             trend="stable"
             color="info"
             icon={<ComputerIcon />}
+            variant="classic"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={<TranslatedText text="Flagged Accounts" />}
             value={flaggedAccounts.length.toString()}
             trend={flaggedAccounts.length > 0 ? 'up' : 'stable'}
             color={flaggedAccounts.length > 0 ? 'error' : 'success'}
             icon={<PersonIcon />}
+            variant="classic"
           />
         </Grid>
       </Grid>

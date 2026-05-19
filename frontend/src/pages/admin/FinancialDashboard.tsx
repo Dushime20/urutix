@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FaDollarSign, FaChartLine, FaCreditCard, FaWallet, FaExchangeAlt,
   FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaPlus, FaCalendar,
@@ -8,6 +8,8 @@ import {
 } from 'react-icons/fa';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { StatCard } from '../../components/EnliteUI';
+import ModernLoader from '../../components/common/ModernLoader';
 
 interface Transaction {
   id: string;
@@ -40,6 +42,13 @@ interface FinancialMetrics {
 }
 
 const FinancialDashboard: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
       id: '1',
@@ -206,6 +215,17 @@ const FinancialDashboard: React.FC = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <AdminPageLayout
+        title={<TranslatedText text="Financial Dashboard" />}
+        description={<TranslatedText text="Monitor transactions, revenue, and financial metrics" />}
+      >
+        <ModernLoader isLoading={true} type="page" showStats={true} />
+      </AdminPageLayout>
+    );
+  }
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="Financial Dashboard" />}
@@ -214,69 +234,45 @@ const FinancialDashboard: React.FC = () => {
 
       {/* Financial Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-gray-800">${metrics.totalRevenue.toLocaleString()}</p>
-              <p className="text-gray-600"><TranslatedText text="Total Revenue" /></p>
-              <div className="flex items-center mt-2">
-                <FaCaretUp className="text-green-500 mr-1" />
-                <span className="text-green-600 text-sm font-medium">+{metrics.monthlyGrowth}%</span>
-                <span className="text-gray-500 text-sm ml-1"><TranslatedText text="this month" /></span>
-              </div>
-            </div>
-            <FaDollarSign className="text-green-500 text-4xl" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-gray-800">{metrics.totalTransactions.toLocaleString()}</p>
-              <p className="text-gray-600"><TranslatedText text="Total Transactions" /></p>
-              <div className="flex items-center mt-2">
-                <span className="text-blue-600 text-sm font-medium">${metrics.averageTransactionValue}</span>
-                <span className="text-gray-500 text-sm ml-1"><TranslatedText text="avg value" /></span>
-              </div>
-            </div>
-            <FaExchangeAlt className="text-blue-500 text-4xl" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-gray-800">${metrics.pendingAmount.toLocaleString()}</p>
-              <p className="text-gray-600"><TranslatedText text="Pending Amount" /></p>
-              <div className="flex items-center mt-2">
-                <FaClock className="text-yellow-500 mr-1" />
-                <span className="text-yellow-600 text-sm font-medium">
-                  {transactions.filter(t => t.status === 'pending').length} <TranslatedText text="transactions" />
-                </span>
-              </div>
-            </div>
-            <FaHourglassHalf className="text-yellow-500 text-4xl" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-gray-800">${metrics.escrowBalance.toLocaleString()}</p>
-              <p className="text-gray-600"><TranslatedText text="Escrow Balance" /></p>
-              <div className="flex items-center mt-2">
-                <FaPiggyBank className="text-purple-500 mr-1" />
-                <span className="text-purple-600 text-sm font-medium"><TranslatedText text="Secured funds" /></span>
-              </div>
-            </div>
-            <FaPiggyBank className="text-purple-500 text-4xl" />
-          </div>
-        </div>
+        <StatCard
+          title={<TranslatedText text="Total Revenue" />}
+          value={`$${metrics.totalRevenue.toLocaleString()}`}
+          icon={<FaDollarSign className="w-5 h-5" />}
+          color="primary"
+          trend={`+${metrics.monthlyGrowth}%`}
+          trendDirection="up"
+          subtitle={<TranslatedText text="this month" />}
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Total Transactions" />}
+          value={metrics.totalTransactions.toLocaleString()}
+          icon={<FaExchangeAlt className="w-5 h-5" />}
+          color="primary"
+          subtitle={`$${metrics.averageTransactionValue} avg value`}
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Pending Amount" />}
+          value={`$${metrics.pendingAmount.toLocaleString()}`}
+          icon={<FaHourglassHalf className="w-5 h-5" />}
+          color="primary"
+          subtitle={`${transactions.filter(t => t.status === 'pending').length} transactions`}
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Escrow Balance" />}
+          value={`$${metrics.escrowBalance.toLocaleString()}`}
+          icon={<FaPiggyBank className="w-5 h-5" />}
+          color="primary"
+          subtitle={<TranslatedText text="Secured funds" />}
+          variant="classic"
+        />
       </div>
 
       {/* Revenue Chart and Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trend (Last 7 Days)</h3>
           <div className="flex items-end space-x-2 h-48">
             {metrics.dailyRevenue.map((revenue, index) => (
@@ -294,7 +290,7 @@ const FinancialDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl border border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Financial Summary</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -324,7 +320,7 @@ const FinancialDashboard: React.FC = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-xl shadow-lg">
+      <div className="bg-white rounded-xl border border-transparent">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
@@ -337,11 +333,11 @@ const FinancialDashboard: React.FC = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <button className="flex items-center space-x-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] transition-colors">
                 <FaFilter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              <button className="flex items-center space-x-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] transition-colors">
                 <FaDownload className="w-4 h-4" />
                 <span>Export</span>
               </button>

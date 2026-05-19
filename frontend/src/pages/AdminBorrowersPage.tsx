@@ -4,6 +4,7 @@ import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import { StatCard } from '../components/EnliteUI';
 import {
   User, Mail, Phone, Building2,
   MoreHorizontal, Search, TrendingUp,
@@ -439,89 +440,59 @@ const AdminBorrowersPage: React.FC = () => {
       {showAnalytics && analytics && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Users className="text-gray-900" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analytics?.totalBorrowers}</span>
-                  <div className="flex items-center gap-1 mt-1 justify-end">
-                    <TrendingUp className="text-emerald-500" size={10} />
-                    <p className="text-[10px] text-emerald-500 font-black uppercase tracking-tighter">+{analytics?.monthlyGrowth}%</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Total Borrowers" /></p>
-            </div>
-
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <CheckCircle2 className="text-emerald-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analytics?.activeBorrowers}</span>
-                  <div className="mt-1 flex justify-end">
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">
-                      {((analytics?.activeBorrowers || 0) / (analytics?.totalBorrowers || 1) * 100).toFixed(1)}% Operational
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Matrix" /></p>
-            </div>
-
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <DollarSign className="text-indigo-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">
-                    {(analytics.totalAmountBorrowed / 1000000).toFixed(1)}M
-                  </span>
-                  <div className="mt-1 flex justify-end">
-                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">{analytics.totalLoansIssued} Issuances</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Total Issuance (RWF)" /></p>
-            </div>
-
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Star className="text-rose-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analytics.avgCreditScore}</span>
-                  <div className="mt-1 flex justify-end">
-                    <p className="text-[10px] text-rose-500 font-black uppercase tracking-tighter">{analytics.defaultRate.toFixed(1)}% Default Index</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Efficiency Core" /></p>
-            </div>
+             <StatCard
+              title={<TranslatedText text="Total Borrowers" />}
+              value={analytics?.totalBorrowers}
+              icon={<Users size={22} />}
+              color="primary"
+              variant="classic"
+              trend={`+${analytics?.monthlyGrowth}%`}
+              trendDirection="up"
+              subtitle="Registered borrowers"
+            />
+            <StatCard
+              title={<TranslatedText text="Active Matrix" />}
+              value={analytics?.activeBorrowers}
+              icon={<CheckCircle2 size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={`${((analytics?.activeBorrowers || 0) / (analytics?.totalBorrowers || 1) * 100).toFixed(1)}% Operational`}
+            />
+            <StatCard
+              title={<TranslatedText text="Total Issuance (RWF)" />}
+              value={`${(analytics.totalAmountBorrowed / 1000000).toFixed(1)}M`}
+              icon={<DollarSign size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={`${analytics.totalLoansIssued} Issuances`}
+            />
+            <StatCard
+              title={<TranslatedText text="Efficiency Core" />}
+              value={analytics.avgCreditScore}
+              icon={<Star size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={`${analytics.defaultRate.toFixed(1)}% Default Index`}
+            />
           </div>
 
           {/* Performance Insights */}
-          <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm">
+          <div className="bg-white rounded-[32px] border border-transparent p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entity Intelligence</h3>
                 <p className="text-xl font-black text-gray-900 tracking-tight uppercase">Performance Analytics</p>
               </div>
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="text-indigo-600" size={24} />
+              <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center">
+                <TrendingUp className="text-slate-600" size={24} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="group">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-50 group-hover:border-indigo-100 transition-all">
+                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-transparent">
                       <Star className="text-amber-500" size={20} />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Credit Alpha</p>
@@ -532,9 +503,9 @@ const AdminBorrowersPage: React.FC = () => {
               </div>
 
               <div className="group">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-50 group-hover:border-emerald-100 transition-all">
+                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-transparent">
                       <Percent className="text-emerald-500" size={20} />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Repayment Matrix</p>
@@ -545,9 +516,9 @@ const AdminBorrowersPage: React.FC = () => {
               </div>
 
               <div className="group">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-gray-50 group-hover:border-indigo-100 transition-all">
+                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-transparent">
                       <TrendingUp className="text-indigo-600" size={20} />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Growth Vector</p>
@@ -562,15 +533,15 @@ const AdminBorrowersPage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm">
+      <div className="bg-white rounded-[32px] border border-transparent p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={16} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search entities..."
-              className="pl-12 pr-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all placeholder:text-slate-400 font-medium"
+              className="pl-12 pr-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all placeholder:text-slate-400 font-medium"
             />
           </div>
 
@@ -578,7 +549,7 @@ const AdminBorrowersPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
-              className="px-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
             >
               <option value="all">Operational Matrix (All)</option>
               <option value="active">Active Protocol</option>
@@ -592,7 +563,7 @@ const AdminBorrowersPage: React.FC = () => {
             <select
               value={riskFilter}
               onChange={e => setRiskFilter(e.target.value as any)}
-              className="px-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
             >
               <option value="all">Vulnerability Tiers (All)</option>
               <option value="low">Validated (Low Risk)</option>
@@ -605,7 +576,7 @@ const AdminBorrowersPage: React.FC = () => {
             <select
               value={lenderFilter}
               onChange={e => setLenderFilter(e.target.value)}
-              className="px-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
             >
               <option value="all">Provider Matrix (All)</option>
               {uniqueLenders.map(lender => (
@@ -625,7 +596,7 @@ const AdminBorrowersPage: React.FC = () => {
             ))}
           </div>
         ) : sorted.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+          <div className="text-center py-12 border border-transparent rounded-lg bg-gray-50">
             <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
               <User className="text-gray-500" size={24} />
             </div>

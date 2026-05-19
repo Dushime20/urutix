@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaInfoCircle } from 'react-icons/fa';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
+import ModernLoader from '../../components/common/ModernLoader';
 import api from '../../services/api';
 
 interface PricingRule {
@@ -160,6 +161,14 @@ const CreditPricingRules: React.FC = () => {
     return labels[type] || type;
   };
 
+  if (isLoading && rules.length === 0) {
+    return (
+      <AdminPageLayout title={<TranslatedText text="Credit Pricing Rules" />}>
+        <ModernLoader isLoading={true} type="page" showStats={true} />
+      </AdminPageLayout>
+    );
+  }
+
   return (
     <AdminPageLayout title={<TranslatedText text="Credit Pricing Rules" />}>
       <div className="space-y-6">
@@ -176,7 +185,7 @@ const CreditPricingRules: React.FC = () => {
 
         {/* Create/Edit Form */}
         {isCreating && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">
               {editingId ? <TranslatedText text="Edit Pricing Rule" /> : <TranslatedText text="Create New Pricing Rule" />}
             </h3>
@@ -298,7 +307,7 @@ const CreditPricingRules: React.FC = () => {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] disabled:opacity-50 flex items-center gap-2"
                 >
                   <FaSave />
                   {editingId ? <TranslatedText text="Update Rule" /> : <TranslatedText text="Create Rule" />}
@@ -320,7 +329,7 @@ const CreditPricingRules: React.FC = () => {
         {!isCreating && (
           <button
             onClick={() => setIsCreating(true)}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+            className="px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] flex items-center gap-2"
           >
             <FaPlus />
             <TranslatedText text="Create New Rule" />
@@ -328,7 +337,7 @@ const CreditPricingRules: React.FC = () => {
         )}
 
         {/* Rules List */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -413,7 +422,7 @@ const CreditPricingRules: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => handleEdit(rule)}
-                          className="text-primary-600 hover:text-primary-900 mr-3"
+                          className="text-[#2c5173] hover:text-[#1e3850] mr-3"
                         >
                           <FaEdit />
                         </button>

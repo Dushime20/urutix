@@ -170,23 +170,23 @@ const AdminSidebar: React.FC = () => {
                                         key={itemIdx}
                                         to={item.path}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${active
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                            ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400'
                                             : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
                                             }`}
                                         title={collapsed ? item.label : undefined}
                                     >
                                         {active && (
-                                            <div className="absolute left-[-1rem] top-1/4 bottom-1/4 w-1 bg-indigo-600 rounded-r-full" />
+                                            <div className="absolute left-[-1rem] top-1/4 bottom-1/4 w-1 bg-primary-600 rounded-r-full" />
                                         )}
                                         <Icon
                                             size={20}
-                                            className={active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}
+                                            className={active ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600'}
                                         />
                                         {!collapsed && (
                                             <>
                                                 <span className="text-sm font-bold flex-1"><TranslatedText text={item.label} /></span>
                                                 {item.badge && (
-                                                    <span className="px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-md">
+                                                    <span className="px-1.5 py-0.5 bg-primary-600 text-white text-[10px] font-black rounded-md">
                                                         {item.badge}
                                                     </span>
                                                 )}

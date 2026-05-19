@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminLoad } from '../services/adminApi';
+import { StatCard } from '../components/EnliteUI';
 import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
 
@@ -403,25 +404,43 @@ const AdminLoads: React.FC = () => {
       <div className="space-y-6">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Loads',  value: stats.total,     color: 'bg-blue-50',   icon: FaBox,        iconColor: 'text-blue-500' },
-            { label: 'Active',       value: stats.active,    color: 'bg-indigo-50', icon: FaBox,        iconColor: 'text-indigo-500' },
-            { label: 'Completed',    value: stats.completed, color: 'bg-green-50',  icon: FaBox,        iconColor: 'text-green-500' },
-            { label: 'Cancelled',    value: stats.cancelled, color: 'bg-red-50',    icon: FaBox,        iconColor: 'text-red-500' },
-          ].map(s => (
-            <div key={s.label} className={`${s.color} rounded-xl shadow-sm p-5 flex items-center justify-between`}>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
-                <p className="text-3xl font-black text-gray-900 mt-1">{s.value}</p>
-              </div>
-              <s.icon className={`text-4xl opacity-30 ${s.iconColor}`} />
-            </div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total Loads"
+            value={stats.total}
+            icon={<FaBox size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Platform shipments"
+          />
+          <StatCard
+            title="Active Loads"
+            value={stats.active}
+            icon={<FaBox size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Currently in progress"
+          />
+          <StatCard
+            title="Completed"
+            value={stats.completed}
+            icon={<FaBox size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Successfully delivered"
+          />
+          <StatCard
+            title="Cancelled"
+            value={stats.cancelled}
+            icon={<FaBox size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Aborted shipments"
+          />
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-5 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white rounded-xl p-5 flex flex-col md:flex-row gap-4 items-center justify-between border border-transparent">
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-64">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
@@ -448,14 +467,14 @@ const AdminLoads: React.FC = () => {
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
               <FaDownload size={12} /> Export CSV
             </button>
-            <span className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-semibold">
+            <span className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold">
               {filteredLoads.length} loads
             </span>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl overflow-hidden border border-transparent">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
@@ -530,7 +549,7 @@ const AdminLoads: React.FC = () => {
                         <div className="flex justify-end gap-1">
                           <button
                             onClick={() => setSelectedLoad(load)}
-                            className="p-2 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
+                            className="p-2 rounded-lg text-primary-600 hover:bg-slate-100 transition-colors"
                             title="View Details"
                           >
                             <FaEye size={14} />
@@ -564,7 +583,7 @@ const AdminLoads: React.FC = () => {
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map(p => (
                   <button key={p} onClick={() => setCurrentPage(p)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium ${currentPage === p ? 'bg-indigo-600 text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium ${currentPage === p ? 'bg-primary-600 text-white hover:bg-primary-500' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                     {p}
                   </button>
                 ))}

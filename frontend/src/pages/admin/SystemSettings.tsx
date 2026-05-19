@@ -8,12 +8,19 @@ import {
 } from 'lucide-react';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import ModernLoader from '../../components/common/ModernLoader';
 
 const SystemSettings: React.FC = () => {
+  const [pageLoading, setPageLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('general');
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setPageLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const settingSections = [
     { id: 'general', label: 'General Settings', icon: Settings },
@@ -207,7 +214,7 @@ const SystemSettings: React.FC = () => {
             type="text"
             value={settings.general.siteName}
             onChange={(e) => handleInputChange('general', 'siteName', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
         <div>
@@ -216,7 +223,7 @@ const SystemSettings: React.FC = () => {
             type="email"
             value={settings.general.contactEmail}
             onChange={(e) => handleInputChange('general', 'contactEmail', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
       </div>
@@ -227,7 +234,7 @@ const SystemSettings: React.FC = () => {
           value={settings.general.siteDescription}
           onChange={(e) => handleInputChange('general', 'siteDescription', e.target.value)}
           rows={3}
-          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
         />
       </div>
 
@@ -237,7 +244,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.general.timezone}
             onChange={(e) => handleInputChange('general', 'timezone', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700 pointer-cursor"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 pointer-cursor"
           >
             <option value="Africa/Kigali">Africa/Kigali</option>
             <option value="UTC">UTC</option>
@@ -251,7 +258,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.general.language}
             onChange={(e) => handleInputChange('general', 'language', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="English">English</option>
             <option value="Kinyarwanda">Kinyarwanda</option>
@@ -264,7 +271,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.general.currency}
             onChange={(e) => handleInputChange('general', 'currency', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="RWF">Rwandan Franc (RWF)</option>
             <option value="USD">US Dollar (USD)</option>
@@ -312,7 +319,7 @@ const SystemSettings: React.FC = () => {
                   type="checkbox"
                   checked={settings.security[item.key as keyof typeof settings.security] as boolean}
                   onChange={(e) => handleInputChange('security', item.key, e.target.checked)}
-                  className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                  className="w-5 h-5 text-[#2c5173] rounded focus:ring-[#2c5173] border-gray-300"
                 />
               </div>
             </div>
@@ -333,7 +340,7 @@ const SystemSettings: React.FC = () => {
                 type="number"
                 value={settings.security[item.key as keyof typeof settings.security] as number}
                 onChange={(e) => handleInputChange('security', item.key, parseInt(e.target.value))}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
               />
             </div>
           ))}
@@ -370,7 +377,7 @@ const SystemSettings: React.FC = () => {
                 type="checkbox"
                 checked={value as boolean}
                 onChange={(e) => handleInputChange('notifications', key, e.target.checked)}
-                className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                className="w-5 h-5 text-[#2c5173] rounded focus:ring-[#2c5173] border-gray-300"
               />
             </div>
           ))}
@@ -385,10 +392,10 @@ const SystemSettings: React.FC = () => {
               { label: 'Shipment Updates', desc: 'Cargo status notifications' },
               { label: 'Payment Confirmations', desc: 'Payment success notifications' }
             ].map((item, idx) => (
-              <button key={idx} className="w-full text-left p-4 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all group">
+              <button key={idx} className="w-full text-left p-4 bg-white border border-gray-200 rounded-xl hover:border-primary-300 transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">{item.label}</span>
-                  <Edit2 className="text-gray-400 w-4 h-4 group-hover:text-indigo-500" />
+                  <span className="font-bold text-slate-800 group-hover:text-[#2c5173] transition-colors">{item.label}</span>
+                  <Edit2 className="text-gray-400 w-4 h-4 group-hover:text-[#2c5173]" />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
               </button>
@@ -410,12 +417,12 @@ const SystemSettings: React.FC = () => {
                 type={showApiKey ? "text" : "password"}
                 value={settings.api.apiKey}
                 onChange={(e) => handleInputChange('api', 'apiKey', e.target.value)}
-                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-mono text-sm text-slate-700"
+                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-mono text-sm text-slate-700"
                 readOnly
               />
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#2c5173] transition-colors"
               >
                 {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -428,7 +435,7 @@ const SystemSettings: React.FC = () => {
             </button>
             <button
               onClick={regenerateApiKey}
-              className="px-4 bg-indigo-600 text-white rounded-r-xl hover:bg-indigo-500 transition-colors flex items-center justify-center"
+              className="px-4 bg-[#2c5173] text-white rounded-r-xl hover:bg-[#1e3850] transition-colors flex items-center justify-center"
             >
               <RefreshCw size={16} />
             </button>
@@ -442,7 +449,7 @@ const SystemSettings: React.FC = () => {
             type="number"
             value={settings.api.requestsPerMinute}
             onChange={(e) => handleInputChange('api', 'requestsPerMinute', parseInt(e.target.value))}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
       </div>
@@ -462,7 +469,7 @@ const SystemSettings: React.FC = () => {
               type="checkbox"
               checked={settings.api[item.key as keyof typeof settings.api] as boolean}
               onChange={(e) => handleInputChange('api', item.key, e.target.checked)}
-              className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+              className="w-5 h-5 text-[#2c5173] rounded focus:ring-[#2c5173] border-gray-300"
             />
           </div>
         ))}
@@ -475,7 +482,7 @@ const SystemSettings: React.FC = () => {
             type="text"
             value={settings.api.apiVersion}
             onChange={(e) => handleInputChange('api', 'apiVersion', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
         <div>
@@ -483,7 +490,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.api.maxPayloadSize}
             onChange={(e) => handleInputChange('api', 'maxPayloadSize', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="1MB">1MB</option>
             <option value="5MB">5MB</option>
@@ -503,7 +510,7 @@ const SystemSettings: React.FC = () => {
         <button
           onClick={createBackup}
           disabled={isLoading}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider shadow-lg shadow-indigo-200"
+          className="bg-[#2c5173] hover:bg-[#1e3850] disabled:bg-slate-400 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider"
         >
           {isLoading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
           <span>{isLoading ? 'Creating...' : 'Create Backup'}</span>
@@ -516,7 +523,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.database.backupFrequency}
             onChange={(e) => handleInputChange('database', 'backupFrequency', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           >
             <option value="hourly">Hourly</option>
             <option value="daily">Daily</option>
@@ -530,7 +537,7 @@ const SystemSettings: React.FC = () => {
             type="number"
             value={settings.database.backupRetention}
             onChange={(e) => handleInputChange('database', 'backupRetention', parseInt(e.target.value))}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
         <div>
@@ -539,12 +546,12 @@ const SystemSettings: React.FC = () => {
             type="number"
             value={settings.database.connectionPool}
             onChange={(e) => handleInputChange('database', 'connectionPool', parseInt(e.target.value))}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
           />
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
           <h4 className="font-bold text-slate-800 text-sm">Backup History</h4>
         </div>
@@ -562,7 +569,7 @@ const SystemSettings: React.FC = () => {
                   }`}>
                   {backup.status}
                 </span>
-                <button className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all">
+                <button className="text-slate-400 hover:text-[#2c5173] p-1.5 rounded-lg hover:bg-slate-100 transition-all">
                   <Download size={14} />
                 </button>
                 <button className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-slate-100 transition-all">
@@ -603,6 +610,17 @@ const SystemSettings: React.FC = () => {
     }
   };
 
+  if (pageLoading) {
+    return (
+      <AdminPageLayout
+        title={<TranslatedText text="System Settings" />}
+        description={<TranslatedText text="Configure platform settings and preferences" />}
+      >
+        <ModernLoader isLoading={true} type="page" showStats={false} />
+      </AdminPageLayout>
+    );
+  }
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="System Settings" />}
@@ -620,7 +638,7 @@ const SystemSettings: React.FC = () => {
             <button
               onClick={handleSave}
               disabled={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-200 font-bold text-xs uppercase tracking-wider"
+              className="bg-[#2c5173] hover:bg-[#1e3850] disabled:bg-slate-400 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider"
             >
               {isLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
               <span>{isLoading ? <TranslatedText text="Saving..." /> : <TranslatedText text="Save Changes" />}</span>
@@ -632,22 +650,22 @@ const SystemSettings: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
-        <div className="lg:w-72 bg-white rounded-[24px] shadow-sm border border-slate-100 p-4 h-fit">
+        <div className="lg:w-72 bg-white rounded-[24px] border border-slate-100 p-4 h-fit">
           <nav className="space-y-1">
             {settingSections.map((section) => {
               const Icon = section.icon;
               const isActive = activeSection === section.id;
               return (
                 <button
-                  key={section.id}
+                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all ${isActive
-                    ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                    ? 'bg-slate-100 text-[#2c5173]'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
                     }`}
                 >
-                  <Icon className={`mr-3 w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
-                  <span className={`font-bold text-sm ${isActive ? 'text-indigo-900' : 'text-slate-600'}`}>
+                  <Icon className={`mr-3 w-5 h-5 ${isActive ? 'text-[#2c5173]' : 'text-slate-400'}`} />
+                  <span className={`font-bold text-sm ${isActive ? 'text-[#2c5173]' : 'text-slate-600'}`}>
                     <TranslatedText text={section.label} />
                   </span>
                 </button>
@@ -657,7 +675,7 @@ const SystemSettings: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-slate-100 p-8 min-h-[600px]">
+        <div className="flex-1 bg-white rounded-[24px] border border-slate-100 p-8 min-h-[600px]">
           <div className="mb-8 pb-4 border-b border-slate-100">
             <h3 className="text-xl font-black text-slate-800">
               <TranslatedText text={settingSections.find(s => s.id === activeSection)?.label || ''} />

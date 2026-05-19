@@ -38,6 +38,7 @@ import {
 import Grid from '@mui/material/Grid';
 import { toast } from 'react-hot-toast';
 import { cn } from '../utils/cn';
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 interface TruckOwnerProfile {
   personal: {
@@ -300,46 +301,6 @@ const TruckOwnerProfilePage: React.FC = () => {
     });
   };
 
-  const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
-    return (
-      <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
-          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-            <circle
-              cx="80"
-              cy="80"
-              r="72"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray="452"
-              strokeDashoffset="350"
-              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
-            />
-          </svg>
-
-          <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-            <Icon size={18} />
-          </div>
-
-          <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-            <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-              {value}
-            </span>
-          </div>
-
-          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
-        </div>
-
-        <div className="mt-4 text-center px-2">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-primary-500 transition-colors duration-300 line-clamp-1">
-            {title}
-          </p>
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return <ModernLoader isLoading={true} type="page" />;
   }
@@ -432,28 +393,28 @@ const TruckOwnerProfilePage: React.FC = () => {
 
       {/* Stats Matrix */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-12 place-items-center bg-white p-6 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-        <CircularStatsCard
+        <CircularStatCard
           title="Total Trucks"
           value={profile.fleet.totalTrucks}
           icon={Truck}
           colorClass="bg-blue-50 text-blue-600"
           secondaryColor="text-blue-600"
         />
-        <CircularStatsCard
+        <CircularStatCard
           title="Active Fleet"
           value={profile.fleet.activeTrucks}
           icon={Activity}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
-        <CircularStatsCard
+        <CircularStatCard
           title="Commanders"
           value={profile.fleet.totalDrivers}
           icon={Users}
           colorClass="bg-amber-50 text-amber-600"
           secondaryColor="text-amber-600"
         />
-        <CircularStatsCard
+        <CircularStatCard
           title="Trust Score"
           value="4.85"
           icon={Star}

@@ -8,6 +8,8 @@ import {
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import api from '../../services/api';
+import { StatCard } from '../../components/EnliteUI';
+import ModernLoader from '../../components/common/ModernLoader';
 import { format } from 'date-fns';
 
 interface CreditTransaction {
@@ -213,7 +215,7 @@ const CreditUsageHistory: React.FC = () => {
       actions={
         <button
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850]"
         >
           <FaDownload />
           <TranslatedText text="Export CSV" />
@@ -222,70 +224,43 @@ const CreditUsageHistory: React.FC = () => {
     >
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600"><TranslatedText text="Total Consumed" /></p>
-              <p className="text-2xl font-bold text-red-600 mt-1">
-                {stats.totalConsumed.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500 mt-1"><TranslatedText text="Last" /> {dateRange} <TranslatedText text="days" /></p>
-            </div>
-            <div className="p-3 bg-red-50 rounded-lg">
-              <FaArrowDown className="text-2xl text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600"><TranslatedText text="Total Purchased" /></p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
-                {stats.totalPurchased.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500 mt-1"><TranslatedText text="Last" /> {dateRange} <TranslatedText text="days" /></p>
-            </div>
-            <div className="p-3 bg-green-50 rounded-lg">
-              <FaArrowUp className="text-2xl text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600"><TranslatedText text="Bonus Credits" /></p>
-              <p className="text-2xl font-bold text-yellow-600 mt-1">
-                {stats.totalBonus.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500 mt-1"><TranslatedText text="Last" /> {dateRange} <TranslatedText text="days" /></p>
-            </div>
-            <div className="p-3 bg-yellow-50 rounded-lg">
-              <FaCoins className="text-2xl text-yellow-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600"><TranslatedText text="Daily Average" /></p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">
-                {stats.averageDaily.toFixed(1)}
-              </p>
-              <p className="text-xs text-gray-500 mt-1"><TranslatedText text="Credits per day" /></p>
-            </div>
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <FaChartLine className="text-2xl text-blue-600" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title={<TranslatedText text="Total Consumed" />}
+          value={stats.totalConsumed.toLocaleString()}
+          icon={<FaArrowDown className="w-5 h-5" />}
+          color="primary"
+          subtitle={`Last ${dateRange} days`}
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Total Purchased" />}
+          value={stats.totalPurchased.toLocaleString()}
+          icon={<FaArrowUp className="w-5 h-5" />}
+          color="primary"
+          subtitle={`Last ${dateRange} days`}
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Bonus Credits" />}
+          value={stats.totalBonus.toLocaleString()}
+          icon={<FaCoins className="w-5 h-5" />}
+          color="primary"
+          subtitle={`Last ${dateRange} days`}
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Daily Average" />}
+          value={stats.averageDaily.toFixed(1)}
+          icon={<FaChartLine className="w-5 h-5" />}
+          color="primary"
+          subtitle="Credits per day"
+          variant="classic"
+        />
       </div>
 
       {/* Top Consumers */}
       {stats.topConsumers.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4"><TranslatedText text="Top Credit Consumers" /></h3>
           <div className="space-y-3">
             {stats.topConsumers.map((consumer: any, index: number) => (
@@ -310,7 +285,7 @@ const CreditUsageHistory: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-lg p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div>
@@ -323,7 +298,7 @@ const CreditUsageHistory: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search transactions..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173]"
             />
           </div>
 
@@ -336,7 +311,7 @@ const CreditUsageHistory: React.FC = () => {
             <select
               value={selectedTenant}
               onChange={(e) => setSelectedTenant(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173]"
             >
               <option value="all"><TranslatedText text="All Tenants" /></option>
               {tenants.map((tenant: any) => (
@@ -356,7 +331,7 @@ const CreditUsageHistory: React.FC = () => {
             <select
               value={transactionType}
               onChange={(e) => setTransactionType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173]"
             >
               <option value="all"><TranslatedText text="All Types" /></option>
               <option value="CONSUMPTION"><TranslatedText text="Consumption" /></option>
@@ -377,7 +352,7 @@ const CreditUsageHistory: React.FC = () => {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173]"
             >
               <option value="7"><TranslatedText text="Last 7 days" /></option>
               <option value="30"><TranslatedText text="Last 30 days" /></option>
@@ -389,7 +364,7 @@ const CreditUsageHistory: React.FC = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             <TranslatedText text="Transaction History" />
@@ -400,9 +375,8 @@ const CreditUsageHistory: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600"><TranslatedText text="Loading transactions..." /></p>
+          <div className="p-6">
+            <ModernLoader isLoading={true} type="table" rows={5} columns={6} />
           </div>
         ) : filteredTransactions.length === 0 ? (
           <div className="p-12 text-center">

@@ -4,14 +4,16 @@ import { motion } from 'framer-motion';
 export interface StatCardProps {
   title: React.ReactNode;
   value: number | string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   trend?: React.ReactNode;
   trendDirection?: 'up' | 'down' | 'neutral';
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'accent' | 'purple' | 'pink' | 'emerald';
   subtitle?: React.ReactNode;
   loading?: boolean;
   onClick?: () => void;
-  variant?: 'classic' | 'modern' | 'premium';
+  variant?: 'classic' | 'modern' | 'premium' | 'circular';
+  colorClass?: string;
+  secondaryColor?: string;
 }
 
 const colorClasses = {
@@ -98,6 +100,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   loading = false,
   onClick,
   variant = 'modern',
+  colorClass,
+  secondaryColor,
 }) => {
   const colors = colorClasses[color];
 
@@ -112,6 +116,45 @@ export const StatCard: React.FC<StatCardProps> = ({
     if (trendDirection === 'down') return '↓';
     return '→';
   };
+
+  if (variant === 'circular') {
+    const iconCls = colorClass ?? `${colors.bg} ${colors.icon}`;
+    const arcCls  = secondaryColor ?? colors.icon;
+    return (
+      <div className="flex flex-col items-center group" onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
+        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-gray-100 dark:hover:border-gray-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50">
+          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
+            <circle
+              cx="80" cy="80" r="72"
+              fill="none" stroke="currentColor"
+              strokeWidth="3" strokeDasharray="452" strokeDashoffset="350"
+              className={`opacity-10 transition-all duration-1000 ${arcCls}`}
+            />
+          </svg>
+          {loading ? (
+            <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-current animate-spin opacity-40" />
+          ) : (
+            <>
+              <div className={`p-2 rounded-2xl mb-2 transition-all duration-500 ${iconCls} group-hover:bg-white dark:group-hover:bg-slate-700`}>
+                {icon}
+              </div>
+              <div className="flex flex-col items-center px-4 w-full overflow-hidden">
+                <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+                  {value}
+                </span>
+              </div>
+            </>
+          )}
+          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
+        </div>
+        <div className="mt-4 text-center px-2">
+          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
+            {title}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (variant === 'premium') {
     return (
@@ -305,3 +348,30 @@ export const StatCard: React.FC<StatCardProps> = ({
 };
 
 export default StatCard;
+
+/**
+ * Drop-in replacement for the local CircularStatsCard / StatsCard used across
+ * DriversList, TrucksList, SafetyManagement, FleetAnalytics, FuelPage,
+ * TripManagement, TruckOwnerProfilePage, UnifiedDriverManagement,
+ * Routes, Tracking, and any other page that had its own copy.
+ */
+export const CircularStatCard: React.FC<{
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  colorClass?: string;
+  secondaryColor?: string;
+  loading?: boolean;
+  onClick?: () => void;
+}> = ({ title, value, icon: Icon, colorClass, secondaryColor, loading, onClick }) => (
+  <StatCard
+    title={title}
+    value={value}
+    icon={<Icon size={18} />}
+    variant="circular"
+    colorClass={colorClass}
+    secondaryColor={secondaryColor}
+    loading={loading}
+    onClick={onClick}
+  />
+);

@@ -9,6 +9,8 @@ import toast from 'react-hot-toast';
 import { biddingAPI } from '../../services/biddingApi';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
+import { StatCard } from '../../components/EnliteUI';
+import ModernLoader from '../../components/common/ModernLoader';
 
 interface Bid {
   id: string;
@@ -247,6 +249,17 @@ const BiddingManagement: React.FC = () => {
     avgRating: 0 // Rating not available in current API response
   };
 
+  if (bidsLoading && bids.length === 0) {
+    return (
+      <AdminPageLayout
+        title={<TranslatedText text="Bidding Management" />}
+        description={<TranslatedText text="Monitor and manage cargo bidding processes" />}
+      >
+        <ModernLoader isLoading={true} type="page" showStats={true} />
+      </AdminPageLayout>
+    );
+  }
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="Bidding Management" />}
@@ -254,73 +267,49 @@ const BiddingManagement: React.FC = () => {
     >
 
       {/* Bidding Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
-        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Bids" /></p>
-              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.total}</p>
-            </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-              <FaGavel className="text-white text-xs" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Pending" /></p>
-              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.pending}</p>
-            </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-              <FaClock className="text-white text-xs" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Accepted" /></p>
-              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.accepted}</p>
-            </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-              <FaCheckCircle className="text-white text-xs" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Rejected" /></p>
-              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.rejected}</p>
-            </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-              <FaTimesCircle className="text-white text-xs" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Value" /></p>
-              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">${stats.totalValue.toLocaleString()}</p>
-            </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-              <FaDollarSign className="text-white text-xs" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-2.5 hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Avg Rating" /></p>
-              <p className="text-lg font-black text-gray-900 leading-none tracking-tight">{stats.avgRating}</p>
-            </div>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-              <FaChartLine className="text-white text-xs" />
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <StatCard
+          title={<TranslatedText text="Total Bids" />}
+          value={stats.total}
+          icon={<FaGavel />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Pending" />}
+          value={stats.pending}
+          icon={<FaClock />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Accepted" />}
+          value={stats.accepted}
+          icon={<FaCheckCircle />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Rejected" />}
+          value={stats.rejected}
+          icon={<FaTimesCircle />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Total Value" />}
+          value={`$${stats.totalValue.toLocaleString()}`}
+          icon={<FaDollarSign />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Avg Rating" />}
+          value={stats.avgRating}
+          icon={<FaChartLine />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Filters */}
@@ -333,13 +322,13 @@ const BiddingManagement: React.FC = () => {
               placeholder="Search bids..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white"
           >
             <option value=""><TranslatedText text="All Status" /></option>
             <option value="pending"><TranslatedText text="Pending" /></option>
@@ -350,7 +339,7 @@ const BiddingManagement: React.FC = () => {
           <select
             value={filterCargoId}
             onChange={(e) => setFilterCargoId(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white"
+            className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white"
           >
             <option value=""><TranslatedText text="All Cargos" /></option>
             {Array.from(new Set(bids.map(b => b.loadId).filter(Boolean))).map(loadId => (
@@ -493,7 +482,7 @@ const BiddingManagement: React.FC = () => {
       {/* Bid Details Modal */}
       {showDetailsModal && selectedBid && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-900"><TranslatedText text="Bid Details" /></h3>
               <button
@@ -595,7 +584,7 @@ const BiddingManagement: React.FC = () => {
                       handleAcceptBid(selectedBid.id);
                       setShowDetailsModal(false);
                     }}
-                    className="flex-1 px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-xs font-medium"
+                    className="flex-1 px-3 py-1.5 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] transition-colors text-xs font-medium"
                   >
                     <TranslatedText text="Accept Bid" />
                   </button>

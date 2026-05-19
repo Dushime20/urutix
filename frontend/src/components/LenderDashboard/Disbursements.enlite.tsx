@@ -398,6 +398,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                     subtitle={`${formatAmount(totalAmount > 0 ? totalAmount : null)} total`}
                     icon={<FileText size={24} />}
                     color="primary"
+                    variant="classic"
                 />
                 <StatCard
                     title="Pending Approval"
@@ -405,6 +406,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                     subtitle={pendingCount > 0 ? 'Awaiting review' : 'None pending'}
                     icon={<Clock size={24} />}
                     color="warning"
+                    variant="classic"
                 />
                 <StatCard
                     title="Approved — Ready"
@@ -412,6 +414,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                     subtitle={approvedCount > 0 ? 'Ready to disburse' : 'None approved'}
                     icon={<CheckCircle size={24} />}
                     color="success"
+                    variant="classic"
                 />
                 <StatCard
                     title="Disbursed"
@@ -419,6 +422,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                     subtitle={disbursedAmount > 0 ? formatAmount(disbursedAmount) : 'None disbursed'}
                     icon={<TrendingUp size={24} />}
                     color="secondary"
+                    variant="classic"
                 />
             </div>
 

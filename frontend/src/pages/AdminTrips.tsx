@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import { StatCard } from '../components/EnliteUI';
 import { cn } from '../utils/cn';
 
 interface Trip {
@@ -354,7 +355,7 @@ const AdminTrips: React.FC = () => {
           <div className="text-sm text-slate-400 mr-2">
             <span className="font-bold text-slate-100">{mappedTrips.filter(t => t.status === 'in_progress').length}</span> <TranslatedText text="active trips" />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all text-xs">
+          <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-all text-xs">
             <FaDownload size={14} /> <TranslatedText text="Export Report" />
           </button>
         </div>
@@ -381,32 +382,43 @@ const AdminTrips: React.FC = () => {
         <div className="space-y-6">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={index} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-none transition-all duration-300 group relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-500">
-                    <Icon size={100} className="text-gray-900 dark:text-white" />
-                  </div>
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gray-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-gray-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-all duration-300">
-                        <Icon size={20} />
-                      </div>
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">{stat.label}</p>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none tracking-tight">{stat.value}</h3>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 leading-none">{stat.description}</p>
-                  </div>
-                </div>
-              );
-            })}
+            <StatCard
+              title={<TranslatedText text="Total Trips" />}
+              value={mappedTrips.length}
+              icon={<FaTruck size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={<TranslatedText text="All registered trips" />}
+            />
+            <StatCard
+              title={<TranslatedText text="Active Trips" />}
+              value={mappedTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length}
+              icon={<FaShippingFast size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={<TranslatedText text="Currently active" />}
+            />
+            <StatCard
+              title={<TranslatedText text="Total Revenue" />}
+              value={formatCurrency(mappedTrips.reduce((sum: number, t: Trip) => sum + (t.revenue ?? 0), 0))}
+              icon={<FaDollarSign size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={<TranslatedText text="Combined trip revenue" />}
+            />
+            <StatCard
+              title={<TranslatedText text="Completed Today" />}
+              value={mappedTrips.filter((t: Trip) => t.status === 'completed' &&
+                new Date(t.endTime || '').toDateString() === new Date().toDateString()).length}
+              icon={<FaCheck size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={<TranslatedText text="Trips completed today" />}
+            />
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-transparent dark:border-slate-800">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="relative">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-3.5 h-3.5" />
@@ -462,7 +474,7 @@ const AdminTrips: React.FC = () => {
           </div>
 
           {/* Table Container */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-gray-100/50 dark:shadow-none overflow-hidden border border-gray-100 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-transparent dark:border-slate-800">
             <div className="overflow-x-auto text-slate-900 dark:text-slate-100">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -496,7 +508,7 @@ const AdminTrips: React.FC = () => {
                       <tr key={trip.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gray-900 dark:bg-slate-950 rounded-2xl flex items-center justify-center shadow-lg shadow-gray-900/10 dark:shadow-none border border-transparent dark:border-slate-800">
+                            <div className="w-12 h-12 bg-gray-900 dark:bg-slate-950 rounded-2xl flex items-center justify-center border border-transparent dark:border-slate-800">
                               <FaBarcode className="text-white dark:text-blue-400 text-lg" />
                             </div>
                             <div>

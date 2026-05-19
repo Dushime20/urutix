@@ -5,6 +5,7 @@ import { fuelApi } from '../services/fuelApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
 import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight, Brain, AlertTriangle, BarChart3, Activity, Droplets, TrendingUp } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -185,32 +186,6 @@ const FleetAnalytics: React.FC = () => {
     }
   };
 
-  const CircularStatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
-    <div className="flex flex-col items-center group">
-      <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/50">
-        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-          <circle cx="80" cy="80" r="72" fill="none" stroke="currentColor" strokeWidth="3"
-            strokeDasharray="452" strokeDashoffset="350"
-            className={cn("opacity-10 transition-all duration-1000", secondaryColor)} />
-        </svg>
-        <div className={cn("p-2 rounded-2xl mb-2 bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-          <Icon size={18} />
-        </div>
-        <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-          <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-            {value}
-          </span>
-        </div>
-        <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 dark:opacity-30 group-hover:rotate-90 transition-transform duration-1000" />
-      </div>
-      <div className="mt-4 text-center px-2">
-        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
-          {title}
-        </p>
-      </div>
-    </div>
-  );
-
   const FuelStatsTab = () => {
     if (fuelLoading) {
       return (
@@ -224,28 +199,28 @@ const FleetAnalytics: React.FC = () => {
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
         {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <CircularStatsCard
+          <CircularStatCard
             title="Total Spend"
             value={`$${Number(fuelStats?.totalSpend || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             icon={DollarSign}
             colorClass="bg-blue-50 text-blue-600"
             secondaryColor="text-blue-600"
           />
-          <CircularStatsCard
+          <CircularStatCard
             title="Fuel Volume"
             value={`${Number(fuelStats?.totalVolume || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} Gal`}
             icon={Droplets}
             colorClass="bg-emerald-50 text-emerald-600"
             secondaryColor="text-emerald-600"
           />
-          <CircularStatsCard
+          <CircularStatCard
             title="Avg. MPG"
             value={`${Number(fuelStats?.fleetEfficiency || 0).toFixed(1)} MPG`}
             icon={TrendingUp}
             colorClass="bg-amber-50 text-amber-600"
             secondaryColor="text-amber-600"
           />
-          <CircularStatsCard
+          <CircularStatCard
             title="Fraud Alerts"
             value={fuelStats?.fraudAlerts || 0}
             icon={AlertTriangle}
@@ -347,28 +322,28 @@ const FleetAnalytics: React.FC = () => {
     return (
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <CircularStatsCard
+          <CircularStatCard
             title="Utilization"
             value={utilization !== null ? `${Math.round(utilization)}%` : '—'}
             icon={Zap}
             colorClass="bg-blue-50 text-blue-600"
             secondaryColor="text-blue-600"
           />
-          <CircularStatsCard
+          <CircularStatCard
             title="Avg Rating"
             value={avgRating !== null ? avgRating.toFixed(1) : '—'}
             icon={Activity}
             colorClass="bg-emerald-50 text-emerald-600"
             secondaryColor="text-emerald-600"
           />
-          <CircularStatsCard
+          <CircularStatCard
             title="Revenue"
             value={totalRevenue !== null ? `$${(totalRevenue / 1000).toFixed(1)}k` : '—'}
             icon={DollarSign}
             colorClass="bg-amber-50 text-amber-600"
             secondaryColor="text-amber-600"
           />
-          <CircularStatsCard
+          <CircularStatCard
             title="Active Trips"
             value={activeTrips !== null ? activeTrips : '—'}
             icon={CheckCircle}

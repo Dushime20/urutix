@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import ModernLoader from '../../components/common/ModernLoader';
 import {
     Search, User, Mail, Shield,
     AlertCircle, CheckCircle, MoreHorizontal,
@@ -63,7 +64,7 @@ const PermissionManagement = () => {
             description={<TranslatedText text="Manage user-specific permissions and access control" />}
         >
             {!selectedUser ? (
-                <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6">
+                <div className="bg-white rounded-[24px] border border-gray-100 p-6">
                     {/* Search Bar */}
                     <form onSubmit={handleSearch} className="flex gap-3 mb-6">
                         <div className="relative flex-1">
@@ -71,14 +72,14 @@ const PermissionManagement = () => {
                             <input
                                 type="text"
                                 placeholder="Search by name, email..."
-                                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm font-medium outline-none"
+                                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all text-sm font-medium outline-none"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
                         </div>
                         <button
                             type="submit"
-                            className="bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-gray-800 font-bold shadow-lg shadow-gray-200 transition-all text-xs uppercase tracking-wider flex items-center gap-2"
+                            className="bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-gray-800 font-bold transition-all text-xs uppercase tracking-wider flex items-center gap-2"
                         >
                             <Search className="w-4 h-4" />
                             <TranslatedText text="Search" />
@@ -87,9 +88,8 @@ const PermissionManagement = () => {
 
                     {/* Users List */}
                     {loading ? (
-                        <div className="text-center py-12 text-gray-500 flex flex-col items-center">
-                            <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-                            <span className="text-xs font-medium">Loading potential candidates...</span>
+                        <div className="py-6">
+                            <ModernLoader isLoading={true} type="table" rows={5} columns={4} />
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -107,7 +107,7 @@ const PermissionManagement = () => {
                                         <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 font-bold text-xs group-hover:bg-white group-hover:shadow-md transition-all">
+                                                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 font-bold text-xs group-hover:bg-white transition-all">
                                                         {user.firstName?.charAt(0) || <User className="w-4 h-4" />}
                                                     </div>
                                                     <div>
@@ -134,7 +134,7 @@ const PermissionManagement = () => {
                                             <td className="px-6 py-4 text-right">
                                                 <button
                                                     onClick={() => setSelectedUser(user)}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-lg transition-all text-xs font-bold shadow-sm"
+                                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:border-slate-300 hover:bg-[#2c5173]/10 text-gray-600 hover:text-[#2c5173] rounded-lg transition-all text-xs font-bold"
                                                 >
                                                     <Lock className="w-3 h-3" />
                                                     <TranslatedText text="Manage Access" />

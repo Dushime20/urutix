@@ -10,6 +10,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import { adminAPI, type AdminDispute } from '../../services/adminApi';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StatCard } from '../../components/EnliteUI';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ const ResolveModal: React.FC<ResolveModalProps> = ({ dispute, onClose, onConfirm
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
+      <div className="bg-white rounded-2xl w-full max-w-md border border-gray-100">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <h3 className="text-base font-black text-gray-900">Update Dispute</h3>
@@ -84,7 +85,7 @@ const ResolveModal: React.FC<ResolveModalProps> = ({ dispute, onClose, onConfirm
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent appearance-none"
               >
                 <option value="RESOLVED">Resolved</option>
                 <option value="ESCALATED">Escalated</option>
@@ -103,7 +104,7 @@ const ResolveModal: React.FC<ResolveModalProps> = ({ dispute, onClose, onConfirm
               onChange={e => setResolution(e.target.value)}
               rows={3}
               placeholder="Describe the resolution or reason for status change..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent resize-none"
             />
           </div>
         </div>
@@ -144,7 +145,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[24px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
+      <div className="bg-white rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
 
         {/* Header */}
         <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
@@ -180,7 +181,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
             </div>
             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Trip</div>
-              <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded inline-block truncate max-w-full">
+              <div className="text-xs font-bold text-[#2c5173] bg-slate-100 px-2 py-0.5 rounded inline-block truncate max-w-full">
                 {dispute.trip?.tripNumber || (dispute.tripId ? dispute.tripId.slice(0, 12) + '...' : 'N/A')}
               </div>
             </div>
@@ -361,25 +362,45 @@ const DisputeManagement: React.FC = () => {
     >
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        {[
-          { label: 'Total',     value: stats.total,     Icon: Gavel,         bg: 'bg-gray-50',    color: 'text-gray-600'  },
-          { label: 'Open',      value: stats.open,      Icon: Flag,          bg: 'bg-gray-50',    color: 'text-gray-600'  },
-          { label: 'Resolved',  value: stats.resolved,  Icon: CheckCircle,   bg: 'bg-green-50',   color: 'text-green-600' },
-          { label: 'Escalated', value: stats.escalated, Icon: AlertTriangle, bg: 'bg-orange-50',  color: 'text-orange-600'},
-          { label: 'Rejected',  value: stats.rejected,  Icon: XCircle,       bg: 'bg-red-50',     color: 'text-red-600'   },
-        ].map(({ label, value, Icon, bg, color }) => (
-          <div key={label} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2 hover:border-gray-200 transition-all">
-            <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
-              <Icon className={`w-4 h-4 ${color}`} />
-            </div>
-            <div className="text-2xl font-black text-gray-900">{value}</div>
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</div>
-          </div>
-        ))}
+        <StatCard
+          title={<TranslatedText text="Total" />}
+          value={stats.total}
+          icon={<Gavel size={18} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Open" />}
+          value={stats.open}
+          icon={<Flag size={18} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Resolved" />}
+          value={stats.resolved}
+          icon={<CheckCircle size={18} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Escalated" />}
+          value={stats.escalated}
+          icon={<AlertTriangle size={18} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Rejected" />}
+          value={stats.rejected}
+          icon={<XCircle size={18} />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-[24px] border border-gray-100 p-4 mb-6 shadow-sm">
+      <div className="bg-white rounded-[24px] border border-gray-100 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -388,14 +409,14 @@ const DisputeManagement: React.FC = () => {
               placeholder="Search by reason, ID, user, or trip number..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent"
             />
           </div>
           <div className="relative">
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-[#2c5173] focus:border-transparent"
             >
               <option value="">All Status</option>
               <option value="OPEN">Open</option>
@@ -418,7 +439,7 @@ const DisputeManagement: React.FC = () => {
             >
               <Download className="w-4 h-4" /> Export
             </button>
-            <span className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold self-center whitespace-nowrap">
+            <span className="px-3 py-2 bg-slate-100 text-[#2c5173] rounded-xl text-sm font-semibold self-center whitespace-nowrap">
               {filtered.length} disputes
             </span>
           </div>
@@ -426,7 +447,7 @@ const DisputeManagement: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden shadow-sm">
+      <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -479,7 +500,7 @@ const DisputeManagement: React.FC = () => {
                     {/* Raised By */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-[10px] flex-shrink-0">
+                        <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[#2c5173] font-bold text-[10px] flex-shrink-0">
                           {raisedByName.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -493,7 +514,7 @@ const DisputeManagement: React.FC = () => {
 
                     {/* Trip */}
                     <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg whitespace-nowrap">
+                      <span className="text-xs font-bold text-[#2c5173] bg-slate-100 px-2 py-1 rounded-lg whitespace-nowrap">
                         {dispute.trip?.tripNumber || (dispute.tripId ? dispute.tripId.slice(0, 10) + '...' : 'N/A')}
                       </span>
                     </td>

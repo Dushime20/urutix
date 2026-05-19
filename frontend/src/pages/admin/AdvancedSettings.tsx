@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bell,
   Shield,
@@ -14,12 +14,31 @@ import {
 } from 'lucide-react';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
+import ModernLoader from '../../components/common/ModernLoader';
 
 const AdvancedSettings: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  if (loading) {
+    return (
+      <AdminPageLayout
+        title={<TranslatedText text="Advanced Settings" />}
+        description={<TranslatedText text="Configure system-wide settings and preferences" />}
+      >
+        <ModernLoader isLoading={true} type="page" showStats={false} />
+      </AdminPageLayout>
+    );
+  }
 
   return (
     <AdminPageLayout
@@ -28,9 +47,9 @@ const AdvancedSettings: React.FC = () => {
     >
       <div className="space-y-6">
         {/* Notification Settings */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden animate-enter">
+        <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden animate-enter">
           <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#2c5173]">
               <Bell size={20} />
             </div>
             <div>
@@ -51,7 +70,7 @@ const AdvancedSettings: React.FC = () => {
                   onChange={(e) => setEmailNotifications(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
               </label>
             </div>
 
@@ -67,16 +86,16 @@ const AdvancedSettings: React.FC = () => {
                   onChange={(e) => setPushNotifications(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
               </label>
             </div>
           </div>
         </div>
 
         {/* Security Settings */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden animate-enter" style={{ animationDelay: '100ms' }}>
+        <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden animate-enter" style={{ animationDelay: '100ms' }}>
           <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#2c5173]">
               <Shield size={20} />
             </div>
             <div>
@@ -97,7 +116,7 @@ const AdvancedSettings: React.FC = () => {
                   onChange={(e) => setTwoFactorAuth(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
               </label>
             </div>
 
@@ -106,7 +125,7 @@ const AdvancedSettings: React.FC = () => {
                 <Clock size={12} />
                 <TranslatedText text="Session Timeout" />
               </label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none bg-gray-50">
+              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none bg-gray-50">
                 <option><TranslatedText text="15 minutes" /></option>
                 <option><TranslatedText text="30 minutes" /></option>
                 <option><TranslatedText text="1 hour" /></option>
@@ -117,9 +136,9 @@ const AdvancedSettings: React.FC = () => {
         </div>
 
         {/* System Settings */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden animate-enter" style={{ animationDelay: '200ms' }}>
+        <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden animate-enter" style={{ animationDelay: '200ms' }}>
           <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#2c5173]">
               <SettingsIcon size={20} />
             </div>
             <div>
@@ -145,7 +164,7 @@ const AdvancedSettings: React.FC = () => {
                   onChange={(e) => setMaintenanceMode(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
               </label>
             </div>
 
@@ -154,7 +173,7 @@ const AdvancedSettings: React.FC = () => {
                 <Globe size={12} />
                 <TranslatedText text="Timezone" />
               </label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none bg-gray-50">
+              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none bg-gray-50">
                 <option>UTC</option>
                 <option>Africa/Nairobi (EAT)</option>
                 <option>America/New_York (EST)</option>
@@ -165,9 +184,9 @@ const AdvancedSettings: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden animate-enter" style={{ animationDelay: '300ms' }}>
+        <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden animate-enter" style={{ animationDelay: '300ms' }}>
           <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-[#2c5173]">
               <Zap size={20} />
             </div>
             <div>
@@ -178,7 +197,7 @@ const AdvancedSettings: React.FC = () => {
           <div className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
-                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Database size={20} />
                 </div>
                 <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Backup Database" /></h4>
@@ -186,7 +205,7 @@ const AdvancedSettings: React.FC = () => {
               </button>
 
               <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
-                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Mail size={20} />
                 </div>
                 <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Test Email" /></h4>
@@ -194,7 +213,7 @@ const AdvancedSettings: React.FC = () => {
               </button>
 
               <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
-                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Trash2 size={20} />
                 </div>
                 <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Clear Cache" /></h4>

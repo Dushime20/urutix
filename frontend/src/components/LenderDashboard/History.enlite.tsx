@@ -185,17 +185,17 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                             : '—'}
                     </span>
                     {/* Show interest/principal breakdown for repayments */}
-                    {e.source === 'repayment' && (e.interestPaid !== null || e.principalPaid !== null) && (
+                    {e.source === 'repayment' && (e.interestPaid != null || e.principalPaid != null) && (
                         <div className="flex gap-2 justify-end text-[9px] font-bold uppercase">
-                            {e.principalPaid !== null && e.principalPaid > 0 && (
+                            {e.principalPaid != null && e.principalPaid > 0 && (
                                 <span className="text-[#345E85]">P: {formatAmount(e.principalPaid)}</span>
                             )}
-                            {e.interestPaid !== null && e.interestPaid > 0 && (
+                            {e.interestPaid != null && e.interestPaid > 0 && (
                                 <span className="text-emerald-600">I: {formatAmount(e.interestPaid)}</span>
                             )}
                         </div>
                     )}
-                    {e.source === 'disbursement' && e.interestRate !== null && (
+                    {e.source === 'disbursement' && e.interestRate != null && (
                         <span className="text-[9px] text-slate-400 font-bold">{e.interestRate}% APR</span>
                     )}
                 </div>
@@ -252,6 +252,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                     subtitle={`${disbursements.length} disbursements, ${repayments.length} repayments`}
                     icon={<FileText size={24} />}
                     color="primary"
+                    variant="classic"
                 />
                 <StatCard
                     title="Capital Outflow"
@@ -259,6 +260,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                     subtitle={`${disbursements.length} disbursement${disbursements.length !== 1 ? 's' : ''}`}
                     icon={<TrendingDown size={24} />}
                     color="error"
+                    variant="classic"
                 />
                 <StatCard
                     title="Capital Inflow"
@@ -266,6 +268,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                     subtitle={`${repayments.length} repayment${repayments.length !== 1 ? 's' : ''}`}
                     icon={<TrendingUp size={24} />}
                     color="success"
+                    variant="classic"
                 />
                 <StatCard
                     title="Interest Collected"
@@ -273,6 +276,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                     subtitle={totalInterestCollected > 0 ? 'From repayment records' : 'No interest recorded'}
                     icon={<DollarSign size={24} />}
                     color="secondary"
+                    variant="classic"
                 />
             </div>
 

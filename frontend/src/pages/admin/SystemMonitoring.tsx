@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { StatCard } from '../../components/EnliteUI';
+import ModernLoader from '../../components/common/ModernLoader';
 
 const SystemMonitoring: React.FC = () => {
     const [auditPage, setAuditPage] = useState(1);
@@ -101,9 +103,12 @@ const SystemMonitoring: React.FC = () => {
 
     if (healthLoading || activityLoading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="animate-spin text-indigo-600 text-5xl" />
-            </div>
+            <AdminPageLayout
+                title={<TranslatedText text="System Monitoring" />}
+                description={<TranslatedText text="Real-time system health, performance metrics, and audit logs across the platform." />}
+            >
+                <ModernLoader isLoading={true} type="page" showStats={true} />
+            </AdminPageLayout>
         );
     }
 
@@ -115,9 +120,9 @@ const SystemMonitoring: React.FC = () => {
                 <div className="flex gap-3">
                     <button
                         onClick={() => setAutoRefresh(!autoRefresh)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-all ${autoRefresh
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
-                            : 'bg-slate-700 hover:bg-slate-600 text-white shadow-slate-700/20'
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${autoRefresh
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            : 'bg-slate-700 hover:bg-slate-600 text-white'
                             }`}
                     >
                         <Activity size={14} className={autoRefresh ? 'animate-pulse' : ''} />
@@ -125,7 +130,7 @@ const SystemMonitoring: React.FC = () => {
                     </button>
                     <button
                         onClick={() => refetchHealth()}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
                     >
                         <RefreshCw size={14} /> <TranslatedText text="Refresh Now" />
                     </button>
@@ -134,84 +139,44 @@ const SystemMonitoring: React.FC = () => {
         >
             {/* System Status Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {/* Overall Status */}
-                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-50 rounded-lg">
-                                {getStatusIcon(health?.status || 'unknown')}
-                            </div>
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="System Status" /></h3>
-                        </div>
-                    </div>
-                    <div className={`text-2xl font-black mb-1 leading-none tracking-tight ${getStatusColor(health?.status || 'unknown')} bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-emerald-400`}>
-                        {health?.status?.toUpperCase() || 'UNKNOWN'}
-                    </div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-2">
-                        <TranslatedText text="Uptime" />: {health?.uptime.formatted || 'N/A'}
-                    </div>
-                </div>
-
-                {/* Database */}
-                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                            <Database className="text-blue-600 w-5 h-5" />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Database" /></h3>
-                    </div>
-                    <div className={`text-2xl font-black mb-1 leading-none tracking-tight ${health?.services.database.status === 'healthy' ? 'text-emerald-600' : 'text-slate-600'}`}>
-                        {health?.services.database.status?.toUpperCase() || 'UNKNOWN'}
-                    </div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-2">
-                        <TranslatedText text="Response" />: {health?.services.database.responseTime || 'N/A'}
-                    </div>
-                </div>
-
-                {/* Memory Usage */}
-                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-purple-50 rounded-lg">
-                            <HardDrive className="text-purple-600 w-5 h-5" />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Memory" /></h3>
-                    </div>
-                    <div className="text-2xl font-black text-purple-600 mb-1 leading-none tracking-tight">
-                        {health?.resources.memory.system.usagePercent || 0}%
-                    </div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-2 flex justify-between">
-                        <span>{health?.resources.memory.system.used || 0}GB <TranslatedText text="Used" /></span>
-                        <span>{health?.resources.memory.system.total || 0}GB <TranslatedText text="Total" /></span>
-                    </div>
-                    <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
-                            style={{ width: `${health?.resources.memory.system.usagePercent || 0}%` }}
-                        />
-                    </div>
-                </div>
-
-                {/* CPU */}
-                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-orange-50 rounded-lg">
-                            <Cpu className="text-orange-600 w-5 h-5" />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="CPU" /></h3>
-                    </div>
-                    <div className="text-2xl font-black text-orange-600 mb-1 leading-none tracking-tight">
-                        {health?.resources.cpu.cores || 0} <TranslatedText text="Cores" />
-                    </div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none truncate mt-2">
-                        {health?.resources.cpu.model || 'Unknown'}
-                    </div>
-                </div>
+                <StatCard
+                    title={<TranslatedText text="System Status" />}
+                    value={health?.status?.toUpperCase() || 'UNKNOWN'}
+                    icon={getStatusIcon(health?.status || 'unknown')}
+                    color="primary"
+                    variant="classic"
+                    subtitle={`Uptime: ${health?.uptime.formatted || 'N/A'}`}
+                />
+                <StatCard
+                    title={<TranslatedText text="Database" />}
+                    value={health?.services.database.status?.toUpperCase() || 'UNKNOWN'}
+                    icon={<Database className="w-5 h-5" />}
+                    color="primary"
+                    variant="classic"
+                    subtitle={`Response: ${health?.services.database.responseTime || 'N/A'}`}
+                />
+                <StatCard
+                    title={<TranslatedText text="Memory" />}
+                    value={`${health?.resources.memory.system.usagePercent || 0}%`}
+                    icon={<HardDrive className="w-5 h-5" />}
+                    color="primary"
+                    variant="classic"
+                    subtitle={`${health?.resources.memory.system.used || 0}GB Used / ${health?.resources.memory.system.total || 0}GB Total`}
+                />
+                <StatCard
+                    title={<TranslatedText text="CPU" />}
+                    value={`${health?.resources.cpu.cores || 0} Cores`}
+                    icon={<Cpu className="w-5 h-5" />}
+                    color="primary"
+                    variant="classic"
+                    subtitle={`Model: ${health?.resources.cpu.model || 'Unknown'}`}
+                />
             </div>
 
             {/* Performance & Network Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-6">
                 {/* Traffic Stats */}
-                <div className="bg-white rounded-[24px] p-8 shadow-sm border border-slate-100">
+                <div className="bg-white rounded-[24px] p-8 border border-slate-100">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 bg-cyan-50 rounded-lg">
                             <Globe className="text-cyan-600 w-6 h-6" />
@@ -241,7 +206,7 @@ const SystemMonitoring: React.FC = () => {
                 </div>
 
                 {/* Error Rates */}
-                <div className="bg-white rounded-[24px] p-8 shadow-sm border border-slate-100">
+                <div className="bg-white rounded-[24px] p-8 border border-slate-100">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 bg-red-50 rounded-lg">
                             <AlertTriangle className="text-red-500 w-6 h-6" />
@@ -267,7 +232,7 @@ const SystemMonitoring: React.FC = () => {
             </div>
 
             {/* User Activity Stats */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden mb-6">
+            <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden mb-6">
                 <div className="px-8 py-6 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-indigo-50 rounded-lg">
@@ -278,24 +243,27 @@ const SystemMonitoring: React.FC = () => {
                 </div>
                 <div className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl border border-blue-100">
-                            <div className="text-4xl font-black text-blue-600 mb-2 tracking-tight">
-                                {userActivity?.activeUsers.last24h || 0}
-                            </div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-blue-400">Active (24h)</div>
-                        </div>
-                        <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl border border-purple-100">
-                            <div className="text-4xl font-black text-purple-600 mb-2 tracking-tight">
-                                {userActivity?.activeUsers.last7d || 0}
-                            </div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-purple-400">Active (7d)</div>
-                        </div>
-                        <div className="text-center p-6 bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-2xl border border-pink-100">
-                            <div className="text-4xl font-black text-pink-600 mb-2 tracking-tight">
-                                {userActivity?.activeUsers.last30d || 0}
-                            </div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-pink-400">Active (30d)</div>
-                        </div>
+                        <StatCard
+                            title={<TranslatedText text="Active (24h)" />}
+                            value={userActivity?.activeUsers.last24h || 0}
+                            icon={<Users className="w-5 h-5" />}
+                            color="primary"
+                            variant="classic"
+                        />
+                        <StatCard
+                            title={<TranslatedText text="Active (7d)" />}
+                            value={userActivity?.activeUsers.last7d || 0}
+                            icon={<Users className="w-5 h-5" />}
+                            color="primary"
+                            variant="classic"
+                        />
+                        <StatCard
+                            title={<TranslatedText text="Active (30d)" />}
+                            value={userActivity?.activeUsers.last30d || 0}
+                            icon={<Users className="w-5 h-5" />}
+                            color="primary"
+                            variant="classic"
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -306,7 +274,7 @@ const SystemMonitoring: React.FC = () => {
                                 {userActivity?.usersByStatus.map(item => (
                                     <div key={item.status} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                                         <span className="font-bold text-slate-700 text-sm">{item.status}</span>
-                                        <span className="font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg text-sm">{item.count}</span>
+                                        <span className="font-black text-[#2c5173] bg-slate-100 px-3 py-1 rounded-lg text-sm">{item.count}</span>
                                     </div>
                                 ))}
                             </div>
@@ -329,7 +297,7 @@ const SystemMonitoring: React.FC = () => {
             </div>
 
             {/* Audit Logs */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden">
                 <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-slate-100 rounded-lg">
@@ -337,7 +305,7 @@ const SystemMonitoring: React.FC = () => {
                         </div>
                         <h2 className="text-lg font-black text-slate-800">Audit Logs</h2>
                     </div>
-                    <button className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2 text-xs font-bold uppercase tracking-wider shadow-lg shadow-indigo-200 transition-all">
+                    <button className="px-5 py-2.5 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-all">
                         <Download size={14} /> Export CSV
                     </button>
                 </div>
@@ -348,12 +316,12 @@ const SystemMonitoring: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Filter by user ID..."
-                            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm bg-white font-medium outline-none"
+                            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] text-sm bg-white font-medium outline-none"
                             value={auditFilters.userId}
                             onChange={(e) => setAuditFilters({ ...auditFilters, userId: e.target.value })}
                         />
                         <select
-                            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm bg-white font-medium outline-none cursor-pointer"
+                            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] text-sm bg-white font-medium outline-none cursor-pointer"
                             value={auditFilters.action}
                             onChange={(e) => setAuditFilters({ ...auditFilters, action: e.target.value })}
                         >
@@ -365,7 +333,7 @@ const SystemMonitoring: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Filter by resource..."
-                            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm bg-white font-medium outline-none"
+                            className="px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] text-sm bg-white font-medium outline-none"
                             value={auditFilters.resource}
                             onChange={(e) => setAuditFilters({ ...auditFilters, resource: e.target.value })}
                         />
@@ -387,8 +355,8 @@ const SystemMonitoring: React.FC = () => {
                         <tbody className="divide-y divide-slate-50">
                             {auditLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-8 py-12 text-center">
-                                        <Loader2 className="animate-spin text-indigo-600 text-3xl mx-auto" />
+                                    <td colSpan={6} className="px-8 py-6">
+                                        <ModernLoader isLoading={true} type="table" rows={5} columns={6} />
                                     </td>
                                 </tr>
                             ) : auditLogs?.data?.length === 0 ? (
@@ -417,7 +385,7 @@ const SystemMonitoring: React.FC = () => {
                                                 {log.action}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-4 font-mono text-xs text-indigo-600 bg-indigo-50/50 rounded-lg px-2 py-1 inline-block">
+                                        <td className="px-8 py-4 font-mono text-xs text-[#2c5173] bg-slate-100 rounded-lg px-2 py-1 inline-block">
                                             {log.permission}
                                         </td>
                                         <td className="px-8 py-4 text-slate-600 max-w-xs truncate text-xs">

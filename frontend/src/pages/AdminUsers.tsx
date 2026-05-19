@@ -23,6 +23,7 @@ import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermis
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 interface User {
@@ -406,35 +407,50 @@ const AdminUsers: React.FC = () => {
       {activeTab === 'users' ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            {stats.map((stat, idx) => {
-              const Icon = stat.icon;
-              return (
-                <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-slate-950/50 transition-all duration-300 group relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-                    <Icon size={100} className="text-gray-900 dark:text-white" />
-                  </div>
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gray-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-gray-400 dark:text-slate-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 transition-all duration-300 shadow-sm">
-                        <Icon size={18} />
-                      </div>
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none"><TranslatedText text={stat.label} /></p>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <h3 className="text-2xl font-black text-gray-900 dark:text-white leading-none tracking-tight">{stat.value}</h3>
-                      <span className={`text-[10px] font-black tracking-widest uppercase ${stat.changeType === 'positive' ? 'text-emerald-500' : stat.changeType === 'negative' ? 'text-rose-500' : 'text-slate-400'}`}>
-                        {stat.change}
-                      </span>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-4 leading-none"><TranslatedText text={stat.description} /></p>
-                  </div>
-                </div>
-              );
-            })}
+            <StatCard
+              title={<TranslatedText text="Total Users" />}
+              value={users.length}
+              icon={<Users size={22} />}
+              color="primary"
+              variant="classic"
+              trend="+12.5%"
+              trendDirection="up"
+              subtitle={<TranslatedText text="Active platform users" />}
+            />
+            <StatCard
+              title={<TranslatedText text="Active Users" />}
+              value={users.filter(u => u.status === 'ACTIVE').length}
+              icon={<UserCheck size={22} />}
+              color="primary"
+              variant="classic"
+              trend="+5.2%"
+              trendDirection="up"
+              subtitle={<TranslatedText text="Currently active" />}
+            />
+            <StatCard
+              title={<TranslatedText text="Security Flagged" />}
+              value={usersWithOverrides}
+              icon={<ShieldCheck size={22} />}
+              color="primary"
+              variant="classic"
+              trend="+1"
+              trendDirection="neutral"
+              subtitle={<TranslatedText text="Custom permissions" />}
+            />
+            <StatCard
+              title={<TranslatedText text="Suspended" />}
+              value={users.filter(u => u.status === 'SUSPENDED').length}
+              icon={<UserX size={22} />}
+              color="primary"
+              variant="classic"
+              trend="0%"
+              trendDirection="neutral"
+              subtitle={<TranslatedText text="Suspended accounts" />}
+            />
           </div>
 
           {/* Users Content Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
             {/* Filters Header */}
             <div className="p-6 border-b border-gray-100 dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900/50 flex flex-col md:flex-row gap-6 items-center justify-between">
               <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
@@ -444,12 +460,12 @@ const AdminUsers: React.FC = () => {
                     placeholder="SEARCH USERS..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all shadow-sm"
+                    className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all"
                   />
                   <Search className="absolute left-3.5 top-3 text-slate-400 dark:text-slate-500 group-hover:text-primary-500 transition-colors w-3.5 h-3.5" />
                 </div>
                 <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm cursor-pointer hover:border-primary-200 dark:hover:border-primary-800 transition-all font-black"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer transition-all font-black"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
@@ -459,9 +475,9 @@ const AdminUsers: React.FC = () => {
                   <option value="PENDING_VERIFICATION">PENDING VERIFICATION</option>
                   <option value="SUSPENDED">SUSPENDED</option>
                 </select>
-
+ 
                 <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm cursor-pointer hover:border-primary-200 dark:hover:border-primary-800 transition-all font-black"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer transition-all font-black"
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
                 >
@@ -482,9 +498,9 @@ const AdminUsers: React.FC = () => {
                   <option value="FLEET_ACCOUNTANT">FLEET ACCOUNTANT</option>
                   <option value="FLEET_SAFETY_OFFICER">FLEET SAFETY OFFICER</option>
                 </select>
-
+ 
                 <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm cursor-pointer hover:border-primary-200 dark:hover:border-primary-800 transition-all font-black"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer transition-all font-black"
                   value={tenantFilter}
                   onChange={(e) => setTenantFilter(e.target.value)}
                 >
@@ -495,10 +511,10 @@ const AdminUsers: React.FC = () => {
                 </select>
               </div>
               <div className="flex items-center gap-3">
-                <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 transition-all shadow-sm text-slate-600 dark:text-slate-400">
+                <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 transition-all text-slate-600 dark:text-slate-400">
                   <Download className="w-3 h-3" /> <TranslatedText text="Export" />
                 </button>
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-gray-100/50 dark:bg-slate-800/50 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-gray-100/50 dark:bg-slate-800/50 px-4 py-2.5 rounded-xl">
                   {total} <TranslatedText text="IDENTIFIED" />
                 </div>
               </div>
@@ -552,7 +568,7 @@ const AdminUsers: React.FC = () => {
                       <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden relative group-hover:scale-105 transition-transform duration-300 bg-gradient-to-br ${getRoleColor(user.role).includes('blue') || getRoleColor(user.role).includes('indigo') ? 'from-primary-500 to-primary-700 shadow-primary-200 dark:shadow-primary-900/40' : 'from-slate-700 to-slate-900 shadow-slate-200 dark:shadow-slate-950/40'}`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm overflow-hidden relative group-hover:scale-105 transition-transform duration-300 ${getRoleColor(user.role).includes('blue') || getRoleColor(user.role).includes('indigo') ? 'bg-primary-600' : 'bg-slate-700'}`}>
                               <span className="relative z-10">{user.firstName ? user.firstName[0] : user.email[0].toUpperCase()}</span>
                               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
@@ -570,13 +586,13 @@ const AdminUsers: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getRoleColor(user.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100 shadow-sm`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getRoleColor(user.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100`}>
                             {formatRole(user.role)}
                           </span>
                         </td>
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-2.5">
-                            <div className={`w-2 h-2 rounded-full shadow-sm ${user.status === 'ACTIVE' ? 'bg-emerald-500 shadow-emerald-200' : user.status === 'SUSPENDED' ? 'bg-rose-500 shadow-rose-200' : 'bg-amber-500 shadow-amber-200'}`}></div>
+                            <div className={`w-2 h-2 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500' : user.status === 'SUSPENDED' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
                             <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text={(user.status || '').replace('_', ' ')} /></span>
                           </div>
                         </td>
@@ -599,21 +615,21 @@ const AdminUsers: React.FC = () => {
                                 setSelectedUser(user);
                                 setShowDetailsModal(true);
                               }}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEditUser(user)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setPermissionUser(user)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
                               title="Manage Permissions"
                             >
                               <ShieldCheck className="w-4 h-4" />
@@ -621,7 +637,7 @@ const AdminUsers: React.FC = () => {
                              {user.status === 'SUSPENDED' ? (
                               <button
                                 onClick={() => activateUserMutation(user.id)}
-                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
                                 title="Activate"
                               >
                                 <Unlock className="w-4 h-4" />
@@ -629,7 +645,7 @@ const AdminUsers: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => suspendUserMutation({ userId: user.id })}
-                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
                                 title="Suspend"
                               >
                                 <Ban className="w-4 h-4" />
@@ -637,7 +653,7 @@ const AdminUsers: React.FC = () => {
                             )}
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -659,7 +675,7 @@ const AdminUsers: React.FC = () => {
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all shadow-sm shadow-gray-100 dark:shadow-none hover:border-primary-200 dark:hover:border-primary-800"
+                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-transparent text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all"
                     onClick={() => setPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                   >
@@ -667,7 +683,7 @@ const AdminUsers: React.FC = () => {
                   </button>
                   <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mx-2"><TranslatedText text="Page" /> <span className="text-gray-900 dark:text-white font-black">{currentPage}</span> <TranslatedText text="of" /> <span className="text-gray-900 dark:text-white font-black">{totalPages}</span></span>
                   <button
-                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all shadow-sm shadow-gray-100 dark:shadow-none hover:border-primary-200 dark:hover:border-primary-800"
+                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-transparent text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all"
                     onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                   >
@@ -687,7 +703,7 @@ const AdminUsers: React.FC = () => {
       {
         showCreateModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent">
               <div className="p-6 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Create New User" /></h2>
@@ -832,7 +848,7 @@ const AdminUsers: React.FC = () => {
                 <button
                   onClick={handleCreateUser}
                   disabled={isCreating || !tenantId || !email || !firstName || !lastName}
-                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium shadow-lg shadow-primary-200"
+                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
                 >
                   {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                   <span>{isCreating ? 'Creating...' : 'Create User'}</span>
@@ -847,7 +863,7 @@ const AdminUsers: React.FC = () => {
       {
         showEditModal && editingUserId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent">
               <div className="p-3 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold text-gray-900">Edit User</h2>
@@ -1000,7 +1016,7 @@ const AdminUsers: React.FC = () => {
                 <button
                   onClick={() => updateUserMutation()}
                   disabled={isUpdating || !editFirstName || !editLastName}
-                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium shadow-lg shadow-primary-100"
+                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
                 >
                   {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                   <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
@@ -1015,11 +1031,11 @@ const AdminUsers: React.FC = () => {
       {
         showDetailsModal && selectedUser && (
           <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-100">
+            <div className="bg-white rounded-[2rem] w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-transparent">
               <div className="p-8 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl bg-gradient-to-br ${getRoleColor(selectedUser.role).includes('blue') || getRoleColor(selectedUser.role).includes('indigo') ? 'from-primary-500 to-primary-700' : 'from-slate-700 to-slate-900'}`}>
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-xl bg-primary-600`}>
                       {selectedUser.firstName ? selectedUser.firstName[0] : selectedUser.email[0].toUpperCase()}
                     </div>
                     <div>
@@ -1029,7 +1045,7 @@ const AdminUsers: React.FC = () => {
                             ? `${selectedUser.firstName} ${selectedUser.lastName}`
                             : selectedUser.email.split('@')[0]}
                         </h2>
-                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getRoleColor(selectedUser.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100 shadow-sm`}>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getRoleColor(selectedUser.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100`}>
                           {formatRole(selectedUser.role)}
                         </span>
                       </div>
@@ -1047,7 +1063,7 @@ const AdminUsers: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="p-3 text-slate-400 hover:text-gray-600 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all border border-gray-100"
+                    className="p-3 text-slate-400 hover:text-gray-600 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all border border-transparent"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1061,7 +1077,7 @@ const AdminUsers: React.FC = () => {
                       setShowDetailsModal(false);
                       handleEditUser(selectedUser);
                     }}
-                    className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-200"
+                    className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all"
                   >
                     Modify Access Profile
                   </button>
@@ -1071,21 +1087,21 @@ const AdminUsers: React.FC = () => {
                   <div className="space-y-8">
                     <div>
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary-500 shadow-lg shadow-primary-500/50" />
+                        <div className="w-2 h-2 rounded-full bg-primary-500" />
                         Authentication Matrix
                       </h3>
                       <div className="space-y-6">
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Email</span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{selectedUser.email}</span>
                         </div>
                         {selectedUser.phone && (
-                          <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                          <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Secure Phone</span>
                             <span className="text-sm font-black text-gray-900 tracking-tight">{selectedUser.phone}</span>
                           </div>
                         )}
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Tenant</span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{selectedUser.tenantName || 'N/A'}</span>
                         </div>
@@ -1096,15 +1112,15 @@ const AdminUsers: React.FC = () => {
                   <div className="space-y-8">
                     <div>
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         Lifecycle Meta
                       </h3>
                       <div className="space-y-6">
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registration Date</span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">{new Date(selectedUser.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Network Sync</span>
                           <span className="text-sm font-black text-gray-900 tracking-tight">
                             {selectedUser.lastLoginAt
@@ -1112,7 +1128,7 @@ const AdminUsers: React.FC = () => {
                               : 'NEVER'}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl border border-gray-50">
+                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Verif</span>
                           <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${selectedUser.emailVerifiedAt ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                             {selectedUser.emailVerifiedAt ? 'VERIFIED' : 'PENDING'}
@@ -1125,7 +1141,7 @@ const AdminUsers: React.FC = () => {
 
                 <div className="space-y-8">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-rose-500 shadow-lg shadow-rose-500/50" />
+                    <div className="w-2 h-2 rounded-full bg-rose-500" />
                     Security Procedures
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1135,7 +1151,7 @@ const AdminUsers: React.FC = () => {
                           activateUserMutation(selectedUser.id);
                           setShowDetailsModal(false);
                         }}
-                        className="flex items-center gap-3 p-4 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 font-black text-[10px] uppercase tracking-widest"
+                        className="flex items-center gap-3 p-4 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 transition-all font-black text-[10px] uppercase tracking-widest"
                       >
                         <Unlock size={14} /> Restore Account Access
                       </button>
@@ -1145,7 +1161,7 @@ const AdminUsers: React.FC = () => {
                           suspendUserMutation({ userId: selectedUser.id });
                           setShowDetailsModal(false);
                         }}
-                        className="flex items-center gap-3 p-4 bg-amber-500 text-white rounded-2xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-200 font-black text-[10px] uppercase tracking-widest"
+                        className="flex items-center gap-3 p-4 bg-amber-500 text-white rounded-2xl hover:bg-amber-600 transition-all font-black text-[10px] uppercase tracking-widest"
                       >
                         <Ban size={14} /> Immediate Suspension
                       </button>
@@ -1155,7 +1171,7 @@ const AdminUsers: React.FC = () => {
                         handleDeleteUser(selectedUser.id);
                         setShowDetailsModal(false);
                       }}
-                      className="flex items-center gap-3 p-4 bg-rose-500 text-white rounded-2xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 font-black text-[10px] uppercase tracking-widest"
+                      className="flex items-center gap-3 p-4 bg-rose-500 text-white rounded-2xl hover:bg-rose-600 transition-all font-black text-[10px] uppercase tracking-widest"
                     >
                       <Trash2 size={14} /> Terminate User Identity
                     </button>
@@ -1170,7 +1186,7 @@ const AdminUsers: React.FC = () => {
       {/* Permission Editor Modal */}
       {/* Permission Drawer */}
       <div
-        className={`fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${permissionUser ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 w-full max-w-2xl bg-white border-l border-transparent transform transition-transform duration-300 ease-in-out z-50 ${permissionUser ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {permissionUser && (
           <UserPermissionEditor

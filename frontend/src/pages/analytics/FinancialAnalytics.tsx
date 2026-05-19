@@ -225,6 +225,7 @@ const FinancialAnalytics: React.FC = () => {
             icon={<TrendingUpIcon />}
             loading={trendsLoading}
             color="primary"
+            variant="classic"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -235,6 +236,7 @@ const FinancialAnalytics: React.FC = () => {
             icon={<ShippingIcon />}
             loading={trendsLoading}
             color="secondary"
+            variant="classic"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -245,6 +247,7 @@ const FinancialAnalytics: React.FC = () => {
             icon={<InventoryIcon />}
             loading={trendsLoading}
             color="success"
+            variant="classic"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -255,6 +258,7 @@ const FinancialAnalytics: React.FC = () => {
             icon={<SpeedIcon />}
             loading={summaryLoading}
             color="warning"
+            variant="classic"
           />
         </Grid>
       </Grid>

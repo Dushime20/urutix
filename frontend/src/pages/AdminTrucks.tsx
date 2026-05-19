@@ -13,6 +13,7 @@ import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminTruck } from '../services/adminApi';
+import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 // ── Truck Detail Modal ────────────────────────────────────────────────────────
@@ -59,10 +60,10 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl overflow-hidden flex flex-col max-h-[90vh] border border-transparent">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 text-white" style={{ backgroundColor: '#2c5173' }}>
+        <div className="flex items-center justify-between px-6 py-5 text-white bg-primary-600">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
               <Truck size={22} className="text-white" />
@@ -73,11 +74,11 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
               </h2>
               <div className="flex items-center gap-2 mt-1">
                 {plate && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-white text-xs font-black tracking-widest border border-white/30">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-white text-xs font-black tracking-widest border border-transparent">
                     <Hash size={10} />{plate}
                   </span>
                 )}
-                <span className="text-indigo-200 text-xs">
+                <span className="text-slate-200 text-xs">
                   {truck.tenantName || 'Vehicle Details'}
                 </span>
               </div>
@@ -106,17 +107,17 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plate No.</p>
               <p className="text-sm font-black text-white mt-1 tracking-widest">{plate || '—'}</p>
             </div>
-            <div className="bg-indigo-50 rounded-xl p-3 text-center">
-              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Status</p>
-              <p className="text-sm font-black text-indigo-700 mt-1">{cfg.label}</p>
+            <div className="bg-slate-100 rounded-xl p-3 text-center">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</p>
+              <p className="text-sm font-black text-slate-800 mt-1">{cfg.label}</p>
             </div>
-            <div className="bg-emerald-50 rounded-xl p-3 text-center">
-              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active</p>
-              <p className="text-sm font-black text-emerald-700 mt-1">{truck.isActive ? 'Yes' : 'No'}</p>
+            <div className="bg-slate-100 rounded-xl p-3 text-center">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active</p>
+              <p className="text-sm font-black text-slate-800 mt-1">{truck.isActive ? 'Yes' : 'No'}</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-3 text-center">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Drivers</p>
-              <p className="text-sm font-black text-blue-700 mt-1">{truck.assignedDrivers?.length ?? (truck.currentDriverName ? 1 : 0)}</p>
+            <div className="bg-slate-100 rounded-xl p-3 text-center">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Drivers</p>
+              <p className="text-sm font-black text-slate-800 mt-1">{truck.assignedDrivers?.length ?? (truck.currentDriverName ? 1 : 0)}</p>
             </div>
           </div>
 
@@ -166,7 +167,7 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
                   href={`https://maps.google.com/?q=${truck.coordinates.latitude},${truck.coordinates.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-850 hover:underline"
                 >
                   <MapPin size={12} /> View on Google Maps →
                 </a>
@@ -179,10 +180,10 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
             <Section title={`Driver History (${truck.assignedDrivers.length})`}>
               <div className="space-y-2">
                 {truck.assignedDrivers.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-100">
+                  <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-transparent">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <User size={12} className="text-indigo-600" />
+                      <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+                        <User size={12} className="text-slate-600" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-800">{d.driverName}</p>
@@ -390,60 +391,47 @@ const AdminTrucks: React.FC = () => {
       <div className="space-y-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Total Trucks</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{trucks.length}</p>
-              </div>
-              <FaTruck className="text-4xl text-blue-500 opacity-50" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Active Trucks</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {trucks.filter(t => 
-                    t.isActive && 
-                    (t.status?.toUpperCase() === 'AVAILABLE' || t.status?.toUpperCase() === 'IN_TRANSIT')
-                  ).length}
-                </p>
-              </div>
-              <FaTruck className="text-4xl text-green-500 opacity-50" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">In Maintenance</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {trucks.filter(t => t.status?.toUpperCase() === 'MAINTENANCE').length}
-                </p>
-              </div>
-              <FaTruck className="text-4xl text-yellow-500 opacity-50" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Out of Service</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {trucks.filter(t => 
-                    !t.isActive || t.status?.toUpperCase() === 'OUT_OF_SERVICE'
-                  ).length}
-                </p>
-              </div>
-              <FaTruck className="text-4xl text-purple-500 opacity-50" />
-            </div>
-          </div>
+          <StatCard
+            title="Total Trucks"
+            value={trucks.length}
+            icon={<FaTruck size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Registered fleet"
+          />
+          <StatCard
+            title="Active Trucks"
+            value={trucks.filter(t => 
+              t.isActive && 
+              (t.status?.toUpperCase() === 'AVAILABLE' || t.status?.toUpperCase() === 'IN_TRANSIT')
+            ).length}
+            icon={<FaTruck size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Available or In Transit"
+          />
+          <StatCard
+            title="In Maintenance"
+            value={trucks.filter(t => t.status?.toUpperCase() === 'MAINTENANCE').length}
+            icon={<FaTruck size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Under service"
+          />
+          <StatCard
+            title="Out of Service"
+            value={trucks.filter(t => 
+              !t.isActive || t.status?.toUpperCase() === 'OUT_OF_SERVICE'
+            ).length}
+            icon={<FaTruck size={22} />}
+            color="primary"
+            variant="classic"
+            subtitle="Offline or inactive"
+          />
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-white rounded-xl p-6 border border-transparent">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
               {/* Search */}
@@ -488,7 +476,7 @@ const AdminTrucks: React.FC = () => {
                 <FaDownload />
                 Export
               </button>
-              <span className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg font-medium">
+              <span className="px-4 py-2 bg-slate-100 text-slate-800 rounded-lg font-medium">
                 {filteredTrucks.length} trucks
               </span>
             </div>
@@ -496,7 +484,7 @@ const AdminTrucks: React.FC = () => {
         </div>
 
         {/* Trucks Table */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-xl overflow-hidden border border-transparent">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -666,7 +654,7 @@ const AdminTrucks: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav className="relative z-0 inline-flex rounded-md -space-x-px" aria-label="Pagination">
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
@@ -684,7 +672,7 @@ const AdminTrucks: React.FC = () => {
                           onClick={() => setCurrentPage(pageNum)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                             currentPage === pageNum
-                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                              ? 'z-10 bg-slate-100 border-transparent text-primary-700 font-bold'
                               : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                           }`}
                         >

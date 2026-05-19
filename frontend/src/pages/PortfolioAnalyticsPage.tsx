@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import ModernLoader from '../components/common/ModernLoader';
 import api from '../services/api';
+import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 
 // ── RWF formatter (ISO 4217) ─────────────────────────────────────────────────
 const fmtRWF = (n: number): string => {
@@ -28,25 +29,17 @@ const riskColour = (level: string) =>
 const KpiCard: React.FC<{
   label: string; value: string; sub?: string;
   icon: React.ReactNode; trend?: number; accent?: boolean;
-}> = ({ label, value, sub, icon, trend, accent }) => (
-  <div className={`bg-white rounded-3xl border ${accent ? 'border-[#345E85]/20 shadow-blue-100' : 'border-slate-100'} shadow-sm p-6 flex flex-col gap-3`}>
-    <div className="flex items-center justify-between">
-      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${accent ? 'bg-[#345E85]/10 text-[#345E85]' : 'bg-slate-50 text-slate-500'}`}>
-        {icon}
-      </div>
-      {trend != null && (
-        <span className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${trend >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-          {trend >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          {Math.abs(trend).toFixed(1)}%
-        </span>
-      )}
-    </div>
-    <div>
-      <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
-      {sub && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{sub}</p>}
-    </div>
-    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.18em]">{label}</p>
-  </div>
+}> = ({ label, value, sub, icon, trend }) => (
+  <StatCard
+    title={label}
+    value={value}
+    icon={icon}
+    subtitle={sub}
+    trend={trend != null ? `${Math.abs(trend).toFixed(1)}%` : undefined}
+    trendDirection={trend != null ? (trend >= 0 ? 'up' : 'down') : 'neutral'}
+    color="primary"
+    variant="classic"
+  />
 );
 
 const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; sub?: string }> = ({ icon, title, sub }) => (

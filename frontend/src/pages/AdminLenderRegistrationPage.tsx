@@ -2,6 +2,7 @@
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { StatCard } from '../components/EnliteUI';
 import {
   Trash2, Plus, Key, Mail,
   Phone, Building2, MoreHorizontal,
@@ -333,73 +334,51 @@ const AdminLenderRegistrationPage: React.FC = () => {
       {showAnalytics && analytics && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-indigo-100 transition-all group overflow-hidden relative">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Building2 className="text-indigo-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analytics?.totalLenders}</span>
-                  <div className="flex items-center gap-1 mt-1 justify-end">
-                    <TrendingUp className="text-emerald-500" size={10} />
-                    <p className="text-[10px] text-emerald-500 font-black uppercase tracking-tighter">+{analytics?.monthlyGrowth}%</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Providers</p>
-            </div>
-
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-emerald-100 transition-all group overflow-hidden relative">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ShieldCheck className="text-emerald-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{analytics?.activeLenders}</span>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter mt-1">
-                    {((analytics?.activeLenders || 0) / (analytics?.totalLenders || 1) * 100).toFixed(1)}% Active
-                  </p>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Matrix</p>
-            </div>
-
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-blue-100 transition-all group overflow-hidden relative">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Briefcase className="text-blue-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">{(analytics?.totalLoansIssued || 0).toLocaleString()}</span>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter mt-1">Total Issued</p>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loan Volume</p>
-            </div>
-
-            <div className="bg-white rounded-[32px] p-8 border border-gray-100 hover:border-amber-100 transition-all group overflow-hidden relative">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <DollarSign className="text-amber-600" size={24} />
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight leading-none">M {((analytics?.totalAmountDisbursed || 0) / 1000000).toFixed(1)}</span>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter mt-1">Disbursed Total</p>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Financial Flow</p>
-            </div>
+             <StatCard
+              title="Total Providers"
+              value={analytics?.totalLenders}
+              icon={<Building2 size={22} />}
+              color="primary"
+              variant="classic"
+              trend={`+${analytics?.monthlyGrowth}%`}
+              trendDirection="up"
+              subtitle="Registered lenders"
+            />
+            <StatCard
+              title="Active Matrix"
+              value={analytics?.activeLenders}
+              icon={<ShieldCheck size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle={`${((analytics?.activeLenders || 0) / (analytics?.totalLenders || 1) * 100).toFixed(1)}% Active`}
+            />
+            <StatCard
+              title="Loan Volume"
+              value={(analytics?.totalLoansIssued || 0).toLocaleString()}
+              icon={<Briefcase size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle="Total Issued Loans"
+            />
+            <StatCard
+              title="Financial Flow"
+              value={`M ${((analytics?.totalAmountDisbursed || 0) / 1000000).toFixed(1)}`}
+              icon={<DollarSign size={22} />}
+              color="primary"
+              variant="classic"
+              subtitle="Disbursed Total Amount"
+            />
           </div>
 
-          <div className="bg-[#fafafa] rounded-[32px] border border-gray-100 p-8">
+          <div className="bg-[#fafafa] rounded-[32px] border border-transparent p-8">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <TrendingUp size={14} className="text-indigo-600" /> Matrix Performance Insights
+                <TrendingUp size={14} className="text-primary-600" /> Matrix Performance Insights
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white p-6 rounded-2xl border border-gray-50 flex items-center gap-4">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+              <div className="bg-white p-6 rounded-2xl border border-transparent flex items-center gap-4">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
                   <Percent size={20} />
                 </div>
                 <div>
@@ -407,8 +386,8 @@ const AdminLenderRegistrationPage: React.FC = () => {
                   <p className="text-xl font-black text-gray-900 tracking-tight">{analytics?.avgApprovalRate.toFixed(1)}%</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-gray-50 flex items-center gap-4">
-                <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+              <div className="bg-white p-6 rounded-2xl border border-transparent flex items-center gap-4">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
                   <Clock size={20} />
                 </div>
                 <div>
@@ -416,8 +395,8 @@ const AdminLenderRegistrationPage: React.FC = () => {
                   <p className="text-xl font-black text-gray-900 tracking-tight">{analytics?.avgProcessingTime.toFixed(1)} Days</p>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-gray-50 flex items-center gap-4">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+              <div className="bg-white p-6 rounded-2xl border border-transparent flex items-center gap-4">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
                   <TrendingUp size={20} />
                 </div>
                 <div>
@@ -431,15 +410,15 @@ const AdminLenderRegistrationPage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm">
+      <div className="bg-white rounded-[32px] border border-transparent p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={16} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search providers..."
-              className="pl-12 pr-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all placeholder:text-slate-400 font-medium"
+              className="pl-12 pr-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all placeholder:text-slate-400 font-medium"
             />
           </div>
 
@@ -447,7 +426,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
-              className="px-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
             >
               <option value="all">All Operational Status</option>
               <option value="active">Active Matrix</option>
@@ -460,7 +439,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
             <select
               value={riskFilter}
               onChange={e => setRiskFilter(e.target.value as any)}
-              className="px-4 py-3 w-full rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
             >
               <option value="all">Security Risk Tiers</option>
               <option value="low">Validated (Low Risk)</option>
@@ -474,14 +453,14 @@ const AdminLenderRegistrationPage: React.FC = () => {
       {/* Registration Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden animate-enter" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-[32px] w-full max-w-lg overflow-hidden animate-enter border border-transparent" onClick={e => e.stopPropagation()}>
             <div className="bg-[#fafafa]/50 px-8 py-6 flex items-center justify-between border-b border-gray-50">
               <div>
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Administrative Registry</h3>
                 <p className="text-xl font-black text-gray-900 tracking-tight uppercase">Register New Provider</p>
               </div>
               <button
-                className="w-10 h-10 bg-white hover:bg-gray-50 rounded-xl flex items-center justify-center text-slate-400 transition-colors shadow-sm"
+                className="w-10 h-10 bg-white hover:bg-gray-50 rounded-xl flex items-center justify-center text-slate-400 transition-colors"
                 onClick={() => setShowModal(false)}
               >
                 <X size={18} />
@@ -492,14 +471,14 @@ const AdminLenderRegistrationPage: React.FC = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lender Designation</label>
                   <div className="relative group">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={16} />
                     <input
                       type="text"
                       name="name"
                       value={form.name}
                       onChange={handleChange}
                       required
-                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all font-medium"
                       placeholder="e.g. Acme Credit Corp"
                     />
                   </div>
@@ -508,14 +487,14 @@ const AdminLenderRegistrationPage: React.FC = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Communication Endpoint (Email)</label>
                   <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={16} />
                     <input
                       type="email"
                       name="email"
                       value={form.email}
                       onChange={handleChange}
                       required
-                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all font-medium"
                       placeholder="contact@lender.com"
                     />
                   </div>
@@ -524,14 +503,14 @@ const AdminLenderRegistrationPage: React.FC = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secure Line (Phone)</label>
                   <div className="relative group">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={16} />
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={16} />
                     <input
                       type="text"
                       name="phone"
                       value={form.phone}
                       onChange={handleChange}
                       required
-                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/30 text-sm bg-[#fafafa] outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all font-medium"
                       placeholder="+250 7..."
                     />
                   </div>

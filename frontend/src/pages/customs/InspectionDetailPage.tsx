@@ -4,21 +4,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   ShieldCheck, ArrowLeft, CheckCircle, XCircle, AlertTriangle,
-  Clock, FileText, Truck, User, MapPin, Package, Flag,
+  Clock, FileText, Truck, User, MapPin, Package, Flag, Hash,
+  Calendar, Building2, Weight, DollarSign, Zap, Globe,
+  ChevronRight, Loader2, BadgeCheck, ShieldAlert, PauseCircle,
 } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
 
 const BRAND = '#345E85';
 
-const statusBadge: Record<string, string> = {
-  PENDING:     'bg-amber-100 text-amber-700',
-  IN_PROGRESS: 'bg-blue-100 text-blue-700',
-  CLEARED:     'bg-emerald-100 text-emerald-700',
-  REJECTED:    'bg-rose-100 text-rose-700',
-  ON_HOLD:     'bg-purple-100 text-purple-700',
-  HIGH_RISK:   'bg-red-100 text-red-700',
+const STATUS_CONFIG: Record<string, { label: string; badge: string; dot: string }> = {
+  PENDING:     { label: 'Pending',      badge: 'bg-amber-100 text-amber-700 border-amber-200',   dot: 'bg-amber-400' },
+  IN_PROGRESS: { label: 'In Progress',  badge: 'bg-blue-100 text-blue-700 border-blue-200',      dot: 'bg-blue-500' },
+  CLEARED:     { label: 'Cleared',      badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  REJECTED:    { label: 'Rejected',     badge: 'bg-rose-100 text-rose-700 border-rose-200',      dot: 'bg-rose-500' },
+  ON_HOLD:     { label: 'On Hold',      badge: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+  HIGH_RISK:   { label: 'High Risk',    badge: 'bg-red-100 text-red-700 border-red-200',         dot: 'bg-red-600' },
 };
+
+const RISK_CONFIG: Record<string, { bg: string; text: string; bar: string; label: string; pct: number }> = {
+  LOW:      { bg: 'bg-emerald-50',  text: 'text-emerald-700', bar: 'bg-emerald-400', label: 'Low Risk',      pct: 20 },
+  MEDIUM:   { bg: 'bg-amber-50',    text: 'text-amber-700',   bar: 'bg-amber-400',   label: 'Medium Risk',   pct: 55 },
+  HIGH:     { bg: 'bg-rose-50',     text: 'text-rose-700',    bar: 'bg-rose-500',    label: 'High Risk',     pct: 80 },
+  CRITICAL: { bg: 'bg-red-900',     text: 'text-white',       bar: 'bg-red-600',     label: 'Critical Risk', pct: 100 },
+};
+
+const fmt = (n: number | null | undefined, currency = 'USD') =>
+  n != null ? `${currency} ${Number(n).toLocaleString()}` : null;
 
 const InspectionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -87,288 +99,485 @@ const InspectionDetailPage: React.FC = () => {
     setShowActionPanel(true);
   };
 
+  const isBusy = mutation.isPending || flagMutation.isPending;
+
+  /* ── Loading ── */
   if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]" />
+    <div className="flex flex-col items-center justify-center h-72 gap-4">
+      <div className="relative">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: BRAND }}>
+          <ShieldCheck size={24} className="text-white" />
+        </div>
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow">
+          <Loader2 size={12} className="text-[#345E85] animate-spin" />
+        </div>
+      </div>
+      <p className="text-sm font-semibold text-slate-400">Loading inspection…</p>
     </div>
   );
 
   if (!ins) return (
-    <div className="text-center py-20 text-slate-400">Inspection not found</div>
+    <div className="flex flex-col items-center justify-center h-72 gap-3">
+      <ShieldAlert size={40} className="text-slate-300" />
+      <p className="text-sm font-bold text-slate-400">Inspection record not found</p>
+      <button onClick={() => navigate(-1)} className="text-xs text-[#345E85] font-bold hover:underline">← Go back</button>
+    </div>
   );
 
-  const InfoRow = ({ label, value }: { label: string; value?: string | number | null }) => value != null ? (
-    <div className="flex items-start justify-between py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
-      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
-      <span className="text-xs font-bold text-slate-800 dark:text-white text-right max-w-[60%]">{String(value)}</span>
+  const statusCfg = STATUS_CONFIG[ins.status] || { label: ins.status, badge: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' };
+  const riskCfg = ins.riskLevel ? RISK_CONFIG[ins.riskLevel] : null;
+  const cur = ins.currency || 'USD';
+
+  /* ── Sub-components ── */
+  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
+    <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${BRAND}15` }}>
+        <span className="text-[#345E85]">{icon}</span>
+      </div>
+      <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">{title}</h3>
     </div>
-  ) : null;
+  );
+
+  const InfoRow = ({ icon, label, value, accent }: { icon?: React.ReactNode; label: string; value?: string | number | null; accent?: boolean }) =>
+    value != null ? (
+      <div className="flex items-center justify-between py-2.5 border-b border-slate-50 dark:border-slate-800/60 last:border-0 group">
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-slate-300 group-hover:text-slate-400 transition-colors">{icon}</span>}
+          <span className="text-xs font-semibold text-slate-400">{label}</span>
+        </div>
+        <span className={cn('text-xs font-bold text-right max-w-[55%]', accent ? 'text-[#345E85]' : 'text-slate-800 dark:text-slate-100')}>
+          {String(value)}
+        </span>
+      </div>
+    ) : null;
+
+  const ACTION_META: Record<string, { icon: React.ReactNode; label: string; desc: string; classes: string; confirmClasses: string }> = {
+    CLEARED:  { icon: <BadgeCheck size={16} />,  label: 'Approve & Clear',       desc: 'Release cargo for transit',      classes: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200', confirmClasses: 'bg-emerald-600 hover:bg-emerald-700' },
+    REJECTED: { icon: <XCircle size={16} />,     label: 'Reject Shipment',       desc: 'Deny clearance with reason',     classes: 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200',           confirmClasses: 'bg-rose-600 hover:bg-rose-700' },
+    ON_HOLD:  { icon: <PauseCircle size={16} />, label: 'Hold for Investigation',desc: 'Pause pending further review',   classes: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200',   confirmClasses: 'bg-purple-600 hover:bg-purple-700' },
+    FLAG:     { icon: <Flag size={16} />,        label: 'Flag as High Risk',     desc: 'Mark shipment as critical',      classes: 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200',             confirmClasses: 'bg-red-600 hover:bg-red-700' },
+  };
+
+  const currentAction = pendingAction ? ACTION_META[pendingAction] : null;
 
   return (
-    <div className="space-y-6 p-6 max-w-5xl mx-auto">
-      {/* Back + header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors">
-          <ArrowLeft size={16} />
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: BRAND }}>
-            <ShieldCheck size={16} className="text-white" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        {/* ── Hero Header ── */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+          {/* Accent bar */}
+          <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${BRAND}, #5b8ab5)` }} />
+
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Left: Back + identity */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex-shrink-0 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <ArrowLeft size={16} className="text-slate-600 dark:text-slate-300" />
+                </button>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0" style={{ background: BRAND }}>
+                  <ShieldCheck size={22} className="text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {ins.plateNumber || ins.shipmentReference || `INS-${ins.id.slice(0, 8).toUpperCase()}`}
+                    </h1>
+                    <span className={cn('inline-flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded-full border uppercase tracking-widest', statusCfg.badge)}>
+                      <span className={cn('w-1.5 h-1.5 rounded-full', statusCfg.dot)} />
+                      {statusCfg.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    {ins.declarationNumber && (
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Hash size={10} /> {ins.declarationNumber}
+                      </span>
+                    )}
+                    {ins.checkpointName && (
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <MapPin size={10} /> {ins.checkpointName}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                      <Calendar size={10} /> {new Date(ins.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: breadcrumb */}
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 flex-shrink-0">
+                <span>Customs</span>
+                <ChevronRight size={12} />
+                <span>Inspections</span>
+                <ChevronRight size={12} />
+                <span className="text-slate-700 dark:text-slate-200 font-semibold">Detail</span>
+              </div>
+            </div>
+
+            {/* Financial summary strip */}
+            {(ins.declaredValue || ins.dutyAmount || ins.taxAmount) && (
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {ins.declaredValue && (
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <DollarSign size={14} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Declared Value</p>
+                      <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(ins.declaredValue, cur)}</p>
+                    </div>
+                  </div>
+                )}
+                {ins.dutyAmount && (
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <DollarSign size={14} className="text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duty Amount</p>
+                      <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(ins.dutyAmount, cur)}</p>
+                    </div>
+                  </div>
+                )}
+                {ins.taxAmount && (
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                      <DollarSign size={14} className="text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tax Amount</p>
+                      <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(ins.taxAmount, cur)}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
-              Inspection — {ins.plateNumber || ins.shipmentReference || ins.id.slice(0, 8)}
-            </h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wide', statusBadge[ins.status] || 'bg-slate-100 text-slate-600')}>
-                {ins.status?.replace(/_/g, ' ')}
-              </span>
-              <span className="text-xs text-slate-400">{new Date(ins.createdAt).toLocaleString()}</span>
+        </div>
+
+        {/* ── Alert banners ── */}
+        {ins.hasDangerousGoods && (
+          <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-2xl px-5 py-4">
+            <AlertTriangle size={18} className="text-rose-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-black text-rose-700">Dangerous Goods Declared</p>
+              {ins.imdgClass && <p className="text-xs text-rose-500 mt-0.5">IMDG Class {ins.imdgClass}{ins.unNumber ? ` · UN ${ins.unNumber}` : ''}</p>}
+            </div>
+          </div>
+        )}
+        {ins.isRestrictedGoods && (
+          <div className="flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-2xl px-5 py-4">
+            <Flag size={18} className="text-purple-600 flex-shrink-0" />
+            <p className="text-sm font-black text-purple-700">Restricted Goods — Special Handling Required</p>
+          </div>
+        )}
+        {ins.rejectionReason && (
+          <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 rounded-2xl px-5 py-4">
+            <p className="text-xs font-black uppercase tracking-widest text-rose-500 mb-1">Rejection Reason</p>
+            <p className="text-sm text-rose-800 dark:text-rose-300">{ins.rejectionReason}</p>
+          </div>
+        )}
+
+        {/* ── Main grid ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* ── LEFT: 2/3 ── */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* Trade & Declaration */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <SectionHeader icon={<FileText size={14} />} title="Trade & Declaration" />
+              <InfoRow icon={<Hash size={11} />}      label="Declaration No."    value={ins.declarationNumber} accent />
+              <InfoRow icon={<Truck size={11} />}     label="Mode of Transport"  value={ins.modeOfTransport} />
+              <InfoRow icon={<Globe size={11} />}     label="Country of Origin"  value={ins.countryOfOrigin} />
+              <InfoRow icon={<Hash size={11} />}      label="Shipment Ref"       value={ins.shipmentReference} />
+              <InfoRow icon={<MapPin size={11} />}    label="Checkpoint"         value={ins.checkpointName} />
+              <InfoRow icon={<Building2 size={11} />} label="AEO Number"         value={ins.aeoNumber} />
+              {ins.estimatedReleaseAt && (
+                <InfoRow icon={<Calendar size={11} />} label="Est. Release" value={new Date(ins.estimatedReleaseAt).toLocaleString()} />
+              )}
+            </div>
+
+            {/* Vehicle & Driver */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <SectionHeader icon={<Truck size={14} />} title="Vehicle & Driver" />
+              <InfoRow icon={<Hash size={11} />}      label="Plate Number"       value={ins.plateNumber} accent />
+              <InfoRow icon={<Truck size={11} />}     label="Truck Type"         value={ins.truckType} />
+              <InfoRow icon={<User size={11} />}      label="Driver Name"        value={ins.driverName} />
+              <InfoRow icon={<Hash size={11} />}      label="Container No."      value={ins.containerNumber} />
+              <InfoRow icon={<Hash size={11} />}      label="Seal Number"        value={ins.sealNumber} />
+              <InfoRow icon={<Building2 size={11} />} label="Shipping Company"   value={ins.shippingCompany} />
+            </div>
+
+            {/* Cargo Details */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <SectionHeader icon={<Package size={14} />} title="Cargo Details" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+                <div>
+                  <InfoRow icon={<Package size={11} />}  label="Cargo Type"        value={ins.cargoType} />
+                  <InfoRow icon={<Package size={11} />}  label="Category"          value={ins.cargoCategory} />
+                  <InfoRow icon={<Hash size={11} />}     label="HS Code"           value={ins.hsCode} accent />
+                </div>
+                <div>
+                  <InfoRow icon={<Weight size={11} />}   label="Declared Weight"   value={ins.declaredWeight != null ? `${ins.declaredWeight} kg` : null} />
+                  <InfoRow icon={<Weight size={11} />}   label="Actual Weight"     value={ins.actualWeight != null ? `${ins.actualWeight} kg` : null} />
+                  <InfoRow icon={<Package size={11} />}  label="Declared Qty"      value={ins.declaredQuantity} />
+                  <InfoRow icon={<Package size={11} />}  label="Actual Qty"        value={ins.actualQuantity} />
+                </div>
+              </div>
+            </div>
+
+            {/* Route */}
+            {(ins.originCountry || ins.destinationCountry) && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                <SectionHeader icon={<MapPin size={14} />} title="Route" />
+                <div className="flex items-center gap-4 py-3">
+                  <div className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Origin</p>
+                    <p className="text-base font-black text-slate-800 dark:text-white">{ins.originCountry || '—'}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-8 h-px bg-slate-300" />
+                    <ChevronRight size={16} className="text-slate-400" />
+                    <div className="w-8 h-px bg-slate-300" />
+                  </div>
+                  <div className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl p-4 text-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Destination</p>
+                    <p className="text-base font-black text-slate-800 dark:text-white">{ins.destinationCountry || '—'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Inspection Classification */}
+            {(ins.examType || ins.holdType || ins.inspectionChannel) && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                <SectionHeader icon={<ShieldCheck size={14} />} title="Inspection Classification" />
+
+                <div className="space-y-3">
+                  {ins.examType && ins.examType !== 'NONE' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-400">Exam Type</span>
+                      <span className={cn('text-xs font-black px-3 py-1 rounded-full uppercase tracking-wide', {
+                        'bg-blue-100 text-blue-700':    ins.examType === 'DOCUMENT',
+                        'bg-purple-100 text-purple-700': ins.examType === 'X_RAY',
+                        'bg-amber-100 text-amber-700':  ins.examType === 'TAILGATE',
+                        'bg-rose-100 text-rose-700':    ins.examType === 'INTENSIVE',
+                      })}>
+                        {ins.examType.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  )}
+                  {ins.holdType && ins.holdType !== 'NONE' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-400">Hold Type</span>
+                      <span className="text-xs font-black text-rose-700 bg-rose-50 px-3 py-1 rounded-full uppercase tracking-wide">
+                        {ins.holdType.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  )}
+                  {ins.inspectionChannel && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-400">WCO Lane</span>
+                      <span className={cn('text-xs font-black px-3 py-1 rounded-full border', {
+                        'bg-emerald-50 text-emerald-700 border-emerald-200': ins.inspectionChannel === 'GREEN',
+                        'bg-amber-50 text-amber-700 border-amber-200':       ins.inspectionChannel === 'YELLOW',
+                        'bg-rose-50 text-rose-700 border-rose-200':          ins.inspectionChannel === 'RED',
+                      })}>
+                        {ins.inspectionChannel === 'GREEN'  && '● Green Lane'}
+                        {ins.inspectionChannel === 'YELLOW' && '● Yellow Lane'}
+                        {ins.inspectionChannel === 'RED'    && '● Red Lane'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {(ins.sanctionsScreened || ins.deniedPartyFlag) && (
+                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    {ins.sanctionsScreened && (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+                        <CheckCircle size={10} /> Sanctions Screened
+                      </span>
+                    )}
+                    {ins.deniedPartyFlag && (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 bg-red-100 text-red-700 rounded-full border border-red-200">
+                        <XCircle size={10} /> Denied Party Match
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Inspection Notes */}
+            {ins.inspectionNotes && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                <SectionHeader icon={<FileText size={14} />} title="Inspection Notes" />
+                <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {ins.inspectionNotes}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* ── RIGHT: 1/3 ── */}
+          <div className="space-y-5">
+
+            {/* Risk Level Card */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <SectionHeader icon={<Zap size={14} />} title="Risk Assessment" />
+              {riskCfg ? (
+                <div className={cn('rounded-xl p-4', riskCfg.bg)}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className={cn('text-sm font-black', riskCfg.text)}>{riskCfg.label}</p>
+                    <ShieldAlert size={18} className={riskCfg.text} />
+                  </div>
+                  <div className="w-full bg-black/10 rounded-full h-2">
+                    <div
+                      className={cn('h-2 rounded-full transition-all', riskCfg.bar)}
+                      style={{ width: `${riskCfg.pct}%` }}
+                    />
+                  </div>
+                  <p className={cn('text-[10px] font-bold mt-1.5 opacity-70', riskCfg.text)}>{riskCfg.pct}% risk score</p>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-4">No risk data</p>
+              )}
+            </div>
+
+            {/* Assigned Officer */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <SectionHeader icon={<User size={14} />} title="Assigned Officer" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-sm text-white"
+                  style={{ background: BRAND }}>
+                  {ins.officer?.email?.charAt(0).toUpperCase() || '?'}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-white">{ins.officer?.email || '—'}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Customs Officer</p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-semibold">Opened</span>
+                  <span className="text-slate-700 dark:text-slate-200 font-bold">{new Date(ins.createdAt).toLocaleDateString()}</span>
+                </div>
+                {ins.completedAt && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-semibold">Completed</span>
+                    <span className="text-slate-700 dark:text-slate-200 font-bold">{new Date(ins.completedAt).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+              <SectionHeader icon={<ShieldCheck size={14} />} title="Actions" />
+              <div className="space-y-2.5">
+                {Object.entries(ACTION_META).map(([key, meta]) => (
+                  <button
+                    key={key}
+                    onClick={() => openAction(key)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all group',
+                      meta.classes,
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {meta.icon}
+                      <div className="text-left">
+                        <p className="text-xs font-black">{meta.label}</p>
+                        <p className="text-[10px] opacity-60 font-semibold">{meta.desc}</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={14} className="opacity-40 group-hover:opacity-80 transition-opacity" />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Details panels */}
-        <div className="lg:col-span-2 space-y-5">
-
-          {/* Trade & Declaration */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-              <FileText size={13} /> Trade & Declaration
-            </h3>
-            <InfoRow label="Declaration No." value={ins.declarationNumber} />
-            <InfoRow label="Mode of Transport" value={ins.modeOfTransport} />
-            <InfoRow label="Country of Origin" value={ins.countryOfOrigin} />
-            <InfoRow label="AEO Number" value={ins.aeoNumber} />
-            <InfoRow label="Shipment Ref" value={ins.shipmentReference} />
-            <InfoRow label="Checkpoint" value={ins.checkpointName} />
-            {ins.estimatedReleaseAt && (
-              <InfoRow label="Est. Release" value={new Date(ins.estimatedReleaseAt).toLocaleString()} />
-            )}
-          </div>
-
-          {/* Truck & Driver */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-              <Truck size={13} /> Vehicle & Driver
-            </h3>
-            <InfoRow label="Plate Number" value={ins.plateNumber} />
-            <InfoRow label="Truck Type" value={ins.truckType} />
-            <InfoRow label="Driver Name" value={ins.driverName} />
-            <InfoRow label="Container No." value={ins.containerNumber} />
-            <InfoRow label="Seal Number" value={ins.sealNumber} />
-            <InfoRow label="Shipping Company" value={ins.shippingCompany} />
-          </div>
-
-          {/* Cargo */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-              <Package size={13} /> Cargo Details
-            </h3>
-            <InfoRow label="Cargo Type" value={ins.cargoType} />
-            <InfoRow label="Category" value={ins.cargoCategory} />
-            <InfoRow label="HS Code" value={ins.hsCode} />
-            <InfoRow label="Declared Weight" value={ins.declaredWeight != null ? `${ins.declaredWeight} kg` : null} />
-            <InfoRow label="Actual Weight" value={ins.actualWeight != null ? `${ins.actualWeight} kg` : null} />
-            <InfoRow label="Declared Qty" value={ins.declaredQuantity} />
-            <InfoRow label="Actual Qty" value={ins.actualQuantity} />
-            <InfoRow label="Declared Value" value={ins.declaredValue != null ? `${ins.currency || 'USD'} ${Number(ins.declaredValue).toLocaleString()}` : null} />
-            <InfoRow label="Duty Amount" value={ins.dutyAmount != null ? `${ins.currency || 'USD'} ${Number(ins.dutyAmount).toLocaleString()}` : null} />
-            <InfoRow label="Tax Amount" value={ins.taxAmount != null ? `${ins.currency || 'USD'} ${Number(ins.taxAmount).toLocaleString()}` : null} />
-            {ins.imdgClass && <InfoRow label="IMDG Class" value={`Class ${ins.imdgClass}`} />}
-            {ins.unNumber && <InfoRow label="UN Number" value={ins.unNumber} />}
-            {ins.hasDangerousGoods && (
-              <div className="mt-2 flex items-center gap-2 text-xs font-bold text-rose-700 bg-rose-50 rounded-xl px-3 py-2">
-                <AlertTriangle size={13} /> DANGEROUS GOODS DECLARED
-              </div>
-            )}
-            {ins.isRestrictedGoods && (
-              <div className="mt-2 flex items-center gap-2 text-xs font-bold text-purple-700 bg-purple-50 rounded-xl px-3 py-2">
-                <Flag size={13} /> RESTRICTED GOODS
-              </div>
-            )}
-          </div>
-
-          {/* Route */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-              <MapPin size={13} /> Route
-            </h3>
-            <InfoRow label="Origin Country" value={ins.originCountry} />
-            <InfoRow label="Destination" value={ins.destinationCountry} />
-          </div>
-
-          {/* Exam & Hold */}
-          {(ins.examType || ins.holdType || ins.inspectionChannel) && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                <ShieldCheck size={13} /> Inspection Classification
-              </h3>
-              {ins.examType && ins.examType !== 'NONE' && (
-                <div className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Exam Type</span>
-                  <span className={cn('text-xs font-black px-2 py-0.5 rounded-lg uppercase', {
-                    'bg-blue-100 text-blue-700': ins.examType === 'DOCUMENT',
-                    'bg-purple-100 text-purple-700': ins.examType === 'X_RAY',
-                    'bg-amber-100 text-amber-700': ins.examType === 'TAILGATE',
-                    'bg-rose-100 text-rose-700': ins.examType === 'INTENSIVE',
-                  })}>{ins.examType.replace(/_/g, ' ')}</span>
-                </div>
-              )}
-              {ins.holdType && ins.holdType !== 'NONE' && (
-                <div className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hold Type</span>
-                  <span className="text-xs font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg uppercase">{ins.holdType.replace(/_/g, ' ')}</span>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {ins.sanctionsScreened && <span className="text-[10px] font-black px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg">✅ Sanctions Screened</span>}
-                {ins.deniedPartyFlag && <span className="text-[10px] font-black px-2 py-1 bg-red-100 text-red-700 rounded-lg">🚫 Denied Party Match</span>}
-                {ins.aeoNumber && <span className="text-[10px] font-black px-2 py-1 bg-blue-50 text-blue-700 rounded-lg">AEO: {ins.aeoNumber}</span>}
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          {ins.inspectionNotes && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
-                <FileText size={13} /> Inspection Notes
-              </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{ins.inspectionNotes}</p>
-            </div>
-          )}
-
-          {ins.rejectionReason && (
-            <div className="bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-200 p-5">
-              <h3 className="text-xs font-black uppercase tracking-widest text-rose-600 mb-2">Rejection Reason</h3>
-              <p className="text-sm text-rose-800 dark:text-rose-300">{ins.rejectionReason}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Actions panel */}
-        <div className="space-y-5">
-          {/* Risk level + WCO Channel */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Risk Level</h3>
-            <div className={cn('text-center py-3 rounded-xl font-black text-sm', {
-              'bg-emerald-100 text-emerald-700': ins.riskLevel === 'LOW',
-              'bg-amber-100 text-amber-700': ins.riskLevel === 'MEDIUM',
-              'bg-rose-100 text-rose-700': ins.riskLevel === 'HIGH',
-              'bg-red-900 text-white': ins.riskLevel === 'CRITICAL',
-            })}>
-              {ins.riskLevel}
-            </div>
-            {ins.inspectionChannel && (
-              <div className={cn('text-center py-2.5 rounded-xl font-black text-sm mt-2', {
-                'bg-emerald-50 text-emerald-700 border border-emerald-200': ins.inspectionChannel === 'GREEN',
-                'bg-amber-50 text-amber-700 border border-amber-200': ins.inspectionChannel === 'YELLOW',
-                'bg-rose-50 text-rose-700 border border-rose-200': ins.inspectionChannel === 'RED',
-              })}>
-                {ins.inspectionChannel === 'GREEN' && '🟢 Green Lane'}
-                {ins.inspectionChannel === 'YELLOW' && '🟡 Yellow Lane'}
-                {ins.inspectionChannel === 'RED' && '🔴 Red Lane'}
-              </div>
-            )}
-          </div>
-
-          {/* Action buttons */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Actions</h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => openAction('CLEARED')}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold hover:bg-emerald-100 transition-colors"
-              >
-                <CheckCircle size={14} /> Approve & Clear
-              </button>
-              <button
-                onClick={() => openAction('REJECTED')}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 text-sm font-bold hover:bg-rose-100 transition-colors"
-              >
-                <XCircle size={14} /> Reject
-              </button>
-              <button
-                onClick={() => openAction('ON_HOLD')}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50 text-purple-700 text-sm font-bold hover:bg-purple-100 transition-colors"
-              >
-                <Clock size={14} /> Hold for Investigation
-              </button>
-              <button
-                onClick={() => openAction('FLAG')}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 text-red-700 text-sm font-bold hover:bg-red-100 transition-colors"
-              >
-                <Flag size={14} /> Flag as High Risk
-              </button>
-            </div>
-          </div>
-
-          {/* Officer info */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
-              <User size={13} /> Officer
-            </h3>
-            <p className="text-sm font-bold text-slate-700 dark:text-white">{ins.officer?.email || '—'}</p>
-            <p className="text-xs text-slate-400 mt-1">Inspected: {new Date(ins.createdAt).toLocaleString()}</p>
-            {ins.completedAt && (
-              <p className="text-xs text-slate-400 mt-0.5">Completed: {new Date(ins.completedAt).toLocaleString()}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Action Confirmation Panel */}
-      {showActionPanel && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4">
+      {/* ── Action Confirmation Modal ── */}
+      {showActionPanel && currentAction && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-lg shadow-2xl">
-            <h3 className="text-base font-black text-slate-900 dark:text-white mb-4">
-              {pendingAction === 'CLEARED' && 'Approve & Clear Cargo'}
-              {pendingAction === 'REJECTED' && 'Reject Cargo'}
-              {pendingAction === 'ON_HOLD' && 'Hold for Investigation'}
-              {pendingAction === 'FLAG' && 'Flag as High Risk'}
-            </h3>
+            {/* Modal header */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', currentAction.confirmClasses)}>
+                <span className="text-white">{currentAction.icon}</span>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">{currentAction.label}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{currentAction.desc}</p>
+              </div>
+            </div>
+
+            {/* Shipment reference */}
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 mb-4">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Applying to</p>
+              <p className="text-sm font-black text-slate-800 dark:text-white">
+                {ins.plateNumber || ins.shipmentReference || `INS-${ins.id.slice(0, 8).toUpperCase()}`}
+              </p>
+            </div>
 
             {pendingAction === 'REJECTED' && (
-              <div className="mb-3">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Rejection Reason *</label>
+              <div className="mb-4">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Rejection Reason <span className="text-rose-500">*</span>
+                </label>
                 <textarea
-                  className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+                  className="w-full mt-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all"
                   rows={3}
-                  placeholder="State the reason for rejection..."
+                  placeholder="Describe the reason for rejection…"
                   value={rejectionReason}
                   onChange={e => setRejectionReason(e.target.value)}
                 />
               </div>
             )}
 
-            <div className="mb-4">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Notes (optional)</label>
+            <div className="mb-6">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Additional Notes <span className="text-slate-300">(optional)</span>
+              </label>
               <textarea
-                className="w-full mt-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+                className="w-full mt-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all"
                 rows={3}
-                placeholder="Additional notes..."
+                placeholder="Any additional notes for the record…"
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
               />
             </div>
 
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3">
               <button
                 onClick={() => { setShowActionPanel(false); setPendingAction(null); }}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex-1 px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAction}
-                disabled={mutation.isPending || flagMutation.isPending}
-                className="px-5 py-2.5 rounded-xl text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
-                style={{ background: BRAND }}
+                disabled={isBusy}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-black transition-all disabled:opacity-60',
+                  currentAction.confirmClasses,
+                )}
               >
-                {mutation.isPending || flagMutation.isPending ? 'Processing...' : 'Confirm'}
+                {isBusy ? (
+                  <><Loader2 size={14} className="animate-spin" /> Processing…</>
+                ) : (
+                  <>{currentAction.icon} Confirm</>
+                )}
               </button>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import api from '@/services/api';
 
 interface LoadPerformance {
@@ -101,46 +102,9 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
 
 
 
-  const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+  const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
     const displayValue = Array.isArray(value) ? value.length : value;
-
-    return (
-      <div className="flex flex-col items-center group">
-        <div className="relative w-40 h-40 rounded-full bg-white dark:bg-slate-900 border-[8px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-blue-900/30 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-blue-500/10">
-          <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-            <circle
-              cx="80"
-              cy="80"
-              r="72"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray="452"
-              strokeDashoffset="350"
-              className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
-            />
-          </svg>
-
-          <div className={cn("p-2 rounded-2xl mb-1 bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-600 group-hover:bg-white dark:group-hover:bg-slate-800 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-            <Icon className="w-5 h-5" />
-          </div>
-
-          <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-            <span className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-              {displayValue}
-            </span>
-          </div>
-
-          <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
-        </div>
-
-        <div className="mt-4 text-center">
-          <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300">
-            {title}
-          </p>
-        </div>
-      </div>
-    );
+    return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
   };
 
   const formatCurrency = (amount: number) => {

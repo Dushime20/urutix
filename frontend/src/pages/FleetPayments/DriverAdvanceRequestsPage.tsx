@@ -9,15 +9,22 @@ import {
   AlertCircle,
   X,
   User,
-  Truck,
   Route,
   RefreshCw,
+  Hash,
+  Calendar,
+  ChevronRight,
+  Banknote,
+  BadgeCheck,
+  FileText,
+  Wallet,
 } from 'lucide-react';
 import { FaTimes, FaShieldAlt } from 'react-icons/fa';
 import { fuelApi } from '../../services/fuelApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 type FilterStatus = 'all' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'RECONCILED';
 
@@ -132,18 +139,42 @@ const DriverAdvanceRequestsPage: React.FC = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Pending',    value: stats?.pendingCount   ?? 0, amount: stats?.pendingAmount   ?? 0, color: 'amber'   },
-          { label: 'Approved',   value: stats?.approvedCount  ?? 0, amount: stats?.approvedAmount  ?? 0, color: 'emerald' },
-          { label: 'Reconciled', value: stats?.reconciledCount?? 0, amount: stats?.totalReconciled ?? 0, color: 'blue'    },
-          { label: 'Rejected',   value: stats?.rejectedCount  ?? 0, amount: 0,                          color: 'rose'    },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <p className={`text-[8px] font-black uppercase tracking-widest text-${s.color}-500 mb-1`}>{s.label}</p>
-            <p className="text-2xl font-black text-[#0f172a]">{s.value}</p>
-            <p className="text-[10px] font-bold text-slate-400 mt-1">{formatCurrency(s.amount)}</p>
-          </div>
-        ))}
+        <StatCard
+          title="Pending"
+          value={stats?.pendingCount ?? 0}
+          icon={<Clock size={20} />}
+          subtitle={formatCurrency(stats?.pendingAmount ?? 0)}
+          color="warning"
+          loading={!stats}
+          variant="premium"
+        />
+        <StatCard
+          title="Approved"
+          value={stats?.approvedCount ?? 0}
+          icon={<CheckCircle size={20} />}
+          subtitle={formatCurrency(stats?.approvedAmount ?? 0)}
+          color="success"
+          loading={!stats}
+          variant="premium"
+        />
+        <StatCard
+          title="Reconciled"
+          value={stats?.reconciledCount ?? 0}
+          icon={<BadgeCheck size={20} />}
+          subtitle={formatCurrency(stats?.totalReconciled ?? 0)}
+          color="primary"
+          loading={!stats}
+          variant="premium"
+        />
+        <StatCard
+          title="Rejected"
+          value={stats?.rejectedCount ?? 0}
+          icon={<XCircle size={20} />}
+          subtitle="—"
+          color="error"
+          loading={!stats}
+          variant="premium"
+        />
       </div>
 
       {/* Filter Tabs */}
@@ -287,102 +318,267 @@ const DriverAdvanceRequestsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* ── Detail Modal ── */}
       <AnimatePresence>
-        {selectedAdvance && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedAdvance(null)}
-              className="absolute inset-0 bg-[#0f172a]/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="bg-[#345E85] p-8 text-white flex items-center justify-between shrink-0">
-                <div>
-                  <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest">Advance Request</p>
-                  <h3 className="text-xl font-black uppercase tracking-tight mt-1">
-                    {formatCurrency(selectedAdvance.advanceAmount)}
-                  </h3>
-                </div>
-                <button onClick={() => setSelectedAdvance(null)} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
-                  <X size={18} />
-                </button>
-              </div>
+        {selectedAdvance && (() => {
+          const adv = selectedAdvance;
+          const driverName = adv.driver ? `${adv.driver.firstName} ${adv.driver.lastName}` : 'Unknown Driver';
+          const driverInitials = adv.driver
+            ? `${adv.driver.firstName?.[0] ?? ''}${adv.driver.lastName?.[0] ?? ''}`.toUpperCase()
+            : '?';
+          const sCfg = getStatusConfig(adv.status);
+          const StatusIcon = sCfg.icon;
 
-              <div className="p-8 space-y-6 overflow-y-auto">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><User size={10} /> Driver</p>
-                    <p className="text-sm font-black text-[#0f172a] uppercase">
-                      {selectedAdvance.driver ? `${selectedAdvance.driver.firstName} ${selectedAdvance.driver.lastName}` : 'Unknown'}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Truck size={10} /> Status</p>
-                    <div className={cn('inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-black uppercase', getStatusConfig(selectedAdvance.status).cls)}>
-                      {selectedAdvance.status}
+          const timeline = [
+            { label: 'Requested', date: adv.advanceDate || adv.createdAt, done: true },
+            { label: 'Reviewed',  date: adv.updatedAt,                    done: adv.status !== 'PENDING' },
+            { label: 'Credited',  date: adv.approvedAt,                   done: adv.status === 'APPROVED' || adv.status === 'RECONCILED' },
+            { label: 'Reconciled',date: adv.reconciledAt,                 done: adv.status === 'RECONCILED' },
+          ];
+
+          return (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setSelectedAdvance(null)}
+                className="absolute inset-0 bg-[#0f172a]/70 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ scale: 0.96, opacity: 0, y: 24 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.96, opacity: 0, y: 24 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                className="relative w-full max-w-xl bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+              >
+                {/* ── Hero header ── */}
+                <div className="relative shrink-0 overflow-hidden" style={{ background: 'linear-gradient(135deg, #345E85 0%, #1e3a52 100%)' }}>
+                  {/* Decorative circles */}
+                  <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full bg-white/5" />
+                  <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
+
+                  <div className="relative p-6 pb-5">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Driver avatar + name */}
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-lg">
+                          {driverInitials}
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-blue-200 uppercase tracking-[0.2em] mb-0.5">Advance Request</p>
+                          <p className="text-base font-black text-white uppercase tracking-tight leading-tight">{driverName}</p>
+                          {adv.driver && (
+                            <p className="text-[9px] text-blue-300 font-bold mt-0.5">ID: {adv.driverId?.slice(0, 8)}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedAdvance(null)}
+                        className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white shrink-0"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Amount + status */}
+                    <div className="mt-5 flex items-end justify-between">
+                      <div>
+                        <p className="text-[9px] font-black text-blue-300 uppercase tracking-widest mb-1">Amount Requested</p>
+                        <p className="text-3xl font-black text-white tracking-tight">{formatCurrency(adv.advanceAmount)}</p>
+                      </div>
+                      <div className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest bg-white/10 border-white/20 text-white')}>
+                        <span className={cn('w-1.5 h-1.5 rounded-full', {
+                          'bg-amber-300':  adv.status === 'PENDING',
+                          'bg-emerald-300': adv.status === 'APPROVED',
+                          'bg-rose-300':   adv.status === 'REJECTED',
+                          'bg-blue-300':   adv.status === 'RECONCILED',
+                        })} />
+                        <StatusIcon size={10} />
+                        {sCfg.label}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Route size={10} /> Linked Trip</p>
-                  {selectedAdvance.trip ? (
-                    <div>
-                      <p className="text-sm font-black text-[#0f172a] uppercase">
-                        {selectedAdvance.trip.origin?.city || '?'} → {selectedAdvance.trip.destination?.city || '?'}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">#{selectedAdvance.trip.tripNumber}</p>
+                {/* ── Scrollable body ── */}
+                <div className="overflow-y-auto flex-1 p-6 space-y-5">
+
+                  {/* Alert banners */}
+                  {adv.rejectionReason && (
+                    <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3.5">
+                      <XCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Rejection Reason</p>
+                        <p className="text-xs text-rose-700 font-semibold">{adv.rejectionReason}</p>
+                      </div>
                     </div>
-                  ) : (
-                    <p className="text-sm text-slate-400">No trip linked</p>
                   )}
+
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Requested on */}
+                    <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                      <div className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        <Calendar size={9} /> Requested On
+                      </div>
+                      <p className="text-xs font-bold text-[#0f172a]">{formatDate(adv.advanceDate || adv.createdAt)}</p>
+                    </div>
+
+                    {/* Reference */}
+                    <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                      <div className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        <Hash size={9} /> Reference
+                      </div>
+                      <p className="text-xs font-black text-[#345E85] font-mono">{adv.id?.slice(0, 12).toUpperCase()}…</p>
+                    </div>
+
+                    {/* Advance type */}
+                    {adv.type && (
+                      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                        <div className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          <Banknote size={9} /> Type
+                        </div>
+                        <p className="text-xs font-black text-[#0f172a] uppercase">{adv.type.replace(/_/g, ' ')}</p>
+                      </div>
+                    )}
+
+                    {/* Wallet impact */}
+                    <div className={cn('rounded-2xl border p-4', adv.status === 'APPROVED' || adv.status === 'RECONCILED' ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100')}>
+                      <div className={cn('flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest mb-2', adv.status === 'APPROVED' || adv.status === 'RECONCILED' ? 'text-emerald-500' : 'text-slate-400')}>
+                        <Wallet size={9} /> Wallet
+                      </div>
+                      <p className={cn('text-xs font-black uppercase', adv.status === 'APPROVED' || adv.status === 'RECONCILED' ? 'text-emerald-700' : 'text-slate-400')}>
+                        {adv.status === 'APPROVED' || adv.status === 'RECONCILED' ? '✓ Credited' : 'Pending Approval'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Linked trip */}
+                  <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                    <div className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                      <Route size={9} /> Linked Trip
+                    </div>
+                    {adv.trip ? (
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-white rounded-xl border border-slate-100 px-4 py-2.5 text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">From</p>
+                          <p className="text-sm font-black text-[#0f172a] uppercase">{adv.trip.origin?.city || '?'}</p>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-slate-300">
+                          <div className="w-4 h-px bg-slate-300" />
+                          <ChevronRight size={12} className="text-slate-400" />
+                          <div className="w-4 h-px bg-slate-300" />
+                        </div>
+                        <div className="flex-1 bg-white rounded-xl border border-slate-100 px-4 py-2.5 text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">To</p>
+                          <p className="text-sm font-black text-[#0f172a] uppercase">{adv.trip.destination?.city || '?'}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No trip linked to this advance</p>
+                    )}
+                    {adv.trip?.tripNumber && (
+                      <p className="text-[9px] font-bold text-slate-400 mt-2 text-center">Trip #{adv.trip.tripNumber}</p>
+                    )}
+                  </div>
+
+                  {/* Driver's reason */}
+                  {adv.notes && (
+                    <div className="bg-blue-50 rounded-2xl border border-blue-100 p-4">
+                      <div className="flex items-center gap-1.5 text-[8px] font-black text-blue-400 uppercase tracking-widest mb-2">
+                        <FileText size={9} /> Driver's Reason
+                      </div>
+                      <p className="text-xs text-blue-800 italic leading-relaxed">"{adv.notes}"</p>
+                    </div>
+                  )}
+
+                  {/* Reconciliation info */}
+                  {adv.status === 'RECONCILED' && (
+                    <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4">
+                      <div className="flex items-center gap-1.5 text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-3">
+                        <BadgeCheck size={9} /> Reconciliation
+                      </div>
+                      <div className="space-y-1.5">
+                        {adv.reconciliationAmount != null && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold text-emerald-600">Amount Reconciled</span>
+                            <span className="text-sm font-black text-emerald-800">{formatCurrency(adv.reconciliationAmount)}</span>
+                          </div>
+                        )}
+                        {adv.reconciliationNotes && (
+                          <p className="text-[10px] text-emerald-600 italic mt-1">"{adv.reconciliationNotes}"</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timeline */}
+                  <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">Timeline</p>
+                    <div className="space-y-0">
+                      {timeline.map((step, i) => (
+                        <div key={step.label} className="flex items-start gap-3">
+                          <div className="flex flex-col items-center">
+                            <div className={cn(
+                              'w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2',
+                              step.done
+                                ? 'bg-[#345E85] border-[#345E85]'
+                                : 'bg-white border-slate-200',
+                            )}>
+                              {step.done
+                                ? <CheckCircle size={10} className="text-white" />
+                                : <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                              }
+                            </div>
+                            {i < timeline.length - 1 && (
+                              <div className={cn('w-0.5 h-6 mt-0.5', step.done ? 'bg-[#345E85]/30' : 'bg-slate-100')} />
+                            )}
+                          </div>
+                          <div className="pb-4 last:pb-0 -mt-0.5">
+                            <p className={cn('text-[9px] font-black uppercase tracking-wider', step.done ? 'text-[#0f172a]' : 'text-slate-300')}>
+                              {step.label}
+                            </p>
+                            {step.date && step.done && (
+                              <p className="text-[9px] text-slate-400 font-bold mt-0.5">{formatDate(step.date)}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Requested On</p>
-                  <p className="text-sm font-bold text-[#0f172a]">{formatDate(selectedAdvance.advanceDate || selectedAdvance.createdAt)}</p>
-                </div>
-
-                {selectedAdvance.notes && (
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Driver's Reason</p>
-                    <p className="text-sm text-slate-600 italic">"{selectedAdvance.notes}"</p>
+                {/* ── Footer actions ── */}
+                {adv.status === 'PENDING' ? (
+                  <div className="shrink-0 p-5 border-t border-slate-100 bg-slate-50 flex gap-3">
+                    <button
+                      onClick={() => { setAdvanceToReject(adv); setShowRejectModal(true); }}
+                      className="flex-1 h-12 bg-white text-rose-600 border border-rose-200 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all"
+                    >
+                      <XCircle size={13} className="inline mr-1.5 -mt-0.5" />
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => openApproveModal(adv)}
+                      className="flex-[2] h-12 bg-emerald-500 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2"
+                    >
+                      <BadgeCheck size={13} />
+                      Approve & Credit Wallet
+                    </button>
+                  </div>
+                ) : (
+                  <div className="shrink-0 p-5 border-t border-slate-100">
+                    <button
+                      onClick={() => setSelectedAdvance(null)}
+                      className="w-full h-11 rounded-2xl border border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
+                    >
+                      Close
+                    </button>
                   </div>
                 )}
-
-                {selectedAdvance.rejectionReason && (
-                  <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
-                    <p className="text-[8px] font-black text-rose-500 uppercase tracking-widest mb-2">Rejection Reason</p>
-                    <p className="text-sm text-rose-600">"{selectedAdvance.rejectionReason}"</p>
-                  </div>
-                )}
-              </div>
-
-              {selectedAdvance.status === 'PENDING' && (
-                <div className="p-8 pt-0 flex gap-3 shrink-0">
-                  <button
-                    onClick={() => { setAdvanceToReject(selectedAdvance); setShowRejectModal(true); }}
-                    className="flex-1 h-14 bg-rose-50 text-rose-600 border border-rose-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => openApproveModal(selectedAdvance)}
-                    className="flex-[2] h-14 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200"
-                  >
-                    Approve & Credit Wallet
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* ── PAYMENT MODAL (same pattern as BuyCredits) ── */}

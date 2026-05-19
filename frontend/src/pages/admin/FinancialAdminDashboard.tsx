@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { adminAPI } from '../../services/adminApi';
+import { StatCard } from '../../components/EnliteUI';
+import ModernLoader from '../../components/common/ModernLoader';
 
 interface Transaction {
   id: string;
@@ -268,7 +270,7 @@ const FinancialAdminDashboard: React.FC = () => {
       description={<TranslatedText text="Monitor platform revenue, transactions, and financial health" />}
       actions={
         <button 
-          className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
           onClick={() => window.location.reload()}
         >
           <RefreshCw size={14} /> <TranslatedText text="Refresh Data" />
@@ -276,12 +278,7 @@ const FinancialAdminDashboard: React.FC = () => {
       }
     >
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center gap-3">
-            <Loader2 className="animate-spin text-4xl text-indigo-600" />
-            <span className="text-lg text-gray-600">Loading financial data...</span>
-          </div>
-        </div>
+        <ModernLoader isLoading={true} type="dashboard" showStats={true} />
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <div className="flex items-center">
@@ -306,99 +303,51 @@ const FinancialAdminDashboard: React.FC = () => {
       <div className="space-y-10">
         {/* Financial Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-              <DollarSign size={80} className="text-gray-900" />
-            </div>
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-emerald-600 group-hover:bg-emerald-50 transition-all duration-300 shadow-sm">
-                  <DollarSign size={18} />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Total Revenue" /></p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
-                  ${(metrics.totalRevenue / 1000).toFixed(0)}k
-                </h3>
-                <div className="flex items-center text-emerald-600">
-                  <ArrowUp size={10} className="mr-0.5" />
-                  <span className="text-[10px] font-black">{metrics.monthlyGrowth}%</span>
-                </div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Active yield this month" /></p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-              <Activity size={80} className="text-gray-900" />
-            </div>
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-amber-600 group-hover:bg-amber-50 transition-all duration-300 shadow-sm">
-                  <Activity size={18} />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Transactions" /></p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
-                  {metrics.totalTransactions.toLocaleString()}
-                </h3>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">${metrics.averageTransactionValue} AVG</span>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Network throughput" /></p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-              <Timer size={80} className="text-gray-900" />
-            </div>
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all duration-300 shadow-sm">
-                  <Timer size={18} />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Pending" /></p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
-                  ${(metrics.pendingAmount / 1000).toFixed(0)}k
-                </h3>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                  {transactions.filter(t => t.status === 'pending').length} TXN
-                </span>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Assets in processing" /></p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-              <PiggyBank size={80} className="text-gray-900" />
-            </div>
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-purple-600 group-hover:bg-purple-50 transition-all duration-300 shadow-sm">
-                  <PiggyBank size={18} />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text="Escrow Balance" /></p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-black text-gray-900 leading-none tracking-tight">
-                  ${(metrics.escrowBalance / 1000).toFixed(0)}k
-                </h3>
-                <div className="bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter">SECURED</div>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4 leading-none"><TranslatedText text="Guaranteed liquidity" /></p>
-            </div>
-          </div>
+          <StatCard
+            title={<TranslatedText text="Total Revenue" />}
+            value={`$${(metrics.totalRevenue / 1000).toFixed(0)}k`}
+            icon={<DollarSign size={18} />}
+            trend={`${metrics.monthlyGrowth}%`}
+            trendDirection="up"
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="Active yield this month" />}
+          />
+          <StatCard
+            title={<TranslatedText text="Transactions" />}
+            value={metrics.totalTransactions.toLocaleString()}
+            icon={<Activity size={18} />}
+            trend={`$${metrics.averageTransactionValue} AVG`}
+            trendDirection="neutral"
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="Network throughput" />}
+          />
+          <StatCard
+            title={<TranslatedText text="Pending" />}
+            value={`$${(metrics.pendingAmount / 1000).toFixed(0)}k`}
+            icon={<Timer size={18} />}
+            trend={`${transactions.filter(t => t.status === 'pending').length} TXN`}
+            trendDirection="neutral"
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="Assets in processing" />}
+          />
+          <StatCard
+            title={<TranslatedText text="Escrow Balance" />}
+            value={`$${(metrics.escrowBalance / 1000).toFixed(0)}k`}
+            icon={<PiggyBank size={18} />}
+            trend="SECURED"
+            trendDirection="neutral"
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="Guaranteed liquidity" />}
+          />
         </div>
 
         {/* Revenue Chart and Quick Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase">Revenue Trend</h3>
@@ -416,13 +365,13 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div key={index} className="flex-1 flex flex-col items-center group">
                   <div className="relative w-full flex flex-col items-center">
                     <div
-                      className="w-full bg-indigo-50/50 rounded-lg transition-all duration-500 group-hover:bg-indigo-600 overflow-hidden relative border border-indigo-100/50 group-hover:border-indigo-600 shadow-sm"
+                      className="w-full bg-[#2c5173]/20 rounded-lg transition-all duration-500 group-hover:bg-[#2c5173] overflow-hidden relative border border-gray-100 group-hover:border-[#2c5173]"
                       style={{ height: `${(revenue / Math.max(...metrics.dailyRevenue)) * 180}px` }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/10 to-transparent opacity-100 group-hover:from-black/20" />
+                      <div className="absolute inset-0 bg-[#2c5173]/10 opacity-100 group-hover:from-black/20" />
                     </div>
                     <div className="absolute -top-6 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1">
-                      <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm leading-none flex items-center gap-1">
+                      <span className="text-[10px] font-black text-[#2c5173] bg-primary-50 px-2 py-0.5 rounded-md border border-primary-100 leading-none flex items-center gap-1">
                         ${(revenue / 1000).toFixed(1)}k
                       </span>
                     </div>
@@ -435,19 +384,19 @@ const FinancialAdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col">
             <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase mb-6">Fiscal Intelligence</h3>
             <div className="space-y-4 flex-1">
-              <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100 group hover:border-indigo-100 transition-all">
+              <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100 group hover:border-primary-100 transition-all">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Fees</span>
-                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-slate-400 group-hover:text-[#2c5173] transition-colors">
                     <Receipt size={14} />
                   </div>
                 </div>
                 <span className="text-lg font-black text-gray-900 tracking-tight">${(metrics.platformFees / 1000).toFixed(1)}k</span>
                 <div className="mt-2 w-full bg-gray-100 h-1 rounded-full overflow-hidden">
-                  <div className="bg-indigo-500 h-full w-[65%]" />
+                  <div className="bg-[#2c5173] h-full w-[65%]" />
                 </div>
               </div>
 
@@ -472,14 +421,14 @@ const FinancialAdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button className="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200">
+            <button className="w-full mt-6 py-3 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
               Generate Detailed Report
             </button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="relative group min-w-[240px]">
@@ -488,16 +437,16 @@ const FinancialAdminDashboard: React.FC = () => {
                   placeholder="SEARCH TRANSACTIONS..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full bg-[#fafafa] transition-all shadow-sm"
+                  className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent w-full bg-[#fafafa] transition-all"
                 />
-                <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-indigo-500 transition-colors w-3.5 h-3.5" />
+                <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-[#2c5173] transition-colors w-3.5 h-3.5" />
               </div>
 
               <div className="flex items-center gap-2">
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="">ALL STATUS</option>
                   <option value="completed">COMPLETED</option>
@@ -510,7 +459,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="">ALL TYPES</option>
                   <option value="payment">PAYMENT</option>
@@ -524,7 +473,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={filterPaymentMethod}
                   onChange={(e) => setFilterPaymentMethod(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="">ALL METHODS</option>
                   <option value="credit_card">CREDIT CARD</option>
@@ -536,7 +485,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="7d">LAST 7 DAYS</option>
                   <option value="30d">LAST 30 DAYS</option>
@@ -546,7 +495,7 @@ const FinancialAdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all shadow-sm text-slate-600">
+            <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all text-slate-600">
               <Download className="w-3.5 h-3.5" />
               <span>Export</span>
             </button>
@@ -554,7 +503,7 @@ const FinancialAdminDashboard: React.FC = () => {
         </div>
 
         {/* Transactions Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[#fafafa] border-b border-gray-100">
@@ -597,7 +546,7 @@ const FinancialAdminDashboard: React.FC = () => {
                     <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${getTypeColor(transaction.type)} shadow-sm group-hover:scale-105 transition-transform`}>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${getTypeColor(transaction.type)} group-hover:scale-105 transition-transform`}>
                             {getTypeIcon(transaction.type)}
                           </div>
                           <div>
@@ -632,7 +581,7 @@ const FinancialAdminDashboard: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(transaction.status)} shadow-sm`}>
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(transaction.status)}`}>
                           {getStatusIcon(transaction.status)}
                           {transaction.status}
                         </div>
@@ -647,9 +596,9 @@ const FinancialAdminDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                           <button
                             onClick={() => handleViewDetails(transaction)}
-                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                            className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-primary-50 rounded-xl transition-all bg-white border border-gray-100"
                             title="View Details"
                           >
                             <Eye size={14} />
@@ -657,7 +606,7 @@ const FinancialAdminDashboard: React.FC = () => {
                           {transaction.status === 'pending' && (
                             <button
                               onClick={() => handleTransactionStatusChange(transaction.id, 'completed')}
-                              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
+                              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all bg-white border border-gray-100"
                               title="Mark Complete"
                             >
                               <CheckCircle2 size={14} />
@@ -676,7 +625,7 @@ const FinancialAdminDashboard: React.FC = () => {
         {/* Transaction Details Modal */}
         {showDetailsModal && selectedTransaction && (
           <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-white/20 flex flex-col">
+            <div className="bg-white rounded-[32px] w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-100 flex flex-col">
               <div className="p-8 border-b border-gray-100 bg-[#fafafa]">
                 <div className="flex items-center justify-between">
                   <div>
@@ -728,14 +677,14 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">IDENTIFIED PARTIES</h4>
                   <div className="space-y-6 relative ml-2">
-                    <div className="absolute left-0 top-3 bottom-3 w-[1px] bg-indigo-100 border-l border-dashed border-indigo-200" />
+                    <div className="absolute left-0 top-3 bottom-3 w-[1px] bg-primary-100 border-l border-dashed border-primary-200" />
                     <div className="pl-6 relative">
-                      <div className="absolute left-[-2px] top-1.5 w-1 h-1 rounded-full bg-indigo-600" />
+                      <div className="absolute left-[-2px] top-1.5 w-1 h-1 rounded-full bg-[#2c5173]" />
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">SOURCE ACCOUNT</p>
                       <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{selectedTransaction.fromAccount}</p>
                     </div>
                     <div className="pl-6 relative">
-                      <div className="absolute left-[-2px] top-1.5 w-1 h-1 rounded-full bg-indigo-600" />
+                      <div className="absolute left-[-2px] top-1.5 w-1 h-1 rounded-full bg-[#2c5173]" />
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">TARGET RECIPIENT</p>
                       <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{selectedTransaction.toAccount}</p>
                     </div>
@@ -743,7 +692,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Amount Details */}
-                <div className="bg-slate-900 rounded-2xl p-6 shadow-xl shadow-slate-200">
+                <div className="bg-slate-900 rounded-2xl p-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">FISCAL SUMMARY</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
@@ -790,14 +739,14 @@ const FinancialAdminDashboard: React.FC = () => {
                         handleTransactionStatusChange(selectedTransaction.id, 'completed');
                         setShowDetailsModal(false);
                       }}
-                      className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                      className="flex-1 py-4 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
                     >
                       Authorize Clearance
                     </button>
                   )}
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="flex-1 py-4 bg-white text-slate-600 border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
+                    className="flex-1 py-4 bg-white text-slate-600 border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
                   >
                     Close Audit
                   </button>

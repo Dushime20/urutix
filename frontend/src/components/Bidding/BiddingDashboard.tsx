@@ -20,65 +20,16 @@ import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
 import InactiveAuctions from './InactiveAuctions';
 import { cn } from '@/utils/cn';
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useLocation } from 'react-router-dom';
 
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
-const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => {
+const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
   const displayValue = Array.isArray(value) ? value.length : value;
-
-  return (
-    <div className="flex flex-col items-center group">
-      <div className="relative w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-white dark:bg-slate-950 border-[6px] sm:border-[10px] border-slate-50 dark:border-slate-900/50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-blue-900/10">
-        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-          {/* Mobile circle */}
-          <circle
-            cx="64"
-            cy="64"
-            r="58"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeDasharray="364"
-            strokeDashoffset="280"
-            className={cn("sm:hidden opacity-10 dark:opacity-20 transition-all duration-1000 group-hover:stroke-dashoffset-[150]", secondaryColor)}
-          />
-          {/* Desktop circle */}
-          <circle
-            cx="88"
-            cy="88"
-            r="80"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeDasharray="502"
-            strokeDashoffset="400"
-            className={cn("hidden sm:block opacity-10 dark:opacity-20 transition-all duration-1000 group-hover:stroke-dashoffset-[250]", secondaryColor)}
-          />
-        </svg>
-
-        <div className={cn("p-2 sm:p-2.5 rounded-xl sm:rounded-2xl mb-1 sm:mb-2 bg-slate-50 dark:bg-slate-900 text-slate-400 group-hover:bg-white dark:group-hover:bg-slate-800 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-        </div>
-
-        <div className="flex flex-col items-center px-2 sm:px-4 w-full overflow-hidden">
-          <span className="text-lg sm:text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-            {displayValue}
-          </span>
-        </div>
-
-        <div className="absolute inset-3 sm:inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
-      </div>
-
-      <div className="mt-3 sm:mt-5 text-center px-1 sm:px-2">
-        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest sm:tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
-          {title}
-        </p>
-      </div>
-    </div>
-  );
+  return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
 };
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {

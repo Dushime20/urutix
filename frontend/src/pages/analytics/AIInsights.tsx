@@ -135,6 +135,7 @@ export const AIInsights: React.FC = () => {
               subtitle="AI RECOMMENDATIONS"
               icon={<AIIcon />}
               color="primary"
+              variant="classic"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -144,6 +145,7 @@ export const AIInsights: React.FC = () => {
               subtitle="ISSUES DETECTED"
               icon={<WarningIcon />}
               color="error"
+              variant="classic"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -153,6 +155,7 @@ export const AIInsights: React.FC = () => {
               subtitle="ESTIMATED SAVINGS"
               icon={<TrendingUpIcon />}
               color="success"
+              variant="classic"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -162,6 +165,7 @@ export const AIInsights: React.FC = () => {
               subtitle="AVERAGE ACCURACY"
               icon={<InsightIcon />}
               color="secondary"
+              variant="classic"
             />
           </Grid>
         </Grid>

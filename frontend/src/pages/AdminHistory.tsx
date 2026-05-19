@@ -28,6 +28,7 @@ import {
   FaClock
 } from 'react-icons/fa';
 import { TranslatedText } from '@/components/translated-text';
+import { StatCard } from '../components/EnliteUI';
 import { activityLogsApi, type ActivityLog } from '@/services/activityLogsApi';
 
 const AdminHistory: React.FC = () => {
@@ -129,36 +130,43 @@ const AdminHistory: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Activities', value: stats.totalActivities, sub: 'Last 24 hours', icon: FaHistory, color: 'bg-[#345E85]' },
-          { label: 'User Actions', value: stats.userActions, sub: 'User operations', icon: FaUser, color: 'bg-emerald-500' },
-          { label: 'Security Events', value: stats.securityEvents, sub: 'Auth & security', icon: FaShieldAlt, color: 'bg-rose-500' },
-          { label: 'System Events', value: stats.systemEvents, sub: 'System operations', icon: FaCog, color: 'bg-amber-500' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all group">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-2xl ${stat.color} flex items-center justify-center text-white shadow-lg shadow-opacity-20`}>
-                <stat.icon className="w-5 h-5" />
-              </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <TranslatedText text={stat.sub} />
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
-                <TranslatedText text={stat.label} />
-              </p>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {stat.value}
-              </p>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title={<TranslatedText text="Total Activities" />}
+          value={stats.totalActivities}
+          icon={<FaHistory size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Last 24 hours" />}
+        />
+        <StatCard
+          title={<TranslatedText text="User Actions" />}
+          value={stats.userActions}
+          icon={<FaUser size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="User operations" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Security Events" />}
+          value={stats.securityEvents}
+          icon={<FaShieldAlt size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Auth & security" />}
+        />
+        <StatCard
+          title={<TranslatedText text="System Events" />}
+          value={stats.systemEvents}
+          icon={<FaCog size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="System operations" />}
+        />
       </div>
 
       {/* Filters */}
-      <div className="bg-slate-50 border border-slate-100 rounded-3xl p-3 shadow-inner">
+      <div className="bg-slate-50 border border-transparent rounded-3xl p-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           <div className="relative">
             <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
@@ -200,7 +208,7 @@ const AdminHistory: React.FC = () => {
 
           <button
             onClick={handleExport}
-            className="px-6 py-3 bg-[#345E85] text-white rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 text-[10px] font-black uppercase tracking-widest"
+            className="px-6 py-3 bg-[#345E85] text-white rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest"
           >
             <FaDownload className="w-3.5 h-3.5" />
             Export Logs
@@ -209,7 +217,7 @@ const AdminHistory: React.FC = () => {
       </div>
 
       {/* Activity Timeline */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
+      <div className="bg-white rounded-[2rem] border border-transparent overflow-hidden">
         <div className="px-8 py-6 border-b border-slate-50 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">

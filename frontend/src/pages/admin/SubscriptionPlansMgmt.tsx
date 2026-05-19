@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
+import ModernLoader from '../../components/common/ModernLoader';
 
 // --- Interfaces ---
 interface PlanFeatures {
@@ -163,7 +164,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
       actions={
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           <TranslatedText text="Back" />
@@ -173,20 +174,20 @@ const SubscriptionPlansMgmt: React.FC = () => {
       <div className="space-y-6">
         
         {/* Controls */}
-        <div className="flex flex-col md:flex-row justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
           <div className="relative group flex-1 max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-indigo-500 transition-colors" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-[#2c5173] transition-colors" />
             <input
               type="text"
               placeholder="Search plans by name or slug..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all dark:text-slate-200"
+              className="pl-9 pr-4 py-2 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-[#2c5173]/20 focus:bg-white dark:focus:bg-slate-900 transition-all dark:text-slate-200"
             />
           </div>
           <button 
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-lg text-sm font-semibold transition-all active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Create Plan</span>
@@ -195,8 +196,8 @@ const SubscriptionPlansMgmt: React.FC = () => {
 
       {/* Grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="py-10">
+          <ModernLoader isLoading={true} type="cards" cardsCount={3} />
         </div>
       ) : filteredPlans.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -207,14 +208,14 @@ const SubscriptionPlansMgmt: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlans.map((plan) => (
-            <div key={plan.id} className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
+            <div key={plan.id} className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 transition-all overflow-hidden relative">
               {/* Status Indicator Bar */}
               <div className={`h-1.5 w-full ${plan.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`} />
               
               <div className="p-6 space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white pb-1 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white pb-1 group-hover:text-[#2c5173] transition-colors">
                       {plan.name}
                     </h3>
                     <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold rounded uppercase tracking-wider">
@@ -224,7 +225,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                   <div className="flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
                     <button 
                       onClick={() => handleOpenModal(plan)}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-[#2c5173] hover:bg-slate-100 dark:hover:bg-slate-900/30 rounded-lg transition-colors"
                       title="Edit Plan"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -240,9 +241,9 @@ const SubscriptionPlansMgmt: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <div className="text-center py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                  <div className="text-center py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Credit Economics</div>
-                    <div className="text-2xl font-black text-blue-600 dark:text-blue-400">${plan.pricePerCredit || 0.15}</div>
+                    <div className="text-2xl font-black text-[#2c5173] dark:text-blue-400">${plan.pricePerCredit || 0.15}</div>
                     <div className="text-xs text-slate-500">per credit</div>
                   </div>
                 </div>
@@ -268,11 +269,11 @@ const SubscriptionPlansMgmt: React.FC = () => {
                     <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Credit per Ton</div>
                     <div className="flex items-center justify-between text-sm mb-2">
                       <span className="font-semibold text-slate-600 dark:text-slate-400">Tenant Admin:</span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400">{plan.creditsPerTonTenant || 2} credits/ton</span>
+                      <span className="font-bold text-[#2c5173] dark:text-blue-400">{plan.creditsPerTonTenant || 2} credits/ton</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-semibold text-slate-600 dark:text-slate-400">Truck Owner:</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{plan.creditsPerTonTruckOwner || 5} credits/ton</span>
+                      <span className="font-bold text-[#2c5173] dark:text-indigo-400">{plan.creditsPerTonTruckOwner || 5} credits/ton</span>
                     </div>
                   </div>
                   
@@ -293,7 +294,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
       {/* Save Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                 {isEditMode ? 'Edit Subscription Plan' : 'Create Subscription Plan'}
@@ -315,7 +316,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                     value={currentPlan.name || ''}
                     onChange={(e) => setCurrentPlan({...currentPlan, name: e.target.value})}
                     placeholder="e.g. Starter"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white font-medium"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white font-medium"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -325,7 +326,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                     value={currentPlan.slug || ''}
                     onChange={(e) => setCurrentPlan({...currentPlan, slug: e.target.value})}
                     placeholder="e.g. starter"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white font-mono"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white font-mono"
                   />
                 </div>
               </div>
@@ -337,7 +338,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                   onChange={(e) => setCurrentPlan({...currentPlan, description: e.target.value})}
                   rows={2}
                   placeholder="Brief description of this subscription plan"
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white resize-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white resize-none"
                 />
               </div>
 
@@ -362,7 +363,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                       value={currentPlan.pricePerCredit ?? ''}
                       onChange={(e) => setCurrentPlan({...currentPlan, pricePerCredit: parseFloat(e.target.value)})}
                       placeholder="0.15"
-                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:text-white"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white"
                     />
                     <p className="text-xs text-slate-500">What tenant pays per credit</p>
                   </div>
@@ -374,7 +375,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                       value={currentPlan.totalCredits ?? ''}
                       onChange={(e) => setCurrentPlan({...currentPlan, totalCredits: parseInt(e.target.value)})}
                       placeholder="-1 for unlimited"
-                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:text-white"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white"
                     />
                     <p className="text-xs text-slate-500">-1 for unlimited credits</p>
                   </div>
@@ -404,7 +405,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                       value={currentPlan.creditsPerTonTenant ?? ''}
                       onChange={(e) => setCurrentPlan({...currentPlan, creditsPerTonTenant: parseFloat(e.target.value)})}
                       placeholder="2"
-                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white"
                     />
                     <p className="text-xs text-slate-500">Credits deducted per ton for tenant</p>
                   </div>
@@ -419,7 +420,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                       value={currentPlan.creditsPerTonTruckOwner ?? ''}
                       onChange={(e) => setCurrentPlan({...currentPlan, creditsPerTonTruckOwner: parseFloat(e.target.value)})}
                       placeholder="5"
-                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white"
                     />
                     <p className="text-xs text-slate-500">Credits deducted per ton for truck owner</p>
                   </div>
@@ -431,20 +432,20 @@ const SubscriptionPlansMgmt: React.FC = () => {
                     <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Example: 10 Ton Cargo</div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-600 dark:text-slate-400">Tenant Admin Cost:</span>
-                      <span className="font-black text-blue-600 dark:text-blue-400">
+                      <span className="font-black text-[#2c5173] dark:text-blue-400">
                         {(currentPlan.creditsPerTonTenant * 10).toFixed(1)} credits
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-600 dark:text-slate-400">Truck Owner Cost:</span>
-                      <span className="font-black text-indigo-600 dark:text-indigo-400">
+                      <span className="font-black text-[#2c5173] dark:text-indigo-400">
                         {(currentPlan.creditsPerTonTruckOwner * 10).toFixed(1)} credits
                       </span>
                     </div>
                     {currentPlan.pricePerCredit && (
                       <div className="pt-2 border-t border-blue-100 dark:border-blue-800">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-600 dark:text-slate-400">Tenant's Cost (USD):</span>
+                           <span className="text-slate-600 dark:text-slate-400">Tenant's Cost (USD):</span>
                           <span className="font-black text-emerald-600 dark:text-emerald-400">
                             ${(currentPlan.creditsPerTonTenant * 10 * currentPlan.pricePerCredit).toFixed(2)}
                           </span>
@@ -462,7 +463,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                     id="isActive"
                     checked={currentPlan.isActive ?? true}
                     onChange={(e) => setCurrentPlan({...currentPlan, isActive: e.target.checked})}
-                    className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500"
+                    className="w-5 h-5 rounded text-[#2c5173] focus:ring-[#2c5173]"
                   />
                   <label htmlFor="isActive" className="text-sm font-semibold text-slate-900 dark:text-white mb-0 cursor-pointer">
                     Plan is Active (visible to users)
@@ -474,7 +475,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                       type="number"
                       value={currentPlan.displayOrder ?? 0}
                       onChange={(e) => setCurrentPlan({...currentPlan, displayOrder: parseInt(e.target.value)})}
-                      className="w-20 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white"
+                      className="w-20 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173] dark:text-white"
                     />
                 </div>
               </div>
@@ -490,7 +491,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
               </button>
               <button
                 onClick={savePlan}
-                className="px-6 py-2.5 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-none hover:shadow-lg rounded-xl transition-all active:scale-95"
+                className="px-6 py-2.5 text-sm font-bold bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-xl transition-all active:scale-95"
               >
                 {isEditMode ? 'Save Changes' : 'Create Plan'}
               </button>

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StatCard } from '../../components/EnliteUI';
 import {
   FaCreditCard,
   FaSearch,
@@ -237,7 +238,7 @@ const TenantSubscriptions: React.FC = () => {
       actions={
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
         >
           <FaSync className="text-sm" />
           <TranslatedText text="Refresh" />
@@ -247,25 +248,42 @@ const TenantSubscriptions: React.FC = () => {
       <div className="space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div key={index} className="bg-white rounded-xl shadow-md p-6 border-2 border-slate-100 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 bg-gradient-to-r ${stat.color} rounded-xl`}>
-                    <Icon className="text-2xl text-white" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">{stat.label}</span>
-                </div>
-                <div className="text-3xl font-bold text-slate-900 mb-1">{stat.value}</div>
-                <div className="text-sm text-slate-600">{stat.description}</div>
-              </div>
-            );
-          })}
+          <StatCard
+            title={<TranslatedText text="Total Subscriptions" />}
+            value={subscriptions.length}
+            icon={<FaCreditCard className="w-5 h-5" />}
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="All tenant subscriptions" />}
+          />
+          <StatCard
+            title={<TranslatedText text="Active" />}
+            value={subscriptions.filter(s => s.status === 'active').length}
+            icon={<FaCheckCircle className="w-5 h-5" />}
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="Currently active" />}
+          />
+          <StatCard
+            title={<TranslatedText text="Trial" />}
+            value={subscriptions.filter(s => s.status === 'trial').length}
+            icon={<FaClock className="w-5 h-5" />}
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="In trial period" />}
+          />
+          <StatCard
+            title={<TranslatedText text="Total Revenue" />}
+            value={`$${Number(subscriptions.reduce((sum, s) => sum + (s.paidAmount || 0), 0)).toFixed(2)}`}
+            icon={<FaChartLine className="w-5 h-5" />}
+            color="primary"
+            variant="classic"
+            subtitle={<TranslatedText text="Total payments received" />}
+          />
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-4 border border-slate-200">
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
@@ -317,7 +335,7 @@ const TenantSubscriptions: React.FC = () => {
         </div>
 
         {/* Subscriptions Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-slate-200">
+        <div className="bg-white rounded-lg overflow-hidden border border-slate-200">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
@@ -367,8 +385,8 @@ const TenantSubscriptions: React.FC = () => {
                     <tr key={subscription.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <FaBuilding className="text-indigo-600" />
+                          <div className="w-10 h-10 bg-[#2c5173]/10 rounded-lg flex items-center justify-center">
+                            <FaBuilding className="text-[#2c5173]" />
                           </div>
                           <div>
                             <div className="font-medium text-slate-900">{subscription.tenantName}</div>
@@ -409,7 +427,7 @@ const TenantSubscriptions: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-indigo-600">
+                        <div className="font-bold text-[#2c5173]">
                           {(subscription.creditBalance || 0).toLocaleString()}
                         </div>
                       </td>
@@ -438,7 +456,7 @@ const TenantSubscriptions: React.FC = () => {
                               setSelectedSubscription(subscription);
                               setShowDetailsModal(true);
                             }}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            className="p-2 text-[#2c5173] hover:bg-[#2c5173]/10 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <FaEye />
@@ -487,7 +505,7 @@ const TenantSubscriptions: React.FC = () => {
         {/* Details Modal */}
         {showDetailsModal && selectedSubscription && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-slate-900">Subscription Details</h3>
                 <button
@@ -621,7 +639,7 @@ const TenantSubscriptions: React.FC = () => {
         {/* Add Credits Modal */}
         {showAddCreditsModal && selectedSubscription && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <div className="bg-white rounded-2xl max-w-md w-full p-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-slate-900">Sell / Grant Credits</h3>
                 <button
@@ -712,7 +730,7 @@ const TenantSubscriptions: React.FC = () => {
                       }
                     }}
                     disabled={addCredits.isPending || creditsToAdd <= 0}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all font-bold disabled:opacity-50"
+                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-bold disabled:opacity-50"
                   >
                     {addCredits.isPending ? 'Processing...' : (transactionType === 'purchase' ? 'Record Sale' : 'Grant Bonus')}
                   </button>
@@ -736,7 +754,7 @@ const TenantSubscriptions: React.FC = () => {
         {/* Transactions Modal */}
         {showTransactionsModal && selectedSubscription && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900">Credit Transactions</h3>

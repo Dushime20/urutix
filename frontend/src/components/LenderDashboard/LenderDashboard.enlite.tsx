@@ -9,6 +9,7 @@ import {
   RefreshCw, ChevronRight, Banknote, BarChart3,
   ShieldCheck, Percent,
 } from 'lucide-react';
+import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
@@ -29,30 +30,19 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   );
 };
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
+// ── Stat card ── uses shared EnliteUI StatCard ────────────────────────────────
 const StatCard: React.FC<{
   title: string; value: string | number; icon: React.ReactNode;
-  sub?: string; color: string; loading?: boolean;
-}> = ({ title, value, icon, sub, color, loading }) => (
-  <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex items-start justify-between mb-4">
-      <div className={`h-11 w-11 rounded-2xl flex items-center justify-center ${color}`}>
-        {icon}
-      </div>
-    </div>
-    {loading ? (
-      <div className="space-y-2">
-        <div className="h-7 w-24 bg-slate-100 rounded-xl animate-pulse" />
-        <div className="h-3 w-32 bg-slate-50 rounded-lg animate-pulse" />
-      </div>
-    ) : (
-      <>
-        <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{title}</p>
-        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
-      </>
-    )}
-  </div>
+  sub?: string; color?: string; loading?: boolean;
+}> = ({ title, value, icon, sub, loading }) => (
+  <SharedStatCard
+    title={title}
+    value={value}
+    icon={icon}
+    subtitle={sub}
+    loading={loading}
+    variant="classic"
+  />
 );
 
 // ── Main component ────────────────────────────────────────────────────────────

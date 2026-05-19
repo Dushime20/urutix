@@ -118,10 +118,10 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
               value={`${Math.round(overallScore)}%`}
               icon={<Analytics />}
               color="primary"
+              variant="classic"
               trend={overallScore > 50 ? '+15%' : undefined}
               trendDirection={overallScore > 50 ? 'up' : 'neutral'}
               subtitle="Verification Progress"
-              variant="premium"
             />
           </Grid>
           
@@ -131,8 +131,8 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
               value={profile?.complianceScore || 0}
               icon={<Shield />}
               color="emerald"
+              variant="classic"
               subtitle="Security Rating"
-              variant="premium"
             />
           </Grid>
           
@@ -142,8 +142,8 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
               value={metrics?.documentsUploaded || 0}
               icon={<CheckCircle />}
               color="primary"
+              variant="classic"
               subtitle="Files Uploaded"
-              variant="premium"
             />
           </Grid>
           
@@ -152,9 +152,9 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
               title="Est. Time"
               value={metrics?.estimatedCompletion || 'N/A'}
               icon={<Schedule />}
+              variant="classic"
               color="secondary"
               subtitle="Processing"
-              variant="premium"
             />
           </Grid>
         </Grid>

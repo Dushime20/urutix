@@ -20,42 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import MapLocationPicker from '@/components/FleetDashboard/MapLocationPicker';
-
-const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
-  <div className="flex flex-col items-center group">
-    <div className="relative w-36 h-36 rounded-full bg-white dark:bg-slate-900 border-[6px] border-slate-50 dark:border-slate-800 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none">
-      <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-        <circle
-          cx="72"
-          cy="72"
-          r="66"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeDasharray="414"
-          strokeDashoffset="300"
-          className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[150]", secondaryColor)}
-        />
-      </svg>
-
-      <div className={cn("p-2 rounded-xl mb-1 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-        <Icon className="w-4 h-4" />
-      </div>
-
-      <div className="flex flex-col items-center">
-        <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500">
-          {value}
-        </span>
-      </div>
-    </div>
-
-    <div className="mt-4 text-center">
-      <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300">
-        {title}
-      </p>
-    </div>
-  </div>
-);
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const { confirm, DialogComponent } = useConfirmDialog();
@@ -234,32 +199,36 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     );
   }
 
+  function haversineKm(lat: number, lng: number, lat1: number, lng1: number): number | undefined {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <div className={cn("space-y-12 animate-in fade-in duration-700", isEmbedded ? "p-0" : "p-0")}>
       {/* Search & Stats Hub */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-slate-50/50 dark:bg-slate-900/50 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-inner">
-        <StatsCard
+        <CircularStatCard
           title="Optimal Paths"
           value={routes.length}
           icon={Navigation}
           colorClass="bg-blue-50 text-[#345E85]"
           secondaryColor="text-[#345E85]"
         />
-        <StatsCard
+        <CircularStatCard
           title="Active Dynamics"
           value={activeRoutes}
           icon={Activity}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
-        <StatsCard
+        <CircularStatCard
           title="Network Scope"
           value={`${(totalCoverage / 1000).toFixed(1)}K KM`}
           icon={Box}
           colorClass="bg-amber-50 text-amber-600"
           secondaryColor="text-amber-600"
         />
-        <StatsCard
+        <CircularStatCard
           title="Path Reliability"
           value="98.2%"
           icon={Shield}

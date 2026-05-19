@@ -39,7 +39,7 @@ const AdminNotificationDropdown: React.FC = () => {
     if (t.includes('security') || t.includes('suspicious') || t.includes('alert'))
       return <ShieldAlert size={size} className="text-red-500" />;
     if (t.includes('activity') || t.includes('system'))
-      return <Activity size={size} className="text-indigo-500" />;
+      return <Activity size={size} className="text-primary-500" />;
     return <Bell size={size} className="text-slate-400" />;
   };
 
@@ -94,7 +94,7 @@ const AdminNotificationDropdown: React.FC = () => {
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                     selectedNotification.priority === 'HIGH' || selectedNotification.priority === 'CRITICAL'
                       ? 'bg-red-100 text-red-600'
-                      : 'bg-indigo-100 text-indigo-600'
+                      : 'bg-primary-100 text-primary-600'
                   }`}>
                     {selectedNotification.priority || 'NORMAL'} PRIORITY
                   </span>
@@ -133,7 +133,7 @@ const AdminNotificationDropdown: React.FC = () => {
                   Dismiss View
                 </button>
                 <button
-                  className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98]"
+                  className="flex-1 py-4 bg-primary-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 active:scale-[0.98]"
                   onClick={() => {
                     if (selectedNotification.actionUrl) {
                       window.location.href = selectedNotification.actionUrl;
@@ -157,7 +157,7 @@ const AdminNotificationDropdown: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`relative p-2 rounded-xl transition-all ${
-          isOpen ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'
+          isOpen ? 'bg-primary-50 text-primary-600' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50'
         }`}
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
       >
@@ -245,12 +245,12 @@ const AdminNotificationDropdown: React.FC = () => {
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
                     className={`group px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer relative ${
-                      !n.isRead ? 'bg-indigo-50/20' : ''
+                      !n.isRead ? 'bg-primary-50/20' : ''
                     }`}
                   >
                     {/* Unread left bar */}
                     {!n.isRead && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-600 rounded-r" />
                     )}
 
                     <div className="flex gap-4">
@@ -292,7 +292,7 @@ const AdminNotificationDropdown: React.FC = () => {
                       {!n.isRead && (
                         <button
                           onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}
-                          className="p-1 rounded bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 transition-colors shadow-sm"
+                          className="p-1 rounded bg-white border border-slate-200 text-slate-400 hover:text-primary-600 transition-colors shadow-sm"
                           title="Mark as read"
                         >
                           <Check size={10} />
@@ -314,7 +314,7 @@ const AdminNotificationDropdown: React.FC = () => {
             {/* Footer */}
             <div className="p-4 bg-slate-50 border-t border-slate-100">
               <button
-                className="w-full py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm active:scale-[0.98]"
+                className="w-full py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all shadow-sm active:scale-[0.98]"
                 onClick={() => { window.location.href = '/admin/notifications'; setIsOpen(false); }}
               >
                 VIEW ALL SYSTEM ALERTS

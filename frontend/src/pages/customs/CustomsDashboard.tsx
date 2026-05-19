@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
+import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const BRAND = '#345E85';
@@ -38,25 +39,15 @@ const StatCard: React.FC<{
   bg: string;
   border: string;
   onClick?: () => void;
-}> = ({ label, value, sub, icon: Icon, color, bg, border, onClick }) => (
-  <motion.div
-    whileHover={{ y: -3, boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}
+}> = ({ label, value, sub, icon: Icon, onClick }) => (
+  <SharedStatCard
+    title={label}
+    value={value}
+    icon={<Icon size={18} />}
+    subtitle={sub}
+    variant="premium"
     onClick={onClick}
-    className={cn(
-      'bg-white dark:bg-slate-900 rounded-2xl p-5 border flex flex-col gap-3 transition-all',
-      border,
-      onClick && 'cursor-pointer',
-    )}
-  >
-    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', bg)}>
-      <Icon size={18} className={color} />
-    </div>
-    <div>
-      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{label}</p>
-      <p className={cn('text-2xl font-black tracking-tight mt-0.5', color)}>{value}</p>
-      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
-    </div>
-  </motion.div>
+  />
 );
 
 const CustomsDashboard: React.FC = () => {

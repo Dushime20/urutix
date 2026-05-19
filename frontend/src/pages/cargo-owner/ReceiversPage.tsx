@@ -19,48 +19,9 @@ import { toast } from 'react-hot-toast';
 import receiverService from '../../services/receiverService';
 import type { Receiver, CreateReceiverDto } from '../../types/receiver';
 import { cn } from '@/utils/cn';
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 import ModernLoader from '../../components/common/ModernLoader';
-
-const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
-  <div className="flex flex-col items-center group w-full max-w-[200px] mb-8 lg:mb-0">
-    <div className="relative w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-white border-[6px] sm:border-[12px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
-      {/* Decorative outer ring */}
-      <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.02] sm:scale-[1.05]">
-        <circle
-          cx="50%"
-          cy="50%"
-          r="48%"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeDasharray="553"
-          strokeDashoffset="440"
-          className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[300]", secondaryColor)}
-        />
-      </svg>
-
-      <div className={cn("p-1.5 sm:p-3 rounded-lg sm:rounded-2xl mb-0.5 sm:mb-2 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-        <Icon className="w-3.5 h-3.5 sm:w-6 sm:h-6" />
-      </div>
-
-      <div className="flex flex-col items-center">
-        <span className="text-xl sm:text-4xl font-black text-[#0f172a] tracking-tighter group-hover:scale-110 transition-transform duration-500">
-          {value}
-        </span>
-      </div>
-
-      {/* Aesthetic inner ring */}
-      <div className="absolute inset-2 sm:inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
-    </div>
-
-    <div className="mt-3 sm:mt-6 text-center">
-      <p className="text-[7px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] sm:tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300">
-        {title}
-      </p>
-    </div>
-  </div>
-);
 
 const ReceiversPage: React.FC = () => {
   const [receivers, setReceivers] = useState<Receiver[]>([]);
@@ -215,28 +176,28 @@ const ReceiversPage: React.FC = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 lg:gap-12 items-start">
-        <StatsCard
+        <CircularStatCard
           title="Total Receivers"
           value={receivers.length}
           icon={Users}
           colorClass="bg-blue-50 text-[#345E85]"
           secondaryColor="text-[#345E85]"
         />
-        <StatsCard
+        <CircularStatCard
           title="Active"
           value={receivers.filter(r => r.status === 'ACTIVE').length}
           icon={CheckCircle}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
-        <StatsCard
+        <CircularStatCard
           title="Pending"
           value={receivers.filter(r => r.status !== 'ACTIVE').length}
           icon={Clock}
           colorClass="bg-amber-50 text-amber-600"
           secondaryColor="text-amber-600"
         />
-        <StatsCard
+        <CircularStatCard
           title="Assigned Cargo"
           value="0"
           icon={Package}

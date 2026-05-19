@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import ModernLoader from '../../components/common/ModernLoader';
 import {
   FaBox,
   FaEdit,
@@ -22,6 +23,7 @@ import {
 } from "react-icons/fa";
 import FilterSelect from "@/components/common/FilterSelect";
 import { TranslatedText } from '../../components/translated-text';
+import { StatCard } from '../../components/EnliteUI';
 
 interface Cargo {
   id: string;
@@ -41,6 +43,13 @@ interface Cargo {
 }
 
 const CargoManagement: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [cargos] = useState<Cargo[]>([
     {
       id: '1',
@@ -132,10 +141,14 @@ const CargoManagement: React.FC = () => {
     return matchesSearch && matchesStatus && matchesType;
   });
 
+  if (loading) {
+    return <ModernLoader isLoading={true} type="page" showStats={true} />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Custom Header for Tenant Admin */}
-      <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100">
+      <div className="bg-white rounded-[24px] p-8 border border-slate-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Cargo Management" /></h1>
@@ -144,7 +157,7 @@ const CargoManagement: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold text-sm shadow-lg shadow-indigo-100 flex items-center gap-2">
+            <button className="px-6 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all font-bold text-sm flex items-center gap-2">
               <FaPlus className="text-xs" />
               <TranslatedText text="Add Cargo" />
             </button>
@@ -153,7 +166,7 @@ const CargoManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl bg-gradient-to-r from-gray-50 via-white to-gray-50 p-6 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.35)]">
+      <div className="rounded-2xl bg-slate-50 border border-slate-200 p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_repeat(3,1fr)] xl:grid-cols-[2fr_repeat(4,1fr)]">
           <div className="relative flex items-center">
             <FaSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -162,42 +175,42 @@ const CargoManagement: React.FC = () => {
               placeholder="Search cargo by title, owner or route…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-transparent bg-white/80 py-3 pl-11 pr-4 text-sm text-gray-700 shadow-inner transition focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-100"
+              className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm text-gray-700 transition focus:border-[#2c5173] focus:outline-none focus:ring-2 focus:ring-[#2c5173]/20"
             />
           </div>
 
           <FilterSelect
             label="Status"
-            icon={<FaLayerGroup className="text-purple-500" />}
+            icon={<FaLayerGroup className="text-[#2c5173]" />}
             value={filterStatus}
             placeholder="All Status"
             options={[
-              { value: '', label: <TranslatedText text="All Status" /> },
-              { value: 'draft', label: <TranslatedText text="Draft" /> },
-              { value: 'published', label: <TranslatedText text="Published" /> },
-              { value: 'assigned', label: <TranslatedText text="Assigned" /> },
-              { value: 'in_transit', label: <TranslatedText text="In Transit" /> },
-              { value: 'delivered', label: <TranslatedText text="Delivered" /> },
+              { value: '', label: "All Status" },
+              { value: 'draft', label: "Draft" },
+              { value: 'published', label: "Published" },
+              { value: 'assigned', label: "Assigned" },
+              { value: 'in_transit', label: "In Transit" },
+              { value: 'delivered', label: "Delivered" },
             ]}
             onChange={setFilterStatus}
           />
 
           <FilterSelect
             label="Cargo Type"
-            icon={<FaBox className="text-blue-500" />}
+            icon={<FaBox className="text-[#2c5173]" />}
             value={filterType}
             placeholder="All Types"
             options={[
-              { value: '', label: <TranslatedText text="All Types" /> },
-              { value: 'GENERAL', label: <TranslatedText text="General" /> },
-              { value: 'FRAGILE', label: <TranslatedText text="Fragile" /> },
-              { value: 'HAZARDOUS', label: <TranslatedText text="Hazardous" /> },
-              { value: 'REFRIGERATED', label: <TranslatedText text="Refrigerated" /> },
+              { value: '', label: "All Types" },
+              { value: 'GENERAL', label: "General" },
+              { value: 'FRAGILE', label: "Fragile" },
+              { value: 'HAZARDOUS', label: "Hazardous" },
+              { value: 'REFRIGERATED', label: "Refrigerated" },
             ]}
             onChange={setFilterType}
           />
 
-          <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:scale-[1.01] hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-1">
+          <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-gray-50 focus:outline-none">
             <FaFilter />
             <span><TranslatedText text="Advanced Filters" /></span>
           </button>
@@ -215,7 +228,7 @@ const CargoManagement: React.FC = () => {
               <FaSync className="text-xs" />
               <TranslatedText text="Reset" />
             </button>
-            <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-gray-900/15 transition hover:scale-[1.01] hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-1">
+            <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 focus:outline-none">
               <FaDownload />
               <TranslatedText text="Export" />
             </button>
@@ -225,55 +238,45 @@ const CargoManagement: React.FC = () => {
 
       {/* Cargo Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Cargos" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.length}</p>
-            </div>
-            <FaBox className="text-purple-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="In Transit" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.status === 'in_transit').length}</p>
-            </div>
-            <FaTruck className="text-green-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Critical" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.urgency === 'critical').length}</p>
-            </div>
-            <FaClock className="text-red-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Hazardous" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{cargos.filter(c => c.isHazardous).length}</p>
-            </div>
-            <FaExclamationTriangle className="text-yellow-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none"><TranslatedText text="Total Value" /></p>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">${cargos.reduce((acc, c) => acc + c.value, 0).toLocaleString()}</p>
-            </div>
-            <FaDollarSign className="text-blue-500 text-3xl" />
-          </div>
-        </div>
+        <StatCard
+          title={<TranslatedText text="Total Cargos" />}
+          value={cargos.length}
+          icon={<FaBox size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="In Transit" />}
+          value={cargos.filter(c => c.status === 'in_transit').length}
+          icon={<FaTruck size={22} />}
+          color="success"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Critical" />}
+          value={cargos.filter(c => c.urgency === 'critical').length}
+          icon={<FaClock size={22} />}
+          color="error"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Hazardous" />}
+          value={cargos.filter(c => c.isHazardous).length}
+          icon={<FaExclamationTriangle size={22} />}
+          color="warning"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Total Value" />}
+          value={`$${cargos.reduce((acc, c) => acc + c.value, 0).toLocaleString()}`}
+          icon={<FaDollarSign size={22} />}
+          color="info"
+          variant="classic"
+        />
       </div>
 
       {/* Cargo Table */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -291,7 +294,7 @@ const CargoManagement: React.FC = () => {
                 <tr key={cargo.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 bg-slate-50 border border-slate-150 rounded-full flex items-center justify-center text-slate-700 font-semibold">
                         {getTypeIcon(cargo.type, cargo)}
                       </div>
                       <div className="ml-4">

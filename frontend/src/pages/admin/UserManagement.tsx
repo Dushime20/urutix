@@ -9,6 +9,9 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
+import { StatCard } from '../../components/EnliteUI';
+import ModernLoader from '../../components/common/ModernLoader';
 
 interface User {
   id: string;
@@ -28,8 +31,16 @@ interface User {
 }
 
 const UserManagement: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const { user } = useAuth();
   const { hasPermission } = usePermission();
+  const { tSync } = useTranslation();
 
   // Permission-based access control with role fallback
   const canManageUsers = hasPermission('user:manage') ||
@@ -257,18 +268,29 @@ const UserManagement: React.FC = () => {
     ));
   };
 
+  if (loading) {
+    return (
+      <AdminPageLayout
+        title={<TranslatedText text="User Management" />}
+        description={<TranslatedText text="Manage all platform users and their permissions" />}
+      >
+        <ModernLoader isLoading={true} type="page" showStats={true} />
+      </AdminPageLayout>
+    );
+  }
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="User Management" />}
       description={<TranslatedText text="Manage all platform users and their permissions" />}
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold shadow-lg transition-all">
+          <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-all">
             <FaDownload size={14} />
             <span className="hidden sm:inline"><TranslatedText text="Export" /></span>
           </button>
           {canCreateUsers && (
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all">
+            <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-bold transition-all">
               <FaPlus size={14} />
               <span className="hidden sm:inline"><TranslatedText text="Add User" /></span>
             </button>
@@ -277,13 +299,13 @@ const UserManagement: React.FC = () => {
       }
     >
       {/* Enhanced Filters */}
-      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+      <div className="bg-white rounded-lg p-4 lg:p-6 border border-transparent">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div className="relative lg:col-span-2">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder={<TranslatedText text="Search users, companies..." />}
+              placeholder={tSync("Search users, companies...")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -372,7 +394,7 @@ const UserManagement: React.FC = () => {
       )}
 
       {/* Enhanced User Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white rounded-lg overflow-hidden border border-transparent">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
             <thead className="bg-[#fafafa] border-b border-slate-200">
@@ -428,7 +450,7 @@ const UserManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
                         {user.name.charAt(0)}
                       </div>
                       <div className="ml-4">
@@ -464,23 +486,23 @@ const UserManagement: React.FC = () => {
                         <button
                           onClick={() => openUserModal(user)}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                          title={<TranslatedText text="View Details" />}
+                          title={tSync("View Details")}
                         >
                           <FaEye />
                         </button>
                       )}
                       {canManageUsers && (
-                        <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors" title={<TranslatedText text="Edit" />}>
+                        <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors" title={tSync("Edit")}>
                           <FaEdit />
                         </button>
                       )}
                       {canManageUsers && (
-                        <button className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors" title={<TranslatedText text="Permissions" />}>
+                        <button className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors" title={tSync("Permissions")}>
                           <FaShieldAlt />
                         </button>
                       )}
                       <div className="relative">
-                        <button className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors" title={<TranslatedText text="More Actions" />}>
+                        <button className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors" title={tSync("More Actions")}>
                           <FaEllipsisV />
                         </button>
                         {/* Dropdown menu would go here */}
@@ -496,51 +518,41 @@ const UserManagement: React.FC = () => {
 
       {/* Enhanced Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Total Users" /></p>
-            </div>
-            <FaUsers className="text-blue-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.status === 'active').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Active Users" /></p>
-            </div>
-            <FaUserCheck className="text-green-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.status === 'pending').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Pending Users" /></p>
-            </div>
-            <FaUserTimes className="text-yellow-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.role === 'ADMIN').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Admins" /></p>
-            </div>
-            <FaShieldAlt className="text-purple-500 text-3xl" />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-black text-gray-900 leading-none tracking-tight">{users.filter(u => u.verificationStatus === 'verified').length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 leading-none"><TranslatedText text="Verified" /></p>
-            </div>
-            <FaCheck className="text-green-500 text-3xl" />
-          </div>
-        </div>
+        <StatCard
+          title={<TranslatedText text="Total Users" />}
+          value={users.length}
+          icon={<FaUsers size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Active Users" />}
+          value={users.filter(u => u.status === 'active').length}
+          icon={<FaUserCheck size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Pending Users" />}
+          value={users.filter(u => u.status === 'pending').length}
+          icon={<FaUserTimes size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Admins" />}
+          value={users.filter(u => u.role === 'ADMIN').length}
+          icon={<FaShieldAlt size={22} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Verified" />}
+          value={users.filter(u => u.verificationStatus === 'verified').length}
+          icon={<FaCheck size={22} />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* User Details Modal */}
@@ -560,7 +572,7 @@ const UserManagement: React.FC = () => {
             <div className="space-y-6">
               {/* Basic Info */}
               <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
                   {selectedUser.name.charAt(0)}
                 </div>
                 <div>

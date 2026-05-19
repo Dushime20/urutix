@@ -23,6 +23,7 @@ import {
 import { FaShieldAlt } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 interface Route {
@@ -499,7 +500,7 @@ const AdminRoutes: React.FC = () => {
         canCreateRoutes && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-all duration-200 text-sm font-bold"
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary-700 transition-all duration-200 text-sm font-bold shadow-md shadow-primary-500/10"
           >
             <Plus size={16} />
             <span><TranslatedText text="Add Route" /></span>
@@ -510,30 +511,47 @@ const AdminRoutes: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-black text-gray-900 mb-1">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.description}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                    <Icon className="text-white" size={20} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <StatCard
+          title={<TranslatedText text="Total Routes" />}
+          value={analyticsData?.totalRoutes ?? routes.length}
+          icon={<LucideMap size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="All registered routes" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Active Routes" />}
+          value={analyticsData?.activeRoutes ?? routes.filter((r: Route) => r.status === 'active').length}
+          icon={<Check size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Currently operational" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Total Distance" />}
+          value={`${(analyticsData?.totalDistance ?? routes.reduce((sum: number, r: Route) => sum + (r.distance || 0), 0)).toLocaleString()} km`}
+          icon={<Milestone size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Combined route distance" />}
+        />
+        <StatCard
+          title={<TranslatedText text="Assigned Trucks" />}
+          value={routes.reduce((sum: number, r: Route) => {
+            if (Array.isArray(r.assignedTrucks)) {
+              return sum + r.assignedTrucks.length;
+            }
+            return sum + (typeof r.assignedTrucks === 'number' ? r.assignedTrucks : 0);
+          }, 0)}
+          icon={<Truck size={22} />}
+          color="primary"
+          variant="classic"
+          subtitle={<TranslatedText text="Trucks using routes" />}
+        />
       </div>
 
       {/* Toolbar: filters, bulk actions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-transparent p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -645,7 +663,7 @@ const AdminRoutes: React.FC = () => {
       </div>
 
       {/* Routes Table */}
-      <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl overflow-hidden border border-transparent">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">

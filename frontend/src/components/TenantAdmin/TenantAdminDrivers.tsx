@@ -61,7 +61,7 @@ const TenantAdminDrivers: React.FC = () => {
   const [selectedExistingDriver, setSelectedExistingDriver] = useState<any | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Pick<Driver, 'firstName' | 'lastName' | 'email' | 'phone' | 'licenseNumber' | 'status' | 'availabilityStatus'>>({
     firstName: '',
     lastName: '',
     email: '',
@@ -115,7 +115,7 @@ const TenantAdminDrivers: React.FC = () => {
   // Create driver mutation
   const createMutation = useMutation({
     mutationFn: async (driverData: Partial<Driver>) => {
-      return await fleetApi.createDriver(driverData);
+      return await fleetApi.createDriver(driverData as any);
     },
     onSuccess: () => {
       toast.success('Driver created successfully');
@@ -314,7 +314,7 @@ const TenantAdminDrivers: React.FC = () => {
       email: driver.email || '',
       phone: driver.phone || '',
       licenseNumber: driver.licenseNumber || '',
-      status: (driver.status || 'ACTIVE').toUpperCase(),
+      status: (driver.status || 'ACTIVE'),
       availabilityStatus: (driver.availabilityStatus || 'AVAILABLE').toUpperCase(),
     });
     setShowEditModal(true);
@@ -458,6 +458,7 @@ const TenantAdminDrivers: React.FC = () => {
             icon={<Users />}
             color="primary"
             subtitle="Fleet Size"
+            variant="classic"
           />
           <StatCard
             title="Active Drivers"
@@ -465,6 +466,7 @@ const TenantAdminDrivers: React.FC = () => {
             icon={<CheckCircle2 />}
             color="success"
             subtitle="Operational"
+            variant="classic"
           />
           <StatCard
             title="Inactive"
@@ -472,6 +474,7 @@ const TenantAdminDrivers: React.FC = () => {
             icon={<UserX />}
             color="secondary"
             subtitle="Off Duty"
+            variant="classic"
           />
           <StatCard
             title="Available"
@@ -479,6 +482,7 @@ const TenantAdminDrivers: React.FC = () => {
             icon={<Clock />}
             color="info"
             subtitle="Ready"
+            variant="classic"
           />
           <StatCard
             title="In Transit"
@@ -486,11 +490,13 @@ const TenantAdminDrivers: React.FC = () => {
             icon={<Truck />}
             color="warning"
             subtitle="On Job"
+            variant="classic"
           />
           <StatCard
             title="Experience"
             value={`${stats.totalExperience.toFixed(0)} yrs`}
             icon={<Briefcase />}
+            variant="classic"
             color="accent"
             subtitle="Cumulative"
           />
@@ -1007,7 +1013,7 @@ const TenantAdminDrivers: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as Driver['status'] })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="ACTIVE">Active</option>
@@ -1145,7 +1151,7 @@ const TenantAdminDrivers: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as Driver['status'] })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="ACTIVE">Active</option>

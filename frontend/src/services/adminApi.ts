@@ -434,3 +434,32 @@ export const cancelTrip = (tripId: string, reason: string) =>
 export const assignTripDriver = (tripId: string, driverId: string) =>
   api.patch<any>(`/admin/trips/${tripId}/assign-driver`, { driverId })
     .then(res => res.data);
+
+// Security Center management
+export const fetchSecurityEvents = (severity?: string) =>
+  api.get<any>(`/admin/security-center/events`, { params: severity ? { severity } : {} })
+    .then(res => res.data);
+
+export const fetchFailedLogins = () =>
+  api.get<any>(`/admin/security-center/failed-logins`)
+    .then(res => res.data);
+
+export const fetchActiveSessions = () =>
+  api.get<any>(`/admin/security-center/sessions`)
+    .then(res => res.data);
+
+export const fetchFlaggedAccounts = () =>
+  api.get<any>(`/admin/security-center/flagged-accounts`)
+    .then(res => res.data);
+
+export const fetchPermissionHistory = () =>
+  api.get<any>(`/admin/security-center/permission-history`)
+    .then(res => res.data);
+
+export const terminateSession = (sessionId: string) =>
+  api.post<any>(`/admin/security-center/sessions/${sessionId}/terminate`)
+    .then(res => res.data);
+
+export const exportSecurityLogs = (startDate: string, endDate: string) =>
+  api.get<any>(`/admin/security-center/export`, { params: { startDate, endDate } })
+    .then(res => res.data);

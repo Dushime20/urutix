@@ -448,6 +448,7 @@ export const AdvancedAnalytics: React.FC = () => {
               subtitle="ACTIVE AI MODELS"
               icon={<MLIcon />}
               color="primary"
+              variant="classic"
             />
           </Grid>
         )}
@@ -458,6 +459,7 @@ export const AdvancedAnalytics: React.FC = () => {
             subtitle="ACTIVE MONITORING"
             icon={<RealtimeIcon />}
             color="info"
+            variant="classic"
           />
         </Grid>
         {!isCargoOwnerRole && (
@@ -468,6 +470,7 @@ export const AdvancedAnalytics: React.FC = () => {
               subtitle="ACTIVE API KEYS"
               icon={<ApiIcon />}
               color="secondary"
+              variant="classic"
             />
           </Grid>
         )}
@@ -478,6 +481,7 @@ export const AdvancedAnalytics: React.FC = () => {
             subtitle="AI PREDICTIONS TODAY"
             icon={<TrendingUpIcon />}
             color="warning"
+            variant="classic"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: isCargoOwnerRole ? 4 : 3 }}>
@@ -487,6 +491,7 @@ export const AdvancedAnalytics: React.FC = () => {
             subtitle="MONITORING ALERTS"
             icon={<SettingsIcon />}
             color="error"
+            variant="classic"
           />
         </Grid>
       </Grid>

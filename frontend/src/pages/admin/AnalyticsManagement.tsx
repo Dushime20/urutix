@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { TranslatedText } from '../../components/translated-text';
+import ModernLoader from '../../components/common/ModernLoader';
 import {
   BarChart as BarChartIcon,
   PieChart as PieChartIcon,
@@ -157,12 +158,23 @@ const AnalyticsManagement: React.FC = () => {
         fleetData?.stats?.utilizationRate || 0,
         systemData ? Math.min(100, Math.round((systemData.system?.uptime || 0) / 3600)) : 0,
       ],
-      backgroundColor: 'rgba(52, 94, 133, 0.2)',
-      borderColor: '#345E85',
+      backgroundColor: 'rgba(44, 81, 115, 0.2)',
+      borderColor: '#2c5173',
       borderWidth: 2,
-      pointBackgroundColor: '#345E85',
+      pointBackgroundColor: '#2c5173',
     }]
   };
+
+  if (dataLoading) {
+    return (
+      <AdminPageLayout
+        title={<TranslatedText text="Analytics Command Center" />}
+        description={<TranslatedText text="Live platform intelligence, user demographics, and operational health matrix" />}
+      >
+        <ModernLoader isLoading={true} type="page" showStats={true} />
+      </AdminPageLayout>
+    );
+  }
 
   return (
     <AdminPageLayout
@@ -182,8 +194,7 @@ const AnalyticsManagement: React.FC = () => {
                 color: theme === 'dark' ? 'white' : 'inherit',
                 border: theme === 'dark' ? '1px solid #334155' : '1px solid #f1f5f9',
                 '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                '& .MuiSvgIcon-root': { color: theme === 'dark' ? '#94a3b8' : 'inherit' },
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                '& .MuiSvgIcon-root': { color: theme === 'dark' ? '#94a3b8' : 'inherit' }
               }}
             >
               <MenuItem value="24h"><TranslatedText text="LATEST 24H" /></MenuItem>
@@ -195,9 +206,9 @@ const AnalyticsManagement: React.FC = () => {
           
           <button
             onClick={() => setIsRealTime(!isRealTime)}
-            className={`py-2.5 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-3 shadow-sm ${
+            className={`py-2.5 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-3 ${
               isRealTime 
-                ? 'bg-emerald-500 text-white shadow-emerald-200 ring-4 ring-emerald-50' 
+                ? 'bg-emerald-500 text-white' 
                 : 'bg-white border border-slate-100 text-slate-500 hover:border-slate-200'
             }`}
           >
@@ -208,7 +219,7 @@ const AnalyticsManagement: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="py-2.5 px-6 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-[#1e3a5f] transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/10 active:scale-95 disabled:opacity-50"
+            className="py-2.5 px-6 bg-[#2c5173] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] hover:bg-[#1e3850] transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
           >
             {loading ? <CircularProgress size={14} thickness={6} sx={{ color: 'white' }} /> : <OverviewIcon sx={{ fontSize: 16 }} />}
             <TranslatedText text="RE-CALIBRATE" />
@@ -233,15 +244,15 @@ const AnalyticsManagement: React.FC = () => {
               borderRadius: '16px',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&.Mui-selected': {
-                color: '#345E85',
-                backgroundColor: 'rgba(52, 94, 133, 0.05)',
+                color: '#2c5173',
+                backgroundColor: 'rgba(44, 81, 115, 0.05)',
               },
               '&:hover': {
                 backgroundColor: 'rgba(0,0,0,0.02)',
               }
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: '#345E85',
+              backgroundColor: '#2c5173',
               height: 3,
               borderRadius: '3px',
               bottom: 8
@@ -260,7 +271,7 @@ const AnalyticsManagement: React.FC = () => {
         <div className="space-y-10">
           {dataLoading ? (
             <div className="flex items-center justify-center h-40 gap-3">
-              <CircularProgress size={28} sx={{ color: '#345E85' }} />
+              <CircularProgress size={28} sx={{ color: '#2c5173' }} />
               <span className="text-slate-500 font-bold text-sm">Loading analytics...</span>
             </div>
           ) : (
@@ -274,6 +285,7 @@ const AnalyticsManagement: React.FC = () => {
               trend={`${overviewData?.stats?.totalTrips || 0} trips`}
               trendDirection="up"
               color="primary"
+              variant="classic"
             />
             <StatCard
               title={<TranslatedText text="ACTIVE NETWORK" />}
@@ -283,6 +295,7 @@ const AnalyticsManagement: React.FC = () => {
               trend={`${overviewData?.stats?.totalTrucks || 0} trucks`}
               trendDirection="up"
               color="info"
+              variant="classic"
             />
             <StatCard
               title={<TranslatedText text="PLATFORM VELOCITY" />}
@@ -292,6 +305,7 @@ const AnalyticsManagement: React.FC = () => {
               trend={`${overviewData?.stats?.completedTrips || 0} completed`}
               trendDirection="up"
               color="success"
+              variant="classic"
             />
             <StatCard
               title={<TranslatedText text="ACTIVE TRIPS" />}
@@ -301,6 +315,7 @@ const AnalyticsManagement: React.FC = () => {
               trend={`${overviewData?.stats?.totalLoads || 0} loads`}
               trendDirection="up"
               color="warning"
+              variant="classic"
             />
           </div>
 
@@ -315,8 +330,8 @@ const AnalyticsManagement: React.FC = () => {
                         {
                           label: 'TRIPS',
                           data: overviewData?.weeklyTripCounts?.map((w: any) => w.count) || [],
-                          borderColor: '#345E85',
-                          backgroundColor: 'rgba(52, 94, 133, 0.05)',
+                          borderColor: '#2c5173',
+                          backgroundColor: 'rgba(44, 81, 115, 0.05)',
                           fill: true,
                           tension: 0.4,
                           borderWidth: 4,
@@ -375,74 +390,42 @@ const AnalyticsManagement: React.FC = () => {
         <div className="space-y-10">
           {dataLoading ? (
             <div className="flex items-center justify-center h-40 gap-3">
-              <CircularProgress size={28} sx={{ color: '#345E85' }} />
+              <CircularProgress size={28} sx={{ color: '#2c5173' }} />
               <span className="text-slate-500 font-bold text-sm">Loading cargo analytics...</span>
             </div>
           ) : (
           <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 group">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="w-14 h-14 bg-blue-50 text-[#345E85] rounded-[1.25rem] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <CargoIcon />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL LOADS</p>
-                        <h3 className="text-3xl font-black text-slate-900 mt-1">{cargoData?.stats?.totalLoads || 0}</h3>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
-                        <span className="text-slate-400">BOOKING SUCCESS</span>
-                        <span className="text-emerald-500">{cargoData?.stats?.bookingSuccessRate || 0}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${cargoData?.stats?.bookingSuccessRate || 0}%` }} transition={{ duration: 1 }} className="h-full bg-emerald-500" />
-                    </div>
-                </div>
-             </div>
-
-             <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 group">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-[1.25rem] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <UsersIcon />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ACTIVE LOADS</p>
-                        <h3 className="text-3xl font-black text-slate-900 mt-1">{cargoData?.stats?.activeLoads || 0}</h3>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
-                        <span className="text-slate-400">COMPLETED</span>
-                        <span className="text-indigo-500">{cargoData?.stats?.completedLoads || 0}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: cargoData?.stats?.totalLoads ? `${(cargoData.stats.completedLoads / cargoData.stats.totalLoads) * 100}%` : '0%' }} transition={{ duration: 1 }} className="h-full bg-indigo-500" />
-                    </div>
-                </div>
-             </div>
-
-             <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500 group">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-[1.25rem] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <MoneyIcon />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AVG LOAD VALUE</p>
-                        <h3 className="text-3xl font-black text-slate-900 mt-1">${(cargoData?.stats?.avgLoadValue || 0).toFixed(0)}</h3>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
-                        <span className="text-slate-400">CANCELLED</span>
-                        <span className="text-red-500">{cargoData?.stats?.cancelledLoads || 0}</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: cargoData?.stats?.totalLoads ? `${(cargoData.stats.cancelledLoads / cargoData.stats.totalLoads) * 100}%` : '0%' }} transition={{ duration: 1 }} className="h-full bg-red-400" />
-                    </div>
-                </div>
-             </div>
+             <StatCard
+                title="TOTAL LOADS"
+                value={cargoData?.stats?.totalLoads || 0}
+                subtitle="BOOKING SUCCESS"
+                trend={`${cargoData?.stats?.bookingSuccessRate || 0}%`}
+                trendDirection="up"
+                icon={<CargoIcon />}
+                color="primary"
+                variant="classic"
+             />
+             <StatCard
+                title="ACTIVE LOADS"
+                value={cargoData?.stats?.activeLoads || 0}
+                subtitle="COMPLETED"
+                trend={`${cargoData?.stats?.completedLoads || 0}`}
+                trendDirection="up"
+                icon={<UsersIcon />}
+                color="info"
+                variant="classic"
+             />
+             <StatCard
+                title="AVG LOAD VALUE"
+                value={`$${(cargoData?.stats?.avgLoadValue || 0).toFixed(0)}`}
+                subtitle="CANCELLED"
+                trend={`${cargoData?.stats?.cancelledLoads || 0}`}
+                trendDirection="down"
+                icon={<MoneyIcon />}
+                color="warning"
+                variant="classic"
+             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -454,7 +437,7 @@ const AnalyticsManagement: React.FC = () => {
                             datasets: [{
                                 data: cargoData?.cargoTypeBreakdown?.map((c: any) => c.count) || [],
                                 backgroundColor: [
-                                    'rgba(52, 94, 133, 0.7)', 'rgba(16, 185, 129, 0.7)',
+                                    'rgba(44, 81, 115, 0.7)', 'rgba(16, 185, 129, 0.7)',
                                     'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)',
                                     'rgba(139, 92, 246, 0.7)', 'rgba(100, 116, 139, 0.7)',
                                     'rgba(20, 184, 166, 0.7)', 'rgba(249, 115, 22, 0.7)',
@@ -477,7 +460,7 @@ const AnalyticsManagement: React.FC = () => {
                     data={{
                         labels: cargoData?.monthlyLoads?.map((m: any) => m.label) || [],
                         datasets: [
-                            { label: 'LOADS', data: cargoData?.monthlyLoads?.map((m: any) => m.count) || [], backgroundColor: '#345E85', borderRadius: 12 },
+                            { label: 'LOADS', data: cargoData?.monthlyLoads?.map((m: any) => m.count) || [], backgroundColor: '#2c5173', borderRadius: 12 },
                             { label: 'REVENUE ($)', data: cargoData?.monthlyLoads?.map((m: any) => m.revenue) || [], backgroundColor: '#10b981', borderRadius: 12 }
                         ]
                     }}
@@ -500,29 +483,40 @@ const AnalyticsManagement: React.FC = () => {
         <div className="space-y-10">
           {dataLoading ? (
             <div className="flex items-center justify-center h-40 gap-3">
-              <CircularProgress size={28} sx={{ color: '#345E85' }} />
+              <CircularProgress size={28} sx={{ color: '#2c5173' }} />
               <span className="text-slate-500 font-bold text-sm">Loading fleet analytics...</span>
             </div>
           ) : (
           <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[
-              { label: 'TOTAL TRUCKS', value: fleetData?.stats?.totalTrucks || 0, color: 'bg-blue-50 text-[#345E85]', bar: 100 },
-              { label: 'AVAILABLE', value: fleetData?.stats?.availableTrucks || 0, color: 'bg-emerald-50 text-emerald-600', bar: fleetData?.stats?.totalTrucks ? (fleetData.stats.availableTrucks / fleetData.stats.totalTrucks) * 100 : 0 },
-              { label: 'IN TRANSIT', value: fleetData?.stats?.inTransitTrucks || 0, color: 'bg-indigo-50 text-indigo-600', bar: fleetData?.stats?.totalTrucks ? (fleetData.stats.inTransitTrucks / fleetData.stats.totalTrucks) * 100 : 0 },
-              { label: 'MAINTENANCE', value: fleetData?.stats?.maintenanceTrucks || 0, color: 'bg-amber-50 text-amber-600', bar: fleetData?.stats?.totalTrucks ? (fleetData.stats.maintenanceTrucks / fleetData.stats.totalTrucks) * 100 : 0 },
-            ].map((item, i) => (
-              <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center mb-4`}>
-                  <FleetIcon />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</p>
-                <h3 className="text-3xl font-black text-slate-900 mt-1">{item.value}</h3>
-                <div className="mt-3 h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${item.bar}%` }} transition={{ duration: 1 }} className="h-full bg-current opacity-40" />
-                </div>
-              </div>
-            ))}
+            <StatCard
+              title="TOTAL TRUCKS"
+              value={fleetData?.stats?.totalTrucks || 0}
+              icon={<FleetIcon />}
+              color="primary"
+              variant="classic"
+            />
+            <StatCard
+              title="AVAILABLE"
+              value={fleetData?.stats?.availableTrucks || 0}
+              icon={<FleetIcon />}
+              color="success"
+              variant="classic"
+            />
+            <StatCard
+              title="IN TRANSIT"
+              value={fleetData?.stats?.inTransitTrucks || 0}
+              icon={<FleetIcon />}
+              color="info"
+              variant="classic"
+            />
+            <StatCard
+              title="MAINTENANCE"
+              value={fleetData?.stats?.maintenanceTrucks || 0}
+              icon={<FleetIcon />}
+              color="warning"
+              variant="classic"
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -533,7 +527,7 @@ const AnalyticsManagement: React.FC = () => {
                     labels: fleetData?.truckTypeBreakdown?.map((t: any) => t.label) || [],
                     datasets: [{
                       data: fleetData?.truckTypeBreakdown?.map((t: any) => t.count) || [],
-                      backgroundColor: ['#345E85','#10b981','#f59e0b','#ef4444','#8b5cf6','#64748b','#14b8a6','#f97316'],
+                      backgroundColor: ['#2c5173','#10b981','#f59e0b','#ef4444','#8b5cf6','#64748b','#14b8a6','#f97316'],
                       borderWidth: 0,
                     }]
                   }}
@@ -551,7 +545,7 @@ const AnalyticsManagement: React.FC = () => {
                   data={{
                     labels: fleetData?.monthlyTrips?.map((m: any) => m.label) || [],
                     datasets: [
-                      { label: 'TRIPS', data: fleetData?.monthlyTrips?.map((m: any) => m.count) || [], backgroundColor: '#345E85', borderRadius: 10 },
+                      { label: 'TRIPS', data: fleetData?.monthlyTrips?.map((m: any) => m.count) || [], backgroundColor: '#2c5173', borderRadius: 10 },
                       { label: 'REVENUE ($)', data: fleetData?.monthlyTrips?.map((m: any) => m.revenue) || [], backgroundColor: '#10b981', borderRadius: 10 },
                     ]
                   }}
@@ -566,26 +560,22 @@ const AnalyticsManagement: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">FLEET UTILIZATION RATE</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-slate-900">{fleetData?.stats?.utilizationRate || 0}%</span>
-                <span className="text-sm font-bold text-slate-400">of fleet active</span>
-              </div>
-              <div className="mt-4 h-3 w-full bg-slate-50 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${fleetData?.stats?.utilizationRate || 0}%` }} transition={{ duration: 1.2 }} className="h-full bg-[#345E85] rounded-full" />
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">TRIP SUCCESS RATE</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-slate-900">{fleetData?.stats?.tripSuccessRate || 0}%</span>
-                <span className="text-sm font-bold text-slate-400">of {fleetData?.stats?.totalTrips || 0} trips</span>
-              </div>
-              <div className="mt-4 h-3 w-full bg-slate-50 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${fleetData?.stats?.tripSuccessRate || 0}%` }} transition={{ duration: 1.2 }} className="h-full bg-emerald-500 rounded-full" />
-              </div>
-            </div>
+            <StatCard
+              title="FLEET UTILIZATION RATE"
+              value={`${fleetData?.stats?.utilizationRate || 0}%`}
+              subtitle="of fleet active"
+              icon={<PerformanceIcon />}
+              color="primary"
+              variant="classic"
+            />
+            <StatCard
+              title="TRIP SUCCESS RATE"
+              value={`${fleetData?.stats?.tripSuccessRate || 0}%`}
+              subtitle={`of ${fleetData?.stats?.totalTrips || 0} trips`}
+              icon={<SecurityIcon />}
+              color="success"
+              variant="classic"
+            />
           </div>
           </>
           )}
@@ -596,7 +586,7 @@ const AnalyticsManagement: React.FC = () => {
       <TabPanel value={tabValue} index={3}>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1 space-y-6">
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-900/10">
+                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5">
                             <SecurityIcon />
@@ -629,7 +619,7 @@ const AnalyticsManagement: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-[#345E85] rounded-[2.5rem] p-8 text-white shadow-xl">
+                <div className="bg-[#2c5173] rounded-[2.5rem] p-8 text-white">
                    <div className="flex items-center gap-4 mb-4">
                         <RealTimeIcon className="text-white/40" />
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">LIVE PULSE</h4>
@@ -660,7 +650,7 @@ const AnalyticsManagement: React.FC = () => {
                 <DataCard title="PLATFORM RECORD COUNTS" subtitle="Total records across all database tables" icon={<GeoIcon />}>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6">
                       {[
-                        { label: 'USERS', value: systemData?.platform?.totalUsers || 0, color: '#345E85' },
+                        { label: 'USERS', value: systemData?.platform?.totalUsers || 0, color: '#2c5173' },
                         { label: 'TRIPS', value: systemData?.platform?.totalTrips || 0, color: '#10b981' },
                         { label: 'LOADS', value: systemData?.platform?.totalLoads || 0, color: '#f59e0b' },
                         { label: 'TRUCKS', value: systemData?.platform?.totalTrucks || 0, color: '#8b5cf6' },
@@ -685,7 +675,7 @@ const AnalyticsManagement: React.FC = () => {
                                   systemData?.system?.memoryUsedMB || 0,
                                   Math.max(0, (systemData?.system?.memoryTotalMB || 0) - (systemData?.system?.memoryUsedMB || 0)),
                                 ],
-                                backgroundColor: ['#345E85', '#f1f5f9'],
+                                backgroundColor: ['#2c5173', '#f1f5f9'],
                                 borderWidth: 0,
                               }]
                             }}
@@ -697,7 +687,7 @@ const AnalyticsManagement: React.FC = () => {
                         </div>
                         <div className="flex gap-6 text-center">
                           <div>
-                            <p className="text-xs font-black text-[#345E85]">{systemData?.system?.memoryUsedMB || 0}MB</p>
+                            <p className="text-xs font-black text-[#2c5173]">{systemData?.system?.memoryUsedMB || 0}MB</p>
                             <p className="text-[8px] font-black text-slate-400 uppercase">USED</p>
                           </div>
                           <div>

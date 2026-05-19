@@ -23,6 +23,7 @@ import {
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import { adminAPI } from '../services/adminApi';
+import { StatCard } from '../components/EnliteUI';
 
 interface EscrowAccount {
   id: string;
@@ -123,7 +124,7 @@ const EscrowManagement: React.FC = () => {
   const filteredAccounts = escrowAccounts.filter(account => {
     const matchesSearch =
       account.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.tripId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (account.tripId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.cargoOwner.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.truckOwner.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -188,74 +189,34 @@ const EscrowManagement: React.FC = () => {
       <>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-50"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
-                <Banknote className="w-5 h-5" />
-              </div>
-              <LineChart className="w-4 h-4 text-blue-400 opacity-50" />
-            </div>
-            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-              {formatCurrency(stats.totalInEscrow, 'USD')}
-            </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Total in Escrow" /></div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-50"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
-                <Lock className="w-5 h-5" />
-              </div>
-              <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                <TranslatedText text="Active" />
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-              {stats.activeAccounts}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-transparent opacity-50"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center">
-                <Clock className="w-5 h-5" />
-              </div>
-              <span className="text-[9px] font-black text-yellow-600 bg-yellow-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                <TranslatedText text="Pending" />
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-              {stats.pendingRelease}
-            </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Pending Release" /></div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-transparent opacity-50"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <span className="text-[9px] font-black text-red-600 bg-red-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                <TranslatedText text="Alert" />
-              </span>
-            </div>
-            <div className="text-2xl font-black text-gray-900 mb-1 tracking-tight">
-              {stats.disputedAccounts}
-            </div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Disputed Accounts" /></div>
-          </div>
-        </div>
+        <StatCard
+          title={<TranslatedText text="Total in Escrow" />}
+          value={formatCurrency(stats.totalInEscrow, 'USD')}
+          icon={<Banknote className="w-5 h-5" />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Active Accounts" />}
+          value={stats.activeAccounts}
+          icon={<Lock className="w-5 h-5" />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Pending Release" />}
+          value={stats.pendingRelease}
+          icon={<Clock className="w-5 h-5" />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title={<TranslatedText text="Disputed Accounts" />}
+          value={stats.disputedAccounts}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Filters and Search */}

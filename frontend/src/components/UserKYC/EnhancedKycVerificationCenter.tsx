@@ -240,10 +240,10 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
                     value={`${metrics?.completionRate || 100}%`}
                     icon={<TrendingUp />}
                     color="emerald"
+                    variant="classic"
                     trend={metrics && metrics.completionRate > 50 ? '+12%' : '+12%'}
                     trendDirection={metrics && metrics.completionRate > 50 ? 'up' : 'up'}
                     subtitle="Overall Progress"
-                    variant="premium"
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -252,8 +252,8 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
                     value={metrics?.documentsUploaded || 4}
                     icon={<DocumentScanner />}
                     color="primary"
+                    variant="classic"
                     subtitle="Files Uploaded"
-                    variant="premium"
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -262,8 +262,8 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
                     value={metrics?.complianceScore || 95}
                     icon={<Shield />}
                     color="primary"
+                    variant="classic"
                     subtitle="Safety Score"
-                    variant="premium"
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -272,8 +272,8 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
                     value={metrics?.verificationLevel || 'ENHANCED'}
                     icon={<Star />}
                     color="secondary"
+                    variant="classic"
                     subtitle="Account Level"
-                    variant="premium"
                   />
                 </Grid>
               </Grid>

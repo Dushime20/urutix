@@ -71,31 +71,31 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
                 {/* Desktop Branding */}
                 <div className="hidden lg:flex items-center gap-2">
-                    <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center rounded-xl">
-                        <Shield className="text-indigo-600 dark:text-indigo-400 w-5 h-5" />
+                    <div className="w-10 h-10 bg-primary-50 dark:bg-primary-950/30 flex items-center justify-center rounded-xl">
+                        <Shield className="text-primary-600 dark:text-primary-400 w-5 h-5" />
                     </div>
                     <div>
                         <h2 className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none uppercase">
-                            Admin<span className="text-indigo-600 dark:text-indigo-400">Core</span>
+                            Admin<span className="text-primary-600 dark:text-primary-400">Core</span>
                         </h2>
                     </div>
                 </div>
 
                 {/* Mobile Branding */}
                 <div className="lg:hidden flex items-center min-w-max">
-                    <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center rounded-lg">
-                        <Shield className="text-indigo-600 dark:text-indigo-400 w-4 h-4" />
+                    <div className="w-8 h-8 bg-primary-50 dark:bg-primary-950/30 flex items-center justify-center rounded-lg">
+                        <Shield className="text-primary-600 dark:text-primary-400 w-4 h-4" />
                     </div>
                 </div>
 
                 <div className="flex-1 max-w-md relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors w-4 h-4" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 dark:group-focus-within:text-primary-400 transition-colors w-4 h-4" />
                     <input
                         type="text"
                         placeholder={tSync(searchPlaceholder)}
                         value={searchValue}
                         onChange={handleSearchChange}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-indigo-100 dark:focus:border-indigo-900/50 rounded-xl py-2.5 pl-11 pr-4 text-xs text-slate-700 dark:text-slate-200 transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-primary-100 dark:focus:border-primary-900/50 rounded-xl py-2.5 pl-11 pr-4 text-xs text-slate-700 dark:text-slate-200 transition-all placeholder-slate-400 dark:placeholder-slate-500"
                     />
                 </div>
             </div>
@@ -123,7 +123,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                 {user?.role?.replace('_', ' ') || 'Platform Owner'}
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-xs border border-white/20 shadow-sm transition-transform active:scale-95">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white font-black text-xs border border-white/20 shadow-sm transition-transform active:scale-95">
                             {user?.firstName ? user.firstName.charAt(0).toUpperCase() : 'AD'}
                         </div>
                         <ChevronDown className={`text-slate-400 w-4 h-4 transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
@@ -138,9 +138,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
                             <div className="h-px bg-slate-50 dark:bg-slate-800 mx-4 mb-2"></div>
 
-                            <Link
+                             <Link
                                 to="/admin/profile"
-                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors"
+                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-primary-950/30 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-3 transition-colors"
                                 onClick={() => setShowUserMenu(false)}
                             >
                                 <User size={16} />
@@ -148,7 +148,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                             </Link>
                             <Link
                                 to="/admin/settings"
-                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors"
+                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-primary-950/30 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-3 transition-colors"
                                 onClick={() => setShowUserMenu(false)}
                             >
                                 <Settings size={16} />
@@ -191,11 +191,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                         <div className="p-6 space-y-8">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center rounded-lg">
-                                        <Shield className="text-indigo-600 dark:text-indigo-400 w-4 h-4" />
+                                    <div className="w-8 h-8 bg-primary-50 dark:bg-primary-950/30 flex items-center justify-center rounded-lg">
+                                        <Shield className="text-primary-600 dark:text-primary-400 w-4 h-4" />
                                     </div>
                                     <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase">
-                                        Admin<span className="text-indigo-600 dark:text-indigo-400">Core</span>
+                                        Admin<span className="text-primary-600 dark:text-primary-400">Core</span>
                                     </h2>
                                 </div>
                                 <button
@@ -252,7 +252,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                                         key={itemIdx}
                                                         onClick={() => { navigate(item.path); setShowMobileMenu(false); }}
                                                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${active
-                                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                                            ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400'
                                                             : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
                                                             }`}
                                                     >

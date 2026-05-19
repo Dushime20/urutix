@@ -121,6 +121,7 @@ export const OperationalAnalytics: React.FC = () => {
               subtitle="TOTAL COMPLETED"
               icon={<ShippingIcon />}
               color="primary"
+              variant="classic"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -130,6 +131,7 @@ export const OperationalAnalytics: React.FC = () => {
               subtitle="ON-TIME PERFORMANCE"
               icon={<ScheduleIcon />}
               color="success"
+              variant="classic"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -139,6 +141,7 @@ export const OperationalAnalytics: React.FC = () => {
               subtitle="ACTIVE PROVIDERS"
               icon={<CarrierIcon />}
               color="secondary"
+              variant="classic"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -148,6 +151,7 @@ export const OperationalAnalytics: React.FC = () => {
               subtitle="OVERALL RATING"
               icon={<TrendingUpIcon />}
               color="warning"
+              variant="classic"
             />
           </Grid>
         </Grid>

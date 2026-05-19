@@ -68,7 +68,7 @@ const AdminDashboardEnlite: React.FC = () => {
       label: 'Type',
       sortable: true,
       render: (value) => (
-        <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">
+        <span className="px-3 py-1 bg-[#2c5173]/10 text-[#2c5173] rounded-full text-xs font-semibold">
           {value}
         </span>
       ),
@@ -123,6 +123,7 @@ const AdminDashboardEnlite: React.FC = () => {
             color="primary"
             subtitle={<TranslatedText text="Last 30 days" />}
             loading={statsLoading}
+            variant="classic"
           />
 
           <StatCard
@@ -131,9 +132,10 @@ const AdminDashboardEnlite: React.FC = () => {
             icon={<FaTruck />}
             trend="+8%"
             trendDirection="up"
-            color="success"
+            color="primary"
             subtitle={<TranslatedText text="Currently active" />}
             loading={statsLoading}
+            variant="classic"
           />
 
           <StatCard
@@ -142,9 +144,10 @@ const AdminDashboardEnlite: React.FC = () => {
             icon={<FaUsers />}
             trend="+15%"
             trendDirection="up"
-            color="info"
+            color="primary"
             subtitle={<TranslatedText text="Registered users" />}
             loading={statsLoading}
+            variant="classic"
           />
 
           <StatCard
@@ -153,9 +156,10 @@ const AdminDashboardEnlite: React.FC = () => {
             icon={<FaChartLine />}
             trend="+23%"
             trendDirection="up"
-            color="warning"
+            color="primary"
             subtitle={<TranslatedText text="This month" />}
             loading={statsLoading}
+            variant="classic"
           />
         </div>
 
@@ -165,9 +169,10 @@ const AdminDashboardEnlite: React.FC = () => {
             title={<TranslatedText text="Active Subscriptions" />}
             value={stats?.activeSubscriptions || 0}
             icon={<FaCreditCard />}
-            color="secondary"
+            color="primary"
             subtitle={<TranslatedText text="Current subscriptions" />}
             loading={statsLoading}
+            variant="classic"
           />
 
           <StatCard
@@ -176,18 +181,20 @@ const AdminDashboardEnlite: React.FC = () => {
             icon={<FaCoins />}
             trend="-5%"
             trendDirection="down"
-            color="warning"
+            color="primary"
             subtitle={<TranslatedText text="Available credits" />}
             loading={statsLoading}
+            variant="classic"
           />
 
           <StatCard
             title={<TranslatedText text="Pending Approvals" />}
             value={stats?.pendingApprovals || 0}
             icon={<FaExclamationTriangle />}
-            color="error"
+            color="primary"
             subtitle={<TranslatedText text="Requires attention" />}
             loading={statsLoading}
+            variant="classic"
           />
 
           <StatCard
@@ -196,9 +203,10 @@ const AdminDashboardEnlite: React.FC = () => {
             icon={<FaCheckCircle />}
             trend="Excellent"
             trendDirection="up"
-            color="success"
+            color="primary"
             subtitle={<TranslatedText text="All systems operational" />}
             loading={statsLoading}
+            variant="classic"
           />
         </div>
 
@@ -209,7 +217,7 @@ const AdminDashboardEnlite: React.FC = () => {
           icon={<FaChartLine />}
           headerColor="primary"
           actions={
-            <button className="px-4 py-2 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold text-sm">
+            <button className="px-4 py-2 border border-slate-200 text-[#2c5173] rounded-lg hover:bg-slate-50 transition-colors font-semibold text-sm">
               <TranslatedText text="View All" />
             </button>
           }
@@ -235,15 +243,15 @@ const AdminDashboardEnlite: React.FC = () => {
           headerColor="secondary"
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all">
+            <button className="p-4 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all">
               <FaBuilding className="text-2xl mb-2" />
               <p className="font-semibold"><TranslatedText text="Add Tenant" /></p>
             </button>
-            <button className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all">
+            <button className="p-4 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all">
               <FaTruck className="text-2xl mb-2" />
               <p className="font-semibold"><TranslatedText text="Register Truck" /></p>
             </button>
-            <button className="p-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all">
+            <button className="p-4 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all">
               <FaUsers className="text-2xl mb-2" />
               <p className="font-semibold"><TranslatedText text="Manage Users" /></p>
             </button>

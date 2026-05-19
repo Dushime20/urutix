@@ -10,44 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import receiverService from '../services/receiverService';
 import { brokerAPI } from '../services/brokerApi';
 import { cn } from '@/utils/cn';
-
-const StatsCard = ({ title, value, icon: Icon, colorClass, secondaryColor }: any) => (
-  <div className="flex flex-col items-center group">
-    <div className="relative w-40 h-40 rounded-full bg-white border-[8px] border-slate-50 flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/50">
-      <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-        <circle
-          cx="80"
-          cy="80"
-          r="72"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeDasharray="452"
-          strokeDashoffset="350"
-          className={cn("opacity-10 transition-all duration-1000 group-hover:stroke-dashoffset-[200]", secondaryColor)}
-        />
-      </svg>
-
-      <div className={cn("p-2 rounded-2xl mb-1 bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-inherit transition-all duration-500 shadow-sm", colorClass)}>
-        <Icon className="w-5 h-5" />
-      </div>
-
-      <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-        <span className="text-xl font-black text-[#0f172a] tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
-          {value}
-        </span>
-      </div>
-
-      <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 opacity-50 group-wheel:rotate-90 transition-transform duration-1000" />
-    </div>
-
-    <div className="mt-4 text-center">
-      <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-[#345E85] transition-colors duration-300 line-clamp-1">
-        {title}
-      </p>
-    </div>
-  </div>
-);
+import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 interface Shipment {
   id: string;
@@ -533,28 +496,28 @@ const Tracking: React.FC = () => {
     <div className="space-y-12">
       {/* Search & Global Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100 shadow-inner">
-        <StatsCard
+        <CircularStatCard
           title="Active Tracking"
           value={activeCount}
           icon={Activity}
           colorClass="bg-blue-50 text-[#345E85]"
           secondaryColor="text-[#345E85]"
         />
-        <StatsCard
+        <CircularStatCard
           title="Delivered"
           value={deliveryCount}
           icon={CheckCircle}
           colorClass="bg-emerald-50 text-emerald-600"
           secondaryColor="text-emerald-600"
         />
-        <StatsCard
+        <CircularStatCard
           title="On-time Rate"
           value={`${onTimeRate}%`}
           icon={Shield}
           colorClass="bg-amber-50 text-amber-600"
           secondaryColor="text-amber-600"
         />
-        <StatsCard
+        <CircularStatCard
           title="Avg Speed"
           value="42 KM/H"
           icon={TrendingUp}

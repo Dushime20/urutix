@@ -31,6 +31,7 @@ import {
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { DataCard } from '../../components/EnliteUI/Cards/DataCard';
 import { TranslatedText } from '../../components/translated-text';
+import ModernLoader from '../../components/common/ModernLoader';
 import {
   fetchCurrentSystemHealth,
   fetchHistoricalSystemHealth,
@@ -219,8 +220,8 @@ const SystemHealthDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box p={3}>
+        <ModernLoader isLoading={true} type="page" showStats={true} />
       </Box>
     );
   }
@@ -298,6 +299,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${metrics.server.cpuUsage.toFixed(1)}%`}
             trend={metrics.server.cpuUsage > 70 ? 'up' : 'stable'}
             color={metrics.server.cpuUsage > 90 ? 'error' : metrics.server.cpuUsage > 70 ? 'warning' : 'success'}
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -306,6 +308,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${metrics.server.memoryUsage.toFixed(1)}%`}
             trend={metrics.server.memoryUsage > 80 ? 'up' : 'stable'}
             color={metrics.server.memoryUsage > 95 ? 'error' : metrics.server.memoryUsage > 80 ? 'warning' : 'success'}
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -314,6 +317,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={formatBytes(metrics.server.diskUsage)}
             trend="stable"
             color="info"
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -322,6 +326,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${formatBytes(metrics.server.networkIn)} / ${formatBytes(metrics.server.networkOut)}`}
             trend="stable"
             color="info"
+            variant="classic"
           />
         </Grid>
       </Grid>
@@ -337,6 +342,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={metrics.database.connectionCount.toString()}
             trend="stable"
             color="primary"
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -345,6 +351,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={metrics.database.activeQueries.toString()}
             trend="stable"
             color="primary"
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -353,6 +360,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${metrics.database.avgQueryTime.toFixed(1)}ms`}
             trend={metrics.database.avgQueryTime > 100 ? 'up' : 'stable'}
             color={metrics.database.avgQueryTime > 500 ? 'error' : metrics.database.avgQueryTime > 100 ? 'warning' : 'success'}
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -361,6 +369,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={metrics.database.slowQueries.toString()}
             trend={metrics.database.slowQueries > 10 ? 'up' : 'stable'}
             color={metrics.database.slowQueries > 50 ? 'error' : metrics.database.slowQueries > 10 ? 'warning' : 'success'}
+            variant="classic"
           />
         </Grid>
       </Grid>
@@ -376,6 +385,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={metrics.api.requestsPerMinute.toString()}
             trend="stable"
             color="secondary"
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -384,6 +394,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${metrics.api.avgResponseTime.toFixed(1)}ms`}
             trend={metrics.api.avgResponseTime > 200 ? 'up' : 'stable'}
             color={metrics.api.avgResponseTime > 1000 ? 'error' : metrics.api.avgResponseTime > 200 ? 'warning' : 'success'}
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -392,6 +403,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${metrics.api.errorRate.toFixed(2)}%`}
             trend={metrics.api.errorRate > 1 ? 'up' : 'stable'}
             color={metrics.api.errorRate > 5 ? 'error' : metrics.api.errorRate > 1 ? 'warning' : 'success'}
+            variant="classic"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -400,6 +412,7 @@ const SystemHealthDashboard: React.FC = () => {
             value={`${metrics.api.p95ResponseTime.toFixed(1)}ms`}
             trend="stable"
             color="secondary"
+            variant="classic"
           />
         </Grid>
       </Grid>
