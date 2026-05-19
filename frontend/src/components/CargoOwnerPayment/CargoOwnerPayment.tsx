@@ -590,7 +590,7 @@ const CargoOwnerPayment: React.FC = () => {
 
         toast.dismiss();
         if (response.data?.success) {
-          toast.success(response.data.message || 'Mobile Money payment initiated! A confirmation popup has been sent to the API account. Once confirmed, the payment will be sent to the receiver.');
+          toast.success(response.data.message || 'Payment completed! The truck owner has received the funds.');
           setShowPaymentModal(false);
           setSelectedLoad(null);
           setReceiverPhoneNumber('');

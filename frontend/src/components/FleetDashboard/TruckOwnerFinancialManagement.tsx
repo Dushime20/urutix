@@ -13,8 +13,6 @@ import {
   FaBuilding,
   FaFilter,
   FaSearch,
-  FaArrowDown,
-  FaArrowUp,
   FaInfoCircle
 } from 'react-icons/fa';
 import { paymentsAPI } from '../../services/api';
@@ -36,36 +34,6 @@ interface PaymentInfo {
   accountNumber?: string;
 }
 
-interface CargoPayment {
-  id: string;
-  cargoId: string;
-  cargoName: string;
-  totalAmount: number;
-  advancePaid: number;
-  remainingAmount: number;
-  currency: string;
-  payments: Array<{
-    id: string;
-    amount: number;
-    paymentType: 'advance' | 'final';
-    status: string;
-    paidBy: 'cargo_owner' | 'lender';
-    paidByName: string;
-    paymentDate: string;
-    paymentMethod?: string;
-  }>;
-  tripId?: string;
-  tripNumber?: string;
-}
-
-interface PaymentGroup {
-  source: 'cargo_owner' | 'lender';
-  sourceName: string;
-  totalPaid: number;
-  totalRemaining: number;
-  cargos: CargoPayment[];
-}
-
 const TruckOwnerFinancialManagement: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -74,8 +42,6 @@ const TruckOwnerFinancialManagement: React.FC = () => {
   const [isEditingPaymentInfo, setIsEditingPaymentInfo] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState<'all' | 'cargo_owner' | 'lender'>('all');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
   // Fetch user profile to get payment information
   const { data: profileData } = useQuery({
     queryKey: ['user-profile', user?.id],
@@ -124,188 +90,38 @@ const TruckOwnerFinancialManagement: React.FC = () => {
     },
   });
 
-  // Fetch trips and payments
-  const { data: tripsData, isLoading: tripsLoading } = useQuery({
-    queryKey: ['truck-owner-trips'],
+  // Fetch all received payments (trip payments + lender disbursements)
+  const { data: receivedData, isLoading: receivedLoading } = useQuery({
+    queryKey: ['truck-owner-received-payments'],
     queryFn: async () => {
       try {
-        const response = await api.get('/trips', {
-          params: {
-            status: 'all',
-          },
-        });
-        return response.data?.data || response.data || [];
+        const response = await paymentsAPI.getAllReceivedPayments({});
+        return response.data?.data || null;
       } catch (error) {
-        console.error('Error fetching trips:', error);
-        return [];
+        console.error('Error fetching received payments:', error);
+        return null;
       }
     },
   });
 
-  // Fetch all payments
-  const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['truck-owner-payments'],
-    queryFn: async () => {
-      try {
-        const response = await paymentsAPI.getAll({});
-        return response.data?.payments || response.data?.data?.payments || [];
-      } catch (error) {
-        console.error('Error fetching payments:', error);
-        return [];
-      }
-    },
-  });
+  const allPayments: any[] = receivedData?.payments || [];
 
-  // Process cargo payments from trips and payments data
-  const processCargoPayments = (): CargoPayment[] => {
-    if (!tripsData || !paymentsData) return [];
-
-    const cargoMap = new Map<string, CargoPayment>();
-
-    // Process each trip
-    tripsData.forEach((trip: any) => {
-      const load = trip.load || trip.cargo;
-      if (!load) return;
-
-      const cargoId = load.id;
-      const cargoName = load.title || load.cargoType || 'Cargo';
-      const totalAmount = trip.totalAmount || trip.amount || load.value || 0;
-      const currency = trip.currency || load.currency || 'USD';
-
-      if (!cargoMap.has(cargoId)) {
-        cargoMap.set(cargoId, {
-          id: cargoId,
-          cargoId,
-          cargoName,
-          totalAmount,
-          advancePaid: 0,
-          remainingAmount: totalAmount,
-          currency,
-          payments: [],
-          tripId: trip.id,
-          tripNumber: trip.tripNumber || trip.id.substring(0, 8),
-        });
-      }
-    });
-
-    // Process payments
-    paymentsData.forEach((payment: any) => {
-      const trip = payment.trip || tripsData.find((t: any) => t.id === payment.tripId);
-      if (!trip) return;
-
-      const load = trip.load || trip.cargo;
-      if (!load) return;
-
-      const cargoId = load.id;
-      const cargo = cargoMap.get(cargoId);
-      if (!cargo) return;
-
-      // Determine payment source
-      const payerId = payment.payerId;
-      const cargoOwnerId = load.cargoOwnerId || load.cargoOwner?.id;
-      const isLender = payment.metadata?.financedAmount || payment.metadata?.lenderId;
-
-      const paidBy: 'cargo_owner' | 'lender' = isLender ? 'lender' :
-        (payerId === cargoOwnerId ? 'cargo_owner' : 'cargo_owner');
-
-      const paidByName = isLender
-        ? (payment.metadata?.lenderName || 'Lender')
-        : (load.cargoOwner?.profile?.firstName + ' ' + load.cargoOwner?.profile?.lastName ||
-          load.cargoOwner?.companyName || 'Cargo Owner');
-
-      const paymentAmount = parseFloat(payment.amount) || 0;
-      const paymentType = payment.paymentType === 'advance' || payment.paymentType === 'ADVANCE'
-        ? 'advance'
-        : 'final';
-
-      cargo.payments.push({
-        id: payment.id,
-        amount: paymentAmount,
-        paymentType,
-        status: payment.status,
-        paidBy,
-        paidByName,
-        paymentDate: payment.processedAt || payment.createdAt,
-        paymentMethod: payment.paymentMethod,
-      });
-
-      // Update advance paid and remaining
-      if (payment.status === 'completed' || payment.status === 'COMPLETED') {
-        cargo.advancePaid += paymentAmount;
-        cargo.remainingAmount = Math.max(0, cargo.totalAmount - cargo.advancePaid);
-      }
-    });
-
-    return Array.from(cargoMap.values());
-  };
-
-  const cargoPayments = processCargoPayments();
-
-  // Group payments by source
-  const groupedPayments = (): PaymentGroup[] => {
-    const groups = new Map<'cargo_owner' | 'lender', PaymentGroup>();
-
-    cargoPayments.forEach((cargo) => {
-      const cargoOwnerPayments = cargo.payments.filter(p => p.paidBy === 'cargo_owner');
-      const lenderPayments = cargo.payments.filter(p => p.paidBy === 'lender');
-
-      // Cargo Owner group
-      if (cargoOwnerPayments.length > 0 || cargo.remainingAmount > 0) {
-        if (!groups.has('cargo_owner')) {
-          groups.set('cargo_owner', {
-            source: 'cargo_owner',
-            sourceName: 'Cargo Owner Payments',
-            totalPaid: 0,
-            totalRemaining: 0,
-            cargos: [],
-          });
-        }
-        const group = groups.get('cargo_owner')!;
-        const totalPaid = cargoOwnerPayments
-          .filter(p => p.status === 'completed' || p.status === 'COMPLETED')
-          .reduce((sum, p) => sum + p.amount, 0);
-        group.totalPaid += totalPaid;
-        group.totalRemaining += cargo.remainingAmount;
-        group.cargos.push(cargo);
-      }
-
-      // Lender group
-      if (lenderPayments.length > 0) {
-        if (!groups.has('lender')) {
-          groups.set('lender', {
-            source: 'lender',
-            sourceName: 'Lender Payments',
-            totalPaid: 0,
-            totalRemaining: 0,
-            cargos: [],
-          });
-        }
-        const group = groups.get('lender')!;
-        const totalPaid = lenderPayments
-          .filter(p => p.status === 'completed' || p.status === 'COMPLETED')
-          .reduce((sum, p) => sum + p.amount, 0);
-        group.totalPaid += totalPaid;
-        group.cargos.push(cargo);
-      }
-    });
-
-    return Array.from(groups.values());
-  };
-
-  const paymentGroups = groupedPayments();
-
-  // Filter groups
-  const filteredGroups = paymentGroups.filter(group => {
-    if (filterSource !== 'all' && group.source !== filterSource) return false;
-
+  // Filter payments
+  const filteredPayments = allPayments.filter((p: any) => {
+    const matchesSource =
+      filterSource === 'all' ||
+      (filterSource === 'lender' && p.isLenderPayment) ||
+      (filterSource === 'cargo_owner' && !p.isLenderPayment);
+    if (!matchesSource) return false;
     if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      return group.cargos.some(cargo =>
-        cargo.cargoName.toLowerCase().includes(search) ||
-        cargo.tripNumber?.toLowerCase().includes(search)
+      const s = searchTerm.toLowerCase();
+      return (
+        p.trip?.tripNumber?.toLowerCase().includes(s) ||
+        p.description?.toLowerCase().includes(s) ||
+        p.referenceNumber?.toLowerCase().includes(s) ||
+        p.lenderName?.toLowerCase().includes(s)
       );
     }
-
     return true;
   });
 
@@ -315,16 +131,6 @@ const TruckOwnerFinancialManagement: React.FC = () => {
       return;
     }
     savePaymentInfoMutation.mutate(paymentInfo);
-  };
-
-  const toggleGroup = (source: string) => {
-    const newExpanded = new Set(expandedGroups);
-    if (newExpanded.has(source)) {
-      newExpanded.delete(source);
-    } else {
-      newExpanded.add(source);
-    }
-    setExpandedGroups(newExpanded);
   };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
@@ -343,14 +149,15 @@ const TruckOwnerFinancialManagement: React.FC = () => {
     });
   };
 
-  // Calculate financial summary stats
-  const totalPaid = paymentGroups.reduce((sum, group) => sum + group.totalPaid, 0);
-  const totalRemaining = paymentGroups.reduce((sum, group) => sum + group.totalRemaining, 0);
-  const totalCargos = paymentGroups.reduce((sum, group) => sum + group.cargos.length, 0);
-  const completedPayments = cargoPayments.reduce((sum, cargo) => {
-    const cargoCompleted = cargo.payments.filter(p => p.status === 'completed' || p.status === 'COMPLETED').length;
-    return sum + cargoCompleted;
-  }, 0);
+  // Calculate financial summary stats from flat payments list
+  const totalPaid = allPayments
+    .filter((p: any) => p.status === 'completed' || p.status === 'COMPLETED')
+    .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+  const totalRemaining = allPayments
+    .filter((p: any) => p.status === 'pending' || p.status === 'processing' || p.status === 'PENDING' || p.status === 'PROCESSING')
+    .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+  const totalCargos = new Set(allPayments.map((p: any) => p.tripId).filter(Boolean)).size;
+  const completedPayments = allPayments.filter((p: any) => p.status === 'completed' || p.status === 'COMPLETED').length;
 
   const SummaryCard = ({ title, value, icon: Icon, colorClass, gradient }: { title: string; value: string; icon: any; colorClass: string; gradient: string }) => (
     <motion.div
@@ -610,13 +417,13 @@ const TruckOwnerFinancialManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Payment Tracking Tab */}
+        {/* Payment Tracking Tab — All Received Payments */}
         {activeTab === 'payment-tracking' && (
           <div className="p-6">
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">Payment Tracking</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">Received Payments</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
-                Track payments made for goods you've transported, showing advance payments and remaining amounts.
+                All payments received — from cargo owners for trips and from lenders on behalf of borrowers.
               </p>
             </div>
 
@@ -627,7 +434,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                   <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4 transition-colors duration-200" />
                   <input
                     type="text"
-                    placeholder="Search cargo or trip number..."
+                    placeholder="Search trip, reference or description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200"
@@ -649,182 +456,88 @@ const TruckOwnerFinancialManagement: React.FC = () => {
             </div>
 
             {/* Loading State */}
-            {(tripsLoading || paymentsLoading) && (
+            {receivedLoading && (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div>
               </div>
             )}
 
-            {/* Payment Groups */}
-            {!tripsLoading && !paymentsLoading && (
-              <div className="space-y-4">
-                {filteredGroups.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg transition-colors duration-200">
+            {/* Payments flat list */}
+            {!receivedLoading && (
+              <div className="space-y-3">
+                {filteredPayments.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 transition-colors duration-200">
                     <FaDollarSign className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 transition-colors duration-200" />
-                    <p className="text-gray-600 dark:text-gray-400 transition-colors duration-200">No payments found</p>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium transition-colors duration-200">No payments found</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 transition-colors duration-200">Payments from cargo owners and lenders will appear here</p>
                   </div>
                 ) : (
-                  filteredGroups.map((group) => {
-                    const isExpanded = expandedGroups.has(group.source);
+                  filteredPayments.map((payment: any) => {
+                    const isCompleted = payment.status === 'completed' || payment.status === 'COMPLETED';
+                    const isPending = payment.status === 'pending' || payment.status === 'PENDING';
+                    const isProcessing = payment.status === 'processing' || payment.status === 'PROCESSING';
                     return (
-                      <div key={group.source} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
-                        {/* Group Header */}
-                        <button
-                          onClick={() => toggleGroup(group.source)}
-                          className="w-full p-5 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-200 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl transition-colors duration-200 ${group.source === 'cargo_owner'
-                                ? 'bg-blue-50 dark:bg-blue-950/40'
-                                : 'bg-blue-100 dark:bg-blue-900/40'
-                              }`}>
-                              {group.source === 'cargo_owner' ? (
-                                <FaUser className="w-6 h-6 text-blue-500 dark:text-blue-400 transition-colors duration-200" />
-                              ) : (
-                                <FaBuilding className="w-6 h-6 text-blue-600 dark:text-blue-400 transition-colors duration-200" />
-                              )}
-                            </div>
-                            <div className="text-left">
-                              <h4 className="text-lg font-bold text-gray-900 dark:text-white transition-colors duration-200">{group.sourceName}</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 transition-colors duration-200">
-                                {group.cargos.length} cargo{group.cargos.length !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-8">
-                            <div className="text-right">
-                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Paid</p>
-                              <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
-                                {formatCurrency(group.totalPaid, 'USD')}
-                              </p>
-                            </div>
-                            {group.totalRemaining > 0 && (
-                              <div className="text-right">
-                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Remaining</p>
-                                <p className="text-xl font-bold text-orange-600 dark:text-orange-400 mt-1">
-                                  {formatCurrency(group.totalRemaining, 'USD')}
-                                </p>
-                              </div>
+                      <div
+                        key={payment.id}
+                        className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700 hover:shadow-sm transition-all duration-200"
+                      >
+                        {/* Status icon */}
+                        <div className={`p-2.5 rounded-xl shrink-0 ${isCompleted ? 'bg-emerald-50 dark:bg-emerald-950/30' : isPending || isProcessing ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-gray-50 dark:bg-slate-800'}`}>
+                          {isCompleted
+                            ? <FaCheckCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                            : <FaDollarSign className={`w-5 h-5 ${isPending || isProcessing ? 'text-amber-500 dark:text-amber-400' : 'text-gray-400 dark:text-slate-500'}`} />
+                          }
+                        </div>
+
+                        {/* Main info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              {formatCurrency(payment.amount, payment.currency)}
+                            </span>
+                            {/* Source badge */}
+                            {payment.isLenderPayment ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400">
+                                <FaBuilding className="w-2.5 h-2.5" /> Lender
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">
+                                <FaUser className="w-2.5 h-2.5" /> Cargo Owner
+                              </span>
                             )}
-                            <div className={`p-2 rounded-lg transition-all ${isExpanded ? 'bg-primary-50 dark:bg-blue-900/20 text-primary-500 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                              }`}>
-                              {isExpanded ? (
-                                <FaArrowUp className="w-4 h-4" />
-                              ) : (
-                                <FaArrowDown className="w-4 h-4" />
-                              )}
-                            </div>
+                            {/* Status badge */}
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                              isCompleted ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
+                              : isPending ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                              : isProcessing ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400'
+                              : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400'
+                            }`}>
+                              {payment.status}
+                            </span>
                           </div>
-                        </button>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                            {payment.description || (payment.isLenderPayment ? 'Loan disbursement' : 'Trip payment')}
+                            {payment.trip?.tripNumber && (
+                              <span className="ml-2 font-medium text-gray-700 dark:text-slate-300">· Trip {payment.trip.tripNumber}</span>
+                            )}
+                            {payment.trip?.load?.title && (
+                              <span className="ml-1 text-gray-400 dark:text-slate-500">· {payment.trip.load.title}</span>
+                            )}
+                          </p>
+                          {payment.referenceNumber && (
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 font-mono">{payment.referenceNumber}</p>
+                          )}
+                        </div>
 
-                        {/* Group Content */}
-                        {isExpanded && (
-                          <div className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900 transition-colors duration-200">
-                            {group.cargos.map((cargo) => (
-                              <div key={cargo.id} className="p-5 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors duration-200">
-                                <div className="flex items-start justify-between mb-4">
-                                  <div className="flex-1">
-                                    <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-1 transition-colors duration-200">{cargo.cargoName}</h5>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2 transition-colors duration-200">
-                                      <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 rounded-md text-xs font-medium transition-colors duration-200">
-                                        Trip: {cargo.tripNumber || 'N/A'}
-                                      </span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right ml-4">
-                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Amount</p>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                                      {formatCurrency(cargo.totalAmount, cargo.currency)}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Payment Progress */}
-                                <div className="mb-3">
-                                  <div className="flex items-center justify-between text-sm mb-1">
-                                    <span className="text-gray-600 dark:text-gray-400">Payment Progress</span>
-                                    <span className="font-medium text-gray-900 dark:text-white">
-                                      {formatCurrency(cargo.advancePaid, cargo.currency)} / {formatCurrency(cargo.totalAmount, cargo.currency)}
-                                    </span>
-                                  </div>
-                                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div
-                                      className="bg-primary-500 dark:bg-blue-600 h-2 rounded-full transition-all"
-                                      style={{
-                                        width: `${Math.min(100, (cargo.advancePaid / cargo.totalAmount) * 100)}%`,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Payment Breakdown */}
-                                <div className="grid grid-cols-3 gap-4 mb-4">
-                                  <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/10 dark:to-green-800/5 p-4 rounded-xl border border-green-200 dark:border-green-900/30 shadow-sm">
-                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Advance Paid</p>
-                                    <p className="text-lg font-bold text-green-700 dark:text-green-400">
-                                      {formatCurrency(cargo.advancePaid, cargo.currency)}
-                                    </p>
-                                  </div>
-                                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/10 dark:to-orange-800/5 p-4 rounded-xl border border-orange-200 dark:border-orange-900/30 shadow-sm">
-                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Remaining</p>
-                                    <p className="text-lg font-bold text-orange-700 dark:text-orange-400">
-                                      {formatCurrency(cargo.remainingAmount, cargo.currency)}
-                                    </p>
-                                  </div>
-                                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/10 dark:to-blue-800/5 p-4 rounded-xl border border-blue-200 dark:border-blue-900/30 shadow-sm">
-                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Total Amount</p>
-                                    <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                                      {formatCurrency(cargo.totalAmount, cargo.currency)}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Payment History */}
-                                {cargo.payments.length > 0 && (
-                                  <div className="mt-4 pt-4 border-t border-gray-200">
-                                    <p className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                      <FaDollarSign className="w-4 h-4 text-primary-500" />
-                                      Payment History
-                                    </p>
-                                    <div className="space-y-2">
-                                      {cargo.payments.map((payment) => (
-                                        <div
-                                          key={payment.id}
-                                          className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-lg text-sm border border-gray-200 dark:border-slate-800 hover:shadow-sm transition-all"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${payment.status === 'completed' || payment.status === 'COMPLETED'
-                                                ? 'bg-green-100'
-                                                : 'bg-yellow-100'
-                                              }`}>
-                                              {payment.status === 'completed' || payment.status === 'COMPLETED' ? (
-                                                <FaCheckCircle className="w-4 h-4 text-green-600" />
-                                              ) : (
-                                                <FaTimesCircle className="w-4 h-4 text-yellow-600" />
-                                              )}
-                                            </div>
-                                            <div>
-                                              <span className="font-bold text-gray-900">
-                                                {formatCurrency(payment.amount, cargo.currency)}
-                                              </span>
-                                              <span className="ml-2 text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded-md font-medium">
-                                                {payment.paymentType === 'advance' ? 'Advance' : 'Final'}
-                                              </span>
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-4 text-gray-600">
-                                            <span className="font-medium">{payment.paidByName}</span>
-                                            <span className="text-xs">{formatDate(payment.paymentDate)}</span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        {/* Date */}
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                            {formatDate(payment.processedAt || payment.createdAt)}
+                          </p>
+                          {payment.isLenderPayment && payment.lenderName && (
+                            <p className="text-[10px] text-violet-600 dark:text-violet-400 mt-0.5 font-semibold">{payment.lenderName}</p>
+                          )}
+                        </div>
                       </div>
                     );
                   })

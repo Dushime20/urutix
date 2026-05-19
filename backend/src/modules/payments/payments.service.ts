@@ -93,31 +93,46 @@ export class PaymentsService {
     // Verify trip exists and user has permission (only if tripId is provided and valid)
     let trip = null;
     if (createPaymentDto.tripId && typeof createPaymentDto.tripId === 'string' && createPaymentDto.tripId.trim() !== '') {
-      trip = await this.tripRepository.findOne({
-        where: { id: createPaymentDto.tripId, tenantId },
-        relations: ['load'],
-      });
-      if (!trip) throw new NotFoundException('Trip not found');
-      
-      // Check if this is a lender payment (from metadata)
+      // Check isLenderPayment BEFORE the trip lookup so we can use the right query
       const isLenderPayment = createPaymentDto.metadata && 
         (typeof createPaymentDto.metadata === 'object' && createPaymentDto.metadata !== null) &&
         (createPaymentDto.metadata as any).isLenderPayment === true;
-      
-      // Only check cargo owner permission if it's not a lender payment
-      if (!isLenderPayment && trip.load.cargoOwnerId !== userId) {
-        throw new ForbiddenException(
-          'You can only create payments for your own trips',
-        );
-      }
-      
-      // Check if payment already exists for this trip (only for non-lender payments to avoid blocking retries)
-      if (!isLenderPayment) {
+
+      if (isLenderPayment) {
+        // Lender disbursement: the trip belongs to the borrower's tenant, not the lender's.
+        // Look up without tenant scoping — the lender already authorised the loan.
+        trip = await this.tripRepository.findOne({
+          where: { id: createPaymentDto.tripId },
+          relations: ['load'],
+        });
+        // Trip not existing is non-fatal for a lender payment — the loan record is the source of truth
+      } else {
+        trip = await this.tripRepository.findOne({
+          where: { id: createPaymentDto.tripId, tenantId },
+          relations: ['load'],
+        });
+        if (!trip) throw new NotFoundException('Trip not found');
+
+        // Only check cargo owner permission for non-lender payments
+        if (trip.load.cargoOwnerId !== userId) {
+          throw new ForbiddenException(
+            'You can only create payments for your own trips',
+          );
+        }
+
+        // Check if an active payment already exists for this trip
+        // (PENDING, PROCESSING, or COMPLETED — not FAILED/CANCELLED which can be retried)
         const existingPayment = await this.paymentRepository.findOne({
-          where: { tripId: createPaymentDto.tripId, tenantId },
+          where: [
+            { tripId: createPaymentDto.tripId, tenantId, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.PENDING },
+            { tripId: createPaymentDto.tripId, tenantId, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.PROCESSING },
+            { tripId: createPaymentDto.tripId, tenantId, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.COMPLETED },
+          ],
         });
         if (existingPayment)
-          throw new ConflictException('Payment already exists for this trip');
+          throw new ConflictException(
+            `An active payment already exists for this trip (status: ${existingPayment.status}). Duplicate payments are not allowed.`,
+          );
       }
     }
 
@@ -376,7 +391,65 @@ export class PaymentsService {
       await this.handleAdvancePaymentCompletion(payment.tripId, tenantId);
     }
 
+    // Handle trip fee / lender disbursement completion
+    if (
+      updatePaymentStatusDto.status === PaymentStatus.COMPLETED &&
+      (payment.paymentType === PaymentType.TRIP_PAYMENT ||
+       payment.paymentType === PaymentType.SERVICE_FEE ||
+       (payment.metadata as any)?.isLenderPayment) &&
+      payment.tripId
+    ) {
+      await this.handleTripPaymentCompletion(savedPayment, tenantId);
+    }
+
     return savedPayment;
+  }
+
+  /**
+   * Handle full trip fee / lender disbursement completion.
+   * Marks the payment as paid (processedAt) and emits payment.trip.completed
+   * so the truck owner's Received Payments tab shows it instantly.
+   */
+  private async handleTripPaymentCompletion(
+    payment: Payment,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      this.logger.log(
+        `Handling trip payment completion for payment ${payment.id}, trip ${payment.tripId}`,
+      );
+
+      // Ensure processedAt is stamped
+      if (!payment.processedAt) {
+        payment.processedAt = new Date();
+        await this.paymentRepository.save(payment);
+      }
+
+      // Emit event so other listeners (notifications, analytics) can react
+      if (this.eventEmitter) {
+        this.eventEmitter.emit('payment.trip.completed', {
+          paymentId: payment.id,
+          tripId: payment.tripId,
+          tenantId,
+          amount: Number(payment.amount),
+          currency: payment.currency,
+          payeeId: payment.payeeId,
+          payerId: payment.payerId,
+          isLenderPayment: !!(payment.metadata as any)?.isLenderPayment,
+          lenderName: (payment.metadata as any)?.lenderName || null,
+          processedAt: payment.processedAt,
+        });
+      }
+
+      this.logger.log(
+        `Trip payment ${payment.id} marked completed and event emitted`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error handling trip payment completion for payment ${payment.id}:`,
+        error,
+      );
+    }
   }
 
   /**
@@ -513,19 +586,27 @@ export class PaymentsService {
         });
 
       if (processingResult.success) {
-        // For mobile money payments, status should be PROCESSING initially
-        // Payment will be marked as COMPLETED when webhook callback is received
         const isMobileMoney = provider === PaymentProvider.MOBILE_MONEY;
-        const finalStatus = isMobileMoney ? PaymentStatus.PROCESSING : PaymentStatus.COMPLETED;
+        // Lender disbursements and direct trip payments are intentional — mark COMPLETED
+        // immediately so the truck owner's Received Payments tab shows them right away.
+        // Regular cargo-owner mobile money stays PROCESSING until webhook confirms.
+        const isIntentionalTripPayment =
+          (payment.metadata as any)?.isLenderPayment === true ||
+          payment.paymentType === PaymentType.TRIP_PAYMENT;
+        const finalStatus =
+          isMobileMoney && !isIntentionalTripPayment
+            ? PaymentStatus.PROCESSING
+            : PaymentStatus.COMPLETED;
 
         // Update payment with processing results
         const updateData: UpdatePaymentStatusDto = {
           status: finalStatus,
           transactionId: processingResult.transactionId,
-          gatewayResponse: isMobileMoney 
-            ? 'Mobile Money payment initiated. Waiting for confirmation.' 
-            : 'Payment processed successfully',
-          processedAt: isMobileMoney ? undefined : new Date(),
+          gatewayResponse:
+            finalStatus === PaymentStatus.COMPLETED
+              ? 'Payment completed successfully.'
+              : 'Mobile Money payment initiated. Waiting for confirmation.',
+          processedAt: finalStatus === PaymentStatus.COMPLETED ? new Date() : undefined,
           processingFee: processingResult.processingFee,
         };
 
@@ -551,8 +632,8 @@ export class PaymentsService {
           status: finalStatus,
         });
 
-        // Generate invoice and receipt only if payment is completed (not for pending mobile money)
-        if (!isMobileMoney) {
+        // Generate invoice and receipt when payment is completed
+        if (finalStatus === PaymentStatus.COMPLETED) {
           try {
             if (this.invoiceReceiptService) {
               await this.invoiceReceiptService.handlePaymentCompletion(updated);
@@ -565,7 +646,7 @@ export class PaymentsService {
 
         // Emit payment.received event for notification system
         try {
-          if (this.eventEmitter && !isMobileMoney) {
+          if (this.eventEmitter && finalStatus === PaymentStatus.COMPLETED) {
             // Get trip details to find recipient and sender
             const trip = updated.tripId 
               ? await this.tripRepository.findOne({ 

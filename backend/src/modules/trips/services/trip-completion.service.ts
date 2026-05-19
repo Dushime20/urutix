@@ -226,18 +226,28 @@ export class TripCompletionService {
 
   /**
    * Get pending payments for cargo owner dashboard
+   * Returns PENDING and PROCESSING payments so in-flight payments are visible
+   * and the cargo owner cannot attempt to pay the same trip twice.
    */
   async getPendingPaymentsForCargoOwner(
     cargoOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
     return this.paymentRepository.find({
-      where: {
-        payerId: cargoOwnerId,
-        tenantId,
-        status: PaymentStatus.PENDING,
-        paymentType: PaymentType.TRIP_PAYMENT,
-      },
+      where: [
+        {
+          payerId: cargoOwnerId,
+          tenantId,
+          status: PaymentStatus.PENDING,
+          paymentType: PaymentType.TRIP_PAYMENT,
+        },
+        {
+          payerId: cargoOwnerId,
+          tenantId,
+          status: PaymentStatus.PROCESSING,
+          paymentType: PaymentType.TRIP_PAYMENT,
+        },
+      ],
       relations: ['trip', 'trip.load'],
       order: { dueDate: 'ASC', createdAt: 'ASC' },
     });
@@ -245,31 +255,43 @@ export class TripCompletionService {
 
   /**
    * Get expected payments for truck owner dashboard
+   * Returns PENDING and PROCESSING payments (both direct and lender-disbursed)
    */
   async getExpectedPaymentsForTruckOwner(
     truckOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
     return this.paymentRepository.find({
-      where: {
-        payeeId: truckOwnerId,
-        tenantId,
-        status: PaymentStatus.PENDING,
-        paymentType: PaymentType.TRIP_PAYMENT,
-      },
+      where: [
+        {
+          payeeId: truckOwnerId,
+          tenantId,
+          status: PaymentStatus.PENDING,
+          paymentType: PaymentType.TRIP_PAYMENT,
+        },
+        {
+          payeeId: truckOwnerId,
+          tenantId,
+          status: PaymentStatus.PROCESSING,
+          paymentType: PaymentType.TRIP_PAYMENT,
+        },
+      ],
       relations: ['trip', 'trip.load'],
       order: { dueDate: 'ASC', createdAt: 'ASC' },
     });
   }
 
   /**
-   * Get completed/received payments for truck owner transaction history
+   * Get completed/received payments for truck owner transaction history.
+   * Combines payeeId-linked completed payments AND lender disbursements
+   * matched by receiver phone number.
    */
   async getCompletedPaymentsForTruckOwner(
     truckOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
-    return this.paymentRepository.find({
+    // 1. payeeId-linked completed payments
+    const byPayeeId = await this.paymentRepository.find({
       where: {
         payeeId: truckOwnerId,
         tenantId,
@@ -278,5 +300,88 @@ export class TripCompletionService {
       relations: ['trip', 'trip.load'],
       order: { processedAt: 'DESC', createdAt: 'DESC' },
     });
+
+    // 2. Lender disbursements matched by receiver phone (may not have payeeId set)
+    const user = await this.userRepository.findOne({ where: { id: truckOwnerId } });
+    let byPhone: Payment[] = [];
+    if (user?.phone) {
+      const digits = user.phone.replace(/\D/g, '');
+      byPhone = await this.paymentRepository
+        .createQueryBuilder('payment')
+        .leftJoinAndSelect('payment.trip', 'trip')
+        .leftJoinAndSelect('trip.load', 'load')
+        .where(`payment.metadata->>'isLenderPayment' = 'true'`)
+        .andWhere('payment.status = :status', { status: PaymentStatus.COMPLETED })
+        .andWhere(
+          `regexp_replace(payment.metadata->>'receiverPhoneNumber', '\\D', '', 'g') LIKE :phone`,
+          { phone: `%${digits.slice(-9)}` },
+        )
+        .orderBy('payment.processedAt', 'DESC')
+        .addOrderBy('payment.createdAt', 'DESC')
+        .getMany();
+    }
+
+    // Merge and deduplicate
+    const seen = new Set<string>();
+    const merged: Payment[] = [];
+    for (const p of [...byPayeeId, ...byPhone]) {
+      if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
+    }
+    merged.sort((a, b) => {
+      const aTime = new Date(a.processedAt || a.createdAt).getTime();
+      const bTime = new Date(b.processedAt || b.createdAt).getTime();
+      return bTime - aTime;
+    });
+    return merged;
+  }
+
+  /**
+   * Get ALL received payments for a truck owner — including lender disbursements
+   * sent directly to their phone (metadata.receiverPhoneNumber matches user.phone).
+   * Combines: payeeId-linked payments + lender momo disbursements.
+   */
+  async getAllReceivedPaymentsForTruckOwner(
+    truckOwnerId: string,
+    tenantId: string,
+    status?: PaymentStatus,
+  ): Promise<Payment[]> {
+    // 1. Normal payeeId-linked payments
+    const byPayeeId = await this.paymentRepository.find({
+      where: {
+        payeeId: truckOwnerId,
+        ...(status ? { status } : {}),
+      },
+      relations: ['trip', 'trip.load'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // 2. Lender disbursements matched by receiver phone
+    const user = await this.userRepository.findOne({ where: { id: truckOwnerId } });
+    let byPhone: Payment[] = [];
+    if (user?.phone) {
+      // Normalise to digits only so 078... matches 25078...
+      const digits = user.phone.replace(/\D/g, '');
+      byPhone = await this.paymentRepository
+        .createQueryBuilder('payment')
+        .leftJoinAndSelect('payment.trip', 'trip')
+        .leftJoinAndSelect('trip.load', 'load')
+        .where(`payment.metadata->>'isLenderPayment' = 'true'`)
+        .andWhere(
+          `regexp_replace(payment.metadata->>'receiverPhoneNumber', '\\D', '', 'g') LIKE :phone`,
+          { phone: `%${digits.slice(-9)}` },  // last 9 digits covers 078xxx and 25078xxx
+        )
+        .andWhere(status ? 'payment.status = :status' : '1=1', status ? { status } : {})
+        .orderBy('payment.createdAt', 'DESC')
+        .getMany();
+    }
+
+    // Merge, deduplicate by id, sort newest first
+    const seen = new Set<string>();
+    const merged: Payment[] = [];
+    for (const p of [...byPayeeId, ...byPhone]) {
+      if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
+    }
+    merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return merged;
   }
 }

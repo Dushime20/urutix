@@ -334,9 +334,10 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                 <LoanApprovalModal
                     loan={approvalLoan}
                     onClose={() => setApprovalLoan(null)}
-                    onConfirm={async (loanId, payload) => {
-                        await onApprove(loanId, payload);
+                    onConfirm={async () => { /* handled internally by modal */ }}
+                    onSuccess={(loanId) => {
                         setApprovalLoan(null);
+                        onApprove(loanId, { approvedAmount: approvalLoan.approved_amount ?? approvalLoan.requested_amount, loanTermMonths: approvalLoan.loan_term_months ?? 3, dueDate: approvalLoan.due_date ?? '' });
                     }}
                 />
             )}

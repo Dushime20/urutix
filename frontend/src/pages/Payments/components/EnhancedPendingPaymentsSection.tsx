@@ -242,6 +242,17 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
       pending: 'text-slate-700',
     };
 
+    const isProcessing = payment.status === 'PROCESSING';
+    const paymentSource = payment.paymentSource ||
+      (payment.isLenderPayment ? 'lender_disbursement' : 'direct_payment');
+
+    const sourceLabel =
+      paymentSource === 'lender_disbursement'
+        ? { text: 'Via Lender', color: 'bg-purple-100 text-purple-700' }
+        : paymentSource === 'direct_payment'
+        ? { text: 'Direct Payment', color: 'bg-blue-100 text-blue-700' }
+        : { text: 'Auto-created', color: 'bg-slate-100 text-slate-600' };
+
     return (
       <div className={cn(
         'rounded-2xl border p-6 transition-all hover:shadow-lg',
@@ -287,22 +298,44 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
               </span>
             </div>
           )}
+          {/* Payment source badge */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', sourceLabel.color)}>
+              {sourceLabel.text}
+            </span>
+            {payment.isLenderPayment && payment.lenderName && (
+              <span className="text-xs text-slate-500">by {payment.lenderName}</span>
+            )}
+            {isProcessing && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 flex items-center gap-1">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                Processing
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2">
           {isCargoOwner && (
-            <button
-              onClick={() => handlePayNow(payment.id)}
-              disabled={processPaymentMutation.isPending}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {processPaymentMutation.isPending ? (
+            isProcessing ? (
+              <div className="flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <CreditCard className="w-4 h-4" />
-              )}
-              Pay Now
-            </button>
+                Payment in progress…
+              </div>
+            ) : (
+              <button
+                onClick={() => handlePayNow(payment.id)}
+                disabled={processPaymentMutation.isPending}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {processPaymentMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                Pay Now
+              </button>
+            )
           )}
           <button
             onClick={() => handleViewDetails(payment.id)}

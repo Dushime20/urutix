@@ -40,6 +40,9 @@ export interface PaymentMetadata {
   lenderName?: string;
   financedAmount?: number;
   isLenderPayment?: boolean;
+  truckOwnerId?: string;
+  loanId?: string;
+  loanNumber?: string;
   referenceId?: string;
   externalId?: string;
   senderId?: string;

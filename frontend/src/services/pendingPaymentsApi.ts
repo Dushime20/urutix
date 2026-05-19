@@ -12,6 +12,10 @@ export interface PendingPayment {
   referenceNumber: string;
   createdAt: string;
   metadata: any;
+  /** How this payment was initiated: direct_payment | lender_disbursement | auto_created */
+  paymentSource?: 'direct_payment' | 'lender_disbursement' | 'auto_created';
+  isLenderPayment?: boolean;
+  lenderName?: string | null;
   trip: {
     id: string;
     tripNumber: string;

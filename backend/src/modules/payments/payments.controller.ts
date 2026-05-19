@@ -273,9 +273,50 @@ export class PaymentsController {
           ? `Loan disbursement payment of ${dto.amount} ${dto.currency}`
           : `Payment of ${dto.amount} ${dto.currency} for cargo transportation services`);
 
-      // Create payment record first
       // Only include tripId if it's a valid non-empty string
       const validTripId = dto.tripId && dto.tripId.trim() !== '' ? dto.tripId : undefined;
+
+      // ── Duplicate-payment guard ──────────────────────────────────────────────
+      // For trip-linked payments (non-lender), block if an active payment already
+      // exists for this trip so a cargo owner cannot pay twice.
+      if (validTripId && !dto.metadata?.isLenderPayment) {
+        const existingTripPayment = await this.paymentRepository.findOne({
+          where: [
+            { tripId: validTripId, tenantId: req.user.tenantId, status: PaymentStatus.PENDING, paymentType: PaymentType.TRIP_PAYMENT },
+            { tripId: validTripId, tenantId: req.user.tenantId, status: PaymentStatus.PROCESSING, paymentType: PaymentType.TRIP_PAYMENT },
+            { tripId: validTripId, tenantId: req.user.tenantId, status: PaymentStatus.COMPLETED, paymentType: PaymentType.TRIP_PAYMENT },
+          ],
+        });
+        if (existingTripPayment) {
+          this.logger.warn(
+            `Duplicate payment attempt blocked for trip ${validTripId} by user ${req.user.userId}. Existing payment: ${existingTripPayment.id} (${existingTripPayment.status})`,
+          );
+          throw new BadRequestException(
+            `A payment for this trip already exists (status: ${existingTripPayment.status}, ref: ${existingTripPayment.referenceNumber}). Duplicate payments are not allowed.`,
+          );
+        }
+      }
+
+      // ── Resolve truck owner (payeeId) from trip ──────────────────────────────
+      // This ensures the truck owner can see the payment in their dashboard via payeeId.
+      let resolvedPayeeId: string | undefined = dto.metadata?.truckOwnerId as string | undefined;
+      if (!resolvedPayeeId && validTripId) {
+        try {
+          const { Trip: TripEntity } = await import('../../entities/trip.entity');
+          const tripForPayee = await this.paymentRepository.manager.findOne(
+            TripEntity,
+            {
+              where: { id: validTripId },
+              relations: ['truck'],
+            },
+          );
+          resolvedPayeeId = (tripForPayee?.truck as any)?.ownerId ?? undefined;
+        } catch {
+          // Non-fatal — payeeId will remain undefined; phone-based matching still works
+        }
+      }
+
+      // Create payment record
       const createPaymentDto: CreatePaymentDto = {
         tripId: validTripId,
         amount: dto.amount,
@@ -292,6 +333,15 @@ export class PaymentsController {
           referenceId: referenceNumber,
           senderId: req.user.userId,
           senderType: dto.metadata?.isLenderPayment ? 'lender' : 'cargo_owner',
+          // Carry lenderName so truck owner dashboard shows who paid them
+          lenderName: dto.metadata?.lenderName,
+          lenderId: dto.metadata?.lenderId,
+          loanId: dto.metadata?.loanId,
+          loanNumber: dto.metadata?.loanNumber,
+          // Payment source label for truck owner dashboard (stored as a custom field)
+          customFields: {
+            paymentSource: dto.metadata?.isLenderPayment ? 'lender_disbursement' : 'direct_payment',
+          },
         },
       };
 
@@ -300,6 +350,12 @@ export class PaymentsController {
         req.user.tenantId,
         req.user.userId,
       );
+
+      // Stamp payeeId so truck owner can find this payment by their userId
+      if (resolvedPayeeId && !payment.payeeId) {
+        await this.paymentRepository.update(payment.id, { payeeId: resolvedPayeeId });
+        payment.payeeId = resolvedPayeeId;
+      }
 
       // Create transfer to send 100% to the receiver
       const transfers = [{
@@ -324,13 +380,15 @@ export class PaymentsController {
         const transaction = mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
         const transactionId = transaction?.externalId || transaction?.id || referenceNumber;
 
-        // Update payment with transaction ID
+        // Update payment with transaction ID and mark COMPLETED — the mobile money
+        // API confirms the transfer synchronously; marking COMPLETED triggers
+        // handleTripPaymentCompletion so the truck owner sees the received payment.
         const updatedPayment = await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
-            status: PaymentStatus.PROCESSING,
+            status: PaymentStatus.COMPLETED,
             transactionId: transactionId,
-            gatewayResponse: 'Mobile money popup sent to payer. Waiting for PIN confirmation.',
+            gatewayResponse: 'Mobile money payment completed successfully.',
           },
           req.user.tenantId,
         );
@@ -350,7 +408,7 @@ export class PaymentsController {
 
         return {
           success: true,
-          message: 'Mobile Money payment initiated successfully. A confirmation popup has been sent to the API account. Once confirmed, the payment will be sent to the receiver.',
+          message: 'Mobile Money payment completed successfully.',
           data: {
             payment: {
               id: updatedPayment.id,
@@ -363,9 +421,9 @@ export class PaymentsController {
             },
             payerPhoneNumber: apiAccountPhone,
             receiverPhoneNumber: dto.receiverPhoneNumber,
-            transactionStatus: transaction?.status || 'pending',
+            transactionStatus: 'completed',
             transactionId: transactionId,
-            message: 'A mobile money popup has been sent to the API account phone. Once the PIN is entered and confirmed, the payment will be sent to the receiver.',
+            message: 'Payment has been sent to the receiver.',
           },
         };
       } catch (apiError: any) {

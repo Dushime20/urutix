@@ -16,11 +16,13 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
+import { lendingApi } from '../../services/lending/lendingApi';
 import { createPortal } from 'react-dom';
+import { toast } from 'react-hot-toast';
 import {
-  X, AlertCircle, ShieldCheck,
+  X, AlertCircle, ShieldCheck, CheckCircle, Loader2,
   CalendarDays, DollarSign, Clock, Info,
-  Percent, BarChart3, Receipt, TrendingUp, ArrowRight, ChevronLeft,
+  Percent, BarChart3, TrendingUp, ArrowRight, ChevronLeft,
 } from 'lucide-react';
 
 export interface LoanApprovalPayload {
@@ -33,6 +35,7 @@ interface Props {
   loan: any; // enriched loan object from getLenderLoanRequests
   onClose: () => void;
   onConfirm: (loanId: string, payload: LoanApprovalPayload) => Promise<void>;
+  onSuccess?: (loanId: string) => void;
 }
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
@@ -66,16 +69,58 @@ const Field: React.FC<{ label: string; value: React.ReactNode; sub?: string; acc
 
 // ────────────────────────────────────────────────────────────────────────────
 
-const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onConfirm }) => {
+const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
   const [step, setStep] = useState<'terms' | 'preview' | 'processing' | 'success' | 'error'>('terms');
   const [errorMsg, setErrorMsg] = useState('');
 
   // ── Disbursement method (Step 2) ────────────────────────────────────────
   const [disbursementMethod, setDisbursementMethod] = useState<'momo' | 'card'>('momo');
   const [momoProvider, setMomoProvider] = useState<'mtn' | 'airtel' | 'mpesa'>('mtn');
-  const [momoPhone, setMomoPhone] = useState('');
+
+  // Auto-resolve beneficiary (truck owner) from loan's requested_split
+  // The split has {type: "truck_owner", id: <userId>, amount: N} — no phone yet
+  const beneficiaryFromSplit: { type: string; phone?: string; amount?: number; id?: string } | null =
+    (loan?.requested_split as any[])?.find(
+      (s: any) => s.type === 'truck_owner' || s.phone || s.phoneNumber,
+    ) ?? null;
+
+  const autoPhone: string =
+    beneficiaryFromSplit?.phone ??
+    (beneficiaryFromSplit as any)?.phoneNumber ??
+    loan?.metadata?.beneficiary_phone ??
+    loan?.metadata?.truck_owner_phone ??
+    loan?.borrower?.phone ??
+    '';
+  const autoName: string =
+    (beneficiaryFromSplit as any)?.name ??
+    loan?.metadata?.beneficiary_name ??
+    loan?.borrower?.contact_name ??
+    loan?.borrower?.company_name ??
+    '';
+
+  const [momoPhone, setMomoPhone] = useState(autoPhone);
   const [bankAccount, setBankAccount] = useState('');
-  const [bankName, setBankName] = useState('');
+  const [bankName, setBankName] = useState(autoName);
+
+  // ── Fetch truck owner's phone from their user record if not in split ──
+  // The split only carries {type, id, amount} — we look up the phone via /users/:id
+  const truckOwnerUserId: string | null = beneficiaryFromSplit?.id ?? null;
+  useEffect(() => {
+    if (autoPhone || !truckOwnerUserId) return; // already have phone, skip
+    api.get(`/users/${truckOwnerUserId}`)
+      .then(res => {
+        const userData = res.data?.data;
+        // Phone lives on user.phone, or in profile.preferences.paymentInfo
+        const phone =
+          userData?.phone ||
+          userData?.profile?.preferences?.paymentInfo?.phoneNumber ||
+          userData?.profile?.preferences?.paymentInfo?.momoCode ||
+          '';
+        if (phone) setMomoPhone(phone);
+      })
+      .catch(() => { /* non-fatal — lender can type it manually */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [truckOwnerUserId]);
 
   // ── Lender-editable fields ──────────────────────────────────────────────
   const [approvedAmount, setApprovedAmount] = useState<number>(
@@ -163,17 +208,53 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onConfirm }) => {
     return d.toISOString().split('T')[0];
   })();
 
-  // ── Submit ──────────────────────────────────────────────────────────────
+  // ── Submit — calls backend directly, no secondary payment modal ─────────
   const handleConfirm = async () => {
-    // onConfirm stores the payload and opens the payment modal.
-    // This modal closes immediately — approval only happens after payment.
+    if (disbursementMethod === 'momo' && !momoPhone.trim()) {
+      toast.error('Please enter the phone number for mobile money disbursement.');
+      return;
+    }
+    if (disbursementMethod === 'card' && (!bankAccount.trim() || !bankName.trim())) {
+      toast.error('Please enter bank account details.');
+      return;
+    }
+    setStep('processing');
     try {
-      await onConfirm(loan.id, { approvedAmount, loanTermMonths, dueDate });
-      // onClose is called by the parent (LoanRequestsEnlite) after onConfirm resolves
+      // Step 1: Approve the loan
+      await lendingApi.approveLoanRequest(loan.id, {
+        approved_amount: approvedAmount,
+        due_date: dueDate,
+      });
+
+      // Step 2: Disburse funds directly to the truck owner on behalf of the cargo owner
+      if (disbursementMethod === 'momo') {
+        await api.post('/payments/mobile-money/send', {
+          receiverPhoneNumber: momoPhone.trim(),
+          amount: approvedAmount,
+          currency: loan.currency || 'RWF',
+          tripId: loan.trip_id,
+          message: `Loan disbursement for trip — ${loan.loan_number || loan.id}. Paid by ${loan.lender?.name || 'Lender'} on behalf of cargo owner.`,
+          metadata: {
+            isLenderPayment: true,
+            lenderId: loan.lender_id ?? loan.lender?.id,
+            lenderName: loan.lender?.name || loan.lender?.contact_email || 'Lender',
+            loanId: loan.id,
+            loanNumber: loan.loan_number,
+            // truck owner userId so backend can stamp payeeId
+            truckOwnerId: truckOwnerUserId ?? beneficiaryFromSplit?.id,
+            provider: momoProvider,
+          },
+        });
+      }
+      // Bank transfer: approval is sufficient — physical transfer handled off-platform
+
+      toast.success('Loan approved and funds disbursed!');
+      setStep('success');
+      onSuccess?.(loan.id);
     } catch (err: any) {
-      setErrorMsg(
-        err?.response?.data?.message || err?.message || 'Failed to open payment. Please try again.',
-      );
+      const msg = err?.response?.data?.message || err?.message || 'Failed to approve loan.';
+      setErrorMsg(msg);
+      toast.error(msg);
       setStep('error');
     }
   };
@@ -184,6 +265,43 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onConfirm }) => {
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-6 overflow-y-auto">
       <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl border border-slate-100 flex flex-col max-h-[95vh] overflow-hidden my-4">
 
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━ PROCESSING ━━━━━━━━━━━━━━━━━━━━━ */}
+        {step === 'processing' && (
+          <div className="flex flex-col items-center justify-center py-24 px-8">
+            <div className="relative mb-6">
+              <div className="w-20 h-20 rounded-full bg-[#345E85]/10 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-[#345E85] animate-spin" />
+              </div>
+              <div className="absolute inset-0 rounded-full border-4 border-[#345E85]/20 border-t-[#345E85] animate-spin" style={{ animationDuration: '1.5s' }} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Approving &amp; Disbursing</h3>
+            <p className="text-sm text-slate-500 text-center max-w-xs">
+              Please wait while we approve the loan and send{' '}
+              <span className="font-bold text-slate-700">{fmtUSD(approvedAmount)}</span> to the borrower.
+            </p>
+          </div>
+        )}
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━ SUCCESS ━━━━━━━━━━━━━━━━━━━━━ */}
+        {step === 'success' && (
+          <div className="flex flex-col items-center justify-center py-24 px-8">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
+              <CheckCircle className="w-10 h-10 text-emerald-600" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Loan Approved!</h3>
+            <p className="text-sm text-slate-500 text-center max-w-xs mb-8">
+              {disbursementMethod === 'momo'
+                ? <>Funds of <span className="font-bold text-slate-700">{fmtUSD(approvedAmount)}</span> have been sent via mobile money to the borrower.</>
+                : <>Loan approved. Bank transfer of <span className="font-bold text-slate-700">{fmtUSD(approvedAmount)}</span> should be processed manually.</>
+              }
+            </p>
+            <button onClick={onClose}
+              className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2a4d6d] transition-all border-b-4 border-indigo-900/20">
+              Done
+            </button>
+          </div>
+        )}
 
         {/* ━━━━━━━━━━━━━━━━━━━━━ ERROR ━━━━━━━━━━━━━━━━━━━━━ */}
         {step === 'error' && (
@@ -402,7 +520,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onConfirm }) => {
                   </div>
                   <div className="pt-4 border-t-2 border-dashed border-blue-200">
                     <div className="flex items-center justify-between">
-                      <span className="text-base font-black text-blue-900 uppercase">Total Disbursed to Borrower:</span>
+                      <span className="text-base font-black text-blue-900 uppercase">Total Disbursed:</span>
                       <span className="text-3xl font-black text-[#345E85]">{fmtUSD(approvedAmount)}</span>
                     </div>
                   </div>

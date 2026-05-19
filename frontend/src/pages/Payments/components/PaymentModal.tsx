@@ -62,7 +62,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
       let response: any;
 
       if (formData.method === 'mobile_money') {
-        response = await api.post(`/payments/mobile-money`, {
+        response = await api.post(`/payments/mobile-money/initiate`, {
           tripId: payment.relatedEntity?.id,
           amount: totalAmount,
           currency: payment.currency,

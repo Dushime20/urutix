@@ -96,6 +96,10 @@ export class PendingPaymentsController {
           referenceNumber: payment.referenceNumber,
           createdAt: payment.createdAt,
           metadata: payment.metadata,
+          // Payment source: direct_payment | lender_disbursement | auto_created
+          paymentSource: (payment.metadata as any)?.paymentSource ||
+            (payment.metadata as any)?.customFields?.paymentSource ||
+            ((payment.metadata as any)?.isLenderPayment ? 'lender_disbursement' : 'direct_payment'),
           trip: payment.trip ? {
             id: payment.trip.id,
             tripNumber: payment.trip.tripNumber,
@@ -194,6 +198,12 @@ export class PendingPaymentsController {
           referenceNumber: payment.referenceNumber,
           createdAt: payment.createdAt,
           metadata: payment.metadata,
+          // Payment source label so truck owner knows how they're being paid
+          paymentSource: (payment.metadata as any)?.paymentSource ||
+            (payment.metadata as any)?.customFields?.paymentSource ||
+            ((payment.metadata as any)?.isLenderPayment ? 'lender_disbursement' : 'direct_payment'),
+          isLenderPayment: !!(payment.metadata as any)?.isLenderPayment,
+          lenderName: (payment.metadata as any)?.lenderName || null,
           trip: payment.trip ? {
             id: payment.trip.id,
             tripNumber: payment.trip.tripNumber,
@@ -219,6 +229,88 @@ export class PendingPaymentsController {
           limit: limit || filteredPayments.length,
           offset: startIndex,
           hasMore: endIndex ? endIndex < filteredPayments.length : false,
+        },
+      },
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * GET /pending-payments/truck-owner/all
+   * Get ALL received payments for truck owner — including lender disbursements by phone
+   */
+  @Get('truck-owner/all')
+  @Roles(UserRole.TRUCK_OWNER, UserRole.FLEET_MANAGER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get all received payments for truck owner',
+    description: 'Returns all payments received by the truck owner — both trip-linked and lender disbursements sent to their phone number.',
+  })
+  @ApiQuery({ name: 'status', required: false, enum: PaymentStatus })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiOkResponse({ description: 'All received payments retrieved successfully' })
+  async getAllReceivedPayments(
+    @Request() req,
+    @Query('status') status?: PaymentStatus,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    const payments = await this.tripCompletionService.getAllReceivedPaymentsForTruckOwner(
+      req.user.userId,
+      req.user.tenantId,
+      status,
+    );
+
+    const startIndex = offset || 0;
+    const endIndex = limit ? startIndex + Number(limit) : undefined;
+    const paginatedPayments = payments.slice(startIndex, endIndex);
+    const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return {
+      success: true,
+      message: 'All received payments retrieved successfully',
+      data: {
+        payments: paginatedPayments.map(payment => ({
+          id: payment.id,
+          tripId: payment.tripId,
+          amount: Number(payment.amount),
+          currency: payment.currency,
+          status: payment.status,
+          paymentType: payment.paymentType,
+          paymentMethod: payment.paymentMethod,
+          description: payment.description,
+          referenceNumber: payment.referenceNumber,
+          processedAt: payment.processedAt,
+          createdAt: payment.createdAt,
+          isLenderPayment: !!(payment.metadata as any)?.isLenderPayment,
+          lenderName: (payment.metadata as any)?.lenderName || null,
+          lenderId: (payment.metadata as any)?.lenderId || null,
+          trip: payment.trip ? {
+            id: payment.trip.id,
+            tripNumber: payment.trip.tripNumber,
+            status: payment.trip.status,
+            load: payment.trip.load ? {
+              id: payment.trip.load.id,
+              title: payment.trip.load.title,
+              origin: payment.trip.load.origin,
+              destination: payment.trip.load.destination,
+            } : null,
+          } : null,
+        })),
+        summary: {
+          totalPayments: payments.length,
+          totalAmount,
+          currency: paginatedPayments[0]?.currency || 'RWF',
+          completedCount: payments.filter(p => p.status === PaymentStatus.COMPLETED).length,
+          pendingCount: payments.filter(p => p.status === PaymentStatus.PENDING || p.status === PaymentStatus.PROCESSING).length,
+          lenderPaymentsCount: payments.filter(p => (p.metadata as any)?.isLenderPayment).length,
+        },
+        pagination: {
+          total: payments.length,
+          limit: limit || payments.length,
+          offset: startIndex,
+          hasMore: endIndex ? endIndex < payments.length : false,
         },
       },
       statusCode: 200,

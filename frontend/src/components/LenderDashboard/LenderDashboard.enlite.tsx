@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lendingApi } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
+import LoanApprovalModal from './LoanApprovalModal';
 import {
   DollarSign, Briefcase, AlertTriangle, Activity,
-  TrendingUp, Clock, CheckCircle, X, Eye, Check,
+  TrendingUp, Clock, X, Eye, Check,
   RefreshCw, ChevronRight, Banknote, BarChart3,
   ShieldCheck, Percent,
 } from 'lucide-react';
@@ -64,7 +65,7 @@ const LenderDashboardEnlite: React.FC = () => {
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState<string | null>(null);
-  const [approvingId, setApprovingId]       = useState<string | null>(null);
+  const [approvalLoan, setApprovalLoan]     = useState<any>(null);
   const [rejectingId, setRejectingId]       = useState<string | null>(null);
 
   const lenderId = user?.role === 'LENDER' ? user.id : null;
@@ -76,7 +77,7 @@ const LenderDashboardEnlite: React.FC = () => {
     try {
       const [dash, analytics, requests] = await Promise.all([
         lendingApi.getLenderDashboard(lenderId).catch(() => null),
-        lendingApi.getLenderAnalytics(lenderId, '30d').catch(() => null),
+        lendingApi.getLenderAnalytics(lenderId, 1).catch(() => null),
         lendingApi.getLenderLoanRequests(lenderId, undefined, 1, 10).catch(() => null),
       ]);
 
@@ -96,14 +97,8 @@ const LenderDashboardEnlite: React.FC = () => {
   useEffect(() => { load(); }, [load]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
-  const handleApprove = async (loanId: string, amount: number) => {
-    setApprovingId(loanId);
-    try {
-      await lendingApi.approveLoanRequest(loanId, { approved_amount: amount, interest_rate: 10 });
-      setRecentRequests(prev => prev.map(r => r.id === loanId ? { ...r, status: 'approved' } : r));
-    } catch (err: any) {
-      alert('Failed to approve: ' + (err?.response?.data?.message || err?.message));
-    } finally { setApprovingId(null); }
+  const handleApprove = (req: any) => {
+    setApprovalLoan(req);
   };
 
   const handleReject = async (loanId: string) => {
@@ -140,6 +135,7 @@ const LenderDashboardEnlite: React.FC = () => {
   if (!user) return null;
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
 
       {/* ── Header ── */}
@@ -382,15 +378,11 @@ const LenderDashboardEnlite: React.FC = () => {
                           {req.status === 'pending' && (
                             <>
                               <button
-                                onClick={() => handleApprove(req.id, amount)}
-                                disabled={approvingId === req.id}
-                                className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors disabled:opacity-50"
+                                onClick={() => handleApprove(req)}
+                                className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors"
                                 title="Approve"
                               >
-                                {approvingId === req.id
-                                  ? <RefreshCw size={14} className="animate-spin" />
-                                  : <Check size={14} />
-                                }
+                                <Check size={14} />
                               </button>
                               <button
                                 onClick={() => handleReject(req.id)}
@@ -450,6 +442,21 @@ const LenderDashboardEnlite: React.FC = () => {
       </div>
 
     </div>
+
+      {approvalLoan && (
+        <LoanApprovalModal
+          loan={approvalLoan}
+          onClose={() => setApprovalLoan(null)}
+          onConfirm={async () => { /* handled internally by modal */ }}
+          onSuccess={(loanId) => {
+            setApprovalLoan(null);
+            setRecentRequests(prev => prev.map(r =>
+              r.id === loanId ? { ...r, status: 'approved' } : r
+            ));
+          }}
+        />
+      )}
+    </>
   );
 };
 
