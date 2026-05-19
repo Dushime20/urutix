@@ -24,10 +24,12 @@ import {
   MessageSquare,
   Link,
   DollarSign,
-  ShoppingCart
+  ShoppingCart,
+  ClipboardList
 } from 'lucide-react';
 import { DetailedErrorBoundary } from '../DetailedErrorBoundary';
 import { FleetSkeleton } from './FleetSkeleton';
+import BiddingDashboard from '../Bidding/BiddingDashboard';
 import { FleetModal } from './FleetModal';
 import { DriversList } from './DriversList';
 import StatCard from '../EnliteUI/Cards/StatCard';
@@ -101,7 +103,7 @@ export const FleetDashboard: React.FC = () => {
 
   const [search, setSearch] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans' | 'buy-credits' | 'partner-plans'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trucks' | 'drivers' | 'analytics' | 'safety' | 'financial' | 'expenses' | 'routes' | 'assignments' | 'matches' | 'fuel' | 'credits' | 'communicate' | 'loans' | 'buy-credits' | 'partner-plans' | 'bids'>('overview');
 
 
   const [showForm, setShowForm] = useState(false);
@@ -119,11 +121,11 @@ export const FleetDashboard: React.FC = () => {
 
   // ── Role Based Access Control ──────────────────────────────────────────────
   const rolePermissions: Record<string, string[]> = {
-    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
-    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
-    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
-    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
-    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans'],
+    'SUPER_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans', 'bids'],
+    'ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans', 'bids'],
+    'TENANT_ADMIN': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans', 'bids'],
+    'TRUCK_OWNER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans', 'bids'],
+    'FLEET_MANAGER': ['overview', 'trucks', 'drivers', 'fuel', 'routes', 'assignments', 'safety', 'matches', 'financial', 'expenses', 'credits', 'analytics', 'communicate', 'buy-credits', 'partner-plans', 'loans', 'bids'],
     'FLEET_DISPATCHER': ['overview', 'trucks', 'drivers', 'routes', 'assignments', 'matches', 'analytics', 'communicate'],
     'FLEET_ACCOUNTANT': ['overview', 'financial', 'expenses', 'credits', 'fuel', 'analytics'],
     'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
@@ -147,6 +149,7 @@ export const FleetDashboard: React.FC = () => {
     else if (path.includes('/fleet/drivers')) setActiveTab('drivers');
     else if (path.includes('/fleet/analytics')) setActiveTab('analytics');
     else if (path.includes('/fleet/safety')) setActiveTab('safety');
+    else if (path.includes('/fleet/bids') || path.includes('/fleet/my-bids')) setActiveTab('bids');
     else if (path.includes('/fleet/loan-requests')) setActiveTab('loans');
     else if (path.includes('/fleet/financial')) setActiveTab('financial');
     else if (path.includes('/fleet/financial-info')) setActiveTab('financial');
@@ -533,23 +536,23 @@ export const FleetDashboard: React.FC = () => {
 
         {/* Intelligence Header Context */}
         <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200">
-          <div className="absolute top-0 right-0 p-20 opacity-[0.02] dark:opacity-[0.03] scale-[2.5] pointer-events-none rotate-12">
-            <Layers size={140} className="text-blue-500 dark:text-blue-400" />
+          <div className="absolute top-0 right-0 p-10 opacity-[0.02] dark:opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
+            <Layers size={100} className="text-[#2c5173] dark:text-[#2c5173]" />
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
-                    <Truck size={20} />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 bg-[#2c5173]/10 dark:bg-[#2c5173]/20 rounded-lg flex items-center justify-center text-[#2c5173] dark:text-[#2c5173]">
+                    <Truck size={16} />
                   </div>
-                  <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400">
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#2c5173] dark:text-[#2c5173]">
                     <TranslatedText text="Fleet Dashboard" />
                   </h2>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
                   {(() => {
                     const hour = new Date().getHours();
                     const greeting = hour < 12 ? tSync('Good morning') : hour < 18 ? tSync('Good afternoon') : tSync('Good evening');
@@ -559,10 +562,10 @@ export const FleetDashboard: React.FC = () => {
                         ? `${(user as any).profile.firstName} ${(user as any).profile.lastName || ''}`.trim()
                         : user?.email?.split('@')[0] || 'Fleet Manager');
 
-                    return <>{greeting}, <span className="text-blue-600 dark:text-blue-400">{displayName}</span></>;
+                    return <>{greeting}, <span className="text-[#2c5173] dark:text-[#2c5173]">{displayName}</span></>;
                   })()}
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400 font-medium max-w-xl">
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium max-w-xl">
                   <TranslatedText text="Manage your trucks, drivers and fleet performance." />
                 </p>
               </div>
@@ -570,82 +573,29 @@ export const FleetDashboard: React.FC = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleCreateTruck}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-blue-600 dark:bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 dark:hover:bg-blue-700 active:scale-95 transition-all group"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#2c5173] text-white rounded-lg font-semibold text-sm hover:bg-[#1e3850] active:scale-95 transition-all group"
                 >
-                  <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+                  <Plus size={16} className="group-hover:rotate-90 transition-transform" />
                   <TranslatedText text="Add New Truck" />
                 </button>
                 <button
                   onClick={handleCreateDriver}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-lg font-semibold text-sm hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 active:scale-95 transition-all shadow-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 rounded-lg font-semibold text-sm hover:border-[#2c5173] hover:text-[#2c5173] dark:hover:text-[#2c5173] active:scale-95 transition-all shadow-sm"
                 >
-                  <User size={18} />
+                  <User size={16} />
                   <TranslatedText text="Add New Driver" />
                 </button>
                 <button
                   onClick={() => navigate('/dashboard/fleet/fuel')}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg font-semibold text-sm hover:bg-gray-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-lg font-semibold text-sm hover:bg-gray-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
                 >
-                  <Fuel size={18} />
+                  <Fuel size={16} />
                   <TranslatedText text="Log Fuel" />
                 </button>
               </div>
             </div>
 
-            {/* Sub-Navigation / Quick Vectors */}
-            <div className="flex flex-wrap items-center gap-4 mt-12 pb-2">
-              {[
-                 { id: 'overview', icon: Layout, label: 'Overview' },
-                 { id: 'trucks', icon: Truck, label: 'Trucks' },
-                 { id: 'drivers', icon: User, label: 'Drivers' },
-                 { id: 'fuel', icon: Fuel, label: 'Fuel' },
-                 { id: 'routes', icon: Navigation, label: 'Routes' },
-                 { id: 'safety', icon: Shield, label: 'Safety' },
-                 { id: 'matches', icon: Zap, label: 'Matches' },
-                 { id: 'financial', icon: CreditCard, label: 'Financials' },
-                 { id: 'expenses', icon: Calculator, label: 'Expenses' },
-                 { id: 'credits', icon: CreditCard, label: 'Credits' },
-                 { id: 'buy-credits', icon: ShoppingCart, label: 'Marketplace' },
-                 { id: 'analytics', icon: Activity, label: 'Analytics' },
-                 { id: 'communicate', icon: MessageSquare, label: 'Comms' }
-               ].filter(t => allowedTabs.includes(t.id)).map((tab) => (
-                 <button
-                   key={tab.id}
-                   onClick={() => {
-                     if (tab.id === 'overview') {
-                       navigate('/dashboard/fleet');
-                     } else if (tab.id === 'fuel') {
-                       navigate('/dashboard/fleet/fuel');
-                     } else if (tab.id === 'credits') {
-                       navigate('/dashboard/fleet/credits');
-                     } else if (tab.id === 'buy-credits' || tab.id === 'partner-plans') {
-                       navigate('/dashboard/fleet/buy-credits');
-                     } else if (tab.id === 'financial') {
-                       navigate('/dashboard/fleet/overview');
-                     } else if (tab.id === 'loans') {
-                       navigate('/dashboard/fleet/loan-requests');
-                     } else if (tab.id === 'expenses') {
-                       navigate('/dashboard/fleet/expenses');
-                     } else if (tab.id === 'trucks') {
-                       navigate('/dashboard/fleet/trucks');
-                     } else if (tab.id === 'drivers') {
-                       navigate('/dashboard/fleet/drivers');
-                     } else if (tab.id === 'assignments') {
-                       navigate('/dashboard/fleet/assignments');
-                     } else {
-                       setActiveTab(tab.id as any);
-                     }
-                   }}
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400'
-                    }`}
-                >
-                  <tab.icon size={16} />
-                  <TranslatedText text={tab.label} />
-                </button>
-              ))}
-            </div>
+
           </div>
         </div>
 
@@ -669,7 +619,7 @@ export const FleetDashboard: React.FC = () => {
               className="space-y-8"
             >
               {/* Specialized View Header (Hidden for tabs that implement their own complete control surfaces) */}
-              {!['trucks', 'drivers', 'assignments'].includes(activeTab) && (
+              {!['trucks', 'drivers', 'assignments', 'bids'].includes(activeTab) && (
                 <div className="bg-white dark:bg-gray-900 p-8 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-6">
                     <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-500 dark:text-blue-400">
@@ -732,7 +682,9 @@ export const FleetDashboard: React.FC = () => {
                     <span className="text-sm font-semibold">{error}</span>
                   </div>
                 )}
-                {activeTab === 'analytics' ? (
+                {activeTab === 'bids' ? (
+                  <BiddingDashboard userRole={user?.role === 'TRUCK_OWNER' ? 'TRUCK_OWNER' : 'CARGO_OWNER'} />
+                ) : activeTab === 'analytics' ? (
                   <TruckAnalytics 
                     trucks={trucks} 
                     analytics={analytics} 
@@ -785,6 +737,42 @@ export const FleetDashboard: React.FC = () => {
               </div>
             </motion.div>
           )}
+
+          {/* Sticky Right-Side Quick Actions */}
+          <div className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[90]">
+            {[
+              { id: 'financial', icon: CreditCard, label: 'Finance', path: '/dashboard/fleet/financial' },
+              { id: 'matches', icon: Zap, label: 'Matches', path: '/dashboard/fleet?tab=matches' },
+              { id: 'bids', icon: ClipboardList, label: 'Bidding', path: '/dashboard/fleet/bids' },
+            ].map((action) => {
+              const isActive = (action.id === 'bids' && location.pathname.includes('/fleet/bids')) ||
+                               (activeTab === action.id);
+              return (
+                <div key={action.id} className="relative group flex items-center">
+                  <button
+                    onClick={() => {
+                       if (action.id === 'bids' || action.id === 'financial') {
+                         navigate(action.path);
+                       } else {
+                         setActiveTab(action.id as any);
+                       }
+                    }}
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white shadow-lg shadow-[#2c5173]/30 transition-all duration-300 hover:scale-110 active:scale-95 ${
+                      isActive ? 'bg-[#1f3a53] ring-4 ring-[#2c5173]/30' : 'bg-[#2c5173] hover:bg-[#1f3a53]'
+                    }`}
+                  >
+                    <action.icon size={22} />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute right-full mr-4 px-3 py-2 bg-gray-900 text-white text-[11px] font-bold rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap shadow-xl">
+                    <TranslatedText text={action.label} />
+                    {/* Arrow */}
+                    <div className="absolute top-1/2 right-[-5px] -translate-y-1/2 border-[5px] border-transparent border-l-gray-900"></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           <FleetModal
             fleetItem={selectedFleetItem}

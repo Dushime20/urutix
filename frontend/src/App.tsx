@@ -386,9 +386,9 @@ function App() {
                       <Route path="credits" element={<TruckOwnerCredits />} />
                       {/* NEW: Credit Marketplace - Buy Credits */}
                       <Route path="buy-credits" element={<BuyCredits />} />
-                      <Route path="bids" element={<UnifiedBiddingManagement />} />
-                      <Route path="my-bids" element={<UnifiedBiddingManagement />} />
-                      <Route path="bidding-analytics" element={<UnifiedBiddingManagement />} />
+                      <Route path="bids" element={<FleetDashboard />} />
+                      <Route path="my-bids" element={<FleetDashboard />} />
+                      <Route path="bidding-analytics" element={<FleetDashboard />} />
                       <Route path="smart-bookings" element={<SmartBookingRequests />} />
                       <Route path="fuel" element={<FleetDashboard />} />
                       <Route path="expenses" element={<FleetDashboard />} />

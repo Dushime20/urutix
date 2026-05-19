@@ -8,6 +8,7 @@ import {
   Activity, ArrowRight, Shield, BarChart3, MapPin,
   Package, RefreshCw, ChevronRight, Circle,
 } from 'lucide-react';
+import StatCard from '../EnliteUI/Cards/StatCard';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ function TrendBadge({ value, suffix = '%' }: { value: number; suffix?: string })
   );
 }
 
-function MiniBar({ value, max, color = 'bg-blue-500' }: { value: number; max: number; color?: string }) {
+function MiniBar({ value, max, color = 'bg-[#2c5173]' }: { value: number; max: number; color?: string }) {
   const w = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
     <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -52,7 +53,7 @@ function MiniBar({ value, max, color = 'bg-blue-500' }: { value: number; max: nu
 }
 
 // Simple sparkline using SVG — no external chart lib needed
-function Sparkline({ data, color = '#3b82f6', height = 32 }: { data: number[]; color?: string; height?: number }) {
+function Sparkline({ data, color = '#2c5173', height = 32 }: { data: number[]; color?: string; height?: number }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data, 1);
   const min = Math.min(...data, 0);
@@ -68,44 +69,6 @@ function Sparkline({ data, color = '#3b82f6', height = 32 }: { data: number[]; c
   );
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
-
-interface KpiCardProps {
-  title: string;
-  value: string | number;
-  sub?: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  trend?: number;
-  sparkData?: number[];
-  sparkColor?: string;
-  onClick?: () => void;
-  alert?: boolean;
-}
-
-function KpiCard({ title, value, sub, icon, iconBg, trend, sparkData, sparkColor, onClick, alert }: KpiCardProps) {
-  return (
-    <div
-      onClick={onClick}
-      className={`bg-white dark:bg-slate-900 rounded-2xl border p-5 flex flex-col gap-3 transition-all duration-200 ${
-        onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5' : ''
-      } ${alert ? 'border-red-200 dark:border-red-800' : 'border-slate-100 dark:border-slate-800'}`}
-    >
-      <div className="flex items-start justify-between">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
-          {icon}
-        </div>
-        {trend !== undefined && <TrendBadge value={trend} />}
-        {sparkData && <Sparkline data={sparkData} color={sparkColor} />}
-      </div>
-      <div>
-        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{value}</p>
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{title}</p>
-        {sub && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  );
-}
 
 // ── Fleet Status Donut ────────────────────────────────────────────────────────
 
@@ -232,14 +195,14 @@ function TruckHealthTable({ trucks }: { trucks: any[] }) {
 
   const statusColor: Record<string, string> = {
     AVAILABLE:      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    IN_TRANSIT:     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    IN_TRANSIT:     'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]',
     MAINTENANCE:    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     OUT_OF_SERVICE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   };
 
   const statusDot: Record<string, string> = {
     AVAILABLE:      'bg-emerald-500',
-    IN_TRANSIT:     'bg-blue-500',
+    IN_TRANSIT:     'bg-[#2c5173]',
     MAINTENANCE:    'bg-amber-500',
     OUT_OF_SERVICE: 'bg-red-500',
   };
@@ -341,7 +304,7 @@ function AlertsPanel({ trucks, drivers }: { trucks: any[]; drivers: any[] }) {
   const typeStyle = {
     danger:  { bg: 'bg-red-50 dark:bg-red-900/20',    icon: 'text-red-500',    dot: 'bg-red-500' },
     warning: { bg: 'bg-amber-50 dark:bg-amber-900/20', icon: 'text-amber-500',  dot: 'bg-amber-500' },
-    info:    { bg: 'bg-blue-50 dark:bg-blue-900/20',   icon: 'text-blue-500',   dot: 'bg-blue-500' },
+    info:    { bg: 'bg-[#2c5173]/10 dark:bg-[#2c5173]/20',   icon: 'text-[#2c5173]',   dot: 'bg-[#2c5173]' },
   };
 
   return (
@@ -418,11 +381,11 @@ function RevenueTrendChart({ analytics }: { analytics: any }) {
           return (
             <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
               <div
-                className={`w-full rounded-t-md transition-all duration-500 ${isToday ? 'bg-blue-500' : 'bg-slate-100 dark:bg-slate-800'}`}
+                className={`w-full rounded-t-md transition-all duration-500 ${isToday ? 'bg-[#2c5173]' : 'bg-slate-100 dark:bg-slate-800'}`}
                 style={{ height: `${h}px` }}
                 title={`${d.day}: ${fmt(d.value)}`}
               />
-              <span className={`text-[9px] font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>{d.day}</span>
+              <span className={`text-[9px] font-bold ${isToday ? 'text-[#2c5173]' : 'text-slate-400'}`}>{d.day}</span>
             </div>
           );
         })}
@@ -436,12 +399,12 @@ function RevenueTrendChart({ analytics }: { analytics: any }) {
 function QuickActions({ onAddTruck, onAddDriver }: { onAddTruck: () => void; onAddDriver: () => void }) {
   const navigate = useNavigate();
   const actions = [
-    { label: 'Add Truck',      icon: Truck,     color: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',     onClick: onAddTruck },
-    { label: 'Add Driver',     icon: Users,     color: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400', onClick: onAddDriver },
-    { label: 'Log Fuel',       icon: Fuel,      color: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',  onClick: () => navigate('/dashboard/fleet/fuel') },
-    { label: 'View Matches',   icon: Zap,       color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400', onClick: () => navigate('/dashboard/fleet?tab=matches') },
-    { label: 'Financials',     icon: DollarSign,color: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400',  onClick: () => navigate('/dashboard/fleet/overview') },
-    { label: 'Safety',         icon: Shield,    color: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',          onClick: () => navigate('/dashboard/fleet/safety') },
+    { label: 'Add Truck',      icon: Truck,     color: 'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]',     onClick: onAddTruck },
+    { label: 'Add Driver',     icon: Users,     color: 'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]', onClick: onAddDriver },
+    { label: 'Log Fuel',       icon: Fuel,      color: 'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]',  onClick: () => navigate('/dashboard/fleet/fuel') },
+    { label: 'View Matches',   icon: Zap,       color: 'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]', onClick: () => navigate('/dashboard/fleet?tab=matches') },
+    { label: 'Financials',     icon: DollarSign,color: 'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]',  onClick: () => navigate('/dashboard/fleet/overview') },
+    { label: 'Safety',         icon: Shield,    color: 'bg-[#2c5173]/10 text-[#2c5173] dark:bg-[#2c5173]/20 dark:text-[#2c5173]',          onClick: () => navigate('/dashboard/fleet/safety') },
   ];
 
   return (
@@ -476,7 +439,7 @@ function DriverAvailability({ drivers }: { drivers: any[] }) {
 
   const bars = [
     { label: 'Available',   value: stats.active,    color: 'bg-emerald-500' },
-    { label: 'In Transit',  value: stats.inTransit, color: 'bg-blue-500' },
+    { label: 'In Transit',  value: stats.inTransit, color: 'bg-[#2c5173]' },
     { label: 'On Leave',    value: stats.onLeave,   color: 'bg-amber-500' },
     { label: 'Inactive',    value: stats.inactive,  color: 'bg-slate-300 dark:bg-slate-600' },
   ];
@@ -533,7 +496,7 @@ function PerformanceScorecard({ analytics, trucks, drivers }: { analytics: any; 
       : 0);
 
   const metrics = [
-    { label: 'Fleet Utilization',   value: Math.round(utilization),  max: 100, unit: '%', color: 'bg-blue-500',    good: 70 },
+    { label: 'Fleet Utilization',   value: Math.round(utilization),  max: 100, unit: '%', color: 'bg-[#2c5173]',    good: 70 },
     { label: 'Avg Driver Rating',   value: Number(avgRating.toFixed(1)), max: 5, unit: '/5', color: 'bg-amber-500', good: 4 },
     { label: 'On-Time Delivery',    value: Math.round(onTimeRate),   max: 100, unit: '%', color: 'bg-emerald-500', good: 85 },
     { label: 'Safety Score',        value: Math.round(safetyScore),  max: 100, unit: '%', color: 'bg-purple-500',  good: 90 },
@@ -620,42 +583,45 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
     <div className="space-y-6">
 
       {/* ── Row 1: KPI Cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
-        <KpiCard
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard
           title="Total Trucks"
           value={trucks.length}
-          sub={`${truckStats.inTransit} in transit · ${truckStats.available} available`}
-          icon={<Truck size={18} />}
-          iconBg="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+          subtitle={`${truckStats.inTransit} in transit · ${truckStats.available} available`}
+          icon={<Truck size={24} />}
+          color="primary"
+          variant="classic"
           onClick={() => navigate('/dashboard/fleet/trucks')}
         />
-        <KpiCard
+        <StatCard
           title="Fleet Utilization"
           value={`${truckStats.utilization}%`}
-          sub={`${truckStats.inTransit} of ${trucks.length} trucks active`}
-          icon={<Activity size={18} />}
-          iconBg="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-          trend={truckStats.utilization > 60 ? 5 : -3}
+          subtitle={`${truckStats.inTransit} of ${trucks.length} trucks active`}
+          icon={<Activity size={24} />}
+          color="primary"
+          variant="classic"
+          trend={truckStats.utilization > 60 ? '5%' : '3%'}
+          trendDirection={truckStats.utilization > 60 ? 'up' : 'down'}
         />
-        <KpiCard
+        <StatCard
           title="Total Revenue"
           value={fmt(truckStats.totalRevenue)}
-          sub="All-time earnings"
-          icon={<DollarSign size={18} />}
-          iconBg="bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-          trend={12}
-          sparkData={revSpark}
-          sparkColor="#10b981"
+          subtitle="All-time earnings"
+          icon={<DollarSign size={24} />}
+          color="primary"
+          variant="classic"
+          trend="12%"
+          trendDirection="up"
         />
-        <KpiCard
+        <StatCard
           title="Total Trips"
           value={truckStats.totalTrips}
-          sub={`${drivers.length} drivers registered`}
-          icon={<Package size={18} />}
-          iconBg="bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
-          trend={8}
-          sparkData={tripSpark}
-          sparkColor="#8b5cf6"
+          subtitle={`${drivers.length} drivers registered`}
+          icon={<Package size={24} />}
+          color="primary"
+          variant="classic"
+          trend="8%"
+          trendDirection="up"
           onClick={() => navigate('/dashboard/fleet/trips')}
         />
       </div>
