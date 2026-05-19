@@ -20,6 +20,7 @@ import {
 import { CargoLoadConfirmation } from "@/components/LoanRequest";
 import CargoDetailsModal from "@/components/CargoDetailsModal";
 import { loadsAPI } from "@/services/load";
+import receiverService from "@/services/receiverService";
 import EnhancedCargoForm from "../create/components/form";
 import BiddingDashboard from "@/components/Bidding/BiddingDashboard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -140,14 +141,23 @@ const UnifiedCargoManagement = () => {
   const queryClient = useQueryClient();
   const unsubscribeRefs = useRef<Map<string, () => void>>(new Map());
 
+  // CARGO_RECEIVER users see only their assigned cargos via /receivers/my/cargos
+  const isReceiver = user?.role === 'CARGO_RECEIVER';
+
   const {
     data: loadsResponse,
     isLoading,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["loads", searchTerm, statusFilter, cargoTypeFilter],
+    queryKey: ["loads", searchTerm, statusFilter, cargoTypeFilter, isReceiver],
     queryFn: async () => {
+      if (isReceiver) {
+        // Use the receiver-specific endpoint — no role restriction
+        const data = await receiverService.getMyCargos();
+        // Normalise to the same shape the rest of the component expects
+        return { data: { cargos: data } };
+      }
       // Use the regular /loads endpoint which includes broker data
       const response = await loadsAPI.getAll({
         search: searchTerm,
@@ -622,7 +632,8 @@ const UnifiedCargoManagement = () => {
       label: "Bidding",
       icon: Gavel,
     }] : []),
-  ];
+  // Receivers only see the list — no create/template/bidding tabs
+  ].filter(tab => isReceiver ? (tab.id === 'all' || tab.id === 'active') : true);
 
   return (
     <>
@@ -646,6 +657,7 @@ const UnifiedCargoManagement = () => {
                 <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Loads</div>
                 <div className="text-lg font-black text-[#345E85] dark:text-primary-400 leading-tight">{activeLoads.length}</div>
               </div>
+              {!isReceiver && (
               <button
                 onClick={() => handleTabChange("create")}
                 className="px-6 py-2.5 bg-[#345E85] dark:bg-primary-600 text-white rounded-2xl transition-all duration-300 font-black text-sm hover:bg-slate-800 dark:hover:bg-primary-700 flex items-center gap-2"
@@ -653,6 +665,7 @@ const UnifiedCargoManagement = () => {
                 <Plus className="w-4 h-4" />
                 <span>CREATE CARGO</span>
               </button>
+              )}
             </div>
           </div>
         )}
@@ -868,7 +881,7 @@ const UnifiedCargoManagement = () => {
                             ? "No saved drafts. Start creating cargo to save drafts."
                             : "Create your first cargo shipment to get started."}
                       </p>
-                      {(activeTab === "all" || activeTab === "drafts") && (
+                      {!isReceiver && (activeTab === "all" || activeTab === "drafts") && (
                         <div className="mt-8 flex justify-center">
                           <button
                             onClick={() => setActiveTab("create")}
@@ -889,12 +902,12 @@ const UnifiedCargoManagement = () => {
                               key={load.id}
                               load={load}
                               handleViewClick={handleViewClick}
-                              handleConfirmLoading={handleConfirmLoading}
-                              handleDeleteCargo={handleDeleteCargo}
-                              handleEditCargo={handleEditCargo}
-                              handleAssignBroker={handleAssignBroker}
-                              handleUnassignBroker={handleUnassignBroker}
-                              handleAssignReceiver={handleAssignReceiver}
+                              handleConfirmLoading={isReceiver ? undefined : handleConfirmLoading}
+                              handleDeleteCargo={isReceiver ? undefined : handleDeleteCargo}
+                              handleEditCargo={isReceiver ? undefined : handleEditCargo}
+                              handleAssignBroker={isReceiver ? undefined : handleAssignBroker}
+                              handleUnassignBroker={isReceiver ? undefined : handleUnassignBroker}
+                              handleAssignReceiver={isReceiver ? undefined : handleAssignReceiver}
                             />
                           ))}
                         </div>
@@ -927,9 +940,9 @@ const UnifiedCargoManagement = () => {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <button onClick={() => handleViewClick(load)} className="p-2 text-slate-400 hover:text-[#345E85]"><Eye className="w-4 h-4" /></button>
-                                    {!load.broker && <button onClick={() => handleEditCargo(load)} className="p-2 text-slate-400 hover:text-primary-600"><Edit className="w-4 h-4" /></button>}
-                                    {handleAssignBroker && !load.broker && <button onClick={() => handleAssignBroker(load)} className="p-2 text-purple-600"><Users className="w-4 h-4" /></button>}
-                                    {!load.broker && <button onClick={() => handleDeleteCargo(load)} className="p-2 text-red-400"><Trash2 className="w-4 h-4" /></button>}
+                                    {!isReceiver && !load.broker && <button onClick={() => handleEditCargo(load)} className="p-2 text-slate-400 hover:text-primary-600"><Edit className="w-4 h-4" /></button>}
+                                    {!isReceiver && !load.broker && <button onClick={() => handleAssignBroker(load)} className="p-2 text-purple-600"><Users className="w-4 h-4" /></button>}
+                                    {!isReceiver && !load.broker && <button onClick={() => handleDeleteCargo(load)} className="p-2 text-red-400"><Trash2 className="w-4 h-4" /></button>}
                                   </div>
                                 </div>
                               </div>
@@ -996,7 +1009,7 @@ const UnifiedCargoManagement = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </button>
-                                        {!load.broker && (
+                                        {!isReceiver && !load.broker && (
                                           <button
                                             onClick={() => handleEditCargo(load)}
                                             className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
@@ -1005,7 +1018,7 @@ const UnifiedCargoManagement = () => {
                                             <Edit className="w-4 h-4" />
                                           </button>
                                         )}
-                                        {handleAssignBroker && !load.broker && (
+                                        {!isReceiver && !load.broker && (
                                           <button
                                             onClick={() => handleAssignBroker(load)}
                                             className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
@@ -1014,6 +1027,7 @@ const UnifiedCargoManagement = () => {
                                             <Users className="w-4 h-4" />
                                           </button>
                                         )}
+                                        {!isReceiver && (
                                         <button
                                           onClick={() => !load.receiverId && handleAssignReceiver(load)}
                                           className={cn(
@@ -1025,6 +1039,7 @@ const UnifiedCargoManagement = () => {
                                         >
                                           <Users className="w-4 h-4" />
                                         </button>
+                                        )}
                                       </div>
                                     </td>
                                   </tr>
