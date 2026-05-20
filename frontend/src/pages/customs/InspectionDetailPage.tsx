@@ -10,8 +10,9 @@ import {
 } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
-const BRAND = '#345E85';
+const BRAND = '#2c5173';
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; dot: string }> = {
   PENDING:     { label: 'Pending',      badge: 'bg-amber-100 text-amber-700 border-amber-200',   dot: 'bg-amber-400' },
@@ -103,16 +104,12 @@ const InspectionDetailPage: React.FC = () => {
 
   /* ── Loading ── */
   if (isLoading) return (
-    <div className="flex flex-col items-center justify-center h-72 gap-4">
-      <div className="relative">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: BRAND }}>
-          <ShieldCheck size={24} className="text-white" />
-        </div>
-        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow">
-          <Loader2 size={12} className="text-[#345E85] animate-spin" />
-        </div>
+    <div className="space-y-4 animate-pulse p-6">
+      <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+      <div className="grid grid-cols-2 gap-4">
+        {[1,2,3,4].map(i => <div key={i} className="h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
       </div>
-      <p className="text-sm font-semibold text-slate-400">Loading inspection…</p>
+      <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
     </div>
   );
 
@@ -120,7 +117,7 @@ const InspectionDetailPage: React.FC = () => {
     <div className="flex flex-col items-center justify-center h-72 gap-3">
       <ShieldAlert size={40} className="text-slate-300" />
       <p className="text-sm font-bold text-slate-400">Inspection record not found</p>
-      <button onClick={() => navigate(-1)} className="text-xs text-[#345E85] font-bold hover:underline">← Go back</button>
+      <button onClick={() => navigate(-1)} className="text-xs text-[#2c5173] font-bold hover:underline">← Go back</button>
     </div>
   );
 
@@ -132,7 +129,7 @@ const InspectionDetailPage: React.FC = () => {
   const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
     <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
       <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${BRAND}15` }}>
-        <span className="text-[#345E85]">{icon}</span>
+        <span className="text-[#2c5173]">{icon}</span>
       </div>
       <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">{title}</h3>
     </div>
@@ -145,7 +142,7 @@ const InspectionDetailPage: React.FC = () => {
           {icon && <span className="text-slate-300 group-hover:text-slate-400 transition-colors">{icon}</span>}
           <span className="text-xs font-semibold text-slate-400">{label}</span>
         </div>
-        <span className={cn('text-xs font-bold text-right max-w-[55%]', accent ? 'text-[#345E85]' : 'text-slate-800 dark:text-slate-100')}>
+        <span className={cn('text-xs font-bold text-right max-w-[55%]', accent ? 'text-[#2c5173]' : 'text-slate-800 dark:text-slate-100')}>
           {String(value)}
         </span>
       </div>
@@ -224,37 +221,13 @@ const InspectionDetailPage: React.FC = () => {
             {(ins.declaredValue || ins.dutyAmount || ins.taxAmount) && (
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {ins.declaredValue && (
-                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <DollarSign size={14} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Declared Value</p>
-                      <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(ins.declaredValue, cur)}</p>
-                    </div>
-                  </div>
+                  <StatCard title="Declared Value" value={fmt(ins.declaredValue, cur) ?? '—'} icon={<DollarSign size={16} />} color="primary" variant="classic" />
                 )}
                 {ins.dutyAmount && (
-                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                      <DollarSign size={14} className="text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Duty Amount</p>
-                      <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(ins.dutyAmount, cur)}</p>
-                    </div>
-                  </div>
+                  <StatCard title="Duty Amount" value={fmt(ins.dutyAmount, cur) ?? '—'} icon={<DollarSign size={16} />} color="primary" variant="classic" />
                 )}
                 {ins.taxAmount && (
-                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <DollarSign size={14} className="text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tax Amount</p>
-                      <p className="text-sm font-black text-slate-800 dark:text-white">{fmt(ins.taxAmount, cur)}</p>
-                    </div>
-                  </div>
+                  <StatCard title="Tax Amount" value={fmt(ins.taxAmount, cur) ?? '—'} icon={<DollarSign size={16} />} color="primary" variant="classic" />
                 )}
               </div>
             )}
@@ -536,7 +509,7 @@ const InspectionDetailPage: React.FC = () => {
                   Rejection Reason <span className="text-rose-500">*</span>
                 </label>
                 <textarea
-                  className="w-full mt-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all"
+                  className="w-full mt-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2c5173]/30 focus:border-[#2c5173] transition-all"
                   rows={3}
                   placeholder="Describe the reason for rejection…"
                   value={rejectionReason}
@@ -550,7 +523,7 @@ const InspectionDetailPage: React.FC = () => {
                 Additional Notes <span className="text-slate-300">(optional)</span>
               </label>
               <textarea
-                className="w-full mt-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all"
+                className="w-full mt-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2c5173]/30 focus:border-[#2c5173] transition-all"
                 rows={3}
                 placeholder="Any additional notes for the record…"
                 value={actionNotes}

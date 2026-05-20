@@ -4,7 +4,7 @@ import { Activity, ShieldCheck, CheckCircle, XCircle, AlertTriangle, Clock, Flag
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
 
-const BRAND = '#345E85';
+const BRAND = '#2c5173';
 
 const statusIcon: Record<string, React.ElementType> = {
   CLEARED:     CheckCircle,
@@ -47,8 +47,8 @@ const CustomsAuditPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]" />
+        <div className="space-y-3 animate-pulse">
+          {[1,2,3,4,5,6].map(i => <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
         </div>
       ) : inspections.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">

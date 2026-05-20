@@ -5,7 +5,7 @@ import { ShieldCheck, Plus, Search, Eye, Inbox } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
 
-const BRAND = '#345E85';
+const BRAND = '#2c5173';
 
 const STATUSES = ['', 'PENDING', 'IN_PROGRESS', 'CLEARED', 'REJECTED', 'ON_HOLD', 'HIGH_RISK'];
 const RISKS    = ['', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
@@ -79,7 +79,7 @@ const InspectionsPage: React.FC = () => {
           <input
             type="text"
             placeholder="Search plate, ref, container, driver..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+            className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2c5173]/30"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
           />
@@ -164,7 +164,7 @@ const InspectionsPage: React.FC = () => {
                 <td className="px-4 py-4">
                   <button
                     onClick={e => { e.stopPropagation(); navigate(`/dashboard/customs/inspections/${ins.id}`); }}
-                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-[#345E85] transition-colors"
+                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#2c5173]/10 text-slate-500 hover:text-[#2c5173] transition-colors"
                   >
                     <Eye size={13} />
                   </button>

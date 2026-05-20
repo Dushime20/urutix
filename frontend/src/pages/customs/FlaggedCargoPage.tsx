@@ -5,7 +5,6 @@ import { Flag, AlertTriangle, Eye, Inbox } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
 
-const BRAND = '#345E85';
 
 const FlaggedCargoPage: React.FC = () => {
   const navigate = useNavigate();
@@ -66,7 +65,7 @@ const FlaggedCargoPage: React.FC = () => {
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
           <button
             onClick={e => { e.stopPropagation(); navigate(`/dashboard/customs/inspections/${ins.id}`); }}
-            className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-[#345E85] transition-colors"
+            className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#2c5173]/10 text-slate-500 hover:text-[#2c5173] transition-colors"
           >
             <Eye size={13} />
           </button>

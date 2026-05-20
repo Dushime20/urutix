@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Archive, Search, Eye, Inbox, CheckCircle } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 
-const BRAND = '#345E85';
 
 const ClearedShipmentsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,7 +33,7 @@ const ClearedShipmentsPage: React.FC = () => {
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
-            className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+            className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2c5173]/30"
             placeholder="Search..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -43,8 +42,8 @@ const ClearedShipmentsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-emerald-600" />
+        <div className="space-y-3 animate-pulse">
+          {[1,2,3,4,5].map(i => <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
         </div>
       ) : inspections.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
