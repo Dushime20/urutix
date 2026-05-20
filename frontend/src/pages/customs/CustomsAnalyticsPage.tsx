@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { cn } from '../../utils/cn';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const BRAND = '#345E85';
 
@@ -49,12 +50,12 @@ const CustomsAnalyticsPage: React.FC = () => {
   })).filter((r: any) => r.value > 0);
 
   const kpis = [
-    { label: 'Total', value: analytics.total ?? 0, icon: BarChart3, color: 'text-[#345E85]', bg: 'bg-blue-50' },
-    { label: 'Clearance Rate', value: `${analytics.clearanceRate ?? 0}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Cleared', value: (analytics.byStatus || []).find((s: any) => s.status === 'CLEARED')?.count ?? 0, icon: CheckCircle, color: 'text-teal-600', bg: 'bg-teal-50' },
-    { label: 'Rejected', value: (analytics.byStatus || []).find((s: any) => s.status === 'REJECTED')?.count ?? 0, icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'On Hold', value: (analytics.byStatus || []).find((s: any) => s.status === 'ON_HOLD')?.count ?? 0, icon: Clock, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'High Risk', value: (analytics.byStatus || []).find((s: any) => s.status === 'HIGH_RISK')?.count ?? 0, icon: Flag, color: 'text-red-700', bg: 'bg-red-50' },
+    { label: 'Total', value: analytics.total ?? 0, icon: BarChart3, statColor: 'primary' as const },
+    { label: 'Clearance Rate', value: `${analytics.clearanceRate ?? 0}%`, icon: TrendingUp, statColor: 'primary' as const },
+    { label: 'Cleared', value: (analytics.byStatus || []).find((s: any) => s.status === 'CLEARED')?.count ?? 0, icon: CheckCircle, statColor: 'primary' as const },
+    { label: 'Rejected', value: (analytics.byStatus || []).find((s: any) => s.status === 'REJECTED')?.count ?? 0, icon: XCircle, statColor: 'primary' as const },
+    { label: 'On Hold', value: (analytics.byStatus || []).find((s: any) => s.status === 'ON_HOLD')?.count ?? 0, icon: Clock, statColor: 'primary' as const },
+    { label: 'High Risk', value: (analytics.byStatus || []).find((s: any) => s.status === 'HIGH_RISK')?.count ?? 0, icon: Flag, statColor: 'primary' as const },
   ];
 
   return (
@@ -95,12 +96,15 @@ const CustomsAnalyticsPage: React.FC = () => {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {kpis.map(({ label, value, icon: Icon, color, bg }) => (
-              <div key={label} className={cn('rounded-2xl p-4 flex flex-col gap-2 border border-transparent', bg)}>
-                <Icon size={16} className={color} />
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{value}</p>
-                <p className={cn('text-[9px] font-black uppercase tracking-widest', color)}>{label}</p>
-              </div>
+            {kpis.map(({ label, value, icon: Icon, statColor }) => (
+              <StatCard
+                key={label}
+                title={label}
+                value={value}
+                icon={<Icon size={24} />}
+                color={statColor}
+                variant="classic"
+              />
             ))}
           </div>
 

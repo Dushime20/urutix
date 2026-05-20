@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { financialAPI, fleetAPI, tripsAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 interface Expense {
   id: string;
@@ -161,67 +162,33 @@ const ExpenseManagement: React.FC = () => {
     { value: 'other', label: 'Other', icon: Receipt, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800' }
   ];
 
-  const SummaryCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string; icon: any; subtitle?: string }) => (
-    <motion.div
-      whileHover={{ y: -5 }}
-      className="flex flex-col items-center group cursor-pointer"
-    >
-      <div className="relative size-36 lg:size-40 bg-white dark:bg-slate-900 border-[6px] border-slate-50 dark:border-slate-800 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none">
-        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-          <circle
-            cx="50%"
-            cy="50%"
-            r="46%"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeDasharray="414"
-            strokeDashoffset="300"
-            className="text-blue-400 opacity-10 transition-all duration-1000 group-hover:opacity-30"
-          />
-        </svg>
-
-        <div className="p-2 rounded-xl mb-1 bg-slate-50 dark:bg-slate-950 text-[#345E85] dark:text-blue-400 group-hover:bg-white dark:group-hover:bg-slate-800 transition-all duration-500 shadow-sm border border-transparent dark:border-slate-800">
-          <Icon size={14} />
-        </div>
-        <p className="text-xl lg:text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
-          {value}
-        </p>
-      </div>
-      <div className="mt-4 text-center">
-        <p className="text-[7px] font-black uppercase tracking-[0.2em] text-[#345E85] dark:text-slate-400 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors">
-          {title}
-        </p>
-        {subtitle && (
-          <p className="text-[6px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-            {subtitle}
-          </p>
-        )}
-      </div>
-    </motion.div>
-  );
-
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
       {/* Quick Dashboard - SUBTLE CIRCULAR DESIGN */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 py-8 bg-slate-50/30 dark:bg-slate-900/10 rounded-[3rem] border border-slate-100/50 dark:border-slate-800 place-items-center">
-        <SummaryCard 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-8 bg-slate-50/30 dark:bg-slate-900/10 rounded-[3rem] border border-slate-100/50 dark:border-slate-800">
+        <StatCard 
           title="Total Burn" 
           value={`$${stats.total.toLocaleString()}`} 
-          icon={TrendingUp} 
+          icon={<TrendingUp size={24} />} 
           subtitle="Operational Expenses"
+          color="primary"
+          variant="classic"
         />
-        <SummaryCard 
+        <StatCard 
           title="Pending Approval" 
           value={`$${stats.pending.toLocaleString()}`} 
-          icon={Clock} 
+          icon={<Clock size={24} />} 
           subtitle="Awaiting Review"
+          color="primary"
+          variant="classic"
         />
-        <SummaryCard 
+        <StatCard 
           title="Tax Deductible" 
           value={`$${stats.taxSaved.toLocaleString()}`} 
-          icon={ShieldCheck} 
+          icon={<ShieldCheck size={24} />} 
           subtitle="Estimated Savings"
+          color="primary"
+          variant="classic"
         />
       </div>
 

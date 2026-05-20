@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { KycManagementPage } from '../components/UserKYC/KycManagementPage';
 import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 import { toast } from 'react-hot-toast';
+import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { TranslatedText } from '../components/translated-text';
 
 // Helper for BarChart if needed, or just use plain icon
 const BarChart = ({ size }: { size: number }) => (
@@ -215,16 +217,25 @@ const Profile: React.FC = () => {
     );
   }
 
-  if (loading && !profile) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin" />
+  const ProfileSkeleton = () => (
+    <AdminPageLayout
+      title={<TranslatedText text="Administrative Profile" />}
+      description={<TranslatedText text="Manage your admin account details and preferences" />}
+    >
+      <div className="space-y-6 animate-pulse">
+        <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-[48px]" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1,2,3].map(i => <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />)}
+        </div>
+        <div className="h-96 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
       </div>
-    );
-  }
+    </AdminPageLayout>
+  );
 
-  return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-20 p-4 md:p-8">
+  if (loading && !profile) return <ProfileSkeleton />;
+
+  const profileContent = (
+    <div className="max-w-7xl mx-auto space-y-8 pb-20">
       {/* Premium Profile Header */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
@@ -786,6 +797,15 @@ const Profile: React.FC = () => {
       </AnimatePresence>
       </div>
     </div>
+  );
+
+  return (
+    <AdminPageLayout
+      title={<TranslatedText text="Administrative Profile" />}
+      description={<TranslatedText text="Manage your admin account details and preferences" />}
+    >
+      {profileContent}
+    </AdminPageLayout>
   );
 };
 

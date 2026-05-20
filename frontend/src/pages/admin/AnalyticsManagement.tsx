@@ -294,7 +294,7 @@ const AnalyticsManagement: React.FC = () => {
               icon={<UsersIcon />}
               trend={`${overviewData?.stats?.totalTrucks || 0} trucks`}
               trendDirection="up"
-              color="info"
+              color="primary"
               variant="classic"
             />
             <StatCard
@@ -304,7 +304,7 @@ const AnalyticsManagement: React.FC = () => {
               icon={<PerformanceIcon />}
               trend={`${overviewData?.stats?.completedTrips || 0} completed`}
               trendDirection="up"
-              color="success"
+              color="primary"
               variant="classic"
             />
             <StatCard
@@ -314,7 +314,7 @@ const AnalyticsManagement: React.FC = () => {
               icon={<SecurityIcon />}
               trend={`${overviewData?.stats?.totalLoads || 0} loads`}
               trendDirection="up"
-              color="warning"
+              color="primary"
               variant="classic"
             />
           </div>
@@ -413,7 +413,7 @@ const AnalyticsManagement: React.FC = () => {
                 trend={`${cargoData?.stats?.completedLoads || 0}`}
                 trendDirection="up"
                 icon={<UsersIcon />}
-                color="info"
+                color="primary"
                 variant="classic"
              />
              <StatCard
@@ -423,7 +423,7 @@ const AnalyticsManagement: React.FC = () => {
                 trend={`${cargoData?.stats?.cancelledLoads || 0}`}
                 trendDirection="down"
                 icon={<MoneyIcon />}
-                color="warning"
+                color="primary"
                 variant="classic"
              />
           </div>
@@ -500,21 +500,21 @@ const AnalyticsManagement: React.FC = () => {
               title="AVAILABLE"
               value={fleetData?.stats?.availableTrucks || 0}
               icon={<FleetIcon />}
-              color="success"
+              color="primary"
               variant="classic"
             />
             <StatCard
               title="IN TRANSIT"
               value={fleetData?.stats?.inTransitTrucks || 0}
               icon={<FleetIcon />}
-              color="info"
+              color="primary"
               variant="classic"
             />
             <StatCard
               title="MAINTENANCE"
               value={fleetData?.stats?.maintenanceTrucks || 0}
               icon={<FleetIcon />}
-              color="warning"
+              color="primary"
               variant="classic"
             />
           </div>
@@ -573,7 +573,7 @@ const AnalyticsManagement: React.FC = () => {
               value={`${fleetData?.stats?.tripSuccessRate || 0}%`}
               subtitle={`of ${fleetData?.stats?.totalTrips || 0} trips`}
               icon={<SecurityIcon />}
-              color="success"
+              color="primary"
               variant="classic"
             />
           </div>

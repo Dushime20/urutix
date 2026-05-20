@@ -1204,11 +1204,26 @@ const Settings: React.FC = () => {
     </>
   );
 
-  if (user?.role === 'SUPER_ADMIN') {
+  if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
+    if (loading) {
+      return (
+        <AdminPageLayout
+          title={<TranslatedText text="Settings" />}
+          description={<TranslatedText text="Manage your account settings and preferences" />}
+        >
+          <div className="space-y-4 animate-pulse">
+            <div className="h-12 bg-slate-100 dark:bg-slate-800 rounded-[16px] w-2/3" />
+            {[1,2,3,4].map(i => (
+              <div key={i} className="h-32 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
+            ))}
+          </div>
+        </AdminPageLayout>
+      );
+    }
     return (
       <AdminPageLayout
-        title="Settings"
-        description="Manage your account settings and preferences"
+        title={<TranslatedText text="Settings" />}
+        description={<TranslatedText text="Manage your account settings and preferences" />}
       >
         {settingsContent}
       </AdminPageLayout>

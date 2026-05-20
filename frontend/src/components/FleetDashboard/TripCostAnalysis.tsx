@@ -10,6 +10,7 @@ import {
   FaCalculator
 } from 'react-icons/fa';
 import { tripsAPI } from '../../services/api';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 interface TripCostAnalysisProps {
   tripId?: string;
@@ -322,27 +323,28 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <h3 className="text-sm font-semibold text-gray-900">Profitability Analysis</h3>
             </div>
             <div className="p-3 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-md p-2">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Revenue</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(profitability.revenue, trip.currencyCode || 'USD')}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-md p-2">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Total Cost</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(profitability.totalCost, trip.currencyCode || 'USD')}
-                  </p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-md p-2">
-                <p className="text-[10px] text-gray-500 mb-0.5">Profit</p>
-                <p className={`text-base font-bold ${
-                  profitability.profit >= 0 ? 'text-gray-900' : 'text-red-600'
-                }`}>
-                  {formatCurrency(profitability.profit, trip.currencyCode || 'USD')}
-                </p>
+              <div className="grid grid-cols-1 gap-3">
+                <StatCard
+                  title="Revenue"
+                  value={formatCurrency(profitability.revenue, trip.currencyCode || 'USD')}
+                  icon={<FaChartLine size={16} />}
+                  color="primary"
+                  variant="classic"
+                />
+                <StatCard
+                  title="Total Cost"
+                  value={formatCurrency(profitability.totalCost, trip.currencyCode || 'USD')}
+                  icon={<FaCalculator size={16} />}
+                  color="primary"
+                  variant="classic"
+                />
+                <StatCard
+                  title="Profit"
+                  value={formatCurrency(profitability.profit, trip.currencyCode || 'USD')}
+                  icon={<FaDollarSign size={16} />}
+                  color="primary"
+                  variant="classic"
+                />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-600">Profit Margin</span>

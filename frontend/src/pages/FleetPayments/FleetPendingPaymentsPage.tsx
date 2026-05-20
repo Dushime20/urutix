@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
 import { AlertCircle, Clock, AlertTriangle, Inbox, DollarSign } from 'lucide-react';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
@@ -65,40 +66,39 @@ const FleetPendingPaymentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-slate-600" />
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Due</span>
-          </div>
-          <p className="text-xl font-black text-slate-900">{fmt(summary.totalAmount || 0)}</p>
-          <p className="text-xs text-slate-500 mt-1">{summary.totalPayments || 0} payments</p>
-        </div>
-        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-4 h-4 text-rose-600" />
-            <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Overdue</span>
-          </div>
-          <p className="text-xl font-black text-rose-700">{fmt(summary.overdueAmount || 0)}</p>
-          <p className="text-xs text-rose-600 mt-1">{summary.overdueCount || 0} overdue</p>
-        </div>
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-amber-600" />
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Due Soon</span>
-          </div>
-          <p className="text-xl font-black text-amber-700">{fmt(summary.dueSoonAmount || 0)}</p>
-          <p className="text-xs text-amber-600 mt-1">{summary.dueSoonCount || 0} within 7 days</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-[#345E85]" />
-            <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">Upcoming</span>
-          </div>
-          <p className="text-xl font-black text-[#345E85]">{pendingList.length}</p>
-          <p className="text-xs text-[#345E85] mt-1">scheduled</p>
-        </div>
+        <StatCard
+          title="Total Due"
+          value={fmt(summary.totalAmount || 0)}
+          subtitle={`${summary.totalPayments || 0} payments`}
+          icon={<DollarSign size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Overdue"
+          value={fmt(summary.overdueAmount || 0)}
+          subtitle={`${summary.overdueCount || 0} overdue`}
+          icon={<AlertTriangle size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Due Soon"
+          value={fmt(summary.dueSoonAmount || 0)}
+          subtitle={`${summary.dueSoonCount || 0} within 7 days`}
+          icon={<Clock size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Upcoming"
+          value={pendingList.length}
+          subtitle="scheduled"
+          icon={<Clock size={24} />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Filters */}

@@ -35,17 +35,16 @@ const StatCard: React.FC<{
   value: number | string;
   sub?: string;
   icon: React.ElementType;
-  color: string;
-  bg: string;
-  border: string;
+  statColor?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'purple' | 'emerald';
   onClick?: () => void;
-}> = ({ label, value, sub, icon: Icon, onClick }) => (
+}> = ({ label, value, sub, icon: Icon, statColor, onClick }) => (
   <SharedStatCard
     title={label}
     value={value}
     icon={<Icon size={18} />}
     subtitle={sub}
-    variant="premium"
+    color={statColor || 'primary'}
+    variant="classic"
     onClick={onClick}
   />
 );
@@ -77,14 +76,14 @@ const CustomsDashboard: React.FC = () => {
   const recent: any[] = recentData?.data?.data || [];
 
   const statCards = [
-    { label: 'Total Inspections', value: stats.totalInspections ?? 0, sub: 'All time', icon: ShieldCheck, color: `text-[${BRAND}]`, bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: 'Pending', value: stats.pending ?? 0, sub: 'Awaiting inspection', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { label: 'Cleared Today', value: stats.clearedToday ?? 0, sub: 'Today', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { label: 'Rejected', value: stats.rejected ?? 0, sub: 'All time', icon: XCircle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
-    { label: 'Flagged / High Risk', value: (stats.flagged ?? 0) + (stats.highRisk ?? 0), sub: 'Require attention', icon: Flag, color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-100' },
-    { label: 'On Hold', value: stats.onHold ?? 0, sub: 'Under investigation', icon: AlertTriangle, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
-    { label: 'Cleared Total', value: stats.cleared ?? 0, sub: 'All time', icon: Archive, color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
-    { label: 'Clearance Rate', value: `${analytics.clearanceRate ?? 0}%`, sub: 'Last 30 days', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { label: 'Total Inspections', value: stats.totalInspections ?? 0, sub: 'All time', icon: ShieldCheck, statColor: 'primary' as const },
+    { label: 'Pending', value: stats.pending ?? 0, sub: 'Awaiting inspection', icon: Clock, statColor: 'primary' as const },
+    { label: 'Cleared Today', value: stats.clearedToday ?? 0, sub: 'Today', icon: CheckCircle, statColor: 'primary' as const },
+    { label: 'Rejected', value: stats.rejected ?? 0, sub: 'All time', icon: XCircle, statColor: 'primary' as const },
+    { label: 'Flagged / High Risk', value: (stats.flagged ?? 0) + (stats.highRisk ?? 0), sub: 'Require attention', icon: Flag, statColor: 'primary' as const },
+    { label: 'On Hold', value: stats.onHold ?? 0, sub: 'Under investigation', icon: AlertTriangle, statColor: 'primary' as const },
+    { label: 'Cleared Total', value: stats.cleared ?? 0, sub: 'All time', icon: Archive, statColor: 'primary' as const },
+    { label: 'Clearance Rate', value: `${analytics.clearanceRate ?? 0}%`, sub: 'Last 30 days', icon: TrendingUp, statColor: 'primary' as const },
   ];
 
   const pieData = (analytics.byStatus || []).filter((s: any) => s.count > 0).map((s: any) => ({
@@ -163,13 +162,13 @@ const CustomsDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       {statsLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="bg-slate-100 dark:bg-slate-800 rounded-2xl h-28 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
           {statCards.map(card => (
             <StatCard key={card.label} {...card} />
           ))}

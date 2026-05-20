@@ -208,9 +208,15 @@ const EnhancedPermissions: React.FC = () => {
                 {activeTab === 'matrix' && (
                     <div className="p-6">
                         {matrixLoading ? (
-                            <div className="text-center py-24">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2c5173] mx-auto"></div>
-                                <p className="mt-4 text-slate-400 font-bold text-sm tracking-wide">Loading permission matrix...</p>
+                            <div className="space-y-3 p-6 animate-pulse">
+                                {[1,2,3,4,5,6].map(i => (
+                                    <div key={i} className="flex items-center gap-4">
+                                        <div className="w-32 h-4 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0" />
+                                        <div className="flex gap-3 flex-1">
+                                            {[1,2,3,4].map(j => <div key={j} className="h-8 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg" />)}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <>
@@ -284,9 +290,10 @@ const EnhancedPermissions: React.FC = () => {
                 {activeTab === 'roles' && (
                     <div className="p-8">
                         {rolesLoading ? (
-                            <div className="text-center py-24">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2c5173] mx-auto"></div>
-                                <p className="mt-4 text-slate-400 font-bold text-sm tracking-wide">Loading roles...</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 animate-pulse">
+                                {[1,2,3,4,5,6].map(i => (
+                                    <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
+                                ))}
                             </div>
                         ) : rolesData && rolesData.length === 0 ? (
                             // Empty state

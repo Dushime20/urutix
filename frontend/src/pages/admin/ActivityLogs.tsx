@@ -485,9 +485,16 @@ const ActivityLogs: React.FC = () => {
                         )}
 
                         {logsLoading ? (
-                            <div className="text-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2c5173] mx-auto"></div>
-                                <p className="mt-4 text-slate-600"><TranslatedText text="Loading activities..." /></p>
+                            <div className="space-y-3 p-6 animate-pulse">
+                                {[1,2,3,4,5].map(i => (
+                                    <div key={i} className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full shrink-0" />
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-lg w-3/4" />
+                                            <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-lg w-1/2" />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : logsData?.activities?.length === 0 ? (
                             <div className="text-center py-16">
@@ -611,9 +618,10 @@ const ActivityLogs: React.FC = () => {
                 {activeTab === 'sessions' && (
                     <div className="p-6">
                         {sessionsLoading ? (
-                            <div className="text-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2c5173] mx-auto"></div>
-                                <p className="mt-4 text-slate-600"><TranslatedText text="Loading sessions..." /></p>
+                            <div className="space-y-3 p-6 animate-pulse">
+                                {[1,2,3].map(i => (
+                                    <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                                ))}
                             </div>
                         ) : sessionsData?.length === 0 ? (
                             <div className="text-center py-16">
@@ -680,9 +688,10 @@ const ActivityLogs: React.FC = () => {
                 {activeTab === 'analytics' && (
                     <div className="p-6">
                         {analyticsLoading ? (
-                            <div className="text-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2c5173] mx-auto"></div>
-                                <p className="mt-4 text-slate-600"><TranslatedText text="Loading analytics..." /></p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 animate-pulse">
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
+                                ))}
                             </div>
                         ) : (
                             <div className="space-y-6">

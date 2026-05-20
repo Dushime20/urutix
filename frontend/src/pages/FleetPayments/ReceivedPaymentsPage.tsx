@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
 import { TrendingUp, Clock, CheckCircle, AlertCircle, Inbox, Building, User } from 'lucide-react';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const fmt = (v: number, currency = 'RWF') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0 }).format(v);
@@ -70,34 +71,31 @@ const ReceivedPaymentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Received</span>
-          </div>
-          <p className="text-2xl font-black text-emerald-900">{fmt(totalCompleted, currency)}</p>
-          <p className="text-xs text-emerald-600 mt-1">{payments.filter((p: any) => p.status === 'completed').length} completed</p>
-        </div>
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-amber-600" />
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Pending / Processing</span>
-          </div>
-          <p className="text-2xl font-black text-amber-900">{fmt(totalPending, currency)}</p>
-          <p className="text-xs text-amber-600 mt-1">{payments.filter((p: any) => p.status === 'pending' || p.status === 'processing').length} in progress</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle className="w-4 h-4 text-[#345E85]" />
-            <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">Total Payments</span>
-          </div>
-          <p className="text-2xl font-black text-[#345E85]">{summary.totalPayments || payments.length}</p>
-          <p className="text-xs text-[#345E85] mt-1">
-            {summary.lenderPaymentsCount || 0} via lender · {(summary.totalPayments || payments.length) - (summary.lenderPaymentsCount || 0)} direct
-          </p>
-        </div>
+        <StatCard
+          title="Total Received"
+          value={fmt(totalCompleted, currency)}
+          subtitle={`${payments.filter((p: any) => p.status === 'completed').length} completed`}
+          icon={<TrendingUp size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Pending / Processing"
+          value={fmt(totalPending, currency)}
+          subtitle={`${payments.filter((p: any) => p.status === 'pending' || p.status === 'processing').length} in progress`}
+          icon={<Clock size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Total Payments"
+          value={summary.totalPayments || payments.length}
+          subtitle={`${summary.lenderPaymentsCount || 0} via lender · ${(summary.totalPayments || payments.length) - (summary.lenderPaymentsCount || 0)} direct`}
+          icon={<CheckCircle size={24} />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Filters */}

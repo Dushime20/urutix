@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
 import { AlertCircle, CheckCircle, DollarSign, Inbox, ChevronLeft, ChevronRight, Building, User } from 'lucide-react';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const fmt = (v: number, currency = 'RWF') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0 }).format(v);
@@ -78,32 +79,31 @@ const FleetTransactionHistoryPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Received</span>
-          </div>
-          <p className="text-2xl font-black text-emerald-900">{fmt(summary.totalAmount || 0, currency)}</p>
-          <p className="text-xs text-emerald-600 mt-1">{summary.totalPayments || 0} transactions</p>
-        </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-slate-600" />
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Showing</span>
-          </div>
-          <p className="text-2xl font-black text-slate-900">{filtered.length}</p>
-          <p className="text-xs text-slate-500 mt-1">matching filter</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle className="w-4 h-4 text-[#345E85]" />
-            <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">Currency</span>
-          </div>
-          <p className="text-2xl font-black text-[#345E85]">{currency}</p>
-          <p className="text-xs text-[#345E85] mt-1">all transactions</p>
-        </div>
+        <StatCard
+          title="Total Received"
+          value={fmt(summary.totalAmount || 0, currency)}
+          subtitle={`${summary.totalPayments || 0} transactions`}
+          icon={<CheckCircle size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Showing"
+          value={filtered.length}
+          subtitle="matching filter"
+          icon={<DollarSign size={24} />}
+          color="primary"
+          variant="classic"
+        />
+        <StatCard
+          title="Currency"
+          value={currency}
+          subtitle="all transactions"
+          icon={<CheckCircle size={24} />}
+          color="primary"
+          variant="classic"
+        />
       </div>
 
       {/* Filters */}

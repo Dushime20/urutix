@@ -769,9 +769,17 @@ const TenantSubscriptions: React.FC = () => {
               </div>
 
               {transactionsLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                  <p className="mt-4 text-slate-600">Loading transactions...</p>
+                <div className="space-y-3 p-4 animate-pulse">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                      <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                      </div>
+                      <div className="w-16 h-6 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                    </div>
+                  ))}
                 </div>
               ) : transactionsData?.data?.length === 0 ? (
                 <div className="text-center py-12">

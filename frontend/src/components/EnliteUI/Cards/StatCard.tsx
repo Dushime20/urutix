@@ -19,10 +19,10 @@ export interface StatCardProps {
 const colorClasses = {
   primary: {
     bg: 'bg-blue-50/30 dark:bg-blue-900/20',
-    icon: 'text-[#345E85] dark:text-blue-400', // Primary Brand Blue
-    border: 'border-[#345E85] dark:border-blue-500',
-    accent: 'text-[#345E85] dark:text-blue-400',
-    circle: 'border-[#345E85] dark:border-blue-500',
+    icon: 'text-[#2c5173] dark:text-blue-400', // Primary Brand Blue
+    border: 'border-[#2c5173] dark:border-blue-500',
+    accent: 'text-[#2c5173] dark:text-blue-400',
+    circle: 'border-[#2c5173] dark:border-blue-500',
   },
   secondary: {
     bg: 'bg-slate-50 dark:bg-slate-800/50',

@@ -34,6 +34,7 @@ import { cn } from '@/utils/cn';
 import { financialAPI } from '@/services/api';
 import { fuelApi } from '@/services/fuelApi';
 import { tenantApi } from '@/services/tenantApi';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const FinancialDashboard: React.FC = () => {
   const location = useLocation();
@@ -138,46 +139,6 @@ const FinancialDashboard: React.FC = () => {
     }).format(amount);
   };
 
-  const SummaryCard = ({ title, value, icon: Icon, colorClass, gradient, change, changePositive }: { title: string; value: string; icon: any; colorClass: string; gradient: string; change?: string; changePositive?: boolean }) => (
-    <motion.div
-      whileHover={{ y: -5 }}
-      className="flex flex-col items-center group cursor-pointer"
-    >
-      <div className="relative size-40 lg:size-44 bg-white dark:bg-gray-800 border-[6px] border-slate-50 dark:border-gray-700 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-gray-600 hover:shadow-xl hover:shadow-slate-200/50">
-        {/* Subtle Decorative Ring */}
-        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-          <circle
-            cx="50%"
-            cy="50%"
-            r="46%"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeDasharray="414"
-            strokeDashoffset="300"
-            className={cn("opacity-10 transition-all duration-1000 group-hover:opacity-30", colorClass)}
-          />
-        </svg>
-
-        {/* Central Content */}
-        <div className={cn("p-2 rounded-xl mb-1 bg-slate-50 dark:bg-gray-700 text-slate-400 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-600 group-hover:text-inherit transition-all duration-500 shadow-sm", gradient)}>
-          <Icon size={16} />
-        </div>
-        <p className="text-xl lg:text-2xl font-black text-[#0f172a] dark:text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
-          {value}
-        </p>
-        {change && (
-          <span className={cn("text-[8px] font-black mt-1", changePositive ? "text-emerald-500" : "text-rose-500")}>
-            {change}
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-gray-500 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors text-center px-2">
-        {title}
-      </p>
-    </motion.div>
-  );
-
   const advanceChartData = useMemo(() => {
     if (!advanceStats) return [];
     return [
@@ -206,59 +167,38 @@ const FinancialDashboard: React.FC = () => {
         <div className="space-y-8">
           {/* Headline KPI row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                label: 'Credit Balance',
-                value: (creditBalance?.currentBalance ?? 0).toLocaleString(),
-                sub: 'Available credits',
-                icon: Coins,
-                color: 'text-violet-600',
-                bg: 'bg-violet-50 dark:bg-violet-900/20',
-                border: 'border-violet-100 dark:border-violet-800',
-              },
-              {
-                label: 'Total Advances Paid',
-                value: formatCurrency(advanceStats?.totalAdvanced || 0),
-                sub: `${advanceStats?.totalAdvances ?? 0} advances`,
-                icon: Banknote,
-                color: 'text-[#345E85]',
-                bg: 'bg-blue-50 dark:bg-blue-900/20',
-                border: 'border-blue-100 dark:border-blue-800',
-              },
-              {
-                label: 'Pending Advances',
-                value: formatCurrency(advanceStats?.pendingAmount || 0),
-                sub: `${advanceStats?.pendingCount ?? 0} awaiting approval`,
-                icon: Clock,
-                color: 'text-amber-600',
-                bg: 'bg-amber-50 dark:bg-amber-900/20',
-                border: 'border-amber-100 dark:border-amber-800',
-              },
-              {
-                label: 'Wallet Balance',
-                value: formatCurrency(walletStats?.totalBalance || 0),
-                sub: `${walletStats?.activeWallets ?? 0} active wallets`,
-                icon: Wallet,
-                color: 'text-emerald-600',
-                bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-                border: 'border-emerald-100 dark:border-emerald-800',
-              },
-            ].map(({ label, value, sub, icon: Icon, color, bg, border }) => (
-              <motion.div
-                key={label}
-                whileHover={{ y: -3 }}
-                className={cn('bg-white dark:bg-slate-900 rounded-[2rem] p-6 border shadow-sm flex items-start gap-4 transition-all', border)}
-              >
-                <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0', bg)}>
-                  <Icon size={20} className={color} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-1">{label}</p>
-                  <p className={cn('text-xl font-black tracking-tight', color)}>{value}</p>
-                  <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 truncate">{sub}</p>
-                </div>
-              </motion.div>
-            ))}
+            <StatCard
+              title="Credit Balance"
+              value={(creditBalance?.currentBalance ?? 0).toLocaleString()}
+              subtitle="Available credits"
+              icon={<Coins size={20} />}
+              color="primary"
+              variant="classic"
+            />
+            <StatCard
+              title="Total Advances Paid"
+              value={formatCurrency(advanceStats?.totalAdvanced || 0)}
+              subtitle={`${advanceStats?.totalAdvances ?? 0} advances`}
+              icon={<Banknote size={20} />}
+              color="primary"
+              variant="classic"
+            />
+            <StatCard
+              title="Pending Advances"
+              value={formatCurrency(advanceStats?.pendingAmount || 0)}
+              subtitle={`${advanceStats?.pendingCount ?? 0} awaiting approval`}
+              icon={<Clock size={20} />}
+              color="primary"
+              variant="classic"
+            />
+            <StatCard
+              title="Wallet Balance"
+              value={formatCurrency(walletStats?.totalBalance || 0)}
+              subtitle={`${walletStats?.activeWallets ?? 0} active wallets`}
+              icon={<Wallet size={20} />}
+              color="primary"
+              variant="classic"
+            />
           </div>
 
           {/* Credit breakdown + Advance distribution */}
@@ -421,41 +361,41 @@ const FinancialDashboard: React.FC = () => {
 
       {/* Primary Metrics Vector Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-10 bg-white/40 dark:bg-gray-800/20 rounded-[3rem] border border-slate-100/50 dark:border-gray-700/50 transition-colors">
-        <SummaryCard 
+        <StatCard 
           title="Total Revenue" 
           value={formatCurrency(stats.revenue)} 
-          change="+12%"
-          changePositive={true}
-          icon={TrendingUp} 
-          colorClass="text-emerald-500" 
-          gradient="bg-emerald-50 text-emerald-600" 
+          trend="+12%"
+          trendDirection="up"
+          icon={<TrendingUp size={24} />} 
+          color="success" 
+          variant="classic"
         />
-        <SummaryCard 
+        <StatCard 
           title="Total Expenses" 
           value={formatCurrency(stats.expenses)} 
-          change="+5%"
-          changePositive={false}
-          icon={Wallet} 
-          colorClass="text-rose-400" 
-          gradient="bg-rose-50 text-rose-600" 
+          trend="+5%"
+          trendDirection="down"
+          icon={<Wallet size={24} />} 
+          color="error" 
+          variant="classic"
         />
-        <SummaryCard 
+        <StatCard 
           title="Net Profit" 
           value={formatCurrency(stats.profit)} 
-          change="Peak"
-          changePositive={true}
-          icon={ArrowUpRight} 
-          colorClass="text-blue-500" 
-          gradient="bg-blue-50 text-[#345E85]" 
+          trend="Peak"
+          trendDirection="up"
+          icon={<ArrowUpRight size={24} />} 
+          color="info" 
+          variant="classic"
         />
-        <SummaryCard 
+        <StatCard 
           title="Profit Margin" 
           value={`${stats.margin.toFixed(1)}%`} 
-          change="Audit Ready"
-          changePositive={true}
-          icon={PieChartIcon} 
-          colorClass="text-amber-500" 
-          gradient="bg-amber-50 text-amber-600" 
+          trend="Audit Ready"
+          trendDirection="neutral"
+          icon={<PieChartIcon size={24} />} 
+          color="warning" 
+          variant="classic"
         />
       </div>
 
