@@ -189,11 +189,11 @@ const Settings: React.FC = () => {
   const saveSettings = async () => {
     try {
       setLoading(true);
-      await updateUser(userProfile.id, {
+      await authAPI.updateProfile({
         preferences,
         notifications,
-        security
-      });
+        security,
+      } as any);
       toast.success('Settings saved successfully');
     } catch (err: any) {
       console.error('Error saving settings:', err);
@@ -343,7 +343,7 @@ const Settings: React.FC = () => {
           paymentPermissions: receiverForm.paymentPermissions,
           documentPermissions: receiverForm.documentPermissions,
           workflowPermissions: receiverForm.workflowPermissions,
-        });
+        } as any);
         toast.success('Team member added');
       }
       setShowAddReceiver(false);
@@ -413,7 +413,7 @@ const Settings: React.FC = () => {
               type="checkbox"
               checked={value as boolean}
               onChange={(e) => handleNestedPermissionChange(category, field, e.target.checked)}
-              className="w-4 h-4 text-indigo-600 dark:text-blue-500 border-gray-300 dark:border-slate-700 rounded focus:ring-indigo-500 dark:focus:ring-blue-500"
+              className="w-4 h-4 text-[#2c5173] border-gray-300 dark:border-slate-700 rounded focus:ring-[#2c5173]"
             />
             <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-white uppercase tracking-widest leading-tight italic">
               {field.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
@@ -446,7 +446,7 @@ const Settings: React.FC = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`py-6 px-4 font-bold text-xs uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${isActive
-                      ? 'border-indigo-600 dark:border-blue-500 text-indigo-600 dark:text-blue-400'
+                      ? 'border-[#2c5173] text-[#2c5173]'
                       : 'border-transparent text-slate-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-200 dark:hover:border-slate-700'
                       }`}
                   >
@@ -478,7 +478,7 @@ const Settings: React.FC = () => {
                 ) : (
                   <div>
                     <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
-                      <SettingsIcon size={16} className="text-indigo-600 dark:text-blue-500" />
+                      <SettingsIcon size={16} className="text-[#2c5173]" />
                       <TranslatedText text="Account Information" />
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -536,7 +536,7 @@ const Settings: React.FC = () => {
                           type="text"
                           value={userProfile?.firstName || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, firstName: e.target.value }))}
-                          className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                          className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
                           placeholder="First Name"
                         />
                       </div>
@@ -548,7 +548,7 @@ const Settings: React.FC = () => {
                           type="text"
                           value={userProfile?.lastName || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, lastName: e.target.value }))}
-                          className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                          className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
                           placeholder="Last Name"
                         />
                       </div>
@@ -582,7 +582,7 @@ const Settings: React.FC = () => {
                           }
                         }}
                         disabled={loading}
-                        className="px-8 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+                        className="px-8 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20"
                       >
                         {loading ? 'Saving...' : 'Save Profile'}
                       </button>
@@ -591,7 +591,7 @@ const Settings: React.FC = () => {
                     <div className="pt-12 border-t border-gray-100 dark:border-slate-800">
                       <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6">Account Actions</h3>
                       <div className="flex flex-col md:flex-row gap-4">
-                        <button className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10 flex items-center justify-center gap-2">
+                        <button className="px-6 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20 flex items-center justify-center gap-2">
                           <Check size={14} />
                           Download My Data
                         </button>
@@ -613,7 +613,7 @@ const Settings: React.FC = () => {
               <div className="space-y-8 animate-enter">
                 <div>
                   <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
-                    <Mail size={16} className="text-indigo-600 dark:text-blue-500" />
+                    <Mail size={16} className="text-[#2c5173]" />
                     Email Notifications
                   </h3>
                   <div className="space-y-4">
@@ -634,7 +634,7 @@ const Settings: React.FC = () => {
                             onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 dark:peer-checked:bg-blue-600"></div>
+                          <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
                         </label>
                       </div>
                     ))}
@@ -642,7 +642,7 @@ const Settings: React.FC = () => {
                 </div>
                 <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
                   <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
-                    <Bell size={16} className="text-indigo-600 dark:text-blue-500" />
+                    <Bell size={16} className="text-[#2c5173]" />
                     Push Notifications
                   </h3>
                   <div className="space-y-4">
@@ -658,7 +658,7 @@ const Settings: React.FC = () => {
                           onChange={(e) => handleNotificationChange('push', e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 dark:peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
                       </label>
                     </div>
                   </div>
@@ -667,7 +667,7 @@ const Settings: React.FC = () => {
                   <button
                     onClick={saveSettings}
                     disabled={loading}
-                    className="px-8 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+                    className="px-8 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20"
                   >
                     {loading ? 'Saving...' : 'Update Notification Settings'}
                   </button>
@@ -680,7 +680,7 @@ const Settings: React.FC = () => {
               <div className="space-y-8 animate-enter">
                 <div>
                   <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
-                    <Shield size={16} className="text-indigo-600 dark:text-blue-500" />
+                    <Shield size={16} className="text-[#2c5173]" />
                     Security Settings
                   </h3>
                   <div className="space-y-4">
@@ -696,7 +696,7 @@ const Settings: React.FC = () => {
                           onChange={(e) => handleSecurityChange('twoFactorAuth', e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 dark:peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
                       </label>
                     </div>
                     <div>
@@ -706,7 +706,7 @@ const Settings: React.FC = () => {
                       <select
                         value={security.sessionTimeout}
                         onChange={(e) => handleSecurityChange('sessionTimeout', parseInt(e.target.value))}
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
                       >
                         <option value={15}>15 minutes</option>
                         <option value={30}>30 minutes</option>
@@ -726,19 +726,19 @@ const Settings: React.FC = () => {
                           onChange={(e) => handleSecurityChange('passwordChangeRequired', e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 dark:peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
                       </label>
                     </div>
                   </div>
                 </div>
                 <div className="pt-6 border-t border-gray-100 dark:border-slate-800">
                   <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
-                    <Lock size={16} className="text-indigo-600 dark:text-blue-500" />
+                    <Lock size={16} className="text-[#2c5173]" />
                     Password
                   </h3>
                    <button 
                     onClick={() => setShowChangePassword(true)}
-                    className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10 flex items-center gap-2"
+                    className="px-6 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20 flex items-center gap-2"
                   >
                     <Edit size={14} />
                     Change Password
@@ -748,7 +748,7 @@ const Settings: React.FC = () => {
                   <button
                     onClick={saveSettings}
                     disabled={loading}
-                    className="px-8 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+                    className="px-8 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20"
                   >
                     {loading ? 'Saving...' : 'Update Security Settings'}
                   </button>
@@ -760,7 +760,7 @@ const Settings: React.FC = () => {
               <div className="space-y-8 animate-enter">
                 <div>
                   <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
-                    <Palette size={16} className="text-indigo-600 dark:text-blue-500" />
+                    <Palette size={16} className="text-[#2c5173]" />
                     Display Preferences
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -773,7 +773,7 @@ const Settings: React.FC = () => {
                         <select
                           value={preferences.language}
                           onChange={(e) => handlePreferenceChange('language', e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none appearance-none"
+                          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none appearance-none"
                         >
                           <option value="en">English</option>
                           <option value="sw">Swahili</option>
@@ -788,7 +788,7 @@ const Settings: React.FC = () => {
                       <select
                         value={preferences.timezone}
                         onChange={(e) => handlePreferenceChange('timezone', e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
                       >
                         <option value="Africa/Nairobi">Nairobi (UTC+3)</option>
                         <option value="Africa/Dar_es_Salaam">Dar es Salaam (UTC+3)</option>
@@ -802,7 +802,7 @@ const Settings: React.FC = () => {
                       <select
                         value={preferences.currency}
                         onChange={(e) => handlePreferenceChange('currency', e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
                       >
                         <option value="USD">USD ($)</option>
                         <option value="KES">KES (KSh)</option>
@@ -816,7 +816,7 @@ const Settings: React.FC = () => {
                       <select
                         value={preferences.theme}
                         onChange={(e) => handlePreferenceChange('theme', e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
                       >
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>
@@ -829,7 +829,7 @@ const Settings: React.FC = () => {
                   <button
                     onClick={saveSettings}
                     disabled={loading}
-                    className="px-8 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+                    className="px-8 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20"
                   >
                     {loading ? 'Saving...' : 'Update Preferences'}
                   </button>
@@ -843,14 +843,14 @@ const Settings: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                      <Users size={16} className="text-indigo-600 dark:text-blue-500" />
+                      <Users size={16} className="text-[#2c5173]" />
                       Team Members
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 pl-6">Manage cargo receivers and team members</p>
                   </div>
                   <button
                     onClick={handleAddReceiver}
-                    className="px-4 py-2 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10 flex items-center gap-2"
+                    className="px-4 py-2 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20 flex items-center gap-2"
                   >
                     <UserPlus size={14} />
                     <span>Add Member</span>
@@ -861,7 +861,7 @@ const Settings: React.FC = () => {
                     <div key={receiver.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-indigo-50 dark:bg-blue-900/20 text-indigo-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
+                          <div className="w-12 h-12 bg-[#2c5173]/10 text-[#2c5173] rounded-2xl flex items-center justify-center">
                             <Users size={20} />
                           </div>
                           <div>
@@ -871,14 +871,14 @@ const Settings: React.FC = () => {
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{receiver.role.replace('_', ' ')}</span>
                               <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
-                              <span className="text-[10px] font-black text-indigo-500 dark:text-blue-400 uppercase tracking-widest">{receiver.email}</span>
+                              <span className="text-[10px] font-black text-[#2c5173] uppercase tracking-widest">{receiver.email}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           <button
                             onClick={() => handleEditReceiver(receiver)}
-                            className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-blue-400 hover:bg-indigo-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
+                            className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-[#2c5173]/10 rounded-lg transition-all"
                           >
                             <Edit size={14} />
                           </button>
@@ -941,7 +941,7 @@ const Settings: React.FC = () => {
                       type="text"
                       value={receiverForm.firstName}
                       onChange={(e) => setReceiverForm(prev => ({ ...prev, firstName: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
                       placeholder="e.g. John"
                     />
                   </div>
@@ -953,7 +953,7 @@ const Settings: React.FC = () => {
                       type="text"
                       value={receiverForm.lastName}
                       onChange={(e) => setReceiverForm(prev => ({ ...prev, lastName: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
                       placeholder="e.g. Doe"
                     />
                   </div>
@@ -966,7 +966,7 @@ const Settings: React.FC = () => {
                       value={receiverForm.email}
                       disabled={!!editingReceiver}
                       onChange={(e) => setReceiverForm(prev => ({ ...prev, email: e.target.value }))}
-                      className={`w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none ${editingReceiver ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none ${editingReceiver ? 'opacity-50 cursor-not-allowed' : ''}`}
                       placeholder="e.g. john@example.com"
                     />
                   </div>
@@ -979,7 +979,7 @@ const Settings: React.FC = () => {
                         type="password"
                         value={receiverForm.password}
                         onChange={(e) => setReceiverForm(prev => ({ ...prev, password: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
                         placeholder="••••••••"
                       />
                     </div>
@@ -993,7 +993,7 @@ const Settings: React.FC = () => {
                   <select
                     value={receiverForm.role}
                     onChange={(e) => setReceiverForm(prev => ({ ...prev, role: e.target.value }))}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
                   >
                     {user?.role === 'TRUCK_OWNER' ? (
                       <>
@@ -1063,7 +1063,7 @@ const Settings: React.FC = () => {
                             type="checkbox"
                             checked={receiverForm.permissions.includes(permission)}
                             onChange={(e) => handlePermissionChange(permission, e.target.checked)}
-                            className="w-4 h-4 text-indigo-600 dark:text-blue-500 border-gray-300 dark:border-slate-700 rounded focus:ring-indigo-500 dark:focus:ring-blue-500"
+                            className="w-4 h-4 text-[#2c5173] border-gray-300 dark:border-slate-700 rounded focus:ring-[#2c5173]"
                           />
                           <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">
                             {permission.replace('_', ' ')}
@@ -1088,7 +1088,7 @@ const Settings: React.FC = () => {
               </button>
               <button
                 onClick={handleSaveReceiver}
-                className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+                className="px-6 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20"
               >
                 {editingReceiver ? 'Save Changes' : 'Add Member'}
               </button>
@@ -1126,7 +1126,7 @@ const Settings: React.FC = () => {
                       type={showCurrentPassword ? "text" : "password"}
                       value={passwordForm.currentPassword}
                       onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all"
                       placeholder="••••••••"
                     />
                     <button
@@ -1147,7 +1147,7 @@ const Settings: React.FC = () => {
                       type={showNewPassword ? "text" : "password"}
                       value={passwordForm.newPassword}
                       onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all"
                       placeholder="••••••••"
                     />
                     <button
@@ -1168,7 +1168,7 @@ const Settings: React.FC = () => {
                       type={showConfirmPassword ? "text" : "password"}
                       value={passwordForm.confirmPassword}
                       onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all"
                       placeholder="••••••••"
                     />
                     <button
@@ -1193,7 +1193,7 @@ const Settings: React.FC = () => {
               <button
                 onClick={handlePasswordChange}
                 disabled={loading}
-                className="px-6 py-3 bg-indigo-600 dark:bg-blue-600 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-blue-700 font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 dark:shadow-blue-900/10"
+                className="px-6 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20"
               >
                 {loading ? 'Changing...' : 'Change Password'}
               </button>

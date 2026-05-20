@@ -110,7 +110,7 @@ const FinancialDashboard: React.FC = () => {
 
   const categoryBreakdown = useMemo(() => {
     if (!reportData?.expenses?.byCategory) return [];
-    const colors = ['#345E85', '#EC4899', '#F59E0B', '#6B8DAD', '#10B981', '#8B5CF6'];
+    const colors = ['#2c5173', '#EC4899', '#F59E0B', '#4a7fa5', '#10B981', '#8B5CF6'];
     return Object.entries(reportData.expenses.byCategory).map(([name, value], i) => ({
       name,
       value: Number(value),
@@ -144,18 +144,22 @@ const FinancialDashboard: React.FC = () => {
     return [
       { name: 'Pending',    value: advanceStats.pendingAmount   || 0, color: '#F59E0B' },
       { name: 'Approved',   value: advanceStats.approvedAmount  || 0, color: '#10B981' },
-      { name: 'Reconciled', value: advanceStats.reconciledAmount|| 0, color: '#345E85' },
+      { name: 'Reconciled', value: advanceStats.reconciledAmount|| 0, color: '#2c5173' },
       { name: 'Rejected',   value: advanceStats.rejectedAmount  || 0, color: '#EF4444' },
     ].filter(d => d.value > 0);
   }, [advanceStats]);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-40 gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center animate-bounce">
-          <Wallet className="w-6 h-6 text-[#345E85]" />
+      <div className="space-y-8 animate-pulse">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-[2rem]" />)}
         </div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Synchronizing Ledger Assets...</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-[2.5rem]" />
+          <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-[2.5rem]" />
+        </div>
+        <div className="h-80 bg-slate-100 dark:bg-slate-800 rounded-[2.5rem]" />
       </div>
     );
   }
@@ -210,12 +214,12 @@ const FinancialDashboard: React.FC = () => {
                   <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Credit Breakdown</h3>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Subscription · Purchased · Bonus</p>
                 </div>
-                <CreditCard className="text-[#345E85] dark:text-blue-400 w-5 h-5 opacity-40" />
+                <CreditCard className="text-[#2c5173] w-5 h-5 opacity-40" />
               </div>
               <div className="space-y-4">
                 {[
                   { label: 'Subscription Credits', value: creditBalance?.subscriptionCredits ?? 0, color: 'bg-violet-500', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
-                  { label: 'Purchased Credits',    value: creditBalance?.purchasedCredits    ?? 0, color: 'bg-[#345E85]', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
+                  { label: 'Purchased Credits',    value: creditBalance?.purchasedCredits    ?? 0, color: 'bg-[#2c5173]', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
                   { label: 'Bonus Credits',        value: creditBalance?.bonusCredits        ?? 0, color: 'bg-emerald-500', max: Math.max(1, creditBalance?.currentBalance ?? 1) },
                 ].map(({ label, value, color, max }) => (
                   <div key={label}>
@@ -241,7 +245,7 @@ const FinancialDashboard: React.FC = () => {
                   <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Advance Distribution</h3>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">By approval status</p>
                 </div>
-                <PieChartIcon className="text-[#345E85] dark:text-blue-400 w-5 h-5 opacity-40" />
+                <PieChartIcon className="text-[#2c5173] w-5 h-5 opacity-40" />
               </div>
               {advanceChartData.length > 0 ? (
                 <div className="flex items-center gap-6">
@@ -341,7 +345,7 @@ const FinancialDashboard: React.FC = () => {
               className={cn(
                 "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
                 timeRange === range
-                  ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-lg'
+                  ? 'bg-[#2c5173] text-white shadow-lg'
                   : 'text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700'
               )}
             >
@@ -353,7 +357,7 @@ const FinancialDashboard: React.FC = () => {
           <button className="h-12 px-6 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2">
             <Filter size={14} /> Filter Node
           </button>
-          <button className="h-12 px-6 bg-[#345E85] dark:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10 active:scale-95">
+          <button className="h-12 px-6 bg-[#2c5173] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1e3850] transition-all flex items-center gap-2 shadow-lg shadow-[#2c5173]/20 active:scale-95">
             <Download size={14} /> Export Audit
           </button>
         </div>
@@ -367,7 +371,7 @@ const FinancialDashboard: React.FC = () => {
           trend="+12%"
           trendDirection="up"
           icon={<TrendingUp size={24} />} 
-          color="success" 
+          color="primary" 
           variant="classic"
         />
         <StatCard 
@@ -376,7 +380,7 @@ const FinancialDashboard: React.FC = () => {
           trend="+5%"
           trendDirection="down"
           icon={<Wallet size={24} />} 
-          color="error" 
+          color="primary" 
           variant="classic"
         />
         <StatCard 
@@ -385,7 +389,7 @@ const FinancialDashboard: React.FC = () => {
           trend="Peak"
           trendDirection="up"
           icon={<ArrowUpRight size={24} />} 
-          color="info" 
+          color="primary" 
           variant="classic"
         />
         <StatCard 
@@ -394,7 +398,7 @@ const FinancialDashboard: React.FC = () => {
           trend="Audit Ready"
           trendDirection="neutral"
           icon={<PieChartIcon size={24} />} 
-          color="warning" 
+          color="primary" 
           variant="classic"
         />
       </div>
@@ -408,15 +412,15 @@ const FinancialDashboard: React.FC = () => {
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Expenditure Lifecycle</h3>
               <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mt-1">Cross-category financial velocity</p>
             </div>
-            <BarChart3 className="text-[#345E85] dark:text-blue-400 w-6 h-6 opacity-40" />
+            <BarChart3 className="text-[#2c5173] w-6 h-6 opacity-40" />
           </div>
           <div className="h-[300px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={reportData?.expenses?.byMonth ? Object.entries(reportData.expenses.byMonth).map(([month, total]) => ({ month, total })) : []}>
                 <defs>
                   <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#345E85" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#345E85" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#2c5173" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#2c5173" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-gray-700" vertical={false} />
@@ -435,7 +439,7 @@ const FinancialDashboard: React.FC = () => {
                   }}
                   itemStyle={{ color: 'inherit' }}
                 />
-                <Area type="monotone" dataKey="total" stroke="#345E85" strokeWidth={3} fillOpacity={1} fill="url(#colorPrimary)" />
+                <Area type="monotone" dataKey="total" stroke="#2c5173" strokeWidth={3} fillOpacity={1} fill="url(#colorPrimary)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -448,7 +452,7 @@ const FinancialDashboard: React.FC = () => {
               <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Capital Distribution</h3>
               <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mt-1">Allocation across operational nodes</p>
             </div>
-            <PieChartIcon className="text-[#345E85] dark:text-blue-400 w-6 h-6 opacity-40" />
+            <PieChartIcon className="text-[#2c5173] w-6 h-6 opacity-40" />
           </div>
           <div className="flex items-center h-[300px]">
             <ResponsiveContainer width="60%" height="100%">

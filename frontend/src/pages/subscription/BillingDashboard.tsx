@@ -111,11 +111,12 @@ const BillingDashboard: React.FC = () => {
 
   if (subLoading || balanceLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading billing information...</p>
+      <div className="space-y-6 p-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1,2,3].map(i => <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />)}
         </div>
+        <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
+        <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
       </div>
     );
   }

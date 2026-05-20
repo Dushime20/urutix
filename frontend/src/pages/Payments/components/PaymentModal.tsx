@@ -120,10 +120,10 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
         {step === 'processing' && (
           <div className="flex flex-col items-center justify-center py-20 px-8">
             <div className="relative mb-6">
-              <div className="w-20 h-20 rounded-full bg-[#345E85]/10 flex items-center justify-center">
-                <Loader2 className="w-10 h-10 text-[#345E85] animate-spin" />
+              <div className="w-20 h-20 rounded-full bg-[#2c5173]/10 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-[#2c5173] animate-spin" />
               </div>
-              <div className="absolute inset-0 rounded-full border-4 border-[#345E85]/20 border-t-[#345E85] animate-spin" style={{ animationDuration: '1.5s' }} />
+              <div className="absolute inset-0 rounded-full border-4 border-[#2c5173]/20 border-t-[#2c5173] animate-spin" style={{ animationDuration: '1.5s' }} />
             </div>
             <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Processing Payment</h3>
             <p className="text-sm text-slate-500 text-center max-w-xs">
@@ -150,7 +150,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
             </p>
             <button
               onClick={handleClose}
-              className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2a4d6d] transition-all border-b-4 border-indigo-900/20"
+              className="px-8 py-4 bg-[#2c5173] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#1e3850] transition-all shadow-lg shadow-[#2c5173]/20"
             >
               Done
             </button>
@@ -170,7 +170,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
             <div className="flex gap-3">
               <button
                 onClick={handleRetry}
-                className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2a4d6d] transition-all border-b-4 border-indigo-900/20"
+                className="px-8 py-4 bg-[#2c5173] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#1e3850] transition-all shadow-lg shadow-[#2c5173]/20"
               >
                 Try Again
               </button>
@@ -233,7 +233,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
                   <div className="pt-4 border-t-2 border-dashed border-blue-200">
                     <div className="flex items-center justify-between">
                       <span className="text-base font-black text-blue-900 uppercase">Total Amount:</span>
-                      <span className="text-3xl font-black text-[#345E85]">
+                      <span className="text-3xl font-black text-[#2c5173]">
                         {formatCurrency(totalAmount, payment.currency)}
                       </span>
                     </div>
@@ -251,7 +251,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
                     onClick={() => setFormData(prev => ({ ...prev, method: 'card' }))}
                     className={`p-6 rounded-2xl border-2 transition-all ${
                       formData.method === 'card'
-                        ? 'border-[#345E85] bg-blue-50'
+                        ? 'border-[#2c5173] bg-[#2c5173]/5'
                         : 'border-slate-100 bg-white hover:border-slate-200'
                     }`}
                   >
@@ -264,7 +264,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
                     onClick={() => setFormData(prev => ({ ...prev, method: 'mobile_money' }))}
                     className={`p-6 rounded-2xl border-2 transition-all ${
                       formData.method === 'mobile_money'
-                        ? 'border-[#345E85] bg-blue-50'
+                        ? 'border-[#2c5173] bg-[#2c5173]/5'
                         : 'border-slate-100 bg-white hover:border-slate-200'
                     }`}
                   >
@@ -402,7 +402,7 @@ const PaymentModal = ({ isOpen, onClose, payment, onPaymentSuccess }: PaymentMod
               </button>
               <button
                 onClick={handleConfirm}
-                className="flex-1 px-8 py-4 text-xs font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all uppercase tracking-widest border-b-4 border-indigo-900/20"
+                className="flex-1 px-8 py-4 text-xs font-black bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-[#2c5173]/20"
               >
                 Confirm Payment · {formatCurrency(totalAmount, payment.currency)}
               </button>

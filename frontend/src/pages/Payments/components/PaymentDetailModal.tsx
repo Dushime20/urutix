@@ -64,7 +64,7 @@ const PaymentDetailModal = ({ isOpen, onClose, payment, onPayNow }: PaymentDetai
           </div>
 
           {/* Payment Overview Card */}
-          <div className="bg-[#345E85] rounded-3xl p-6 text-white">
+          <div className="bg-[#2c5173] rounded-3xl p-6 text-white">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
                 <span className="text-2xl">{typeIcon}</span>
@@ -184,7 +184,7 @@ const PaymentDetailModal = ({ isOpen, onClose, payment, onPayNow }: PaymentDetai
                   ? "bg-rose-600 text-white hover:bg-rose-700"
                   : payment.urgency === 'DUE_SOON'
                   ? "bg-amber-600 text-white hover:bg-amber-700"
-                  : "bg-[#345E85] text-white hover:bg-slate-800"
+                  : "bg-[#2c5173] text-white hover:bg-[#1e3850]"
               )}
             >
               <CreditCard className="w-5 h-5" />

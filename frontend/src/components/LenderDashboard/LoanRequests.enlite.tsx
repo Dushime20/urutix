@@ -15,9 +15,9 @@ import {
     FileText,
     Activity
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StatCard } from '../EnliteUI';
 import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 import LoanApprovalModal from './LoanApprovalModal';
@@ -58,45 +58,6 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
         if (onExport) onExport();
     };
 
-    const SummaryCard = ({ title, value, icon: Icon, subtitle }: { title: string; value: string; icon: any; subtitle?: string }) => (
-        <motion.div
-            whileHover={{ y: -5 }}
-            className="flex flex-col items-center group cursor-pointer"
-        >
-            <div className="relative size-36 lg:size-40 bg-white dark:bg-slate-900 border-[6px] border-slate-50 dark:border-slate-800 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:border-slate-100 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-blue-900/20">
-                <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.05]">
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r="46%"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeDasharray="414"
-                        strokeDashoffset="300"
-                        className="text-blue-400 opacity-10 transition-all duration-1000 group-hover:opacity-30"
-                    />
-                </svg>
-
-                <div className="p-2 rounded-xl mb-1 bg-slate-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 group-hover:bg-white dark:group-hover:bg-slate-700 group-hover:text-blue-600 transition-all duration-500 shadow-sm">
-                    <Icon size={14} />
-                </div>
-                <p className="text-xl lg:text-2xl font-black text-[#0f172a] dark:text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 text-center leading-none">
-                    {value}
-                </p>
-            </div>
-            <div className="mt-4 text-center">
-                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-600 group-hover:text-[#345E85] transition-colors">
-                    {title}
-                </p>
-                {subtitle && (
-                    <p className="text-[6px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-                        {subtitle}
-                    </p>
-                )}
-            </div>
-        </motion.div>
-    );
 
     const columns = [
         {
@@ -223,7 +184,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                         <>
                             <button
                                 onClick={() => setApprovalLoan(row)}
-                                className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 transition-colors"
+                                className="p-1.5 hover:bg-[#2c5173]/10 rounded text-[#2c5173] transition-colors"
                                 title="Approve"
                             >
                                 <Check className="w-4 h-4" />
@@ -244,7 +205,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     {row.status === 'approved' && (
                         <button
                             onClick={() => onProcessPayment(row)}
-                            className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 transition-colors"
+                            className="p-1.5 hover:bg-[#2c5173]/10 rounded text-[#2c5173] transition-colors"
                             title="Disburse Funds"
                         >
                             <DollarSign className="w-4 h-4" />
@@ -254,7 +215,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     {row.status === 'disbursed' && (
                         <button
                             onClick={() => onViewPaymentDetails(row)}
-                            className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 transition-colors"
+                            className="p-1.5 hover:bg-[#2c5173]/10 rounded text-[#2c5173] transition-colors"
                             title="Payment Details"
                         >
                             <CreditCard className="w-4 h-4" />
@@ -267,32 +228,12 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Analytics Summary - CIRCULAR DESIGN */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-8 bg-slate-50/30 dark:bg-slate-900/30 rounded-[3rem] border border-slate-100/50 dark:border-slate-800/50 place-items-center">
-                <SummaryCard
-                    title="Total Applications"
-                    value={analytics?.totalRequests?.toString() || "0"}
-                    icon={FileText}
-                    subtitle="Lifetime requests"
-                />
-                <SummaryCard
-                    title="Pending Approval"
-                    value={analytics?.pendingRequests?.toString() || "0"}
-                    icon={Clock}
-                    subtitle="Requires attention"
-                />
-                <SummaryCard
-                    title="Capital Requested"
-                    value={`USD ${(analytics?.totalAmountRequested / 1000 || 0).toFixed(1)}K`}
-                    icon={DollarSign}
-                    subtitle="Pipeline volume"
-                />
-                <SummaryCard
-                    title="Approval Strategy"
-                    value={`${analytics?.approvalRate?.toFixed(1) || 0}%`}
-                    icon={Shield}
-                    subtitle={`Avg risk: ${analytics?.averageRiskScore?.toFixed(0) || 0}%`}
-                />
+            {/* Analytics Summary */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard title="Total Applications" value={analytics?.totalRequests ?? 0} subtitle="Lifetime requests" icon={<FileText size={18} />} color="primary" variant="classic" />
+                <StatCard title="Pending Approval" value={analytics?.pendingRequests ?? 0} subtitle="Requires attention" icon={<Clock size={18} />} color="primary" variant="classic" />
+                <StatCard title="Capital Requested" value={`USD ${(analytics?.totalAmountRequested / 1000 || 0).toFixed(1)}K`} subtitle="Pipeline volume" icon={<DollarSign size={18} />} color="primary" variant="classic" />
+                <StatCard title="Approval Rate" value={`${analytics?.approvalRate?.toFixed(1) || 0}%`} subtitle={`Avg risk: ${analytics?.averageRiskScore?.toFixed(0) || 0}%`} icon={<Shield size={18} />} color="primary" variant="classic" />
             </div>
 
             {/* Requests Management */}

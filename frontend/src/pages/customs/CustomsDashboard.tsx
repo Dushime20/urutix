@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import {
   ShieldCheck, AlertTriangle, Clock, CheckCircle, XCircle,
   TrendingUp, Search, FileText, Flag, Archive, Activity,
@@ -12,7 +11,7 @@ import { cn } from '../../utils/cn';
 import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
-const BRAND = '#345E85';
+const BRAND = '#2c5173';
 
 const statusColors: Record<string, string> = {
   PENDING:     '#f59e0b',
@@ -95,7 +94,7 @@ const CustomsDashboard: React.FC = () => {
   }));
 
   const quickLinks = [
-    { label: 'Search Truck', icon: Search, path: '/dashboard/customs/search', color: 'text-[#345E85]', bg: 'bg-blue-50 hover:bg-blue-100' },
+    { label: 'Search Truck', icon: Search, path: '/dashboard/customs/search', color: 'text-[#2c5173]', bg: 'bg-[#2c5173]/5 hover:bg-[#2c5173]/10' },
     { label: 'New Inspection', icon: Plus, path: '/dashboard/customs/inspections/new', color: 'text-emerald-700', bg: 'bg-emerald-50 hover:bg-emerald-100' },
     { label: 'All Inspections', icon: ShieldCheck, path: '/dashboard/customs/inspections', color: 'text-slate-700', bg: 'bg-slate-50 hover:bg-slate-100' },
     { label: 'Flagged Cargo', icon: Flag, path: '/dashboard/customs/flagged', color: 'text-rose-700', bg: 'bg-rose-50 hover:bg-rose-100' },
@@ -145,7 +144,7 @@ const CustomsDashboard: React.FC = () => {
             <input
               type="text"
               placeholder="Search plate, shipment ref, container..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2c5173]/30"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -265,7 +264,7 @@ const CustomsDashboard: React.FC = () => {
           <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Recent Inspections</h3>
           <button
             onClick={() => navigate('/dashboard/customs/inspections')}
-            className="text-xs font-bold text-[#345E85] hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-[#2c5173] hover:underline flex items-center gap-1"
           >
             View All <Eye size={12} />
           </button>

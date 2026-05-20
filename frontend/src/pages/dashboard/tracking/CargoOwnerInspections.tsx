@@ -15,12 +15,12 @@ import {
   Phone,
   Mail,
   FileText,
-  Camera,
   PenLine,
 } from "lucide-react";
 import api from "@/services/api";
 import { cn } from "@/utils/cn";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
+import { StatCard } from "@/components/EnliteUI";
 
 interface Inspection {
   id: string;
@@ -132,9 +132,12 @@ const CargoOwnerInspections = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <div className="w-12 h-12 border-4 border-slate-200 border-t-[#345E85] rounded-full animate-spin" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading Inspections...</p>
+      <div className="space-y-6 animate-pulse">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[1,2,3,4,5].map(i => <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
+        </div>
+        <div className="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+        {[1,2,3].map(i => <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
       </div>
     );
   }
@@ -154,26 +157,11 @@ const CargoOwnerInspections = () => {
       {/* Header Stats */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-slate-900">{summary.completed}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completed</p>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-amber-600">{summary.pending}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</p>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-blue-600">{summary.inProgress}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">In Progress</p>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-rose-600">{summary.disputed}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Disputed</p>
-          </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-            <p className="text-2xl font-black text-orange-600">{summary.withDiscrepancies}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">With Issues</p>
-          </div>
+          <StatCard title="Completed" value={summary.completed} icon={<CheckCircle size={18} />} color="primary" variant="classic" />
+          <StatCard title="Pending" value={summary.pending} icon={<Clock size={18} />} color="primary" variant="classic" />
+          <StatCard title="In Progress" value={summary.inProgress} icon={<ClipboardCheck size={18} />} color="primary" variant="classic" />
+          <StatCard title="Disputed" value={summary.disputed} icon={<XCircle size={18} />} color="primary" variant="classic" />
+          <StatCard title="With Issues" value={summary.withDiscrepancies} icon={<AlertTriangle size={18} />} color="primary" variant="classic" />
         </div>
       )}
 
@@ -188,7 +176,7 @@ const CargoOwnerInspections = () => {
               placeholder="Search by cargo, reference, or receiver..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none transition-all placeholder-slate-400"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173] outline-none transition-all placeholder-slate-400"
             />
           </div>
           
@@ -201,7 +189,7 @@ const CargoOwnerInspections = () => {
                 className={cn(
                   "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
                   statusFilter === status
-                    ? "bg-[#345E85] text-white shadow-md"
+                    ? "bg-[#2c5173] text-white shadow-md"
                     : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                 )}
               >
@@ -244,7 +232,7 @@ const CargoOwnerInspections = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 bg-blue-50 rounded-xl flex items-center justify-center text-[#345E85]">
+                      <div className="h-12 w-12 bg-[#2c5173]/10 rounded-xl flex items-center justify-center text-[#2c5173]">
                         <Package size={24} />
                       </div>
                       <div>
@@ -413,7 +401,7 @@ const CargoOwnerInspections = () => {
                               rel="noreferrer"
                               className="group"
                             >
-                              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-[#345E85] transition-all hover:shadow-md">
+                              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-[#2c5173] transition-all hover:shadow-md">
                                 {doc.type === 'photo' ? (
                                   <div className="h-24 overflow-hidden">
                                     <img

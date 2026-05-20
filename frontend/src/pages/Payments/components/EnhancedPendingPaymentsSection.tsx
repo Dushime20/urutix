@@ -351,13 +351,10 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
 
   if (isLoading) {
     return (
-      <div className={cn('space-y-6', className)}>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-slate-600">Loading payments...</p>
-          </div>
-        </div>
+      <div className={cn('space-y-4 animate-pulse', className)}>
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className="h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+        ))}
       </div>
     );
   }

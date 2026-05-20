@@ -218,11 +218,13 @@ const SubscriptionPlans: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#345E85] mx-auto"></div>
-          <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Subscription Plans...</p>
+      <div className="space-y-6 animate-pulse p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1,2,3].map(i => (
+            <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
+          ))}
         </div>
+        <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
       </div>
     );
   }
@@ -776,11 +778,10 @@ const SubscriptionPlans: React.FC = () => {
       {activeTab === 'subscriptions' && (
         <div className="space-y-8">
           {isLoadingSubscriptions ? (
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#345E85] mx-auto"></div>
-                  <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Subscriptions...</p>
-                </div>
+              <div className="space-y-4 p-4 animate-pulse">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                ))}
               </div>
             ) : subscriptionsData?.data?.length > 0 ? (
               <div className="space-y-6">

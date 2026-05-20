@@ -15,6 +15,7 @@ import {
 import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
 import LoanDetailModal from '../components/LenderDashboard/LoanDetailModal';
 import EnhancedRepayButton from '../components/Lending/EnhancedRepayButton';
+import { StatCard } from '../components/EnliteUI';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
 interface LoanRequest {
@@ -846,20 +847,13 @@ const TruckOwnerLoanRequestsView: React.FC<{
     r.status.toLowerCase().includes(search.toLowerCase())
   );
 
-  const statCards = [
-    { label: 'Total Requests', value: analytics?.totalRequests ?? 0, icon: FileText, color: 'text-[#345E85]', bg: 'bg-blue-50' },
-    { label: 'Pending', value: analytics?.pendingRequests ?? 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Approved', value: analytics?.approvedRequests ?? 0, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Total Requested', value: `$${((analytics?.totalAmountRequested ?? 0) / 1000).toFixed(1)}K`, icon: Banknote, color: 'text-purple-600', bg: 'bg-purple-50' },
-  ];
-
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
-            My Loan <span className="text-[#345E85]">Requests</span>
+            My Loan <span className="text-[#2c5173]">Requests</span>
           </h2>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
             Fleet financing & advance management
@@ -870,7 +864,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
             <RefreshCw size={16} />
           </button>
           <button onClick={onNewRequest}
-            className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100 active:scale-95">
+            className="flex items-center gap-2 px-6 py-3 bg-[#2c5173] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1e3850] transition-all shadow-lg shadow-[#2c5173]/20 active:scale-95">
             <Plus size={14} /> Request Loan
           </button>
         </div>
@@ -878,17 +872,10 @@ const TruckOwnerLoanRequestsView: React.FC<{
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-white rounded-3xl border border-slate-100 p-6 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className={`h-12 w-12 rounded-2xl ${bg} flex items-center justify-center flex-shrink-0`}>
-              <Icon size={20} className={color} />
-            </div>
-            <div>
-              <p className="text-2xl font-black text-slate-900">{value}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
-            </div>
-          </div>
-        ))}
+        <StatCard title="Total Requests" value={analytics?.totalRequests ?? 0} icon={<FileText size={18} />} color="primary" variant="classic" />
+        <StatCard title="Pending" value={analytics?.pendingRequests ?? 0} icon={<Clock size={18} />} color="primary" variant="classic" />
+        <StatCard title="Approved" value={analytics?.approvedRequests ?? 0} icon={<CheckCircle size={18} />} color="primary" variant="classic" />
+        <StatCard title="Total Requested" value={`$${((analytics?.totalAmountRequested ?? 0) / 1000).toFixed(1)}K`} icon={<Banknote size={18} />} color="primary" variant="classic" />
       </div>
 
       {/* Search */}
@@ -896,7 +883,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
         <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
         <input type="text" placeholder="Search by ID, purpose or status..."
           value={search} onChange={e => onSearchChange(e.target.value)}
-          className="w-full bg-white border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] transition-all shadow-sm" />
+          className="w-full bg-white border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#2c5173]/10 focus:border-[#2c5173] transition-all shadow-sm" />
       </div>
 
       {/* Error */}
@@ -910,8 +897,8 @@ const TruckOwnerLoanRequestsView: React.FC<{
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-[#345E85]/10 flex items-center justify-center">
-              <TrendingUp size={14} className="text-[#345E85]" />
+            <div className="h-8 w-8 rounded-xl bg-[#2c5173]/10 flex items-center justify-center">
+              <TrendingUp size={14} className="text-[#2c5173]" />
             </div>
             <div>
               <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Loan History</p>
@@ -1092,6 +1079,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   const [loadingCalculations, setLoadingCalculations] = useState<Record<string, boolean>>({});
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLoanForDetail, setSelectedLoanForDetail] = useState<LoanRequest | null>(null);
+  const [loanPayments, setLoanPayments] = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [selectedLoanForPaymentDetails, setSelectedLoanForPaymentDetails] = useState<LoanRequest | null>(null);
+  const [showPaymentDetailsModal, setShowPaymentDetailsModal] = useState(false);
 
   const lenderId = user?.id; // Dynamically use the logged-in user's ID
 
@@ -1553,8 +1544,12 @@ const EnhancedLoanRequestsPage: React.FC = () => {
 
   // Ã¢â€â‚¬Ã¢â€â‚¬ Lender View Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   if (fetching) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className="space-y-6 p-6 animate-pulse">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-3xl" />)}
+      </div>
+      <div className="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+      {[1,2,3,4,5].map(i => <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
     </div>
   );
 
@@ -1564,13 +1559,13 @@ const EnhancedLoanRequestsPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4 mb-8">
           <div className="flex flex-col">
             <h2 className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tight uppercase">
-              Loan <span className="text-[#345E85] dark:text-blue-400">Requests</span>
+              Loan <span className="text-[#2c5173]">Requests</span>
             </h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time financing workflow management</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative group">
-              <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-[#345E85] transition-colors" />
+              <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 group-focus-within:text-[#2c5173] transition-colors" />
               <input type="text" placeholder="SEARCH LOANS..." value={search} onChange={e => setSearch(e.target.value)}
                 className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 pl-14 pr-6 text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 dark:text-slate-300 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-200 transition-all w-64 lg:w-80" />
             </div>

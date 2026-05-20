@@ -9,7 +9,7 @@ import {
 import { cn } from '../../utils/cn';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
-const BRAND = '#345E85';
+const BRAND = '#2c5173';
 
 const statusColors: Record<string, string> = {
   PENDING:     '#f59e0b',
@@ -89,8 +89,14 @@ const CustomsAnalyticsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]" />
+        <div className="space-y-4 animate-pulse">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[1,2,3,4,5,6].map(i => <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+            <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
+          </div>
         </div>
       ) : (
         <>

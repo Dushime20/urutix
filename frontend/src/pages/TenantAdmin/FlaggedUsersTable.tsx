@@ -139,8 +139,16 @@ const FlaggedUsersTable: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-3 p-4 animate-pulse">
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-lg w-3/4" />
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-lg w-1/2" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
