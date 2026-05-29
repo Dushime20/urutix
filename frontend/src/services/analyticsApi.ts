@@ -499,6 +499,7 @@ export interface ComprehensiveInsights {
 }
 
 export interface AIDashboardSummary {
+  insights: any;
   summary: {
     totalInsights: number;
     potentialSavings: number;

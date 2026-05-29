@@ -123,32 +123,58 @@ export enum MatchingAlgorithm {
 }
 
 // =====================================================
-// SIMPLIFIED MATCHING CRITERIA (6 Core Factors)
-// 1. Capacity - Weight/volume matching
-// 2. Equipment - Required equipment compatibility  
-// 3. Distance - Proximity to pickup location
-// 4. GPS Tracking - GPS availability for monitoring
-// 5. Availability - Truck availability status
-// 6. Route - Route compatibility (origin/destination match)
+// SMART MATCHING ENGINE v3 - 12 DIMENSION SCORING MODEL
+// =====================================================
+// Per v3 Specification:
+// 1. Capacity (30%)     - Weight/volume utilization fit
+// 2. Equipment (25%)    - Forklift, crane, reefer, hazmat compatibility
+// 3. Distance (20%)     - Truck proximity to pickup location
+// 4. Availability (15%) - Truck status and next available time
+// 5. GPS Tracking (10%) - GPS availability for cargo monitoring
+// 6. Temperature (Dynamic) - Refrigeration match for temp-controlled cargo
+// 7. Security (Dynamic)    - GPS monitoring, insurance, camera systems
+// 8. Route (Dynamic)       - Road type clearance, escort requirements
+// 9. Time (Dynamic)        - Urgency vs carrier availability window
+// 10. Experience (Dynamic) - Track record with specific cargo type
+// 11. Rating (Dynamic)     - Historical performance score from prior trips
+// 12. Cost (Dynamic)       - Market-competitive pricing alignment
 // =====================================================
 
 export interface MatchingFactors {
-  capacityScore: number;      // Weight & volume utilization
-  equipmentScore: number;     // Required equipment compatibility
-  distanceScore: number;      // Proximity to pickup location
-  gpsTrackingScore: number;   // GPS availability for monitoring
-  availabilityScore: number;  // Truck availability status
-  routeScore: number;         // Route compatibility (origin/destination match)
+  capacityScore: number;       // 30% - Weight & volume utilization
+  equipmentScore: number;        // 25% - Required equipment compatibility
+  distanceScore: number;         // 20% - Proximity to pickup location
+  availabilityScore: number;     // 15% - Truck availability status
+  gpsTrackingScore: number;      // 10% - GPS availability for monitoring
+  // Dynamic dimensions (0-35% based on cargo type)
+  temperatureScore: number;      // Dynamic - Temperature control match
+  securityScore: number;         // Dynamic - Security features match
+  routeCompatibilityScore: number; // Dynamic - Route clearance/escort
+  timeScore: number;             // Dynamic - Urgency vs availability
+  experienceScore: number;       // Dynamic - Driver cargo experience
+  ratingScore: number;           // Dynamic - Historical performance
+  costScore: number;             // Dynamic - Price competitiveness
 }
 
 export interface DynamicWeights {
-  capacity: number;         // Default: 25%
-  equipment: number;        // Default: 20%
-  distance: number;         // Default: 15%
-  gpsTracking: number;      // Default: 10%
-  availability: number;     // Default: 15%
-  route: number;            // Default: 15%
+  // Base weights (must sum to 1.0)
+  capacity: number;         // 30%
+  equipment: number;        // 25%
+  distance: number;         // 20%
+  availability: number;     // 15%
+  gpsTracking: number;      // 10%
+  // Dynamic dimensions (initialized to 0, adjusted based on cargo)
+  temperature: number;      // Dynamic: 0-35%
+  security: number;         // Dynamic: 0-20%
+  routeCompatibility: number; // Dynamic: 0-15%
+  time: number;             // Dynamic: 0-20%
+  experience: number;       // Dynamic: 0-15%
+  rating: number;           // Dynamic: 0-15%
+  cost: number;             // Dynamic: 0-15%
 }
+
+// High-value cargo threshold in KES
+const HIGH_VALUE_THRESHOLD_KES = 500000;
 
 @Injectable()
 export class MatchingService {
@@ -1587,7 +1613,7 @@ export class MatchingService {
             match.capacityScore,
             match.equipmentScore,
             match.ratingScore,
-            match.priceScore,
+            match.costScore,
           ],
           metadata: { match },
         });
@@ -1711,39 +1737,15 @@ export class MatchingService {
       }
 
       // =====================================================
-      // CALCULATE 6 CORE SCORING FACTORS
+      // CALCULATE ALL 12 SCORING DIMENSIONS (v3 Specification)
       // =====================================================
-
-      // 1. CAPACITY SCORE - Weight & volume utilization (25%)
-      const capacityScore = this.calculateCapacityScore(truck, load);
-
-      // 2. EQUIPMENT SCORE - Required equipment compatibility (20%)
-      const equipmentScore = this.calculateEquipmentScore(truck, load);
-
-      // 3. DISTANCE SCORE - Proximity to pickup location (15%)
-      // Uses relative scoring: closest truck among all candidates gets highest score
-      const distanceScore = this.calculateDistanceScore(load, truck, criteria, allTruckDistances);
-
-      // 4. GPS TRACKING SCORE - GPS availability for monitoring (10%)
-      const gpsTrackingScore = this.calculateGpsTrackingScore(truck, load);
-
-      // 5. AVAILABILITY SCORE - Truck availability status (15%)
-      const availabilityScore = this.calculateAvailabilityScore(truck);
-
-      // 6. ROUTE SCORE - Route compatibility (origin/destination match) (15%)
-      const routeScore = await this.calculateRouteScore(truck, load);
-
-      // Get dynamic weights based on load requirements
+      const factors = await this.calculateMatchingFactors(truck, load, criteria);
+      
+      // Get dynamic weights based on load requirements (FR-MATCH-001 to FR-MATCH-005)
       const weights = this.getDynamicWeights(load);
 
-      // Calculate weighted overall score using 6 core factors
-      const overallScore =
-        capacityScore * weights.capacity +
-        equipmentScore * weights.equipment +
-        distanceScore * weights.distance +
-        gpsTrackingScore * weights.gpsTracking +
-        availabilityScore * weights.availability +
-        routeScore * weights.route;
+      // Calculate weighted overall score using all 12 dimensions
+      const overallScore = this.calculateWeightedScore(factors, weights);
 
       // Calculate supporting metrics using ROUTE distance (pickup → delivery), not truck-to-pickup
       const pickup = load.pickupLocation?.locationData?.coordinates;
@@ -1778,11 +1780,11 @@ export class MatchingService {
         }
       }
 
-      // Generate match reason based on 6 core factors
+      // Generate match reason based on all 12 factors
       const utilization = ((loadWeight / truckCapacityKg) * 100).toFixed(1);
       const matchReason = this.generateSimplifiedMatchReason(
-        truck, load, capacityScore, equipmentScore, distanceScore,
-        gpsTrackingScore, availabilityScore, routeScore, distanceKm, utilization
+        truck, load, factors.capacityScore, factors.equipmentScore, factors.distanceScore,
+        factors.gpsTrackingScore, factors.availabilityScore, factors.routeCompatibilityScore, distanceKm, utilization
       );
 
       const confidence = Math.min(overallScore * 1.1, 1.0);
@@ -1792,12 +1794,20 @@ export class MatchingService {
         truckId: truck.id,
         loadId: load.id,
         overallScore: Math.min(overallScore, 1.0),
-        capacityScore,
-        equipmentScore,
-        distanceScore,
-        gpsTrackingScore,
-        availabilityScore,
-        routeScore,
+        // Base 5 dimensions
+        capacityScore: factors.capacityScore,
+        equipmentScore: factors.equipmentScore,
+        distanceScore: factors.distanceScore,
+        gpsTrackingScore: factors.gpsTrackingScore,
+        availabilityScore: factors.availabilityScore,
+        routeScore: factors.routeCompatibilityScore,
+        // Dynamic 7 dimensions
+        temperatureScore: factors.temperatureScore,
+        securityScore: factors.securityScore,
+        timeScore: factors.timeScore,
+        experienceScore: factors.experienceScore,
+        ratingScore: factors.ratingScore,
+        costScore: factors.costScore,
         distanceKm: Math.round(distanceKm * 10) / 10,
         estimatedCost: Math.round(estimatedCost * 100) / 100,
         estimatedRevenue: Math.round(estimatedRevenue * 100) / 100,
@@ -1842,32 +1852,55 @@ export class MatchingService {
     criteria: MatchRequestDto,
   ): Promise<MatchingFactors> {
     try {
-      // SIMPLIFIED: Calculate 6 core scoring factors
+      // Calculate all 12 scoring dimensions per v3 specification
+      // Base 5 dimensions (always calculated)
       const capacityScore = this.calculateCapacityScore(truck, load);
       const equipmentScore = this.calculateEquipmentScore(truck, load);
       const distanceScore = this.calculateDistanceScore(load, truck, criteria);
       const gpsTrackingScore = this.calculateGpsTrackingScore(truck, load);
       const availabilityScore = this.calculateAvailabilityScore(truck);
-      const routeScore = await this.calculateRouteScore(truck, load);
+      const routeCompatibilityScore = await this.calculateRouteScore(truck, load);
+      
+      // Dynamic 7 dimensions (calculated based on cargo requirements)
+      const temperatureScore = this.calculateTemperatureScore(truck, load);
+      const securityScore = this.calculateSecurityScore(truck, load);
+      const timeScore = this.calculateTimeScore(truck, load);
+      const experienceScore = this.calculateExperienceScore(truck, load);
+      const ratingScore = this.calculateRatingScore(truck);
+      const costScore = this.calculateCostScore(truck, load);
 
       return {
+        // Base 5 dimensions
         capacityScore: capacityScore || 0,
         equipmentScore: equipmentScore || 0,
         distanceScore: distanceScore || 0,
         gpsTrackingScore: gpsTrackingScore || 0,
         availabilityScore: availabilityScore || 0,
-        routeScore: routeScore || 0,
+        routeCompatibilityScore: routeCompatibilityScore || 0,
+        // Dynamic 7 dimensions
+        temperatureScore: temperatureScore || 0,
+        securityScore: securityScore || 0,
+        timeScore: timeScore || 0,
+        experienceScore: experienceScore || 0,
+        ratingScore: ratingScore || 0,
+        costScore: costScore || 0,
       };
     } catch (error) {
       this.logger.error('Error in calculateMatchingFactors:', error);
       // Return default scores if calculation fails
       return {
-        capacityScore: 0,
-        equipmentScore: 0,
-        distanceScore: 0,
-        gpsTrackingScore: 0,
-        availabilityScore: 0,
-        routeScore: 0,
+        capacityScore: 0.5,
+        equipmentScore: 0.5,
+        distanceScore: 0.5,
+        gpsTrackingScore: 0.5,
+        availabilityScore: 0.5,
+        routeCompatibilityScore: 0.5,
+        temperatureScore: 0.5,
+        securityScore: 0.5,
+        timeScore: 0.5,
+        experienceScore: 0.5,
+        ratingScore: 0.5,
+        costScore: 0.5,
       };
     }
   }
@@ -2486,82 +2519,172 @@ export class MatchingService {
   }
 
   // =====================================================
-  // SIMPLIFIED DYNAMIC WEIGHTS (5 Core Criteria)
-  // =====================================================
-  // SIMPLIFIED DYNAMIC WEIGHTS (6 Core Criteria)
+  // DYNAMIC WEIGHT ADJUSTMENT RULES (FR-MATCH-001 to FR-MATCH-005)
   // =====================================================
   private getDynamicWeights(load: Load): DynamicWeights {
-    // Base weights for 6 core criteria (must sum to 1.0)
-    const baseWeights: DynamicWeights = {
-      capacity: 0.25,      // 25% - Can truck carry the load?
-      equipment: 0.20,     // 20% - Required equipment for cargo type
-      distance: 0.15,      // 15% - Proximity to pickup location
-      gpsTracking: 0.10,   // 10% - GPS availability for tracking
-      availability: 0.15,  // 15% - Is truck available now?
-      route: 0.15,         // 15% - Route compatibility (origin/destination match)
+    // Base weights per v3 specification (must sum to 1.0 for base)
+    const weights: DynamicWeights = {
+      capacity: 0.30,         // 30% - Weight/volume utilization fit
+      equipment: 0.25,        // 25% - Forklift, crane, reefer, hazmat compatibility
+      distance: 0.20,         // 20% - Truck proximity to pickup
+      availability: 0.15,     // 15% - Truck status and next available time
+      gpsTracking: 0.10,      // 10% - GPS availability for monitoring
+      // Dynamic dimensions start at 0, adjusted based on cargo type
+      temperature: 0,           // Dynamic: up to 35% for refrigerated
+      security: 0,            // Dynamic: up to 20% for high-value/hazardous
+      routeCompatibility: 0,  // Dynamic: up to 15% for specific routes
+      time: 0,                // Dynamic: up to 20% for time-critical
+      experience: 0,          // Dynamic: up to 15% for specialized cargo
+      rating: 0,              // Dynamic: up to 15% for quality assurance
+      cost: 0,                // Dynamic: up to 15% for price optimization
     };
 
-    // Adjust weights based on cargo characteristics
+    // FR-MATCH-001: Hazardous cargo adjustments
+    // Equipment weight +15%, Security weight +10%
     if (load.isHazardous) {
-      // Hazardous cargo: Equipment becomes more critical
-      baseWeights.equipment += 0.10;
-      baseWeights.gpsTracking += 0.05; // Need GPS for hazmat tracking
-      baseWeights.capacity -= 0.10;
-      baseWeights.distance -= 0.05;
+      weights.equipment += 0.15;
+      weights.security += 0.10;
+      weights.gpsTracking += 0.05; // Additional GPS for hazmat tracking
+      // Reduce others proportionally
+      weights.capacity -= 0.10;
+      weights.distance -= 0.10;
+      weights.availability -= 0.05;
+      weights.routeCompatibility += 0.05; // Route clearance matters for hazmat
     }
 
-    if (load.requiresRefrigeration) {
-      // Refrigerated cargo: Equipment is critical
-      baseWeights.equipment += 0.10;
-      baseWeights.capacity -= 0.05;
-      baseWeights.route -= 0.05;
-    }
-
+    // FR-MATCH-002: Time-Critical cargo adjustments
+    // Availability weight +20%, Distance weight +10%
     if (load.isTimeCritical || load.urgencyLevel === UrgencyLevel.CRITICAL) {
-      // Time-critical: Availability and distance matter more
-      baseWeights.availability += 0.10;
-      baseWeights.distance += 0.05;
-      baseWeights.capacity -= 0.10;
-      baseWeights.route -= 0.05;
+      weights.availability += 0.20;
+      weights.distance += 0.10;
+      weights.time += 0.15; // Time window matching becomes critical
+      // Reduce others proportionally
+      weights.capacity -= 0.15;
+      weights.equipment -= 0.10;
+      weights.gpsTracking -= 0.05;
+      weights.rating += 0.05; // Reliable carriers matter for time-critical
     }
 
+    // FR-MATCH-003: Fragile cargo adjustments
+    // Equipment weight +15%, Experience weight +10%
+    if (load.isFragile) {
+      weights.equipment += 0.15;
+      weights.experience += 0.10;
+      weights.rating += 0.05; // High-rated carriers for fragile
+      // Reduce others proportionally
+      weights.capacity -= 0.10;
+      weights.distance -= 0.10;
+      weights.cost -= 0.05;
+      weights.routeCompatibility += 0.05; // Smooth route for fragile
+    }
+
+    // FR-MATCH-004: Refrigerated cargo adjustments
+    // Temperature weight becomes primary factor at 35%
+    if (load.requiresRefrigeration) {
+      weights.temperature = 0.35; // Primary factor
+      weights.equipment += 0.10; // Refrigeration equipment critical
+      // Reduce base weights significantly to accommodate temperature
+      weights.capacity -= 0.15;
+      weights.distance -= 0.10;
+      weights.availability -= 0.05;
+      weights.gpsTracking -= 0.05;
+      weights.routeCompatibility -= 0.05;
+    }
+
+    // FR-MATCH-005: High-Value cargo (>KES 500K) adjustments
+    // Security weight +20%, Experience weight +15%
+    const loadValue = this.estimateLoadValue(load);
+    if (loadValue > HIGH_VALUE_THRESHOLD_KES) {
+      weights.security += 0.20;
+      weights.experience += 0.15;
+      weights.rating += 0.10; // Only highest-rated carriers
+      weights.gpsTracking += 0.10; // Enhanced tracking for high-value
+      // Reduce others proportionally
+      weights.capacity -= 0.15;
+      weights.distance -= 0.15;
+      weights.cost -= 0.15; // Cost less important for high-value
+      weights.routeCompatibility += 0.10; // Secure routes matter
+    }
+
+    // Additional dynamic adjustments for specialized requirements
     if (load.requiresGpsMonitoring) {
-      // GPS monitoring required: GPS score becomes more important
-      baseWeights.gpsTracking += 0.10;
-      baseWeights.distance -= 0.05;
-      baseWeights.route -= 0.05;
+      weights.security += 0.10;
+      weights.gpsTracking += 0.10;
+      weights.distance -= 0.10;
     }
 
-    // If load has specific origin/destination, route matching becomes more important
+    // If load has specific origin/destination with route constraints
     if (load.origin && load.destination) {
-      baseWeights.route += 0.10;
-      baseWeights.distance -= 0.05;
-      baseWeights.capacity -= 0.05;
+      if (load.truckRequirements?.requiredFeatures?.includes('ESCORT') || 
+          load.truckRequirements?.requiredFeatures?.includes('HEAVY_DUTY')) {
+        weights.routeCompatibility += 0.15;
+        weights.distance -= 0.10;
+      }
     }
 
-    // Normalize weights to sum to 1.0
-    const totalWeight = Object.values(baseWeights).reduce((sum, w) => sum + w, 0);
-    Object.keys(baseWeights).forEach((key) => {
-      baseWeights[key as keyof DynamicWeights] = baseWeights[key as keyof DynamicWeights] / totalWeight;
+    // For standard cargo without special requirements, distribute remaining weight to cost optimization
+    if (!load.isHazardous && !load.requiresRefrigeration && !load.isFragile && 
+        loadValue <= HIGH_VALUE_THRESHOLD_KES && !load.isTimeCritical) {
+      weights.cost += 0.15;
+      weights.rating += 0.05;
+      weights.routeCompatibility += 0.05;
+    }
+
+    // Normalize all weights to sum to 1.0
+    const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
+    Object.keys(weights).forEach((key) => {
+      weights[key as keyof DynamicWeights] = weights[key as keyof DynamicWeights] / totalWeight;
     });
 
-    return baseWeights;
+    return weights;
+  }
+
+  /**
+   * Estimate load value for high-value cargo detection (FR-MATCH-005)
+   */
+  private estimateLoadValue(load: Load): number {
+    // Estimate based on cargo type and weight
+    // Uses per-kg valuation for high-value cargo types
+    const baseValuePerKg: Record<string, number> = {
+      'ELECTRONICS': 500,
+      'PHARMACEUTICALS': 800,
+      'JEWELRY': 2000,
+      'PRECIOUS_METALS': 1500,
+      'ART': 1000,
+      'LUXURY_GOODS': 600,
+      'HAZARDOUS': 200,
+      'REFRIGERATED': 150,
+      'FRAGILE': 200,
+      'GENERAL': 50,
+      'CONTAINER': 30,
+      'BULK': 20,
+    };
+    const valuePerKg = baseValuePerKg[load.cargoType] || 50;
+    return load.weight * valuePerKg;
   }
 
   // =====================================================
-  // SIMPLIFIED WEIGHTED SCORE CALCULATION
+  // FULL 12-DIMENSION WEIGHTED SCORE CALCULATION
   // =====================================================
   private calculateWeightedScore(
     factors: MatchingFactors,
     weights: DynamicWeights,
   ): number {
     return (
+      // Base 5 dimensions (always calculated)
       factors.capacityScore * weights.capacity +
       factors.equipmentScore * weights.equipment +
       factors.distanceScore * weights.distance +
-      factors.gpsTrackingScore * weights.gpsTracking +
       factors.availabilityScore * weights.availability +
-      factors.routeScore * weights.route
+      factors.gpsTrackingScore * weights.gpsTracking +
+      // Dynamic 7 dimensions (weighted based on cargo type)
+      (factors.temperatureScore || 0) * weights.temperature +
+      (factors.securityScore || 0) * weights.security +
+      (factors.routeCompatibilityScore || 0) * weights.routeCompatibility +
+      (factors.timeScore || 0) * weights.time +
+      (factors.experienceScore || 0) * weights.experience +
+      (factors.ratingScore || 0) * weights.rating +
+      (factors.costScore || 0) * weights.cost
     );
   }
 
@@ -2600,7 +2723,7 @@ export class MatchingService {
     if (factors.capacityScore >= 0.9) probability += 0.1;
     if (factors.equipmentScore >= 0.8) probability += 0.1;
     if (factors.distanceScore >= 0.8) probability += 0.05;
-    if (factors.routeScore >= 0.8) probability += 0.05;
+    if (factors.routeCompatibilityScore >= 0.8) probability += 0.05;
     if (factors.gpsTrackingScore >= 0.7) probability += 0.05;
     if (factors.availabilityScore >= 0.9) probability += 0.05;
 
@@ -3053,7 +3176,7 @@ export class MatchingService {
       distanceScore: number;
       equipmentScore: number;
       ratingScore: number;
-      priceScore: number;
+      costScore: number;
       temperatureScore: number;
       securityScore: number;
       routeScore: number;
@@ -3119,9 +3242,9 @@ export class MatchingService {
     }
 
     // Price competitiveness
-    if (scores.priceScore >= 0.9) {
+    if (scores.costScore >= 0.9) {
       reasons.push('Very competitive pricing');
-    } else if (scores.priceScore >= 0.7) {
+    } else if (scores.costScore >= 0.7) {
       reasons.push('Competitive pricing');
     }
 
@@ -3340,7 +3463,7 @@ export class MatchingService {
         if (match.truckRating >= 4.5) adjustedScore *= 1.05;
       } else if (marketContext.marketBalance === 'TRUCK_SURPLUS') {
         // More trucks than loads - competitive pricing matters
-        if (match.priceScore >= 0.8) adjustedScore *= 1.05;
+        if (match.costScore >= 0.8) adjustedScore *= 1.05;
       }
 
       // Apply seasonal multiplier

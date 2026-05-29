@@ -17,38 +17,68 @@ export class MatchResultDto {
   overallScore: number; // 0-1 scale
 
   // =====================================================
-  // 6 CORE MATCHING CRITERIA SCORES
+  // SMART MATCHING ENGINE v3 - 12 DIMENSION SCORING MODEL
+  // =====================================================
+  // Base 5 dimensions (always calculated with fixed weights)
+  // 1. Capacity (30%) - Weight & volume utilization
+  // 2. Equipment (25%) - Forklift, crane, reefer, hazmat compatibility
+  // 3. Distance (20%) - Proximity to pickup location
+  // 4. Availability (15%) - Truck status and next available time
+  // 5. GPS Tracking (10%) - GPS availability for monitoring
   // =====================================================
 
   @IsNumber()
-  capacityScore: number; // 0-1 scale - Weight & volume utilization
+  capacityScore: number; // 0-1 scale - Weight & volume utilization (30%)
 
   @IsNumber()
-  equipmentScore: number; // 0-1 scale - Required equipment compatibility
+  equipmentScore: number; // 0-1 scale - Required equipment compatibility (25%)
 
   @IsNumber()
-  distanceScore: number; // 0-1 scale - Proximity to pickup
+  distanceScore: number; // 0-1 scale - Proximity to pickup (20%)
 
   @IsNumber()
-  gpsTrackingScore: number; // 0-1 scale - GPS availability for monitoring
+  availabilityScore: number; // 0-1 scale - Truck availability status (15%)
 
   @IsNumber()
-  availabilityScore: number; // 0-1 scale - Truck availability status
+  gpsTrackingScore: number; // 0-1 scale - GPS availability for monitoring (10%)
 
   @IsNumber()
-  routeScore: number; // 0-1 scale - Route compatibility (origin/destination match)
+  routeScore: number; // 0-1 scale - Route compatibility (dynamic weight)
 
   // =====================================================
-  // LEGACY SCORES (Optional - kept for backward compatibility)
+  // DYNAMIC 7 DIMENSIONS (weighted based on cargo type per FR-MATCH-001 to FR-MATCH-005)
+  // 6. Temperature (0-35%) - Refrigeration match for temp-controlled cargo
+  // 7. Security (0-20%) - GPS monitoring, insurance, camera systems
+  // 8. Route Compatibility (0-15%) - Road type clearance, escort requirements
+  // 9. Time (0-20%) - Urgency vs carrier availability window
+  // 10. Experience (0-15%) - Track record with specific cargo type
+  // 11. Rating (0-15%) - Historical performance score from prior trips
+  // 12. Cost (0-15%) - Market-competitive pricing alignment
   // =====================================================
 
   @IsOptional()
   @IsNumber()
-  ratingScore?: number; // 0-1 scale
+  temperatureScore?: number; // 0-1 scale - Temperature control match
 
   @IsOptional()
   @IsNumber()
-  priceScore?: number; // 0-1 scale
+  securityScore?: number; // 0-1 scale - Security features match
+
+  @IsOptional()
+  @IsNumber()
+  timeScore?: number; // 0-1 scale - Time window compatibility
+
+  @IsOptional()
+  @IsNumber()
+  experienceScore?: number; // 0-1 scale - Driver cargo experience
+
+  @IsOptional()
+  @IsNumber()
+  ratingScore?: number; // 0-1 scale - Historical performance
+
+  @IsOptional()
+  @IsNumber()
+  costScore?: number; // 0-1 scale - Price competitiveness
 
   // =====================================================
   // METRICS & ESTIMATES
@@ -135,23 +165,6 @@ export class MatchResultDto {
   @IsOptional()
   @IsNumber()
   confidence?: number;
-
-  // Enhanced scoring factors
-  @IsOptional()
-  @IsNumber()
-  temperatureScore?: number; // 0-1 scale
-
-  @IsOptional()
-  @IsNumber()
-  securityScore?: number; // 0-1 scale
-
-  @IsOptional()
-  @IsNumber()
-  timeScore?: number; // 0-1 scale
-
-  @IsOptional()
-  @IsNumber()
-  experienceScore?: number; // 0-1 scale
 
   // NOTE: availabilityScore and routeScore are now core criteria, not optional
 

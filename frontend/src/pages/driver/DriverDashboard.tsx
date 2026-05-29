@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   Trophy
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -54,6 +53,7 @@ import { MyTruck } from '../../components/DriverDashboard/MyTruck';
 import { TranslatedText } from '../../components/translated-text';
 import { DriverRouteMap } from '../../components/DriverDashboard/DriverRouteMap';
 import { DriverMessenger } from '../../components/DriverDashboard/DriverMessenger';
+import { TacticalMissionOverlay } from '../../components/DriverDashboard/TacticalMissionOverlay';
 import { CommunicationRelay } from '../../components/DriverDashboard/CommunicationRelay';
 import { messengerApi } from '../../services/messengerApi';
 import { MessageSquare as MessageIcon } from 'lucide-react';
@@ -295,9 +295,18 @@ const DriverDashboard: React.FC = () => {
         tabs={tabs}
       />
 
-      <AnimatePresence>
-        {/* Sticky bar removed to avoid redundancy with layout-level TacticalMissionOverlay */}
-      </AnimatePresence>
+      {/* Active Mission Overlay - Only visible on Overview tab */}
+      {activeTab === 'overview' && currentTrip && (
+        <TacticalMissionOverlay
+          currentTrip={currentTrip}
+          onFocusMission={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onQuickAction={(action: string) => {
+            if (action === 'refuel') setActiveTab('fuel');
+            else if (action === 'complete') handleTripAction('complete');
+            else if (action === 'report') setShowIncidentModal(true);
+          }}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 py-6 pb-28 lg:pb-6">
 

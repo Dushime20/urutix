@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { driverApi } from '../../services/driverApi';
 import { TacticalAiAssistant } from '../DriverDashboard/TacticalAiAssistant';
-import { TacticalMissionOverlay } from '../DriverDashboard/TacticalMissionOverlay';
 import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
 import { useNavigate } from 'react-router-dom';
@@ -70,17 +69,6 @@ const DriverLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
-      {/* Tactical Mission Overlay - Sticky Top Bar */}
-      <TacticalMissionOverlay 
-        currentTrip={currentTrip} 
-        onFocusMission={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        onQuickAction={(action) => {
-          if (action === 'refuel') navigate('/dashboard/driver/fuel');
-          else if (action === 'complete') setShowCompleteModal(true);
-          else if (action === 'report') setShowIncidentModal(true);
-        }}
-      />
-
       <main className={cn("flex-1 pb-20 lg:pb-0 relative transition-all duration-500", currentTrip ? "pt-24 lg:pt-28" : "")}>
         <Outlet />
       </main>
