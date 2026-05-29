@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  FaUsers, FaTruck, FaBox, FaRoute, FaChartLine,
-  FaGavel, FaMoneyBillWave, FaClipboardCheck,
-  FaExclamationTriangle, FaCheckCircle, FaBell, FaSearch
-} from 'react-icons/fa';
+  Users, Truck, Package, Route, TrendingUp,
+  Scale, Banknote, ClipboardCheck, Search,
+  AlertTriangle, CheckCircle2, Bell
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { CardSkeleton } from '../../components/common/LoadingSkeletons';
+import { useAuth } from '../../contexts/AuthContext';
 import { adminAPI } from '../../services/adminApi';
 
 // Admin Dashboard for ADMIN role (Tenant-level)
@@ -91,7 +92,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'disputes',
       title: 'Dispute Resolution',
       subtitle: 'Manage and resolve disputes between parties',
-      icon: <FaGavel size={20} />,
+      icon: <Scale size={20} />,
       value: stats.activeDisputes,
       color: 'error' as const,
       path: '/admin/disputes',
@@ -101,7 +102,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'loads',
       title: 'Load Management',
       subtitle: 'Oversee pending loads and assignments',
-      icon: <FaBox size={20} />,
+      icon: <Package size={20} />,
       value: stats.pendingLoads,
       color: 'primary' as const,
       path: '/admin/loads',
@@ -111,7 +112,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'trips',
       title: 'Trip Monitoring',
       subtitle: 'Monitor active trips and deliveries',
-      icon: <FaRoute size={20} />,
+      icon: <Route size={20} />,
       value: stats.activeTrips,
       color: 'success' as const,
       path: '/admin/trips',
@@ -120,7 +121,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'fleet',
       title: 'Fleet Overview',
       subtitle: 'Track available trucks and capacity',
-      icon: <FaTruck size={20} />,
+      icon: <Truck size={20} />,
       value: stats.availableTrucks,
       color: 'purple' as const,
       path: '/admin/fleet',
@@ -129,7 +130,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'approvals',
       title: 'Pending Approvals',
       subtitle: 'Review and approve pending requests',
-      icon: <FaClipboardCheck size={20} />,
+      icon: <ClipboardCheck size={20} />,
       value: stats.pendingApprovals,
       color: 'warning' as const,
       path: '/admin/approvals',
@@ -139,7 +140,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'reports',
       title: 'Reports & Analytics',
       subtitle: 'View operational reports and metrics',
-      icon: <FaChartLine size={20} />,
+      icon: <TrendingUp size={20} />,
       value: 'View',
       color: 'info' as const,
       path: '/admin/reports',
@@ -148,7 +149,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'financial',
       title: 'Financial Overview',
       subtitle: 'Monitor payments and transactions',
-      icon: <FaMoneyBillWave size={20} />,
+      icon: <Banknote size={20} />,
       value: 'View',
       color: 'emerald' as const,
       path: '/admin/financial',
@@ -157,7 +158,7 @@ const TenantOperationalDashboard: React.FC = () => {
       id: 'users',
       title: 'User Management',
       subtitle: 'Manage users and their permissions',
-      icon: <FaUsers size={20} />,
+      icon: <Users size={20} />,
       value: 'View',
       color: 'accent' as const,
       path: '/admin/users',
@@ -225,7 +226,7 @@ const TenantOperationalDashboard: React.FC = () => {
           <div className="flex items-center gap-4">
             {stats.alertsCount > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
-                <FaExclamationTriangle />
+                <AlertTriangle size={18} />
                 <span className="font-medium">{stats.alertsCount} alerts</span>
               </div>
             )}
@@ -245,7 +246,7 @@ const TenantOperationalDashboard: React.FC = () => {
           <StatCard
             title="Active Trips"
             value={stats.activeTrips}
-            icon={<FaRoute size={20} />}
+            icon={<Route size={20} />}
             color="primary"
             variant="classic"
             subtitle="In transit now"
@@ -255,7 +256,7 @@ const TenantOperationalDashboard: React.FC = () => {
           <StatCard
             title="Pending Loads"
             value={stats.pendingLoads}
-            icon={<FaBox size={20} />}
+            icon={<Package size={20} />}
             color="warning"
             variant="classic"
             subtitle="Awaiting assignment"
@@ -265,7 +266,7 @@ const TenantOperationalDashboard: React.FC = () => {
           <StatCard
             title="Active Disputes"
             value={stats.activeDisputes}
-            icon={<FaGavel size={20} />}
+            icon={<Scale size={20} />}
             color="error"
             variant="classic"
             subtitle="Need resolution"
@@ -275,7 +276,7 @@ const TenantOperationalDashboard: React.FC = () => {
           <StatCard
             title="Available Trucks"
             value={stats.availableTrucks}
-            icon={<FaTruck size={20} />}
+            icon={<Truck size={20} />}
             color="success"
             variant="classic"
             subtitle="Ready for loads"
@@ -324,7 +325,7 @@ const TenantOperationalDashboard: React.FC = () => {
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
-                <FaGavel className="text-red-500" />
+                <Scale className="text-red-500" size={20} />
                 Pending Disputes
               </h3>
               <button
@@ -337,7 +338,7 @@ const TenantOperationalDashboard: React.FC = () => {
             
             {pendingDisputes.length === 0 ? (
               <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                <FaCheckCircle className="mx-auto mb-2 text-green-500" size={32} />
+                <CheckCircle2 className="mx-auto mb-2 text-green-500" size={32} />
                 <p>No pending disputes</p>
               </div>
             ) : (
@@ -370,14 +371,14 @@ const TenantOperationalDashboard: React.FC = () => {
           {/* System Alerts */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
             <h3 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-              <FaBell className="text-amber-500" />
+              <Bell className="text-amber-500" size={20} />
               System Alerts
             </h3>
             
             <div className="space-y-3">
               {stats.pendingLoads > 0 && (
                 <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                  <FaBox className="text-amber-500" />
+                  <Package className="text-amber-500" size={18} />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-800 dark:text-white">
                       {stats.pendingLoads} loads awaiting assignment
@@ -391,7 +392,7 @@ const TenantOperationalDashboard: React.FC = () => {
               
               {stats.activeDisputes > 0 && (
                 <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <FaGavel className="text-red-500" />
+                  <Scale className="text-red-500" size={18} />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-800 dark:text-white">
                       {stats.activeDisputes} disputes need resolution
@@ -405,7 +406,7 @@ const TenantOperationalDashboard: React.FC = () => {
               
               {stats.alertsCount === 0 && (
                 <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-                  <FaCheckCircle className="mx-auto mb-2 text-green-500" size={24} />
+                  <CheckCircle2 className="mx-auto mb-2 text-green-500" size={24} />
                   <p className="text-sm">No alerts at this time</p>
                 </div>
               )}
@@ -415,7 +416,7 @@ const TenantOperationalDashboard: React.FC = () => {
           {/* Quick Search */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
             <h3 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-              <FaSearch className="text-blue-500" />
+              <Search className="text-blue-500" size={20} />
               Quick Search
             </h3>
             
