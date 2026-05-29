@@ -80,6 +80,7 @@ const MonitoringDashboard = lazy(() => import('./pages/admin/MonitoringDashboard
 const BiddingManagement = lazy(() => import('./pages/admin/BiddingManagement'));
 const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
 const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
+const TenantAdminDashboard = lazy(() => import('./pages/admin-dashboard/Dashboard'));
 const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
 const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
 const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory'));
@@ -439,9 +440,15 @@ function App() {
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
                     </Route>
 
-                    {/* Admin Routes */}
+                    {/* Admin Routes - Super Admin (System Level) */}
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<AdminDashboard />} />
+                      {/* Admin sub-routes... */}
+                    </Route>
+
+                    {/* Admin-Tenant Routes - ADMIN Role (Tenant Level) */}
+                    <Route path="/admin-tenant" element={<AdminLayout />}>
+                      <Route index element={<TenantAdminDashboard />} />
                       <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
                       <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
                       <Route path="borrowers" element={<AdminBorrowersPage />} />
