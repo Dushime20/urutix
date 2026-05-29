@@ -72,17 +72,17 @@ async function seedAdmin() {
       // Verify the user
       await queryRunner.query(
         `UPDATE users SET status = $1, "emailVerifiedAt" = NOW(), role = $2 WHERE id = $3`,
-        ['ACTIVE', 'ADMIN', existingAdmin[0].id]
+        ['ACTIVE', 'SUPER_ADMIN', existingAdmin[0].id]
       );
-      console.log('✅ Admin user verified and role updated');
+      console.log('✅ Super Admin user verified and role updated to SUPER_ADMIN');
 
       // Display credentials
       console.log('\n' + '='.repeat(60));
-      console.log('🔑 SYSTEM ADMIN CREDENTIALS');
+      console.log('🔑 SUPER ADMIN CREDENTIALS');
       console.log('='.repeat(60));
       console.log('Email:    admin@urutix.com');
       console.log('Password: Admin@123456');
-      console.log('Role:     ADMIN');
+      console.log('Role:     SUPER_ADMIN');
       console.log('Tenant:   ' + tenantName);
       console.log('Status:   ACTIVE (Verified)');
       console.log('Access:   Full System Administration');
@@ -109,14 +109,14 @@ async function seedAdmin() {
       [
         'admin@urutix.com',
         hashedPassword,
-        'ADMIN',
+        'SUPER_ADMIN',
         'ACTIVE',
         tenantId
       ]
     );
 
     const user = userResult[0];
-    console.log(`✅ Admin user created: ${user.email} (${user.id})`);
+    console.log(`✅ Super Admin user created: ${user.email} (${user.id})`);
 
     // Create user profile
     console.log('📝 Creating user profile...');
@@ -143,11 +143,11 @@ async function seedAdmin() {
 
     // Display credentials
     console.log('\n' + '='.repeat(60));
-    console.log('🎉 SYSTEM ADMIN CREATED SUCCESSFULLY');
+    console.log('🎉 SUPER ADMIN CREATED SUCCESSFULLY');
     console.log('='.repeat(60));
     console.log('Email:    ' + user.email);
     console.log('Password: ' + password);
-    console.log('Role:     ' + user.role);
+    console.log('Role:     SUPER_ADMIN');
     console.log('Tenant:   ' + tenantName);
     console.log('Status:   ' + user.status + ' (Verified)');
     console.log('User ID:  ' + user.id);
