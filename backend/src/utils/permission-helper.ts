@@ -2,9 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 // Fallback role → permissions map used when the permissions tables don't exist in DB
+// Role level hierarchy:
+// - SUPER_ADMIN: System level (all permissions across all tenants)
+// - ADMIN: Tenant level (all permissions within their assigned tenant only)
+// - TENANT_ADMIN: Tenant level (admin within their tenant)
 const ROLE_PERMISSION_DEFAULTS: Record<string, string[]> = {
-    SUPER_ADMIN: ['*'],
-    ADMIN: ['*'],
+    SUPER_ADMIN: ['*'], // System level - all permissions
+    ADMIN: ['*'], // Tenant level - all permissions but scoped to tenant
     TENANT_ADMIN: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
     TRUCK_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
     FLEET_MANAGER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
@@ -86,10 +90,16 @@ export class PermissionHelper {
 
     /**
      * Check if a role has a specific permission
+     * Note: ADMIN has tenant-level permissions (scoped to their tenant)
+     *       SUPER_ADMIN has system-level permissions (all tenants)
      */
     async roleHasPermission(roleName: string, permission: string): Promise<boolean> {
-        // SUPER_ADMIN and ADMIN always have all permissions
-        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
+        // SUPER_ADMIN has system-level all permissions
+        if (roleName === 'SUPER_ADMIN') {
+            return true;
+        }
+        // ADMIN has tenant-level all permissions (enforced by TenantGuard)
+        if (roleName === 'ADMIN') {
             return true;
         }
 
@@ -107,7 +117,12 @@ export class PermissionHelper {
      * Check if a role has any of the specified permissions
      */
     async roleHasAnyPermission(roleName: string, permissions: string[]): Promise<boolean> {
-        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
+        // SUPER_ADMIN has system-level all permissions
+        if (roleName === 'SUPER_ADMIN') {
+            return true;
+        }
+        // ADMIN has tenant-level all permissions (enforced by TenantGuard)
+        if (roleName === 'ADMIN') {
             return true;
         }
 
@@ -125,7 +140,12 @@ export class PermissionHelper {
      * Check if a role has all of the specified permissions
      */
     async roleHasAllPermissions(roleName: string, permissions: string[]): Promise<boolean> {
-        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
+        // SUPER_ADMIN has system-level all permissions
+        if (roleName === 'SUPER_ADMIN') {
+            return true;
+        }
+        // ADMIN has tenant-level all permissions (enforced by TenantGuard)
+        if (roleName === 'ADMIN') {
             return true;
         }
 
