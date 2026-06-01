@@ -6,6 +6,7 @@ import { identifyUser, resetUser, captureEvent } from '../utils/posthog';
 import { authAPI } from '../services/api';
 import { getApiBaseUrl } from '../config/environment';
 import { useTranslation } from '../hooks/useTranslation';
+import { formatErrorForToast, getErrorTitle } from '../config/errorMessages';
 
 // Debug helper
 const debugUserData = (userData: any, source: string) => {
@@ -398,8 +399,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Login: Error occurred:', error);
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
-      const errorMessage = error.response?.data?.message || tSync('Login failed');
-      toast.error(errorMessage);
+      
+      // Use professional error messages
+      const errorMessage = formatErrorForToast(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast.error(`${errorTitle}: ${errorMessage}`);
       return null;
     }
   };
@@ -439,8 +444,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Select Role Error:', error);
       setIsLoading(false);
       setIsLoggingIn(false);
-      const errorMessage = error.response?.data?.message || tSync('Role selection failed');
-      toast.error(errorMessage);
+      
+      // Use professional error messages
+      const errorMessage = formatErrorForToast(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast.error(`${errorTitle}: ${errorMessage}`);
       return null;
     }
   };
@@ -488,8 +497,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Register: Error occurred:', error);
       setIsLoading(false);
       setIsLoggingIn(false); // Reset logging in flag
-      const errorMessage = error.response?.data?.message || tSync('Registration failed');
-      toast.error(errorMessage);
+      
+      // Use professional error messages
+      const errorMessage = formatErrorForToast(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast.error(`${errorTitle}: ${errorMessage}`);
       return null;
     }
   };
