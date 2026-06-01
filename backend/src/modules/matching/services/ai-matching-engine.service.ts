@@ -982,7 +982,7 @@ export class AIMatchingEngineService {
       availabilityScore: 1.0, // Assume available
       routeScore: 0.5, // NEW: Neutral route score (AI engine doesn't use route matching yet)
       ratingScore: scores.performanceScore,
-      priceScore: scores.priceScore,
+      costScore: scores.priceScore,
       distanceKm: distance,
       estimatedCost,
       estimatedRevenue,
