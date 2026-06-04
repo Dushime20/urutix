@@ -29,6 +29,8 @@ import { PermissionsGuard } from './guards/permissions.guard';
 import { ActivityLogService } from '../../services/activity-log.service';
 import { EventsModule } from '../events/events.module';
 import { SystemSettingsService } from '../../services/system-settings.service';
+import { TwoFactorService } from './services/two-factor.service';
+import { TwoFactorController } from './controllers/two-factor.controller';
 
 @Module({
   imports: [
@@ -69,8 +71,9 @@ import { SystemSettingsService } from '../../services/system-settings.service';
     PermissionsGuard,
     ActivityLogService,
     SystemSettingsService,
+    TwoFactorService,
   ],
-  controllers: [EnhancedAuthController, TenantController],
+  controllers: [EnhancedAuthController, TenantController, TwoFactorController],
   exports: [
     EnhancedAuthService,
     EnhancedJwtStrategy,
@@ -83,6 +86,7 @@ import { SystemSettingsService } from '../../services/system-settings.service';
     PermissionService,
     PermissionsGuard,
     ActivityLogService,
+    TwoFactorService,
   ],
 })
 export class EnhancedAuthModule { }

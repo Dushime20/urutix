@@ -12,7 +12,6 @@ import {
   Tooltip,
   Legend,
   Filler,
-  GridLineOptions,
 } from 'chart.js';
 
 ChartJS.register(
@@ -51,9 +50,9 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
 }) => {
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
   
-  const { data, isLoading, error, refetch } = useQuery({ 
-    queryKey: ['analytics'], 
-    queryFn: fetchAnalytics,
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['analytics'],
+    queryFn: () => fetchAnalytics(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
@@ -129,7 +128,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
           padding: 20,
           font: {
             size: 12,
-            weight: '600' as const,
+            weight: 600,
           },
         },
       },
@@ -165,7 +164,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
           drawBorder: false,
         },
         ticks: {
-          font: { size: 11, weight: '500' as const },
+          font: { size: 11, weight: 500 },
           color: '#6b7280',
         },
       },
@@ -175,7 +174,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
           drawBorder: false,
         },
         ticks: {
-          font: { size: 11, weight: '500' as const },
+          font: { size: 11, weight: 500 },
           color: '#6b7280',
           callback: (value: any) => `${value}k`,
         },

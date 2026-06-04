@@ -32,6 +32,9 @@ export class UserScore {
   @Column()
   userId: string;
 
+  @Column({ nullable: true })
+  tenantId: string;
+
   @Column({
     type: 'enum',
     enum: ScoreCategory,

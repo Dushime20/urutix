@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoadsController } from './loads.controller';
 import { LoadsService } from './loads.service';
+import { LoadTemplateController } from './load-template.controller';
+import { LoadTemplateService } from './load-template.service';
 import { Load } from '../../entities/load.entity';
+import { LoadTemplate } from '../../entities/load-template.entity';
 import { Document } from '../../entities/document.entity';
 import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { Alert } from '../../entities/alert.entity';
@@ -27,6 +31,7 @@ import { TenantGuard } from '../auth/guards/tenant.guard';
   imports: [
     TypeOrmModule.forFeature([
       Load,
+      LoadTemplate,
       Document,
       TrackingEvent,
       Alert,
@@ -40,14 +45,15 @@ import { TenantGuard } from '../auth/guards/tenant.guard';
       Truck,
       UserProfile,
     ]),
+    ScheduleModule.forRoot(),
     LocationsModule,
     FileUploadModule,
     MatchingModule,
     EnhancedAuthModule,
     BrokersModule,
   ],
-  controllers: [LoadsController],
-  providers: [LoadsService, RolesGuard, TenantGuard],
-  exports: [LoadsService],
+  controllers: [LoadsController, LoadTemplateController],
+  providers: [LoadsService, LoadTemplateService, RolesGuard, TenantGuard],
+  exports: [LoadsService, LoadTemplateService],
 })
 export class LoadsModule {}

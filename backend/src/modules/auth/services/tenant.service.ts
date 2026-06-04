@@ -296,6 +296,10 @@ export class TenantService {
     return tenant;
   }
 
+  async getTenantById(id: string): Promise<Tenant> {
+    return this.findTenantById(id);
+  }
+
   async findTenantBySubdomain(subdomain: string): Promise<Tenant> {
     const tenant = await this.tenantRepository.findOne({
       where: { subdomain },

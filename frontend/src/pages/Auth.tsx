@@ -211,9 +211,6 @@ const Auth = () => {
             navigate('/dashboard');
             break;
         }
-      } else {
-        // The login function already shows an error toast, but we can add more context
-        setError(tSync('Login failed. Please check your credentials and try again.'));
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);

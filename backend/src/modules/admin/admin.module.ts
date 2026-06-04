@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
+import { OperationalAdminController } from './operational-admin.controller';
 import { AdminService } from './admin.service';
 import { UsersModule } from '../users/users.module';
 import { User } from '../../entities/user.entity';
@@ -51,6 +52,7 @@ import { BulkEmailService } from '../../services/bulk-email.service';
 import { AIEmailAssistantService } from '../../services/ai-email-assistant.service';
 // EmailService is imported from EnhancedAuthModule
 import { NotificationsModule } from '../notifications/notifications.module';
+import { BiddingModule } from '../bidding/bidding.module';
 
 // System Health imports
 import { SystemHealthLog } from '../../entities/system-health.entity';
@@ -107,9 +109,11 @@ import { TenantManagementController } from './tenant-management.controller';
     UsersModule, // Import UsersModule to use UsersService
     EnhancedAuthModule, // Import EnhancedAuthModule to use PermissionService
     NotificationsModule, // Import NotificationsModule for SmsService + NotificationsService
+    BiddingModule, // Import BiddingModule for BiddingService
   ],
   controllers: [
     AdminController,
+    OperationalAdminController,
     AdminPermissionsController,
     AdminMonitoringController,
     // New controllers

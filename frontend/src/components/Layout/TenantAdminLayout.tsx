@@ -23,6 +23,8 @@ const TenantAdminLayoutContent: React.FC = () => {
       // Redirect non-tenant-admins to appropriate dashboard
       switch (user.role) {
         case 'ADMIN':
+          navigate('/admin-operational', { replace: true });
+          break;
         case 'SUPER_ADMIN':
           navigate('/admin', { replace: true });
           break;

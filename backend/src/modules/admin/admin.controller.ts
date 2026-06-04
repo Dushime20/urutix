@@ -9,6 +9,8 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../../types/permission.types';
 import { AdminService } from './admin.service';
 import { Body, Query } from '@nestjs/common';
 import { CreateTenantDto } from './dto/create-tenant.dto';
@@ -156,7 +158,8 @@ export class AdminController {
   }
 
   @Get('tenants')
-  @ApiOperation({ summary: 'List tenants' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all tenants (Super Admin only)' })
   @ApiOkResponse({ description: 'Tenants retrieved' })
   getTenants() {
     return this.adminService.getTenants();
@@ -164,31 +167,36 @@ export class AdminController {
 
   // Admin-wide listings
   @Get('all/trucks')
-  @ApiOperation({ summary: 'List all trucks (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all trucks across tenants (Super Admin only)' })
   listAllTrucks(@Query('tenantId') tenantId?: string) {
     return this.adminService.listAllTrucks(tenantId);
   }
 
   @Get('all/loads')
-  @ApiOperation({ summary: 'List all loads (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all loads across tenants (Super Admin only)' })
   listAllLoads(@Query('tenantId') tenantId?: string) {
     return this.adminService.listAllLoads(tenantId);
   }
 
   @Get('all/trips')
-  @ApiOperation({ summary: 'List all trips (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all trips across tenants (Super Admin only)' })
   listAllTrips(@Query('tenantId') tenantId?: string) {
     return this.adminService.listAllTrips(tenantId);
   }
 
   @Get('all/users')
-  @ApiOperation({ summary: 'List all users (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all users across tenants (Super Admin only)' })
   listAllUsers(@Query('tenantId') tenantId?: string) {
     return this.adminService.listAllUsers(tenantId);
   }
 
   @Patch('users/:userId')
-  @ApiOperation({ summary: 'Update user information (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update user information (Super Admin only)' })
   @ApiOkResponse({ description: 'User updated successfully' })
   updateUser(
     @Param('userId') userId: string,
@@ -207,21 +215,24 @@ export class AdminController {
   }
 
   @Delete('users/:userId')
-  @ApiOperation({ summary: 'Delete a user (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete a user (Super Admin only)' })
   @ApiOkResponse({ description: 'User deleted successfully' })
   deleteUser(@Param('userId') userId: string) {
     return this.adminService.deleteUser(userId);
   }
 
   @Patch('users/:userId/activate')
-  @ApiOperation({ summary: 'Activate a user (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Activate a user (Super Admin only)' })
   @ApiOkResponse({ description: 'User activated successfully' })
   activateUser(@Param('userId') userId: string) {
     return this.adminService.activateUser(userId);
   }
 
   @Patch('users/:userId/suspend')
-  @ApiOperation({ summary: 'Suspend a user (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Suspend a user (Super Admin only)' })
   @ApiOkResponse({ description: 'User suspended successfully' })
   suspendUser(
     @Param('userId') userId: string,
@@ -230,10 +241,11 @@ export class AdminController {
     return this.adminService.suspendUser(userId, body.reason);
   }
 
-  // Create tenant
+  // Create tenant (Super Admin only)
   @Post('tenants')
+  @Roles(UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'Create a new tenant',
+    summary: 'Create a new tenant (Super Admin only)',
     description:
       'Creates a new tenant with an admin user. The tenant will be in PENDING_ACTIVATION status until activated by a super admin.',
   })
@@ -280,9 +292,10 @@ export class AdminController {
     return this.adminService.createRouteForTenant(body.tenantId, body.route);
   }
 
-  // Subscription Plan Management Endpoints
+  // Subscription Plan Management Endpoints (Super Admin only)
   @Get('subscription-plans')
-  @ApiOperation({ summary: 'Get all subscription plans (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all subscription plans (Super Admin only)' })
   @ApiOkResponse({ description: 'Returns all subscription plans' })
   async getAllSubscriptionPlans() {
     const plans = await this.subscriptionService.getAllSubscriptionPlans(true);
@@ -293,7 +306,8 @@ export class AdminController {
   }
 
   @Post('subscription-plans')
-  @ApiOperation({ summary: 'Create a new subscription plan (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create a new subscription plan (Super Admin only)' })
   @ApiOkResponse({ description: 'Subscription plan created successfully' })
   async createSubscriptionPlan(
     @Body(new ValidationPipe({ transform: true, whitelist: true })) body: any
@@ -306,7 +320,8 @@ export class AdminController {
   }
 
   @Patch('subscription-plans/:id')
-  @ApiOperation({ summary: 'Update a subscription plan (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update a subscription plan (Super Admin only)' })
   @ApiOkResponse({ description: 'Subscription plan updated successfully' })
   async updateSubscriptionPlan(
     @Param('id') id: string,
@@ -320,7 +335,8 @@ export class AdminController {
   }
 
   @Delete('subscription-plans/:id')
-  @ApiOperation({ summary: 'Delete a subscription plan (admin)' })
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete a subscription plan (Super Admin only)' })
   @ApiOkResponse({ description: 'Subscription plan deleted successfully' })
   async deleteSubscriptionPlan(@Param('id') id: string) {
     await this.subscriptionService.deleteSubscriptionPlan(id);

@@ -18,6 +18,8 @@ import { CreditService } from '../../services/credit.service';
 import { CreditAccount } from '../../entities/credit-account.entity';
 import { CreditTransaction } from '../../entities/credit-transaction.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
+import { Notification } from '../../entities/notification.entity';
+import { UserScore } from '../../entities/user-score.entity';
 import { MatchingService } from './matching.service';
 import { MatchingController } from './matching.controller';
 import { AIMatchingEngineService } from './services/ai-matching-engine.service';
@@ -31,6 +33,8 @@ import { RateLimiterService } from './services/rate-limiter.service';
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { MLPredictionService } from './services/ml-prediction.service';
+import { EmergencyRematchService } from './services/emergency-rematch.service';
+import { EmergencyRematchController } from './controllers/emergency-rematch.controller';
 import { NotificationModule } from '../notifications/notification.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
@@ -39,7 +43,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     TypeOrmModule.forFeature([
       Truck, Load, Driver, Location, Trip, RateLimit, LoadMatch,
       User, TenantSubscription, SubscriptionPlan, CreditAccount, CreditTransaction,
-      FeatureCreditCost, Route, RouteTruck,
+      FeatureCreditCost, Route, RouteTruck, Notification, UserScore,
     ]),
     EventEmitterModule.forRoot(),
     ConfigModule,
@@ -60,8 +64,9 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     CacheService,
     MarketIntelligenceService,
     MLPredictionService,
+    EmergencyRematchService,
   ],
-  controllers: [MatchingController],
+  controllers: [MatchingController, EmergencyRematchController],
   exports: [
     MatchingService,
     AIMatchingEngineService,
@@ -75,6 +80,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     CacheService,
     MarketIntelligenceService,
     MLPredictionService,
+    EmergencyRematchService,
   ],
 })
 export class MatchingModule {}

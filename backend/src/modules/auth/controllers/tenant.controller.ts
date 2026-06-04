@@ -303,4 +303,34 @@ export class TenantController {
     const tenant = await this.tenantService.deleteTenant(id);
     return this.createApiResponse(tenant, 'Tenant deactivated successfully');
   }
+  @Put(':id/branding')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, TenantGuard)
+  @ApiOperation({ summary: 'Update tenant white-label branding configuration' })
+  async updateBranding(
+    @Param('id') id: string,
+    @Body() branding: {
+      logoUrl?: string;
+      primaryColor?: string;
+      secondaryColor?: string;
+      fontFamily?: string;
+      faviconUrl?: string;
+      companyName?: string;
+    },
+  ): Promise<ApiResponseDto> {
+    const tenant = await this.tenantService.updateTenant(id, {
+      settings: { branding },
+    } as any);
+    return this.createApiResponse(tenant, 'Branding updated successfully');
+  }
+
+  @Get(':id/branding')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, TenantGuard)
+  @ApiOperation({ summary: 'Get tenant branding configuration' })
+  async getBranding(@Param('id') id: string): Promise<ApiResponseDto> {
+    const tenant = await this.tenantService.getTenantById(id);
+    const branding = (tenant as any)?.settings?.branding || {};
+    return this.createApiResponse(branding, 'Branding retrieved successfully');
+  }
 }

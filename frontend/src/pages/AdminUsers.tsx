@@ -83,7 +83,7 @@ const AdminUsers: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState<'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN' | 'BROKER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER'>('CARGO_OWNER');
+  const [role, setRole] = useState<'ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN' | 'BROKER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER'>('CARGO_OWNER');
 
   // Edit form state
   const [editEmail, setEditEmail] = useState('');
@@ -746,6 +746,7 @@ const AdminUsers: React.FC = () => {
                       value={role}
                       onChange={(e) => setRole(e.target.value as any)}
                     >
+                      <option value="ADMIN">ADMIN</option>
                       <option value="TENANT_ADMIN">TENANT ADMIN</option>
                       <option value="CARGO_OWNER">CARGO OWNER</option>
                       <option value="CARGO_RECEIVER">CARGO RECEIVER</option>

@@ -3,6 +3,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EnhancedAuthModule } from './modules/auth/enhanced-auth.module';
@@ -42,6 +43,12 @@ import { EventsModule } from './modules/events/events.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CargoOwnerModule } from './modules/cargo-owner/cargo-owner.module';
 import { CustomsModule } from './modules/customs/customs.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
+import { RevenueModule } from './modules/revenue/revenue.module';
+import { CarrierTierModule } from './modules/carrier-tier/carrier-tier.module';
+import { CarrierMarketplaceModule } from './modules/carrier-marketplace/carrier-marketplace.module';
+import { GeofencingModule } from './modules/geofencing/geofencing.module';
+import { ApiMarketplaceModule } from './modules/api-marketplace/api-marketplace.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
@@ -54,9 +61,39 @@ import { UserSession } from './entities/user-session.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot(databaseConfig),
-    TypeOrmModule.forFeature([Tenant, ActivityLog, UserSession]), // Add entities for interceptor
+    TypeOrmModule.forRootAsync({
+      useFactory: async () => {
+        // Drop indexes that block synchronize from dropping removed columns.
+        // We connect with a raw pg client before TypeORM initializes so that
+        // synchronize can proceed cleanly.
+        if (process.env.DB_SYNCHRONIZE === 'true') {
+          try {
+            const { Client } = await import('pg');
+            const pgClient = new Client({
+              host: process.env.DB_HOST || 'localhost',
+              port: parseInt(process.env.DB_PORT || '5432', 10),
+              user: process.env.DB_USERNAME || 'postgres',
+              password: String(process.env.DB_PASSWORD || ''),
+              database: process.env.DB_NAME || 'urutix',
+              ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+            });
+            await pgClient.connect();
+            await pgClient.query(`DROP INDEX IF EXISTS "public"."idx_tenants_health_score"`);
+            await pgClient.query(`DROP INDEX IF EXISTS "public"."idx_tenants_last_health_check"`);
+            await pgClient.end();
+            console.log('✅ Pre-sync cleanup: dropped blocking indexes on tenants table');
+          } catch (e) {
+            // Non-fatal: log and continue — synchronize may still succeed if
+            // the indexes were already dropped in a previous run.
+            console.warn('⚠️  Pre-sync cleanup warning:', (e as Error).message);
+          }
+        }
+        return databaseConfig;
+      },
+    }),
+    TypeOrmModule.forFeature([Tenant, ActivityLog, UserSession]),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     EnhancedAuthModule,
     LoadsModule,
@@ -95,6 +132,12 @@ import { UserSession } from './entities/user-session.entity';
     MaintenanceModule,
     CargoOwnerModule,
     CustomsModule,
+    ComplianceModule,
+    RevenueModule,
+    CarrierTierModule,
+    CarrierMarketplaceModule,
+    GeofencingModule,
+    ApiMarketplaceModule,
   ],
   controllers: [AppController],
   providers: [

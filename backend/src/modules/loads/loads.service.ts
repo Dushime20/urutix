@@ -4351,4 +4351,55 @@ export class LoadsService {
       // Don't throw - commission calculation failure shouldn't break load creation
     }
   }
+  // --- Bulk CSV Upload ----------------------------------------------------------
+
+  async processBulkCSV(
+    csvBuffer: Buffer,
+    userId: string,
+    tenantId: string,
+  ): Promise<{ created: number; failed: number; errors: Array<{ row: number; message: string }>; loadIds: string[] }> {
+    const { BulkCsvService } = await import('./bulk-csv.service');
+    const svc = new BulkCsvService(this.loadRepository);
+    return svc.processCSV(csvBuffer, userId, tenantId);
+  }
+
+  // --- Map-View Load Browsing ---------------------------------------------------
+
+  async getLoadsForMap(
+    tenantId: string,
+    lat: number,
+    lng: number,
+    radiusKm: number,
+    truckType?: string,
+  ): Promise<Load[]> {
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      return this.loadRepository.find({
+        where: { tenantId, status: LoadStatus.PUBLISHED },
+        take: 50,
+        order: { createdAt: 'DESC' },
+      });
+    }
+
+    // Use JSONB location coordinates for proximity filtering
+    // Haversine approximation via SQL
+    const radiusDeg = radiusKm / 111.0; // ~1 degree = 111km
+
+    const qb = this.loadRepository
+      .createQueryBuilder('l')
+      .where('l."tenantId" = :tenantId', { tenantId })
+      .andWhere('l.status = :status', { status: LoadStatus.PUBLISHED })
+      .andWhere(
+        `ABS((l.locations->0->'locationData'->'coordinates'->>'latitude')::float - :lat) < :deg
+         AND ABS((l.locations->0->'locationData'->'coordinates'->>'longitude')::float - :lng) < :deg`,
+        { lat, lng, deg: radiusDeg },
+      )
+      .orderBy('l."createdAt"', 'DESC')
+      .take(100);
+
+    if (truckType) {
+      qb.andWhere(`l."truckRequirements"->>'truckType' = :truckType`, { truckType });
+    }
+
+    return qb.getMany();
+  }
 }

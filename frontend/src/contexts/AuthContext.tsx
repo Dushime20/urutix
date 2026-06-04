@@ -405,7 +405,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const errorTitle = getErrorTitle(error);
       
       toast.error(`${errorTitle}: ${errorMessage}`);
-      return null;
+      throw error; // Re-throw so the caller can handle the specific error message
     }
   };
 

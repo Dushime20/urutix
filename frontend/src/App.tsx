@@ -13,6 +13,7 @@ import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
 import FleetOwnerLayout from './components/Layout/FleetOwnerLayout';
 import DriverLayout from './components/Layout/DriverLayout';
 import AdminLayout from './components/Layout/AdminLayout';
+import AdminOperationalLayout from './components/Layout/AdminOperationalLayout';
 import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import BrokerLayout from './components/Layout/BrokerLayout';
@@ -44,6 +45,7 @@ const CargoOwnerContracts = lazy(() => import('./pages/cargo-owner/Contracts'));
 const EnhancedJourneyFlow = lazy(() => import('./components/CargoOwnerJourney/EnhancedJourneyFlow'));
 const EnhancedCargoDemo = lazy(() => import('./pages/EnhancedCargoDemo'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminOperationalDashboard = lazy(() => import('./pages/admin-dashboard/Dashboard'));
 
 // Dashboard components - create placeholders for missing ones
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -57,7 +59,6 @@ const DriverDashboard = lazy(() => import('./pages/driver/DriverDashboard'));
 const SubscriptionPlans = lazy(() => import('./pages/subscription/SubscriptionPlans'));
 
 const TruckRecordsPage = lazy(() => import('./pages/TruckRecordsPage'));
-const FleetPaymentManagement = lazy(() => import('./pages/FleetPaymentManagement'));
 const TruckOwnerCredits = lazy(() => import('./pages/truck-owner/TruckOwnerCredits'));
 
 // NEW: Credit Marketplace Pages (replacing old partner plans)
@@ -79,6 +80,17 @@ const AdminRoutes = lazy(() => import('./pages/AdminRoutes'));
 const MonitoringDashboard = lazy(() => import('./pages/admin/MonitoringDashboard'));
 const BiddingManagement = lazy(() => import('./pages/admin/BiddingManagement'));
 const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
+const OperationalAdminDisputes = lazy(() => import('./pages/admin-operational/Disputes'));
+const OperationalAdminTrips = lazy(() => import('./pages/admin-operational/Trips'));
+const OperationalAdminLoads = lazy(() => import('./pages/admin-operational/Loads'));
+const OperationalAdminBidding = lazy(() => import('./pages/admin-operational/Bidding'));
+const OperationalAdminMonitoring = lazy(() => import('./pages/admin-operational/Monitoring'));
+const OperationalAdminAnalytics = lazy(() => import('./pages/admin-operational/Analytics'));
+const OperationalAdminFinancial = lazy(() => import('./pages/admin-operational/Financial'));
+const OperationalAdminReports = lazy(() => import('./pages/admin-operational/Reports'));
+const OperationalAdminActivityLogs = lazy(() => import('./pages/admin-operational/ActivityLogs'));
+const OperationalAdminProfile = lazy(() => import('./pages/admin-operational/Profile'));
+const OperationalAdminSettings = lazy(() => import('./pages/admin-operational/Settings'));
 const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
 const TenantAdminDashboard = lazy(() => import('./pages/admin-dashboard/Dashboard'));
 const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
@@ -92,6 +104,19 @@ const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules')
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
+
+// ─── New Feature Pages ────────────────────────────────────────────────────────
+const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
+const ComplianceDashboard = lazy(() => import('./pages/shared/ComplianceDashboard'));
+const GeofenceManager = lazy(() => import('./pages/shared/GeofenceManager'));
+const CarrierMarketplacePage = lazy(() => import('./pages/dashboard/CarrierMarketplacePage'));
+const BackhaulMatchingPage = lazy(() => import('./pages/dashboard/fleet/BackhaulMatchingPage'));
+const CarrierTierPage = lazy(() => import('./pages/dashboard/fleet/CarrierTierPage'));
+const LoadMapPage = lazy(() => import('./pages/dashboard/fleet/LoadMapPage'));
+const BulkUploadPage = lazy(() => import('./pages/dashboard/cargos/BulkUploadPage'));
+const LoadTemplatesPage = lazy(() => import('./pages/dashboard/LoadTemplatesPage'));
+const IntegrationsPage = lazy(() => import('./pages/tenant-admin/IntegrationsPage'));
+const BrandingSettingsPage = lazy(() => import('./pages/tenant-admin/BrandingSettingsPage'));
 
 // Subscription Management Pages
 const BillingDashboard = lazy(() => import('./pages/subscription/BillingDashboard'));
@@ -288,6 +313,9 @@ function App() {
                       <Route path="receivers" element={<ReceiversPage />} />
                       <Route path="customs-inspections" element={<CargoCustomsInspectionsPage />} />
                       <Route path="customs-inspections/:id" element={<CargoCustomsInspectionsPage />} />
+                      <Route path="carrier-marketplace" element={<CarrierMarketplacePage />} />
+                      <Route path="templates" element={<LoadTemplatesPage />} />
+                      <Route path="cargos/bulk-upload" element={<BulkUploadPage />} />
 
                       {/* Enhanced Transaction Flow Routes */}
                       <Route path="transaction-flow" element={<TransactionFlow />} />
@@ -401,6 +429,9 @@ function App() {
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
                       <Route path="settings" element={<Settings />} />
                       <Route path="support" element={<FleetHelpSupport />} />
+                      <Route path="backhaul" element={<BackhaulMatchingPage />} />
+                      <Route path="tier" element={<CarrierTierPage />} />
+                      <Route path="load-map" element={<LoadMapPage />} />
                     </Route>
 
                     {/* Profile Route for Truck Owner */}
@@ -443,11 +474,63 @@ function App() {
                     {/* Admin Routes - Super Admin (System Level) */}
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<AdminDashboard />} />
-                      {/* Admin sub-routes... */}
+                      <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
+                      <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
+                      <Route path="borrowers" element={<AdminBorrowersPage />} />
+                      <Route path="analytics" element={<AdminAnalytics />} />
+                      <Route path="monitoring" element={<MonitoringDashboard />} />
+                      <Route path="bidding" element={<BiddingManagement />} />
+                      <Route path="disputes" element={<DisputeManagement />} />
+                      <Route path="financial" element={<FinancialAdminDashboard />} />
+                      <Route path="transaction-monitoring" element={<TransactionFlow />} />
+                      <Route path="dispute-management" element={<DisputeResolution />} />
+                      <Route path="escrow-management" element={<EscrowManagement />} />
+                      <Route path="users" element={<AdminUsers />} />
+                      <Route path="trucks" element={<AdminTrucks />} />
+                      <Route path="loads" element={<AdminLoads />} />
+                      <Route path="trips" element={<AdminTrips />} />
+                      <Route path="tenants" element={<AdminTenants />} />
+                      <Route path="routes" element={<AdminRoutes />} />
+                      <Route path="subscriptions" element={<TenantSubscriptions />} />
+                      <Route path="subscription-plans" element={<SubscriptionPlansMgmt />} />
+                      <Route path="pricing-rules" element={<CreditPricingRules />} />
+                      <Route path="credit-usage" element={<CreditUsageHistory />} />
+                      <Route path="roles" element={<RoleManagement />} />
+                      <Route path="permissions" element={<EnhancedPermissions />} />
+                      <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
+                      <Route path="activity-logs" element={<ActivityLogs />} />
+                      <Route path="advanced-settings" element={<AdvancedSettings />} />
+                      <Route path="component-showcase" element={<ComponentShowcase />} />
+                      <Route path="bulk-email" element={<BulkEmail />} />
+                      <Route path="reports" element={<Analytics />} />
+                      <Route path="help" element={<Settings />} />
+                      <Route path="profile" element={<Profile />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="billing" element={<BillingDashboard />} />
+                      <Route path="credits" element={<PurchaseCredits />} />
+                      <Route path="revenue" element={<RevenueDashboard />} />
                     </Route>
 
-                    {/* Admin-Tenant Routes - ADMIN Role (Tenant Level) */}
-                    <Route path="/admin-tenant" element={<AdminLayout />}>
+                    {/* Admin Operational Routes - ADMIN Role (Operational Oversight) */}
+                    <Route path="/admin-operational" element={<AdminOperationalLayout />}>
+                      <Route index element={<AdminOperationalDashboard />} />
+                      <Route path="trips" element={<OperationalAdminTrips />} />
+                      <Route path="loads" element={<OperationalAdminLoads />} />
+                      <Route path="disputes" element={<OperationalAdminDisputes />} />
+                      <Route path="analytics" element={<OperationalAdminAnalytics />} />
+                      <Route path="financial" element={<OperationalAdminFinancial />} />
+                      <Route path="bidding" element={<OperationalAdminBidding />} />
+                      <Route path="monitoring" element={<OperationalAdminMonitoring />} />
+                      <Route path="activity-logs" element={<OperationalAdminActivityLogs />} />
+                      <Route path="reports" element={<OperationalAdminReports />} />
+                      <Route path="profile" element={<OperationalAdminProfile />} />
+                      <Route path="settings" element={<OperationalAdminSettings />} />
+                      <Route path="compliance" element={<ComplianceDashboard />} />
+                      <Route path="geofences" element={<GeofenceManager />} />
+                    </Route>
+
+                    {/* Admin-Tenant Routes - TENANT_ADMIN Role (Tenant Level) */}
+                    <Route path="/admin-tenant" element={<TenantAdminLayout />}>
                       <Route index element={<TenantAdminDashboard />} />
                       <Route path="lenders/register" element={<AdminLenderRegistrationPage />} />
                       <Route path="lenders" element={<Navigate to="lenders/register" replace />} />
@@ -510,6 +593,10 @@ function App() {
                       <Route path="reports" element={<TenantDashboardPage />} />
                       <Route path="profile" element={<TenantDashboardPage defaultView="profile" />} />
                       <Route path="settings" element={<TenantDashboardPage defaultView="settings" />} />
+                      <Route path="compliance" element={<ComplianceDashboard />} />
+                      <Route path="geofences" element={<GeofenceManager />} />
+                      <Route path="integrations" element={<IntegrationsPage />} />
+                      <Route path="branding" element={<BrandingSettingsPage />} />
                     </Route>
 
                     {/* Lender Routes */}

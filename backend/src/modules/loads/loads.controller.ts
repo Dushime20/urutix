@@ -2440,4 +2440,56 @@ export class LoadsController {
       throw error;
     }
   }
+
+  // ─── Bulk CSV Upload ──────────────────────────────────────────────────────────
+
+  @Post('bulk-upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Bulk create loads from CSV file' })
+  async bulkUploadCSV(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
+    if (!file) throw new BadRequestException('CSV file is required');
+    if (!file.originalname.endsWith('.csv') && file.mimetype !== 'text/csv') {
+      throw new BadRequestException('Only CSV files are accepted');
+    }
+    const { BulkCsvService } = await import('./bulk-csv.service');
+    // BulkCsvService is injected via module — use loadsService fallback
+    return this.loadsService.processBulkCSV(file.buffer, req.user.id, req.user.tenantId);
+  }
+
+  @Get('bulk-upload/template')
+  @ApiOperation({ summary: 'Download CSV template for bulk load upload' })
+  downloadCSVTemplate(@Res() res: Response) {
+    const template = [
+      'origin,destination,weight,cargoType,pickupDate,deliveryDate,offeredPrice,currency,urgencyLevel,title,description',
+      'Nairobi,Mombasa,5000,GENERAL,2026-07-01,2026-07-02,50000,KES,STANDARD,Sample Load,Sample description',
+    ].join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="loads-template.csv"');
+    res.send(template);
+  }
+
+  // ─── Map-View Load Browsing (PostGIS radius) ──────────────────────────────────
+
+  @Get('map')
+  @ApiOperation({ summary: 'Get loads within radius for map view (truck owners)' })
+  async getLoadsForMap(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radius') radius: string,
+    @Query('truckType') truckType: string,
+    @Req() req: any,
+  ) {
+    return this.loadsService.getLoadsForMap(
+      req.user.tenantId,
+      Number(lat),
+      Number(lng),
+      Number(radius) || 100,
+      truckType,
+    );
+  }
 }
+

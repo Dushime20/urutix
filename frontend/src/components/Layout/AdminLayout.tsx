@@ -11,12 +11,15 @@ const AdminLayoutContent: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Both ADMIN and SUPER_ADMIN roles can access admin dashboard
+    // Only SUPER_ADMIN role can access admin dashboard
     if (!isLoading && user) {
-      if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
-        console.warn('Access denied: Only ADMIN and SUPER_ADMIN can access admin dashboard');
+      if (user.role !== 'SUPER_ADMIN') {
+        console.warn('Access denied: Only SUPER_ADMIN can access admin dashboard');
         // Redirect to appropriate dashboard based on role
         switch (user.role) {
+          case 'ADMIN':
+            navigate('/admin-operational', { replace: true });
+            break;
           case 'TENANT_ADMIN':
             navigate('/tenant-admin', { replace: true });
             break;
@@ -50,8 +53,8 @@ const AdminLayoutContent: React.FC = () => {
     return <ModernLoader isLoading={true} text="Verifying_Credentials" />;
   }
 
-  // Only render admin content if user is ADMIN or SUPER_ADMIN
-  if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
+  // Only render admin content if user is SUPER_ADMIN
+  if (!user || user.role !== 'SUPER_ADMIN') {
     return null;
   }
 

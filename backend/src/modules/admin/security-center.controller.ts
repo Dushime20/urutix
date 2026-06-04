@@ -19,14 +19,16 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PermissionGuard } from '../../guards/permission.guard';
-import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { RolesGuard } from './roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../../types/permission.types';
 import { SecurityCenterService } from '../../services/security-center.service';
 import { SecuritySeverity } from '../../entities/security-event.entity';
 
 @ApiTags('Security Center')
 @Controller('admin/security-center')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPER_ADMIN)
 @ApiBearerAuth('JWT-auth')
 export class SecurityCenterController {
   constructor(private readonly securityCenterService: SecurityCenterService) {}
@@ -37,7 +39,6 @@ export class SecurityCenterController {
    */
   @Get('failed-logins')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @ApiOperation({
     summary: 'Get recent failed login attempts',
     description: 'Returns recent failed login attempts across all tenants',
@@ -63,7 +64,6 @@ export class SecurityCenterController {
    */
   @Get('events')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @ApiOperation({
     summary: 'Get security events',
     description: 'Returns security events filtered by severity',
@@ -99,7 +99,6 @@ export class SecurityCenterController {
    */
   @Get('flagged-accounts')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @ApiOperation({
     summary: 'Get flagged accounts',
     description: 'Returns accounts with more than 5 failed login attempts in the last 15 minutes',
@@ -118,7 +117,6 @@ export class SecurityCenterController {
    */
   @Get('sessions')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @ApiOperation({
     summary: 'Get active user sessions',
     description: 'Returns all active user sessions across the platform',
@@ -137,7 +135,6 @@ export class SecurityCenterController {
    */
   @Post('sessions/:sessionId/terminate')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @ApiOperation({
     summary: 'Terminate user session',
     description: 'Immediately terminates a user session and logs the action',
@@ -170,7 +167,6 @@ export class SecurityCenterController {
    */
   @Get('export')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @Header('Content-Type', 'text/csv')
   @Header('Content-Disposition', 'attachment; filename="security-logs.csv"')
   @ApiOperation({
@@ -215,7 +211,6 @@ export class SecurityCenterController {
    */
   @Get('permission-history')
   @HttpCode(HttpStatus.OK)
-  @RequirePermissions('super_admin')
   @ApiOperation({
     summary: 'Get permission change history',
     description: 'Returns history of all RBAC modifications with timestamps and actors',

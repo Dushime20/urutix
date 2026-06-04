@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -16,6 +16,7 @@ import { CreditService } from '../../services/credit.service';
 import { UserRole } from '../../entities/user.entity';
 import { SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 import { EmailService } from '../auth/services/email.service';
+import { EmergencyRematchService } from '../matching/services/emergency-rematch.service';
 
 @Injectable()
 export class TripsService {
@@ -38,6 +39,7 @@ export class TripsService {
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
     private readonly emailService: EmailService,
+    @Optional() private readonly emergencyRematchService?: EmergencyRematchService,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -232,6 +234,27 @@ export class TripsService {
       this.emitTripCompletedEvent(savedTrip).catch(err =>
         this.logger.error(`Failed to emit trip.completed event: ${err.message}`, err.stack)
       );
+    }
+
+    // Emergency re-match: trigger when post-acceptance trip is cancelled
+    if (
+      updateTripStatusDto.status === TripStatus.CANCELLED &&
+      [TripStatus.PLANNED, TripStatus.IN_PROGRESS].includes(oldStatus) &&
+      this.emergencyRematchService
+    ) {
+      this.logger.warn(`Post-acceptance cancellation detected for trip ${savedTrip.id} — triggering emergency rematch`);
+      this.emergencyRematchService.triggerEmergencyRematch(savedTrip.id).catch(err =>
+        this.logger.error(`Emergency rematch failed for trip ${savedTrip.id}: ${err.message}`)
+      );
+      // Apply penalty to the truck owner
+      if (savedTrip.truckId) {
+        const truck = await this.truckRepository.findOne({ where: { id: savedTrip.truckId } });
+        if (truck?.ownerId) {
+          this.emergencyRematchService.applyCancellationPenalty(truck.ownerId, tenantId).catch(err =>
+            this.logger.error(`Penalty application failed: ${err.message}`)
+          );
+        }
+      }
     }
 
     return savedTrip;
