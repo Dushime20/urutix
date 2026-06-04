@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -24,7 +24,7 @@ interface RevenuePoint { day: string; revenue: number; trips: number }
 interface LoadStatusItem { name: string; value: number; color: string }
 interface BidPoint { label: string; bids: number }
 interface ActivityItem { dot: string; title: string; sub: string; time: string; type: string }
-interface Kpi { activeTrips: number; openLoads: number; openDisputes: number; revenueToday: number }
+interface Kpi { activeTrips: number; openLoads: number; openDisputes: number; revenueToday: number; currency: string }
 
 interface DashboardCharts {
   revenueAndTrips: RevenuePoint[];
@@ -92,12 +92,14 @@ const AdminOperationalDashboard: React.FC = () => {
   const bidActivity = data?.bidActivity ?? [];
   const recentActivity = data?.recentActivity ?? [];
 
+  const currency = data?.kpi?.currency || 'USD';
+
   const formatCurrency = (n: number) =>
     n >= 1_000_000
-      ? `$${(n / 1_000_000).toFixed(1)}M`
+      ? `${currency} ${(n / 1_000_000).toFixed(1)}M`
       : n >= 1_000
-      ? `$${(n / 1_000).toFixed(1)}K`
-      : `$${n.toLocaleString()}`;
+      ? `${currency} ${(n / 1_000).toFixed(1)}K`
+      : `${currency} ${n.toLocaleString()}`;
 
   return (
     <div className="space-y-6">
@@ -255,7 +257,7 @@ const AdminOperationalDashboard: React.FC = () => {
                 <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="revenue" name="Revenue ($)" stroke="#3b82f6" strokeWidth={2} fill="url(#revGrad)" dot={false} />
+                <Area type="monotone" dataKey="revenue" name={`Revenue (${currency})`} stroke="#3b82f6" strokeWidth={2} fill="url(#revGrad)" dot={false} />
                 <Area type="monotone" dataKey="trips"   name="Trips"       stroke="#10b981" strokeWidth={2} fill="url(#tripGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>

@@ -20,7 +20,7 @@ interface RevenuePoint  { day: string; revenue: number; trips: number }
 interface LoadStatusItem { name: string; value: number; color: string }
 interface BidPoint       { label: string; bids: number }
 interface ActivityItem   { dot: string; title: string; sub: string; time: string }
-interface Kpi            { activeTrips: number; openLoads: number; openDisputes: number; revenueToday: number }
+interface Kpi            { activeTrips: number; openLoads: number; openDisputes: number; revenueToday: number; currency: string }
 interface Charts {
   revenueAndTrips: RevenuePoint[];
   loadStatus:      LoadStatusItem[];
@@ -88,10 +88,12 @@ const TenantOperationalDashboard: React.FC = () => {
   const bidActivity     = charts?.bidActivity     ?? [];
   const recentActivity  = charts?.recentActivity  ?? [];
 
+  const currency = charts?.kpi?.currency || 'USD';
+
   const fmtCurrency = (n: number) =>
-    n >= 1_000_000 ? `KES ${(n / 1_000_000).toFixed(1)}M`
-    : n >= 1_000   ? `KES ${(n / 1_000).toFixed(1)}K`
-                   : `KES ${n.toLocaleString()}`;
+    n >= 1_000_000 ? `${currency} ${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000   ? `${currency} ${(n / 1_000).toFixed(1)}K`
+                   : `${currency} ${n.toLocaleString()}`;
 
   /* ── Loading skeleton ── */
   if (loading) return (
@@ -260,7 +262,7 @@ const TenantOperationalDashboard: React.FC = () => {
                   <XAxis dataKey="day"     tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} axisLine={false} tickLine={false} />
                   <YAxis                  tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue (KES)" stroke="#3b82f6" strokeWidth={2} fill="url(#revGrad)"  dot={false} />
+                  <Area type="monotone" dataKey="revenue" name={`Revenue (${currency})`} stroke="#3b82f6" strokeWidth={2} fill="url(#revGrad)"  dot={false} />
                   <Area type="monotone" dataKey="trips"   name="Trips"         stroke="#10b981" strokeWidth={2} fill="url(#tripGrad)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>

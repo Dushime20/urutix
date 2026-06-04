@@ -1387,7 +1387,7 @@ export class AdminService {
       });
 
       // ── 5. KPI top-line numbers ───────────────────────────────────────────
-      const [activeTrips, openLoads, openDisputes, totalRevRow] = await Promise.all([
+      const [activeTrips, openLoads, openDisputes, totalRevRow, currencyRow] = await Promise.all([
         this.tripRepo.count({ where: { tenantId: safeTenantId, status: 'IN_PROGRESS' } as any }),
         this.loadRepo.count({ where: { tenantId: safeTenantId, status: 'PUBLISHED' } as any }),
         this.disputeRepo.count({ where: { tenantId: safeTenantId, status: 'OPEN' } as any }),
@@ -1397,13 +1397,23 @@ export class AdminService {
              AND DATE_TRUNC('day', "createdAt") = DATE_TRUNC('day', NOW())`,
           [safeTenantId],
         ),
+        // Most-used currency for this tenant's trips
+        this.tripRepo.manager.query(
+          `SELECT "currencyCode", COUNT(*) AS cnt
+           FROM trips WHERE "tenantId" = $1 AND "currencyCode" IS NOT NULL
+           GROUP BY "currencyCode" ORDER BY cnt DESC LIMIT 1`,
+          [safeTenantId],
+        ),
       ]);
+
+      const currency = currencyRow[0]?.currencyCode || 'USD';
 
       const kpi = {
         activeTrips,
         openLoads,
         openDisputes,
         revenueToday: Number(totalRevRow[0]?.total || 0),
+        currency,
       };
 
       return { revenueAndTrips, loadStatus, bidActivity, recentActivity, kpi };
