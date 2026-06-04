@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   LogOut, User, Menu, X, ChevronDown,
@@ -29,8 +29,6 @@ interface NavItem {
   subItems?: SubNavItem[];
 }
 
-// Same grouped-dropdown pattern as DashboardHeader:
-// 1 direct link + 2 dropdown groups, each with 4-5 sub-items
 const navItems: NavItem[] = [
   {
     label: 'Dashboard',
@@ -67,32 +65,40 @@ const OperationalAdminHeader: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu]     = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  // Separate desktop and mobile dropdown state to avoid interference
+  const [desktopDropdown, setDesktopDropdown] = useState<string | null>(null);
+  const [mobileExpanded, setMobileExpanded]   = useState<string | null>(null);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const desktopDropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  const getActiveNavItem = () => {
+  // ── Active detection ────────────────────────────────────────────
+  const getActiveNavLabel = useCallback(() => {
     const path = location.pathname;
     const item = navItems.find(
-      (n) =>
+      n =>
         path === n.path ||
         path.startsWith(n.path + '/') ||
-        n.subItems?.some((s) => path === s.path || path.startsWith(s.path + '/'))
+        n.subItems?.some(s => path === s.path || path.startsWith(s.path + '/'))
     );
     return item?.label || null;
-  };
+  }, [location.pathname]);
 
-  const activeNavItem = getActiveNavItem();
+  const activeNavLabel = getActiveNavLabel();
 
-  const handleNavClick = (path?: string) => {
-    setOpenDropdown(null);
-    setShowMobileMenu(false);
-    setShowUserMenu(false);
-    if (path) navigate(path);
-  };
+  // ── Navigation helpers ──────────────────────────────────────────
+  // Navigate first, then close menus — avoids state-batching race on mobile
+  const goTo = useCallback((path: string) => {
+    navigate(path);
+    // Close everything after navigation is triggered
+    setTimeout(() => {
+      setShowMobileMenu(false);
+      setDesktopDropdown(null);
+      setShowUserMenu(false);
+    }, 10);
+  }, [navigate]);
 
   const handleLogout = () => {
     setShowUserMenu(false);
@@ -101,112 +107,111 @@ const OperationalAdminHeader: React.FC = () => {
     navigate('/auth');
   };
 
+  // ── Close on route change ───────────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setShowUserMenu(false);
-      }
-      Object.keys(dropdownRefs.current).forEach((key) => {
-        if (dropdownRefs.current[key] && !dropdownRefs.current[key]?.contains(e.target as Node)) {
-          setOpenDropdown((prev) => (prev === key ? null : prev));
-        }
-      });
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    setOpenDropdown(null);
+    setDesktopDropdown(null);
     setShowMobileMenu(false);
+    setShowUserMenu(false);
   }, [location.pathname]);
 
+  // ── Scroll lock when mobile menu open ──────────────────────────
   useEffect(() => {
     document.body.style.overflow = showMobileMenu ? 'hidden' : '';
-    if (!showMobileMenu) setOpenDropdown(null);
     return () => { document.body.style.overflow = ''; };
   }, [showMobileMenu]);
 
-  const renderNavItem = (item: NavItem) => {
+  // ── Click-outside for desktop dropdowns + user menu ────────────
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+      const clickedInsideAnyDropdown = Object.values(desktopDropdownRefs.current)
+        .some(ref => ref && ref.contains(e.target as Node));
+      if (!clickedInsideAnyDropdown) {
+        setDesktopDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  // ── Desktop nav item ────────────────────────────────────────────
+  const renderDesktopNavItem = (item: NavItem) => {
     const hasSubItems = !!item.subItems?.length;
-    const isActive = activeNavItem === item.label;
+    const isActive    = activeNavLabel === item.label;
+    const isOpen      = desktopDropdown === item.label;
+
+    const baseClass = `group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden ${
+      isActive
+        ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
+        : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+    }`;
 
     return (
       <div
         key={item.label}
         className="relative z-[100]"
-        ref={(el) => (dropdownRefs.current[item.label] = el)}
+        ref={el => (desktopDropdownRefs.current[item.label] = el)}
       >
         {hasSubItems ? (
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
-              setOpenDropdown(openDropdown === item.label ? null : item.label);
+              setDesktopDropdown(isOpen ? null : item.label);
             }}
-            className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
-              ${isActive
-                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
+            className={baseClass}
           >
             <div className="absolute inset-0 bg-primary-100/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
             <item.icon className={`w-3.5 h-3.5 xl:w-4 xl:h-4 transition-transform relative ${isActive ? 'scale-110' : ''}`} />
             <span className="relative"><TranslatedText text={item.label} /></span>
-            <ChevronDown className={`w-3 h-3 transition-transform relative ${openDropdown === item.label ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3 h-3 transition-transform relative ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         ) : (
-          <Link
-            to={item.path}
-            onClick={(e) => { e.preventDefault(); handleNavClick(item.path); }}
-            className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
-              ${isActive
-                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
-          >
+          <button onClick={() => goTo(item.path)} className={baseClass}>
             <div className="absolute inset-0 bg-primary-100/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
             <item.icon className={`w-3.5 h-3.5 xl:w-4 xl:h-4 transition-transform relative ${isActive ? 'scale-110' : ''}`} />
             <span className="relative"><TranslatedText text={item.label} /></span>
-          </Link>
+          </button>
         )}
 
         {/* Desktop dropdown panel */}
-        {hasSubItems && openDropdown === item.label && (
+        {hasSubItems && isOpen && (
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
             <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
-              <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">
+              <p className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">
                 <TranslatedText text="Quick Actions" />
-              </div>
+              </p>
             </div>
             <div className="py-2 px-1">
-              {item.subItems?.map((subItem) => (
-                <Link
-                  key={subItem.path}
-                  to={subItem.path}
-                  onClick={(e) => { e.preventDefault(); handleNavClick(subItem.path); }}
-                  className={`w-full text-left px-4 py-2 md:py-3 text-[11px] xl:text-xs transition-all flex items-center gap-3 group/sub rounded-xl ${
-                    location.pathname === subItem.path
-                      ? 'bg-primary-50/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 font-bold shadow-sm'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-500 dark:hover:text-primary-400'
-                  }`}
-                >
-                  {subItem.icon && (
-                    <div className={`p-1 rounded-lg transition-colors ${
-                      location.pathname === subItem.path
-                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-600'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover/sub:bg-primary-50 dark:group-hover/sub:bg-primary-900/30 group-hover/sub:text-primary-500'
-                    }`}>
-                      <subItem.icon size={14} />
-                    </div>
-                  )}
-                  <span className="tracking-wide uppercase font-black opacity-80 group-hover/sub:opacity-100 transition-opacity">
-                    <TranslatedText text={subItem.label} />
-                  </span>
-                  {location.pathname === subItem.path && (
-                    <div className="ml-auto w-1 h-3 bg-primary-500 rounded-full" />
-                  )}
-                </Link>
-              ))}
+              {item.subItems?.map(sub => {
+                const isSubActive = location.pathname === sub.path;
+                return (
+                  <button
+                    key={sub.path}
+                    onClick={() => goTo(sub.path)}
+                    className={`w-full text-left px-4 py-2 md:py-3 text-[11px] xl:text-xs transition-all flex items-center gap-3 group/sub rounded-xl ${
+                      isSubActive
+                        ? 'bg-primary-50/50 dark:bg-primary-900/20 text-primary-500 dark:text-primary-400 font-bold shadow-sm'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-500 dark:hover:text-primary-400'
+                    }`}
+                  >
+                    {sub.icon && (
+                      <div className={`p-1 rounded-lg transition-colors ${
+                        isSubActive
+                          ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover/sub:bg-primary-50 dark:group-hover/sub:bg-primary-900/30 group-hover/sub:text-primary-500'
+                      }`}>
+                        <sub.icon size={14} />
+                      </div>
+                    )}
+                    <span className="tracking-wide uppercase font-black opacity-80 group-hover/sub:opacity-100 transition-opacity">
+                      <TranslatedText text={sub.label} />
+                    </span>
+                    {isSubActive && <div className="ml-auto w-1 h-3 bg-primary-500 rounded-full" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -225,38 +230,33 @@ const OperationalAdminHeader: React.FC = () => {
           {/* Left: hamburger + logo + desktop nav */}
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              onClick={() => setShowMobileMenu(v => !v)}
               className="xl:hidden p-1.5 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors touch-manipulation min-w-[38px] min-h-[38px] flex items-center justify-center flex-shrink-0 text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
+              aria-label="Toggle menu"
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
 
-            <div
+            <button
               className="flex items-center flex-shrink-0 cursor-pointer px-1"
-              onClick={() => navigate('/admin-operational')}
+              onClick={() => goTo('/admin-operational')}
             >
-              <img
-                src={logoUrutiX}
-                alt="UrutiX Logistics Logo"
-                className="h-7 sm:h-8 md:h-10 lg:h-12 max-w-none w-auto object-contain transition-all"
-              />
-            </div>
+              <img src={logoUrutiX} alt="UrutiX" className="h-7 sm:h-8 md:h-10 lg:h-12 max-w-none w-auto object-contain" />
+            </button>
 
-            {/* Desktop nav — 1 direct + 2 dropdowns */}
+            {/* Desktop nav */}
             <div className="hidden xl:flex flex-1 items-center min-w-0 h-full">
-              <div className="flex items-center gap-0.5 xl:gap-2 ml-1 xl:ml-4 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap">
-                {navItems.map(renderNavItem)}
+              <div className="flex items-center gap-0.5 xl:gap-2 ml-1 xl:ml-4 flex-nowrap">
+                {navItems.map(renderDesktopNavItem)}
               </div>
             </div>
           </div>
 
-          {/* Right: lang, theme, notifications, help, user */}
+          {/* Right: utilities + user */}
           <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
             <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
               <LanguageSwitcher />
-              <div className="hidden sm:block">
-                <ThemeToggle />
-              </div>
+              <div className="hidden sm:block"><ThemeToggle /></div>
             </div>
             <CargoOwnerNotificationDropdown />
             <div className="hidden sm:flex items-center">
@@ -266,69 +266,72 @@ const OperationalAdminHeader: React.FC = () => {
             {/* User menu */}
             <div className="relative" ref={userMenuRef}>
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                onClick={() => setShowUserMenu(v => !v)}
                 className="h-10 w-10 rounded-full bg-[#0f172a] dark:bg-slate-800 text-white flex items-center justify-center hover:bg-slate-900 dark:hover:bg-slate-700 transition-all shadow-lg shadow-slate-200/50 dark:shadow-none relative overflow-hidden group border-2 border-white dark:border-slate-700"
+                aria-label="User menu"
               >
                 <User size={20} className="transition-transform group-hover:scale-110" />
               </button>
 
-              {showUserMenu && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-800 z-[100] p-2">
-                  <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-800 mb-2">
-                    <p className="text-sm font-semibold truncate text-slate-900 dark:text-white">
-                      {user?.firstName || user?.email || 'Admin'}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user?.email}</p>
-                    <p className="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-0.5">Admin</p>
-                  </div>
-                  <div className="py-1">
-                    <Link
-                      to="/admin-operational/profile"
-                      onClick={() => setShowUserMenu(false)}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
-                    >
-                      <User size={14} className="text-slate-400 dark:text-slate-500" />
-                      <TranslatedText text="Profile Settings" />
-                    </Link>
-                    <Link
-                      to="/admin-operational/settings"
-                      onClick={() => setShowUserMenu(false)}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
-                    >
-                      <Settings size={14} className="text-slate-400 dark:text-slate-500" />
-                      <TranslatedText text="Settings" />
-                    </Link>
-                  </div>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1 pb-1">
-                    <div className="px-4 py-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                          <TranslatedText text="Theme" />
-                        </span>
-                      </div>
+              <AnimatePresence>
+                {showUserMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full right-0 mt-2 w-52 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 z-[200] overflow-hidden"
+                  >
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
+                      <p className="text-sm font-black text-slate-900 dark:text-white truncate">
+                        {user?.firstName} {user?.lastName}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5">{user?.email}</p>
+                      <p className="text-[10px] font-black text-primary-500 uppercase tracking-widest mt-1">Admin</p>
+                    </div>
+                    <div className="p-2">
+                      <button
+                        onClick={() => { setShowUserMenu(false); goTo('/admin-operational/profile'); }}
+                        className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-xl"
+                      >
+                        <User size={14} className="text-slate-400 flex-shrink-0" />
+                        <TranslatedText text="Profile Settings" />
+                      </button>
+                      <button
+                        onClick={() => { setShowUserMenu(false); goTo('/admin-operational/settings'); }}
+                        className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-xl"
+                      >
+                        <Settings size={14} className="text-slate-400 flex-shrink-0" />
+                        <TranslatedText text="Settings" />
+                      </button>
+                    </div>
+                    <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Theme</p>
                       <ThemeToggle />
                     </div>
-                  </div>
-                  <div className="border-t border-slate-100 dark:border-slate-800 pt-1">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors flex items-center gap-3"
-                    >
-                      <LogOut size={14} /> <TranslatedText text="Sign Out" />
-                    </button>
-                  </div>
-                </div>
-              )}
+                    <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors flex items-center gap-3"
+                      >
+                        <LogOut size={14} />
+                        <TranslatedText text="Sign Out" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* ── Mobile drawer ── */}
       {createPortal(
         <AnimatePresence>
           {showMobileMenu && (
             <>
+              {/* Backdrop */}
               <motion.div
                 key="backdrop"
                 initial={{ opacity: 0 }}
@@ -337,6 +340,8 @@ const OperationalAdminHeader: React.FC = () => {
                 onClick={() => setShowMobileMenu(false)}
                 className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm xl:hidden z-[999998]"
               />
+
+              {/* Drawer */}
               <motion.div
                 key="drawer"
                 initial={{ x: '-100%' }}
@@ -346,7 +351,7 @@ const OperationalAdminHeader: React.FC = () => {
                 className="fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-slate-900 shadow-2xl xl:hidden z-[999999] flex flex-col border-r border-slate-200 dark:border-slate-800"
               >
                 {/* Drawer header */}
-                <div className="flex-shrink-0 p-5 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="flex-shrink-0 p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
                       <Activity size={16} />
@@ -356,145 +361,202 @@ const OperationalAdminHeader: React.FC = () => {
                   <button
                     onClick={() => setShowMobileMenu(false)}
                     className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-500"
+                    aria-label="Close menu"
                   >
                     <X size={20} />
                   </button>
                 </div>
 
-                {/* Profile card */}
-                <div className="p-4">
-                  <div className="relative overflow-hidden rounded-2xl p-4 bg-[#345E85] text-white shadow-xl">
+                {/* User profile card */}
+                <div className="p-4 flex-shrink-0">
+                  <button
+                    onClick={() => goTo('/admin-operational/profile')}
+                    className="w-full relative overflow-hidden rounded-2xl p-4 bg-[#2c5173] text-white shadow-xl hover:bg-[#345E85] transition-colors text-left"
+                  >
                     <div className="relative z-10 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-lg">
+                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-lg flex-shrink-0">
                         {user?.firstName?.[0] || 'A'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-black uppercase tracking-tight truncate leading-none mb-1">
+                        <p className="text-sm font-black tracking-tight truncate leading-none mb-1">
                           {user?.firstName} {user?.lastName}
                         </p>
-                        <p className="text-[10px] text-blue-100 font-medium truncate opacity-80">{user?.email}</p>
-                        <p className="text-[9px] text-blue-200 font-black uppercase tracking-widest mt-0.5">Admin</p>
+                        <p className="text-[10px] text-blue-100 truncate opacity-80">{user?.email}</p>
+                        <p className="text-[9px] text-blue-200 font-black uppercase tracking-widest mt-0.5">Admin · Tap to view profile</p>
                       </div>
                     </div>
                     <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-                    <div className="absolute bottom-0 left-0 -ml-4 -mb-4 w-16 h-16 bg-blue-400/20 rounded-full blur-xl" />
-                  </div>
+                  </button>
                 </div>
 
-                {/* Nav items — mirrors desktop: direct + two expandable groups */}
-                <div className="flex-1 overflow-y-auto px-3 space-y-1 py-2">
+                {/* ── Navigation ── */}
+                <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5">
+
                   {navItems.map((item, idx) => {
-                    const hasSubItems = !!item.subItems?.length;
-                    const isDropdownOpen = openDropdown === item.label;
-                    const isActive = activeNavItem === item.label;
+                    const hasSubItems  = !!item.subItems?.length;
+                    const isExpanded   = mobileExpanded === item.label;
+                    const isActive     = activeNavLabel === item.label;
 
                     return (
                       <motion.div
                         key={item.label}
                         initial={{ x: -10, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.1 + idx * 0.05 }}
+                        transition={{ delay: 0.05 + idx * 0.04 }}
                       >
                         {hasSubItems ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdown(isDropdownOpen ? null : item.label);
-                            }}
-                            className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all active:scale-[0.98] ${
+                          /* Expandable group — tap chevron to expand, tap label/icon to navigate to group root */
+                          <div className={`rounded-xl overflow-hidden mb-0.5 ${isActive ? 'ring-1 ring-primary-200 dark:ring-primary-800/50' : ''}`}>
+                            <div className={`flex items-center rounded-xl transition-all ${
                               isActive
-                                ? 'bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <item.icon size={18} className={isActive ? 'text-[#345E85] dark:text-blue-400' : 'text-slate-400'} />
-                              <span className="text-[11px] font-black uppercase tracking-widest">
-                                <TranslatedText text={item.label} />
-                              </span>
+                                ? 'bg-primary-50 dark:bg-primary-900/20'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                            }`}>
+                              {/* Navigate to group root path */}
+                              <button
+                                onClick={() => goTo(item.path)}
+                                className={`flex-1 flex items-center gap-3 p-3.5 text-left transition-colors ${
+                                  isActive ? 'text-[#2c5173] dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'
+                                }`}
+                              >
+                                <item.icon size={18} className={isActive ? 'text-[#2c5173] dark:text-primary-400' : 'text-slate-400'} />
+                                <span className="text-[11px] font-black uppercase tracking-widest">
+                                  <TranslatedText text={item.label} />
+                                </span>
+                              </button>
+                              {/* Expand/collapse chevron */}
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setMobileExpanded(isExpanded ? null : item.label);
+                                }}
+                                className="p-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                              >
+                                <ChevronDown
+                                  size={14}
+                                  className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                />
+                              </button>
                             </div>
-                            <ChevronDown
-                              size={14}
-                              className={`transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`}
-                            />
-                          </button>
+
+                            {/* Sub-items */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="ml-3 mr-1 mb-2 mt-0.5 border-l-2 border-slate-200 dark:border-slate-700 pl-3 space-y-0.5">
+                                    {item.subItems?.map(sub => {
+                                      const isSubActive = location.pathname === sub.path ||
+                                        location.pathname.startsWith(sub.path + '/');
+                                      return (
+                                        /* Use Link for correct React Router navigation on mobile */
+                                        <Link
+                                          key={sub.path}
+                                          to={sub.path}
+                                          onClick={() => {
+                                            // Close drawer after link is followed
+                                            setTimeout(() => setShowMobileMenu(false), 80);
+                                          }}
+                                          className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                                            isSubActive
+                                              ? 'bg-white dark:bg-slate-800 shadow-sm text-[#2c5173] dark:text-primary-400'
+                                              : 'text-slate-500 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/70 hover:text-slate-800 dark:hover:text-slate-200'
+                                          }`}
+                                        >
+                                          {sub.icon && (
+                                            <div className={`p-1.5 rounded-lg flex-shrink-0 ${
+                                              isSubActive
+                                                ? 'bg-primary-50 dark:bg-primary-900/30 text-[#2c5173] dark:text-primary-400'
+                                                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-400'
+                                            }`}>
+                                              <sub.icon size={13} />
+                                            </div>
+                                          )}
+                                          <span className={`text-[10px] font-black uppercase tracking-widest flex-1 ${
+                                            isSubActive ? 'opacity-100' : 'opacity-70'
+                                          }`}>
+                                            <TranslatedText text={sub.label} />
+                                          </span>
+                                          {isSubActive && (
+                                            <div className="w-1 h-3 bg-[#2c5173] dark:bg-primary-400 rounded-full flex-shrink-0" />
+                                          )}
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         ) : (
-                          <button
-                            onClick={() => handleNavClick(item.path)}
-                            className={`w-full flex items-center gap-3 p-3.5 rounded-xl transition-all active:scale-[0.98] ${
+                          /* Direct nav item — use Link for reliable navigation */
+                          <Link
+                            to={item.path}
+                            onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
+                            className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] ${
                               isActive
-                                ? 'bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                ? 'bg-primary-50 dark:bg-primary-900/20 text-[#2c5173] dark:text-primary-400'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}
                           >
-                            <item.icon size={18} className={isActive ? 'text-[#345E85] dark:text-blue-400' : 'text-slate-400'} />
+                            <item.icon
+                              size={18}
+                              className={isActive ? 'text-[#2c5173] dark:text-primary-400' : 'text-slate-400'}
+                            />
                             <span className="text-[11px] font-black uppercase tracking-widest">
                               <TranslatedText text={item.label} />
                             </span>
-                          </button>
+                          </Link>
                         )}
-
-                        <AnimatePresence>
-                          {hasSubItems && isDropdownOpen && (
-                            <motion.div
-                              key={item.label + '-sub'}
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0, transition: { duration: 0.15 } }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden bg-slate-50/50 dark:bg-slate-800/30 rounded-xl mx-2 my-1 border-l-2 border-slate-200 dark:border-slate-700"
-                            >
-                              <div className="py-2 px-1 space-y-1">
-                                {item.subItems?.map((sub) => (
-                                  <button
-                                    key={sub.path}
-                                    onClick={() => handleNavClick(sub.path)}
-                                    className={`w-full group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                                      location.pathname === sub.path
-                                        ? 'bg-white dark:bg-slate-800 shadow-sm text-[#345E85] dark:text-blue-400'
-                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'
-                                    }`}
-                                  >
-                                    {sub.icon && (
-                                      <div className={`p-1.5 rounded-lg transition-colors ${
-                                        location.pathname === sub.path
-                                          ? 'bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400'
-                                          : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-slate-600'
-                                      }`}>
-                                        <sub.icon size={14} />
-                                      </div>
-                                    )}
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${
-                                      location.pathname === sub.path ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
-                                    }`}>
-                                      <TranslatedText text={sub.label} />
-                                    </span>
-                                    {location.pathname === sub.path && (
-                                      <div className="ml-auto w-1 h-3 bg-[#345E85] rounded-full" />
-                                    )}
-                                  </button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
                       </motion.div>
                     );
                   })}
-                </div>
+
+                  {/* Divider + utility pages */}
+                  <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
+                    <p className="px-3 pb-1 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Account</p>
+                    {[
+                      { label: 'Profile',  path: '/admin-operational/profile',  icon: User },
+                      { label: 'Settings', path: '/admin-operational/settings', icon: Settings },
+                    ].map(item => {
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
+                          className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                            isActive
+                              ? 'bg-primary-50 dark:bg-primary-900/20 text-[#2c5173] dark:text-primary-400'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <item.icon size={18} className={isActive ? 'text-[#2c5173]' : 'text-slate-400'} />
+                          <span className="text-[11px] font-black uppercase tracking-widest">
+                            <TranslatedText text={item.label} />
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </nav>
 
                 {/* Footer */}
-                <div className="flex-shrink-0 p-4 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/30">
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-2 shadow-sm mb-3">
-                    <div className="grid grid-cols-2 gap-1">
-                      <div className="flex items-center gap-2 p-1.5">
-                        <ThemeToggle />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Mode</span>
-                      </div>
-                      <div className="flex items-center gap-2 p-1.5 justify-end">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lang</span>
-                        <LanguageSwitcher />
-                      </div>
+                <div className="flex-shrink-0 p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-3 shadow-sm mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ThemeToggle />
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Mode</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lang</span>
+                      <LanguageSwitcher />
                     </div>
                   </div>
                   <button
