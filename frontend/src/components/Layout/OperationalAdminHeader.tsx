@@ -405,14 +405,14 @@ const OperationalAdminHeader: React.FC = () => {
                         transition={{ delay: 0.05 + idx * 0.04 }}
                       >
                         {hasSubItems ? (
-                          /* Expandable group — tap chevron to expand, tap label/icon to navigate to group root */
-                          <div className={`rounded-xl overflow-hidden mb-0.5 ${isActive ? 'ring-1 ring-primary-200 dark:ring-primary-800/50' : ''}`}>
+                          /* Expandable group */
+                          <div className={`rounded-xl mb-0.5 ${isActive ? 'ring-1 ring-primary-200 dark:ring-primary-800/50' : ''}`}>
                             <div className={`flex items-center rounded-xl transition-all ${
                               isActive
                                 ? 'bg-primary-50 dark:bg-primary-900/20'
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}>
-                              {/* Navigate to group root path */}
+                              {/* Navigate to group root */}
                               <button
                                 onClick={() => goTo(item.path)}
                                 className={`flex-1 flex items-center gap-3 p-3.5 text-left transition-colors ${
@@ -424,7 +424,7 @@ const OperationalAdminHeader: React.FC = () => {
                                   <TranslatedText text={item.label} />
                                 </span>
                               </button>
-                              {/* Expand/collapse chevron */}
+                              {/* Chevron — expand/collapse only */}
                               <button
                                 onClick={e => {
                                   e.stopPropagation();
@@ -440,30 +440,27 @@ const OperationalAdminHeader: React.FC = () => {
                               </button>
                             </div>
 
-                            {/* Sub-items */}
-                            <AnimatePresence>
+                            {/* Sub-items — no overflow-hidden on parent so animation isn't clipped */}
+                            <AnimatePresence initial={false}>
                               {isExpanded && (
                                 <motion.div
+                                  key={`${item.label}-sub`}
                                   initial={{ height: 0, opacity: 0 }}
                                   animate={{ height: 'auto', opacity: 1 }}
                                   exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.2, ease: 'easeInOut' }}
-                                  className="overflow-hidden"
+                                  transition={{ duration: 0.22, ease: 'easeInOut' }}
+                                  style={{ overflow: 'hidden' }}
                                 >
                                   <div className="ml-3 mr-1 mb-2 mt-0.5 border-l-2 border-slate-200 dark:border-slate-700 pl-3 space-y-0.5">
                                     {item.subItems?.map(sub => {
                                       const isSubActive = location.pathname === sub.path ||
                                         location.pathname.startsWith(sub.path + '/');
                                       return (
-                                        /* Use Link for correct React Router navigation on mobile */
                                         <Link
                                           key={sub.path}
                                           to={sub.path}
-                                          onClick={() => {
-                                            // Close drawer after link is followed
-                                            setTimeout(() => setShowMobileMenu(false), 80);
-                                          }}
-                                          className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 active:scale-[0.98] ${
+                                          onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
+                                          className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 active:scale-[0.98] ${
                                             isSubActive
                                               ? 'bg-white dark:bg-slate-800 shadow-sm text-[#2c5173] dark:text-primary-400'
                                               : 'text-slate-500 dark:text-slate-400 hover:bg-white/70 dark:hover:bg-slate-800/70 hover:text-slate-800 dark:hover:text-slate-200'
