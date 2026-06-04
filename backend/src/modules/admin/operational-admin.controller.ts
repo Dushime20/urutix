@@ -231,4 +231,18 @@ export class OperationalAdminController {
   getBidHistory(@Request() req) {
     return this.biddingService.getBidHistory(req.user.userId, req.user.tenantId, req.user.role);
   }
+
+  /**
+   * GET /admin/operational/dashboard/charts
+   * All chart data for the overview page, scoped to the admin's tenant.
+   * Returns: revenueAndTrips, loadStatus, bidActivity, recentActivity, kpi
+   */
+  @Get('dashboard/charts')
+  @ApiOperation({ summary: 'Get overview dashboard chart data for tenant' })
+  @ApiResponse({ status: 200, description: 'Dashboard chart data retrieved' })
+  @ApiQuery({ name: 'days', required: false, description: 'Number of days for revenue trend (7 or 30)' })
+  getDashboardCharts(@Request() req, @Query('days') days?: string) {
+    const numDays = days ? parseInt(days, 10) : 7;
+    return this.adminService.getDashboardCharts(req.user.tenantId, numDays);
+  }
 }

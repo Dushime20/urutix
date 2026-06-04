@@ -1262,4 +1262,200 @@ export class AdminService {
     const saved = await this.routeRepo.save(route);
     return { route: saved };
   }
+
+  /**
+   * getDashboardCharts
+   *
+   * Returns all chart-level data needed by the admin-operational overview page,
+   * scoped strictly to the caller's tenant:
+   *   - revenueAndTrips  : last N days of (revenue, trip count) per day
+   *   - loadStatus       : load count per status group for the donut chart
+   *   - bidActivity      : bid count per day for last 7 days (bar chart)
+   *   - recentActivity   : last 10 audit-log events for the activity feed
+   *   - kpi              : top-line numbers for the stat cards
+   */
+  async getDashboardCharts(tenantId: string, days: number = 7) {
+    const safeTenantId = tenantId;
+
+    try {
+      // ── 1. Revenue & Trips per day (last `days` days) ─────────────────────
+      const revenueRows: Array<{ day: string; revenue: string; trips: string }> =
+        await this.tripRepo.manager.query(
+          `SELECT
+             TO_CHAR(DATE_TRUNC('day', t."createdAt"), 'Dy') AS day,
+             COALESCE(SUM(CAST(t."agreedPrice" AS NUMERIC)), 0)  AS revenue,
+             COUNT(*)                                            AS trips
+           FROM trips t
+           WHERE t."tenantId" = $1
+             AND t."createdAt" >= NOW() - ($2 || ' days')::INTERVAL
+           GROUP BY DATE_TRUNC('day', t."createdAt")
+           ORDER BY DATE_TRUNC('day', t."createdAt") ASC`,
+          [safeTenantId, days],
+        );
+
+      const revenueAndTrips = revenueRows.map(r => ({
+        day: r.day,
+        revenue: Number(r.revenue),
+        trips: Number(r.trips),
+      }));
+
+      // ── 2. Load status distribution ───────────────────────────────────────
+      const loadStatusRows: Array<{ status: string; count: string }> =
+        await this.loadRepo.manager.query(
+          `SELECT status, COUNT(*) AS count
+           FROM loads
+           WHERE "tenantId" = $1
+           GROUP BY status`,
+          [safeTenantId],
+        );
+
+      // Group into 4 meaningful buckets for the donut chart
+      const statusMap: Record<string, number> = {};
+      loadStatusRows.forEach(r => { statusMap[r.status] = Number(r.count); });
+
+      const inTransit =
+        (statusMap['IN_TRANSIT'] || 0) +
+        (statusMap['ASSIGNED'] || 0) +
+        (statusMap['LOADED'] || 0);
+      const pending =
+        (statusMap['CREATED'] || 0) +
+        (statusMap['PUBLISHED'] || 0) +
+        (statusMap['DRAFT'] || 0) +
+        (statusMap['PENDING_CONFIRMATION'] || 0);
+      const delivered =
+        (statusMap['DELIVERED'] || 0) +
+        (statusMap['COMPLETED'] || 0) +
+        (statusMap['CLOSED'] || 0);
+      const disputed = statusMap['DISPUTED'] || 0;
+
+      const loadStatus = [
+        { name: 'In Transit', value: inTransit,  color: '#3b82f6' },
+        { name: 'Pending',    value: pending,     color: '#f59e0b' },
+        { name: 'Delivered',  value: delivered,   color: '#10b981' },
+        { name: 'Disputed',   value: disputed,    color: '#ef4444' },
+      ].filter(item => item.value > 0);
+
+      // ── 3. Bid activity — last 7 days ──────────────────────────────────────
+      // Bids are linked to loads which carry tenantId, so we JOIN through loads
+      const bidRows: Array<{ day: string; label: string; bids: string }> =
+        await this.loadRepo.manager.query(
+          `SELECT
+             DATE_TRUNC('day', b."createdAt")                              AS day,
+             TO_CHAR(DATE_TRUNC('day', b."createdAt"), 'Dy')               AS label,
+             COUNT(*)                                                       AS bids
+           FROM bids b
+           JOIN loads l ON l.id = b."loadId"
+           WHERE l."tenantId" = $1
+             AND b."createdAt" >= NOW() - INTERVAL '7 days'
+           GROUP BY DATE_TRUNC('day', b."createdAt")
+           ORDER BY day ASC`,
+          [safeTenantId],
+        );
+
+      // Fill in any missing days with 0
+      const bidActivity = this.fillMissingDays(
+        bidRows.map(r => ({ day: r.day, label: r.label, bids: Number(r.bids) })),
+        7,
+      );
+
+      // ── 4. Recent activity from audit logs ────────────────────────────────
+      const auditRows = await this.auditRepo.find({
+        where: { tenantId: safeTenantId } as any,
+        order: { createdAt: 'DESC' } as any,
+        take: 10,
+      });
+
+      const DOT_COLOR: Record<string, string> = {
+        DISPUTE:  'bg-orange-500',
+        PAYMENT:  'bg-emerald-500',
+        BID:      'bg-blue-500',
+        LOAD:     'bg-purple-500',
+        TRIP:     'bg-slate-400',
+        DEFAULT:  'bg-gray-400',
+      };
+
+      const recentActivity = auditRows.map(log => {
+        const action: string = ((log as any).action || 'DEFAULT').toUpperCase();
+        const typeKey = Object.keys(DOT_COLOR).find(k => action.includes(k)) || 'DEFAULT';
+        return {
+          dot: DOT_COLOR[typeKey],
+          title: this.formatAuditTitle(action),
+          sub: (log as any).details || (log as any).entityId || '',
+          time: this.timeAgo(log.createdAt),
+          type: typeKey.toLowerCase(),
+        };
+      });
+
+      // ── 5. KPI top-line numbers ───────────────────────────────────────────
+      const [activeTrips, openLoads, openDisputes, totalRevRow] = await Promise.all([
+        this.tripRepo.count({ where: { tenantId: safeTenantId, status: 'IN_PROGRESS' } as any }),
+        this.loadRepo.count({ where: { tenantId: safeTenantId, status: 'PUBLISHED' } as any }),
+        this.disputeRepo.count({ where: { tenantId: safeTenantId, status: 'OPEN' } as any }),
+        this.tripRepo.manager.query(
+          `SELECT COALESCE(SUM(CAST("agreedPrice" AS NUMERIC)), 0) AS total
+           FROM trips WHERE "tenantId" = $1
+             AND DATE_TRUNC('day', "createdAt") = DATE_TRUNC('day', NOW())`,
+          [safeTenantId],
+        ),
+      ]);
+
+      const kpi = {
+        activeTrips,
+        openLoads,
+        openDisputes,
+        revenueToday: Number(totalRevRow[0]?.total || 0),
+      };
+
+      return { revenueAndTrips, loadStatus, bidActivity, recentActivity, kpi };
+    } catch (err) {
+      this.logger.error('getDashboardCharts error:', err.message);
+      return {
+        revenueAndTrips: [],
+        loadStatus: [],
+        bidActivity: [],
+        recentActivity: [],
+        kpi: { activeTrips: 0, openLoads: 0, openDisputes: 0, revenueToday: 0 },
+      };
+    }
+  }
+
+  /** Fill missing days in a time series so charts always show N bars */
+  private fillMissingDays(
+    rows: Array<{ day: string | Date; label: string; bids: number }>,
+    n: number,
+  ) {
+    const result: Array<{ label: string; bids: number }> = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const iso = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const found = rows.find(r => {
+        const rowDay = typeof r.day === 'string' ? r.day.split('T')[0] : r.day.toISOString().split('T')[0];
+        return rowDay === iso;
+      });
+      result.push({ label: found?.label || label, bids: found?.bids || 0 });
+    }
+    return result;
+  }
+
+  /** Human-readable title from an audit action string */
+  private formatAuditTitle(action: string): string {
+    return action
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  /** Relative time string */
+  private timeAgo(date: Date): string {
+    const diff = Date.now() - new Date(date).getTime();
+    const mins  = Math.floor(diff / 60_000);
+    const hours = Math.floor(diff / 3_600_000);
+    const days  = Math.floor(diff / 86_400_000);
+    if (mins < 1)  return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  }
 }

@@ -120,4 +120,12 @@ export const operationalAdminApi = {
     });
     return response.data.data || response.data;
   },
+
+  // Dashboard chart data — all charts scoped to the admin's tenant
+  getDashboardCharts: async (days: 7 | 30 = 7) => {
+    const response = await api.get('/admin/operational/dashboard/charts', {
+      params: { days },
+    });
+    return response.data.data || response.data;
+  },
 };
