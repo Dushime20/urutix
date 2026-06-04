@@ -144,12 +144,12 @@ const AdminOperationalDashboard: React.FC = () => {
       )}
 
       {/* ── KPI grid ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
         <StatCard
           title="Active Trips"
           value={loading ? '—' : (kpi?.activeTrips ?? 0)}
-          icon={<Route size={18} />}
-          color="info"
+          icon={<Route size={22} />}
+          color="primary"
           variant="classic"
           subtitle="Currently in progress"
           onClick={() => navigate('/admin-operational/trips')}
@@ -157,8 +157,8 @@ const AdminOperationalDashboard: React.FC = () => {
         <StatCard
           title="Revenue Today"
           value={loading ? '—' : formatCurrency(kpi?.revenueToday ?? 0)}
-          icon={<DollarSign size={18} />}
-          color="emerald"
+          icon={<DollarSign size={22} />}
+          color="success"
           variant="classic"
           subtitle="Platform earnings"
           onClick={() => navigate('/admin-operational/financial')}
@@ -166,8 +166,8 @@ const AdminOperationalDashboard: React.FC = () => {
         <StatCard
           title="Open Loads"
           value={loading ? '—' : (kpi?.openLoads ?? 0)}
-          icon={<Package size={18} />}
-          color="accent"
+          icon={<Package size={22} />}
+          color="primary"
           variant="classic"
           subtitle="Awaiting assignment"
           onClick={() => navigate('/admin-operational/loads')}
@@ -175,7 +175,7 @@ const AdminOperationalDashboard: React.FC = () => {
         <StatCard
           title="Active Disputes"
           value={loading ? '—' : (kpi?.openDisputes ?? 0)}
-          icon={<Gavel size={18} />}
+          icon={<Gavel size={22} />}
           color="warning"
           variant="classic"
           subtitle="Requiring attention"
@@ -184,8 +184,8 @@ const AdminOperationalDashboard: React.FC = () => {
         <StatCard
           title="Active Bids"
           value={loading ? '—' : (bidActivity.reduce((s, d) => s + d.bids, 0))}
-          icon={<TrendingUp size={18} />}
-          color="pink"
+          icon={<TrendingUp size={22} />}
+          color="primary"
           variant="classic"
           subtitle="Last 7 days"
           onClick={() => navigate('/admin-operational/bidding')}
@@ -193,7 +193,7 @@ const AdminOperationalDashboard: React.FC = () => {
         <StatCard
           title="System Health"
           value="99.9%"
-          icon={<Activity size={18} />}
+          icon={<Activity size={22} />}
           color="success"
           variant="classic"
           subtitle="Uptime status"
