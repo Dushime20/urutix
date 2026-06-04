@@ -1,4 +1,4 @@
-import { createPortal } from 'react-dom';
+﻿import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare } from 'lucide-react';
@@ -36,17 +36,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [desktopDropdown, setDesktopDropdown] = useState<string | null>(null);
+  const [mobileExpanded, setMobileExpanded]   = useState<string | null>(null);
 
-  // Track openDropdown changes
+  // Track desktopDropdown changes
   useEffect(() => {
-    console.log('⭐ openDropdown state changed to:', openDropdown);
-    console.log('⭐ Current showMobileMenu:', showMobileMenu);
-    if (openDropdown !== null) {
-      console.log('⭐⭐⭐ DROPDOWN OPENED TO:', openDropdown);
-      console.trace('⭐ Stack trace for dropdown opening:');
+    if (desktopDropdown !== null) {
     }
-  }, [openDropdown, showMobileMenu]);
+  }, [desktopDropdown, showMobileMenu]);
 
   const navRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -369,21 +366,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   };
 
   const handleNavClick = (path?: string) => {
-    console.log('🔵 handleNavClick called with path:', path);
-    console.log('🔵 Current state - showMobileMenu:', showMobileMenu, 'openDropdown:', openDropdown);
-    
-    // Close all menus IMMEDIATELY
-    setOpenDropdown(null);
-    setShowMobileMenu(false);
-    setShowUserMenu(false);
-    
-    console.log('🔵 State set to close - openDropdown: null, showMobileMenu: false');
-    
-    // Then navigate
-    if (path) {
-      console.log('🔵 Navigating to:', path);
-      navigate(path);
-    }
+    if (path) navigate(path);
+    setTimeout(() => {
+      setDesktopDropdown(null);
+      setMobileExpanded(null);
+      setShowMobileMenu(false);
+      setShowUserMenu(false);
+    }, 10);
   };
 
   const getActiveNavItem = () => {
@@ -397,7 +386,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   const activeNavItem = getActiveNavItem();
 
-  console.log('🔄 DashboardHeader rendering - showMobileMenu:', showMobileMenu, 'openDropdown:', openDropdown, 'activeNavItem:', activeNavItem);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -423,24 +411,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   // Track showMobileMenu changes
   useEffect(() => {
-    console.log('⭐ showMobileMenu state changed to:', showMobileMenu);
-    console.log('⭐ Current openDropdown:', openDropdown);
     if (showMobileMenu === true) {
-      console.log('⭐⭐⭐ MOBILE MENU OPENED');
-      console.trace('⭐ Stack trace for mobile menu opening:');
     }
-  }, [showMobileMenu, openDropdown]);
+  }, [showMobileMenu, desktopDropdown]);
 
   useEffect(() => {
     if (showMobileMenu) {
-      console.log('🟢 Mobile menu OPENED');
       document.body.style.overflow = 'hidden';
     } else {
-      console.log('🔴 Mobile menu CLOSED');
       document.body.style.overflow = '';
       // When mobile menu closes, also close any dropdowns
-      console.log('🔴 Closing dropdown because mobile menu closed');
-      setOpenDropdown(null);
+      setDesktopDropdown(null);
     }
     return () => {
       document.body.style.overflow = '';
@@ -449,12 +430,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   // Close dropdown and mobile menu when route changes
   useEffect(() => {
-    console.log('🟡 Route changed to:', location.pathname);
-    console.log('🟡 Current state BEFORE closing - showMobileMenu:', showMobileMenu, 'openDropdown:', openDropdown);
-    console.log('🟡 Closing dropdown and mobile menu');
-    setOpenDropdown(null);
+    setDesktopDropdown(null);
     setShowMobileMenu(false);
-    console.log('🟡 State setters called - waiting for re-render');
   }, [location.pathname]);
 
   useEffect(() => {
@@ -492,7 +469,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenDropdown(openDropdown === item.label ? null : item.label);
+                            setOpenDropdown(desktopDropdown === item.label ? null : item.label);
                           }}
                           className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
                                               ${isActive
@@ -503,7 +480,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                           <div className="absolute inset-0 bg-primary-100/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
                           {item.icon && <item.icon className={`w-3.5 h-3.5 xl:w-4 xl:h-4 transition-transform ${isActive ? 'scale-110' : ''}`} />}
                           <span className="relative"><TranslatedText text={item.label} /></span>
-                          <ChevronDown className={`w-3 h-3 transition-transform relative ${openDropdown === item.label ? 'rotate-180' : ''}`} />
+                          <ChevronDown className={`w-3 h-3 transition-transform relative ${desktopDropdown === item.label ? 'rotate-180' : ''}`} />
                         </button>
                       ) : (
                         <Link
@@ -521,7 +498,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         </Link>
                       )}
 
-                      {hasSubItems && openDropdown === item.label && (
+                      {hasSubItems && desktopDropdown === item.label && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
                           <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1 space-y-2">
                             <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase"><TranslatedText text="Quick Actions" /></div>
@@ -661,9 +638,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
       {/* Side-Docked Mobile Menu Drawer */}
       {createPortal(
-        <AnimatePresence mode="wait" key={location.pathname}>
+        <AnimatePresence initial={false} key={location.pathname}>
           {(() => {
-            console.log('📱 AnimatePresence check - showMobileMenu:', showMobileMenu, 'route:', location.pathname);
             return showMobileMenu;
           })() && (
             <>
@@ -675,7 +651,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0, transition: { duration: 0.2 } }}
                 onClick={() => {
-                  console.log('📱 Backdrop clicked - closing mobile menu');
                   setShowMobileMenu(false);
                 }}
                 className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm xl:hidden z-[999998]"
@@ -694,10 +669,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                   duration: 0.3
                 }}
                 onAnimationStart={(definition) => {
-                  console.log('📱 Drawer animation STARTED:', definition);
                 }}
                 onAnimationComplete={(definition) => {
-                  console.log('📱 Drawer animation COMPLETED:', definition);
                 }}
                 className="fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-slate-900 shadow-2xl xl:hidden z-[999999] flex flex-col border-r border-slate-200 dark:border-slate-800"
               >
@@ -743,7 +716,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 <div className="flex-1 overflow-y-auto px-3 custom-scrollbar space-y-1 py-2">
                   {navItems.map((item, idx) => {
                     const hasSubItems = item.subItems && item.subItems.length > 0;
-                    const isDropdownOpen = openDropdown === item.label;
+                    const isDropdownOpen = mobileExpanded === item.label;
                     const isActive = activeNavItem === item.label;
 
                     return (
@@ -757,10 +730,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              console.log('🟣 Parent dropdown button clicked:', item.label);
-                              console.log('🟣 isDropdownOpen:', isDropdownOpen, 'will toggle to:', !isDropdownOpen);
                               // Toggle the dropdown
-                              setOpenDropdown(isDropdownOpen ? null : item.label);
+                              setMobileExpanded(isDropdownOpen ? null : item.label);
                             }}
                             className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all active:scale-[0.98] ${
                               isActive 
@@ -782,11 +753,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             />
                           </button>
                         ) : (
-                          <button
-                            onClick={() => {
-                              console.log('🟣 Nav item (no subitems) clicked:', item.label);
-                              handleNavClick(item.path);
-                            }}
+                          <Link
+                            to={item.path}
+                            onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
                             className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all active:scale-[0.98] ${
                               isActive 
                                 ? 'bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400' 
@@ -801,27 +770,22 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                 <TranslatedText text={item.label} />
                               </span>
                             </div>
-                          </button>
+                          </Link>
                         )}
 
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence initial={false}>
                           {hasSubItems && isDropdownOpen && (
                             <motion.div
-                              key={item.label}
-                              initial={{ height: 0, opacity: 0, scaleY: 0.95 }}
-                              animate={{ height: 'auto', opacity: 1, scaleY: 1 }}
-                              exit={{ height: 0, opacity: 0, scaleY: 0.95, transition: { duration: 0.15 } }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden bg-slate-50/50 dark:bg-slate-800/30 rounded-xl mx-2 my-1 border-l-2 border-slate-200 dark:border-slate-700"
+                              key={`${item.label}-sub`}
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0, transition: { duration: 0.15 } }}
+                              transition={{ duration: 0.22, ease: 'easeInOut' }}
+                              style={{ overflow: "hidden" }} className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl mx-2 my-1 border-l-2 border-slate-200 dark:border-slate-700"
                             >
                                 <div className="py-2 px-1 space-y-1">
                                   {item.subItems?.map((sub, sIdx) => (
-                                    <button
-                                      key={sub.path}
-                                      onClick={() => {
-                                        console.log('🟠 Subitem clicked:', sub.label, 'path:', sub.path);
-                                        handleNavClick(sub.path);
-                                      }}
+                                    <Link key={sub.path} to={sub.path} onClick={() => setTimeout(() => setShowMobileMenu(false), 80)}
                                       className={`w-full group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                                         location.pathname === sub.path
                                           ? 'bg-white dark:bg-slate-800 shadow-sm text-[#345E85] dark:text-blue-400'
@@ -843,12 +807,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                                         <TranslatedText text={sub.label} />
                                       </span>
                                       {location.pathname === sub.path && (
-                                        <motion.div 
-                                          layoutId="activeSub"
-                                          className="ml-auto w-1 h-3 bg-[#345E85] rounded-full"
-                                        />
+                                        <div className="ml-auto w-1 h-3 bg-[#345E85] rounded-full" />
                                       )}
-                                    </button>
+                                    </Link>
                                   ))}
                                 </div>
                             </motion.div>
