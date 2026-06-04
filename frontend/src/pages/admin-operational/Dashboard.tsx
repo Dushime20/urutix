@@ -144,7 +144,7 @@ const AdminOperationalDashboard: React.FC = () => {
       )}
 
       {/* ── KPI grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
         <StatCard
           title="Active Trips"
           value={loading ? '—' : (kpi?.activeTrips ?? 0)}
@@ -176,7 +176,7 @@ const AdminOperationalDashboard: React.FC = () => {
           title="Active Disputes"
           value={loading ? '—' : (kpi?.openDisputes ?? 0)}
           icon={<Gavel size={22} />}
-          color="warning"
+          color="error"
           variant="classic"
           subtitle="Requiring attention"
           onClick={() => navigate('/admin-operational/disputes')}
