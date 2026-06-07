@@ -398,96 +398,62 @@ export class LendingService {
     createLenderDto: CreateLenderDto,
     tenantId?: string,
   ): Promise<LenderResponseDto> {
-    this.logger.log(`Starting lender creation process for: ${createLenderDto.name}`);
-    if (tenantId) {
-      this.logger.log(`Creating lender for tenant: ${tenantId}`);
+    // tenantId is REQUIRED — lenders must always belong to a tenant
+    if (!tenantId) {
+      throw new BadRequestException(
+        'tenantId is required when creating a lender. ' +
+        'A lender must operate within a specific tenant.',
+      );
     }
-    
-    // Step 1: Check if user already exists BEFORE creating lender
-    // For tenant-specific lenders, check within the tenant scope
-    this.logger.log(`Checking if user with email ${createLenderDto.contact_email} already exists...`);
+
+    this.logger.log(`Creating lender "${createLenderDto.name}" for tenant: ${tenantId}`);
+
+    // Check if user already exists within this tenant
     const existingUser = await this.userRepository.findOne({
-      where: tenantId 
-        ? { 
-            email: createLenderDto.contact_email.trim().toLowerCase(),
-            tenantId: tenantId,
-            role: UserRole.LENDER,
-          }
-        : { 
-            email: createLenderDto.contact_email.trim().toLowerCase(),
-            role: UserRole.LENDER,
-          },
+      where: {
+        email: createLenderDto.contact_email.trim().toLowerCase(),
+        tenantId,
+        role: UserRole.LENDER,
+      },
     });
 
     if (existingUser) {
-      this.logger.error(
-        `Lender user with email ${createLenderDto.contact_email} already exists. Cannot create lender with existing user email.`,
-      );
       throw new ConflictException(
-        `A lender with the email "${createLenderDto.contact_email}" already exists in the system.`,
+        `A lender with the email "${createLenderDto.contact_email}" already exists in this tenant.`,
       );
     }
 
-    // Step 2: Create the lender entity (only if user doesn't exist)
-    this.logger.log(`No existing user found. Proceeding with lender creation...`);
+    // Create the lender entity — always scoped to the tenant
     const apiKey = this.generateApiKey();
     const hashedApiKey = await bcrypt.hash(apiKey, 10);
 
     const lender = this.lenderRepository.create({
       ...createLenderDto,
       api_key_hash: hashedApiKey,
-      tenant_id: tenantId || null,
+      tenant_id: tenantId,              // always set — never null
     });
 
-    // Save lender to database - this must succeed before proceeding
     const savedLender = await this.lenderRepository.save(lender);
-    this.logger.log(`✅ Lender created successfully with ID: ${savedLender.id}`);
+    this.logger.log(`Lender entity created: ${savedLender.id} (tenant: ${tenantId})`);
 
-    // Step 3: After lender is successfully created, proceed with user account creation
-    this.logger.log(`Proceeding with user account creation for email: ${createLenderDto.contact_email}`);
-    
     try {
-      // Create new user for lender (following tenant creation pattern)
-      this.logger.log(`👤 Creating new lender user account...`);
-      
-      // For lenders, tenantId should be nullable or use the first available tenant
-      // If no tenantId provided, query for the first tenant or set to null
-      let lenderTenantId = tenantId;
-      
-      if (!lenderTenantId) {
-        // Try to find the first tenant in the system
-        const firstTenant = await this.dataSource.getRepository('Tenant').findOne({
-          where: {},
-          order: { createdAt: 'ASC' }
-        });
-        
-        if (firstTenant) {
-          lenderTenantId = firstTenant.id;
-          this.logger.log(`Using first available tenant: ${lenderTenantId}`);
-        } else {
-          // If no tenant exists, we cannot create a user (FK constraint will fail)
-          throw new Error('No tenant found in the system. Please create a tenant first before creating lenders.');
-        }
-      }
-      
-      // Check for any existing user with this email to reuse credentials
+      // Reuse credentials if the email already has any user record
       const anyExistingUser = await this.userRepository.findOne({
-        where: { email: createLenderDto.contact_email.trim().toLowerCase() }
+        where: { email: createLenderDto.contact_email.trim().toLowerCase() },
       });
 
-      let passwordHashToUse;
+      let passwordHashToUse: string;
       let userStatus = UserStatus.PENDING_VERIFICATION;
       let shouldSendSetupEmail = true;
 
-      if (anyExistingUser && anyExistingUser.passwordHash) {
-          passwordHashToUse = anyExistingUser.passwordHash;
-          userStatus = UserStatus.ACTIVE;
-          shouldSendSetupEmail = false;
-          this.logger.log(`Found existing user account for ${createLenderDto.contact_email}. Reusing credentials.`);
+      if (anyExistingUser?.passwordHash) {
+        passwordHashToUse  = anyExistingUser.passwordHash;
+        userStatus         = UserStatus.ACTIVE;
+        shouldSendSetupEmail = false;
+        this.logger.log(`Reusing existing credentials for ${createLenderDto.contact_email}`);
       } else {
-          // Generate temporary password (will be replaced when lender sets password)
-          const tempPassword = crypto.randomBytes(32).toString('hex');
-          passwordHashToUse = await bcrypt.hash(tempPassword, 12);
+        const tempPassword = crypto.randomBytes(32).toString('hex');
+        passwordHashToUse  = await bcrypt.hash(tempPassword, 12);
       }
 
       const lenderUser = this.userRepository.create({
@@ -495,29 +461,26 @@ export class LendingService {
         passwordHash: passwordHashToUse,
         role: UserRole.LENDER,
         status: userStatus,
-        tenantId: lenderTenantId,
+        tenantId,                       // same tenant as the lender entity
       });
 
       const savedUser = await this.userRepository.save(lenderUser);
-      this.logger.log(`✅ Lender user created with ID: ${savedUser.id}`);
+      this.logger.log(`Lender user created: ${savedUser.id} (tenant: ${tenantId})`);
 
-      // Create user profile (following tenant creation pattern)
       const nameParts = (createLenderDto.name || 'Lender Admin').split(' ');
       const userProfile = this.userProfileRepository.create({
         userId: savedUser.id,
-        tenantId: lenderTenantId,
+        tenantId,
         firstName: nameParts[0] || 'Lender',
         lastName: nameParts.slice(1).join(' ') || 'Admin',
         companyName: createLenderDto.name,
       });
       await this.userProfileRepository.save(userProfile);
-      this.logger.log(`✅ User profile created for lender user`);
 
       if (shouldSendSetupEmail) {
-          // Generate password setup token
-          this.logger.log(`📧 Generating password setup token for: ${createLenderDto.contact_email}`);
-          const token = crypto.randomBytes(32).toString('hex');
-          const expiresAt = new Date();
+        this.logger.log(`Generating password setup token for: ${createLenderDto.contact_email}`);
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
 
           // Invalidate any existing tokens for this email
@@ -1906,10 +1869,15 @@ export class LendingService {
     });
   }
 
-  async getLenderDashboard(lenderId: string, dateFrom?: Date, dateTo?: Date) {
+  async getLenderDashboard(lenderId: string, dateFrom?: Date, dateTo?: Date, tenantId?: string) {
     const queryBuilder = this.loanRequestRepository
       .createQueryBuilder('loan')
       .where('loan.lender_id = :lenderId', { lenderId });
+
+    // Tenant scope — only loans from the lender's tenant
+    if (tenantId) {
+      queryBuilder.andWhere('loan.tenant_id = :tenantId', { tenantId });
+    }
 
     if (dateFrom) {
       queryBuilder.andWhere('loan.created_at >= :dateFrom', { dateFrom });
@@ -2486,6 +2454,7 @@ export class LendingService {
     status?: string,
     page: number = 1,
     limit: number = 10,
+    tenantId?: string,                      // ← tenant scope
   ) {
     // Step 1: Resolve the actual Lender entity ID from whatever was passed
     let actualLenderId: string | null = null;
@@ -2495,6 +2464,13 @@ export class LendingService {
     });
 
     if (lenderEntity) {
+      // Enforce tenant boundary: lender must belong to the caller's tenant
+      if (tenantId && lenderEntity.tenant_id && lenderEntity.tenant_id !== tenantId) {
+        this.logger.warn(
+          `Tenant boundary violation: lender ${lenderId} belongs to tenant ${lenderEntity.tenant_id}, caller is tenant ${tenantId}`,
+        );
+        return { data: [], total: 0, page, limit, totalPages: 0 };
+      }
       actualLenderId = lenderEntity.id;
     } else {
       // lenderId might be a User ID — resolve via email
@@ -2502,6 +2478,13 @@ export class LendingService {
         where: { id: lenderId, role: UserRole.LENDER },
       });
       if (user) {
+        // Enforce tenant boundary on user-based resolution
+        if (tenantId && user.tenantId !== tenantId) {
+          this.logger.warn(
+            `Tenant boundary violation: lender user ${lenderId} belongs to tenant ${user.tenantId}, caller is tenant ${tenantId}`,
+          );
+          return { data: [], total: 0, page, limit, totalPages: 0 };
+        }
         const lenderByEmail = await this.lenderRepository.findOne({
           where: { contact_email: user.email },
         });
@@ -2521,7 +2504,7 @@ export class LendingService {
       return { data: [], total: 0, page, limit, totalPages: 0 };
     }
 
-    // Step 2: Query loans assigned to this lender, joining loan_terms for computed values
+    // Step 2: Query loans assigned to this lender, scoped to the caller's tenant
     const qb = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.lender', 'lender')
@@ -2530,6 +2513,11 @@ export class LendingService {
       .leftJoinAndSelect('loan.borrower', 'borrower')
       .leftJoinAndSelect('loan.loanTerms', 'loanTerms')
       .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
+
+    // Tenant scope — lender only sees loans from their own tenant
+    if (tenantId) {
+      qb.andWhere('loan.tenant_id = :tenantId', { tenantId });
+    }
 
     // Handle status filter - support comma-separated values
     if (status) {
@@ -2587,7 +2575,7 @@ export class LendingService {
     return { data: enrichedLoans, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async getLenderAnalytics(lenderId: string, period: string = '30d') {
+  async getLenderAnalytics(lenderId: string, period: string = '30d', tenantId?: string) {
     const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - days);
@@ -2603,12 +2591,18 @@ export class LendingService {
       }
     }
 
-    const loans = await this.loanRequestRepository
+    const qb = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.repayments', 'repayments')
       .where('loan.lender_id = :lenderId', { lenderId: actualLenderId })
-      .andWhere('loan.created_at >= :fromDate', { fromDate })
-      .getMany();
+      .andWhere('loan.created_at >= :fromDate', { fromDate });
+
+    // Tenant scope
+    if (tenantId) {
+      qb.andWhere('loan.tenant_id = :tenantId', { tenantId });
+    }
+
+    const loans = await qb.getMany();
 
     const totalLoans = loans.length;
     const totalAmount = loans.reduce(
@@ -2648,7 +2642,7 @@ export class LendingService {
   /**
    * Public method called by the controller — resolves user ID → lender entity ID first.
    */
-  async getLenderActiveLoans(lenderId: string, page: number = 1, limit: number = 10) {
+  async getLenderActiveLoans(lenderId: string, page: number = 1, limit: number = 10, tenantId?: string) {
     // Resolve actual lender entity ID (user ID may be passed)
     let actualLenderId = lenderId;
     const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
@@ -2659,10 +2653,10 @@ export class LendingService {
         if (lenderByEmail) actualLenderId = lenderByEmail.id;
       }
     }
-    return this.getActiveLoan(actualLenderId, page, limit);
+    return this.getActiveLoan(actualLenderId, page, limit, tenantId);
   }
 
-  async getActiveLoan(lenderId: string, page: number = 1, limit: number = 10) {
+  async getActiveLoan(lenderId: string, page: number = 1, limit: number = 10, tenantId?: string) {
     const queryBuilder = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.lender', 'lender')
@@ -2672,7 +2666,14 @@ export class LendingService {
       .where('loan.lender_id = :lenderId', { lenderId })
       .andWhere('loan.status IN (:...statuses)', {
         statuses: ['approved', 'disbursed'],
-      })
+      });
+
+    // Tenant scope
+    if (tenantId) {
+      queryBuilder.andWhere('loan.tenant_id = :tenantId', { tenantId });
+    }
+
+    queryBuilder
       .orderBy('loan.created_at', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -2691,6 +2692,7 @@ export class LendingService {
     lenderId: string,
     page: number = 1,
     limit: number = 50,
+    tenantId?: string,                      // ← tenant scope
   ) {
     // Resolve actual lender entity ID
     let actualLenderId = lenderId;
@@ -2703,14 +2705,18 @@ export class LendingService {
       }
     }
 
-    // Fetch all loans for this lender with borrower relation
-    const loans = await this.loanRequestRepository
+    // Fetch all loans for this lender with borrower relation — scoped to tenant
+    const qb = this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.borrower', 'borrower')
       .leftJoinAndSelect('loan.repayments', 'repayments')
-      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId })
-      .orderBy('loan.created_at', 'DESC')
-      .getMany();
+      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
+
+    if (tenantId) {
+      qb.andWhere('loan.tenant_id = :tenantId', { tenantId });
+    }
+
+    const loans = await qb.orderBy('loan.created_at', 'DESC').getMany();
 
     // Group by borrower_id — one entry per unique borrower
     const borrowerMap = new Map<string, {

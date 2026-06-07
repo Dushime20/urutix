@@ -100,8 +100,11 @@ export class LendingController {
     description: 'Forbidden - insufficient permissions',
   })
   async createLender(@Body() createLenderDto: CreateLenderDto, @Request() req: any) {
-    // For ADMIN users, tenantId is null/undefined. For TENANT_ADMIN, use their tenantId
-    const tenantId = req.user?.role === UserRole.TENANT_ADMIN ? req.user.tenantId : null;
+    // All roles must supply a tenant — SUPER_ADMIN/ADMIN use body.tenantId or their own tenantId
+    const tenantId =
+      req.user?.tenantId ||                             // TENANT_ADMIN / ADMIN always have tenantId
+      (createLenderDto as any).tenantId ||              // SUPER_ADMIN can pass it in the body
+      null;
     return await this.lendingService.createLender(createLenderDto, tenantId);
   }
 
@@ -1042,8 +1045,14 @@ export class LendingController {
     @Param('lenderId', ParseUUIDPipe) lenderId: string,
     @Query('page')  page  = 1,
     @Query('limit') limit = 10,
+    @Request() req?: any,
   ) {
-    return await this.lendingService.getLenderActiveLoans(lenderId, Number(page), Number(limit));
+    return await this.lendingService.getLenderActiveLoans(
+      lenderId,
+      Number(page),
+      Number(limit),
+      req?.user?.tenantId,
+    );
   }
 
   // ===== LENDER REPAYMENTS ENDPOINT =====
@@ -1191,14 +1200,16 @@ export class LendingController {
     @Param('lenderId', ParseUUIDPipe) lenderId: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
+    @Request() req?: any,
   ) {
     const fromDate = dateFrom ? new Date(dateFrom) : undefined;
-    const toDate = dateTo ? new Date(dateTo) : undefined;
+    const toDate   = dateTo   ? new Date(dateTo)   : undefined;
 
     return await this.lendingService.getLenderDashboard(
       lenderId,
       fromDate,
       toDate,
+      req?.user?.tenantId,
     );
   }
 
@@ -1260,8 +1271,13 @@ export class LendingController {
   async getLenderAnalytics(
     @Param('lenderId', ParseUUIDPipe) lenderId: string,
     @Query('months') months: number = 12,
+    @Request() req?: any,
   ) {
-    return await this.lenderAnalyticsService.getFullAnalytics(lenderId, Number(months));
+    return await this.lenderAnalyticsService.getFullAnalytics(
+      lenderId,
+      Number(months),
+      req?.user?.tenantId,
+    );
   }
 
   @Get('lending/lenders/:lenderId/loan-requests')
@@ -1307,12 +1323,14 @@ export class LendingController {
     @Query('status') status?: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Request() req?: any,
   ) {
     return await this.lendingService.getLenderLoanRequests(
       lenderId,
       status,
       page,
       limit,
+      req?.user?.tenantId,
     );
   }
 
@@ -1829,8 +1847,10 @@ export class LendingController {
     @Param('lenderId', ParseUUIDPipe) lenderId: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Request() req?: any,
   ) {
-    const loans = await this.lendingService.getLenderLoanRequests(lenderId, undefined, page, limit);
+    const tenantId = req?.user?.tenantId;
+    const loans = await this.lendingService.getLenderLoanRequests(lenderId, undefined, page, limit, tenantId);
     const raw: any[] = Array.isArray(loans) ? loans : (loans as any)?.data ?? [];
     const borrowerMap = new Map<string, any>();
     for (const loan of raw) {

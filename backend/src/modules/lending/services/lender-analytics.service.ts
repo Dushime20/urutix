@@ -75,14 +75,16 @@ export class LenderAnalyticsService {
     private loanRequestRepository: Repository<LoanRequest>,
   ) {}
 
-  // ── resolve User UUID → Lender entity UUID ──────────────────────────────
-  private async resolveLoans(lenderId: string): Promise<LoanRequest[]> {
-    return this.loanRequestRepository.find({ where: { lender_id: lenderId } });
+  // ── resolve User UUID → Lender entity UUID — scoped to tenant ─────────
+  private async resolveLoans(lenderId: string, tenantId?: string): Promise<LoanRequest[]> {
+    const where: any = { lender_id: lenderId };
+    if (tenantId) where.tenant_id = tenantId;
+    return this.loanRequestRepository.find({ where });
   }
 
   // ── Core Portfolio Metrics (IFRS 9 / Basel II) ──────────────────────────
-  async getPortfolioMetrics(lenderId: string): Promise<PortfolioMetrics> {
-    const loans = await this.resolveLoans(lenderId);
+  async getPortfolioMetrics(lenderId: string, tenantId?: string): Promise<PortfolioMetrics> {
+    const loans = await this.resolveLoans(lenderId, tenantId);
 
     const disbursed = loans.filter(l =>
       l.status === LoanRequestStatus.DISBURSED ||
@@ -138,8 +140,8 @@ export class LenderAnalyticsService {
   }
 
   // ── Monthly Trends (last 12 months) ─────────────────────────────────────
-  async getMonthlyTrends(lenderId: string, months = 12): Promise<MonthlyTrend[]> {
-    const loans = await this.resolveLoans(lenderId);
+  async getMonthlyTrends(lenderId: string, months = 12, tenantId?: string): Promise<MonthlyTrend[]> {
+    const loans = await this.resolveLoans(lenderId, tenantId);
     const trends: Map<string, MonthlyTrend> = new Map();
 
     const now = new Date();
@@ -173,8 +175,8 @@ export class LenderAnalyticsService {
   }
 
   // ── Risk Distribution ────────────────────────────────────────────────────
-  async getRiskDistribution(lenderId: string): Promise<RiskDistribution> {
-    const loans = await this.resolveLoans(lenderId);
+  async getRiskDistribution(lenderId: string, tenantId?: string): Promise<RiskDistribution> {
+    const loans = await this.resolveLoans(lenderId, tenantId);
     const active = loans.filter(l =>
       l.status === LoanRequestStatus.DISBURSED ||
       l.status === LoanRequestStatus.APPROVED,
@@ -203,8 +205,8 @@ export class LenderAnalyticsService {
   }
 
   // ── Cargo-Type Breakdown ─────────────────────────────────────────────────
-  async getCargoBreakdown(lenderId: string): Promise<CargoTypeBreakdown[]> {
-    const loans = await this.resolveLoans(lenderId);
+  async getCargoBreakdown(lenderId: string, tenantId?: string): Promise<CargoTypeBreakdown[]> {
+    const loans = await this.resolveLoans(lenderId, tenantId);
     const map: Map<string, { count: number; total: number; defaults: number; rates: number[] }> = new Map();
 
     for (const l of loans) {
@@ -235,12 +237,12 @@ export class LenderAnalyticsService {
   }
 
   // ── Full Analytics Bundle ────────────────────────────────────────────────
-  async getFullAnalytics(lenderId: string, months = 12): Promise<FullAnalytics> {
+  async getFullAnalytics(lenderId: string, months = 12, tenantId?: string): Promise<FullAnalytics> {
     const [portfolio, monthly_trends, risk_distribution, cargo_breakdown] = await Promise.all([
-      this.getPortfolioMetrics(lenderId),
-      this.getMonthlyTrends(lenderId, months),
-      this.getRiskDistribution(lenderId),
-      this.getCargoBreakdown(lenderId),
+      this.getPortfolioMetrics(lenderId, tenantId),
+      this.getMonthlyTrends(lenderId, months, tenantId),
+      this.getRiskDistribution(lenderId, tenantId),
+      this.getCargoBreakdown(lenderId, tenantId),
     ]);
 
     // IFRS 9 ECL estimate: Stage1×0.5% + Stage2×5% + Stage3×40% of outstanding

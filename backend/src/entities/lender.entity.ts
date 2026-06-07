@@ -21,7 +21,7 @@ export class Lender {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', nullable: true, name: 'tenant_id' })
+  @Column({ type: 'uuid', nullable: false, name: 'tenant_id' })
   tenant_id: string;
 
   @Column({ type: 'varchar', length: 255 })
