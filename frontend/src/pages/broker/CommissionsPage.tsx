@@ -80,7 +80,7 @@ const CommissionsPage: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Yield Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -96,7 +96,7 @@ const CommissionsPage: React.FC = () => {
         <div className="relative z-10 flex items-center gap-12 mr-4">
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-emerald-400">{stats.totalEarned.toLocaleString()}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">KES Revenue</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">KES Revenue</p>
            </div>
            <div className="flex gap-4">
              <button className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-sm font-bold uppercase hover:bg-white hover:text-slate-900 transition-all">Export</button>
@@ -114,14 +114,14 @@ const CommissionsPage: React.FC = () => {
           { label: 'Pending Pipeline', value: stats.totalPending, sub: 'In Clearance Cycle', icon: Clock, isCount: false },
           { label: 'Total Records', value: stats.total, sub: 'Facilitations Processed', icon: Activity, isCount: true }
         ].map((stat, i) => (
-          <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
+          <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
             <div className="relative z-10 space-y-6">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50">
                 <stat.icon size={20} />
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
-                <h3 className="text-3xl font-bold text-slate-900">
+                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
                   {stat.isCount ? stat.value : `${stat.value.toLocaleString()} KES`}
                 </h3>
               </div>
@@ -131,7 +131,7 @@ const CommissionsPage: React.FC = () => {
       </div>
 
       {/* Audit Controls */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 relative group overflow-hidden">
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 relative group overflow-hidden dark:bg-slate-900 dark:border-slate-800">
         <div className="flex-1 space-y-2">
           <label className="text-sm font-bold text-slate-400 uppercase ml-4">Stage</label>
           <div className="relative">
@@ -139,7 +139,7 @@ const CommissionsPage: React.FC = () => {
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full bg-slate-50 border-none rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border-none rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none appearance-none cursor-pointer dark:bg-slate-800/50 dark:text-white"
             >
               <option value="">All Transactions</option>
               <option value="PENDING">Awaiting</option>
@@ -152,23 +152,23 @@ const CommissionsPage: React.FC = () => {
           <label className="text-sm font-bold text-slate-400 uppercase ml-4">Start Boundary</label>
           <div className="relative">
             <Calendar size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
-            <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" />
+            <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none dark:bg-slate-800/50 dark:text-white" />
           </div>
         </div>
         <div className="flex-1 space-y-2">
           <label className="text-sm font-bold text-slate-400 uppercase ml-4">End Boundary</label>
           <div className="relative">
             <Calendar size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
-            <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" />
+            <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none dark:bg-slate-800/50 dark:text-white" />
           </div>
         </div>
       </div>
 
       {/* Ledger */}
-      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
-        <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-          <h3 className="text-sm font-bold text-slate-900 uppercase">Transaction Ledger</h3>
-          <div className="px-4 py-2 bg-white rounded-full text-xs font-bold text-slate-400 uppercase border border-slate-100 shadow-sm">
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
+        <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50 dark:border-slate-800/50">
+          <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Transaction Ledger</h3>
+          <div className="px-4 py-2 bg-white rounded-full text-xs font-bold text-slate-400 uppercase border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
             Records: {commissions.length}
           </div>
         </div>
@@ -176,9 +176,9 @@ const CommissionsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-white">
+              <tr className="bg-white dark:bg-slate-900">
                 {['Ref Node', 'Base Value', 'Yield Factor', 'Net Amount', 'State', 'Timestamp'].map((header) => (
-                  <th key={header} className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">
+                  <th key={header} className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">
                     {header}
                   </th>
                 ))}
@@ -188,16 +188,16 @@ const CommissionsPage: React.FC = () => {
               {commissions.map((comm) => (
                 <tr key={comm.id} className="group hover:bg-slate-50/50 transition-all duration-300">
                   <td className="px-10 py-10">
-                    <p className="text-sm font-bold text-slate-900 uppercase italic group-hover:text-primary-600 transition-colors">#{comm.loadId.substring(0, 10).toUpperCase()}</p>
+                    <p className="text-sm font-bold text-slate-900 uppercase italic group-hover:text-primary-600 transition-colors dark:text-white">#{comm.loadId.substring(0, 10).toUpperCase()}</p>
                   </td>
-                  <td className="px-10 py-10 text-xs font-bold text-slate-700">
+                  <td className="px-10 py-10 text-xs font-bold text-slate-700 dark:text-slate-200">
                     {comm.loadAmount.toLocaleString()} KES
                   </td>
                   <td className="px-10 py-10">
                     <span className="text-xs font-bold text-primary-500 bg-primary-50 px-3 py-1 rounded-lg border border-primary-100">{comm.commissionRate}%</span>
                   </td>
                   <td className="px-10 py-10">
-                    <p className="text-xl font-bold text-slate-900">{comm.commissionAmount.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">{comm.commissionAmount.toLocaleString()}</p>
                   </td>
                   <td className="px-10 py-10">
                     <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase border shadow-sm ${getStatusPrimeStyle(comm.status)}`}>
@@ -205,7 +205,7 @@ const CommissionsPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-10 py-10 text-right">
-                    <p className="text-xs font-bold text-slate-900 uppercase">{new Date(comm.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs font-bold text-slate-900 uppercase dark:text-white">{new Date(comm.createdAt).toLocaleDateString()}</p>
                   </td>
                 </tr>
               ))}

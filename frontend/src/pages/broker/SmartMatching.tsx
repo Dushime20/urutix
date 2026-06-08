@@ -80,7 +80,7 @@ const SmartMatching: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Smart Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -120,12 +120,12 @@ const SmartMatching: React.FC = () => {
             { title: 'Max Profits', desc: 'Identify more ways to save money and increase your earnings.', icon: <TrendingUp className="text-primary-600" /> },
             { title: 'Safe Delivery', desc: 'Reliability screening across all registered carriers.', icon: <Shield className="text-primary-600" /> }
           ].map((feature, i) => (
-            <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary-600 group-hover:text-white transition-all">
+            <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group dark:bg-slate-900 dark:border-slate-800">
+              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary-600 group-hover:text-white transition-all dark:bg-slate-800/50">
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-3">{feature.title}</h3>
-              <p className="text-slate-500 text-sm font-medium leading-relaxed">{feature.desc}</p>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-3 dark:text-white">{feature.title}</h3>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed dark:text-slate-400">{feature.desc}</p>
             </div>
           ))}
         </div>
@@ -133,14 +133,14 @@ const SmartMatching: React.FC = () => {
         <div className="space-y-12">
           <div className="flex items-end justify-between px-4">
             <div>
-              <h2 className="text-3xl font-bold text-slate-900">Best Matches</h2>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Best Matches</h2>
               <p className="text-slate-400 font-bold uppercase text-sm mt-1">Found {recommendations.length} Matches</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-8">
             {recommendations.map((rec, index) => (
-              <div key={rec.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col lg:flex-row hover:shadow-2xl transition-all duration-500 group">
+              <div key={rec.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col lg:flex-row hover:shadow-2xl transition-all duration-500 group dark:bg-slate-900 dark:border-slate-800">
                 <div className={`lg:w-80 p-10 flex flex-col justify-between items-center text-center ${index === 0 ? 'bg-primary-600 text-white' : 'bg-slate-50 text-slate-900'}`}>
                   <div>
                     <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 ${index === 0 ? 'bg-white/20 backdrop-blur-md' : 'bg-white shadow-lg'}`}>
@@ -159,18 +159,18 @@ const SmartMatching: React.FC = () => {
                 </div>
 
                 <div className="flex-1 p-10 lg:p-12">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 pb-10 border-b border-slate-50">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 pb-10 border-b border-slate-50 dark:border-slate-800/50">
                     <div>
                       <p className="text-sm font-bold text-slate-400 uppercase mb-2">Distance Score</p>
-                      <p className="text-xl font-bold text-slate-900">{rec.matchingFactors.distanceScore}%</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{rec.matchingFactors.distanceScore}%</p>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-400 uppercase mb-2">Capacity</p>
-                      <p className="text-xl font-bold text-slate-900">{rec.matchingFactors.capacityUtilization}%</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{rec.matchingFactors.capacityUtilization}%</p>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-400 uppercase mb-2">Reliability</p>
-                      <p className="text-xl font-bold text-slate-900">{rec.matchingFactors.reliabilityScore}%</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{rec.matchingFactors.reliabilityScore}%</p>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-primary-600 uppercase mb-2">Savings</p>
@@ -211,7 +211,7 @@ const SmartMatching: React.FC = () => {
                     <div className="flex items-center gap-4 shrink-0">
                       <button 
                         onClick={() => setSelectedRecommendation(rec)}
-                        className="px-8 py-4 bg-slate-50 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 transition-all border border-slate-100"
+                        className="px-8 py-4 bg-slate-50 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 transition-all border border-slate-100 dark:bg-slate-800/50 dark:text-white dark:border-slate-800"
                       >
                         Details
                       </button>
@@ -255,10 +255,10 @@ const RecommendationDetailsModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-6 animate-fade-in" onClick={onClose}>
       <div 
-        className="bg-white rounded-[3.5rem] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.3)] max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-slide-up"
+        className="bg-white rounded-[3.5rem] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.3)] max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-slide-up dark:bg-slate-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
+        <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl dark:bg-slate-950">
           <div>
             <span className="text-sm font-bold text-primary-400 uppercase tracking-[0.4em] mb-2 block">Analysis</span>
             <h2 className="text-3xl font-bold text-white">Match Details</h2>
@@ -271,38 +271,38 @@ const RecommendationDetailsModal: React.FC<{
         <div className="p-12 overflow-y-auto custom-scrollbar flex-1 space-y-12">
           {/* Key Stats Block */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="bg-slate-50 p-6 rounded-3xl">
+            <div className="bg-slate-50 p-6 rounded-3xl dark:bg-slate-800/50">
               <p className="text-xs font-bold text-slate-400 uppercase mb-2">Match Score</p>
-              <p className="text-3xl font-bold text-slate-900">{recommendation.matchScore}%</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{recommendation.matchScore}%</p>
             </div>
-            <div className="bg-slate-50 p-6 rounded-3xl">
+            <div className="bg-slate-50 p-6 rounded-3xl dark:bg-slate-800/50">
               <p className="text-xs font-bold text-slate-400 uppercase mb-2">Confidence</p>
-              <p className="text-3xl font-bold text-slate-900">{recommendation.confidenceLevel}%</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{recommendation.confidenceLevel}%</p>
             </div>
             <div className="bg-emerald-50 p-6 rounded-3xl">
               <p className="text-xs font-bold text-emerald-600 uppercase mb-2">Success Rate</p>
               <p className="text-3xl font-bold text-emerald-700">{recommendation.aiInsights.predictedSuccessRate.toFixed(1)}%</p>
             </div>
-            <div className="bg-slate-50 p-6 rounded-3xl">
+            <div className="bg-slate-50 p-6 rounded-3xl dark:bg-slate-800/50">
               <p className="text-xs font-bold text-slate-400 uppercase mb-2">Status</p>
-              <p className="text-xl font-bold text-slate-700 uppercase mt-1">{recommendation.status}</p>
+              <p className="text-xl font-bold text-slate-700 uppercase mt-1 dark:text-slate-200">{recommendation.status}</p>
             </div>
           </div>
 
           {/* Route Details */}
           {recommendation.routeOptimization && (
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                 <Route size={18} className="text-primary-600" /> Route Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30">
+                <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30 dark:border-slate-800">
                   <p className="text-sm font-bold text-slate-400 uppercase mb-1">Optimized Distance</p>
-                  <p className="text-xl font-bold text-slate-900">{recommendation.routeOptimization.optimizedDistance.toFixed(2)} km</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{recommendation.routeOptimization.optimizedDistance.toFixed(2)} km</p>
                 </div>
-                <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30">
+                <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30 dark:border-slate-800">
                   <p className="text-sm font-bold text-slate-400 uppercase mb-1">Time Estimate</p>
-                  <p className="text-xl font-bold text-slate-900">{Math.round(recommendation.routeOptimization.estimatedTime / 60)} Hours</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{Math.round(recommendation.routeOptimization.estimatedTime / 60)} Hours</p>
                 </div>
                 <div className="border border-emerald-100 p-6 rounded-3xl bg-emerald-50/20">
                   <p className="text-sm font-bold text-emerald-600 uppercase mb-1">Savings</p>
@@ -315,21 +315,21 @@ const RecommendationDetailsModal: React.FC<{
           {/* Recommendations Block */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                 <Brain size={18} className="text-primary-600" /> Recommendations
               </h3>
               <div className="space-y-3">
                 {recommendation.aiInsights.recommendations.map((insight, idx) => (
-                  <div key={idx} className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                  <div key={idx} className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-800/50 dark:border-slate-800">
                     <div className="w-1.5 h-1.5 bg-primary-500 rounded-full mt-1.5 shrink-0"></div>
-                    <p className="text-sm font-bold text-slate-600 leading-relaxed">{insight}</p>
+                    <p className="text-sm font-bold text-slate-600 leading-relaxed dark:text-slate-300">{insight}</p>
                   </div>
                 ))}
               </div>
             </div>
             
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                 <Shield size={18} className="text-rose-500" /> Risk Factors
               </h3>
               <div className="space-y-3">
@@ -349,13 +349,13 @@ const RecommendationDetailsModal: React.FC<{
           </div>
         </div>
 
-        <div className="p-10 bg-slate-900 flex items-center justify-between">
+        <div className="p-10 bg-slate-900 flex items-center justify-between dark:bg-slate-950">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-primary-400">
               <Shield size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase">Stability Check</p>
+              <p className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Stability Check</p>
               <p className="text-xs font-bold text-white">Verified Secure</p>
             </div>
           </div>

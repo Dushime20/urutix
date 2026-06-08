@@ -99,7 +99,7 @@ const DisputeResolution: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Disputes Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -115,11 +115,11 @@ const DisputeResolution: React.FC = () => {
         <div className="relative z-10 hidden md:flex items-center gap-12 mr-4 text-white">
           <div className="text-center">
             <p className="text-xl font-bold leading-none">{disputes.length}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Total Cases</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Total Cases</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold leading-none text-emerald-400">{disputes.filter(d => d.status === 'RESOLVED').length}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Resolved</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Resolved</p>
           </div>
           <button 
             onClick={() => setShowCreateModal(true)}
@@ -131,7 +131,7 @@ const DisputeResolution: React.FC = () => {
       </div>
 
       {/* Terminal Grid Filters */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end relative group overflow-hidden">
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end relative group overflow-hidden dark:bg-slate-900 dark:border-slate-800">
         <div className="flex-1 space-y-4">
           <label className="text-sm font-bold text-slate-400 uppercase ml-4">Filter Resolutions</label>
           <div className="relative">
@@ -139,7 +139,7 @@ const DisputeResolution: React.FC = () => {
             <input
               type="text"
               placeholder="Search case descriptions..."
-              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 outline-none focus:bg-white transition-all placeholder:text-slate-300"
+              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 outline-none focus:bg-white transition-all placeholder:text-slate-300 dark:bg-slate-800/50 dark:text-white dark:border-slate-800/50"
             />
           </div>
         </div>
@@ -147,7 +147,7 @@ const DisputeResolution: React.FC = () => {
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
+            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-800"
           >
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -157,7 +157,7 @@ const DisputeResolution: React.FC = () => {
           <select
             value={filters.category}
             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
+            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-800"
           >
             <option value="">All Categories</option>
             <option value="DAMAGE">Damage</option>
@@ -168,7 +168,7 @@ const DisputeResolution: React.FC = () => {
       </div>
 
       {/* Case Core */}
-      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
         {disputes.length === 0 ? (
           <div className="py-48 text-center space-y-8 opacity-50">
             <AlertTriangle className="w-24 h-24 text-slate-100 mx-auto" />
@@ -177,15 +177,15 @@ const DisputeResolution: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-10">
             {disputes.map((dispute) => (
-              <div key={dispute.id} className="group bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between">
+              <div key={dispute.id} className="group bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between dark:bg-slate-900 dark:border-slate-800">
                 <div>
                   <div className="flex justify-between items-start mb-8">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm dark:bg-slate-800/50">
                         <AlertTriangle size={18} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900 uppercase italic">Case #{dispute.id.slice(0, 6)}</p>
+                        <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">Case #{dispute.id.slice(0, 6)}</p>
                         <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">{dispute.category}</p>
                       </div>
                     </div>
@@ -194,18 +194,18 @@ const DisputeResolution: React.FC = () => {
                     </span>
                   </div>
 
-                  <p className="text-sm font-bold text-slate-900 leading-relaxed mb-8 line-clamp-3 min-h-[3rem]">{dispute.description}</p>
+                  <p className="text-sm font-bold text-slate-900 leading-relaxed mb-8 line-clamp-3 min-h-[3rem] dark:text-white">{dispute.description}</p>
                 </div>
 
-                <div className="space-y-6 pt-8 border-t border-slate-50">
+                <div className="space-y-6 pt-8 border-t border-slate-50 dark:border-slate-800/50">
                   <div className="flex justify-between items-center text-sm font-bold uppercase text-slate-400">
                     <span>Claimed Amount</span>
-                    <span className="text-slate-900">{dispute.claimedAmount?.toLocaleString() || 0} KES</span>
+                    <span className="text-slate-900 dark:text-white">{dispute.claimedAmount?.toLocaleString() || 0} KES</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setSelectedDispute(dispute)}
-                      className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 dark:bg-slate-950"
                     >
                       <Eye size={14} /> Review Case
                     </button>
@@ -240,8 +240,8 @@ const CreateDisputeModal: React.FC<{ onClose: () => void, onSubmit: (data: Creat
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
-      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
-        <div className="p-12 bg-slate-900 text-white flex justify-between items-center overflow-hidden relative">
+      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] dark:bg-slate-900">
+        <div className="p-12 bg-slate-900 text-white flex justify-between items-center overflow-hidden relative dark:bg-slate-950">
           <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="space-y-2 relative z-10">
             <h2 className="text-3xl font-bold uppercase italic">Open <span className="text-white">Case</span></h2>
@@ -254,19 +254,19 @@ const CreateDisputeModal: React.FC<{ onClose: () => void, onSubmit: (data: Creat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
                <label className="text-sm font-bold uppercase text-slate-400 ml-4">Load Reference</label>
-               <input type="text" required value={formData.loadId} onChange={(e) => setFormData({ ...formData, loadId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
+               <input type="text" required value={formData.loadId} onChange={(e) => setFormData({ ...formData, loadId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800" />
             </div>
             <div className="space-y-4">
                <label className="text-sm font-bold uppercase text-slate-400 ml-4">Disputed Party ID</label>
-               <input type="text" required value={formData.disputedWithId} onChange={(e) => setFormData({ ...formData, disputedWithId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
+               <input type="text" required value={formData.disputedWithId} onChange={(e) => setFormData({ ...formData, disputedWithId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800" />
             </div>
           </div>
           <div className="space-y-4">
              <label className="text-sm font-bold uppercase text-slate-400 ml-4">Issue Description</label>
-             <textarea required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="Provide objective details of the occurrence..." />
+             <textarea required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800" placeholder="Provide objective details of the occurrence..." />
           </div>
-          <div className="flex justify-end pt-12 border-t border-slate-100">
-             <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-rose-600 transition-all flex items-center gap-4">
+          <div className="flex justify-end pt-12 border-t border-slate-100 dark:border-slate-800">
+             <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-rose-600 transition-all flex items-center gap-4 dark:bg-slate-950">
                {submitting ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />} Open Investigation
              </button>
           </div>
@@ -284,8 +284,8 @@ const ViewDisputeModal: React.FC<{ dispute: BrokerDispute, onClose: () => void, 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
-      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
-        <div className="p-12 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden">
+      <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh] dark:bg-slate-900">
+        <div className="p-12 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden dark:bg-slate-950">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="space-y-2 relative z-10">
             <h2 className="text-3xl font-bold uppercase italic">Case <span className="text-white">Details</span></h2>
@@ -302,25 +302,25 @@ const ViewDisputeModal: React.FC<{ dispute: BrokerDispute, onClose: () => void, 
                { label: 'Severity', value: dispute.severity, icon: AlertTriangle },
                { label: 'Identifier', value: dispute.loadId.slice(0, 8), icon: Clock },
              ].map((meta, i) => (
-               <div key={i} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all">
+               <div key={i} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all dark:bg-slate-800/50 dark:border-slate-800">
                  <meta.icon size={18} className="text-slate-300 mb-6 group-hover:text-primary-600 transition-colors" />
                  <p className="text-sm font-bold text-slate-400 uppercase mb-1">{meta.label}</p>
-                 <p className="text-xs font-bold text-slate-900 uppercase tracking-tight">{meta.value}</p>
+                 <p className="text-xs font-bold text-slate-900 uppercase tracking-tight dark:text-white">{meta.value}</p>
                </div>
              ))}
           </div>
 
-          <div className="p-10 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden">
+          <div className="p-10 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden dark:bg-slate-950">
              <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare size={120} /></div>
-             <p className="text-sm font-bold text-slate-500 uppercase mb-4">Case Statement</p>
+             <p className="text-sm font-bold text-slate-500 uppercase mb-4 dark:text-slate-400">Case Statement</p>
              <p className="text-lg font-bold leading-relaxed relative z-10">{dispute.description}</p>
           </div>
 
           {onResolve && (
-            <form onSubmit={handleResolve} className="space-y-10 pt-12 border-t border-slate-100">
+            <form onSubmit={handleResolve} className="space-y-10 pt-12 border-t border-slate-100 dark:border-slate-800">
                <div className="space-y-4">
                   <label className="text-sm font-bold uppercase text-slate-400 ml-4">Final Resolution Protocol</label>
-                  <textarea required rows={4} value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="State the final ruling and agreement..." />
+                  <textarea required rows={4} value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800" placeholder="State the final ruling and agreement..." />
                </div>
                <div className="flex justify-end">
                   <button type="submit" disabled={submitting} className="px-16 py-6 bg-emerald-600 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-emerald-700 transition-all flex items-center gap-4">

@@ -136,7 +136,7 @@ const LoadTracking: React.FC = () => {
   return (
     <div className="max-w-[1200px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Tracking Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -152,7 +152,7 @@ const LoadTracking: React.FC = () => {
         <div className="relative z-10 flex items-center gap-12 mr-4">
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-emerald-400">{tracking.progress}%</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Progress</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Progress</p>
            </div>
            <span className={`px-5 py-2 rounded-xl text-xs font-bold uppercase border shadow-sm ${getStatusPrimeStyle(tracking.currentStatus)}`}>
              {tracking.currentStatus}
@@ -163,49 +163,49 @@ const LoadTracking: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
         {/* Vector Point Analysis */}
         <div className="lg:col-span-1 space-y-10">
-          <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm space-y-10">
-            <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
+          <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
+            <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
               <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Vector Point
             </h3>
             {tracking.currentLocation ? (
               <div className="space-y-6">
-                <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center gap-6">
-                   <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0"><MapPin size={20} /></div>
-                   <p className="text-xs font-bold uppercase text-slate-900 leading-tight">{tracking.currentLocation.address || 'Geo-Coordinates Locked'}</p>
+                <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center gap-6 dark:bg-slate-800/50 dark:border-slate-800">
+                   <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0 dark:bg-slate-950"><MapPin size={20} /></div>
+                   <p className="text-xs font-bold uppercase text-slate-900 leading-tight dark:text-white">{tracking.currentLocation.address || 'Geo-Coordinates Locked'}</p>
                 </div>
                 <div className="px-8 flex justify-between">
                    <div>
                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">Lateral</p>
-                      <p className="text-sm font-bold text-slate-900">{tracking.currentLocation.latitude.toFixed(6)}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{tracking.currentLocation.latitude.toFixed(6)}</p>
                    </div>
                    <div>
                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">Longitudinal</p>
-                      <p className="text-sm font-bold text-slate-900">{tracking.currentLocation.longitude.toFixed(6)}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{tracking.currentLocation.longitude.toFixed(6)}</p>
                    </div>
                 </div>
                 {tracking.tripId && (
-                  <button onClick={() => window.open(`/dashboard/tracking/trips/${tracking.tripId}`)} className="w-full py-5 bg-slate-50 border border-slate-100 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-3">
+                  <button onClick={() => window.open(`/dashboard/tracking/trips/${tracking.tripId}`)} className="w-full py-5 bg-slate-50 border border-slate-100 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-3 dark:bg-slate-800/50 dark:text-white dark:border-slate-800">
                     <Navigation size={16} /> Open Map Terminal
                   </button>
                 )}
               </div>
             ) : (
-              <div className="p-12 text-center bg-slate-50 rounded-[2rem] opacity-50 space-y-4">
+              <div className="p-12 text-center bg-slate-50 rounded-[2rem] opacity-50 space-y-4 dark:bg-slate-800/50">
                  <Zap className="w-10 h-10 text-slate-200 mx-auto" />
                  <p className="text-sm font-bold text-slate-300 uppercase">Waiting for coordinate lock.</p>
               </div>
             )}
           </div>
 
-          <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
+          <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group dark:bg-slate-950">
              <div className="absolute top-0 right-0 p-8 opacity-5"><Clock size={120} /></div>
-             <p className="text-xs font-bold text-slate-500 uppercase mb-4">ETA Projection</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mb-4 dark:text-slate-400">ETA Projection</p>
              <h3 className="text-4xl font-bold text-white mb-8 italic">
                {tracking.estimatedArrival ? new Date(tracking.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'STABLE'}
              </h3>
              <div className="pt-6 border-t border-white/10 flex items-center justify-between">
                 <div>
-                   <p className="text-xs font-bold text-slate-500 uppercase">Date Projection</p>
+                   <p className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Date Projection</p>
                    <p className="text-xs font-bold text-primary-400">{tracking.estimatedArrival ? new Date(tracking.estimatedArrival).toLocaleDateString() : 'Awaiting Calculation'}</p>
                 </div>
                 <Activity size={24} className="text-primary-500 animate-pulse" />
@@ -215,12 +215,12 @@ const LoadTracking: React.FC = () => {
 
         {/* Event Ledger */}
         <div className="lg:col-span-2 space-y-12">
-           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden group">
+           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden group dark:bg-slate-900 dark:border-slate-800">
               <div className="flex items-center justify-between mb-12">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
+                 <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> Event Ledger
                  </h3>
-                 <span className="px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-400 uppercase border border-slate-100">{tracking.events.length} LOGS</span>
+                 <span className="px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-400 uppercase border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">{tracking.events.length} LOGS</span>
               </div>
 
               {tracking.events.length === 0 ? (
@@ -235,12 +235,12 @@ const LoadTracking: React.FC = () => {
                        {index < tracking.events.length - 1 && (
                          <div className="absolute left-[23px] top-[48px] w-px h-[calc(100%+24px)] bg-slate-100"></div>
                        )}
-                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xl ${index === 0 ? 'bg-primary-600 text-white' : 'bg-white border border-slate-100 text-slate-300'}`}>
+                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xl ${index === 0 ? 'bg-primary-600 text-white' : 'bg-white border border-slate-100 text-slate-300'} dark:border-slate-800`}>
                          {index === 0 ? <CheckCircle2 size={24} /> : <Package size={20} />}
                        </div>
                        <div className="flex-1 space-y-3 pt-1">
                          <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">{event.type || event.status}</h4>
+                            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight dark:text-white">{event.type || event.status}</h4>
                             <p className="text-sm font-bold text-slate-300 uppercase">{new Date(event.timestamp).toLocaleString()}</p>
                          </div>
                          {event.description && <p className="text-xs font-bold text-slate-400 uppercase tracking-tight leading-relaxed">{event.description}</p>}
@@ -257,12 +257,12 @@ const LoadTracking: React.FC = () => {
               )}
            </div>
 
-           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden group">
+           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm relative overflow-hidden group dark:bg-slate-900 dark:border-slate-800">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-sm font-bold text-slate-900 uppercase">Stream Progress</h3>
-                <span className="text-xl font-bold text-slate-900">{tracking.progress}%</span>
+                <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Stream Progress</h3>
+                <span className="text-xl font-bold text-slate-900 dark:text-white">{tracking.progress}%</span>
               </div>
-              <div className="w-full h-4 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+              <div className="w-full h-4 bg-slate-50 rounded-full overflow-hidden border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">
                  <div className="h-full bg-primary-600 transition-all duration-1000" style={{ width: `${tracking.progress}%` }}></div>
               </div>
            </div>

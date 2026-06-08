@@ -28,7 +28,7 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm dark:bg-slate-900">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                         <Navigation className="w-5 h-5 mr-2 text-indigo-600" />
@@ -38,7 +38,7 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
                         <button
                             onClick={onRefresh}
                             disabled={loading}
-                            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center"
+                            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center dark:bg-slate-900"
                         >
                             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
@@ -60,11 +60,11 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
                                 </span>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white rounded-lg p-3 border border-emerald-200">
+                                <div className="bg-white rounded-lg p-3 border border-emerald-200 dark:bg-slate-900">
                                     <span className="text-xs text-gray-500 font-medium">Last Location</span>
                                     <p className="text-sm font-semibold text-gray-900">{latestEvent?.location || 'Unknown'}</p>
                                 </div>
-                                <div className="bg-white rounded-lg p-3 border border-emerald-200">
+                                <div className="bg-white rounded-lg p-3 border border-emerald-200 dark:bg-slate-900">
                                     <span className="text-xs text-gray-500 font-medium">Last Update</span>
                                     <p className="text-sm font-semibold text-gray-900">
                                         {latestEvent?.timestamp ? new Date(latestEvent.timestamp).toLocaleString() : 'N/A'}
@@ -74,7 +74,7 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
                         </div>
 
                         {/* Tracking Timeline */}
-                        <div className="bg-white rounded-lg p-6 border border-gray-200">
+                        <div className="bg-white rounded-lg p-6 border border-gray-200 dark:bg-slate-900">
                             <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
                                 <History className="w-4 h-4" />
                                 Tracking History
@@ -82,18 +82,18 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
                             <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
                                 {trackingEvents.map((event, index) => (
                                     <div key={event.id || index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                        <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-emerald-500 text-slate-500 group-[.is-active]:text-emerald-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                                        <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-emerald-500 text-slate-500 group-[.is-active]:text-emerald-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 dark:text-slate-400">
                                             <Route className="w-5 h-5 text-white" />
                                         </div>
-                                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded border border-slate-200 shadow-sm bg-white">
+                                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded border border-slate-200 shadow-sm bg-white dark:bg-slate-900">
                                             <div className="flex items-center justify-between space-x-2 mb-1">
-                                                <div className="font-bold text-slate-900">{event.status}</div>
+                                                <div className="font-bold text-slate-900 dark:text-white">{event.status}</div>
                                                 <time className="font-caveat font-medium text-indigo-500 text-xs">
                                                     {new Date(event.timestamp).toLocaleDateString()}
                                                 </time>
                                             </div>
-                                            <div className="text-slate-500 text-sm mb-1">{event.location}</div>
-                                            {event.description && <div className="text-slate-500 text-xs italic">{event.description}</div>}
+                                            <div className="text-slate-500 text-sm mb-1 dark:text-slate-400">{event.location}</div>
+                                            {event.description && <div className="text-slate-500 text-xs italic dark:text-slate-400">{event.description}</div>}
                                         </div>
                                     </div>
                                 ))}

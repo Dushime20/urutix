@@ -59,7 +59,7 @@ export const CreateBrokerAuctionModal: React.FC<CreateBrokerAuctionModalProps> =
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden dark:bg-slate-900" onClick={e => e.stopPropagation()}>
 
                 <div className="p-5 border-b border-gray-100 flex justify-between items-center">
                     <div>

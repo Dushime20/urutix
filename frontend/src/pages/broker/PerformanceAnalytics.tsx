@@ -70,7 +70,7 @@ const PerformanceAnalytics: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Analytics Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -86,7 +86,7 @@ const PerformanceAnalytics: React.FC = () => {
         <div className="relative z-10 flex items-center gap-12 mr-4">
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-emerald-400">Operational</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Status</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Status</p>
            </div>
            <button onClick={handleGetAllPerformances} className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-sm font-bold uppercase hover:bg-white hover:text-slate-900 transition-all flex items-center gap-3">
              <Activity size={14} /> Global View
@@ -96,7 +96,7 @@ const PerformanceAnalytics: React.FC = () => {
 
       {/* Control Terminal */}
       {viewMode === 'single' && (
-        <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm relative group overflow-hidden">
+        <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm relative group overflow-hidden dark:bg-slate-900 dark:border-slate-800">
           <div className="flex flex-col lg:flex-row gap-8 items-end">
             <div className="flex-1 space-y-3">
               <label className="text-sm font-bold text-slate-400 uppercase ml-4">Authorized Ref ID</label>
@@ -107,12 +107,12 @@ const PerformanceAnalytics: React.FC = () => {
                   placeholder="Carrier Reference..."
                   value={selectedTransporter}
                   onChange={(e) => setSelectedTransporter(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold uppercase text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold uppercase text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800"
                 />
               </div>
             </div>
             <div className="flex gap-4">
-              <button onClick={handleGetPerformance} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
+              <button onClick={handleGetPerformance} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3 dark:bg-slate-950">
                 <Search size={16} /> Sync
               </button>
               <button onClick={handleCalculatePerformance} className="px-10 py-5 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
@@ -133,11 +133,11 @@ const PerformanceAnalytics: React.FC = () => {
               { label: 'Damages', value: `${performance.damageRate.toFixed(1)}%`, score: 100 - performance.damageRate },
               { label: 'Success Prob.', value: `${performance.predictiveMatchSuccess.toFixed(1)}%`, score: performance.predictiveMatchSuccess },
             ].map((stat, i) => (
-              <div key={i} className="group relative bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden">
+              <div key={i} className="group relative bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden dark:bg-slate-900 dark:border-slate-800">
                 <div className="relative z-10">
                   <p className="text-sm font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
-                  <h3 className="text-3xl font-bold text-slate-900 mb-4">{stat.value}</h3>
-                  <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden">
+                  <h3 className="text-3xl font-bold text-slate-900 mb-4 dark:text-white">{stat.value}</h3>
+                  <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden dark:bg-slate-800/50">
                     <div 
                       className={`h-full transition-all duration-1000 ${stat.score >= 80 ? 'bg-emerald-500' : stat.score >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
                       style={{ width: `${stat.score}%` }}
@@ -149,25 +149,25 @@ const PerformanceAnalytics: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10">
-              <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
-                <div className="w-2 h-2 bg-slate-900 rounded-full"></div> Reliability Core
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
+                <div className="w-2 h-2 bg-slate-900 rounded-full dark:bg-slate-950"></div> Reliability Core
               </h3>
               <div className="grid grid-cols-2 gap-8">
-                <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+                <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">
                   <p className="text-xs font-bold text-slate-400 uppercase mb-2">Total Loads</p>
-                  <p className="text-3xl font-bold text-slate-900">{performance.reliabilityMetrics.totalLoads}</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{performance.reliabilityMetrics.totalLoads}</p>
                 </div>
-                <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+                <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">
                   <p className="text-xs font-bold text-slate-400 uppercase mb-2">Contract Score</p>
-                  <p className="text-3xl font-bold text-slate-900">{performance.reliabilityMetrics.communicationScore}/100</p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white">{performance.reliabilityMetrics.communicationScore}/100</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10">
+            <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Timing Data
                   </h3>
                   <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase flex items-center gap-2 ${performance.onTimeTracking.trend === 'IMPROVING' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
@@ -177,9 +177,9 @@ const PerformanceAnalytics: React.FC = () => {
                <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase mb-1">Precision Percentage</p>
-                    <p className="text-4xl font-bold text-slate-900">{performance.onTimeTracking.onTimePercentage.toFixed(1)}%</p>
+                    <p className="text-4xl font-bold text-slate-900 dark:text-white">{performance.onTimeTracking.onTimePercentage.toFixed(1)}%</p>
                   </div>
-                  <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-white">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center text-white dark:bg-slate-950">
                     <CheckCircle2 size={32} />
                   </div>
                </div>
@@ -187,8 +187,8 @@ const PerformanceAnalytics: React.FC = () => {
           </div>
           
           {performance.historicalTrends && (
-            <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12">
-               <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
+            <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12 dark:bg-slate-900 dark:border-slate-800">
+               <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                  <div className="w-2 h-2 bg-primary-600 rounded-full animate-pulse"></div> Historical Flow
                </h3>
                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -203,19 +203,19 @@ const PerformanceAnalytics: React.FC = () => {
 
       {/* Global View (Table View) */}
       {viewMode === 'all' && (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
-          <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
-            <h3 className="text-sm font-bold text-slate-900 uppercase">Global Repository</h3>
-            <div className="px-4 py-2 bg-white rounded-full text-xs font-bold text-slate-400 uppercase border border-slate-100 shadow-sm">
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
+          <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50 dark:border-slate-800/50">
+            <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Global Repository</h3>
+            <div className="px-4 py-2 bg-white rounded-full text-xs font-bold text-slate-400 uppercase border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
               Units: {allPerformances.length}
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-white">
+                <tr className="bg-white dark:bg-slate-900">
                   {['Reference', 'Reliability', 'On-Time', 'Damages', 'Success Probability', 'Details'].map((header) => (
-                    <th key={header} className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">
+                    <th key={header} className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">
                       {header}
                     </th>
                   ))}
@@ -225,12 +225,12 @@ const PerformanceAnalytics: React.FC = () => {
                 {allPerformances.map((perf) => (
                   <tr key={perf.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => { setSelectedTransporter(perf.transporterId); setPerformance(perf); setViewMode('single'); }}>
                     <td className="px-10 py-10">
-                      <p className="text-sm font-bold text-slate-900 uppercase italic">#{perf.transporterId.slice(0, 8)}</p>
+                      <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">#{perf.transporterId.slice(0, 8)}</p>
                     </td>
                     <td className="px-10 py-10">
-                      <p className="text-lg font-bold text-slate-900">{perf.reliabilityScore.toFixed(1)}%</p>
+                      <p className="text-lg font-bold text-slate-900 dark:text-white">{perf.reliabilityScore.toFixed(1)}%</p>
                     </td>
-                    <td className="px-10 py-10 text-sm font-bold text-slate-900">{perf.onTimeDeliveryRate.toFixed(1)}%</td>
+                    <td className="px-10 py-10 text-sm font-bold text-slate-900 dark:text-white">{perf.onTimeDeliveryRate.toFixed(1)}%</td>
                     <td className="px-10 py-10 text-sm font-bold text-rose-500">{perf.damageRate.toFixed(1)}%</td>
                     <td className="px-10 py-10">
                       <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold uppercase">
@@ -238,7 +238,7 @@ const PerformanceAnalytics: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-10 py-10">
-                      <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"><ArrowRight size={16} /></button>
+                      <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"><ArrowRight size={16} /></button>
                     </td>
                   </tr>
                 ))}
@@ -263,7 +263,7 @@ const TrendChart: React.FC<{ data: number[]; label: string; accent: 'primary' | 
         {data.slice(-10).map((value, idx) => (
           <div key={idx} className="flex-1 relative group/bar">
             <div className={`w-full ${colorMap[accent]} rounded-t-lg transition-all cursor-pointer opacity-40 group-hover/bar:opacity-100`} style={{ height: `${max > 0 ? (value / max) * 100 : 0}%`, minHeight: '4px' }}>
-               <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-slate-900 text-white text-[8px] font-bold px-2 py-1 rounded uppercase z-10">{value.toFixed(1)}%</div>
+               <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-slate-900 text-white text-[8px] font-bold px-2 py-1 rounded uppercase z-10 dark:bg-slate-950">{value.toFixed(1)}%</div>
             </div>
           </div>
         ))}

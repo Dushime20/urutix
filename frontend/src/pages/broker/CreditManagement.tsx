@@ -74,7 +74,7 @@ const CreditManagement: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Credit Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -90,21 +90,21 @@ const CreditManagement: React.FC = () => {
         <div className="relative z-10 hidden md:flex items-center gap-12 mr-4 text-white">
           <div className="text-center">
             <p className="text-xl font-bold leading-none">{credits.length}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Records</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Records</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold leading-none text-emerald-400">{credits.filter(c => c.status === 'APPROVED').length}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Approved</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Approved</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold leading-none text-rose-400">{credits.filter(c => c.status === 'REJECTED' || c.status === 'SUSPENDED').length}</p>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Risky</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Risky</p>
           </div>
         </div>
       </div>
 
       {/* Terminal Grid Search */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end relative group overflow-hidden">
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end relative group overflow-hidden dark:bg-slate-900 dark:border-slate-800">
         <div className="flex-1 space-y-4">
           <label className="text-sm font-bold text-slate-400 uppercase ml-4">Analyze Specific Carrier</label>
           <div className="relative">
@@ -114,14 +114,14 @@ const CreditManagement: React.FC = () => {
               placeholder="Enter Carrier ID (e.g. CAR-777)..."
               value={selectedTransporter}
               onChange={(e) => setSelectedTransporter(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:shadow-xl transition-all placeholder:text-slate-300"
+              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:shadow-xl transition-all placeholder:text-slate-300 dark:bg-slate-800/50 dark:text-white dark:border-slate-800/50"
             />
           </div>
         </div>
         <button
           onClick={handleCreditCheck}
           disabled={loading}
-          className="px-12 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center gap-3 shadow-xl h-[64px]"
+          className="px-12 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center gap-3 shadow-xl h-[64px] dark:bg-slate-950"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
           Run Credit Audit
@@ -129,9 +129,9 @@ const CreditManagement: React.FC = () => {
       </div>
 
       {/* Data Core */}
-      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
-        <div className="p-8 border-b border-slate-50">
-          <h3 className="text-xs font-bold text-slate-900 uppercase">Credit Health Index</h3>
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
+        <div className="p-8 border-b border-slate-50 dark:border-slate-800/50">
+          <h3 className="text-xs font-bold text-slate-900 uppercase dark:text-white">Credit Health Index</h3>
         </div>
 
         {loading ? (
@@ -147,14 +147,14 @@ const CreditManagement: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-10">
             {credits.map((credit) => (
-              <div key={credit.id} className="group bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
+              <div key={credit.id} className="group bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
                 <div className="flex justify-between items-start mb-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm dark:bg-slate-800/50">
                       <Activity size={18} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900 uppercase italic">#{credit.id.slice(0, 6)}</p>
+                      <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">#{credit.id.slice(0, 6)}</p>
                       <p className="text-xs font-bold text-slate-400 uppercase-mt-0.5">{credit.transporterId.slice(0, 10)}</p>
                     </div>
                   </div>
@@ -163,10 +163,10 @@ const CreditManagement: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 mb-8 pt-8 border-t border-slate-50">
+                <div className="grid grid-cols-2 gap-6 mb-8 pt-8 border-t border-slate-50 dark:border-slate-800/50">
                   <div>
                     <p className="text-sm font-bold text-slate-400 uppercase mb-1">Limit</p>
-                    <p className="text-lg font-bold text-slate-900">{credit.creditLimit.toLocaleString()} <span className="text-sm text-slate-300 font-bold uppercase">KES</span></p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{credit.creditLimit.toLocaleString()} <span className="text-sm text-slate-300 font-bold uppercase">KES</span></p>
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-400 uppercase mb-1">Balance</p>
@@ -175,7 +175,7 @@ const CreditManagement: React.FC = () => {
                 </div>
 
                 {credit.creditCheck && (
-                  <div className="mb-8 p-6 bg-slate-50 rounded-2xl relative">
+                  <div className="mb-8 p-6 bg-slate-50 rounded-2xl relative dark:bg-slate-800/50">
                     <div className="flex justify-between items-center mb-2">
                        <p className="text-sm font-bold text-slate-400 uppercase">Score Index</p>
                        <span className={`text-xl font-bold ${getRiskColor(credit.creditCheck.riskLevel)}`}>{credit.creditCheck.creditScore}</span>
@@ -189,7 +189,7 @@ const CreditManagement: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => { setSelectedCredit(credit); setShowUpdateModal(true); }}
-                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 dark:bg-slate-950"
                   >
                     <TrendingUp size={14} /> Adjust Terms
                   </button>
@@ -241,8 +241,8 @@ const UpdatePaymentTermsModal: React.FC<{
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
-      <div className="relative w-full max-w-2xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up">
-        <div className="p-12 bg-slate-900 text-white flex justify-between items-center">
+      <div className="relative w-full max-w-2xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up dark:bg-slate-900">
+        <div className="p-12 bg-slate-900 text-white flex justify-between items-center dark:bg-slate-950">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold uppercase italic">Adjust <span className="text-white">Terms</span></h2>
             <p className="text-slate-400 text-sm font-bold uppercase">Update carrier financial trust protocol</p>
@@ -256,7 +256,7 @@ const UpdatePaymentTermsModal: React.FC<{
             <select
               value={formData.paymentTerms}
               onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value as any })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none"
+              className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800"
             >
               <option value="NET_15">Net 15 Days</option>
               <option value="NET_30">Net 30 Days</option>
@@ -272,11 +272,11 @@ const UpdatePaymentTermsModal: React.FC<{
               type="number"
               value={formData.creditLimit || ''}
               onChange={(e) => setFormData({ ...formData, creditLimit: parseFloat(e.target.value) || undefined })}
-              className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-2xl font-bold text-slate-900 outline-none"
+              className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-2xl font-bold text-slate-900 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800"
             />
           </div>
 
-          <button type="submit" disabled={submitting} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center justify-center gap-4">
+          <button type="submit" disabled={submitting} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center justify-center gap-4 dark:bg-slate-950">
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />} Authorize Adjustments
           </button>
         </form>

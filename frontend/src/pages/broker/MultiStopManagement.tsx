@@ -50,7 +50,7 @@ const MultiStopManagement: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Routing Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -71,20 +71,20 @@ const MultiStopManagement: React.FC = () => {
       </div>
 
       {/* Control Terminal */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm space-y-8 group overflow-hidden relative">
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm space-y-8 group overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
         <div className="flex flex-col md:flex-row gap-6 items-end">
            <div className="flex-1 space-y-3">
               <label className="text-sm font-bold text-slate-400 uppercase ml-4">Reference</label>
-              <input type="text" placeholder="Scan Load Node..." value={selectedLoadId} onChange={e => setSelectedLoadId(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none" />
+              <input type="text" placeholder="Scan Load Node..." value={selectedLoadId} onChange={e => setSelectedLoadId(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none dark:bg-slate-800/50 dark:text-white dark:border-slate-800" />
            </div>
-           <button onClick={handleGetMultiStop} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase flex items-center gap-3 hover:bg-primary-600 shadow-xl transition-all">
+           <button onClick={handleGetMultiStop} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase flex items-center gap-3 hover:bg-primary-600 shadow-xl transition-all dark:bg-slate-950">
               <Navigation size={16} /> Fetch
            </button>
         </div>
       </div>
 
       {!multiStop ? (
-        <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm opacity-50 border border-slate-50">
+        <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm opacity-50 border border-slate-50 dark:bg-slate-900 dark:border-slate-800/50">
           <Route className="w-16 h-16 text-slate-100 mx-auto" />
           <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.3em]">No routing field initialized for this node.</p>
         </div>
@@ -99,7 +99,7 @@ const MultiStopManagement: React.FC = () => {
                 { label: 'Delta Resource', value: `${multiStop.routeOptimization.fuelSavings.toFixed(1)} unit`, color: 'indigo' },
                 { label: 'Efficiency', value: `${multiStop.routeOptimization.optimizationScore.toFixed(1)}%`, color: 'slate' }
               ].map((stat, i) => (
-                <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative">
+                <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
                    <p className="text-xs font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
                    <h3 className={`text-2xl font-bold italic ${stat.color === 'emerald' ? 'text-emerald-500' : stat.color === 'primary' ? 'text-primary-600' : stat.color === 'indigo' ? 'text-indigo-500' : 'text-slate-900'}`}>{stat.value}</h3>
                 </div>
@@ -110,20 +110,20 @@ const MultiStopManagement: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             {/* Node List */}
             <div className="lg:col-span-8 space-y-8">
-               <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12">
-                  <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
-                    <div className="w-2 h-2 bg-slate-900 rounded-full"></div> Node Sequence ({multiStop.stops.length})
+               <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12 dark:bg-slate-900 dark:border-slate-800">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
+                    <div className="w-2 h-2 bg-slate-900 rounded-full dark:bg-slate-950"></div> Node Sequence ({multiStop.stops.length})
                   </h3>
                   <div className="space-y-10 pl-4">
                     {multiStop.stops.sort((a,b) => a.sequence - b.sequence).map((stop, idx) => (
                       <div key={stop.stopId} className="relative flex gap-8">
                          {idx < multiStop.stops.length - 1 && <div className="absolute left-[23px] top-[48px] w-px h-[calc(100%+20px)] bg-slate-100"></div>}
-                         <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xl shrink-0 italic">{stop.sequence}</div>
+                         <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xl shrink-0 italic dark:bg-slate-950">{stop.sequence}</div>
                          <div className="flex-1 space-y-3 pt-1">
                             <div className="flex items-center justify-between">
                                <div className="flex items-center gap-3">
                                   <MapPin size={16} className="text-primary-600" />
-                                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight italic">{stop.location.name}</h4>
+                                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight italic dark:text-white">{stop.location.name}</h4>
                                </div>
                                <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase ${stop.type === 'PICKUP' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>{stop.type}</span>
                             </div>
@@ -143,16 +143,16 @@ const MultiStopManagement: React.FC = () => {
             {/* Trajectory Sidebar */}
             <div className="lg:col-span-4 space-y-8">
                {multiStop.optimizedRoute && (
-                  <div className="bg-slate-900 rounded-[3rem] p-12 text-white shadow-2xl space-y-10 relative overflow-hidden group">
+                  <div className="bg-slate-900 rounded-[3rem] p-12 text-white shadow-2xl space-y-10 relative overflow-hidden group dark:bg-slate-950">
                      <div className="absolute top-0 right-0 p-12 opacity-5"><Activity size={120} /></div>
-                     <h3 className="text-sm font-bold uppercase text-slate-500 italic">Trajectory</h3>
+                     <h3 className="text-sm font-bold uppercase text-slate-500 italic dark:text-slate-400">Trajectory</h3>
                      <div className="space-y-8">
                         <div>
-                           <p className="text-xs font-bold text-slate-500 uppercase mb-2">Total Field</p>
+                           <p className="text-xs font-bold text-slate-500 uppercase mb-2 dark:text-slate-400">Total Field</p>
                            <p className="text-3xl font-bold text-white italic">{multiStop.optimizedRoute.totalDistance.toFixed(1)} <span className="text-sm text-primary-400 uppercase">KM</span></p>
                         </div>
                         <div className="pt-8 border-t border-white/5">
-                           <p className="text-xs font-bold text-slate-500 uppercase mb-2">Total Interval</p>
+                           <p className="text-xs font-bold text-slate-500 uppercase mb-2 dark:text-slate-400">Total Interval</p>
                            <p className="text-3xl font-bold text-white italic">{Math.round(multiStop.optimizedRoute.totalTime / 60)} <span className="text-sm text-primary-400 uppercase">HRS</span></p>
                         </div>
                      </div>
@@ -165,8 +165,8 @@ const MultiStopManagement: React.FC = () => {
 
       {showCreateModal && (
         <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-          <div className="bg-white rounded-[4rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
-             <div className="p-16 bg-slate-900 text-white relative overflow-hidden">
+          <div className="bg-white rounded-[4rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-up dark:bg-slate-900">
+             <div className="p-16 bg-slate-900 text-white relative overflow-hidden dark:bg-slate-950">
                 <h2 className="text-4xl font-bold uppercase italic leading-none">Construct <br /><span className="text-primary-600">Trajectory</span></h2>
                 <div className="absolute top-0 right-0 p-12 opacity-5"><Zap size={120} /></div>
              </div>
@@ -174,15 +174,15 @@ const MultiStopManagement: React.FC = () => {
              <form onSubmit={(e) => { e.preventDefault(); /* handle sequence logic */ }} className="p-16 space-y-10">
                 <div className="space-y-10">
                    <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-bold text-slate-900 uppercase">Node Registry</h3>
-                      <button type="button" className="px-6 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-xl">Add Node</button>
+                      <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Node Registry</h3>
+                      <button type="button" className="px-6 py-2 bg-slate-900 text-white text-xs font-bold uppercase rounded-xl dark:bg-slate-950">Add Node</button>
                    </div>
                    {/* Simplified for now as it's a sub-component simulation */}
-                   <p className="text-sm font-bold text-slate-400 uppercase italic text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-100">Terminal Node Configuration Grid</p>
+                   <p className="text-sm font-bold text-slate-400 uppercase italic text-center py-20 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">Terminal Node Configuration Grid</p>
                 </div>
 
                 <div className="pt-8 flex gap-4">
-                   <button type="button" onClick={() => setShowCreateModal(false)} className="px-10 py-5 bg-slate-50 text-sm font-bold uppercase text-slate-400 rounded-2xl">Abort</button>
+                   <button type="button" onClick={() => setShowCreateModal(false)} className="px-10 py-5 bg-slate-50 text-sm font-bold uppercase text-slate-400 rounded-2xl dark:bg-slate-800/50">Abort</button>
                    <button type="submit" className="flex-1 py-5 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl">Synchronize</button>
                 </div>
              </form>

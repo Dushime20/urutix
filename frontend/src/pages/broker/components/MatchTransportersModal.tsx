@@ -79,7 +79,7 @@ export const MatchTransportersModal: React.FC<MatchTransportersModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden flex flex-col max-h-[90vh] dark:bg-slate-900" onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-600 to-blue-700 text-white">
@@ -103,7 +103,7 @@ export const MatchTransportersModal: React.FC<MatchTransportersModalProps> = ({
                             <p className="text-gray-500">Analyzing available carriers...</p>
                         </div>
                     ) : matches.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-dashed border-gray-300">
+                        <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-dashed border-gray-300 dark:bg-slate-900">
                             <Truck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                             <p className="font-medium">No matching carriers found</p>
                             <p className="text-sm mt-1">No trucks are currently available for this load.</p>
@@ -114,7 +114,7 @@ export const MatchTransportersModal: React.FC<MatchTransportersModalProps> = ({
                             const displayName = match.ownerCompany || match.ownerName || 'Unknown Carrier';
                             
                             return (
-                                <div key={match.truckId} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                                <div key={match.truckId} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all dark:bg-slate-900">
                                     <div className="flex items-start justify-between">
                                         {/* Info */}
                                         <div className="flex items-start gap-4">

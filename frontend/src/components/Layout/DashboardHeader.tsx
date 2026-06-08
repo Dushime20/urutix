@@ -675,27 +675,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                   </button>
                 </div>
 
-                {/* Profile Card Section */}
-                <div className="p-4">
-                  <div className="relative overflow-hidden rounded-2xl p-4 bg-[#345E85] text-white shadow-xl">
-                    <div className="relative z-10 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center font-bold text-lg">
-                        {user?.firstName?.[0] || 'U'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-black uppercase tracking-tight truncate leading-none mb-1">
-                          {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-[10px] text-blue-100 font-medium truncate opacity-80">
-                          {user?.email}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Visual flair for the user card */}
-                    <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-                    <div className="absolute bottom-0 left-0 -ml-4 -mb-4 w-16 h-16 bg-blue-400/20 rounded-full blur-xl" />
-                  </div>
-                </div>
+
 
                 {/* Navigation Items */}
                 <div className="flex-1 overflow-y-auto px-3 custom-scrollbar space-y-1 py-2">

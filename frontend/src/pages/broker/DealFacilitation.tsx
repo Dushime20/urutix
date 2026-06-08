@@ -104,7 +104,7 @@ const DealFacilitation: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Facilitation Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -127,8 +127,8 @@ const DealFacilitation: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Active Units */}
         <div className="lg:col-span-4 space-y-8">
-           <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10 group relative overflow-hidden">
-              <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
+           <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10 group relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                 <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Active Units
               </h3>
               {brokerLoads.length === 0 ? (
@@ -139,14 +139,14 @@ const DealFacilitation: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {brokerLoads.map((load) => (
-                    <div key={load.id} onClick={() => { setSelectedLoad(load.id); setShowProposalForm(true); }} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-50 cursor-pointer group/it hover:bg-white hover:shadow-2xl hover:border-slate-100 transition-all">
+                    <div key={load.id} onClick={() => { setSelectedLoad(load.id); setShowProposalForm(true); }} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-50 cursor-pointer group/it hover:bg-white hover:shadow-2xl hover:border-slate-100 transition-all dark:bg-slate-800/50 dark:border-slate-800/50">
                        <div className="flex justify-between items-start mb-4">
-                          <p className="text-sm font-bold text-slate-900 uppercase italic">{load.title}</p>
+                          <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
                           <span className="text-[8px] font-bold bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg uppercase">ACT</span>
                        </div>
-                       <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                       <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                           <DollarSign size={14} className="text-slate-300" />
-                          <span className="text-xs font-bold text-slate-700">{load.loadValue.toLocaleString()} {load.currencyCode}</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{load.loadValue.toLocaleString()} {load.currencyCode}</span>
                        </div>
                     </div>
                   ))}
@@ -157,9 +157,9 @@ const DealFacilitation: React.FC = () => {
 
         {/* Proposals Stream */}
         <div className="lg:col-span-8 space-y-8">
-           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm space-y-10">
+           <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
               <div className="flex items-center justify-between px-2">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
+                 <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> Proposals
                  </h3>
                  <span className="text-sm font-bold text-slate-400 uppercase">{proposals.length} Pending</span>
@@ -173,12 +173,12 @@ const DealFacilitation: React.FC = () => {
               ) : (
                 <div className="space-y-6">
                   {proposals.map((prop, i) => (
-                    <div key={i} className="p-10 bg-slate-50 rounded-[3rem] border border-slate-50 relative group hover:bg-white hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                    <div key={i} className="p-10 bg-slate-50 rounded-[3rem] border border-slate-50 relative group hover:bg-white hover:shadow-2xl transition-all duration-500 overflow-hidden dark:bg-slate-800/50 dark:border-slate-800/50">
                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                           <div className="flex items-center gap-6">
-                             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm"><Package size={24} /></div>
+                             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm dark:bg-slate-900"><Package size={24} /></div>
                              <div>
-                                <h4 className="text-xl font-bold text-slate-900 uppercase italic">{prop.loadTitle}</h4>
+                                <h4 className="text-xl font-bold text-slate-900 uppercase italic dark:text-white">{prop.loadTitle}</h4>
                                 <div className="flex items-center gap-3 mt-1">
                                    <Truck size={14} className="text-primary-500" />
                                    <p className="text-sm font-bold text-slate-400 uppercase">Carrier: {prop.transporterName}</p>
@@ -188,7 +188,7 @@ const DealFacilitation: React.FC = () => {
                           <div className="flex items-center gap-8">
                              <div className="text-right">
                                 <p className="text-xs font-bold text-slate-400 uppercase mb-1">Yield</p>
-                                <p className="text-lg font-bold text-slate-900 italic">{prop.commissionRate}%</p>
+                                <p className="text-lg font-bold text-slate-900 italic dark:text-white">{prop.commissionRate}%</p>
                              </div>
                              <div className={`px-5 py-2 rounded-xl text-xs font-bold uppercase ${prop.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                                 {prop.status}
@@ -205,17 +205,17 @@ const DealFacilitation: React.FC = () => {
 
       {showProposalForm && (
         <Dialog open={showProposalForm} onOpenChange={setShowProposalForm}>
-          <DialogContent className="sm:max-w-xl bg-white rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden animate-slide-up">
-             <div className="p-16 bg-slate-900 text-white relative overflow-hidden">
+          <DialogContent className="sm:max-w-xl bg-white rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden animate-slide-up dark:bg-slate-900">
+             <div className="p-16 bg-slate-900 text-white relative overflow-hidden dark:bg-slate-950">
                 <h2 className="text-4xl font-bold uppercase italic leading-none">Match <br /><span className="text-primary-600">Synthesis</span></h2>
-                <p className="text-sm font-bold text-slate-500 uppercase mt-6">Proposal Node</p>
+                <p className="text-sm font-bold text-slate-500 uppercase mt-6 dark:text-slate-400">Proposal Node</p>
                 <div className="absolute top-0 right-0 p-12 opacity-5"><Zap size={120} /></div>
              </div>
 
              <form onSubmit={handleCreateProposal} className="p-16 space-y-10">
                 <div className="space-y-3">
                    <label className="text-sm font-bold text-slate-400 uppercase ml-4">Select Unit</label>
-                   <select value={selectedLoad || ''} onChange={(e) => setSelectedLoad(e.target.value)} className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-bold uppercase outline-none border border-transparent focus:border-slate-100 transition-all appearance-none cursor-pointer" required>
+                   <select value={selectedLoad || ''} onChange={(e) => setSelectedLoad(e.target.value)} className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-bold uppercase outline-none border border-transparent focus:border-slate-100 transition-all appearance-none cursor-pointer dark:bg-slate-800/50" required>
                       <option value="">Select Target...</option>
                       {brokerLoads.map(l => (
                         <option key={l.id} value={l.id}>{l.title}</option>
@@ -231,16 +231,16 @@ const DealFacilitation: React.FC = () => {
                 <div className="grid grid-cols-2 gap-8">
                    <div className="space-y-3">
                       <label className="text-sm font-bold text-slate-400 uppercase ml-4">Offer</label>
-                      <input type="number" placeholder="0.00" className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-bold uppercase outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+                      <input type="number" placeholder="0.00" className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-bold uppercase outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all dark:bg-slate-800/50" />
                    </div>
                    <div className="space-y-3">
                       <label className="text-sm font-bold text-slate-400 uppercase ml-4">Yield %</label>
-                      <input type="number" step="0.1" defaultValue={5} className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-bold uppercase outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+                      <input type="number" step="0.1" defaultValue={5} className="w-full bg-slate-50 rounded-2xl px-8 py-5 text-[11px] font-bold uppercase outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all dark:bg-slate-800/50" />
                    </div>
                 </div>
 
                 <div className="pt-8 flex gap-4">
-                   <button type="button" onClick={() => setShowProposalForm(false)} className="px-10 py-5 bg-slate-50 text-sm font-bold uppercase text-slate-400 rounded-2xl hover:bg-slate-100 transition-all">Cancel</button>
+                   <button type="button" onClick={() => setShowProposalForm(false)} className="px-10 py-5 bg-slate-50 text-sm font-bold uppercase text-slate-400 rounded-2xl hover:bg-slate-100 transition-all dark:bg-slate-800/50">Cancel</button>
                    <button type="submit" disabled={submitting} className="flex-1 py-5 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl flex items-center justify-center gap-3">
                       {submitting ? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} /> Send Proposal</>}
                    </button>

@@ -20,10 +20,10 @@ Complete command reference for managing UrutiX Smart Logistics in both developme
 
 ```bash
 # Start all services
-docker-compose -f docker-compose.dev.yml up -d
+docker-compose -f docker-compose.dev.yml up -d --build
 
 # Start with rebuild (after code changes)
-docker-compose -f docker-compose.dev.yml up -d --build
+
 
 # Start and view logs
 docker-compose -f docker-compose.dev.yml up

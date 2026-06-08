@@ -48,7 +48,7 @@ const BrokerBidding: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Bidding Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -64,12 +64,12 @@ const BrokerBidding: React.FC = () => {
         <div className="relative z-10 flex items-center gap-12 mr-4 text-right">
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-primary-400">{stats.activeBids}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Active</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Active</p>
            </div>
            <div className="h-10 w-px bg-white/10 mx-2 hidden md:block"></div>
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-emerald-400">{stats.successRate}%</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Win Rate</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Win Rate</p>
            </div>
         </div>
       </div>
@@ -82,14 +82,14 @@ const BrokerBidding: React.FC = () => {
           { label: 'Liquidity', value: stats.totalValue >= 1000 ? `$${(stats.totalValue / 1000).toFixed(1)}K` : `$${stats.totalValue.toLocaleString()}`, icon: DollarSign },
           { label: 'Win Rate', value: `${stats.successRate}%`, icon: Activity }
         ].map((stat, i) => (
-          <div key={i} className="group bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
+          <div key={i} className="group bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
             <div className="relative z-10 space-y-6">
-              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50">
                 <stat.icon size={18} />
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
-                <h3 className="text-2xl font-bold text-slate-900">{stat.value}</h3>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
               </div>
             </div>
           </div>
@@ -97,8 +97,8 @@ const BrokerBidding: React.FC = () => {
       </div>
 
       {/* Tabs Terminal */}
-      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up">
-        <div className="bg-slate-50/50 p-3 border-b border-slate-100">
+      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
+        <div className="bg-slate-50/50 p-3 border-b border-slate-100 dark:border-slate-800">
            <div className="flex gap-2">
               {[
                 { id: 'auctions', label: 'Open', icon: Gavel },

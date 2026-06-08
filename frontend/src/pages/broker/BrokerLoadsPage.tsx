@@ -204,7 +204,7 @@ const BrokerLoadsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 sm:px-9 md:px-10 lg:px-12 xl:px-14 space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Loads Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
@@ -221,11 +221,11 @@ const BrokerLoadsPage: React.FC = () => {
            <div className="h-10 w-px bg-white/10 mx-2 hidden md:block"></div>
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-primary-400">{filteredLoads.filter(l => l.status === 'ASSIGNED').length}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Assigned</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Assigned</p>
            </div>
            <div className="text-center hidden md:block">
              <p className="text-xl font-bold leading-none text-emerald-400">{filteredLoads.filter(l => l.status === 'COMPLETED').length}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Closed</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Closed</p>
            </div>
            <button 
              onClick={() => setViewMode(viewMode === 'card' ? 'table' : 'card')}
@@ -237,7 +237,7 @@ const BrokerLoadsPage: React.FC = () => {
       </div>
 
       {/* Pipeline Master Control */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 relative group overflow-hidden">
+      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 relative group overflow-hidden dark:bg-slate-900 dark:border-slate-800">
         <div className="flex-1 relative group">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-600 transition-colors" size={20} />
           <input
@@ -245,7 +245,7 @@ const BrokerLoadsPage: React.FC = () => {
             placeholder="Search Load ID or Location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-16 pr-8 py-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:shadow-xl transition-all outline-none placeholder:text-slate-300"
+            className="w-full pl-16 pr-8 py-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:shadow-xl transition-all outline-none placeholder:text-slate-300 dark:bg-slate-800/50 dark:text-white"
           />
         </div>
         <div className="flex gap-4">
@@ -267,7 +267,7 @@ const BrokerLoadsPage: React.FC = () => {
 
       {/* Load Stream */}
       {filteredLoads.length === 0 ? (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 p-48 text-center space-y-8 shadow-sm opacity-50">
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 p-48 text-center space-y-8 shadow-sm opacity-50 dark:bg-slate-900 dark:border-slate-800">
           <Package className="w-24 h-24 text-slate-100 mx-auto" />
           <p className="text-xs font-bold text-slate-400 uppercase leading-relaxed">System scan complete. No loads in pipeline matching criteria.</p>
         </div>
@@ -276,23 +276,23 @@ const BrokerLoadsPage: React.FC = () => {
           {filteredLoads.map((load) => {
             const contract = contracts.get(load.id);
             return (
-              <div key={load.id} className="group bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between">
+              <div key={load.id} className="group bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between dark:bg-slate-900 dark:border-slate-800">
                 <div>
                   <div className="flex justify-between items-start mb-8">
                     <span className={`px-4 py-2 text-xs font-bold uppercase rounded-xl border shadow-sm ${getStatusPrimeStyle(load.status)}`}>
                       {load.status.replace('_', ' ')}
                     </span>
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm dark:bg-slate-800/50">
                       <Activity size={18} />
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-900 mb-4 line-clamp-2 min-h-[3rem]">{load.title}</h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-4 line-clamp-2 min-h-[3rem] dark:text-white">{load.title}</h3>
                   
-                  <div className="space-y-4 mb-10 pt-6 border-t border-slate-50">
+                  <div className="space-y-4 mb-10 pt-6 border-t border-slate-50 dark:border-slate-800/50">
                     <div className="flex items-center justify-between">
                        <p className="text-sm font-bold text-slate-400 uppercase">Rate</p>
-                       <p className="text-lg font-bold text-slate-900">{load.loadValue?.toLocaleString()} <span className="text-sm font-bold text-slate-300">KES</span></p>
+                       <p className="text-lg font-bold text-slate-900 dark:text-white">{load.loadValue?.toLocaleString()} <span className="text-sm font-bold text-slate-300">KES</span></p>
                     </div>
                     {load.brokerCommissionRate && (
                        <div className="flex items-center justify-between">
@@ -302,7 +302,7 @@ const BrokerLoadsPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="bg-slate-50 rounded-[2rem] p-6 space-y-4 mb-10 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                  <div className="bg-slate-50 rounded-[2rem] p-6 space-y-4 mb-10 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50">
                     <div className="flex items-center gap-4">
                       <div className="w-2 h-2 rounded-full bg-slate-300"></div>
                       <p className="text-sm font-bold uppercase truncate">{load.pickupLocation}</p>
@@ -324,8 +324,8 @@ const BrokerLoadsPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-50">
-                  <button onClick={() => handleDownloadContract(load.id)} className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-900 hover:text-white transition-all"><Download size={18} /></button>
+                <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-50 dark:border-slate-800/50">
+                  <button onClick={() => handleDownloadContract(load.id)} className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-900 hover:text-white transition-all dark:bg-slate-800/50"><Download size={18} /></button>
                   <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-900/10 hover:-translate-y-1 transition-all flex items-center gap-2">
                     <Eye size={14} /> Full View
                   </button>
@@ -335,14 +335,14 @@ const BrokerLoadsPage: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-sm dark:bg-slate-900 dark:border-slate-800">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Carrier Payload</th>
-                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Route Details</th>
-                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Yield Index</th>
-                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Actions</th>
+                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Carrier Payload</th>
+                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Route Details</th>
+                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Yield Index</th>
+                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -350,30 +350,30 @@ const BrokerLoadsPage: React.FC = () => {
                 <tr key={load.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}>
                   <td className="px-10 py-10">
                     <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                      <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800">
                         <Package size={20} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900 uppercase italic">{load.title}</p>
+                        <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
                         <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">#{load.id.slice(0, 8)}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-10 py-10">
-                    <div className="flex items-center gap-4 text-sm font-bold text-slate-600 uppercase opacity-60 group-hover:opacity-100 transition-all">
+                    <div className="flex items-center gap-4 text-sm font-bold text-slate-600 uppercase opacity-60 group-hover:opacity-100 transition-all dark:text-slate-300">
                        <span>{load.pickupLocation}</span>
                        <ArrowRight size={10} />
                        <span>{load.deliveryLocation}</span>
                     </div>
                   </td>
                   <td className="px-10 py-10 text-right">
-                    <p className="text-lg font-bold text-slate-900">${load.loadValue?.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">${load.loadValue?.toLocaleString()}</p>
                     {load.brokerCommissionRate && <p className="text-xs font-bold text-primary-500 uppercase">Comm: {load.brokerCommissionRate}%</p>}
                   </td>
                   <td className="px-10 py-10 text-right">
                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                       <button onClick={(e) => { e.stopPropagation(); handleDownloadContract(load.id); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all"><Download size={16} /></button>
-                       <button className="p-4 bg-slate-900 text-white rounded-xl shadow-xl transition-all"><Eye size={16} /></button>
+                       <button onClick={(e) => { e.stopPropagation(); handleDownloadContract(load.id); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all dark:bg-slate-900 dark:border-slate-800"><Download size={16} /></button>
+                       <button className="p-4 bg-slate-900 text-white rounded-xl shadow-xl transition-all dark:bg-slate-950"><Eye size={16} /></button>
                     </div>
                   </td>
                 </tr>
