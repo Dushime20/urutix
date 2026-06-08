@@ -799,6 +799,22 @@ const Profile: React.FC = () => {
     </div>
   );
 
+  if (isTenantAdmin) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="mb-8">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+            <TranslatedText text="Tenant Admin Profile" />
+          </h1>
+          <p className="text-sm text-slate-400 font-medium mt-1">
+            <TranslatedText text="Manage your account details and preferences" />
+          </p>
+        </div>
+        {profileContent}
+      </div>
+    );
+  }
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="Administrative Profile" />}

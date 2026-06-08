@@ -1,11 +1,12 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, MoreThan } from 'typeorm';
+import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { LoanRequest, LoanRequestStatus } from '../../../entities/loan-request.entity';
 import { LoanRepayment } from '../../../entities/loan-repayment.entity';
 import { LoanDisbursement } from '../../../entities/loan-disbursement.entity';
+import { LenderPolicy } from '../../../entities/lender-policy.entity';
 
 export interface RepaymentSchedule {
   loan_id: string;
@@ -19,11 +20,17 @@ export interface RepaymentSchedule {
 
 export interface RepaymentCalculation {
   total_principal: number;
+  /** Full interest for the entire agreed term — fixed at disbursement, never changes */
   total_interest: number;
+  /** Fixed total the borrower owes = principal + full term interest */
   total_amount: number;
   installments: RepaymentSchedule[];
-  next_payment_due: Date;
+  next_payment_due: Date | undefined;
   days_overdue: number;
+  /** Annual interest rate used */
+  annual_rate: number;
+  /** Agreed repayment term in days */
+  term_days: number;
 }
 
 @Injectable()
@@ -37,65 +44,71 @@ export class RepaymentProcessorService {
     private repaymentRepository: Repository<LoanRepayment>,
     @InjectRepository(LoanDisbursement)
     private disbursementRepository: Repository<LoanDisbursement>,
+    @InjectRepository(LenderPolicy)
+    private lenderPolicyRepository: Repository<LenderPolicy>,
     private eventEmitter: EventEmitter2,
     @Inject(forwardRef(() => require('../lending.service').LendingService))
     private lendingService: any,
   ) {}
 
-  async calculateRepaymentSchedule(
-    loanId: string,
-  ): Promise<RepaymentCalculation> {
-    try {
-      const loan = await this.loanRequestRepository.findOne({
-        where: { id: loanId },
-        relations: ['disbursements'],
-      });
+  // ─────────────────────────────────────────────────────────────────────────
+  // CORE CALCULATION
+  //
+  // Total amount = principal + (principal × annual_rate / 365 × term_days)
+  //
+  // This is fixed at disbursement time. Whether the borrower repays on day 5
+  // or day 90, they owe the same amount. No discount for early repayment,
+  // no extra penalty either — the agreed amount is the agreed amount.
+  // ─────────────────────────────────────────────────────────────────────────
+  async calculateRepaymentSchedule(loanId: string): Promise<RepaymentCalculation> {
+    const loan = await this.loanRequestRepository.findOne({
+      where: { id: loanId },
+      relations: ['disbursements', 'repayments'],
+    });
 
-      if (!loan) {
-        throw new Error('Loan not found');
-      }
+    if (!loan) throw new Error('Loan not found');
 
-      const disbursement = loan.disbursements?.[0];
-      if (!disbursement) {
-        throw new Error('No disbursement found for loan');
-      }
+    const disbursement = loan.disbursements?.[0];
+    if (!disbursement) throw new Error('No disbursement found for loan');
 
-      const principal = loan.approved_amount || 0;
-      const interestRate = 0.05; // Default 5% interest rate
-      const termDays = 30; // Default 30 days
+    const principal = Number(loan.approved_amount || loan.requested_amount || 0);
+    const annualRate = await this.resolveAnnualRate(loan);
+    const termDays   = await this.resolveTermDays(loan);
 
-      // Calculate total interest
-      const totalInterest = principal * (interestRate / 365) * termDays;
-      const totalAmount = principal + totalInterest;
+    // Fixed interest for the full agreed term — does not change on early repayment
+    const totalInterest = principal * (annualRate / 365) * termDays;
+    const totalAmount   = principal + totalInterest;
 
-      // Calculate installment schedule
-      const installments = this.calculateInstallments(
-        principal,
-        totalInterest,
-        termDays,
-        disbursement.created_at,
-      );
+    const disbursedAt = new Date(disbursement.created_at);
+    const dueDate     = new Date(disbursedAt);
+    dueDate.setDate(dueDate.getDate() + termDays);
 
-      // Find next payment due
-      const nextPaymentDue = installments.find(
-        (i) => i.status === 'pending',
-      )?.due_date;
+    const now = new Date();
+    const msPerDay     = 1000 * 60 * 60 * 24;
+    const daysOverdue  = now > dueDate
+      ? Math.ceil((now.getTime() - dueDate.getTime()) / msPerDay)
+      : 0;
 
-      // Calculate days overdue
-      const daysOverdue = this.calculateDaysOverdue(loan);
+    const installments: RepaymentSchedule[] = [{
+      loan_id:             loanId,
+      installment_number:  1,
+      due_date:            dueDate,
+      amount:              totalAmount,
+      principal,
+      interest:            totalInterest,
+      status:              daysOverdue > 0 ? 'overdue' : 'pending',
+    }];
 
-      return {
-        total_principal: principal,
-        total_interest: totalInterest,
-        total_amount: totalAmount,
-        installments,
-        next_payment_due: nextPaymentDue,
-        days_overdue: daysOverdue,
-      };
-    } catch (error) {
-      this.logger.error('Error calculating repayment schedule', error);
-      throw error;
-    }
+    return {
+      total_principal:   principal,
+      total_interest:    totalInterest,
+      total_amount:      totalAmount,
+      installments,
+      next_payment_due:  daysOverdue === 0 ? dueDate : undefined,
+      days_overdue:      daysOverdue,
+      annual_rate:       annualRate,
+      term_days:         termDays,
+    };
   }
 
   async processRepayment(
@@ -105,60 +118,67 @@ export class RepaymentProcessorService {
     reference: string,
     metadata?: any,
   ): Promise<LoanRepayment> {
-    try {
-      const loan = await this.loanRequestRepository.findOne({
-        where: { id: loanId },
-        relations: ['disbursements', 'repayments'],
-      });
+    const loan = await this.loanRequestRepository.findOne({
+      where: { id: loanId },
+      relations: ['disbursements', 'repayments'],
+    });
 
-      if (!loan) {
-        throw new Error('Loan not found');
-      }
+    if (!loan) throw new Error('Loan not found');
 
-      // Validate payment amount
-      const repaymentSchedule = await this.calculateRepaymentSchedule(loanId);
-      const outstandingAmount = this.calculateOutstandingAmount(
-        loan,
-        repaymentSchedule,
+    const schedule = await this.calculateRepaymentSchedule(loanId);
+    const outstanding = this.calculateOutstandingAmount(loan, schedule);
+
+    if (amount > outstanding + 0.01) {
+      throw new Error(
+        `Payment amount (${amount}) exceeds outstanding balance (${outstanding.toFixed(2)}).`
       );
-
-      if (amount > outstandingAmount) {
-        throw new Error('Payment amount exceeds outstanding balance');
-      }
-
-      // Create repayment record
-      const repayment = this.repaymentRepository.create({
-        loan_request_id: loanId,
-        amount,
-        interest_paid: amount * 0.1, // Assume 10% is interest
-        principal_paid: amount * 0.9, // Assume 90% is principal
-        repayment_date: new Date(),
-        external_txn_ref: reference,
-        metadata: { payment_method: paymentMethod, ...metadata },
-        created_at: new Date(),
-      });
-
-      const savedRepayment = await this.repaymentRepository.save(repayment);
-
-      // Update loan status if fully repaid
-      await this.updateLoanStatus(loan, amount, repaymentSchedule);
-
-      // Emit repayment event
-      this.eventEmitter.emit('loan.repayment.received', {
-        loanId,
-        amount,
-        remainingBalance: outstandingAmount - amount,
-        repaymentId: Array.isArray(savedRepayment)
-          ? savedRepayment[0]?.id
-          : savedRepayment.id,
-      });
-
-      this.logger.log(`Repayment processed: ${amount} for loan ${loanId}`);
-      return Array.isArray(savedRepayment) ? savedRepayment[0] : savedRepayment;
-    } catch (error) {
-      this.logger.error('Error processing repayment', error);
-      throw error;
     }
+
+    // Split the payment into principal and interest proportionally based on the fixed schedule
+    const interestRatio  = schedule.total_amount > 0
+      ? schedule.total_interest / schedule.total_amount
+      : 0;
+    const interestPaid   = amount * interestRatio;
+    const principalPaid  = amount - interestPaid;
+
+    const repayment = this.repaymentRepository.create({
+      loan_request_id:  loanId,
+      amount,
+      interest_paid:    interestPaid,
+      principal_paid:   principalPaid,
+      repayment_date:   new Date(),
+      external_txn_ref: reference,
+      metadata: {
+        payment_method: paymentMethod,
+        annual_rate:    schedule.annual_rate,
+        term_days:      schedule.term_days,
+        // Early repayment: loan closes before due date — no penalty, no discount
+        is_early_repayment: schedule.days_overdue === 0,
+        ...metadata,
+      },
+      created_at: new Date(),
+    });
+
+    const savedRepayment = await this.repaymentRepository.save(repayment);
+    const result = Array.isArray(savedRepayment) ? savedRepayment[0] : savedRepayment;
+
+    await this.updateLoanStatus(loan, amount, schedule);
+
+    this.eventEmitter.emit('loan.repayment.received', {
+      loanId,
+      amount,
+      interestPaid,
+      principalPaid,
+      remainingBalance: Math.max(0, outstanding - amount),
+      repaymentId: result.id,
+    });
+
+    this.logger.log(
+      `Repayment processed: ${amount} for loan ${loanId} ` +
+      `(principal: ${principalPaid.toFixed(2)}, interest: ${interestPaid.toFixed(2)})`
+    );
+
+    return result;
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -176,13 +196,10 @@ export class RepaymentProcessorService {
   async generateRepaymentReminders(): Promise<void> {
     try {
       this.logger.log('Generating repayment reminders...');
-
-      const loansDueSoon = await this.getLoansDueSoon(7); // 7 days
-
+      const loansDueSoon = await this.getLoansDueSoon(7);
       for (const loan of loansDueSoon) {
         await this.sendRepaymentReminder(loan);
       }
-
       this.logger.log(`Sent ${loansDueSoon.length} repayment reminders`);
     } catch (error) {
       this.logger.error('Error generating repayment reminders', error);
@@ -201,157 +218,88 @@ export class RepaymentProcessorService {
       where: { id: loanId },
       relations: ['disbursements', 'repayments'],
     });
-
     if (!loan) return 0;
-
-    const repaymentSchedule = await this.calculateRepaymentSchedule(loanId);
-    return this.calculateOutstandingAmount(loan, repaymentSchedule);
+    const schedule = await this.calculateRepaymentSchedule(loanId);
+    return this.calculateOutstandingAmount(loan, schedule);
   }
 
-  private calculateInstallments(
-    principal: number,
-    totalInterest: number,
-    termDays: number,
-    startDate: Date,
-  ): RepaymentSchedule[] {
-    const installments: RepaymentSchedule[] = [];
+  // ─────────────────────────────────────────────────────────────────────────
+  // PRIVATE HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
 
-    // For simplicity, assume monthly installments
-    const monthlyInstallments = Math.ceil(termDays / 30);
-    const monthlyPrincipal = principal / monthlyInstallments;
-    const monthlyInterest = totalInterest / monthlyInstallments;
-
-    for (let i = 1; i <= monthlyInstallments; i++) {
-      const dueDate = new Date(startDate);
-      dueDate.setMonth(dueDate.getMonth() + i);
-
-      installments.push({
-        loan_id: '',
-        installment_number: i,
-        due_date: dueDate,
-        amount: monthlyPrincipal + monthlyInterest,
-        principal: monthlyPrincipal,
-        interest: monthlyInterest,
-        status: 'pending',
+  /** Resolve annual interest rate from lender policy, fallback 5% */
+  private async resolveAnnualRate(loan: LoanRequest): Promise<number> {
+    if (!loan.lender_id) return 0.05;
+    try {
+      const policy = await this.lenderPolicyRepository.findOne({
+        where: { lender_id: loan.lender_id, is_active: true },
+        order: { created_at: 'DESC' },
       });
+      return policy ? Number(policy.interest_rate) : 0.05;
+    } catch {
+      return 0.05;
     }
-
-    return installments;
   }
 
-  private calculateDaysOverdue(loan: LoanRequest): number {
-    const disbursement = loan.disbursements?.[0];
-    if (!disbursement) return 0;
-
-    const dueDate = new Date(disbursement.created_at);
-    dueDate.setDate(dueDate.getDate() + 30); // Default 30 days
-
-    const now = new Date();
-    const diffTime = now.getTime() - dueDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return Math.max(0, diffDays);
+  /** Resolve repayment term days from lender policy, fallback 30 days */
+  private async resolveTermDays(loan: LoanRequest): Promise<number> {
+    if (!loan.lender_id) return 30;
+    try {
+      const policy = await this.lenderPolicyRepository.findOne({
+        where: { lender_id: loan.lender_id, is_active: true },
+        order: { created_at: 'DESC' },
+      });
+      return policy ? Number(policy.repayment_term_days) : 30;
+    } catch {
+      return 30;
+    }
   }
 
   private calculateOutstandingAmount(
     loan: LoanRequest,
-    repaymentSchedule: RepaymentCalculation,
+    schedule: RepaymentCalculation,
   ): number {
-    const totalRepaid =
-      loan.repayments?.reduce((sum, repayment) => sum + repayment.amount, 0) ||
-      0;
-
-    return repaymentSchedule.total_amount - totalRepaid;
+    const totalRepaid = loan.repayments?.reduce(
+      (sum, r) => sum + Number(r.amount), 0
+    ) ?? 0;
+    return Math.max(0, schedule.total_amount - totalRepaid);
   }
 
   private async updateLoanStatus(
     loan: LoanRequest,
     paymentAmount: number,
-    repaymentSchedule: RepaymentCalculation,
+    schedule: RepaymentCalculation,
   ): Promise<void> {
-    const outstandingAmount = this.calculateOutstandingAmount(
-      loan,
-      repaymentSchedule,
-    );
+    const outstanding = this.calculateOutstandingAmount(loan, schedule);
 
-    if (outstandingAmount <= 0) {
-      // Loan fully repaid
+    if (outstanding <= 0.01) {
       await this.loanRequestRepository.update(loan.id, {
         status: LoanRequestStatus.REPAID,
         repaid_at: new Date(),
       });
-
       this.eventEmitter.emit('loan.repaid', {
         loanId: loan.id,
-        totalAmount: repaymentSchedule.total_amount,
-        totalRepaid: repaymentSchedule.total_amount,
+        totalAmount: schedule.total_amount,
       });
-    } else if (outstandingAmount < repaymentSchedule.total_amount) {
-      // Partial repayment
-      await this.loanRequestRepository.update(loan.id, {
-        status: 'APPROVED' as any, // Use approved status for partial repayment
-        // last_payment_date: new Date(), // TODO: Add this field to LoanRequest entity
-      });
-    }
-  }
-
-  private async processOverdueLoan(loan: LoanRequest): Promise<void> {
-    try {
-      const daysOverdue = this.calculateDaysOverdue(loan);
-
-      if (daysOverdue > 90) {
-        // Mark as defaulted
-        await this.loanRequestRepository.update(loan.id, {
-          status: LoanRequestStatus.DEFAULTED,
-          defaulted_at: new Date(),
-        });
-
-        this.eventEmitter.emit('loan.defaulted', {
-          loanId: loan.id,
-          daysOverdue,
-          amount: loan.approved_amount,
-        });
-      } else if (daysOverdue > 30) {
-        // Mark as overdue
-        await this.loanRequestRepository.update(loan.id, {
-          status: 'APPROVED' as any, // Keep as approved but mark as overdue
-          // is_overdue: true, // TODO: Add this field to LoanRequest entity
-        });
-
-        this.eventEmitter.emit('loan.overdue', {
-          loanId: loan.id,
-          daysOverdue,
-          amount: loan.approved_amount,
-        });
-      }
-    } catch (error) {
-      this.logger.error(`Error processing overdue loan ${loan.id}`, error);
     }
   }
 
   private async getLoansDueSoon(daysAhead: number): Promise<LoanRequest[]> {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + daysAhead);
-
     return this.loanRequestRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.disbursements', 'disbursement')
-      .where('loan.status IN (:...statuses)', {
-        statuses: ['approved', 'disbursed'],
-      })
+      .where('loan.status IN (:...statuses)', { statuses: ['approved', 'disbursed'] })
       .andWhere('disbursement.created_at <= :dueDate', { dueDate })
       .getMany();
   }
 
   private async sendRepaymentReminder(loan: LoanRequest): Promise<void> {
-    // This would integrate with notification service
-    // For now, just log the reminder
     this.logger.log(`Sending repayment reminder for loan ${loan.id}`);
-
     this.eventEmitter.emit('loan.reminder.sent', {
       loanId: loan.id,
       amount: loan.approved_amount,
-      dueDate: new Date(),
     });
   }
 }

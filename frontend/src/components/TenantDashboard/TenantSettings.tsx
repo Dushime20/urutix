@@ -56,7 +56,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             </div>
         );
     }
@@ -73,7 +73,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                     <button
                         onClick={handleSubmit}
                         disabled={updateMutation.isPending}
-                        className="flex items-center px-6 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-100 dark:shadow-none disabled:opacity-70"
+                        className="flex items-center px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-xl font-bold text-sm hover:bg-primary-700 dark:hover:bg-primary-600 transition-all shadow-lg shadow-primary-100 dark:shadow-none disabled:opacity-70"
                     >
                         {updateMutation.isPending ? (
                             <span className="animate-pulse"><TranslatedText text="Saving..." /></span>
@@ -91,7 +91,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                     <button
                         onClick={() => setActiveTab('profile')}
                         className={`pb-4 text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'profile'
-                            ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                            ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                             }`}
                     >
@@ -100,7 +100,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                     <button
                         onClick={() => setActiveTab('preferences')}
                         className={`pb-4 text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'preferences'
-                            ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                            ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                             }`}
                     >
@@ -114,7 +114,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-6">
                         <div className="flex flex-col items-center py-6">
-                            <div className="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-3xl flex items-center justify-center shadow-lg shadow-indigo-100 dark:shadow-none mb-4">
+                            <div className="w-24 h-24 bg-gradient-to-tr from-primary-600 to-violet-500 rounded-3xl flex items-center justify-center shadow-lg shadow-primary-100 dark:shadow-none mb-4">
                                 <span className="text-white font-black text-4xl tracking-tighter">
                                     {formData.name?.charAt(0).toUpperCase() || 'T'}
                                 </span>
@@ -133,7 +133,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Plan" /></p>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase">{tenant?.subscription?.plan || 'Standard'}</span>
+                                    <span className="text-sm font-bold text-primary-600 dark:text-primary-400 uppercase">{tenant?.subscription?.plan || 'Standard'}</span>
                                     <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
                                         <TranslatedText text="Expires" />: {tenant?.subscription?.expiresAt ? new Date(tenant.subscription.expiresAt).toLocaleDateString() : tSync('Never')}
                                     </span>
@@ -163,7 +163,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                                 type="text"
                                                 value={formData.name || ''}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20"
                                             />
                                         </div>
                                     </div>
@@ -181,7 +181,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                                     ...formData,
                                                     contactInfo: { ...formData.contactInfo!, email: e.target.value }
                                                 })}
-                                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20"
                                             />
                                         </div>
                                     </div>
@@ -196,7 +196,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                                     ...formData,
                                                     contactInfo: { ...formData.contactInfo!, phone: e.target.value }
                                                 })}
-                                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20"
                                             />
                                         </div>
                                     </div>
@@ -213,7 +213,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                                 ...formData,
                                                 contactInfo: { ...formData.contactInfo!, address: e.target.value }
                                             })}
-                                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 resize-none"
                                         />
                                     </div>
                                 </div>
@@ -229,7 +229,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                             <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Currency" /></label>
                                             <div className="relative">
                                                 <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
-                                                <select className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 appearance-none">
+                                                <select className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 appearance-none">
                                                     <option>USD ($)</option>
                                                     <option>KES (KSh)</option>
                                                     <option>EUR (€)</option>
@@ -241,7 +241,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                             <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Timezone" /></label>
                                             <div className="relative">
                                                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
-                                                <select className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 appearance-none">
+                                                <select className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 appearance-none">
                                                     <option>Africa/Nairobi (GMT+3)</option>
                                                     <option>Africa/Kigali (GMT+2)</option>
                                                     <option>UTC (GMT+0)</option>
@@ -266,7 +266,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                                 </div>
                                                 <div className="relative inline-flex items-center cursor-pointer">
                                                     <input type="checkbox" className="sr-only peer" defaultChecked />
-                                                    <div className="w-11 h-6 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 dark:peer-checked:bg-indigo-500"></div>
+                                                    <div className="w-11 h-6 bg-gray-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600 dark:peer-checked:bg-primary-500"></div>
                                                 </div>
                                             </div>
                                         ))}

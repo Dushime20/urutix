@@ -29,6 +29,8 @@ import ReceiverPasswordSetup from './pages/ReceiverPasswordSetup';
 import CargoOwnerPasswordSetup from './pages/CargoOwnerPasswordSetup';
 import TruckOwnerPasswordSetup from './pages/TruckOwnerPasswordSetup';
 import CustomsOfficerPasswordSetup from './pages/CustomsOfficerPasswordSetup';
+import BrokerPasswordSetup from './pages/BrokerPasswordSetup';
+import AgentPasswordSetup from './pages/AgentPasswordSetup';
 
 // Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
 // Analytics pages
@@ -261,6 +263,8 @@ function App() {
                     <Route path="/cargo-owner/setup-password" element={<CargoOwnerPasswordSetup />} />
                     <Route path="/truck-owner/setup-password" element={<TruckOwnerPasswordSetup />} />
                     <Route path="/customs-officer/setup-password" element={<CustomsOfficerPasswordSetup />} />
+                    <Route path="/broker/setup-password" element={<BrokerPasswordSetup />} />
+                    <Route path="/agent/setup-password" element={<AgentPasswordSetup />} />
 
                     {/* Cargo Owner Routes */}
                     <Route path="/dashboard" element={<CargoOwnerLayout />}>

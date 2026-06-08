@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadContract, type CreateContractData } from '../../services/brokerApi';
@@ -146,12 +147,7 @@ const ContractManagement: React.FC = () => {
   };
 
   if (loading && contracts.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Contracts...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -165,23 +161,23 @@ const ContractManagement: React.FC = () => {
             <FileText size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Contracts</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Legal & Financial Records</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Contracts</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Legal & Financial Records</p>
           </div>
         </div>
 
         <div className="relative z-10 hidden md:flex items-center gap-12 mr-4">
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none text-white">{contracts.filter(c => c.status === 'ACTIVE' || c.status === 'SIGNED').length}</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Active</p>
+            <p className="text-xl font-bold leading-none text-white">{contracts.filter(c => c.status === 'ACTIVE' || c.status === 'SIGNED').length}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Active</p>
           </div>
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none text-primary-400">{contracts.filter(c => c.status.includes('PENDING')).length}</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Pending</p>
+            <p className="text-xl font-bold leading-none text-primary-400">{contracts.filter(c => c.status.includes('PENDING')).length}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Pending</p>
           </div>
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-[10px]"
+            className="bg-primary-600 hover:bg-primary-500 text-white font-bold uppercase px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
           >
             <Plus size={14} /> New Contract
           </button>
@@ -202,9 +198,9 @@ const ContractManagement: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all mb-6">
                 <stat.icon size={20} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.sub}</p>
+              <p className="text-sm font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-slate-900">{stat.value}</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase mt-1">{stat.sub}</p>
             </div>
           </div>
         ))}
@@ -218,14 +214,14 @@ const ContractManagement: React.FC = () => {
             <input
               type="text"
               placeholder="Search Contracts..."
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-4 text-xs font-bold text-slate-900 placeholder:text-slate-300 outline-none focus:bg-white focus:border-primary-100 transition-all font-manrope"
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-4 text-xs font-bold text-slate-900 placeholder:text-slate-300 outline-none focus:bg-white focus:border-primary-100 transition-all"
             />
           </div>
           <div className="flex gap-4 w-full md:w-auto">
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 md:flex-none"
+              className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 md:flex-none"
             >
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
@@ -242,8 +238,8 @@ const ContractManagement: React.FC = () => {
               <Shield size={48} />
             </div>
             <div className="space-y-4">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">No Contracts Found</h3>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">You have not created any contracts yet.</p>
+              <h3 className="text-xl font-bold text-slate-900 uppercase">No Contracts Found</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase leading-relaxed max-w-xs mx-auto">You have not created any contracts yet.</p>
             </div>
           </div>
         ) : (
@@ -251,11 +247,11 @@ const ContractManagement: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Contract</th>
-                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Earnings</th>
-                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Dates</th>
-                  <th className="px-10 py-8 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Status</th>
-                  <th className="px-10 py-8 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Actions</th>
+                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100">Contract</th>
+                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100">Earnings</th>
+                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100">Dates</th>
+                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100">Status</th>
+                  <th className="px-10 py-8 text-right text-sm font-bold text-slate-400 uppercase border-b border-slate-100">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -267,21 +263,21 @@ const ContractManagement: React.FC = () => {
                           <Activity size={16} />
                         </div>
                         <div>
-                          <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">#{contract.id.slice(0, 8)}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Load {contract.loadId.slice(0, 8)}</p>
+                          <p className="text-sm font-bold text-slate-900 uppercase italic">#{contract.id.slice(0, 8)}</p>
+                          <p className="text-sm font-bold text-slate-400 uppercase mt-1">Load {contract.loadId.slice(0, 8)}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-10 py-8">
-                      <p className="text-sm font-black text-slate-900">{contract.agreedRate.toLocaleString()} <span className="text-[10px] text-slate-300 uppercase tracking-widest">{contract.currencyCode}</span></p>
-                      <p className="text-[9px] font-black text-primary-600 uppercase tracking-widest mt-1">Commission: {contract.commissionAmount.toLocaleString()}</p>
+                      <p className="text-sm font-bold text-slate-900">{contract.agreedRate.toLocaleString()} <span className="text-sm text-slate-300 uppercase">{contract.currencyCode}</span></p>
+                      <p className="text-xs font-bold text-primary-600 uppercase mt-1">Commission: {contract.commissionAmount.toLocaleString()}</p>
                     </td>
                     <td className="px-10 py-8">
-                      <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{contract.pickupDate ? new Date(contract.pickupDate).toLocaleDateString() : 'TBD'}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Pickup Date</p>
+                      <p className="text-xs font-bold text-slate-900 uppercase">{contract.pickupDate ? new Date(contract.pickupDate).toLocaleDateString() : 'TBD'}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase mt-1">Pickup Date</p>
                     </td>
                     <td className="px-10 py-8">
-                      <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit ${getStatusStyle(contract.status)}`}>
+                      <span className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border flex items-center gap-2 w-fit ${getStatusStyle(contract.status)}`}>
                         {contract.status.replace('_', ' ')}
                       </span>
                     </td>
@@ -361,8 +357,8 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
       <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
         <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
           <div className="space-y-2">
-            <h2 className="text-3xl font-black tracking-tighter uppercase italic">Create <span className="text-white">Contract</span></h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Setup a new legal & financial agreement</p>
+            <h2 className="text-3xl font-bold uppercase italic">Create <span className="text-white">Contract</span></h2>
+            <p className="text-slate-400 text-sm font-bold uppercase">Setup a new legal & financial agreement</p>
           </div>
           <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
             <X size={24} />
@@ -372,7 +368,7 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
         <form onSubmit={handleSubmit} className="p-12 md:p-16 overflow-y-auto space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Load ID</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Load ID</label>
               <input
                 type="text"
                 required
@@ -383,7 +379,7 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
               />
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Carrier ID</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Carrier ID</label>
               <input
                 type="text"
                 required
@@ -397,7 +393,7 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Total Rate</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Total Rate</label>
               <div className="relative">
                 <input
                   type="number"
@@ -410,7 +406,7 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
               </div>
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Commission (%)</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Commission (%)</label>
               <input
                 type="number"
                 step="0.1"
@@ -421,7 +417,7 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
               />
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Currency</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Currency</label>
               <select
                 value={formData.currencyCode}
                 onChange={(e) => setFormData({...formData, currencyCode: e.target.value})}
@@ -437,14 +433,14 @@ const CreateContractModal: React.FC<{ onClose: () => void, onSubmit: (data: Crea
             <button
               type="button"
               onClick={onClose}
-              className="px-12 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
+              className="px-12 py-6 text-sm font-bold uppercase text-slate-400 hover:text-slate-900 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4"
+              className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4"
             >
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
               Authorize Contract
@@ -463,8 +459,8 @@ const ViewContractModal: React.FC<{ contract: LoadContract, onClose: () => void,
       <div className="relative w-full max-w-5xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
         <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
           <div className="space-y-2">
-            <h2 className="text-3xl font-black tracking-tighter uppercase italic">Contract <span className="text-white">Details</span></h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Legal agreement reference #{contract.id.slice(0, 8)}</p>
+            <h2 className="text-3xl font-bold uppercase italic">Contract <span className="text-white">Details</span></h2>
+            <p className="text-slate-400 text-sm font-bold uppercase">Legal agreement reference #{contract.id.slice(0, 8)}</p>
           </div>
           <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
             <X size={24} />
@@ -481,28 +477,28 @@ const ViewContractModal: React.FC<{ contract: LoadContract, onClose: () => void,
             ].map((meta, i) => (
               <div key={i} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all">
                 <meta.icon size={20} className="text-slate-300 mb-6 group-hover:text-primary-600 transition-colors" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{meta.label}</p>
-                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{meta.value}</p>
+                <p className="text-sm font-bold text-slate-400 uppercase mb-1">{meta.label}</p>
+                <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">{meta.value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="space-y-8">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Agreement Context</h4>
+              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-[0.4em] ml-4">Agreement Context</h4>
               <div className="bg-slate-900 rounded-[2.5rem] p-10 space-y-8 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/20 rounded-full blur-xl -mr-16 -mt-16"></div>
                 <div className="space-y-6 relative z-10">
                   <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Load Reference</span>
+                    <span className="text-sm font-bold uppercase text-slate-500">Load Reference</span>
                     <span className="text-sm font-bold text-white">{contract.loadId}</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Creation Timestamp</span>
+                    <span className="text-sm font-bold uppercase text-slate-500">Creation Timestamp</span>
                     <span className="text-sm font-bold">{new Date(contract.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Protocol</span>
+                    <span className="text-sm font-bold uppercase text-slate-500">Protocol</span>
                     <span className="text-sm font-bold text-emerald-400">Digital Smart Contract</span>
                   </div>
                 </div>
@@ -510,19 +506,19 @@ const ViewContractModal: React.FC<{ contract: LoadContract, onClose: () => void,
             </div>
 
             <div className="space-y-8">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Financial Terms</h4>
+              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-[0.4em] ml-4">Financial Terms</h4>
               <div className="bg-slate-50 rounded-[2.5rem] p-10 space-y-8 border border-slate-100">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-200/50 pb-4">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Payment Window</span>
-                    <span className="text-sm font-bold text-slate-900 font-manrope">{contract.paymentTerms || 'Standard Net 30'}</span>
+                    <span className="text-sm font-bold uppercase text-slate-400">Payment Window</span>
+                    <span className="text-sm font-bold text-slate-900">{contract.paymentTerms || 'Standard Net 30'}</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-slate-200/50 pb-4">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Commission Verification</span>
+                    <span className="text-sm font-bold uppercase text-slate-400">Commission Verification</span>
                     <span className="text-sm font-bold text-primary-600">Authorized</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase text-slate-400">Legal Standard</span>
+                    <span className="text-sm font-bold uppercase text-slate-400">Legal Standard</span>
                     <span className="text-sm font-bold text-slate-900">Commercial Maritime Act</span>
                   </div>
                 </div>
@@ -534,18 +530,18 @@ const ViewContractModal: React.FC<{ contract: LoadContract, onClose: () => void,
             <div className="flex gap-4 w-full md:w-auto">
               <button
                 onClick={() => onDownload(contract)}
-                className="flex-1 md:flex-none px-12 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-4"
+                className="flex-1 md:flex-none px-12 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-4"
               >
                 <Download size={18} /> Export PDF
               </button>
             </div>
             
             <div className="flex gap-4 w-full md:w-auto">
-              <button onClick={onClose} className="flex-1 md:flex-none px-12 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Close</button>
+              <button onClick={onClose} className="flex-1 md:flex-none px-12 py-6 text-sm font-bold uppercase text-slate-400 hover:text-slate-900 transition-colors">Close</button>
               {contract.status === 'PENDING_SIGNATURE' && (
                 <button
                   onClick={() => onSign(contract.id)}
-                  className="flex-1 md:flex-none px-16 py-6 bg-primary-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4"
+                  className="flex-1 md:flex-none px-16 py-6 bg-primary-600 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4"
                 >
                   <FileCheck size={18} /> Sign Agreement
                 </button>

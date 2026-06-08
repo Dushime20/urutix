@@ -1297,6 +1297,76 @@ export class EnhancedAuthService {
     }
   }
 
+  async setupBrokerPassword(
+    setupPasswordDto: SetupDriverPasswordDto,
+    clientIp?: string,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const { token, password, confirmPassword } = setupPasswordDto;
+      this.validatePasswordStrength(password);
+      if (password !== confirmPassword) throw new BadRequestException('Passwords do not match');
+
+      const setupTokenRecord = await this.passwordResetTokenRepository.findOne({ where: { token, used: false } });
+      if (!setupTokenRecord) throw new BadRequestException('Invalid or expired setup token');
+      if (setupTokenRecord.expiresAt < new Date()) throw new BadRequestException('Setup token has expired');
+
+      const user = await this.userRepository.findOne({ where: { email: setupTokenRecord.email } });
+      if (!user) throw new NotFoundException('User not found');
+      if (user.role !== UserRole.BROKER) throw new BadRequestException('This token is only valid for broker accounts');
+
+      user.passwordHash = await bcrypt.hash(password, 14);
+      user.status = UserStatus.ACTIVE;
+      user.loginAttempts = 0;
+      user.lockedUntil = undefined;
+      await this.userRepository.save(user);
+
+      setupTokenRecord.used = true;
+      await this.passwordResetTokenRepository.save(setupTokenRecord);
+
+      await this.logAuditEvent('BROKER_PASSWORD_SETUP_COMPLETED', user.id, { email: user.email, clientIp });
+      this.logger.log(`Broker password setup completed for: ${user.email} from IP: ${clientIp}`);
+      return { message: 'Password set successfully. You can now log in.' };
+    } catch (error) {
+      this.logger.error(`Broker password setup failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async setupAgentPassword(
+    setupPasswordDto: SetupDriverPasswordDto,
+    clientIp?: string,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const { token, password, confirmPassword } = setupPasswordDto;
+      this.validatePasswordStrength(password);
+      if (password !== confirmPassword) throw new BadRequestException('Passwords do not match');
+
+      const setupTokenRecord = await this.passwordResetTokenRepository.findOne({ where: { token, used: false } });
+      if (!setupTokenRecord) throw new BadRequestException('Invalid or expired setup token');
+      if (setupTokenRecord.expiresAt < new Date()) throw new BadRequestException('Setup token has expired');
+
+      const user = await this.userRepository.findOne({ where: { email: setupTokenRecord.email } });
+      if (!user) throw new NotFoundException('User not found');
+      if (user.role !== UserRole.AGENT) throw new BadRequestException('This token is only valid for agent accounts');
+
+      user.passwordHash = await bcrypt.hash(password, 14);
+      user.status = UserStatus.ACTIVE;
+      user.loginAttempts = 0;
+      user.lockedUntil = undefined;
+      await this.userRepository.save(user);
+
+      setupTokenRecord.used = true;
+      await this.passwordResetTokenRepository.save(setupTokenRecord);
+
+      await this.logAuditEvent('AGENT_PASSWORD_SETUP_COMPLETED', user.id, { email: user.email, clientIp });
+      this.logger.log(`Agent password setup completed for: ${user.email} from IP: ${clientIp}`);
+      return { message: 'Password set successfully. You can now log in.' };
+    } catch (error) {
+      this.logger.error(`Agent password setup failed: ${error.message}`);
+      throw error;
+    }
+  }
+
   async changePassword(
     userId: string,
     changePasswordDto: ChangePasswordDto,

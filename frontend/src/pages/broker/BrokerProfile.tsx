@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type Broker } from '../../services/brokerApi';
@@ -75,26 +76,21 @@ const BrokerProfile: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Accessing Identity...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!broker) {
     return (
       <div className="bg-rose-50 border border-rose-100 rounded-[2rem] p-10 text-center space-y-4">
         <AlertCircle size={48} className="text-rose-600 mx-auto" />
-        <h3 className="text-xl font-black text-rose-900 uppercase tracking-tighter">Identity Not Found</h3>
-        <p className="text-xs font-bold text-rose-700 uppercase tracking-widest leading-relaxed">System failed to resolve broker profile reference.</p>
+        <h3 className="text-xl font-bold text-rose-900 uppercase">Identity Not Found</h3>
+        <p className="text-xs font-bold text-rose-700 uppercase leading-relaxed">System failed to resolve broker profile reference.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+    <div className="max-w-[1200px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Profile Header */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
@@ -104,19 +100,19 @@ const BrokerProfile: React.FC = () => {
             <User size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Profile</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Identity & Verification</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Profile</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Identity & Verification</p>
           </div>
         </div>
 
         <div className="relative z-10 hidden md:flex items-center gap-12 mr-4">
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">Verified</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Status</p>
+            <p className="text-xl font-bold leading-none text-emerald-400">Verified</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Status</p>
           </div>
           <div className="text-center">
-             <p className="text-xl font-black tracking-tighter leading-none text-white italic">{broker.defaultCommissionRate}%</p>
-             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Standard Yield</p>
+             <p className="text-xl font-bold leading-none text-white italic">{broker.defaultCommissionRate}%</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Standard Yield</p>
           </div>
         </div>
       </div>
@@ -125,7 +121,7 @@ const BrokerProfile: React.FC = () => {
         {/* Compliance Guard */}
         <div className="lg:col-span-1 space-y-10">
           <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm space-y-8">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
                <Shield size={18} className="text-emerald-600" /> Compliance Status
             </h3>
             <div className="space-y-4">
@@ -137,9 +133,9 @@ const BrokerProfile: React.FC = () => {
                 <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
                   <div className="flex items-center gap-4">
                     <item.icon size={18} className={`${item.color === 'emerald' ? 'text-emerald-500' : item.color === 'amber' ? 'text-amber-500' : 'text-rose-500'}`} />
-                    <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{item.label}</p>
+                    <p className="text-xs font-bold text-slate-900 uppercase tracking-tight">{item.label}</p>
                   </div>
-                  <span className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${item.color === 'emerald' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : item.color === 'amber' ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
+                  <span className={`px-4 py-1.5 text-xs font-bold uppercase rounded-full border ${item.color === 'emerald' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : item.color === 'amber' ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
                     {item.status}
                   </span>
                 </div>
@@ -149,9 +145,9 @@ const BrokerProfile: React.FC = () => {
 
           <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group">
              <div className="absolute top-0 right-0 p-8 opacity-5"><Zap size={120} /></div>
-             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Security Protocol</p>
+             <p className="text-sm font-bold text-slate-500 uppercase mb-4">Security Protocol</p>
              <p className="text-lg font-bold leading-relaxed relative z-10">Your profile is currently limited until identity validation is confirmed.</p>
-             <button className="mt-8 px-8 py-4 bg-white/10 hover:bg-white hover:text-slate-900 transition-all text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
+             <button className="mt-8 px-8 py-4 bg-white/10 hover:bg-white hover:text-slate-900 transition-all text-white rounded-2xl text-sm font-bold uppercase flex items-center gap-3">
                Start Validation <ArrowRight size={14} />
              </button>
           </div>
@@ -161,37 +157,37 @@ const BrokerProfile: React.FC = () => {
         <div className="lg:col-span-2 space-y-12 animate-slide-up">
           <div className="bg-white rounded-[3.5rem] p-10 md:p-14 border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-12">
-               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Core Identity</h3>
+               <h3 className="text-sm font-bold text-slate-900 uppercase">Core Identity</h3>
             </div>
 
             <form onSubmit={handleUpdate} className="space-y-10">
-              {error && <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-black uppercase tracking-widest">{error}</div>}
-              {success && <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-600 text-xs font-black uppercase tracking-widest">{success}</div>}
+              {error && <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-bold uppercase">{error}</div>}
+              {success && <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-600 text-xs font-bold uppercase">{success}</div>}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">First Name</label>
+                  <label className="text-sm font-bold text-slate-400 uppercase ml-4">First Name</label>
                   <div className="relative">
                     <User size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
                     <input type="text" name="firstName" defaultValue={broker.profile?.firstName || ''} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" required />
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Last Name</label>
+                  <label className="text-sm font-bold text-slate-400 uppercase ml-4">Last Name</label>
                   <div className="relative">
                     <User size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
                     <input type="text" name="lastName" defaultValue={broker.profile?.lastName || ''} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" required />
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Contact Phone</label>
+                  <label className="text-sm font-bold text-slate-400 uppercase ml-4">Contact Phone</label>
                   <div className="relative">
                     <Phone size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
                     <input type="tel" name="phone" defaultValue={broker.profile?.phone || ''} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" />
                   </div>
                 </div>
                 <div className="space-y-3">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Default Comm. Rate (%)</label>
+                   <label className="text-sm font-bold text-slate-400 uppercase ml-4">Default Comm. Rate (%)</label>
                    <div className="relative">
                      <Percent size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
                      <input type="number" name="commissionRate" min="0" max="100" step="0.1" defaultValue={broker.defaultCommissionRate || 0} className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white outline-none" required />
@@ -200,7 +196,7 @@ const BrokerProfile: React.FC = () => {
               </div>
 
               <div className="flex justify-end pt-8">
-                <button type="submit" disabled={updating} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
+                <button type="submit" disabled={updating} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
                   {updating ? <Loader2 size={16} className="animate-spin" /> : <Activity size={16} />} Sync Identity
                 </button>
               </div>
@@ -209,8 +205,8 @@ const BrokerProfile: React.FC = () => {
 
           <div className="bg-white rounded-[3.5rem] p-10 md:p-14 border border-slate-100 shadow-sm space-y-10">
              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Document Registry</h3>
-                <span className="px-4 py-2 bg-slate-50 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest">Vault Enabled</span>
+                <h3 className="text-sm font-bold text-slate-900 uppercase">Document Registry</h3>
+                <span className="px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-400 uppercase">Vault Enabled</span>
              </div>
              <DocumentUpload onUploadComplete={(files) => { setSuccess('Vault updated successfully!'); }} maxFiles={5} acceptedTypes={['image/*', 'application/pdf']} maxSizeMB={10} label="Inject identification records into the vault (ID, Passport, License)" />
           </div>

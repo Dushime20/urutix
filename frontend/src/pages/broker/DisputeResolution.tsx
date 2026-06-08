@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerDispute, type CreateDisputeData, type ResolveDisputeData } from '../../services/brokerApi';
@@ -92,16 +93,11 @@ const DisputeResolution: React.FC = () => {
   };
 
   if (loading && disputes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading cases...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Disputes Header */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
@@ -111,23 +107,23 @@ const DisputeResolution: React.FC = () => {
             <Gavel size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Disputes</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Resolution & Mediation</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Disputes</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Resolution & Mediation</p>
           </div>
         </div>
 
         <div className="relative z-10 hidden md:flex items-center gap-12 mr-4 text-white">
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none">{disputes.length}</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Total Cases</p>
+            <p className="text-xl font-bold leading-none">{disputes.length}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Total Cases</p>
           </div>
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{disputes.filter(d => d.status === 'RESOLVED').length}</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Resolved</p>
+            <p className="text-xl font-bold leading-none text-emerald-400">{disputes.filter(d => d.status === 'RESOLVED').length}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Resolved</p>
           </div>
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-[10px]"
+            className="bg-primary-600 hover:bg-primary-500 text-white font-bold uppercase px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
           >
             <Plus size={14} /> Open Case
           </button>
@@ -137,7 +133,7 @@ const DisputeResolution: React.FC = () => {
       {/* Terminal Grid Filters */}
       <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end relative group overflow-hidden">
         <div className="flex-1 space-y-4">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Filter Resolutions</label>
+          <label className="text-sm font-bold text-slate-400 uppercase ml-4">Filter Resolutions</label>
           <div className="relative">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
             <input
@@ -151,7 +147,7 @@ const DisputeResolution: React.FC = () => {
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
+            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
           >
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -161,7 +157,7 @@ const DisputeResolution: React.FC = () => {
           <select
             value={filters.category}
             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
+            className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-5 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 lg:flex-none"
           >
             <option value="">All Categories</option>
             <option value="DAMAGE">Damage</option>
@@ -176,7 +172,7 @@ const DisputeResolution: React.FC = () => {
         {disputes.length === 0 ? (
           <div className="py-48 text-center space-y-8 opacity-50">
             <AlertTriangle className="w-24 h-24 text-slate-100 mx-auto" />
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No disputes found in record core.</p>
+            <p className="text-xs font-bold text-slate-400 uppercase">No disputes found in record core.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-10">
@@ -189,11 +185,11 @@ const DisputeResolution: React.FC = () => {
                         <AlertTriangle size={18} />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">Case #{dispute.id.slice(0, 6)}</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{dispute.category}</p>
+                        <p className="text-sm font-bold text-slate-900 uppercase italic">Case #{dispute.id.slice(0, 6)}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">{dispute.category}</p>
                       </div>
                     </div>
-                    <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(dispute.status)}`}>
+                    <span className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border ${getStatusStyle(dispute.status)}`}>
                       {dispute.status.replace('_', ' ')}
                     </span>
                   </div>
@@ -202,21 +198,21 @@ const DisputeResolution: React.FC = () => {
                 </div>
 
                 <div className="space-y-6 pt-8 border-t border-slate-50">
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="flex justify-between items-center text-sm font-bold uppercase text-slate-400">
                     <span>Claimed Amount</span>
                     <span className="text-slate-900">{dispute.claimedAmount?.toLocaleString() || 0} KES</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setSelectedDispute(dispute)}
-                      className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
                     >
                       <Eye size={14} /> Review Case
                     </button>
                     {dispute.status === 'OPEN' && (
                       <button 
                         onClick={() => handleStartMediation(dispute.id)}
-                        className="py-4 px-6 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center"
+                        className="py-4 px-6 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center"
                         title="Mediate"
                       >
                         <Gavel size={14} />
@@ -248,8 +244,8 @@ const CreateDisputeModal: React.FC<{ onClose: () => void, onSubmit: (data: Creat
         <div className="p-12 bg-slate-900 text-white flex justify-between items-center overflow-hidden relative">
           <div className="absolute top-0 right-0 w-64 h-64 bg-rose-600/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="space-y-2 relative z-10">
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Open <span className="text-white">Case</span></h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Initiate professional dispute resolution protocol</p>
+            <h2 className="text-3xl font-bold uppercase italic">Open <span className="text-white">Case</span></h2>
+            <p className="text-slate-400 text-sm font-bold uppercase">Initiate professional dispute resolution protocol</p>
           </div>
           <button onClick={onClose} className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white relative z-10 hover:bg-white hover:text-slate-900 transition-all"><X size={24} /></button>
         </div>
@@ -257,20 +253,20 @@ const CreateDisputeModal: React.FC<{ onClose: () => void, onSubmit: (data: Creat
         <form onSubmit={handleSubmit} className="p-12 md:p-16 overflow-y-auto space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
-               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Load Reference</label>
+               <label className="text-sm font-bold uppercase text-slate-400 ml-4">Load Reference</label>
                <input type="text" required value={formData.loadId} onChange={(e) => setFormData({ ...formData, loadId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
             </div>
             <div className="space-y-4">
-               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Disputed Party ID</label>
+               <label className="text-sm font-bold uppercase text-slate-400 ml-4">Disputed Party ID</label>
                <input type="text" required value={formData.disputedWithId} onChange={(e) => setFormData({ ...formData, disputedWithId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
             </div>
           </div>
           <div className="space-y-4">
-             <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Issue Description</label>
+             <label className="text-sm font-bold uppercase text-slate-400 ml-4">Issue Description</label>
              <textarea required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="Provide objective details of the occurrence..." />
           </div>
           <div className="flex justify-end pt-12 border-t border-slate-100">
-             <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-rose-600 transition-all flex items-center gap-4">
+             <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-rose-600 transition-all flex items-center gap-4">
                {submitting ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />} Open Investigation
              </button>
           </div>
@@ -292,8 +288,8 @@ const ViewDisputeModal: React.FC<{ dispute: BrokerDispute, onClose: () => void, 
         <div className="p-12 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="space-y-2 relative z-10">
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Case <span className="text-white">Details</span></h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Active investigation reference #{dispute.id.slice(0, 8)}</p>
+            <h2 className="text-3xl font-bold uppercase italic">Case <span className="text-white">Details</span></h2>
+            <p className="text-slate-400 text-sm font-bold uppercase">Active investigation reference #{dispute.id.slice(0, 8)}</p>
           </div>
           <button onClick={onClose} className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all relative z-10"><X size={24} /></button>
         </div>
@@ -308,26 +304,26 @@ const ViewDisputeModal: React.FC<{ dispute: BrokerDispute, onClose: () => void, 
              ].map((meta, i) => (
                <div key={i} className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all">
                  <meta.icon size={18} className="text-slate-300 mb-6 group-hover:text-primary-600 transition-colors" />
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{meta.label}</p>
-                 <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{meta.value}</p>
+                 <p className="text-sm font-bold text-slate-400 uppercase mb-1">{meta.label}</p>
+                 <p className="text-xs font-bold text-slate-900 uppercase tracking-tight">{meta.value}</p>
                </div>
              ))}
           </div>
 
           <div className="p-10 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare size={120} /></div>
-             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Case Statement</p>
+             <p className="text-sm font-bold text-slate-500 uppercase mb-4">Case Statement</p>
              <p className="text-lg font-bold leading-relaxed relative z-10">{dispute.description}</p>
           </div>
 
           {onResolve && (
             <form onSubmit={handleResolve} className="space-y-10 pt-12 border-t border-slate-100">
                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Final Resolution Protocol</label>
+                  <label className="text-sm font-bold uppercase text-slate-400 ml-4">Final Resolution Protocol</label>
                   <textarea required rows={4} value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="State the final ruling and agreement..." />
                </div>
                <div className="flex justify-end">
-                  <button type="submit" disabled={submitting} className="px-16 py-6 bg-emerald-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-emerald-700 transition-all flex items-center gap-4">
+                  <button type="submit" disabled={submitting} className="px-16 py-6 bg-emerald-600 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-emerald-700 transition-all flex items-center gap-4">
                     {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Close Case Successfully
                   </button>
                </div>

@@ -306,182 +306,23 @@ export class LendingController {
   @Get('lending/tenant/lenders')
   @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN, UserRole.CARGO_OWNER)
   @ApiOperation({
-    summary: 'Get all lenders for tenant',
-    description: 'Get list of active lenders available for the tenant, including loan officers from external systems',
+    summary: 'Get active lenders for the caller tenant',
+    description: 'Returns all active lenders that belong to the same tenant as the authenticated user.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Lenders retrieved successfully',
-  })
+  @ApiResponse({ status: 200, description: 'Lenders retrieved successfully' })
   async getTenantLenders(@Request() req: any) {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
       throw new BadRequestException('Tenant ID is required');
     }
 
-    // Get lenders for the tenant
-    let lenders = await this.lendingService.getAllLenders(tenantId);
+    // Simple: find all ACTIVE lenders in this tenant using the tenantId from the JWT token
+    const lenders = await this.lendingService.getAllLenders(tenantId, LenderStatus.ACTIVE);
 
-    // Filter to only show active lenders for cargo owners
-    if (req.user?.role === UserRole.CARGO_OWNER) {
-      lenders = lenders.filter((lender: any) =>
-        lender.status === 'active' || lender.status === LenderStatus.ACTIVE
-      );
-    }
+    console.log(`[getTenantLenders] Found ${lenders.length} active lenders for tenant ${tenantId}`);
 
-    // Also get external system lenders (regardless of tenant) - these should be available to all cargo owners
-    const externalLenders = await this.lendingService.getAllLenders(undefined, 'active');
-
-    // Log all lenders for debugging
-    console.log(`[getTenantLenders] Total active lenders (no tenant filter): ${externalLenders.length}`);
-    externalLenders.forEach((lender: any) => {
-      console.log(`[getTenantLenders] Lender: ${lender.name} (${lender.id})`, {
-        status: lender.status,
-        hasMetadata: !!lender.metadata,
-        integrationType: lender.metadata?.integrationType,
-        callback_url: lender.callback_url,
-        hasApiKey: !!lender.outbound_api_key_encrypted,
-      });
-    });
-
-    const externalSystemLenders = externalLenders.filter((lender: any) => {
-      const hasIntegrationType = lender.metadata?.integrationType === 'uruti_lending_platform' ||
-        lender.metadata?.integrationType === 'external_lending_system';
-      const hasCallbackUrl = lender.callback_url?.includes('urutilending.com') ||
-        lender.callback_url?.includes('localhost:3000') ||
-        lender.callback_url?.includes('localhost:3001') ||
-        lender.callback_url?.includes('localhost:3002');
-      const hasApiKey = !!lender.outbound_api_key_encrypted;
-
-      // A lender is external if it has integrationType OR (callback_url AND API key)
-      const isExternal = hasIntegrationType || (hasCallbackUrl && hasApiKey);
-
-      if (isExternal) {
-        console.log(`[getTenantLenders] ✅ External system lender found: ${lender.name}`, {
-          integrationType: lender.metadata?.integrationType,
-          callback_url: lender.callback_url,
-          hasApiKey: hasApiKey,
-        });
-      } else {
-        // Log why it's not considered external (for debugging)
-        if (hasCallbackUrl && !hasApiKey) {
-          console.log(`[getTenantLenders] ⚠️ Lender ${lender.name} has callback_url but no API key - not considered external`);
-        }
-      }
-
-      return isExternal;
-    });
-
-    // Log for debugging
-    console.log(`[getTenantLenders] Found ${externalSystemLenders.length} external system lenders`);
-
-    if (externalSystemLenders.length === 0) {
-      console.warn(`[getTenantLenders] ⚠️ No external system lenders found!`);
-      console.warn(`[getTenantLenders] To configure a lender for external system:`);
-      console.warn(`[getTenantLenders] 1. Create a lender (POST /api/admin/lenders)`);
-      console.warn(`[getTenantLenders] 2. Configure it (POST /api/admin/uruti-lending/configure)`);
-      console.warn(`[getTenantLenders] 3. Ensure lender status is 'active'`);
-    }
-
-    // Add external system lenders themselves to the list (so cargo owners can select them)
-    // Filter out any that are already in the tenant's lender list
-    const existingLenderIds = new Set(lenders.map((l: any) => l.id));
-    const externalLendersToAdd = externalSystemLenders
-      .filter((lender: any) => !existingLenderIds.has(lender.id))
-      .map((lender: any) => {
-        // Ensure integrationType is set in metadata for frontend detection
-        const metadata = lender.metadata || {};
-        if (!metadata.integrationType) {
-          // Set integrationType based on callback_url if not already set
-          if (lender.callback_url?.includes('urutilending.com') || lender.callback_url?.includes('localhost:3000')) {
-            metadata.integrationType = 'uruti_lending_platform';
-          } else {
-            metadata.integrationType = 'external_lending_system';
-          }
-        }
-
-        return {
-          ...lender,
-          metadata: {
-            ...metadata,
-            isExternalSystemLender: true,
-          },
-        };
-      });
-
-    console.log(`[getTenantLenders] Adding ${externalLendersToAdd.length} external system lenders to the list`);
-
-    // Fetch loan officers from each external system lender - these will be displayed directly in External Lending System tab
-    const loanOfficersAsLenders: any[] = [];
-
-    for (const externalLender of externalSystemLenders) {
-      if (!externalLender.outbound_api_key_encrypted) {
-        console.warn(`[getTenantLenders] Lender ${externalLender.id} (${externalLender.name}) has no API key configured - skipping loan officer fetch`);
-        continue;
-      }
-
-      console.log(`[getTenantLenders] Fetching loan officers for lender ${externalLender.id} (${externalLender.name})`);
-
-      // getLoanOfficers now returns empty array on error instead of throwing
-      const officers = await this.urutiLendingIntegration.getLoanOfficers(externalLender.id);
-
-      console.log(`[getTenantLenders] ✅ Found ${officers.length} loan officers for lender ${externalLender.id}`);
-
-      if (officers.length === 0) {
-        console.warn(`[getTenantLenders] ⚠️ No loan officers returned for lender ${externalLender.id} (${externalLender.name})`);
-        console.warn(`[getTenantLenders] Possible reasons:`);
-        console.warn(`  1. External system endpoint returns empty array (no loan officers exist)`);
-        console.warn(`  2. Endpoint not implemented (404 - check logs above)`);
-        console.warn(`  3. API key is invalid (401 - check logs above)`);
-        console.warn(`  4. External system is unreachable (network error - check logs above)`);
-        continue;
-      }
-
-      // Convert loan officers to lender-like format - these ARE the external lenders
-      for (const officer of officers) {
-        if (!officer.id || !officer.name) {
-          console.warn(`[getTenantLenders] ⚠️ Skipping invalid loan officer (missing id or name):`, officer);
-          continue;
-        }
-
-        console.log(`[getTenantLenders] ✅ Adding loan officer: ${officer.name} (${officer.id})`);
-
-        loanOfficersAsLenders.push({
-          id: `officer-${officer.id}`, // Prefix to distinguish from regular lenders
-          name: officer.name,
-          firstName: officer.name?.split(' ')[0] || '',
-          lastName: officer.name?.split(' ').slice(1).join(' ') || '',
-          email: officer.email,
-          phone: officer.phone,
-          companyName: externalLender.name, // Parent lender name
-          availableCredit: 0,
-          interestRate: 0,
-          metadata: {
-            ...externalLender.metadata,
-            isLoanOfficer: true,
-            loanOfficerId: officer.id,
-            parentLenderId: externalLender.id,
-            parentLenderName: externalLender.name,
-            specialization: officer.specialization,
-            maxLoanAmount: officer.maxLoanAmount,
-            minLoanAmount: officer.minLoanAmount,
-            integrationType: externalLender.metadata?.integrationType || 'external_lending_system',
-          },
-          // Store original lender reference for API calls
-          _originalLenderId: externalLender.id,
-          _originalOfficerId: officer.id,
-        });
-      }
-    }
-
-    console.log(`[getTenantLenders] Returning ${lenders.length} regular lenders, ${externalLendersToAdd.length} external system lenders, and ${loanOfficersAsLenders.length} loan officers`);
-
-    // For external lending system: return loan officers instead of the lender itself
-    // Loan officers ARE the external lenders - they're what cargo owners should select
-    // Combine: regular lenders + loan officers (loan officers replace external lenders in the list)
-    return [...lenders, ...loanOfficersAsLenders];
+    return lenders;
   }
-
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Get lender by ID',

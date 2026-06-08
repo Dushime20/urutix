@@ -55,7 +55,7 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -100, opacity: 0 }}
-      className="fixed top-0 left-0 right-0 z-[60] p-3 lg:p-6"
+      className="relative z-[60] px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 pt-6"
     >
       <div className="max-w-7xl mx-auto">
         <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/40 overflow-hidden">

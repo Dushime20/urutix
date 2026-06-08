@@ -1,8 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import { CustomsInspection, CustomsInspectionStatus, CustomsRiskLevel } from '../../entities/customs-inspection.entity';
 import { CustomsCheckpoint } from '../../entities/customs-checkpoint.entity';
+import { CustomsComplianceResponse, ComplianceResponseStatus } from '../../entities/customs-compliance-response.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Document, EntityType } from '../../entities/document.entity';
@@ -18,6 +19,8 @@ import {
   UpdateInspectionStatusDto,
   SearchTruckDto,
   CreateCheckpointDto,
+  SubmitComplianceResponseDto,
+  ReviewComplianceResponseDto,
 } from './dto/customs.dto';
 
 @Injectable()
@@ -29,6 +32,8 @@ export class CustomsService {
     private readonly inspectionRepo: Repository<CustomsInspection>,
     @InjectRepository(CustomsCheckpoint)
     private readonly checkpointRepo: Repository<CustomsCheckpoint>,
+    @InjectRepository(CustomsComplianceResponse)
+    private readonly complianceResponseRepo: Repository<CustomsComplianceResponse>,
     @InjectRepository(Trip)
     private readonly tripRepo: Repository<Trip>,
     @InjectRepository(Truck)
@@ -213,12 +218,12 @@ export class CustomsService {
     params: {
       status?: CustomsInspectionStatus;
       riskLevel?: CustomsRiskLevel;
+      officerId?: string;
       limit?: number;
       offset?: number;
       search?: string;
     },
   ) {
-    // Customs officers see all inspections globally
     const qb = this.inspectionRepo
       .createQueryBuilder('i')
       .leftJoinAndSelect('i.officer', 'officer')
@@ -228,6 +233,7 @@ export class CustomsService {
 
     if (params.status) qb.andWhere('i.status = :status', { status: params.status });
     if (params.riskLevel) qb.andWhere('i.riskLevel = :riskLevel', { riskLevel: params.riskLevel });
+    if (params.officerId) qb.andWhere('i.officerId = :officerId', { officerId: params.officerId });
     if (params.search) {
       qb.andWhere(
         '(LOWER(i.plateNumber) LIKE LOWER(:q) OR LOWER(i.shipmentReference) LIKE LOWER(:q) OR LOWER(i.containerNumber) LIKE LOWER(:q) OR LOWER(i.driverName) LIKE LOWER(:q))',
@@ -255,7 +261,7 @@ export class CustomsService {
     return inspection;
   }
 
-  async updateInspectionStatus(tenantId: string, id: string, dto: UpdateInspectionStatusDto) {
+  async updateInspectionStatus(tenantId: string, id: string, dto: UpdateInspectionStatusDto, updatedByOfficerId?: string) {
     const inspection = await this.getInspectionById(tenantId, id);
     Object.assign(inspection, dto);
     if (
@@ -263,6 +269,10 @@ export class CustomsService {
       dto.status === CustomsInspectionStatus.REJECTED
     ) {
       inspection.completedAt = new Date();
+    }
+    // Track which officer last updated this inspection
+    if (updatedByOfficerId) {
+      inspection.metadata = { ...(inspection.metadata || {}), lastUpdatedBy: updatedByOfficerId };
     }
     const saved = await this.inspectionRepo.save(inspection);
 
@@ -323,11 +333,14 @@ export class CustomsService {
     return saved;
   }
 
-  async flagInspection(tenantId: string, id: string, riskLevel: CustomsRiskLevel, notes?: string) {
+  async flagInspection(tenantId: string, id: string, riskLevel: CustomsRiskLevel, notes?: string, updatedByOfficerId?: string) {
     const inspection = await this.getInspectionById(tenantId, id);
     inspection.riskLevel = riskLevel;
     inspection.status = CustomsInspectionStatus.HIGH_RISK;
     if (notes) inspection.inspectionNotes = notes;
+    if (updatedByOfficerId) {
+      inspection.metadata = { ...(inspection.metadata || {}), lastUpdatedBy: updatedByOfficerId };
+    }
     const saved = await this.inspectionRepo.save(inspection);
 
     if (saved.tripId) {
@@ -413,6 +426,141 @@ export class CustomsService {
       : 0;
 
     return { total: all.length, byStatus, byRisk, clearanceRate, period: days };
+  }
+
+  // ─── Compliance Responses ─────────────────────────────────────────────────────
+
+  /**
+   * Cargo owner submits a compliance response to an ON_HOLD inspection.
+   * They provide notes explaining what was resolved and reference uploaded document IDs.
+   * The assigned officer is notified in real-time.
+   */
+  async submitComplianceResponse(
+    inspectionId: string,
+    submittedById: string,
+    dto: SubmitComplianceResponseDto,
+  ): Promise<CustomsComplianceResponse> {
+    const inspection = await this.inspectionRepo.findOne({ where: { id: inspectionId } });
+    if (!inspection) throw new NotFoundException(`Inspection ${inspectionId} not found`);
+
+    const response = this.complianceResponseRepo.create({
+      inspectionId,
+      submittedById,
+      notes: dto.notes,
+      documentIds: dto.documentIds || [],
+      status: ComplianceResponseStatus.SUBMITTED,
+    });
+    const saved = await this.complianceResponseRepo.save(response);
+
+    // Mark inspection as pending re-review
+    inspection.status = CustomsInspectionStatus.PENDING;
+    inspection.metadata = {
+      ...(inspection.metadata || {}),
+      lastComplianceResponseId: saved.id,
+      lastComplianceResponseAt: new Date().toISOString(),
+    };
+    await this.inspectionRepo.save(inspection);
+
+    // Notify the officer who created the inspection
+    try {
+      await this.notificationsService.createNotification({
+        userId: inspection.officerId,
+        tenantId: inspection.tenantId,
+        subject: '📋 Compliance Response Submitted — Action Required',
+        content: `A cargo owner has submitted a compliance response for inspection on ${inspection.plateNumber || inspection.shipmentReference || inspectionId}. They have provided notes and ${dto.documentIds?.length || 0} document(s). Please review and update the inspection status.`,
+        type: NotificationType.CARGO_CUSTOMS_UPDATE,
+        category: NotificationCategory.COMPLIANCE,
+        channel: NotificationChannel.IN_APP,
+        priority: NotificationPriority.HIGH,
+        entityType: 'TRIP' as any,
+        entityId: inspection.tripId,
+        actionUrl: `/customs/inspections/${inspectionId}`,
+        actionText: 'Review Response',
+        metadata: {
+          inspectionId,
+          complianceResponseId: saved.id,
+          submittedById,
+          documentsCount: dto.documentIds?.length || 0,
+        },
+      } as any, inspection.tenantId);
+    } catch (err) {
+      this.logger.warn(`Could not notify officer of compliance response: ${err.message}`);
+    }
+
+    return saved;
+  }
+
+  /**
+   * Get all compliance responses for an inspection.
+   * Officers and cargo owners can both view these.
+   */
+  async getComplianceResponses(inspectionId: string): Promise<CustomsComplianceResponse[]> {
+    return this.complianceResponseRepo.find({
+      where: { inspectionId },
+      relations: ['submittedBy', 'reviewedBy'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Officer reviews a compliance response — accepts or rejects it.
+   * If accepted, inspection moves to IN_PROGRESS for final decision.
+   * If rejected, it goes back to ON_HOLD so cargo owner can try again.
+   * Cargo owner is notified either way.
+   */
+  async reviewComplianceResponse(
+    inspectionId: string,
+    responseId: string,
+    reviewedById: string,
+    dto: ReviewComplianceResponseDto,
+  ): Promise<CustomsComplianceResponse> {
+    const response = await this.complianceResponseRepo.findOne({
+      where: { id: responseId, inspectionId },
+    });
+    if (!response) throw new NotFoundException(`Compliance response ${responseId} not found`);
+
+    response.status = dto.status;
+    response.reviewedById = reviewedById;
+    response.reviewNotes = dto.reviewNotes;
+    response.reviewedAt = new Date();
+    const saved = await this.complianceResponseRepo.save(response);
+
+    // Update inspection status based on review decision
+    const inspection = await this.inspectionRepo.findOne({ where: { id: inspectionId } });
+    if (inspection) {
+      inspection.status = dto.status === ComplianceResponseStatus.ACCEPTED
+        ? CustomsInspectionStatus.IN_PROGRESS   // officer will now make final decision
+        : CustomsInspectionStatus.ON_HOLD;       // rejected — cargo owner must try again
+      await this.inspectionRepo.save(inspection);
+
+      // Notify the cargo owner of the review outcome
+      try {
+        const isAccepted = dto.status === ComplianceResponseStatus.ACCEPTED;
+        await this.notificationsService.createNotification({
+          userId: response.submittedById,
+          tenantId: inspection.tenantId,
+          subject: isAccepted
+            ? '✅ Your Compliance Response Has Been Accepted'
+            : '❌ Your Compliance Response Was Rejected',
+          content: isAccepted
+            ? `The customs officer has reviewed and accepted your compliance response for inspection on "${inspection.plateNumber || inspection.shipmentReference || inspectionId}". The inspection is now being processed for final clearance.${dto.reviewNotes ? ` Officer notes: ${dto.reviewNotes}` : ''}`
+            : `The customs officer has reviewed your compliance response for inspection on "${inspection.plateNumber || inspection.shipmentReference || inspectionId}" and found it insufficient. Please review the officer's notes and resubmit.${dto.reviewNotes ? ` Officer notes: ${dto.reviewNotes}` : ''}`,
+          type: NotificationType.CARGO_CUSTOMS_UPDATE,
+          category: NotificationCategory.COMPLIANCE,
+          channel: NotificationChannel.IN_APP,
+          priority: isAccepted ? NotificationPriority.HIGH : NotificationPriority.URGENT,
+          entityType: 'TRIP' as any,
+          entityId: inspection.tripId,
+          actionUrl: `/dashboard/customs-inspections/${inspectionId}`,
+          actionText: 'View Inspection',
+          metadata: { inspectionId, complianceResponseId: responseId, reviewStatus: dto.status },
+        } as any, inspection.tenantId);
+      } catch (err) {
+        this.logger.warn(`Could not notify cargo owner of compliance review: ${err.message}`);
+      }
+    }
+
+    return saved;
   }
 
   // ─── Checkpoints ─────────────────────────────────────────────────────────────

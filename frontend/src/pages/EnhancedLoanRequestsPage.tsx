@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { lendingApi } from '../services/lending/lendingApi';
@@ -103,17 +103,35 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       .finally(() => setLoadingLenders(false));
 
     setLoadingCargos(true);
-    api.get('/loads', { params: { page: 1, limit: 50 } })
-      .then(res => {
-        const raw = res.data?.items || res.data?.data || res.data?.loads || res.data || [];
-        let cargosList = Array.isArray(raw) ? raw : [];
-        cargosList = cargosList.filter((cargo: any) =>
-          cargo.cargoOwner?.id === userId ||
-          cargo.createdBy === userId ||
-          cargo.created_by === userId ||
-          cargo.ownerId === userId ||
-          cargo.owner_id === userId
+    // Fetch only cargos that have an active trip — lenders only finance active trips
+    const ACTIVE_TRIP_STATUSES = ['IN_PROGRESS', 'PLANNED', 'DELAYED'];
+    api.get('/trips', { params: { page: 1, limit: 100, status: 'IN_PROGRESS,ASSIGNED,PENDING,ACCEPTED' } })
+      .then(async res => {
+        const rawTrips = res.data?.data || res.data?.trips || res.data?.items || res.data || [];
+        const tripsList: any[] = Array.isArray(rawTrips) ? rawTrips : [];
+        // Keep only trips with an active status
+        const activeTrips = tripsList.filter((t: any) =>
+          ACTIVE_TRIP_STATUSES.includes((t.status || '').toUpperCase())
         );
+        // Extract unique load/cargo IDs from active trips
+        const activeLoadIds = new Set(
+          activeTrips.map((t: any) => t.loadId || t.load_id || t.load?.id).filter(Boolean)
+        );
+        if (activeLoadIds.size === 0) { setCargos([]); return; }
+        // Fetch the matching loads
+        const loadRes = await api.get('/loads', { params: { page: 1, limit: 50 } });
+        const rawLoads = loadRes.data?.items || loadRes.data?.data || loadRes.data?.loads || loadRes.data || [];
+        let cargosList: any[] = Array.isArray(rawLoads) ? rawLoads : [];
+        cargosList = cargosList.filter((cargo: any) => {
+          const isOwner =
+            cargo.cargoOwner?.id === userId ||
+            cargo.createdBy === userId ||
+            cargo.created_by === userId ||
+            cargo.ownerId === userId ||
+            cargo.owner_id === userId;
+          const hasActiveTrip = activeLoadIds.has(cargo.id);
+          return isOwner && hasActiveTrip;
+        });
         setCargos(cargosList);
       })
       .catch(() => setCargos([]))
@@ -129,12 +147,23 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
     }
     setLoadingTrip(true);
     setSelectedTrip(null);
-    api.get('/trips', { params: { loadId: form.cargo_id, limit: 1 } })
+    // Fetch trips for this cargo — only active trips are eligible for loan financing
+    api.get('/trips', { params: { loadId: form.cargo_id, limit: 10 } })
       .then(res => {
         const raw = res.data?.data || res.data?.trips || res.data?.items || res.data || [];
         const tripsList = Array.isArray(raw) ? raw : [];
-        if (tripsList.length > 0) {
-          const trip = tripsList[0]; // Each cargo has exactly one trip
+        // Only consider active trips (PLANNED, IN_PROGRESS, DELAYED)
+        const ACTIVE_STATUSES = ['IN_PROGRESS', 'PLANNED', 'DELAYED'];
+        const activeTrips = tripsList.filter((t: any) =>
+          ACTIVE_STATUSES.includes((t.status || '').toUpperCase())
+        );
+        if (activeTrips.length > 0) {
+          // Prefer IN_PROGRESS over PLANNED over DELAYED
+          const priority = (s: string) =>
+            s === 'IN_PROGRESS' ? 0 : s === 'PLANNED' ? 1 : 2;
+          const trip = [...activeTrips].sort((a, b) =>
+            priority(a.status) - priority(b.status)
+          )[0];
           setSelectedTrip(trip);
           setForm(p => ({ ...p, trip_id: trip.id }));
         } else {
@@ -315,7 +344,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
               <select value={form.cargo_id}
                 onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value, trip_id: '' }))}
                 className={selectCls(true)} disabled={loadingCargos} required>
-                <option value="">{loadingCargos ? 'Loading your cargos…' : cargos.length === 0 ? 'No cargos found' : 'Select your cargo'}</option>
+                <option value="">{loadingCargos ? 'Loading your cargos…' : cargos.length === 0 ? 'No cargos with active trips found' : 'Select your cargo'}</option>
                 {cargos.map((c: any) => {
                   const originCity = typeof c.origin?.city === 'object'
                     ? (c.origin.city.name || c.origin.city.address || '')
@@ -342,6 +371,11 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
                 <MapPin size={10} />
                 {(typeof selectedCargo.origin?.address === 'object' ? selectedCargo.origin.address.address : (selectedCargo.origin?.address || (typeof selectedCargo.pickupLocation === 'object' ? selectedCargo.pickupLocation.address : selectedCargo.pickupLocation) || ''))}
                 {(selectedCargo.destination?.address || selectedCargo.deliveryLocation) ? ' → ' + (typeof selectedCargo.destination?.address === 'object' ? selectedCargo.destination.address.address : (selectedCargo.destination?.address || (typeof selectedCargo.deliveryLocation === 'object' ? selectedCargo.deliveryLocation.address : selectedCargo.deliveryLocation) || '')) : ''}
+              </p>
+            )}
+            {!loadingCargos && cargos.length === 0 && (
+              <p className="text-[10px] text-amber-600 mt-1.5 font-semibold flex items-center gap-1">
+                <Info size={10} /> Only cargos with an active trip are eligible for financing.
               </p>
             )}
           </div>
@@ -533,25 +567,42 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       .catch(() => setLenders([]))
       .finally(() => setLoadingLenders(false));
     
-    // Fetch loads based on user role
+    // Fetch only loads that have an active trip — lenders only finance active trips
+    const ACTIVE_TRIP_STATUSES = ['IN_PROGRESS', 'PLANNED', 'DELAYED'];
     const isCargoOwner = user?.role === 'CARGO_OWNER';
-    const loadsEndpoint = isCargoOwner ? '/loads-v2' : '/loads-v2/assigned-loads';
-    
-    api.get(loadsEndpoint)
-      .then(res => {
-        const raw = res.data?.data || res.data?.loads || res.data || [];
-        let loadsList = Array.isArray(raw) ? raw : [];
-        
-        // For cargo owners, filter by created_by or ownerId
+
+    api.get('/trips', { params: { page: 1, limit: 100 } })
+      .then(async res => {
+        const rawTrips = res.data?.data || res.data?.trips || res.data?.items || res.data || [];
+        const tripsList: any[] = Array.isArray(rawTrips) ? rawTrips : [];
+
+        // Keep only active trips
+        const activeTrips = tripsList.filter((t: any) =>
+          ACTIVE_TRIP_STATUSES.includes((t.status || '').toUpperCase())
+        );
+        const activeLoadIds = new Set(
+          activeTrips.map((t: any) => t.loadId || t.load_id || t.load?.id).filter(Boolean)
+        );
+        if (activeLoadIds.size === 0) { setLoads([]); setLoadingLoads(false); return; }
+
+        // Fetch loads and cross-filter against active trip load IDs
+        const loadsEndpoint = isCargoOwner ? '/loads-v2' : '/loads-v2/assigned-loads';
+        const loadRes = await api.get(loadsEndpoint);
+        const raw = loadRes.data?.data || loadRes.data?.loads || loadRes.data || [];
+        let loadsList: any[] = Array.isArray(raw) ? raw : [];
+
+        // For cargo owners, additionally filter by ownership
         if (isCargoOwner && userId) {
-          loadsList = loadsList.filter((load: any) => 
-            load.created_by === userId || 
+          loadsList = loadsList.filter((load: any) =>
+            load.created_by === userId ||
             load.createdBy === userId ||
             load.owner_id === userId ||
             load.ownerId === userId
           );
         }
-        
+
+        // Keep only loads with an active trip
+        loadsList = loadsList.filter((load: any) => activeLoadIds.has(load.id));
         setLoads(loadsList);
       })
       .catch(() => setLoads([]))
@@ -566,15 +617,21 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       .then(res => {
         const raw = res.data?.data || res.data?.trips || res.data || [];
         const tripsList = Array.isArray(raw) ? raw : [];
-        setTrips(tripsList);
-        // Auto-select: if only one trip exists, pick it automatically
-        if (tripsList.length === 1) {
-          setForm(p => ({ ...p, trip_id: tripsList[0].id }));
-        } else if (tripsList.length > 1) {
-          // Auto-select the most recent active trip
-          const activeTrip = tripsList.find((t: any) => t.status === 'active' || t.status === 'in_progress')
-            || tripsList[0];
-          setForm(p => ({ ...p, trip_id: activeTrip.id }));
+        // Only show active trips — lenders finance active trips only
+        const ACTIVE_TRIP_STATUSES = ['IN_PROGRESS', 'PLANNED', 'DELAYED'];
+        const activeTrips = tripsList.filter((t: any) =>
+          ACTIVE_TRIP_STATUSES.includes((t.status || '').toUpperCase())
+        );
+        setTrips(activeTrips);
+        if (activeTrips.length === 1) {
+          setForm(p => ({ ...p, trip_id: activeTrips[0].id }));
+        } else if (activeTrips.length > 1) {
+          // Auto-select the most recently started active trip
+          const sorted = [...activeTrips].sort((a, b) =>
+            new Date(b.created_at || b.createdAt || 0).getTime() -
+            new Date(a.created_at || a.createdAt || 0).getTime()
+          );
+          setForm(p => ({ ...p, trip_id: sorted[0].id }));
         }
       })
       .catch(() => setTrips([]))
@@ -683,7 +740,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
               <select value={form.cargo_id}
                 onChange={e => setForm(p => ({ ...p, cargo_id: e.target.value, trip_id: '' }))}
                 className={selectCls(true)} disabled={loadingLoads} required>
-                <option value="">{loadingLoads ? 'Loading loads…' : loads.length === 0 ? 'No assigned loads found' : 'Select a load'}</option>
+                <option value="">{loadingLoads ? 'Loading loads…' : loads.length === 0 ? 'No loads with active trips found' : 'Select a load'}</option>
                 {loads.map((l: any) => {
                   const originCity = typeof l.origin?.city === 'object'
                     ? (l.origin.city.name || l.origin.city.address || '')
@@ -723,7 +780,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
               <select value={form.trip_id}
                 onChange={e => setForm(p => ({ ...p, trip_id: e.target.value }))}
                 className={selectCls(true)} disabled={!form.cargo_id || loadingTrips} required>
-                <option value="">{!form.cargo_id ? 'Select a load first' : loadingTrips ? 'Loading trips…' : trips.length === 0 ? 'No trips found for this load' : 'Select a trip'}</option>
+                <option value="">{!form.cargo_id ? 'Select a load first' : loadingTrips ? 'Loading trips…' : trips.length === 0 ? 'No active trips for this load' : 'Select a trip'}</option>
                 {trips.map((t: any) => (
                   <option key={t.id} value={t.id}>
                     {t.tripNumber || t.id.slice(0, 8)} — {t.status || 'Trip'}{t.createdAt ? ' · ' + new Date(t.createdAt).toLocaleDateString() : ''}

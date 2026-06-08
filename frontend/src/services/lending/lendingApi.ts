@@ -670,224 +670,154 @@ export const lendingApi = {
   },
 
   // Interest Rate Policies
-  createInterestRatePolicy: async (lenderId: string, policyData: {
-    name: string;
-    riskLevel: string;
-    baseRate: number;
-    minRate: number;
-    maxRate: number;
-    adjustmentFactors: {
-      creditScore: number;
-      loanHistory: number;
-      collateral: number;
-      businessType: number;
-    };
-  }) => {
+  createInterestRatePolicy: async (lenderId: string, policyData: any) => {
+    // businessTypeRates.sme is the per-type override from the modal.
+    // Backend stores adjustment_factors as { credit_score, loan_history, collateral, business_type }
+    // We map sme override → business_type adjustment; others default to 0.
+    const btr = policyData.businessTypeRates || policyData.adjustmentFactors || {};
     const response = await api.post(`/lending/policies/${lenderId}/interest-rates`, {
       name: policyData.name,
-      risk_level: policyData.riskLevel,
-      base_rate: policyData.baseRate,
-      min_rate: policyData.minRate,
-      max_rate: policyData.maxRate,
+      risk_level: policyData.riskLevel || policyData.risk_level,
+      base_rate: policyData.baseRate ?? policyData.base_rate,
+      min_rate: policyData.minRate ?? policyData.min_rate,
+      max_rate: policyData.maxRate ?? policyData.max_rate,
       adjustment_factors: {
-        credit_score: policyData.adjustmentFactors.creditScore,
-        loan_history: policyData.adjustmentFactors.loanHistory,
-        collateral: policyData.adjustmentFactors.collateral,
-        business_type: policyData.adjustmentFactors.businessType
+        credit_score: 0,
+        loan_history: 0,
+        collateral: 0,
+        business_type: btr.sme ?? btr.business_type ?? 0
       },
       priority: 1,
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // Loan Limit Policies
-  createLoanLimitPolicy: async (lenderId: string, policyData: {
-    name: string;
-    currency: string;
-    businessType: string;
-    minAmount: number;
-    maxAmount: number;
-    creditScoreRequirement: number;
-    collateralRequirement: number;
-    maxUtilization: number;
-  }) => {
+  createLoanLimitPolicy: async (lenderId: string, policyData: any) => {
     const response = await api.post(`/lending/policies/${lenderId}/loan-limits`, {
       name: policyData.name,
-      currency: policyData.currency,
-      business_type: policyData.businessType,
-      min_amount: policyData.minAmount,
-      max_amount: policyData.maxAmount,
-      credit_score_requirement: policyData.creditScoreRequirement,
-      collateral_requirement: policyData.collateralRequirement,
-      max_utilization: policyData.maxUtilization,
+      currency: policyData.currency || 'RWF',
+      business_type: policyData.businessType || policyData.business_type,
+      min_amount: policyData.minAmount ?? policyData.min_amount,
+      max_amount: policyData.maxAmount ?? policyData.max_amount,
+      // creditScoreRequirement removed from form — send a safe default
+      credit_score_requirement: policyData.creditScoreRequirement ?? 300,
+      collateral_requirement: policyData.collateralRequirement ?? policyData.collateral_requirement,
+      // maxUtilization removed from form — send a safe default
+      max_utilization: policyData.maxUtilization ?? 100,
       priority: 1,
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // Eligibility Criteria
-  createEligibilityCriteria: async (lenderId: string, policyData: {
-    name: string;
-    category: string;
-    description: string;
-    requirement: string;
-    minimumValue?: number;
-    maximumValue?: number;
-    required: boolean;
-  }) => {
+  createEligibilityCriteria: async (lenderId: string, policyData: any) => {
     const response = await api.post(`/lending/policies/${lenderId}/eligibility`, {
       name: policyData.name,
       category: policyData.category,
-      description: policyData.description,
+      // description removed from form — fall back to requirement text so DB NOT NULL is satisfied
+      description: policyData.description || policyData.requirement,
       requirement: policyData.requirement,
-      minimum_value: policyData.minimumValue,
-      maximum_value: policyData.maximumValue,
-      is_required: policyData.required,
+      minimum_value: policyData.minimumValue ?? policyData.minimum_value ?? null,
+      maximum_value: policyData.maximumValue ?? policyData.maximum_value ?? null,
+      is_required: policyData.required ?? policyData.is_required ?? false,
       priority: 1,
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // Risk Assessment Rules
-  createRiskAssessmentRule: async (lenderId: string, policyData: {
-    factor: string;
-    weight: number;
-    scoringCriteria: any;
-  }) => {
+  createRiskAssessmentRule: async (lenderId: string, policyData: any) => {
     const response = await api.post(`/lending/policies/${lenderId}/risk-assessment`, {
+      // Risk assessment requires a name — derive from factor if not provided
+      name: policyData.name || `${(policyData.factor || '').replace(/_/g, ' ')} rule`,
       factor: policyData.factor,
       weight: policyData.weight,
-      scoring_criteria: policyData.scoringCriteria,
+      scoring_criteria: policyData.scoringCriteria || {
+        excellent: { min: 0, max: 0, score: 0 },
+        good:      { min: 0, max: 0, score: 0 },
+        fair:      { min: 0, max: 0, score: 0 },
+        poor:      { min: 0, max: 0, score: 0 }
+      },
       priority: 1,
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // Repayment Policies
-  createRepaymentPolicy: async (lenderId: string, policyData: {
-    name: string;
-    description?: string;
-    frequency: string;
-    grace_period_days: number;
-    late_fee_type: string;
-    late_fee_amount: number;
-    penalty_rate: number;
-    max_extensions: number;
-    default_threshold_days: number;
-    early_payment_discount?: number;
-    allow_partial_payments?: boolean;
-    minimum_payment_percentage?: number;
-  }) => {
+  createRepaymentPolicy: async (lenderId: string, policyData: any) => {
     const response = await api.post(`/lending/policies/${lenderId}/repayment`, {
       name: policyData.name,
-      description: policyData.description,
       frequency: policyData.frequency,
-      grace_period_days: policyData.grace_period_days,
+      grace_period_days: policyData.grace_period_days ?? 0,
       late_fee_type: policyData.late_fee_type,
-      late_fee_amount: policyData.late_fee_amount,
-      penalty_rate: policyData.penalty_rate,
-      max_extensions: policyData.max_extensions,
-      default_threshold_days: policyData.default_threshold_days,
-      early_payment_discount: policyData.early_payment_discount,
-      allow_partial_payments: policyData.allow_partial_payments,
-      minimum_payment_percentage: policyData.minimum_payment_percentage,
+      late_fee_amount: policyData.late_fee_amount ?? 0,
+      penalty_rate: policyData.penalty_rate ?? 0,
+      // max_extensions removed from form — default to 0 (no extensions allowed)
+      max_extensions: policyData.max_extensions ?? 0,
+      default_threshold_days: policyData.default_threshold_days ?? 90,
       priority: 1,
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // Cargo Type Policies
-  createCargoTypePolicy: async (lenderId: string, policyData: {
-    cargoType: string;
-    riskLevel: string;
-    riskMultiplier: number;
-    maxLoanAmount: number;
-    insuranceRequired: boolean;
-    specialConditions: string[];
-  }) => {
+  createCargoTypePolicy: async (lenderId: string, policyData: any) => {
+    // cargo_category is a required enum on the backend.
+    // Derive it from the free-text cargoType the lender entered, defaulting to 'general'.
+    const cargoTypeText = (policyData.cargoType || '').toLowerCase();
+    const categoryMap: Record<string, string> = {
+      perishable: 'perishable', perishables: 'perishable',
+      fragile: 'fragile',
+      hazardous: 'hazardous', hazmat: 'hazardous',
+      refrigerated: 'refrigerated', cold: 'refrigerated',
+      liquid: 'liquid',
+      oversized: 'oversized',
+      valuable: 'valuable', electronics: 'valuable',
+      chemical: 'chemicals', chemicals: 'chemicals',
+      machinery: 'machinery', equipment: 'machinery',
+    };
+    const cargo_category = Object.entries(categoryMap).find(([k]) =>
+      cargoTypeText.includes(k)
+    )?.[1] ?? 'general';
+
     const response = await api.post(`/lending/policies/${lenderId}/cargo-types`, {
+      // backend also requires name
+      name: policyData.name || policyData.cargoType,
       cargo_type: policyData.cargoType,
-      risk_level: policyData.riskLevel,
-      risk_multiplier: policyData.riskMultiplier,
-      max_loan_amount: policyData.maxLoanAmount,
-      insurance_required: policyData.insuranceRequired,
-      special_conditions: policyData.specialConditions,
+      cargo_category,
+      risk_level: policyData.riskLevel || policyData.risk_level,
+      risk_multiplier: policyData.riskMultiplier ?? policyData.risk_multiplier,
+      max_loan_amount: policyData.maxLoanAmount ?? policyData.max_loan_amount,
+      insurance_required: policyData.insuranceRequired ?? false,
       priority: 1,
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // System Configuration
-  createSystemConfigPolicy: async (lenderId: string, policyData: {
-    name: string;
-    autoApprovalLimit: number;
-    manualReviewThreshold: number;
-    maxConcurrentLoans: number;
-    totalExposureLimit: number;
-    cooldownPeriod: number;
-    complianceMode: boolean;
-    auditTrail: boolean;
-  }) => {
+  createSystemConfigPolicy: async (lenderId: string, policyData: any) => {
     const response = await api.post(`/lending/policies/${lenderId}/system-config`, {
       name: policyData.name,
-      auto_approval_limit: policyData.autoApprovalLimit,
-      manual_review_threshold: policyData.manualReviewThreshold,
-      max_concurrent_loans: policyData.maxConcurrentLoans,
-      total_exposure_limit: policyData.totalExposureLimit,
-      cooldown_period: policyData.cooldownPeriod,
-      compliance_mode: policyData.complianceMode,
-      audit_trail: policyData.auditTrail,
+      auto_approval_limit: policyData.autoApprovalLimit ?? policyData.auto_approval_limit,
+      manual_review_threshold: policyData.manualReviewThreshold ?? policyData.manual_review_threshold,
+      max_concurrent_loans: policyData.maxConcurrentLoans ?? policyData.max_concurrent_loans ?? 5,
+      // total_exposure_limit removed from form — default to 10× the manual review threshold
+      total_exposure_limit: policyData.totalExposureLimit ??
+        ((policyData.manualReviewThreshold ?? policyData.manual_review_threshold ?? 0) * 10),
+      cooldown_period_days: policyData.cooldownPeriod ?? policyData.cooldown_period_days ?? 30,
+      // approval_mode and compliance_level are required enums — use safe defaults
+      approval_mode: 'hybrid',
+      compliance_level: 'standard',
       is_active: true
     });
-    
-    return {
-      id: response.data.id,
-      ...policyData,
-      isActive: true,
-      created_at: response.data.created_at
-    };
+    return { id: response.data.id, ...policyData, isActive: true, created_at: response.data.created_at };
   },
 
   // Policy Status Management

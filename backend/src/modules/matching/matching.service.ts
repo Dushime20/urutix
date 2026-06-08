@@ -473,8 +473,49 @@ export class MatchingService {
       matches = this.applyPostProcessingFilters(matches, matchRequestDto);
 
       // Sort by overall score and limit results
-      // Sort by overall score and limit results
       matches.sort((a, b) => b.overallScore - a.overallScore);
+
+      // ─────────────────────────────────────────────────────────────
+      // MINIMUM 3 QUALIFIED TRUCKS GUARANTEE
+      // If strict post-processing left fewer than 3 results, re-score
+      // ALL available trucks without the optional filters so the cargo
+      // owner always has at least 3 choices to compare.
+      // ─────────────────────────────────────────────────────────────
+      const MIN_CHOICES = 3;
+      if (matches.length < MIN_CHOICES && availableTrucks.length >= MIN_CHOICES) {
+        this.logger.warn(
+          `⚠️ Only ${matches.length} matches after filters — relaxing optional filters to guarantee ${MIN_CHOICES} choices`,
+        );
+        // Re-score without optional cost / price filters but keeping
+        // hard-requirement filters (refrigeration, hazmat, lift-gate).
+        const relaxedCriteria: MatchRequestDto = {
+          ...matchRequestDto,
+          maxPrice: undefined,
+          minRating: undefined,
+        };
+        let allScored = await this.applyWeightedScoring(load, availableTrucks, relaxedCriteria);
+        allScored = this.applyPostProcessingFilters(allScored, {
+          ...relaxedCriteria,
+          // Keep only the hard equipment requirements
+          requiresRefrigeration: matchRequestDto.requiresRefrigeration,
+          requiresHazmat: matchRequestDto.requiresHazmat,
+          requiresLiftGate: matchRequestDto.requiresLiftGate,
+        } as MatchRequestDto);
+        allScored.sort((a, b) => b.overallScore - a.overallScore);
+
+        // Merge: keep already-filtered results, then fill up to MIN_CHOICES
+        const existingIds = new Set(matches.map(m => m.truckId));
+        for (const m of allScored) {
+          if (matches.length >= MIN_CHOICES) break;
+          if (!existingIds.has(m.truckId)) {
+            matches.push(m);
+            existingIds.add(m.truckId);
+          }
+        }
+        // Re-sort merged list
+        matches.sort((a, b) => b.overallScore - a.overallScore);
+        this.logger.log(`✅ After relaxation: ${matches.length} matches available`);
+      }
 
       // Persist top matches for Truck Owners to view
       if (matches.length > 0) {
@@ -1327,21 +1368,23 @@ export class MatchingService {
       console.log('📦 Load weight:', load.weight);
       console.log('🏢 TenantId:', tenantId);
 
-      // Build dynamic query based on load requirements
-      // Note: Having a driver assigned (currentDriverId) does NOT make a truck unavailable
-      // A truck with a driver is still available for matching
+      // Build dynamic query based on load requirements.
+      // We include AVAILABLE and IN_TRANSIT trucks — IN_TRANSIT trucks can still be
+      // booked for upcoming loads and will score lower on the availability dimension.
+      // Only MAINTENANCE and OUT_OF_SERVICE trucks are excluded entirely.
+      const matchableStatuses = [VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSIT];
       const queryBuilder = this.truckRepository
         .createQueryBuilder('truck')
         .where('truck.tenantId = :tenantId', { tenantId })
-        .andWhere('truck.status = :status', { status: VehicleStatus.AVAILABLE })
+        .andWhere('truck.status IN (:...matchableStatuses)', { matchableStatuses })
         .andWhere('truck.isActive = :isActive', { isActive: true });
 
       console.log('🔧 Query builder initialized with base conditions');
       console.log('🔧 Truck filters:', {
         tenantId,
-        status: VehicleStatus.AVAILABLE,
+        statuses: matchableStatuses,
         isActive: true,
-        note: 'Trucks with assigned drivers are still available for matching',
+        note: 'AVAILABLE + IN_TRANSIT trucks included; MAINTENANCE/OUT_OF_SERVICE excluded',
       });
 
       // Only add capacity filter if load.weight is valid

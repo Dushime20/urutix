@@ -87,6 +87,11 @@ const CargoSmartMatching: React.FC = () => {
             ? responseBody.matches
             : [];
 
+      // Warn if fewer than 3 qualified trucks were returned
+      if (rawMatches.length > 0 && rawMatches.length < 3) {
+        toast('Only ' + rawMatches.length + ' qualified truck(s) found for this cargo', { icon: '⚠️' });
+      }
+
       // Normalize flat MatchResultDto → MatchedTruck shape the UI expects
       const trucks: MatchedTruck[] = rawMatches.map((m: any) => ({
         id: m.truckId || m.id,
@@ -133,7 +138,7 @@ const CargoSmartMatching: React.FC = () => {
       setMatchedTrucks(trucks);
       if (insightsRes.data) setMarketInsights(insightsRes.data);
       if (trucks.length === 0) toast('No matches found for this cargo', { icon: '🔍' });
-      else toast.success(`Found ${trucks.length} matches`);
+      else toast.success(`Found ${trucks.length} qualified truck${trucks.length === 1 ? '' : 's'} — review the top matches below`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Matching failed. Please try again.');
     } finally {
@@ -299,32 +304,77 @@ const CargoSmartMatching: React.FC = () => {
         </div>
       )}
 
-      {/* Market Insights */}
-      {!loading && marketInsights && matchedTrucks.length > 0 && (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FaChartLine className="text-[#345E85]" />
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Market Intelligence</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Avg Cost/Mile', value: `$${marketInsights.averageCostPerMile?.toFixed(2) ?? '—'}`, color: 'bg-blue-50 text-blue-700' },
-              { label: 'Optimal Price', value: `$${marketInsights.recommendedPricing?.optimalPrice?.toLocaleString() ?? '—'}`, color: 'bg-green-50 text-green-700' },
-              { label: 'Market Demand', value: marketInsights.marketDemand ?? '—', color: 'bg-purple-50 text-purple-700' },
-              { label: 'Supply Level', value: marketInsights.supplyLevel ?? '—', color: 'bg-amber-50 text-amber-700' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className={`rounded-2xl p-4 ${color}`}>
-                <p className="text-[9px] font-black uppercase tracking-widest opacity-70 mb-1">{label}</p>
-                <p className="text-lg font-black">{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Market Insights section removed per request */}
 
       {/* Results */}
       {!loading && matchedTrucks.length > 0 && (
         <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          {/* ── Top 3 Qualified Trucks Banner ── */}
+          {(() => {
+            const top3 = filteredTrucks.slice(0, 3);
+            const rankColors = [
+              'border-yellow-400 bg-yellow-50',
+              'border-slate-300 bg-slate-50',
+              'border-amber-600 bg-amber-50',
+            ];
+            const rankLabels = ['#1 Best Match', '#2', '#3'];
+            const rankTextColors = ['text-yellow-700', 'text-slate-600', 'text-amber-800'];
+            if (top3.length === 0) return null;
+            return (
+              <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <Brain className="w-4 h-4 text-[#345E85]" />
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Top {top3.length} Qualified Trucks</h2>
+                  <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-widest">Review &amp; select one to proceed</span>
+                </div>
+                <div className={`grid gap-3 ${top3.length === 1 ? 'grid-cols-1' : top3.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
+                  {top3.map((truck, idx) => (
+                    <button
+                      key={truck.id}
+                      onClick={() => setSelectedTruck(truck)}
+                      className={`relative text-left rounded-2xl border-2 p-4 transition-all ${rankColors[idx]} ${selectedTruck?.id === truck.id ? 'ring-2 ring-[#345E85] ring-offset-1' : 'hover:ring-1 hover:ring-[#345E85]/40'}`}
+                    >
+                      {/* Rank badge */}
+                      <span className={`absolute top-3 right-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${rankTextColors[idx]} bg-white/70`}>
+                        {rankLabels[idx]}
+                      </span>
+                      <div className="mb-2 pr-16">
+                        <p className="text-xs font-black text-slate-900 leading-tight">{truck.truckOwner?.name || 'Unknown Owner'}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">{truck.truck?.make} {truck.truck?.model} · {truck.truck?.truckType}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(truck.score)}`}>
+                          <FaStar className="w-2 h-2" /> {truck.score}%
+                        </span>
+                        <span className="text-[9px] font-black text-slate-700 bg-white/60 px-2 py-0.5 rounded-full border border-slate-200">
+                          ${truck.estimatedCost?.toLocaleString()}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-500 bg-white/60 px-2 py-0.5 rounded-full border border-slate-200">
+                          {truck.distance} mi · {truck.estimatedTime}h
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {truck.truck?.hasGpsTracking && <span className="text-[8px] font-black bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">GPS</span>}
+                        {truck.truck?.hasRefrigeration && <span className="text-[8px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Fridge</span>}
+                        {truck.truck?.hasHazmatPermit && <span className="text-[8px] font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Hazmat</span>}
+                        <span className="text-[8px] font-bold text-slate-500 px-1.5 py-0.5 rounded bg-white/60 border border-slate-200">
+                          ★ {truck.driver?.rating || '—'}
+                        </span>
+                      </div>
+                      <div className={`text-[9px] font-black uppercase tracking-widest py-1.5 text-center rounded-xl ${selectedTruck?.id === truck.id ? 'bg-[#345E85] text-white' : 'bg-white/70 text-[#345E85] border border-[#345E85]/30'}`}>
+                        {selectedTruck?.id === truck.id ? '✓ Selected' : 'Select This Truck'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {matchedTrucks.length > 3 && (
+                  <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                    + {matchedTrucks.length - 3} more trucks available in the full list below
+                  </p>
+                )}
+              </div>
+            );
+          })()}
           {/* Controls bar */}
           <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div className="flex items-center gap-2">

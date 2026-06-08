@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type EscrowAccount, type CreateEscrowData, type FundEscrowData, type ReleaseEscrowData } from '../../services/brokerApi';
@@ -93,12 +94,7 @@ const EscrowManagement: React.FC = () => {
   };
 
   if (loading && escrows.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Accounts...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -112,23 +108,23 @@ const EscrowManagement: React.FC = () => {
             <Wallet size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Escrow</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Payments & Settlements</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Escrow</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Payments & Settlements</p>
           </div>
         </div>
 
         <div className="relative z-10 hidden md:flex items-center gap-12 mr-4">
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none text-white">{escrows.length}</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Accounts</p>
+            <p className="text-xl font-bold leading-none text-white">{escrows.length}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Accounts</p>
           </div>
           <div className="text-center">
-            <p className="text-xl font-black tracking-tighter leading-none text-primary-400">{escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0).toLocaleString()}</p>
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Funded</p>
+            <p className="text-xl font-bold leading-none text-primary-400">{escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0).toLocaleString()}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Funded</p>
           </div>
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-[10px]"
+            className="bg-primary-600 hover:bg-primary-500 text-white font-bold uppercase px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm"
           >
             <Plus size={14} /> Create Escrow
           </button>
@@ -149,9 +145,9 @@ const EscrowManagement: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all mb-6">
                 <stat.icon size={20} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.sub}</p>
+              <p className="text-sm font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-slate-900">{stat.value}</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase mt-1">{stat.sub}</p>
             </div>
           </div>
         ))}
@@ -165,14 +161,14 @@ const EscrowManagement: React.FC = () => {
             <input
               type="text"
               placeholder="Filter Accounts..."
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-4 text-xs font-bold text-slate-900 placeholder:text-slate-300 outline-none focus:bg-white focus:border-primary-100 transition-all font-manrope"
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-4 text-xs font-bold text-slate-900 placeholder:text-slate-300 outline-none focus:bg-white focus:border-primary-100 transition-all"
             />
           </div>
           <div className="flex gap-4 w-full md:w-auto">
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 md:flex-none"
+              className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 md:flex-none"
             >
               <option value="">All Statuses</option>
               <option value="PENDING">Pending</option>
@@ -189,8 +185,8 @@ const EscrowManagement: React.FC = () => {
               <Wallet size={48} />
             </div>
             <div className="space-y-4">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">No Accounts Found</h3>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">You have not created any escrow accounts yet.</p>
+              <h3 className="text-xl font-bold text-slate-900 uppercase">No Accounts Found</h3>
+              <p className="text-xs font-semibold text-slate-400 uppercase leading-relaxed max-w-xs mx-auto">You have not created any escrow accounts yet.</p>
             </div>
           </div>
         ) : (
@@ -203,37 +199,37 @@ const EscrowManagement: React.FC = () => {
                       <Activity size={18} />
                     </div>
                     <div>
-                      <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">#{escrow.id.slice(0, 8)}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Load ID: {escrow.loadId.slice(0, 8)}</p>
+                      <p className="text-sm font-bold text-slate-900 uppercase italic">#{escrow.id.slice(0, 8)}</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase mt-0.5">Load ID: {escrow.loadId.slice(0, 8)}</p>
                     </div>
                   </div>
-                  <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(escrow.status)}`}>
+                  <span className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border ${getStatusStyle(escrow.status)}`}>
                     {escrow.status.replace('_', ' ')}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6 mb-8 pt-8 border-t border-slate-50">
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
-                    <p className="text-lg font-black text-slate-900">{escrow.totalAmount.toLocaleString()} <span className="text-[10px] text-slate-300 font-bold uppercase">{escrow.currencyCode}</span></p>
+                    <p className="text-sm font-bold text-slate-400 uppercase mb-1">Total</p>
+                    <p className="text-lg font-bold text-slate-900">{escrow.totalAmount.toLocaleString()} <span className="text-sm text-slate-300 font-bold uppercase">{escrow.currencyCode}</span></p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Funded</p>
-                    <p className="text-lg font-black text-emerald-600">{escrow.fundedAmount.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-slate-400 uppercase mb-1">Funded</p>
+                    <p className="text-lg font-bold text-emerald-600">{escrow.fundedAmount.toLocaleString()}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => setSelectedEscrow(escrow)}
-                    className="flex-1 px-6 py-4 bg-slate-50 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all border border-slate-100 flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-4 bg-slate-50 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-900 hover:text-white transition-all border border-slate-100 flex items-center justify-center gap-2"
                   >
                     <Eye size={14} /> Details
                   </button>
                   {escrow.status === 'PENDING' && (
                     <button 
                       onClick={() => { setSelectedEscrow(escrow); setShowFundModal(true); }}
-                      className="px-6 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                      className="px-6 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
                     >
                       <ArrowDownCircle size={14} /> Fund
                     </button>
@@ -241,7 +237,7 @@ const EscrowManagement: React.FC = () => {
                   {(escrow.status === 'FUNDED' || escrow.status === 'PARTIALLY_RELEASED') && (
                     <button 
                       onClick={() => { setSelectedEscrow(escrow); setShowReleaseModal(true); }}
-                      className="px-6 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center gap-2"
+                      className="px-6 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center gap-2"
                     >
                       <ArrowUpCircle size={14} /> Release
                     </button>
@@ -286,8 +282,8 @@ const CreateEscrowModal: React.FC<{ onClose: () => void, onSubmit: (data: Create
       <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
         <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
           <div className="space-y-2">
-            <h2 className="text-3xl font-black tracking-tighter uppercase italic">Create <span className="text-white">Escrow</span></h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Setup a secure payment settlement account</p>
+            <h2 className="text-3xl font-bold uppercase italic">Create <span className="text-white">Escrow</span></h2>
+            <p className="text-slate-400 text-sm font-bold uppercase">Setup a secure payment settlement account</p>
           </div>
           <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
             <X size={24} />
@@ -297,7 +293,7 @@ const CreateEscrowModal: React.FC<{ onClose: () => void, onSubmit: (data: Create
         <form onSubmit={handleSubmit} className="p-12 md:p-16 overflow-y-auto space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Load Reference</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Load Reference</label>
               <input
                 type="text"
                 required
@@ -309,11 +305,11 @@ const CreateEscrowModal: React.FC<{ onClose: () => void, onSubmit: (data: Create
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Payer ID</label>
+                <label className="text-sm font-bold text-slate-400 uppercase ml-4">Payer ID</label>
                 <input type="text" required value={formData.payerId} onChange={(e) => setFormData({ ...formData, payerId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-8 py-6 text-sm font-bold text-slate-900 outline-none" />
               </div>
               <div className="space-y-4">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Payee ID</label>
+                <label className="text-sm font-bold text-slate-400 uppercase ml-4">Payee ID</label>
                 <input type="text" required value={formData.payeeId} onChange={(e) => setFormData({ ...formData, payeeId: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-8 py-6 text-sm font-bold text-slate-900 outline-none" />
               </div>
             </div>
@@ -321,18 +317,18 @@ const CreateEscrowModal: React.FC<{ onClose: () => void, onSubmit: (data: Create
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Total Amount (KES)</label>
-              <input type="number" required value={formData.totalAmount || ''} onChange={(e) => setFormData({ ...formData, totalAmount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-xl font-black text-slate-900 outline-none" />
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Total Amount (KES)</label>
+              <input type="number" required value={formData.totalAmount || ''} onChange={(e) => setFormData({ ...formData, totalAmount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-xl font-bold text-slate-900 outline-none" />
             </div>
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Commission</label>
-              <input type="number" required value={formData.commissionAmount || ''} onChange={(e) => setFormData({ ...formData, commissionAmount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-xl font-black text-primary-600 outline-none" />
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Commission</label>
+              <input type="number" required value={formData.commissionAmount || ''} onChange={(e) => setFormData({ ...formData, commissionAmount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-xl font-bold text-primary-600 outline-none" />
             </div>
           </div>
 
           <div className="flex justify-end gap-6 pt-12 border-t border-slate-50">
-            <button type="button" onClick={onClose} className="px-12 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Cancel</button>
-            <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
+            <button type="button" onClick={onClose} className="px-12 py-6 text-sm font-bold uppercase text-slate-400 hover:text-slate-900 transition-colors">Cancel</button>
+            <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
               Create Escrow
             </button>
@@ -350,8 +346,8 @@ const ViewEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void }> 
       <div className="relative w-full max-w-5xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
         <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
           <div className="space-y-2">
-            <h2 className="text-3xl font-black tracking-tighter uppercase italic">Escrow <span className="text-white">Details</span></h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest font-manrope">Settlement account reference #{escrow.id.slice(0, 8)}</p>
+            <h2 className="text-3xl font-bold uppercase italic">Escrow <span className="text-white">Details</span></h2>
+            <p className="text-slate-400 text-sm font-bold uppercase">Settlement account reference #{escrow.id.slice(0, 8)}</p>
           </div>
           <button onClick={onClose} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
             <X size={24} />
@@ -368,28 +364,28 @@ const ViewEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void }> 
             ].map((meta, i) => (
               <div key={i} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 group hover:bg-white hover:shadow-2xl transition-all">
                 <meta.icon size={20} className="text-slate-300 mb-6 group-hover:text-primary-600 transition-colors" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{meta.label}</p>
-                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{meta.value}</p>
+                <p className="text-sm font-bold text-slate-400 uppercase mb-1">{meta.label}</p>
+                <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">{meta.value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8 border-t border-slate-50">
             <div className="space-y-8">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Account Context</h4>
+              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-[0.4em] ml-4">Account Context</h4>
               <div className="bg-slate-900 rounded-[2.5rem] p-10 space-y-8 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/20 rounded-full blur-xl -mr-16 -mt-16"></div>
                 <div className="space-y-6 relative z-10">
                   <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Payer ID</span>
+                    <span className="text-sm font-bold uppercase text-slate-500">Payer ID</span>
                     <span className="text-sm font-bold text-white uppercase italic">{escrow.payerId}</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Payee ID</span>
+                    <span className="text-sm font-bold uppercase text-slate-500">Payee ID</span>
                     <span className="text-sm font-bold text-emerald-400 uppercase italic">{escrow.payeeId}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Commission</span>
+                    <span className="text-sm font-bold uppercase text-slate-500">Commission</span>
                     <span className="text-sm font-bold text-primary-400">{escrow.commissionAmount.toLocaleString()} {escrow.currencyCode}</span>
                   </div>
                 </div>
@@ -397,20 +393,20 @@ const ViewEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void }> 
             </div>
 
             <div className="space-y-8">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Release History</h4>
+              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-[0.4em] ml-4">Release History</h4>
               <div className="bg-slate-50 rounded-[2.5rem] p-8 space-y-4 border border-slate-100 max-h-[300px] overflow-y-auto custom-scrollbar">
                 {escrow.releaseHistory && escrow.releaseHistory.length > 0 ? escrow.releaseHistory.map((release, idx) => (
                   <div key={idx} className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
                     <div>
-                      <p className="text-sm font-black text-slate-900">{release.amount.toLocaleString()} {escrow.currencyCode}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(release.timestamp).toLocaleDateString()}</p>
+                      <p className="text-sm font-bold text-slate-900">{release.amount.toLocaleString()} {escrow.currencyCode}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase mt-1">{new Date(release.timestamp).toLocaleDateString()}</p>
                     </div>
-                    <span className="text-[10px] font-black text-primary-600 uppercase tracking-widest">{release.trigger.replace('_', ' ')}</span>
+                    <span className="text-sm font-bold text-primary-600 uppercase">{release.trigger.replace('_', ' ')}</span>
                   </div>
                 )) : (
                   <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                     <Clock size={32} className="mb-3 opacity-20" />
-                    <p className="text-[10px] font-black uppercase tracking-widest">No releases recorded</p>
+                    <p className="text-sm font-bold uppercase">No releases recorded</p>
                   </div>
                 )}
               </div>
@@ -419,7 +415,7 @@ const ViewEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void }> 
         </div>
 
         <div className="p-10 bg-slate-900 flex items-center justify-end gap-6">
-          <button onClick={onClose} className="px-12 py-6 bg-white/10 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all">Close Account View</button>
+          <button onClick={onClose} className="px-12 py-6 bg-white/10 text-white rounded-[2rem] text-sm font-bold uppercase hover:bg-white/20 transition-all">Close Account View</button>
         </div>
       </div>
     </div>
@@ -436,19 +432,19 @@ const FundEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void, on
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
       <div className="relative w-full max-w-2xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up">
         <div className="p-12 bg-slate-900 text-white flex justify-between items-center">
-          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Fund <span className="text-white">Escrow</span></h2>
+          <h2 className="text-3xl font-bold uppercase italic">Fund <span className="text-white">Escrow</span></h2>
           <button onClick={onClose} className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center"><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-12 space-y-10">
           <div className="space-y-4">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Funding Amount</label>
-            <input type="number" required value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-2xl font-black text-slate-900 outline-none" />
+            <label className="text-sm font-bold uppercase text-slate-400 ml-4">Funding Amount</label>
+            <input type="number" required value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-2xl font-bold text-slate-900 outline-none" />
           </div>
           <div className="space-y-4">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Payment Reference</label>
+            <label className="text-sm font-bold uppercase text-slate-400 ml-4">Payment Reference</label>
             <input type="text" required value={formData.paymentReference} onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" placeholder="TRANS_REFERENCE" />
           </div>
-          <button type="submit" disabled={submitting} className="w-full py-6 bg-emerald-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-4">
+          <button type="submit" disabled={submitting} className="w-full py-6 bg-emerald-600 text-white rounded-[2rem] text-sm font-bold uppercase shadow-xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-4">
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <ArrowDownCircle size={16} />} Authorize Funding
           </button>
         </form>
@@ -466,15 +462,15 @@ const ReleaseEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void,
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>
       <div className="relative w-full max-w-2xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up">
         <div className="p-12 bg-slate-900 text-white flex justify-between items-center">
-          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Release <span className="text-white">Funds</span></h2>
+          <h2 className="text-3xl font-bold uppercase italic">Release <span className="text-white">Funds</span></h2>
           <button onClick={onClose} className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center"><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-12 space-y-10">
           <div className="space-y-4">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Release Amount</label>
-            <input type="number" required value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-2xl font-black text-slate-900 outline-none" />
+            <label className="text-sm font-bold uppercase text-slate-400 ml-4">Release Amount</label>
+            <input type="number" required value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-2xl font-bold text-slate-900 outline-none" />
           </div>
-          <button type="submit" disabled={submitting} className="w-full py-6 bg-primary-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center gap-4">
+          <button type="submit" disabled={submitting} className="w-full py-6 bg-primary-600 text-white rounded-[2rem] text-sm font-bold uppercase shadow-xl hover:bg-primary-700 transition-all flex items-center justify-center gap-4">
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <ArrowUpCircle size={16} />} Authorize Release
           </button>
         </form>

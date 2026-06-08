@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { biddingAPI } from '../../services/biddingApi';
 import AuctionList from '../../components/Bidding/AuctionList';
@@ -41,16 +42,11 @@ const BrokerBidding: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Bidding Stream...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Bidding Header */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
@@ -60,20 +56,20 @@ const BrokerBidding: React.FC = () => {
             <Gavel size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Bidding</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">System Stats</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Bidding</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">System Stats</p>
           </div>
         </div>
 
         <div className="relative z-10 flex items-center gap-12 mr-4 text-right">
            <div className="text-center hidden md:block">
-             <p className="text-xl font-black tracking-tighter leading-none text-primary-400">{stats.activeBids}</p>
-             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Active</p>
+             <p className="text-xl font-bold leading-none text-primary-400">{stats.activeBids}</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Active</p>
            </div>
            <div className="h-10 w-px bg-white/10 mx-2 hidden md:block"></div>
            <div className="text-center hidden md:block">
-             <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{stats.successRate}%</p>
-             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Win Rate</p>
+             <p className="text-xl font-bold leading-none text-emerald-400">{stats.successRate}%</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">Win Rate</p>
            </div>
         </div>
       </div>
@@ -92,8 +88,8 @@ const BrokerBidding: React.FC = () => {
                 <stat.icon size={18} />
               </div>
               <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
+                <h3 className="text-2xl font-bold text-slate-900">{stat.value}</h3>
               </div>
             </div>
           </div>
@@ -114,7 +110,7 @@ const BrokerBidding: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white'}`}
+                  className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-sm font-bold uppercase transition-all ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white'}`}
                 >
                   <tab.icon size={14} />
                   {tab.label}

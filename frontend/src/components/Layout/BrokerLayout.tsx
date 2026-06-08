@@ -35,7 +35,7 @@ const BrokerLayout: React.FC = () => {
     <>
       {isDashboardIndex ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col transition-colors duration-200">
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>

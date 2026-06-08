@@ -23,6 +23,8 @@ import {
   UpdateInspectionStatusDto,
   SearchTruckDto,
   CreateCheckpointDto,
+  SubmitComplianceResponseDto,
+  ReviewComplianceResponseDto,
 } from './dto/customs.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
@@ -88,9 +90,10 @@ export class CustomsController {
   }
 
   @Get('inspections')
-  @ApiOperation({ summary: 'Get all inspections with optional filters' })
+  @ApiOperation({ summary: 'Get all inspections with optional filters. All officers see all inspections. Use ?officerId= to filter by a specific officer.' })
   @ApiQuery({ name: 'status', required: false, enum: CustomsInspectionStatus })
   @ApiQuery({ name: 'riskLevel', required: false, enum: CustomsRiskLevel })
+  @ApiQuery({ name: 'officerId', required: false, description: 'Filter by the officer who created the inspection' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false })
@@ -98,12 +101,13 @@ export class CustomsController {
     @Request() req,
     @Query('status') status?: CustomsInspectionStatus,
     @Query('riskLevel') riskLevel?: CustomsRiskLevel,
+    @Query('officerId') officerId?: string,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
     @Query('search') search?: string,
   ) {
     const result = await this.customsService.getInspections(req.user.tenantId, {
-      status, riskLevel, limit, offset, search,
+      status, riskLevel, officerId, limit, offset, search,
     });
     return { success: true, ...result };
   }
@@ -122,7 +126,12 @@ export class CustomsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateInspectionStatusDto,
   ) {
-    const data = await this.customsService.updateInspectionStatus(req.user.tenantId, id, dto);
+    const data = await this.customsService.updateInspectionStatus(
+      req.user.tenantId,
+      id,
+      dto,
+      req.user.userId,
+    );
     return { success: true, data };
   }
 
@@ -138,11 +147,71 @@ export class CustomsController {
       id,
       body.riskLevel,
       body.notes,
+      req.user.userId,
     );
     return { success: true, data };
   }
 
-  // ─── Cargo Owner: My Inspections ──────────────────────────────────────────
+  // ─── Compliance Responses ─────────────────────────────────────────────────
+
+  @Post('inspections/:id/compliance-response')
+  @Roles(
+    UserRole.CARGO_OWNER,
+    UserRole.CUSTOMS_OFFICER,
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+  )
+  @ApiOperation({
+    summary: 'Submit a compliance response to an ON_HOLD inspection',
+    description: 'Cargo owner provides notes and references uploaded document IDs to resolve missing document issues. Officer is notified automatically.',
+  })
+  async submitComplianceResponse(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SubmitComplianceResponseDto,
+  ) {
+    const data = await this.customsService.submitComplianceResponse(id, req.user.userId, dto);
+    return { success: true, data };
+  }
+
+  @Get('inspections/:id/compliance-responses')
+  @Roles(
+    UserRole.CARGO_OWNER,
+    UserRole.CUSTOMS_OFFICER,
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.TENANT_ADMIN,
+  )
+  @ApiOperation({ summary: 'Get all compliance responses for an inspection' })
+  async getComplianceResponses(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const data = await this.customsService.getComplianceResponses(id);
+    return { success: true, data };
+  }
+
+  @Patch('inspections/:id/compliance-response/:responseId/review')
+  @ApiOperation({
+    summary: 'Officer reviews a compliance response — accept or reject',
+    description: 'ACCEPTED moves inspection to IN_PROGRESS. REJECTED puts it back ON_HOLD so cargo owner can resubmit. Cargo owner is notified.',
+  })
+  async reviewComplianceResponse(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('responseId', ParseUUIDPipe) responseId: string,
+    @Body() dto: ReviewComplianceResponseDto,
+  ) {
+    const data = await this.customsService.reviewComplianceResponse(
+      id,
+      responseId,
+      req.user.userId,
+      dto,
+    );
+    return { success: true, data };
+  }
+
+  // ─── My Inspections (officer's own + cargo owner's) ──────────────────────
 
   @Get('my-inspections')
   @Roles(
@@ -152,8 +221,17 @@ export class CustomsController {
     UserRole.ADMIN,
     UserRole.TENANT_ADMIN,
   )
-  @ApiOperation({ summary: 'Get all customs inspections on cargo owned by the current user' })
+  @ApiOperation({ summary: 'For officers: inspections they created. For cargo owners: inspections on their cargo.' })
   async getMyInspections(@Request() req) {
+    if (req.user.role === UserRole.CUSTOMS_OFFICER) {
+      // Officer sees all inspections they personally created
+      const result = await this.customsService.getInspections(req.user.tenantId, {
+        officerId: req.user.userId,
+        limit: 100,
+      });
+      return { success: true, data: result.data, total: result.total };
+    }
+    // Cargo owner sees inspections on their cargo
     const data = await this.customsService.getInspectionsByCargoOwner(req.user.userId);
     return { success: true, data };
   }

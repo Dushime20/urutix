@@ -69,7 +69,7 @@ const DriverLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
-      <main className={cn("flex-1 pb-20 lg:pb-0 relative transition-all duration-500", currentTrip ? "pt-24 lg:pt-28" : "")}>
+      <main className="flex-1 pb-20 lg:pb-0 relative transition-all duration-500">
         <Outlet />
       </main>
       

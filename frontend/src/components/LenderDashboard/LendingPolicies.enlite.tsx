@@ -27,11 +27,19 @@ export interface InterestRatePolicy {
     baseRate: number;
     minRate: number;
     maxRate: number;
-    adjustmentFactors: {
-        creditScore: number;
-        loanHistory: number;
-        collateral: number;
-        businessType: number;
+    originationFeeRate?: number;
+    businessTypeRates?: {
+        individual?: number;
+        sme?: number;
+        corporation?: number;
+        cooperative?: number;
+    };
+    // legacy shape — kept for backward compat with existing saved policies
+    adjustmentFactors?: {
+        creditScore?: number;
+        loanHistory?: number;
+        collateral?: number;
+        businessType?: number;
     };
     isActive: boolean;
 }
@@ -193,19 +201,41 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     },
                     {
                         key: 'factors',
-                        label: 'ADJUSTMENTS',
-                        render: (_: any, p: InterestRatePolicy) => (
-                            <div className="flex gap-3">
-                                <div title="Credit Score Factor">
-                                    <p className="text-[8px] font-black text-slate-400 uppercase">CS</p>
-                                    <p className="text-[10px] font-bold">+{p.adjustmentFactors.creditScore}%</p>
+                        label: 'RATE BY BUSINESS TYPE',
+                        render: (_: any, p: InterestRatePolicy) => {
+                            const rates = p.businessTypeRates;
+                            if (!rates || Object.keys(rates).length === 0) {
+                                return <span className="text-[9px] text-slate-400 italic">Not configured</span>;
+                            }
+                            return (
+                                <div className="flex gap-3 flex-wrap">
+                                    {rates.individual != null && (
+                                        <div title="Individual">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase">Indiv.</p>
+                                            <p className="text-[10px] font-bold text-slate-700">{rates.individual}%</p>
+                                        </div>
+                                    )}
+                                    {rates.sme != null && (
+                                        <div title="SME">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase">SME</p>
+                                            <p className="text-[10px] font-bold text-slate-700">{rates.sme}%</p>
+                                        </div>
+                                    )}
+                                    {rates.corporation != null && (
+                                        <div title="Corporation">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase">Corp.</p>
+                                            <p className="text-[10px] font-bold text-slate-700">{rates.corporation}%</p>
+                                        </div>
+                                    )}
+                                    {rates.cooperative != null && (
+                                        <div title="Cooperative">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase">Coop.</p>
+                                            <p className="text-[10px] font-bold text-slate-700">{rates.cooperative}%</p>
+                                        </div>
+                                    )}
                                 </div>
-                                <div title="Collateral Factor">
-                                    <p className="text-[8px] font-black text-slate-400 uppercase">COL</p>
-                                    <p className="text-[10px] font-bold">+{p.adjustmentFactors.collateral}%</p>
-                                </div>
-                            </div>
-                        )
+                            );
+                        }
                     },
                     {
                         key: 'status',
@@ -370,7 +400,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         render: (_: any, p: EligibilityCriteria) => (
                             <div className="flex flex-col">
                                 <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
-                                <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.category.replace('_', ' ')}</span>
+                                <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.category.replace(/_/g, ' ')}</span>
                             </div>
                         )
                     },
@@ -443,7 +473,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'RISK FACTOR',
                         render: (_: any, p: RiskAssessmentRule) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.factor.replace('_', ' ')}</span>
+                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.factor.replace(/_/g, ' ')}</span>
                                 <span className="text-[9px] font-bold text-[#345E85]">Weight: {p.weight}%</span>
                             </div>
                         )
@@ -530,7 +560,11 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Late Fee</p>
-                                    <p className="text-[11px] font-bold text-rose-600">RWF {(p.lateFee ?? 0).toLocaleString()}</p>
+                                    <p className="text-[11px] font-bold text-rose-600">
+                                        {p.lateFeeType === 'percentage'
+                                            ? `${(p.lateFee ?? 0)}%`
+                                            : `RWF ${(p.lateFee ?? 0).toLocaleString()}`}
+                                    </p>
                                 </div>
                             </div>
                         )
@@ -770,7 +804,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                 onClick={() => onAdd(currentTabInfo?.category || '')}
                                 className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all"
                             >
-                                <Plus size={14} /> New Configuration
+                                <Plus size={14} /> Add {currentTabInfo?.label ?? 'New'}
                             </button>
                         }
                     >

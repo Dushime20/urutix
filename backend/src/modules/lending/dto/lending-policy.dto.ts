@@ -272,6 +272,8 @@ export class CreateEligibilityPolicyDto extends BaseLendingPolicyDto {
   @IsEnum(EligibilityCategory)
   category: EligibilityCategory;
 
+  // note: description is inherited from BaseLendingPolicyDto (optional)
+
   @ApiProperty()
   @IsString()
   requirement: string;

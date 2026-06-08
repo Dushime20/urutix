@@ -1,4 +1,4 @@
-﻿import { createPortal } from 'react-dom';
+import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare } from 'lucide-react';
@@ -113,12 +113,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           path: '/dashboard/broker/loads',
           icon: Activity,
           subItems: [
-            { label: 'My Loads', path: '/dashboard/broker/loads' },
-            { label: 'Cargo Discovery', path: '/dashboard/broker/discovery' },
+            { label: 'My Assignments', path: '/dashboard/broker/loads' },
+            { label: 'Auctions', path: '/dashboard/broker/bidding' },
+            { label: 'Smart Matching', path: '/dashboard/broker/smart-matching' },
             { label: 'Bidding', path: '/dashboard/broker/bidding' },
-            { label: 'Contracts', path: '/dashboard/broker/contracts' },
             { label: 'Tracking', path: '/dashboard/broker/tracking' },
-            { label: 'Multi-Stop Loads', path: '/dashboard/broker/multi-stop' },
           ]
         },
         {
@@ -131,21 +130,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Escrow Management', path: '/dashboard/broker/escrow' },
             { label: 'Credit Assessment', path: '/dashboard/broker/credit-management' },
           ]
-        },
-        {
-          label: 'Other',
-          path: '#',
-          icon: Menu,
-          subItems: [
-            { label: 'Profile', path: '/dashboard/broker/profile' },
-            { label: 'Smart Matching', path: '/dashboard/broker/smart-matching' },
-            { label: 'Market Intelligence', path: '/dashboard/broker/market-intelligence' },
-            { label: 'Performance Analytics', path: '/dashboard/broker/analytics' },
-            { label: 'Insurance Verification', path: '/dashboard/broker/insurance' },
-            { label: 'Dispute Resolution', path: '/dashboard/broker/disputes' },
-            { label: 'Document Vault', path: '/dashboard/broker/documents' },
-          ]
-        },
+        }
       ];
     }
 
@@ -399,7 +384,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       if (!showMobileMenu) {
         Object.keys(dropdownRefs.current).forEach(key => {
           if (dropdownRefs.current[key] && !dropdownRefs.current[key]?.contains(event.target as Node)) {
-            setOpenDropdown(prev => prev === key ? null : prev);
+            setDesktopDropdown(prev => prev === key ? null : prev);
           }
         });
       }
@@ -469,7 +454,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenDropdown(desktopDropdown === item.label ? null : item.label);
+                            setDesktopDropdown(desktopDropdown === item.label ? null : item.label);
                           }}
                           className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
                                               ${isActive

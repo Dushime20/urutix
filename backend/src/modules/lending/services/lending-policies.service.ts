@@ -293,6 +293,20 @@ export class LendingPoliciesService {
     this.logger.log(`Deleted loan limit policy ${policyId} for lender ${lenderId}`);
   }
 
+  async toggleLoanLimitPolicyStatus(
+    lenderId: string,
+    policyId: string,
+    isActive: boolean,
+    updatedBy?: string,
+  ): Promise<LendingPolicyLoanLimit> {
+    const policy = await this.getLoanLimitPolicy(lenderId, policyId);
+    policy.is_active = isActive;
+    policy.updated_by = updatedBy;
+    const updated = await this.loanLimitRepository.save(policy);
+    this.logger.log(`Toggled loan limit policy ${policyId} status to ${isActive}`);
+    return updated;
+  }
+
   // ===== ELIGIBILITY CRITERIA POLICIES =====
 
   async createEligibilityPolicy(
@@ -300,11 +314,13 @@ export class LendingPoliciesService {
     dto: CreateEligibilityPolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicyEligibility> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     const policy = this.eligibilityRepository.create({
       ...dto,
-      lender_id: lenderId,
+      // fallback: if description not provided, use requirement text (entity column is NOT NULL)
+      description: dto.description || dto.requirement,
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 
@@ -365,6 +381,20 @@ export class LendingPoliciesService {
     this.logger.log(`Deleted eligibility policy ${policyId} for lender ${lenderId}`);
   }
 
+  async toggleEligibilityPolicyStatus(
+    lenderId: string,
+    policyId: string,
+    isActive: boolean,
+    updatedBy?: string,
+  ): Promise<LendingPolicyEligibility> {
+    const policy = await this.getEligibilityPolicy(lenderId, policyId);
+    policy.is_active = isActive;
+    policy.updated_by = updatedBy;
+    const updated = await this.eligibilityRepository.save(policy);
+    this.logger.log(`Toggled eligibility policy ${policyId} status to ${isActive}`);
+    return updated;
+  }
+
   // ===== RISK ASSESSMENT POLICIES =====
 
   async createRiskAssessmentPolicy(
@@ -372,11 +402,11 @@ export class LendingPoliciesService {
     dto: CreateRiskAssessmentPolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicyRiskAssessment> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     const policy = this.riskAssessmentRepository.create({
       ...dto,
-      lender_id: lenderId,
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 
@@ -437,6 +467,20 @@ export class LendingPoliciesService {
     this.logger.log(`Deleted risk assessment policy ${policyId} for lender ${lenderId}`);
   }
 
+  async toggleRiskAssessmentPolicyStatus(
+    lenderId: string,
+    policyId: string,
+    isActive: boolean,
+    updatedBy?: string,
+  ): Promise<LendingPolicyRiskAssessment> {
+    const policy = await this.getRiskAssessmentPolicy(lenderId, policyId);
+    policy.is_active = isActive;
+    policy.updated_by = updatedBy;
+    const updated = await this.riskAssessmentRepository.save(policy);
+    this.logger.log(`Toggled risk assessment policy ${policyId} status to ${isActive}`);
+    return updated;
+  }
+
   // ===== REPAYMENT POLICIES =====
 
   async createRepaymentPolicy(
@@ -444,11 +488,11 @@ export class LendingPoliciesService {
     dto: CreateRepaymentPolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicyRepayment> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     const policy = this.repaymentRepository.create({
       ...dto,
-      lender_id: lenderId,
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 
@@ -509,6 +553,20 @@ export class LendingPoliciesService {
     this.logger.log(`Deleted repayment policy ${policyId} for lender ${lenderId}`);
   }
 
+  async toggleRepaymentPolicyStatus(
+    lenderId: string,
+    policyId: string,
+    isActive: boolean,
+    updatedBy?: string,
+  ): Promise<LendingPolicyRepayment> {
+    const policy = await this.getRepaymentPolicy(lenderId, policyId);
+    policy.is_active = isActive;
+    policy.updated_by = updatedBy;
+    const updated = await this.repaymentRepository.save(policy);
+    this.logger.log(`Toggled repayment policy ${policyId} status to ${isActive}`);
+    return updated;
+  }
+
   // ===== CARGO TYPE POLICIES =====
 
   async createCargoTypePolicy(
@@ -516,11 +574,11 @@ export class LendingPoliciesService {
     dto: CreateCargoTypePolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicyCargoType> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     const policy = this.cargoTypeRepository.create({
       ...dto,
-      lender_id: lenderId,
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 
@@ -581,6 +639,20 @@ export class LendingPoliciesService {
     this.logger.log(`Deleted cargo type policy ${policyId} for lender ${lenderId}`);
   }
 
+  async toggleCargoTypePolicyStatus(
+    lenderId: string,
+    policyId: string,
+    isActive: boolean,
+    updatedBy?: string,
+  ): Promise<LendingPolicyCargoType> {
+    const policy = await this.getCargoTypePolicy(lenderId, policyId);
+    policy.is_active = isActive;
+    policy.updated_by = updatedBy;
+    const updated = await this.cargoTypeRepository.save(policy);
+    this.logger.log(`Toggled cargo type policy ${policyId} status to ${isActive}`);
+    return updated;
+  }
+
   // ===== SYSTEM CONFIG POLICIES =====
 
   async createSystemConfigPolicy(
@@ -588,11 +660,11 @@ export class LendingPoliciesService {
     dto: CreateSystemConfigPolicyDto,
     createdBy?: string,
   ): Promise<LendingPolicySystemConfig> {
-    await this.validateLenderExists(lenderId);
+    const resolvedLenderId = await this.validateLenderExists(lenderId);
 
     // Check if system config already exists for this lender
     const existingConfig = await this.systemConfigRepository.findOne({
-      where: { lender_id: lenderId },
+      where: { lender_id: resolvedLenderId },
     });
 
     if (existingConfig) {
@@ -601,7 +673,7 @@ export class LendingPoliciesService {
 
     const policy = this.systemConfigRepository.create({
       ...dto,
-      lender_id: lenderId,
+      lender_id: resolvedLenderId,
       created_by: createdBy,
     });
 

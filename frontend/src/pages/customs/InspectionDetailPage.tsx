@@ -7,6 +7,7 @@ import {
   Clock, FileText, Truck, User, MapPin, Package, Flag, Hash,
   Calendar, Building2, Weight, DollarSign, Zap, Globe,
   ChevronRight, Loader2, BadgeCheck, ShieldAlert, PauseCircle,
+  MessageSquare, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
@@ -397,6 +398,9 @@ const InspectionDetailPage: React.FC = () => {
                 </p>
               </div>
             )}
+
+            {/* ── Compliance Responses (officer review panel) ── */}
+            <ComplianceResponsesPanel inspectionId={id!} qc={qc} />
           </div>
 
           {/* ── RIGHT: 1/3 ── */}
@@ -559,5 +563,147 @@ const InspectionDetailPage: React.FC = () => {
     </div>
   );
 };
+
+// ── Compliance Responses Panel (Officer View) ─────────────────────────────────
+
+const responseStatusConfig: Record<string, { label: string; color: string }> = {
+  SUBMITTED: { label: 'Awaiting Review', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  REVIEWED:  { label: 'Reviewed',        color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  ACCEPTED:  { label: 'Accepted',        color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  REJECTED:  { label: 'Rejected',        color: 'bg-rose-100 text-rose-700 border-rose-200' },
+};
+
+function ComplianceResponsesPanel({ inspectionId, qc }: { inspectionId: string; qc: any }) {
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [reviewNotes, setReviewNotes] = useState('');
+
+  const { data, refetch } = useQuery({
+    queryKey: ['compliance-responses', inspectionId],
+    queryFn: () => customsApi.getComplianceResponses(inspectionId),
+  });
+  const responses: any[] = data?.data?.data ?? [];
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ responseId, status, notes }: { responseId: string; status: 'ACCEPTED' | 'REJECTED'; notes: string }) =>
+      customsApi.reviewComplianceResponse(inspectionId, responseId, { status, reviewNotes: notes }),
+    onSuccess: (_, vars) => {
+      toast.success(`Response ${vars.status === 'ACCEPTED' ? 'accepted' : 'rejected'} — cargo owner notified`);
+      setReviewingId(null);
+      setReviewNotes('');
+      refetch();
+      qc.invalidateQueries({ queryKey: ['customs-inspection', inspectionId] });
+      qc.invalidateQueries({ queryKey: ['customs-stats'] });
+    },
+    onError: () => toast.error('Failed to submit review'),
+  });
+
+  if (responses.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-800 p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <MessageSquare size={14} className="text-amber-600" />
+        <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
+          Compliance Responses
+        </h3>
+        <span className="ml-auto text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+          {responses.length}
+        </span>
+      </div>
+
+      <div className="space-y-4">
+        {responses.map((r: any) => {
+          const cfg = responseStatusConfig[r.status] ?? responseStatusConfig['SUBMITTED'];
+          const isPending = r.status === 'SUBMITTED';
+          const isReviewing = reviewingId === r.id;
+
+          return (
+            <div key={r.id} className="border border-slate-100 dark:border-slate-800 rounded-xl p-4 space-y-3">
+              {/* Response header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-slate-400">
+                    {new Date(r.createdAt).toLocaleString()} · by cargo owner
+                  </p>
+                </div>
+                <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full border', cfg.color)}>
+                  {cfg.label}
+                </span>
+              </div>
+
+              {/* Notes */}
+              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{r.notes}</p>
+
+              {/* Document count */}
+              {r.documentIds?.length > 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-1.5">
+                  <FileText size={12} />
+                  {r.documentIds.length} document(s) referenced
+                </div>
+              )}
+
+              {/* Previous review notes */}
+              {r.reviewNotes && !isReviewing && (
+                <div className={cn(
+                  'text-xs rounded-lg px-3 py-2',
+                  r.status === 'ACCEPTED' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                )}>
+                  <span className="font-semibold">Your review: </span>{r.reviewNotes}
+                </div>
+              )}
+
+              {/* Review actions — only for SUBMITTED responses */}
+              {isPending && !isReviewing && (
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => { setReviewingId(r.id); setReviewNotes(''); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                  >
+                    Review Response
+                  </button>
+                </div>
+              )}
+
+              {/* Inline review form */}
+              {isReviewing && (
+                <div className="pt-1 space-y-3 border-t border-slate-100 dark:border-slate-800">
+                  <textarea
+                    rows={3}
+                    value={reviewNotes}
+                    onChange={e => setReviewNotes(e.target.value)}
+                    placeholder="Optional notes for the cargo owner…"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none dark:bg-slate-800 dark:border-slate-700"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => reviewMutation.mutate({ responseId: r.id, status: 'ACCEPTED', notes: reviewNotes })}
+                      disabled={reviewMutation.isPending}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      <ThumbsUp size={12} /> Accept
+                    </button>
+                    <button
+                      onClick={() => reviewMutation.mutate({ responseId: r.id, status: 'REJECTED', notes: reviewNotes })}
+                      disabled={reviewMutation.isPending}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      <ThumbsDown size={12} /> Reject
+                    </button>
+                    <button
+                      onClick={() => { setReviewingId(null); setReviewNotes(''); }}
+                      className="px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default InspectionDetailPage;

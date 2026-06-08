@@ -72,7 +72,7 @@ const SmartMatching: React.FC = () => {
           <div className="w-24 h-24 rounded-full border-t-4 border-primary-600 animate-spin"></div>
           <Brain className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-600 w-10 h-10 animate-pulse" />
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Finding Best Matches...</p>
+        <p className="text-sm font-bold uppercase tracking-[0.3em] text-slate-400">Finding Best Matches...</p>
       </div>
     );
   }
@@ -88,8 +88,8 @@ const SmartMatching: React.FC = () => {
             <Target size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Quick Matching</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{recommendations.length} Active Matches</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Quick Matching</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">{recommendations.length} Active Matches</p>
           </div>
         </div>
         
@@ -104,7 +104,7 @@ const SmartMatching: React.FC = () => {
           <button
             onClick={() => handleGenerateRecommendations()}
             disabled={loading || !selectedLoadId}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 text-[10px]"
+            className="bg-primary-600 hover:bg-primary-500 text-white font-bold uppercase px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 text-sm"
           >
             {loading ? <Loader2 className="animate-spin" size={14} /> : <Zap size={14} />}
             {loading ? 'Searching...' : 'Find Matches'}
@@ -124,7 +124,7 @@ const SmartMatching: React.FC = () => {
               <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary-600 group-hover:text-white transition-all">
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight mb-3">{feature.title}</h3>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-3">{feature.title}</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed">{feature.desc}</p>
             </div>
           ))}
@@ -133,8 +133,8 @@ const SmartMatching: React.FC = () => {
         <div className="space-y-12">
           <div className="flex items-end justify-between px-4">
             <div>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Best Matches</h2>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">Found {recommendations.length} Matches</p>
+              <h2 className="text-3xl font-bold text-slate-900">Best Matches</h2>
+              <p className="text-slate-400 font-bold uppercase text-sm mt-1">Found {recommendations.length} Matches</p>
             </div>
           </div>
 
@@ -146,35 +146,35 @@ const SmartMatching: React.FC = () => {
                     <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 ${index === 0 ? 'bg-white/20 backdrop-blur-md' : 'bg-white shadow-lg'}`}>
                       {index === 0 ? <Star size={32} /> : getRecommendationTypeIcon(rec.recommendationType)}
                     </div>
-                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${index === 0 ? 'text-primary-200' : 'text-slate-400'}`}>
+                    <p className={`text-sm font-bold uppercase tracking-[0.2em] mb-2 ${index === 0 ? 'text-primary-200' : 'text-slate-400'}`}>
                       {index === 0 ? 'Best Match' : rec.recommendationType.replace('_', ' ')}
                     </p>
-                    <h4 className="text-2xl font-black tracking-tight mb-8">Match #{rec.id.slice(0, 6)}</h4>
+                    <h4 className="text-2xl font-bold tracking-tight mb-8">Match #{rec.id.slice(0, 6)}</h4>
                   </div>
                   
                   <div className="space-y-1">
-                    <p className="text-5xl font-black tracking-tighter">{rec.matchScore}%</p>
-                    <p className={`text-[10px] font-black uppercase tracking-widest opacity-60`}>Match Score</p>
+                    <p className="text-5xl font-bold">{rec.matchScore}%</p>
+                    <p className={`text-sm font-bold uppercase opacity-60`}>Match Score</p>
                   </div>
                 </div>
 
                 <div className="flex-1 p-10 lg:p-12">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 pb-10 border-b border-slate-50">
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Distance Score</p>
-                      <p className="text-xl font-black text-slate-900">{rec.matchingFactors.distanceScore}%</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase mb-2">Distance Score</p>
+                      <p className="text-xl font-bold text-slate-900">{rec.matchingFactors.distanceScore}%</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Capacity</p>
-                      <p className="text-xl font-black text-slate-900">{rec.matchingFactors.capacityUtilization}%</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase mb-2">Capacity</p>
+                      <p className="text-xl font-bold text-slate-900">{rec.matchingFactors.capacityUtilization}%</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Reliability</p>
-                      <p className="text-xl font-black text-slate-900">{rec.matchingFactors.reliabilityScore}%</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase mb-2">Reliability</p>
+                      <p className="text-xl font-bold text-slate-900">{rec.matchingFactors.reliabilityScore}%</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest mb-2">Savings</p>
-                      <p className="text-xl font-black text-primary-600">{rec.routeOptimization?.fuelSavings.toFixed(1)} km</p>
+                      <p className="text-sm font-bold text-primary-600 uppercase mb-2">Savings</p>
+                      <p className="text-xl font-bold text-primary-600">{rec.routeOptimization?.fuelSavings.toFixed(1)} km</p>
                     </div>
                   </div>
 
@@ -182,8 +182,8 @@ const SmartMatching: React.FC = () => {
                     {rec.bundlingOpportunity && (
                       <div className="flex-1 bg-emerald-50 rounded-3xl p-6 border border-emerald-100/50">
                         <div className="flex items-center gap-3 mb-2 text-emerald-700">
-                          <Package size={18} className="font-black" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Bundle Opportunity</span>
+                          <Package size={18} className="font-bold" />
+                          <span className="text-sm font-bold uppercase">Bundle Opportunity</span>
                         </div>
                         <p className="text-sm font-bold text-emerald-800 leading-snug">
                           {rec.bundlingOpportunity.bundledLoadIds.length} loads merging • Savings: {rec.bundlingOpportunity.totalSavings.toLocaleString()}
@@ -194,7 +194,7 @@ const SmartMatching: React.FC = () => {
                       <div className="flex-1 bg-primary-50 rounded-3xl p-6 border border-primary-100/50">
                         <div className="flex items-center gap-3 mb-2 text-primary-700">
                           <TrendingUp size={18} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Backhaul Opportunity</span>
+                          <span className="text-sm font-bold uppercase">Backhaul Opportunity</span>
                         </div>
                         <p className="text-sm font-bold text-primary-800 leading-snug">
                           Reverse route found • Revenue: {rec.backhaulOpportunity.totalRevenue.toLocaleString()}
@@ -205,25 +205,25 @@ const SmartMatching: React.FC = () => {
 
                   <div className="flex items-center justify-between gap-6 pt-4">
                     <div className="hidden md:block">
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Match Info</p>
+                      <p className="text-sm font-bold text-slate-300 uppercase tracking-[0.2em]">Match Info</p>
                       <p className="text-xs font-bold text-slate-400 mt-1 line-clamp-1">{rec.aiInsights?.recommendations[0] || 'Optimized parameters identified for this load.'}</p>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">
                       <button 
                         onClick={() => setSelectedRecommendation(rec)}
-                        className="px-8 py-4 bg-slate-50 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
+                        className="px-8 py-4 bg-slate-50 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 transition-all border border-slate-100"
                       >
                         Details
                       </button>
                       {rec.status === 'PENDING' ? (
                         <button 
                           onClick={() => handleAcceptRecommendation(rec.id)}
-                          className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-200 hover:scale-105 active:scale-95 transition-all"
+                          className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-200 hover:scale-105 active:scale-95 transition-all"
                         >
                           Accept
                         </button>
                       ) : (
-                        <div className="px-10 py-4 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                        <div className="px-10 py-4 bg-emerald-50 text-emerald-600 rounded-2xl text-sm font-bold uppercase flex items-center gap-2">
                           <CheckCircle2 size={14} /> Active
                         </div>
                       )}
@@ -260,8 +260,8 @@ const RecommendationDetailsModal: React.FC<{
       >
         <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
           <div>
-            <span className="text-[10px] font-black text-primary-400 uppercase tracking-[0.4em] mb-2 block">Analysis</span>
-            <h2 className="text-3xl font-black text-white tracking-tighter">Match Details</h2>
+            <span className="text-sm font-bold text-primary-400 uppercase tracking-[0.4em] mb-2 block">Analysis</span>
+            <h2 className="text-3xl font-bold text-white">Match Details</h2>
           </div>
           <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white/10 rounded-2xl shadow-sm text-white hover:text-red-400 transition-colors border border-white/10">
             <XCircle size={24} />
@@ -272,41 +272,41 @@ const RecommendationDetailsModal: React.FC<{
           {/* Key Stats Block */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="bg-slate-50 p-6 rounded-3xl">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Match Score</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tighter">{recommendation.matchScore}%</p>
+              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Match Score</p>
+              <p className="text-3xl font-bold text-slate-900">{recommendation.matchScore}%</p>
             </div>
             <div className="bg-slate-50 p-6 rounded-3xl">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Confidence</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tighter">{recommendation.confidenceLevel}%</p>
+              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Confidence</p>
+              <p className="text-3xl font-bold text-slate-900">{recommendation.confidenceLevel}%</p>
             </div>
             <div className="bg-emerald-50 p-6 rounded-3xl">
-              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Success Rate</p>
-              <p className="text-3xl font-black text-emerald-700 tracking-tighter">{recommendation.aiInsights.predictedSuccessRate.toFixed(1)}%</p>
+              <p className="text-xs font-bold text-emerald-600 uppercase mb-2">Success Rate</p>
+              <p className="text-3xl font-bold text-emerald-700">{recommendation.aiInsights.predictedSuccessRate.toFixed(1)}%</p>
             </div>
             <div className="bg-slate-50 p-6 rounded-3xl">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</p>
-              <p className="text-xl font-black text-slate-700 uppercase tracking-widest mt-1">{recommendation.status}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Status</p>
+              <p className="text-xl font-bold text-slate-700 uppercase mt-1">{recommendation.status}</p>
             </div>
           </div>
 
           {/* Route Details */}
           {recommendation.routeOptimization && (
             <div className="space-y-6">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3">
                 <Route size={18} className="text-primary-600" /> Route Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Optimized Distance</p>
+                  <p className="text-sm font-bold text-slate-400 uppercase mb-1">Optimized Distance</p>
                   <p className="text-xl font-bold text-slate-900">{recommendation.routeOptimization.optimizedDistance.toFixed(2)} km</p>
                 </div>
                 <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Estimate</p>
+                  <p className="text-sm font-bold text-slate-400 uppercase mb-1">Time Estimate</p>
                   <p className="text-xl font-bold text-slate-900">{Math.round(recommendation.routeOptimization.estimatedTime / 60)} Hours</p>
                 </div>
                 <div className="border border-emerald-100 p-6 rounded-3xl bg-emerald-50/20">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Savings</p>
-                  <p className="text-xl font-black text-emerald-700">{recommendation.routeOptimization.fuelSavings.toFixed(2)} km</p>
+                  <p className="text-sm font-bold text-emerald-600 uppercase mb-1">Savings</p>
+                  <p className="text-xl font-bold text-emerald-700">{recommendation.routeOptimization.fuelSavings.toFixed(2)} km</p>
                 </div>
               </div>
             </div>
@@ -315,7 +315,7 @@ const RecommendationDetailsModal: React.FC<{
           {/* Recommendations Block */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="space-y-6">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3">
                 <Brain size={18} className="text-primary-600" /> Recommendations
               </h3>
               <div className="space-y-3">
@@ -329,7 +329,7 @@ const RecommendationDetailsModal: React.FC<{
             </div>
             
             <div className="space-y-6">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3">
                 <Shield size={18} className="text-rose-500" /> Risk Factors
               </h3>
               <div className="space-y-3">
@@ -341,7 +341,7 @@ const RecommendationDetailsModal: React.FC<{
                 )) : (
                   <div className="flex flex-col items-center justify-center p-12 bg-emerald-50 rounded-3xl border border-emerald-100/30 text-emerald-600">
                     <CheckCircle2 size={32} className="mb-4" />
-                    <p className="text-[10px] font-black uppercase tracking-widest">Minimal Risk Detected</p>
+                    <p className="text-sm font-bold uppercase">Minimal Risk Detected</p>
                   </div>
                 )}
               </div>
@@ -355,16 +355,16 @@ const RecommendationDetailsModal: React.FC<{
               <Shield size={20} />
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Stability Check</p>
+              <p className="text-xs font-bold text-slate-500 uppercase">Stability Check</p>
               <p className="text-xs font-bold text-white">Verified Secure</p>
             </div>
           </div>
           <div className="flex gap-4">
-            <button onClick={onClose} className="px-8 py-4 bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all">Close</button>
+            <button onClick={onClose} className="px-8 py-4 bg-white/10 text-white rounded-2xl text-sm font-bold uppercase hover:bg-white/20 transition-all">Close</button>
             {recommendation.status === 'PENDING' && (
               <button 
                 onClick={() => onAccept(recommendation.id)}
-                className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-primary-900/40 hover:scale-105 active:scale-95 transition-all"
+                className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-2xl shadow-primary-900/40 hover:scale-105 active:scale-95 transition-all"
               >
                 Accept Strategy
               </button>

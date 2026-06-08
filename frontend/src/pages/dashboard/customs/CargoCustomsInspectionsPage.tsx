@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   Shield,
   AlertTriangle,
@@ -16,6 +17,9 @@ import {
   Calendar,
   User,
   Info,
+  Send,
+  MessageSquare,
+  RefreshCw,
 } from 'lucide-react';
 import { customsApi } from '../../../services/customsApi';
 
@@ -303,9 +307,43 @@ export default function CargoCustomsInspectionsPage() {
 }
 
 function InspectionDetailModal({ inspection, onClose }: { inspection: any; onClose: () => void }) {
+  const qc = useQueryClient();
   const status = STATUS_CONFIG[inspection.status] ?? STATUS_CONFIG['PENDING'];
   const risk = RISK_CONFIG[inspection.riskLevel] ?? RISK_CONFIG['LOW'];
   const channel = inspection.inspectionChannel ? CHANNEL_CONFIG[inspection.inspectionChannel] : null;
+  const isOnHold = inspection.status === 'ON_HOLD';
+
+  const [responseNotes, setResponseNotes] = useState('');
+  const [showResponseForm, setShowResponseForm] = useState(false);
+
+  // Load previous compliance responses
+  const { data: responsesData, refetch: refetchResponses } = useQuery({
+    queryKey: ['compliance-responses', inspection.id],
+    queryFn: () => customsApi.getComplianceResponses(inspection.id),
+    enabled: true,
+  });
+  const responses: any[] = responsesData?.data?.data ?? [];
+
+  const submitMutation = useMutation({
+    mutationFn: (notes: string) =>
+      customsApi.submitComplianceResponse(inspection.id, { notes }),
+    onSuccess: () => {
+      toast.success('Compliance response submitted. The customs officer has been notified.');
+      setResponseNotes('');
+      setShowResponseForm(false);
+      refetchResponses();
+      qc.invalidateQueries({ queryKey: ['myCustomsInspections'] });
+    },
+    onError: () => toast.error('Failed to submit response. Please try again.'),
+  });
+
+  const handleSubmitResponse = () => {
+    if (!responseNotes.trim()) {
+      toast.error('Please describe what was resolved or uploaded');
+      return;
+    }
+    submitMutation.mutate(responseNotes.trim());
+  };
 
   const fields: { label: string; value: any }[] = [
     { label: 'Cargo', value: inspection.trip?.load?.title || '—' },
@@ -313,7 +351,6 @@ function InspectionDetailModal({ inspection, onClose }: { inspection: any; onClo
     { label: 'Shipment Reference', value: inspection.shipmentReference || '—' },
     { label: 'Container Number', value: inspection.containerNumber || '—' },
     { label: 'Driver', value: inspection.driverName || '—' },
-    { label: 'Inspection Location', value: inspection.location || '—' },
     { label: 'Declaration Number', value: inspection.declarationNumber || '—' },
     { label: 'Mode of Transport', value: inspection.modeOfTransport || '—' },
     { label: 'Country of Origin', value: inspection.countryOfOrigin || '—' },
@@ -322,20 +359,23 @@ function InspectionDetailModal({ inspection, onClose }: { inspection: any; onClo
     { label: 'Declared Value', value: inspection.declaredValue ? `${inspection.currency || ''} ${inspection.declaredValue}`.trim() : '—' },
     { label: 'Duty Amount', value: inspection.dutyAmount ?? '—' },
     { label: 'Tax Amount', value: inspection.taxAmount ?? '—' },
-    { label: 'AEO Number', value: inspection.aeoNumber || '—' },
-    { label: 'IMDG Class', value: inspection.imdgClass || '—' },
-    { label: 'UN Number', value: inspection.unNumber || '—' },
     { label: 'Sanctions Screened', value: inspection.sanctionsScreened != null ? (inspection.sanctionsScreened ? 'Yes' : 'No') : '—' },
-    { label: 'Denied Party Flag', value: inspection.deniedPartyFlag != null ? (inspection.deniedPartyFlag ? 'Yes — Flagged' : 'No') : '—' },
-    { label: 'Estimated Release', value: inspection.estimatedRelease ? new Date(inspection.estimatedRelease).toLocaleString() : '—' },
+    { label: 'Denied Party Flag', value: inspection.deniedPartyFlag ? 'Yes — Flagged' : 'No' },
     { label: 'Inspection Started', value: inspection.createdAt ? new Date(inspection.createdAt).toLocaleString() : '—' },
     { label: 'Completed At', value: inspection.completedAt ? new Date(inspection.completedAt).toLocaleString() : '—' },
   ];
 
+  const responseStatusConfig: Record<string, { label: string; color: string }> = {
+    SUBMITTED: { label: 'Awaiting Review', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    REVIEWED:  { label: 'Reviewed',        color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    ACCEPTED:  { label: 'Accepted',        color: 'bg-green-100 text-green-700 border-green-200' },
+    REJECTED:  { label: 'Rejected',        color: 'bg-red-100 text-red-700 border-red-200' },
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 p-4">
       <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
-        {/* Modal header */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 rounded-lg">
@@ -346,47 +386,115 @@ function InspectionDetailModal({ inspection, onClose }: { inspection: any; onClo
               <p className="text-xs text-gray-500">Full customs inspection report</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Status banner */}
-        <div className={`mx-6 mt-4 flex flex-wrap items-center gap-2 p-3 rounded-xl border ${status.color}`}>
-          <span className="flex items-center gap-1.5 font-medium text-sm">
-            {status.icon}
-            {status.label}
-          </span>
-          <span className="flex items-center gap-1.5 text-sm">
-            <span className={`w-2 h-2 rounded-full ${risk.dot}`} />
-            {risk.label}
-          </span>
-          {channel && (
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${channel.color}`}>
-              {channel.label}
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {/* Status banner */}
+          <div className={`flex flex-wrap items-center gap-2 p-3 rounded-xl border ${status.color}`}>
+            <span className="flex items-center gap-1.5 font-medium text-sm">{status.icon}{status.label}</span>
+            <span className="flex items-center gap-1.5 text-sm">
+              <span className={`w-2 h-2 rounded-full ${risk.dot}`} />
+              {risk.label}
             </span>
+            {channel && (
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${channel.color}`}>
+                {channel.label}
+              </span>
+            )}
+          </div>
+
+          {/* Officer rejection reason */}
+          {inspection.rejectionReason && (
+            <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3 border border-red-100">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div><span className="font-medium">Rejection Reason: </span>{inspection.rejectionReason}</div>
+            </div>
           )}
-        </div>
 
-        {/* Officer notes / rejection */}
-        {inspection.rejectionReason && (
-          <div className="mx-6 mt-3 flex items-start gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3 border border-red-100">
-            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <div><span className="font-medium">Rejection Reason: </span>{inspection.rejectionReason}</div>
-          </div>
-        )}
-        {inspection.inspectionNotes && (
-          <div className="mx-6 mt-3 flex items-start gap-2 text-sm text-yellow-700 bg-yellow-50 rounded-xl p-3 border border-yellow-100">
-            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <div><span className="font-medium">Officer Notes: </span>{inspection.inspectionNotes}</div>
-          </div>
-        )}
+          {/* Officer hold notes */}
+          {inspection.inspectionNotes && (
+            <div className="flex items-start gap-2 text-sm text-yellow-700 bg-yellow-50 rounded-xl p-3 border border-yellow-100">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div><span className="font-medium">Officer Notes: </span>{inspection.inspectionNotes}</div>
+            </div>
+          )}
 
-        {/* Fields */}
-        <div className="overflow-y-auto flex-1 px-6 py-4">
+          {/* ── COMPLIANCE RESPONSE SECTION (ON_HOLD only) ── */}
+          {isOnHold && (
+            <div className="border border-amber-200 rounded-xl overflow-hidden">
+              <div className="bg-amber-50 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm font-semibold text-amber-800">Action Required — Compliance Response</span>
+                </div>
+                <button
+                  onClick={() => setShowResponseForm(f => !f)}
+                  className="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-lg transition-colors"
+                >
+                  {showResponseForm ? 'Cancel' : 'Submit Response'}
+                </button>
+              </div>
+
+              {/* Previous responses */}
+              {responses.length > 0 && (
+                <div className="px-4 py-3 space-y-2 border-b border-amber-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Previous Responses</p>
+                  {responses.map((r: any) => {
+                    const rCfg = responseStatusConfig[r.status] ?? responseStatusConfig['SUBMITTED'];
+                    return (
+                      <div key={r.id} className="bg-white border border-gray-100 rounded-lg p-3 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleString()}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${rCfg.color}`}>{rCfg.label}</span>
+                        </div>
+                        <p className="text-sm text-gray-700">{r.notes}</p>
+                        {r.documentIds?.length > 0 && (
+                          <p className="text-xs text-gray-400">{r.documentIds.length} document(s) attached</p>
+                        )}
+                        {r.reviewNotes && (
+                          <div className={`mt-1 text-xs rounded-lg px-2 py-1.5 ${r.status === 'ACCEPTED' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                            <span className="font-semibold">Officer: </span>{r.reviewNotes}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Response form */}
+              {showResponseForm && (
+                <div className="px-4 py-3 space-y-3 bg-white">
+                  <p className="text-xs text-gray-500">
+                    Describe what documents you have uploaded and what issues have been resolved. 
+                    Upload your documents first via the cargo documents section, then submit this response.
+                  </p>
+                  <textarea
+                    rows={4}
+                    value={responseNotes}
+                    onChange={e => setResponseNotes(e.target.value)}
+                    placeholder="e.g. Uploaded valid Bill of Lading (BOL-2024-0012) and Phytosanitary Certificate. The weight discrepancy was due to packing materials — corrected manifest attached."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                  />
+                  <button
+                    onClick={handleSubmitResponse}
+                    disabled={submitMutation.isPending || !responseNotes.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                  >
+                    {submitMutation.isPending
+                      ? <><RefreshCw className="w-4 h-4 animate-spin" /> Submitting…</>
+                      : <><Send className="w-4 h-4" /> Submit Response to Officer</>
+                    }
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Inspection fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
             {fields.map(({ label, value }) => (
               <div key={label} className="border-b border-gray-50 pb-3">
@@ -400,11 +508,8 @@ function InspectionDetailModal({ inspection, onClose }: { inspection: any; onClo
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             Close
           </button>
         </div>

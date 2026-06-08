@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadDocument, type CreateDocumentData } from '../../services/brokerApi';
@@ -89,16 +90,11 @@ const DocumentManagement: React.FC = () => {
   };
 
   if (loading && selectedLoadId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scanning Database...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Archive Header */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
@@ -108,17 +104,17 @@ const DocumentManagement: React.FC = () => {
             <FileText size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Archive</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Operational Records</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Archive</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Operational Records</p>
           </div>
         </div>
 
         <div className="relative z-10 flex items-center gap-12 mr-4">
            <div className="text-center hidden md:block">
-             <p className="text-xl font-black tracking-tighter leading-none text-emerald-400">{documents.length}</p>
-             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Total Records</p>
+             <p className="text-xl font-bold leading-none text-emerald-400">{documents.length}</p>
+             <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">Total Records</p>
            </div>
-           <button onClick={() => setShowUploadModal(true)} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+           <button onClick={() => setShowUploadModal(true)} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
              <Upload size={14} /> Import
            </button>
         </div>
@@ -129,7 +125,7 @@ const DocumentManagement: React.FC = () => {
         <div className="space-y-10">
           <div className="flex flex-col lg:flex-row gap-8 items-end">
             <div className="flex-1 space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Target Load ID</label>
+              <label className="text-sm font-bold text-slate-400 uppercase ml-4">Target Load ID</label>
               <div className="relative">
                 <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
                 <input
@@ -137,17 +133,17 @@ const DocumentManagement: React.FC = () => {
                   placeholder="Scan Load ID..."
                   value={selectedLoadId}
                   onChange={(e) => setSelectedLoadId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-black uppercase tracking-widest text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold uppercase text-slate-900 transition-all focus:bg-white focus:border-primary-600 outline-none"
                 />
               </div>
             </div>
             
             {selectedLoadId && (
               <div className="flex gap-4">
-                <button onClick={() => handleGenerateBOL(selectedLoadId)} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
+                <button onClick={() => handleGenerateBOL(selectedLoadId)} className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
                   <FileText size={16} /> Issue BOL
                 </button>
-                <button onClick={() => { const tripId = prompt('Ref Trip ID:'); if (tripId) handleGeneratePOD(selectedLoadId, tripId); }} className="px-10 py-5 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-3">
+                <button onClick={() => { const tripId = prompt('Ref Trip ID:'); if (tripId) handleGeneratePOD(selectedLoadId, tripId); }} className="px-10 py-5 bg-slate-50 text-slate-900 border border-slate-100 rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 transition-all flex items-center gap-3">
                   <CheckCircle2 size={16} /> Issue POD
                 </button>
               </div>
@@ -158,9 +154,9 @@ const DocumentManagement: React.FC = () => {
             <div className="pt-8 border-t border-slate-50 flex gap-6">
               <div className="flex-1 relative">
                 <Filter size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
-                <input type="text" placeholder="Filter files..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="w-full bg-slate-50/50 rounded-xl pl-14 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
+                <input type="text" placeholder="Filter files..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="w-full bg-slate-50/50 rounded-xl pl-14 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all" />
               </div>
-              <select value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })} className="bg-slate-50/50 rounded-xl px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all cursor-pointer">
+              <select value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })} className="bg-slate-50/50 rounded-xl px-8 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all cursor-pointer">
                 <option value="">All Classes</option>
                 <option value="BILL_OF_LADING">BOL</option>
                 <option value="PROOF_OF_DELIVERY">POD</option>
@@ -176,23 +172,23 @@ const DocumentManagement: React.FC = () => {
       {!selectedLoadId ? (
         <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm opacity-50 border border-slate-50">
           <Zap className="w-16 h-16 text-slate-200 mx-auto" />
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Awaiting load reference to sync archive.</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Awaiting load reference to sync archive.</p>
         </div>
       ) : documents.length === 0 && !loading ? (
         <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm border border-slate-50">
           <X className="w-16 h-16 text-slate-200 mx-auto" />
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">No records found for this reference.</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">No records found for this reference.</p>
         </div>
       ) : documents.length > 0 && (
         <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50/50">
-                <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Record Class</th>
-                <th className="px-10 py-8 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Auth Level</th>
-                <th className="px-10 py-8 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Volume</th>
-                <th className="px-10 py-8 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Log Date</th>
-                <th className="px-10 py-8 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Actions</th>
+                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Record Class</th>
+                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Auth Level</th>
+                <th className="px-10 py-8 text-center text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Volume</th>
+                <th className="px-10 py-8 text-center text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Log Date</th>
+                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -204,22 +200,22 @@ const DocumentManagement: React.FC = () => {
                         {getDocumentTypeIcon(doc.documentType)}
                       </div>
                       <div>
-                        <p className="text-sm font-black text-slate-900 tracking-tighter uppercase italic">{doc.documentType.replace('_', ' ')}</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 max-w-[150px] truncate">{doc.fileName}</p>
+                        <p className="text-sm font-bold text-slate-900 uppercase italic">{doc.documentType.replace('_', ' ')}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase mt-0.5 max-w-[150px] truncate">{doc.fileName}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-10 py-10">
-                    <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 w-fit ${doc.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                    <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase flex items-center gap-2 w-fit ${doc.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${doc.status === 'VERIFIED' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
                       {doc.status.replace('_', ' ')}
                     </span>
                   </td>
                   <td className="px-10 py-10 text-center">
-                    <p className="text-xs font-black text-slate-900">{doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
+                    <p className="text-xs font-bold text-slate-900">{doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
                   </td>
                   <td className="px-10 py-10 text-center">
-                    <p className="text-xs font-black text-slate-900">{new Date(doc.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs font-bold text-slate-900">{new Date(doc.createdAt).toLocaleDateString()}</p>
                   </td>
                   <td className="px-10 py-10">
                     <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
@@ -240,8 +236,8 @@ const DocumentManagement: React.FC = () => {
            <div className="w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-slide-up">
               <div className="p-10 bg-slate-900 text-white flex items-center justify-between">
                  <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">Import Record</h2>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Operational Injection</p>
+                    <h2 className="text-2xl font-bold uppercase italic">Import Record</h2>
+                    <p className="text-sm font-bold text-slate-500 uppercase mt-1">Operational Injection</p>
                  </div>
                  <button onClick={() => setShowUploadModal(false)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-rose-600 transition-all"><X size={20} /></button>
               </div>
@@ -258,28 +254,28 @@ const DocumentManagement: React.FC = () => {
            <div className="w-full max-w-4xl bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col">
               <div className="p-10 bg-slate-900 text-white flex items-center justify-between">
                  <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tighter italic">Record <span className="text-primary-400">Analysis</span></h2>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Authorization Terminal</p>
+                    <h2 className="text-2xl font-bold uppercase italic">Record <span className="text-primary-400">Analysis</span></h2>
+                    <p className="text-sm font-bold text-slate-500 uppercase mt-1">Authorization Terminal</p>
                  </div>
                  <button onClick={() => setSelectedDocument(null)} className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-rose-600 transition-all"><X size={20} /></button>
               </div>
               <div className="p-12 overflow-y-auto space-y-10">
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Class</p>
-                       <p className="text-xs font-black uppercase text-slate-900">{selectedDocument.documentType.replace('_', ' ')}</p>
+                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">Class</p>
+                       <p className="text-xs font-bold uppercase text-slate-900">{selectedDocument.documentType.replace('_', ' ')}</p>
                     </div>
                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Auth Level</p>
-                       <p className="text-xs font-black uppercase text-slate-900">{selectedDocument.status}</p>
+                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">Auth Level</p>
+                       <p className="text-xs font-bold uppercase text-slate-900">{selectedDocument.status}</p>
                     </div>
                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Volume</p>
-                       <p className="text-xs font-black uppercase text-slate-900">{selectedDocument.fileSize ? `${(selectedDocument.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
+                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">Volume</p>
+                       <p className="text-xs font-bold uppercase text-slate-900">{selectedDocument.fileSize ? `${(selectedDocument.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
                     </div>
                     <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Logged</p>
-                       <p className="text-xs font-black uppercase text-slate-900">{new Date(selectedDocument.createdAt).toLocaleDateString()}</p>
+                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">Logged</p>
+                       <p className="text-xs font-bold uppercase text-slate-900">{new Date(selectedDocument.createdAt).toLocaleDateString()}</p>
                     </div>
                  </div>
 
@@ -291,16 +287,16 @@ const DocumentManagement: React.FC = () => {
 
                  <div className="flex items-center justify-between pt-10 border-t border-slate-50">
                     <div className="flex gap-4">
-                       <button onClick={() => setSelectedDocument(null)} className="px-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 transition-all">Close</button>
+                       <button onClick={() => setSelectedDocument(null)} className="px-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-sm font-bold uppercase hover:text-slate-900 transition-all">Close</button>
                     </div>
                     <div className="flex gap-4">
                        {selectedDocument.fileUrl && (
-                          <a href={selectedDocument.fileUrl} target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-slate-100 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-3">
+                          <a href={selectedDocument.fileUrl} target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-slate-100 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-200 transition-all flex items-center gap-3">
                              <Download size={14} /> Download
                           </a>
                        )}
                        {selectedDocument.status !== 'VERIFIED' && (
-                          <button onClick={() => handleVerifyDocument(selectedDocument.id)} className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+                          <button onClick={() => handleVerifyDocument(selectedDocument.id)} className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
                              <FileCheck size={14} /> Authorize
                           </button>
                        )}
@@ -326,12 +322,12 @@ const UploadForm: React.FC<{
     <form onSubmit={async (e) => { e.preventDefault(); setSubmitting(true); try { await onSubmit(formData); } finally { setSubmitting(false); } }} className="space-y-8">
        <div className="grid grid-cols-2 gap-8">
           <div className="space-y-3">
-             <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Reference ID</label>
-             <input type="text" value={formData.loadId} onChange={e => setFormData({...formData, loadId: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white focus:border-primary-600 transition-all" required />
+             <label className="text-sm font-bold text-slate-300 uppercase ml-2">Reference ID</label>
+             <input type="text" value={formData.loadId} onChange={e => setFormData({...formData, loadId: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 border border-slate-100 outline-none focus:bg-white focus:border-primary-600 transition-all" required />
           </div>
           <div className="space-y-3">
-             <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Record Class</label>
-             <select value={formData.documentType} onChange={e => setFormData({...formData, documentType: e.target.value as any})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all cursor-pointer">
+             <label className="text-sm font-bold text-slate-300 uppercase ml-2">Record Class</label>
+             <select value={formData.documentType} onChange={e => setFormData({...formData, documentType: e.target.value as any})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all cursor-pointer">
                 <option value="BILL_OF_LADING">BOL</option>
                 <option value="PROOF_OF_DELIVERY">POD</option>
                 <option value="INVOICE">Invoice</option>
@@ -341,16 +337,16 @@ const UploadForm: React.FC<{
           </div>
        </div>
        <div className="space-y-3">
-          <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Display Name</label>
-          <input type="text" placeholder="e.g. Manifest_01.pdf" value={formData.fileName} onChange={e => setFormData({...formData, fileName: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all" required />
+          <label className="text-sm font-bold text-slate-300 uppercase ml-2">Display Name</label>
+          <input type="text" placeholder="e.g. Manifest_01.pdf" value={formData.fileName} onChange={e => setFormData({...formData, fileName: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all" required />
        </div>
        <div className="space-y-3">
-          <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-2">Source URL</label>
-          <input type="url" placeholder="https://..." value={formData.fileUrl} onChange={e => setFormData({...formData, fileUrl: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all" required />
+          <label className="text-sm font-bold text-slate-300 uppercase ml-2">Source URL</label>
+          <input type="url" placeholder="https://..." value={formData.fileUrl} onChange={e => setFormData({...formData, fileUrl: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 border border-slate-100 outline-none focus:bg-white transition-all" required />
        </div>
        <div className="flex justify-end gap-4 pt-6">
-          <button type="button" onClick={onCancel} className="px-10 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Abort</button>
-          <button type="submit" disabled={submitting} className="px-12 py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-primary-600 transition-all flex items-center gap-3">
+          <button type="button" onClick={onCancel} className="px-10 py-5 text-sm font-bold uppercase text-slate-400 hover:text-slate-900 transition-all">Abort</button>
+          <button type="submit" disabled={submitting} className="px-12 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase shadow-xl hover:bg-primary-600 transition-all flex items-center gap-3">
              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Inject Record
           </button>
        </div>

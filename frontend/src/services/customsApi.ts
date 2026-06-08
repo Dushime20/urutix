@@ -41,4 +41,25 @@ export const customsApi = {
   createCheckpoint: (data: any) => api.post('/customs/checkpoints', data),
 
   getMyInspections: () => api.get('/customs/my-inspections'),
+
+  // ─── Compliance Responses ───────────────────────────────────────────────────
+
+  /** Cargo owner submits notes + document IDs to resolve an ON_HOLD inspection */
+  submitComplianceResponse: (inspectionId: string, data: {
+    notes: string;
+    documentIds?: string[];
+  }) => api.post(`/customs/inspections/${inspectionId}/compliance-response`, data),
+
+  /** Get all compliance responses for an inspection (officer + cargo owner) */
+  getComplianceResponses: (inspectionId: string) =>
+    api.get(`/customs/inspections/${inspectionId}/compliance-responses`),
+
+  /** Officer accepts or rejects a compliance response */
+  reviewComplianceResponse: (inspectionId: string, responseId: string, data: {
+    status: 'ACCEPTED' | 'REJECTED';
+    reviewNotes?: string;
+  }) => api.patch(
+    `/customs/inspections/${inspectionId}/compliance-response/${responseId}/review`,
+    data,
+  ),
 };

@@ -84,14 +84,14 @@ const InsuranceVerification: React.FC = () => {
             <ShieldCheck size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Compliance</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Insurance & Safety Verification</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Compliance</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Insurance & Safety Verification</p>
           </div>
         </div>
 
         <button 
           onClick={() => setShowVerifyModal(true)} 
-          className="relative z-10 px-8 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-900/20 active:scale-95 flex items-center gap-2"
+          className="relative z-10 px-8 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-bold uppercase transition-all shadow-xl shadow-primary-900/20 active:scale-95 flex items-center gap-2"
         >
           <Plus size={14} /> Add Record
         </button>
@@ -100,7 +100,7 @@ const InsuranceVerification: React.FC = () => {
       {/* Terminal Input */}
       <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 items-end">
         <div className="flex-1 space-y-4">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Transporter ID</label>
+          <label className="text-sm font-bold text-slate-400 uppercase ml-4">Transporter ID</label>
           <div className="relative">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
             <input
@@ -108,14 +108,14 @@ const InsuranceVerification: React.FC = () => {
               placeholder="Search Transporter ID (e.g. TRANS_001)..."
               value={selectedTransporter}
               onChange={(e) => setSelectedTransporter(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white focus:shadow-xl transition-all outline-none placeholder:text-slate-300 font-manrope"
+              className="w-full bg-slate-50 border border-slate-50 rounded-2xl pl-16 pr-8 py-5 text-sm font-bold text-slate-900 focus:bg-white focus:shadow-xl transition-all outline-none placeholder:text-slate-300"
             />
           </div>
         </div>
         <button
           onClick={handleCheckCompliance}
           disabled={!selectedTransporter || loading}
-          className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center gap-3 shadow-xl h-[60px]"
+          className="px-10 py-5 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center gap-3 shadow-xl h-[60px]"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <FileCheck size={16} />} Run Safety Scan
         </button>
@@ -131,21 +131,21 @@ const InsuranceVerification: React.FC = () => {
                   {complianceCheck.isCompliant ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                 </div>
                 <div>
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${complianceCheck.isCompliant ? 'text-emerald-700' : 'text-rose-700'}`}>Status</p>
-                  <h3 className={`text-2xl font-black tracking-tighter uppercase ${complianceCheck.isCompliant ? 'text-emerald-900' : 'text-rose-900'}`}>{complianceCheck.isCompliant ? 'Safe to Load' : 'At Risk'}</h3>
+                  <p className={`text-sm font-bold uppercase ${complianceCheck.isCompliant ? 'text-emerald-700' : 'text-rose-700'}`}>Status</p>
+                  <h3 className={`text-2xl font-bold uppercase ${complianceCheck.isCompliant ? 'text-emerald-900' : 'text-rose-900'}`}>{complianceCheck.isCompliant ? 'Safe to Load' : 'At Risk'}</h3>
                 </div>
               </div>
 
               <div className="space-y-6">
                 {complianceCheck.missingTypes.length > 0 && (
                   <div className="p-6 bg-white/50 rounded-2xl border border-rose-200">
-                    <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Missing Records</p>
+                    <p className="text-xs font-bold text-rose-400 uppercase mb-1">Missing Records</p>
                     <p className="text-xs font-bold text-rose-900 uppercase tracking-tight">{complianceCheck.missingTypes.join(', ')}</p>
                   </div>
                 )}
                 {complianceCheck.expiredTypes.length > 0 && (
                   <div className="p-6 bg-white/50 rounded-2xl border border-rose-200">
-                    <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Expired Documents</p>
+                    <p className="text-xs font-bold text-rose-400 uppercase mb-1">Expired Documents</p>
                     <p className="text-xs font-bold text-rose-900 uppercase tracking-tight">{complianceCheck.expiredTypes.join(', ')}</p>
                   </div>
                 )}
@@ -162,7 +162,7 @@ const InsuranceVerification: React.FC = () => {
               <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-200">
                 <Activity size={32} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select a Transporter to Start</p>
+              <p className="text-sm font-bold text-slate-400 uppercase">Select a Transporter to Start</p>
             </div>
           )}
 
@@ -170,12 +170,12 @@ const InsuranceVerification: React.FC = () => {
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
               <Shield size={120} />
             </div>
-            <h4 className="text-xl font-black tracking-tighter uppercase mb-1">Compliance Logs</h4>
-            <p className="text-[9px] font-black text-primary-400 uppercase tracking-widest mb-8">Audit History</p>
+            <h4 className="text-xl font-bold uppercase mb-1">Compliance Logs</h4>
+            <p className="text-xs font-bold text-primary-400 uppercase mb-8">Audit History</p>
             <div className="space-y-6">
               {[1, 2, 3].map(i => (
                 <div key={i} className="flex items-center gap-4 text-xs font-bold text-slate-400 border-l border-white/10 pl-6 py-1">
-                  <span className="text-[9px] font-black text-slate-500">Node_{100+i}</span>
+                  <span className="text-xs font-bold text-slate-500">Node_{100+i}</span>
                   <span className="text-slate-200">System Verification Check</span>
                 </div>
               ))}
@@ -186,8 +186,8 @@ const InsuranceVerification: React.FC = () => {
         <div className="lg:col-span-2 space-y-8 animate-slide-up">
           <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
             <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Verified Records</h3>
-              <div className="px-4 py-2 bg-slate-50 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <h3 className="text-sm font-bold text-slate-900 uppercase">Verified Records</h3>
+              <div className="px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-400 uppercase">
                 Nodes: {verifications.length}
               </div>
             </div>
@@ -195,22 +195,22 @@ const InsuranceVerification: React.FC = () => {
             {loading && !complianceCheck ? (
               <div className="py-32 text-center space-y-6">
                 <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto" />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accessing Verification Records...</p>
+                <p className="text-sm font-bold text-slate-400 uppercase">Accessing Verification Records...</p>
               </div>
             ) : verifications.length === 0 ? (
               <div className="py-48 text-center space-y-8 opacity-50">
                 <Shield className="w-24 h-24 text-slate-100 mx-auto" />
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No verified records found for this Transporter.</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">No verified records found for this Transporter.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-slate-50/50">
-                      <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Record Type</th>
-                      <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Status</th>
-                      <th className="px-8 py-6 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Value</th>
-                      <th className="px-8 py-6 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">Expiry</th>
+                      <th className="px-8 py-6 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Record Type</th>
+                      <th className="px-8 py-6 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Status</th>
+                      <th className="px-8 py-6 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Value</th>
+                      <th className="px-8 py-6 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50">Expiry</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -222,13 +222,13 @@ const InsuranceVerification: React.FC = () => {
                               <Shield size={16} />
                             </div>
                             <div>
-                              <p className="text-sm font-black text-slate-900 tracking-tight uppercase italic">{v.verificationType.replace('_', ' ')}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Authorized Node</p>
+                              <p className="text-sm font-bold text-slate-900 tracking-tight uppercase italic">{v.verificationType.replace('_', ' ')}</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">Authorized Node</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-8 py-10">
-                          <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusPrimeStyle(v.status)}`}>
+                          <span className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border ${getStatusPrimeStyle(v.status)}`}>
                             {v.status}
                           </span>
                         </td>
@@ -236,7 +236,7 @@ const InsuranceVerification: React.FC = () => {
                           {v.policyNumber || v.licenseNumber || 'N/A'}
                         </td>
                         <td className="px-8 py-10 text-right">
-                          <p className="text-xs font-black text-slate-900 uppercase tracking-widest">{v.expiryDate ? new Date(v.expiryDate).toLocaleDateString() : 'Infinite'}</p>
+                          <p className="text-xs font-bold text-slate-900 uppercase">{v.expiryDate ? new Date(v.expiryDate).toLocaleDateString() : 'Infinite'}</p>
                         </td>
                       </tr>
                     ))}
@@ -254,8 +254,8 @@ const InsuranceVerification: React.FC = () => {
           <div className="relative w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
             <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl">
               <div className="space-y-2">
-                <h2 className="text-3xl font-black tracking-tighter uppercase italic">Verify <span className="text-white">Compliance</span></h2>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest font-manrope">Update Transporter security & legal status</p>
+                <h2 className="text-3xl font-bold uppercase italic">Verify <span className="text-white">Compliance</span></h2>
+                <p className="text-slate-400 text-sm font-bold uppercase">Update Transporter security & legal status</p>
               </div>
               <button onClick={() => setShowVerifyModal(false)} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-slate-900 transition-all">
                 <X size={24} />
@@ -298,7 +298,7 @@ const VerifyInsuranceModal: React.FC<{
     <form onSubmit={handleSubmit} className="p-12 md:p-16 overflow-y-auto space-y-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className="space-y-4">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Transporter ID</label>
+          <label className="text-sm font-bold text-slate-400 uppercase ml-4">Transporter ID</label>
           <input
             type="text"
             required
@@ -309,7 +309,7 @@ const VerifyInsuranceModal: React.FC<{
           />
         </div>
         <div className="space-y-4">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Record Category</label>
+          <label className="text-sm font-bold text-slate-400 uppercase ml-4">Record Category</label>
           <select
             required
             value={formData.verificationType}
@@ -325,7 +325,7 @@ const VerifyInsuranceModal: React.FC<{
       </div>
 
       <div className="space-y-4">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Reference Number (Policy/License)</label>
+        <label className="text-sm font-bold text-slate-400 uppercase ml-4">Reference Number (Policy/License)</label>
         <input
           type="text"
           required
@@ -336,20 +336,20 @@ const VerifyInsuranceModal: React.FC<{
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 font-manrope">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className="space-y-4">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Valid From</label>
+          <label className="text-sm font-bold text-slate-400 uppercase ml-4">Valid From</label>
           <input type="date" value={formData.effectiveDate} onChange={(e) => setFormData({ ...formData, effectiveDate: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
         </div>
         <div className="space-y-4">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Expiry Date</label>
+          <label className="text-sm font-bold text-slate-400 uppercase ml-4">Expiry Date</label>
           <input type="date" value={formData.expiryDate} onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-10 py-6 text-sm font-bold text-slate-900 outline-none" />
         </div>
       </div>
 
       <div className="flex justify-end gap-6 pt-12 border-t border-slate-50">
-        <button type="button" onClick={onClose} className="px-12 py-6 text-[10px] font-black uppercase text-slate-400 hover:text-slate-900 transition-colors">Cancel</button>
-        <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
+        <button type="button" onClick={onClose} className="px-12 py-6 text-sm font-bold uppercase text-slate-400 hover:text-slate-900 transition-colors">Cancel</button>
+        <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4">
           {submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />} Save Verification
         </button>
       </div>

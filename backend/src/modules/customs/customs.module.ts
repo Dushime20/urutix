@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomsInspection } from '../../entities/customs-inspection.entity';
 import { CustomsCheckpoint } from '../../entities/customs-checkpoint.entity';
+import { CustomsComplianceResponse } from '../../entities/customs-compliance-response.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Document } from '../../entities/document.entity';
@@ -15,6 +16,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     TypeOrmModule.forFeature([
       CustomsInspection,
       CustomsCheckpoint,
+      CustomsComplianceResponse,
       Trip,
       Truck,
       Document,

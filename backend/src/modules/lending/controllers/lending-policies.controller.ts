@@ -225,6 +225,24 @@ export class LendingPoliciesController {
     return this.lendingPoliciesService.deleteLoanLimitPolicy(lenderId, policyId);
   }
 
+  @Patch(':lenderId/loan-limits/:policyId/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({ summary: 'Toggle loan limit policy status' })
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean' } } } })
+  async toggleLoanLimitPolicyStatus(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Param('policyId', ParseUUIDPipe) policyId: string,
+    @Body() body: { isActive: boolean },
+    @Request() req: any,
+  ) {
+    return this.lendingPoliciesService.toggleLoanLimitPolicyStatus(
+      lenderId,
+      policyId,
+      body.isActive,
+      req.user?.userId || req.user?.id,
+    );
+  }
+
   // ===== ELIGIBILITY CRITERIA POLICIES =====
 
   @Post(':lenderId/eligibility')
@@ -290,6 +308,24 @@ export class LendingPoliciesController {
     @Param('policyId', ParseUUIDPipe) policyId: string,
   ) {
     return this.lendingPoliciesService.deleteEligibilityPolicy(lenderId, policyId);
+  }
+
+  @Patch(':lenderId/eligibility/:policyId/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({ summary: 'Toggle eligibility criteria policy status' })
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean' } } } })
+  async toggleEligibilityPolicyStatus(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Param('policyId', ParseUUIDPipe) policyId: string,
+    @Body() body: { isActive: boolean },
+    @Request() req: any,
+  ) {
+    return this.lendingPoliciesService.toggleEligibilityPolicyStatus(
+      lenderId,
+      policyId,
+      body.isActive,
+      req.user?.userId || req.user?.id,
+    );
   }
 
   // ===== RISK ASSESSMENT POLICIES =====
@@ -359,6 +395,24 @@ export class LendingPoliciesController {
     return this.lendingPoliciesService.deleteRiskAssessmentPolicy(lenderId, policyId);
   }
 
+  @Patch(':lenderId/risk-assessment/:policyId/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({ summary: 'Toggle risk assessment policy status' })
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean' } } } })
+  async toggleRiskAssessmentPolicyStatus(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Param('policyId', ParseUUIDPipe) policyId: string,
+    @Body() body: { isActive: boolean },
+    @Request() req: any,
+  ) {
+    return this.lendingPoliciesService.toggleRiskAssessmentPolicyStatus(
+      lenderId,
+      policyId,
+      body.isActive,
+      req.user?.userId || req.user?.id,
+    );
+  }
+
   // ===== REPAYMENT POLICIES =====
 
   @Post(':lenderId/repayment')
@@ -426,6 +480,24 @@ export class LendingPoliciesController {
     return this.lendingPoliciesService.deleteRepaymentPolicy(lenderId, policyId);
   }
 
+  @Patch(':lenderId/repayment/:policyId/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({ summary: 'Toggle repayment policy status' })
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean' } } } })
+  async toggleRepaymentPolicyStatus(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Param('policyId', ParseUUIDPipe) policyId: string,
+    @Body() body: { isActive: boolean },
+    @Request() req: any,
+  ) {
+    return this.lendingPoliciesService.toggleRepaymentPolicyStatus(
+      lenderId,
+      policyId,
+      body.isActive,
+      req.user?.userId || req.user?.id,
+    );
+  }
+
   // ===== CARGO TYPE POLICIES =====
 
   @Post(':lenderId/cargo-types')
@@ -491,6 +563,24 @@ export class LendingPoliciesController {
     @Param('policyId', ParseUUIDPipe) policyId: string,
   ) {
     return this.lendingPoliciesService.deleteCargoTypePolicy(lenderId, policyId);
+  }
+
+  @Patch(':lenderId/cargo-types/:policyId/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.LENDER)
+  @ApiOperation({ summary: 'Toggle cargo type policy status' })
+  @ApiBody({ schema: { type: 'object', properties: { isActive: { type: 'boolean' } } } })
+  async toggleCargoTypePolicyStatus(
+    @Param('lenderId', ParseUUIDPipe) lenderId: string,
+    @Param('policyId', ParseUUIDPipe) policyId: string,
+    @Body() body: { isActive: boolean },
+    @Request() req: any,
+  ) {
+    return this.lendingPoliciesService.toggleCargoTypePolicyStatus(
+      lenderId,
+      policyId,
+      body.isActive,
+      req.user?.userId || req.user?.id,
+    );
   }
 
   // ===== SYSTEM CONFIG POLICIES =====

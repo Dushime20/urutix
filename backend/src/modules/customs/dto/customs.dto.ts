@@ -2,6 +2,7 @@ import { IsString, IsOptional, IsEnum, IsBoolean, IsNumber, IsArray, IsUUID } fr
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomsInspectionStatus, CustomsRiskLevel, InspectionChannel, ExamType, HoldType } from '../../../entities/customs-inspection.entity';
 import { CheckpointType } from '../../../entities/customs-checkpoint.entity';
+import { ComplianceResponseStatus } from '../../../entities/customs-compliance-response.entity';
 
 export class CreateInspectionDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() tripId?: string;
@@ -83,4 +84,32 @@ export class CreateCheckpointDto {
   @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() latitude?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() longitude?: number;
+}
+
+// ─── Compliance Response DTOs ─────────────────────────────────────────────────
+
+export class SubmitComplianceResponseDto {
+  @ApiProperty({ description: 'Explanation of what was resolved / documents provided' })
+  @IsString()
+  notes: string;
+
+  @ApiPropertyOptional({
+    description: 'IDs of documents already uploaded via /documents endpoint',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  documentIds?: string[];
+}
+
+export class ReviewComplianceResponseDto {
+  @ApiProperty({ enum: ComplianceResponseStatus, description: 'ACCEPTED or REJECTED' })
+  @IsEnum(ComplianceResponseStatus)
+  status: ComplianceResponseStatus;
+
+  @ApiPropertyOptional({ description: 'Officer review notes / reason for rejection' })
+  @IsOptional()
+  @IsString()
+  reviewNotes?: string;
 }

@@ -173,10 +173,10 @@ export class UrutiLendingIntegrationService {
   /**
    * Create axios instance with API key authentication
    */
-  private createAxiosInstance(config: UrutiLendingConfig): AxiosInstance {
+  private createAxiosInstance(config: UrutiLendingConfig, timeoutMs = 5000): AxiosInstance {
     return axios.create({
       baseURL: `${config.baseUrl}/api`,
-      timeout: 30000,
+      timeout: timeoutMs,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': config.apiKey,
@@ -475,7 +475,8 @@ export class UrutiLendingIntegrationService {
   async getLoanOfficers(lenderId: string): Promise<any[]> {
     try {
       const config = await this.getLenderConfig(lenderId);
-      const axiosInstance = this.createAxiosInstance(config);
+      // Use a tight 3-second timeout — this is called on every lender list request
+      const axiosInstance = this.createAxiosInstance(config, 3000);
 
       this.logger.log(`Fetching loan officers from: ${config.baseUrl}/integration/loan-officers`);
       

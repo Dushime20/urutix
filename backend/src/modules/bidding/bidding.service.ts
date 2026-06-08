@@ -1061,8 +1061,8 @@ export class BiddingService {
       .leftJoinAndSelect('cargoOwner.profile', 'profile');
 
     if ((role === UserRole.BROKER || role === 'BROKER') && userId) {
-      // Brokers see auctions in their tenant OR auctions for loads they manage
-      queryBuilder.where('(load.tenantId = :tenantId OR load.brokerId = :userId)', { tenantId, userId });
+      // Brokers only see auctions for loads they are assigned to
+      queryBuilder.where('load.brokerId = :userId', { userId });
     } else if ((role === UserRole.CARGO_OWNER || role === 'CARGO_OWNER') && userId) {
       // Cargo owners only see auctions for their own loads
       queryBuilder.where('load.tenantId = :tenantId AND load.cargoOwnerId = :userId', { tenantId, userId });
@@ -1403,6 +1403,20 @@ export class BiddingService {
         .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
         .where('bid.truckOwnerId = :userId', { userId })
         .andWhere('load.tenantId = :tenantId', { tenantId })
+        .orderBy('bid.createdAt', 'DESC')
+        .getMany();
+    }
+
+    // For brokers, return bids on loads they are assigned to
+    if (role === UserRole.BROKER || role === 'BROKER') {
+      return this.bidRepository
+        .createQueryBuilder('bid')
+        .leftJoinAndSelect('bid.load', 'load')
+        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
+        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
+        .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
+        .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
+        .where('load.brokerId = :userId', { userId })
         .orderBy('bid.createdAt', 'DESC')
         .getMany();
     }

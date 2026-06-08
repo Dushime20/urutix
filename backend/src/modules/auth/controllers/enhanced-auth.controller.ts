@@ -825,6 +825,54 @@ export class EnhancedAuthController {
     }
   }
 
+  @Post('broker/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(EnhancedRateLimitGuard)
+  @ApiOperation({
+    summary: 'Set up broker password',
+    description: 'Set password for a broker account using the token received via email',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid token or validation error' })
+  async setupBrokerPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Broker password setup attempt from IP: ${clientIp}`);
+      const result = await this.authService.setupBrokerPassword(setupPasswordDto, clientIp);
+      this.logger.log(`Broker password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Broker password setup failed from IP: ${this.getClientIp(req)}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @Post('agent/setup-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(EnhancedRateLimitGuard)
+  @ApiOperation({
+    summary: 'Set up agent password',
+    description: 'Set password for an agent account using the token received via email',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid token or validation error' })
+  async setupAgentPassword(
+    @Body() setupPasswordDto: SetupDriverPasswordDto,
+    @Req() req: Request,
+  ): Promise<SetupDriverPasswordResponseDto> {
+    try {
+      const clientIp = this.getClientIp(req);
+      this.logger.log(`Agent password setup attempt from IP: ${clientIp}`);
+      const result = await this.authService.setupAgentPassword(setupPasswordDto, clientIp);
+      this.logger.log(`Agent password setup completed from IP: ${clientIp}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Agent password setup failed from IP: ${this.getClientIp(req)}: ${error.message}`);
+      throw error;
+    }
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')

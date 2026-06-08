@@ -1,3 +1,4 @@
+import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerStatistics } from '../../services/brokerApi';
@@ -77,16 +78,11 @@ const BrokerAnalytics: React.FC = () => {
   ];
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 border-t-4 border-primary-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Insights...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24 font-manrope">
+    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Insights Header */}
       <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
@@ -96,15 +92,15 @@ const BrokerAnalytics: React.FC = () => {
             <BarChart3 size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight leading-none mb-1">Insights</h1>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Global Metrics</p>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Insights</h1>
+            <p className="text-slate-400 text-sm font-bold uppercase">Global Metrics</p>
           </div>
         </div>
 
         <div className="relative z-10 flex items-center gap-6 mr-4">
            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-6 py-3">
              <Calendar size={14} className="text-primary-400" />
-             <select value={timeRange} onChange={(e) => setTimeRange(e.target.value as any)} className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none cursor-pointer pr-4 appearance-none">
+             <select value={timeRange} onChange={(e) => setTimeRange(e.target.value as any)} className="bg-transparent border-none text-sm font-bold uppercase text-white outline-none cursor-pointer pr-4 appearance-none">
                 <option value="7d" className="bg-slate-900 text-white">7 Days</option>
                 <option value="30d" className="bg-slate-900 text-white" selected>30 Days</option>
                 <option value="90d" className="bg-slate-900 text-white">90 Days</option>
@@ -127,8 +123,8 @@ const BrokerAnalytics: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all mb-8 shadow-sm">
                 <stat.icon size={20} />
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{stat.label}</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</h3>
+              <p className="text-sm font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
+              <h3 className="text-3xl font-bold text-slate-900">{stat.value}</h3>
             </div>
           </div>
         ))}
@@ -137,7 +133,7 @@ const BrokerAnalytics: React.FC = () => {
       {/* Analysis Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+          <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
             <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Revenue Flow
           </h3>
           <div className="h-[300px] w-full">
@@ -154,7 +150,7 @@ const BrokerAnalytics: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+          <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
             <div className="w-2 h-2 bg-slate-900 rounded-full"></div> Distribution
           </h3>
           <div className="h-[300px] w-full relative">
@@ -172,7 +168,7 @@ const BrokerAnalytics: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+          <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Volume
           </h3>
           <div className="h-[300px] w-full">
@@ -188,7 +184,7 @@ const BrokerAnalytics: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm space-y-10">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+          <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3">
             <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> Success
           </h3>
           <div className="h-[300px] w-full">
@@ -206,7 +202,7 @@ const BrokerAnalytics: React.FC = () => {
 
       {/* Summary */}
       <div className="bg-white rounded-[3.5rem] border border-slate-100 p-12 shadow-sm space-y-12">
-        <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Strategic Summary</h2>
+        <h2 className="text-2xl font-bold text-slate-900 uppercase italic">Strategic Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {[
             { label: 'Yield per Load', value: `$${((statistics?.totalCommissions || 0) / (statistics?.totalLoads || 1)).toFixed(2)}` },
@@ -214,8 +210,8 @@ const BrokerAnalytics: React.FC = () => {
             { label: 'Authorized Earnings', value: `$${statistics?.totalApproved.toLocaleString() || '0.00'}` },
           ].map((item, index) => (
             <div key={index} className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:bg-white transition-all shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{item.label}</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tighter italic">{item.value}</p>
+              <p className="text-sm font-bold text-slate-400 uppercase mb-4">{item.label}</p>
+              <p className="text-3xl font-bold text-slate-900 italic">{item.value}</p>
             </div>
           ))}
         </div>

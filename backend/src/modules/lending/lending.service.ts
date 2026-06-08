@@ -688,6 +688,67 @@ export class LendingService {
       this.logger.log(`No lender specified, will attempt automatic assignment`);
     }
 
+    // ── RULE 1: One loan per trip (invoice/trip financing standard) ───────
+    // A trip can only be financed once. If an active loan already exists
+    // for this trip_id, block the new request immediately.
+    if (createLoanDto.trip_id) {
+      const activeTripLoan = await this.loanRequestRepository.findOne({
+        where: {
+          trip_id: createLoanDto.trip_id,
+          status: In([
+            LoanRequestStatus.PENDING,
+            LoanRequestStatus.APPROVED,
+            LoanRequestStatus.DISBURSED,
+          ]),
+        },
+      });
+      if (activeTripLoan) {
+        throw new BadRequestException(
+          `Trip already has an active loan ` +
+          `(${activeTripLoan.loan_number || activeTripLoan.id.slice(0, 8)}). ` +
+          `A trip can only be financed once.`,
+        );
+      }
+    }
+
+    // ── RULE 2: Block defaulted borrowers (Basel II origination standard) ─
+    // If the borrower has any loan in DEFAULTED status or with days_past_due
+    // exceeding the delinquency threshold, they cannot open new credit until
+    // the outstanding obligation is resolved.
+    const defaultedLoan = await this.loanRequestRepository.findOne({
+      where: {
+        tenant_id: createLoanDto.tenant_id,
+        created_by: createdBy,
+        status: LoanRequestStatus.DEFAULTED,
+      },
+    });
+    if (defaultedLoan) {
+      throw new BadRequestException(
+        `Your account has a defaulted loan ` +
+        `(${defaultedLoan.loan_number || defaultedLoan.id.slice(0, 8)}). ` +
+        `Please resolve your outstanding balance before requesting a new loan.`,
+      );
+    }
+
+    // Also block if any active loan is severely overdue (days_past_due >= 90)
+    const severelyOverdueLoan = await this.loanRequestRepository
+      .createQueryBuilder('loan')
+      .where('loan.tenant_id = :tenantId', { tenantId: createLoanDto.tenant_id })
+      .andWhere('loan.created_by = :createdBy', { createdBy })
+      .andWhere('loan.status IN (:...activeStatuses)', {
+        activeStatuses: [LoanRequestStatus.APPROVED, LoanRequestStatus.DISBURSED],
+      })
+      .andWhere('loan.days_past_due >= :threshold', { threshold: 90 })
+      .getOne();
+    if (severelyOverdueLoan) {
+      throw new BadRequestException(
+        `Your account has a loan overdue by ${severelyOverdueLoan.days_past_due} days ` +
+        `(${severelyOverdueLoan.loan_number || severelyOverdueLoan.id.slice(0, 8)}). ` +
+        `Please clear your overdue balance before requesting new financing.`,
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const idempotencyKey = this.generateIdempotencyKey(createLoanDto);
 
     // Check for existing loan request with enhanced idempotency
