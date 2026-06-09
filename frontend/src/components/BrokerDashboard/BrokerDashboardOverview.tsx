@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Package, TrendingUp, AlertTriangle, CheckCircle, Navigation,
-  DollarSign, FileText, Scale, ArrowUpRight, ArrowDownRight,
-  Clock, ShieldCheck, Banknote, BarChart2, Activity,
+  TrendingUp, CheckCircle,
+  DollarSign, FileText, Scale,
+  Clock, ShieldCheck, Banknote, BarChart2, Activity, Package, Navigation,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { brokerAPI } from '../../services/brokerApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -23,34 +24,6 @@ const pct = (a: number, b: number) =>
   b === 0 ? 0 : Math.round(((a - b) / b) * 100);
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
-
-// ─── stat card ────────────────────────────────────────────────────────────────
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  trend?: number; // positive = up, negative = down, undefined = neutral
-}
-const StatCard: React.FC<StatCardProps> = ({ label, value, sub, icon, iconBg, trend }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-3">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-2xl font-black text-gray-900 dark:text-white leading-none">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
-      </div>
-      <div className={`p-3 rounded-xl ${iconBg}`}>{icon}</div>
-    </div>
-    {trend !== undefined && (
-      <div className={`flex items-center gap-1 text-xs font-bold ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-        {trend >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-        {Math.abs(trend)}% vs last month
-      </div>
-    )}
-  </div>
-);
 
 // ─── main component ────────────────────────────────────────────────────────────
 interface BrokerDashboardOverviewProps {
@@ -170,47 +143,54 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
       {/* ── Row 1: 6 KPI cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard
-          label="Assigned Cargo"
+          title="Assigned Cargo"
           value={totalLoads}
-          sub={`${stats.inTransit} in transit`}
-          icon={<Package className="w-5 h-5 text-blue-600" />}
-          iconBg="bg-blue-50 dark:bg-blue-900/20"
+          subtitle={`${stats.inTransit} in transit`}
+          icon={<Package className="w-5 h-5" />}
+          color="primary"
+          variant="premium"
         />
         <StatCard
-          label="Total Earned"
+          title="Total Earned"
           value={fmt(totalEarned)}
-          sub="commissions paid"
-          icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
-          iconBg="bg-emerald-50 dark:bg-emerald-900/20"
-          trend={loading ? undefined : pct(totalEarned, totalEarned * 0.85)}
+          subtitle="commissions paid"
+          icon={<DollarSign className="w-5 h-5" />}
+          color="success"
+          variant="premium"
+          trend={loading ? undefined : `${Math.abs(pct(totalEarned, totalEarned * 0.85))}%`}
+          trendDirection={pct(totalEarned, totalEarned * 0.85) >= 0 ? 'up' : 'down'}
         />
         <StatCard
-          label="Pending Income"
+          title="Pending Income"
           value={fmt(totalPending + totalApproved)}
-          sub={`avg rate ${avgCommRate.toFixed(1)}%`}
-          icon={<Clock className="w-5 h-5 text-amber-600" />}
-          iconBg="bg-amber-50 dark:bg-amber-900/20"
+          subtitle={`avg rate ${avgCommRate.toFixed(1)}%`}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          variant="premium"
         />
         <StatCard
-          label="Active Contracts"
+          title="Active Contracts"
           value={activeContracts}
-          sub={`${pendingContracts} pending sig.`}
-          icon={<FileText className="w-5 h-5 text-violet-600" />}
-          iconBg="bg-violet-50 dark:bg-violet-900/20"
+          subtitle={`${pendingContracts} pending sig.`}
+          icon={<FileText className="w-5 h-5" />}
+          color="purple"
+          variant="premium"
         />
         <StatCard
-          label="Open Disputes"
+          title="Open Disputes"
           value={openDisputes}
-          sub={`${resolvedDisputes} resolved`}
-          icon={<Scale className="w-5 h-5 text-red-500" />}
-          iconBg="bg-red-50 dark:bg-red-900/20"
+          subtitle={`${resolvedDisputes} resolved`}
+          icon={<Scale className="w-5 h-5" />}
+          color="error"
+          variant="premium"
         />
         <StatCard
-          label="Escrow Held"
+          title="Escrow Held"
           value={fmt(escrowFunded)}
-          sub={`${fmt(escrowReleased)} released`}
-          icon={<ShieldCheck className="w-5 h-5 text-cyan-600" />}
-          iconBg="bg-cyan-50 dark:bg-cyan-900/20"
+          subtitle={`${fmt(escrowReleased)} released`}
+          icon={<ShieldCheck className="w-5 h-5" />}
+          color="info"
+          variant="premium"
         />
       </div>
 

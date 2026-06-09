@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardHeader from '../../components/Layout/DashboardHeader';
 import DashboardFooter from '../../components/Layout/DashboardFooter';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import {
   Package,
   DollarSign,
   TrendingUp,
   Clock,
-  ArrowRight,
   Shield,
   FileText,
   BarChart3,
@@ -76,22 +76,43 @@ const SimpleBrokerDashboard: React.FC = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-           {[
-             { label: 'Net Revenue', value: '$12,450', trend: '↑ 15%', icon: DollarSign },
-             { label: 'Transit', value: '8', trend: 'ACTIVE', icon: Package },
-             { label: 'Pipeline', value: '$3,200', trend: 'RESERVE', icon: Clock },
-             { label: 'Win Rate', value: '94%', trend: '94.2%', icon: TrendingUp }
-           ].map((stat, i) => (
-             <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
-                <div className="relative z-10">
-                   <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all mb-8 shadow-sm dark:bg-slate-800/50"><stat.icon size={20} /></div>
-                   <p className="text-sm font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
-                   <h3 className="text-3xl font-bold text-slate-900 italic dark:text-white">{stat.value}</h3>
-                   <span className="text-xs font-bold text-primary-500 uppercase mt-2 block">{stat.trend}</span>
-                </div>
-             </div>
-           ))}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard
+            title="Net Revenue"
+            value="$12,450"
+            subtitle="commissions earned"
+            icon={<DollarSign className="w-5 h-5" />}
+            color="success"
+            variant="premium"
+            trend="15%"
+            trendDirection="up"
+          />
+          <StatCard
+            title="In Transit"
+            value="8"
+            subtitle="active shipments"
+            icon={<Package className="w-5 h-5" />}
+            color="primary"
+            variant="premium"
+          />
+          <StatCard
+            title="Pipeline"
+            value="$3,200"
+            subtitle="reserved commission"
+            icon={<Clock className="w-5 h-5" />}
+            color="warning"
+            variant="premium"
+          />
+          <StatCard
+            title="Win Rate"
+            value="94%"
+            subtitle="last 30 days"
+            icon={<TrendingUp className="w-5 h-5" />}
+            color="accent"
+            variant="premium"
+            trend="94.2%"
+            trendDirection="up"
+          />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
