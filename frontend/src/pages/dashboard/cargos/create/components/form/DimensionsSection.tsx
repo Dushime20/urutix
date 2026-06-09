@@ -57,10 +57,12 @@ export default function DimensionsSection({
               value={formData.length || ""}
               onChange={(e) => handleFieldChange("length", e.target.value)}
               min="0"
+              max="999.99"
               step="0.01"
-              placeholder="0.00"
+              placeholder="e.g. 12.00"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 m</p>
           </div>
 
           <div className="space-y-2">
@@ -74,10 +76,12 @@ export default function DimensionsSection({
               value={formData.width || ""}
               onChange={(e) => handleFieldChange("width", e.target.value)}
               min="0"
+              max="999.99"
               step="0.01"
-              placeholder="0.00"
+              placeholder="e.g. 2.40"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 m</p>
           </div>
 
           <div className="space-y-2">
@@ -91,10 +95,12 @@ export default function DimensionsSection({
               value={formData.height || ""}
               onChange={(e) => handleFieldChange("height", e.target.value)}
               min="0"
+              max="999.99"
               step="0.01"
-              placeholder="0.00"
+              placeholder="e.g. 2.60"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 m</p>
           </div>
         </div>
       </div>
@@ -149,10 +155,12 @@ export default function DimensionsSection({
                 handleFieldChange("stackableHeight", e.target.value)
               }
               min="0"
+              max="999.99"
               step="0.01"
-              placeholder="0.00"
+              placeholder="e.g. 1.20"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 m</p>
           </div>
 
           <div className="space-y-2">
@@ -171,9 +179,12 @@ export default function DimensionsSection({
                 handleFieldChange("numberOfPieces", e.target.value)
               }
               min="0"
+              max="10000"
+              step="1"
               placeholder="0"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 10,000 pieces</p>
           </div>
 
           <div className="space-y-2">
@@ -192,9 +203,12 @@ export default function DimensionsSection({
                 handleFieldChange("numberOfPallets", e.target.value)
               }
               min="0"
+              max="1000"
+              step="1"
               placeholder="0"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 1,000 pallets</p>
           </div>
         </div>
       </div>

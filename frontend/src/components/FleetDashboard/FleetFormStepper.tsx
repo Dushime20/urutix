@@ -599,6 +599,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       hasAluminum: 'Aluminum',
       hasCarbonSteel: 'Carbon Steel',
       hasFiberglass: 'Fiberglass',
+      hasPlastic: 'Plastic',
+      hasComposite: 'Composite',
       hasInsulated: 'Insulated',
     };
 

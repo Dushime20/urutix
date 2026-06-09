@@ -73,10 +73,12 @@ export default function LoadingSection({
                 handleFieldChange("loadingTimeEstimate", e.target.value)
               }
               min="0"
+              max="999.99"
               step="0.5"
-              placeholder="2.0"
+              placeholder="e.g. 2.0"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-indigo-500/20 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 hrs</p>
           </div>
 
           <div className="space-y-2">
@@ -95,10 +97,12 @@ export default function LoadingSection({
                 handleFieldChange("unloadingTimeEstimate", e.target.value)
               }
               min="0"
+              max="999.99"
               step="0.5"
-              placeholder="1.5"
+              placeholder="e.g. 1.5"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-indigo-500/20 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 hrs</p>
           </div>
         </div>
       </div>

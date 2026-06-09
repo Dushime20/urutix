@@ -52,10 +52,12 @@ export default function RouteSection({
               handleFieldChange("maxClearanceHeight", e.target.value)
             }
             min="0"
+            max="999999"
             step="0.01"
-            placeholder="0.00"
+            placeholder="4.50"
             className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
           />
+          <p className="text-xs text-slate-500">Enter height in meters (e.g. 4.5 for 4.5m). Max: 999,999 m.</p>
         </div>
       </div>
 

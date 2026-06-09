@@ -307,6 +307,52 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Guard: only submit when on the review step — pressing Enter on earlier steps should not fire the API
+    if (currentTab !== 'review') {
+      // Advance to next step instead
+      const tabs = ['basic', 'location', 'special', 'review'];
+      const currentIndex = tabs.indexOf(currentTab);
+      if (currentIndex < tabs.length - 1) {
+        setCurrentTab(tabs[currentIndex + 1] as any);
+      }
+      return;
+    }
+
+    // ── Validation ──────────────────────────────────────────────────────────
+    const errors: string[] = [];
+
+    if (!formData.title.trim()) errors.push('Cargo title is required.');
+    if (!formData.cargoType) errors.push('Cargo type is required.');
+
+    const weight = Number(formData.weight);
+    if (!weight || weight <= 0) errors.push('Weight must be greater than 0.');
+    if (weight > 99999999.99) errors.push('Weight is too large (max 99,999,999 kg).');
+
+    const value = Number(formData.estimatedValue);
+    if (!value || value <= 0) errors.push('Estimated value must be greater than 0.');
+
+    const { length, width, height } = formData.dimensions;
+    if (length > 99999999.99 || width > 99999999.99 || height > 99999999.99) {
+      errors.push('Dimension values are too large (max 99,999,999).');
+    }
+
+    if (!formData.pickupLocation.address.trim()) errors.push('Pickup address is required.');
+    if (!formData.pickupLocation.city.trim()) errors.push('Pickup city is required.');
+    if (!formData.deliveryLocation.address.trim()) errors.push('Delivery address is required.');
+    if (!formData.deliveryLocation.city.trim()) errors.push('Delivery city is required.');
+
+    if (!formData.pickupDate) errors.push('Pickup date is required.');
+    if (!formData.deliveryDate) errors.push('Delivery date is required.');
+    if (formData.pickupDate && formData.deliveryDate && formData.deliveryDate < formData.pickupDate) {
+      errors.push('Delivery date must be after pickup date.');
+    }
+
+    if (errors.length > 0) {
+      toast.error(errors[0], { duration: 4000 });
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -363,6 +409,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             onChange={(e) => handleInputChange('weight', parseFloat(e.target.value))}
             placeholder="Enter weight in kilograms"
             required
+            min="0.01"
+            max="99999999"
             className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -379,6 +427,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             placeholder="Length"
             value={formData.dimensions.length}
             onChange={(e) => handleInputChange('dimensions.length', parseFloat(e.target.value))}
+            min="0"
+            max="99999999"
             className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
           <input
@@ -386,6 +436,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             placeholder="Width"
             value={formData.dimensions.width}
             onChange={(e) => handleInputChange('dimensions.width', parseFloat(e.target.value))}
+            min="0"
+            max="99999999"
             className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
           <input
@@ -393,6 +445,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
             placeholder="Height"
             value={formData.dimensions.height}
             onChange={(e) => handleInputChange('dimensions.height', parseFloat(e.target.value))}
+            min="0"
+            max="99999999"
             className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
@@ -405,6 +459,8 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
           value={formData.estimatedValue}
           onChange={(e) => handleInputChange('estimatedValue', parseFloat(e.target.value))}
           placeholder="Enter estimated value"
+          min="0.01"
+          max="9999999999999"
           className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
       </div>
@@ -1019,6 +1075,34 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
                     onClick={() => {
                       const tabs = ['basic', 'location', 'special', 'review'];
                       const currentIndex = tabs.indexOf(currentTab);
+
+                      // Per-step validation before advancing
+                      if (currentTab === 'basic') {
+                        if (!formData.title.trim()) { toast.error('Cargo title is required.'); return; }
+                        if (!formData.cargoType) { toast.error('Cargo type is required.'); return; }
+                        const w = Number(formData.weight);
+                        if (!w || w <= 0) { toast.error('Weight must be greater than 0.'); return; }
+                        if (w > 99999999.99) { toast.error('Weight is too large (max 99,999,999 kg).'); return; }
+                        const v = Number(formData.estimatedValue);
+                        if (!v || v <= 0) { toast.error('Estimated value must be greater than 0.'); return; }
+                        const { length, width, height } = formData.dimensions;
+                        if (length > 99999999.99 || width > 99999999.99 || height > 99999999.99) {
+                          toast.error('Dimension values are too large (max 99,999,999).'); return;
+                        }
+                      }
+
+                      if (currentTab === 'location') {
+                        if (!formData.pickupLocation.address.trim()) { toast.error('Pickup address is required.'); return; }
+                        if (!formData.pickupLocation.city.trim()) { toast.error('Pickup city is required.'); return; }
+                        if (!formData.deliveryLocation.address.trim()) { toast.error('Delivery address is required.'); return; }
+                        if (!formData.deliveryLocation.city.trim()) { toast.error('Delivery city is required.'); return; }
+                        if (!formData.pickupDate) { toast.error('Pickup date is required.'); return; }
+                        if (!formData.deliveryDate) { toast.error('Delivery date is required.'); return; }
+                        if (formData.deliveryDate < formData.pickupDate) {
+                          toast.error('Delivery date must be after pickup date.'); return;
+                        }
+                      }
+
                       if (currentIndex < tabs.length - 1) {
                         setCurrentTab(tabs[currentIndex + 1] as any);
                       }

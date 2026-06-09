@@ -138,11 +138,13 @@ export default function BasicSection({
               id="weight"
               type="number"
               {...register("weight", { valueAsNumber: true })}
-              min="0"
-              step="0.01"
-              placeholder="0.00"
+              min="1"
+              max="100000"
+              step="1"
+              placeholder="e.g. 1500"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 100,000 kg</p>
             {errors.weight && (
               <p className="text-red-500 text-sm mt-1">
                 {errors.weight.message}
@@ -159,10 +161,12 @@ export default function BasicSection({
               type="number"
               {...register("volume", { valueAsNumber: true })}
               min="0"
+              max="1000"
               step="0.01"
-              placeholder="0.00"
+              placeholder="e.g. 2.5"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-slate-500/20 duration-300"
             />
+            <p className="text-xs text-slate-400">Max: 1,000 m³</p>
             {errors.volume && (
               <p className="text-red-500 text-sm mt-1">
                 {errors.volume.message}

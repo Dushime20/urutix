@@ -56,10 +56,13 @@ export default function EnvironmentalSection({
               onChange={(e) =>
                 handleFieldChange("temperatureMin", e.target.value)
               }
+              min="-999.99"
+              max="999.99"
               step="0.1"
-              placeholder="Enter min temp"
+              placeholder="e.g. -18"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Range: -999.99°C to 999.99°C</p>
           </div>
 
           <div className="space-y-2">
@@ -77,10 +80,13 @@ export default function EnvironmentalSection({
               onChange={(e) =>
                 handleFieldChange("temperatureMax", e.target.value)
               }
+              min="-999.99"
+              max="999.99"
               step="0.1"
-              placeholder="Enter max temp"
+              placeholder="e.g. 25"
               className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10 duration-300"
             />
+            <p className="text-xs text-slate-400">Range: -999.99°C to 999.99°C</p>
           </div>
         </div>
       </div>

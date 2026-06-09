@@ -98,10 +98,12 @@ export default function UrgencySection({
                 handleFieldChange("maxTransitTime", e.target.value)
               }
               min="0"
+              max="999.99"
               step="0.5"
-              placeholder="0"
+              placeholder="e.g. 48"
               className="bg-slate-50 border-slate-200 transition-all focus:ring-2 focus:ring-blue-500/20 text-sm h-10"
             />
+            <p className="text-xs text-slate-400">Max: 999.99 hrs</p>
           </div>
         </div>
       </div>

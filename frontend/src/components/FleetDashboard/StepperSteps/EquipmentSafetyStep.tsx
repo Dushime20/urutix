@@ -203,6 +203,8 @@ const EquipmentSafetyStep: React.FC<EquipmentSafetyStepProps> = ({
             { key: 'hasAluminum', label: 'Aluminum' },
             { key: 'hasCarbonSteel', label: 'Carbon Steel' },
             { key: 'hasFiberglass', label: 'Fiberglass' },
+            { key: 'hasPlastic', label: 'Plastic' },
+            { key: 'hasComposite', label: 'Composite' },
             { key: 'hasInsulated', label: 'Insulated' },
           ].map(({ key, label }) => (
             <label key={key} className="group flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">

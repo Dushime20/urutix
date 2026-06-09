@@ -479,13 +479,33 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
   const [submitStatus, setSubmitStatus] = useState<string>("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
     setLoading(true);
     setError(null);
     setSubmitStatus("Creating cargo...");
 
     try {
+      // Basic validation on submit
+      if (!formData.title?.trim()) {
+        setError("Cargo title is required. Please go back to Basic Information.");
+        setActiveSection("basic");
+        setLoading(false);
+        return;
+      }
+      if (!formData.weight || formData.weight <= 0) {
+        setError("Weight must be greater than 0. Please go back to Basic Information.");
+        setActiveSection("basic");
+        setLoading(false);
+        return;
+      }
+      if (!formData.loadValue || formData.loadValue <= 0) {
+        setError("Load value must be greater than 0. Please go back to Basic Information.");
+        setActiveSection("basic");
+        setLoading(false);
+        return;
+      }
+
       // Validate documents are present (mandatory)
       const pendingDocsCheck = (formData.documents || []).filter(
         (doc: any) => 'isPending' in doc && doc.isPending
@@ -495,6 +515,62 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         setLoading(false);
         return;
       }
+
+      // ── DB precision / backend constraint validation ──────────────────────
+      // precision(5,2) columns → max 999.99
+      const p52Fields: { key: keyof typeof formData; label: string }[] = [
+        { key: 'loadingTimeEstimate',   label: 'Loading time estimate' },
+        { key: 'unloadingTimeEstimate', label: 'Unloading time estimate' },
+        { key: 'maxTransitTime',        label: 'Max transit time' },
+        { key: 'maxClearanceHeight',    label: 'Max clearance height' },
+        { key: 'temperatureMin',        label: 'Min temperature' },
+        { key: 'temperatureMax',        label: 'Max temperature' },
+      ];
+      for (const { key, label } of p52Fields) {
+        const val = formData[key] as number | undefined;
+        if (val !== undefined && val !== null && Math.abs(val) > 999.99) {
+          setError(`${label} must be between -999.99 and 999.99.`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // weight max 100 t (backend @Max(100000 kg), stored as tonnes on frontend)
+      if (formData.weight > 100) {
+        setError("Weight must be at most 100 t (100,000 kg). Please go back to Basic Information.");
+        setActiveSection("basic");
+        setLoading(false);
+        return;
+      }
+
+      // volume max 1000 m³ (backend @Max(1000))
+      if (formData.volume && formData.volume > 1000) {
+        setError("Volume must be at most 1,000 m³. Please go back to Basic Information.");
+        setActiveSection("basic");
+        setLoading(false);
+        return;
+      }
+
+      // title max 200 chars
+      if (formData.title.length > 200) {
+        setError("Cargo title must be at most 200 characters.");
+        setActiveSection("basic");
+        setLoading(false);
+        return;
+      }
+
+      // numberOfPieces max 10,000 | numberOfPallets max 1,000
+      if (formData.numberOfPieces && formData.numberOfPieces > 10000) {
+        setError("Number of pieces must be at most 10,000.");
+        setLoading(false);
+        return;
+      }
+      if (formData.numberOfPallets && formData.numberOfPallets > 1000) {
+        setError("Number of pallets must be at most 1,000.");
+        setLoading(false);
+        return;
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       const submissionData: ICargoBody = {
         ...(formData as any),
@@ -804,7 +880,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       <ReviewSection title="Basic Information" icon={FaBox}>
         <ReviewRow label="Title" value={formData.title} />
         <ReviewRow label="Cargo Type" value={formData.cargoType} />
-        <ReviewRow label="Weight" value={formData.weight ? `${formData.weight} kg` : null} />
+        <ReviewRow label="Weight" value={formData.weight ? `${formData.weight} t` : null} />
         <ReviewRow label="Volume" value={formData.volume ? `${formData.volume} m³` : null} />
         <ReviewRow label="Load Value" value={formData.loadValue ? `$${formData.loadValue.toLocaleString()}` : null} />
         <ReviewRow label="Offered Price" value={formData.offeredPrice ? `$${formData.offeredPrice.toLocaleString()}` : null} />
@@ -971,7 +1047,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
         {/* ── Form Content ─────────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-w-0" id="cargo-form-content">
-          <form id="cargo-form" onSubmit={handleSubmit} className="space-y-4 max-w-3xl mx-auto">
+          <form id="cargo-form" className="space-y-4 max-w-3xl mx-auto">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-start justify-between gap-3">
                 <p className="text-xs text-red-800 dark:text-red-400">{error}</p>
@@ -1055,13 +1131,15 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                   </div>
 
                   <div className="min-w-0">
-                    <Label htmlFor="weight" className="block text-xs font-medium text-gray-700 mb-1">Weight (kg) *</Label>
-                    <Input id="weight" type="number" name="weight" value={formData.weight || ""} onChange={handleNumberChange} required min="0" step="0.01" placeholder="Enter weight in kg" className="text-sm w-full" />
+                    <Label htmlFor="weight" className="block text-xs font-medium text-gray-700 mb-1">Weight (t) *</Label>
+                    <Input id="weight" type="number" name="weight" value={formData.weight || ""} onChange={handleNumberChange} required min="0.001" max="100" step="0.001" placeholder="e.g. 1.5 (= 1,500 kg)" className="text-sm w-full" />
+                    <p className="text-[10px] text-slate-400 mt-0.5">Enter in tonnes — 1 t = 1,000 kg. Max: 100 t</p>
                   </div>
 
                   <div className="min-w-0">
                     <Label htmlFor="volume" className="block text-xs font-medium text-gray-700 mb-1">Volume (m³)</Label>
-                    <Input id="volume" type="number" name="volume" value={formData.volume || ""} onChange={handleNumberChange} min="0" step="0.01" placeholder="Enter volume in m³" className="text-sm w-full" />
+                    <Input id="volume" type="number" name="volume" value={formData.volume || ""} onChange={handleNumberChange} min="0" max="1000" step="0.01" placeholder="e.g. 2.5" className="text-sm w-full" />
+                    <p className="text-[10px] text-slate-400 mt-0.5">Max: 1,000 m³</p>
                   </div>
 
                   <div className="min-w-0">
@@ -1239,10 +1317,10 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                 {isLastContentStep ? "Review →" : "Next →"}
               </button>
             ) : (
-              /* Create Cargo — targets the form by id, always reachable */
+              /* Create Cargo — only this button triggers the API call */
               <button
-                type="submit"
-                form="cargo-form"
+                type="button"
+                onClick={handleSubmit as any}
                 disabled={loading}
                 className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md shadow-emerald-900/20 transition-all"
               >

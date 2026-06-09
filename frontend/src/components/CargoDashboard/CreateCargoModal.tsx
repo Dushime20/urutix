@@ -113,14 +113,21 @@ const CreateCargoModal: React.FC<CreateCargoModalProps> = ({ isOpen, onClose, on
 
             // Transform CargoDetails to API payload
             // Aligning with the structure used in CargoOwnerJourney.tsx which works with the new API
+            const weight = Math.min(Number(details.weight) || 0, 99999999.99);
+            const length = Math.min(Number(details.dimensions.length) || 0, 99999999.99);
+            const width  = Math.min(Number(details.dimensions.width)  || 0, 99999999.99);
+            const height = Math.min(Number(details.dimensions.height) || 0, 99999999.99);
+            // Volume can overflow precision 10,2 if dimensions are large — cap at 9,999,999,999,999.99
+            const rawVolume = length * width * height;
+            const volume = Math.min(rawVolume, 9999999999999.99);
+
             const cargoPayload = {
                 title: details.title,
                 description: details.description,
                 cargoType: cargoTypeMap[details.cargoType] || 'GENERAL',
-                weight: Number(details.weight),
-                // Volume in cubic inches or same unit as dims product
-                volume: details.dimensions.length * details.dimensions.width * details.dimensions.height,
-                loadValue: Number(details.estimatedValue),
+                weight,
+                volume,
+                loadValue: Math.min(Number(details.estimatedValue) || 0, 9999999999999.99),
                 currencyCode: 'USD',
 
                 pickupLocationId: pickupLocationId,
@@ -135,7 +142,7 @@ const CreateCargoModal: React.FC<CreateCargoModalProps> = ({ isOpen, onClose, on
                 urgencyLevel: details.urgency === 'MEDIUM' ? 'NORMAL' : details.urgency,
 
                 status: 'DRAFT',
-                dimensions: details.dimensions,
+                dimensions: { length, width, height },
                 specialRequirements: details.specialRequirements,
                 photos: []
             };
