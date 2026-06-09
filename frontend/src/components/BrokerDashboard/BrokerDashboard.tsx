@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrokerDashboardOverview } from './BrokerDashboardOverview';
-import { AssignedCargoManagement } from './AssignedCargoManagement';
-import { AuctionsManagement } from './AuctionsManagement';
-import { SmartMatchingCenter } from './SmartMatchingCenter';
-import { ShipmentTracking } from './ShipmentTracking';
+
 import { brokerAPI } from '../../services/brokerApi';
 import { biddingAPI } from '../../services/biddingApi-fixed';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,7 +11,7 @@ import { DashboardSkeleton } from '../common/LoadingSkeletons';
 
 export const BrokerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'cargo' | 'auctions' | 'tracking'>('overview');
+
   
   // Real data states
   const [stats, setStats] = useState({ totalAssigned: 0, activeAuctions: 0, inTransit: 0, delivered: 0 });
@@ -105,50 +102,8 @@ export const BrokerDashboard: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400 mt-2">Manage assigned cargo, auctions, and track shipments in real-time.</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto pb-px">
-        {['overview', 'cargo', 'auctions', 'tracking'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === tab
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
       <div className="space-y-6">
-        {activeTab === 'overview' && (
-          <>
-            <BrokerDashboardOverview stats={stats} />
-            <AssignedCargoManagement cargos={cargos} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              <div className="mt-0"><AuctionsManagement auctions={auctions.slice(0, 2)} /></div>
-              <div className="mt-0"><SmartMatchingCenter matches={matches.slice(0, 2)} /></div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'cargo' && (
-          <div className="space-y-6">
-            <AssignedCargoManagement cargos={cargos} />
-            <SmartMatchingCenter matches={matches} />
-          </div>
-        )}
-
-        {activeTab === 'auctions' && (
-          <AuctionsManagement auctions={auctions} />
-        )}
-
-        {activeTab === 'tracking' && (
-          <ShipmentTracking shipments={shipments} />
-        )}
+        <BrokerDashboardOverview stats={stats} />
       </div>
       </main>
       <DashboardFooter />
