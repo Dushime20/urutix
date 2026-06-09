@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
@@ -35,6 +36,7 @@ import { MarketIntelligenceService } from './services/market-intelligence.servic
 import { MLPredictionService } from './services/ml-prediction.service';
 import { EmergencyRematchService } from './services/emergency-rematch.service';
 import { EmergencyRematchController } from './controllers/emergency-rematch.controller';
+import { MatchingSchedulerService } from './services/matching-scheduler.service';
 import { NotificationModule } from '../notifications/notification.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
@@ -46,6 +48,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       FeatureCreditCost, Route, RouteTruck, Notification, UserScore,
     ]),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     ConfigModule,
     NotificationModule,
     EnhancedAuthModule,
@@ -65,6 +68,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     MarketIntelligenceService,
     MLPredictionService,
     EmergencyRematchService,
+    MatchingSchedulerService,
   ],
   controllers: [MatchingController, EmergencyRematchController],
   exports: [

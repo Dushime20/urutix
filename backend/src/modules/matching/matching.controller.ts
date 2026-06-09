@@ -320,8 +320,8 @@ export class MatchingController {
   @Get('cargo-owner/matches')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Get accepted matches for cargo owner',
-    description: 'Returns matches that truck owners have accepted for the cargo owner\'s loads.',
+    summary: 'Get all matches for cargo owner (POTENTIAL + REQUESTED + ACCEPTED)',
+    description: 'Returns all matches across all statuses so cargo owner can review candidates and track progress.',
   })
   async getMatchesForCargoOwner(@Request() req) {
     try {
@@ -333,6 +333,36 @@ export class MatchingController {
     } catch (error) {
       this.logger.error('Error in getMatchesForCargoOwner', error);
       throw new InternalServerErrorException('Failed to retrieve matches');
+    }
+  }
+
+  @Get('cargo-owner/candidates/:loadId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get top-5 POTENTIAL candidates for a specific load',
+    description:
+      'Returns the top-5 scored POTENTIAL match candidates for a load, ' +
+      'ranked by score descending. This is the shortlist the cargo owner ' +
+      'reviews and selects from (FRS §6.8 POTENTIAL step).',
+  })
+  @ApiResponse({ status: 200, description: 'Top-5 candidates returned' })
+  async getCandidatesForLoad(
+    @Param('loadId') loadId: string,
+    @Request() req,
+  ) {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!loadId) throw new BadRequestException('loadId is required');
+      const candidates = await this.matchingService.getCandidatesForLoad(loadId, tenantId);
+      return {
+        message: 'Candidates retrieved successfully',
+        data: candidates,
+        count: candidates.length,
+      };
+    } catch (error) {
+      this.logger.error(`Error in getCandidatesForLoad for load ${loadId}`, error);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException('Failed to retrieve candidates');
     }
   }
 
@@ -1186,6 +1216,16 @@ export class MatchingController {
       );
       throw error;
     }
+  }
+
+  @Post('expire-stale-matches')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Expire stale REQUESTED matches past 24h SLA and promote next candidates',
+  })
+  async expireStaleMatches() {
+    await this.matchingService.expireStaleMatches();
+    return { message: 'Stale matches expired and next candidates promoted' };
   }
 
   @Post('clear-caches')

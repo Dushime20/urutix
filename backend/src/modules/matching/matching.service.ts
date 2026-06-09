@@ -35,6 +35,7 @@ import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreditService } from '../../services/credit.service';
 import { Route } from '../../entities/route.entity';
 import { RouteTruck } from '../../entities/route-truck.entity';
+import { RouteType } from '../../entities/route.entity';
 
 // Enhanced matching algorithms
 import { HungarianAlgorithm } from './algorithms/hungarian.algorithm';
@@ -519,6 +520,11 @@ export class MatchingService {
 
       // Persist top matches for Truck Owners to view
       if (matches.length > 0) {
+        // FR-MATCH-006 to FR-MATCH-011: Apply all enrichments by default
+        matches = await this.applyAllEnrichments(matches, tenantId);
+        // Re-sort after enrichment (scores may have been adjusted)
+        matches.sort((a, b) => b.overallScore - a.overallScore);
+
         // Run in background to not block response
         this.persistMatchesForTruckOwners(matches, matchRequestDto.loadId, tenantId).catch(err =>
           this.logger.error('Background match persistence failed', err)
@@ -553,12 +559,15 @@ export class MatchingService {
     tenantId: string,
   ): Promise<void> {
     try {
-      // Filter for high quality matches (e.g. > 0.6)
+      // Filter for high quality matches (score >= 0.60) — FR-MATCH lifecycle: POTENTIAL threshold
       const highQualityMatches = matches.filter((m) => m.overallScore >= 0.6);
 
-      this.logger.debug(`Persisting ${highQualityMatches.length} matches for Load ${loadId}`);
+      // FR-MATCH lifecycle: Notify Cargo Owner of top 5 candidates only
+      const top5 = highQualityMatches.slice(0, 5);
 
-      for (const match of highQualityMatches) {
+      this.logger.debug(`Persisting ${top5.length} top candidates for Load ${loadId}`);
+
+      for (const match of top5) {
         const existing = await this.loadMatchRepository.findOne({
           where: { loadId, truckId: match.truckId },
         });
@@ -582,13 +591,39 @@ export class MatchingService {
           }
         }
       }
+
+      // FR-MATCH lifecycle: Notify Cargo Owner of top candidates so they can review and select
+      if (top5.length > 0) {
+        const load = await this.loadRepository.findOne({ where: { id: loadId } });
+        if (load?.cargoOwnerId) {
+          await this.notificationService.createNotification({
+            tenantId,
+            recipientId: load.cargoOwnerId,
+            title: 'Smart Match Candidates Ready',
+            message: `${top5.length} truck${top5.length > 1 ? 's have' : ' has'} been matched to your cargo load. Review and select the best candidate.`,
+            shortMessage: `${top5.length} truck match${top5.length > 1 ? 'es' : ''} found for your load`,
+            notificationType: NotificationType.GENERAL,
+            category: NotificationCategory.BUSINESS,
+            priority: NotificationPriority.HIGH,
+            channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+            entityType: EntityType.CARGO,
+            entityId: loadId,
+            requiresAction: true,
+            actionUrl: `/dashboard/cargos/${loadId}/matches`,
+            actionText: 'View Matches',
+          });
+          this.logger.log(`📧 Notified cargo owner ${load.cargoOwnerId} of ${top5.length} top match candidates for load ${loadId}`);
+        }
+      }
     } catch (err) {
       this.logger.error(`Failed to persist matches for load ${loadId}`, err);
     }
   }
 
   /**
-   * Get all persisted matches for a truck owner's fleet
+   * Get all persisted matches for a cargo owner (ACCEPTED + REQUESTED + POTENTIAL).
+   * POTENTIAL = top-5 candidates the engine persisted after scoring (score >= 0.60).
+   * These are the candidates the cargo owner should review and select from.
    */
   async getMatchesForCargoOwner(cargoOwnerId: string, tenantId: string): Promise<any[]> {
     try {
@@ -601,14 +636,18 @@ export class MatchingService {
 
       const loadIds = loads.map(l => l.id);
 
-      // Find ACCEPTED and REQUESTED matches for these loads
+      // Return ALL relevant statuses so cargo owner can see:
+      //   POTENTIAL  — candidates waiting for the owner to pick one
+      //   REQUESTED  — owner has sent a request, waiting for truck owner to respond
+      //   ACCEPTED   — truck owner accepted
       const matches = await this.loadMatchRepository.find({
         where: [
-          { loadId: In(loadIds), status: MatchStatus.ACCEPTED },
+          { loadId: In(loadIds), status: MatchStatus.POTENTIAL },
           { loadId: In(loadIds), status: MatchStatus.REQUESTED },
+          { loadId: In(loadIds), status: MatchStatus.ACCEPTED },
         ],
-        order: { createdAt: 'DESC' },
-        take: 50,
+        order: { score: 'DESC', createdAt: 'DESC' },
+        take: 100,
       });
 
       // Enrich with load and truck details
@@ -626,6 +665,43 @@ export class MatchingService {
       return enriched;
     } catch (error) {
       this.logger.error(`Error finding matches for cargo owner ${cargoOwnerId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the top-5 POTENTIAL match candidates for a specific load.
+   * This is what the cargo owner sees on the load detail page —
+   * the ranked shortlist they pick from before sending a request.
+   */
+  async getCandidatesForLoad(loadId: string, tenantId: string): Promise<any[]> {
+    try {
+      const candidates = await this.loadMatchRepository.find({
+        where: { loadId, tenantId, status: MatchStatus.POTENTIAL },
+        order: { score: 'DESC' },
+        take: 5,
+      });
+
+      if (candidates.length === 0) return [];
+
+      return Promise.all(candidates.map(async (match, index) => {
+        const truck = await this.truckRepository.findOne({
+          where: { id: match.truckId },
+          relations: ['owner', 'owner.profile'],
+        });
+        return {
+          ...match,
+          rank: index + 1,
+          truck: truck || null,
+          ownerName: truck?.owner?.profile
+            ? `${truck.owner.profile.firstName || ''} ${truck.owner.profile.lastName || ''}`.trim() ||
+              (truck.owner.profile as any).companyName || 'Unknown Carrier'
+            : 'Unknown Carrier',
+          ownerVerified: (truck?.owner as any)?.status === 'ACTIVE',
+        };
+      }));
+    } catch (error) {
+      this.logger.error(`Error fetching candidates for load ${loadId}`, error);
       throw error;
     }
   }
@@ -938,8 +1014,8 @@ export class MatchingService {
       this.logger.log(`🎉 Match ${matchId} ACCEPTED - Starting post-acceptance workflow`);
       await this.handleMatchAcceptance(match);
     } else if (status === MatchStatus.REJECTED) {
-      this.logger.log(`❌ Match ${matchId} REJECTED by truck owner`);
-      // Could implement rejection handling here (e.g., find alternative matches)
+      this.logger.log(`❌ Match ${matchId} REJECTED by truck owner - promoting next candidate`);
+      await this.promoteNextCandidate(match.loadId, match.tenantId);
     }
 
     return updatedMatch;
@@ -998,6 +1074,123 @@ export class MatchingService {
       this.logger.error(`❌ Failed to process match acceptance: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Failed to complete match acceptance workflow');
     }
+  }
+
+  /**
+   * FR-MATCH Lifecycle: Promote the next best POTENTIAL candidate when a match is REJECTED or EXPIRED.
+   * Finds the highest-scored POTENTIAL match for the load and transitions it to REQUESTED,
+   * then notifies the next truck owner.
+   */
+  async promoteNextCandidate(loadId: string, tenantId: string): Promise<void> {
+    try {
+      const load = await this.loadRepository.findOne({ where: { id: loadId } });
+      if (!load || load.status === LoadStatus.ASSIGNED) return;
+
+      // Find next best POTENTIAL match (highest score)
+      const nextMatch = await this.loadMatchRepository.findOne({
+        where: { loadId, tenantId, status: MatchStatus.POTENTIAL },
+        order: { score: 'DESC' },
+      });
+
+      if (!nextMatch) {
+        this.logger.warn(`⚠️ No next candidate found for load ${loadId} — revert to PUBLISHED`);
+        if (load.status === LoadStatus.PENDING_CONFIRMATION) {
+          load.status = LoadStatus.PUBLISHED;
+          await this.loadRepository.save(load);
+        }
+        return;
+      }
+
+      // Promote to REQUESTED
+      nextMatch.status = MatchStatus.REQUESTED;
+      await this.loadMatchRepository.save(nextMatch);
+      this.logger.log(`✅ Promoted next candidate truck ${nextMatch.truckId} for load ${loadId}`);
+
+      // Notify the next truck owner
+      const truck = await this.truckRepository.findOne({
+        where: { id: nextMatch.truckId },
+        relations: ['owner'],
+      });
+      if (truck?.owner) {
+        await this.notificationService.createNotification({
+          tenantId,
+          recipientId: truck.owner.id,
+          title: 'New Cargo Match Request',
+          message: `A cargo load has been matched to your truck ${truck.plateNumber}. Please respond.`,
+          notificationType: NotificationType.GENERAL,
+          category: NotificationCategory.BUSINESS,
+          priority: NotificationPriority.HIGH,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+          entityType: EntityType.CARGO,
+          entityId: loadId,
+          requiresAction: true,
+          actionUrl: `/dashboard/fleet?tab=matches`,
+          actionText: 'View Request',
+        });
+      }
+    } catch (err) {
+      this.logger.error(`Failed to promote next candidate for load ${loadId}: ${err.message}`);
+    }
+  }
+
+  /**
+   * FR-MATCH Lifecycle: Expire REQUESTED matches that have not been responded to within SLA (24h).
+   * Should be called by a scheduled job (e.g., every hour via @Cron).
+   */
+  async expireStaleMatches(): Promise<void> {
+    try {
+      const slaHours = 24;
+      const cutoff = new Date(Date.now() - slaHours * 60 * 60 * 1000);
+
+      const staleMatches = await this.loadMatchRepository
+        .createQueryBuilder('match')
+        .where('match.status = :status', { status: MatchStatus.REQUESTED })
+        .andWhere('match.createdAt < :cutoff', { cutoff })
+        .getMany();
+
+      this.logger.log(`⏰ Found ${staleMatches.length} stale REQUESTED matches to expire`);
+
+      for (const match of staleMatches) {
+        match.status = MatchStatus.EXPIRED;
+        await this.loadMatchRepository.save(match);
+        this.logger.log(`🕒 Match ${match.id} expired`);
+
+        // Promote next candidate
+        await this.promoteNextCandidate(match.loadId, match.tenantId);
+      }
+    } catch (err) {
+      this.logger.error(`Failed to expire stale matches: ${err.message}`);
+    }
+  }
+
+  /**
+   * FR-MATCH-006 + FR-MATCH-008 to FR-MATCH-011:
+   * Apply all enrichments (ML, Market Intelligence, Risk, Environmental, Route Optimization)
+   * by default on every findMatches call.
+   */
+  private async applyAllEnrichments(
+    matches: MatchResultDto[],
+    tenantId: string,
+  ): Promise<MatchResultDto[]> {
+    if (matches.length === 0) return matches;
+
+    // FR-MATCH-006: ML Prediction (always on)
+    matches = await this.enrichMatchesWithMLPredictions(matches, tenantId);
+
+    // FR-MATCH-009: Risk Assessment (always on)
+    matches = await this.enrichMatchesWithRiskAssessment(matches, tenantId);
+
+    // FR-MATCH-010: Environmental Impact (always on)
+    matches = await this.enrichMatchesWithEnvironmentalImpact(matches);
+
+    // FR-MATCH-011: Route Optimization (always on)
+    matches = await this.applyRouteOptimization(matches);
+
+    // FR-MATCH-008: Market Intelligence (always on)
+    const marketContext = await this.getMarketContext(tenantId);
+    matches = this.applyMarketAwareScoring(matches, marketContext);
+
+    return matches;
   }
 
   /**
@@ -1425,6 +1618,18 @@ export class MatchingService {
         });
       }
 
+      if (load.requiresCrane) {
+        queryBuilder.andWhere('truck.hasWinch = :hasWinch', {
+          hasWinch: true,
+        });
+      }
+
+      if (load.requiresLoadingDock) {
+        queryBuilder.andWhere('truck.hasTailLift = :hasTailLift', {
+          hasTailLift: true,
+        });
+      }
+
       // Add truck type requirements
       if (load.truckRequirements?.requiredTruckTypes?.length > 0) {
         queryBuilder.andWhere('truck.truckType IN (:...truckTypes)', {
@@ -1684,18 +1889,20 @@ export class MatchingService {
     trucks: Truck[],
     criteria: MatchRequestDto,
   ): Promise<MatchResultDto[]> {
-    // Combine multiple algorithms for better results
-    const [weightedMatches, hungarianMatches, topsisMatches] =
+    // FR-MATCH: HYBRID = ensemble of ALL 4 algorithms, deduplicated and re-scored
+    const [weightedMatches, hungarianMatches, geneticMatches, topsisMatches] =
       await Promise.all([
         this.applyWeightedScoring(load, trucks, criteria),
         this.applyHungarianAlgorithm(load, trucks, criteria),
+        this.applyGeneticAlgorithm(load, trucks, criteria),
         this.applyTopsisAlgorithm(load, trucks, criteria),
       ]);
 
-    // Combine and rank results
+    // Combine all 4 algorithm results, deduplicate, then re-score
     const allMatches = [
       ...weightedMatches,
       ...hungarianMatches,
+      ...geneticMatches,
       ...topsisMatches,
     ];
     const uniqueMatches = this.deduplicateMatches(allMatches);
@@ -1754,6 +1961,18 @@ export class MatchingService {
       }
       if (load.isHazardous && !truck.hasHazmatPermit) {
         this.logger.debug(`❌ Rejected: Missing hazmat permit`);
+        return null;
+      }
+      if (load.requiresForklift && !truck.hasLiftGate) {
+        this.logger.debug(`❌ Rejected: Missing lift gate (forklift required)`);
+        return null;
+      }
+      if (load.requiresCrane && !truck.hasWinch) {
+        this.logger.debug(`❌ Rejected: Missing winch/crane`);
+        return null;
+      }
+      if (load.requiresLoadingDock && !truck.hasTailLift) {
+        this.logger.debug(`❌ Rejected: Missing tail lift (loading dock required)`);
         return null;
       }
 
@@ -2034,7 +2253,7 @@ export class MatchingService {
 
       // Check loading equipment requirements
       if (load.requiresForklift && !truck.hasLiftGate) {
-        score *= 0.8; // Partial penalty
+        score *= 0.8; // Partial penalty — hard rejection handled upstream in scoreTruck()
       }
 
       if (load.requiresCrane && !truck.hasWinch) {
@@ -2284,79 +2503,194 @@ export class MatchingService {
 
   // =====================================================
   // ROUTE SCORE (Core Criteria #6)
-  // Evaluates route compatibility between truck routes and cargo route
+  // Uses pickupLocation/deliveryLocation getters (from locations[] JSONB array)
+  // and also falls back to origin/destination fields if set.
+  //
+  // CORRIDOR LOGIC:
+  // A match requires that the truck's operational route actually COVERS the
+  // cargo's journey.  Simply sharing an origin while heading to a different
+  // destination (e.g. Mombasa→Kigali truck vs Mombasa→Zimbabwe cargo) is NOT
+  // a good match and must score LOW, not 0.7.
+  //
+  // Scoring rules per route candidate:
+  //   1.0 — origin AND destination both match the truck route      (perfect)
+  //   0.8 — cargo destination is on the truck's corridor           (partial but valid)
+  //   0.2 — only origin matches, destinations diverge              (shared start, wrong direction)
+  //   0.1 — only destination matches (truck starts elsewhere)      (pickup problem)
+  //   0.0 → routeTypeCompatibility × 0.4 — nothing matches        (no relevant route)
   // =====================================================
   private async calculateRouteScore(truck: Truck, load: Load): Promise<number> {
     try {
-      let score = 0.5; // Base score (neutral if no route data)
+      // Base / neutral score returned when no route data is available at all
+      const NEUTRAL_SCORE = 0.5;
 
-      // If load doesn't have origin/destination, return neutral score
-      if (!load.origin || !load.destination) {
-        this.logger.debug(`Load ${load.id} has no origin/destination - returning neutral route score`);
-        return score;
+      // ── 1. Resolve load origin / destination city strings ──────────────────
+      const pickupLoc = load.pickupLocation;
+      const deliveryLoc = load.deliveryLocation;
+
+      const originCity = pickupLoc?.locationData?.city
+        || pickupLoc?.locationData?.address
+        || (load as any).origin?.city
+        || (load as any).origin?.address;
+
+      const destinationCity = deliveryLoc?.locationData?.city
+        || deliveryLoc?.locationData?.address
+        || (load as any).destination?.city
+        || (load as any).destination?.address;
+
+      if (!originCity || !destinationCity) {
+        this.logger.debug(
+          `Load ${load.id}: no resolvable origin/destination — neutral route score`,
+        );
+        return NEUTRAL_SCORE;
       }
 
-      // Get truck's assigned routes from route_trucks table
+      // ── 2. Resolve cargo geo-coordinates for corridor checking ─────────────
+      const pickupCoords = pickupLoc?.locationData?.coordinates;
+      const deliveryCoords = deliveryLoc?.locationData?.coordinates;
+
+      const cargoPickupLat = pickupCoords?.latitude ?? null;
+      const cargoPickupLon = pickupCoords?.longitude ?? null;
+      const cargoDeliveryLat = deliveryCoords?.latitude ?? null;
+      const cargoDeliveryLon = deliveryCoords?.longitude ?? null;
+
+      // ── 3. Fetch truck's assigned routes ───────────────────────────────────
       const truckRoutes = await this.routeTruckRepository.find({
         where: { truckId: truck.id, tenantId: truck.tenantId },
         relations: ['route'],
       });
 
-      // If truck has no assigned routes, return neutral score
       if (!truckRoutes || truckRoutes.length === 0) {
-        this.logger.debug(`Truck ${truck.plateNumber} has no assigned routes - returning neutral route score`);
-        return score;
+        // Truck owner has not configured any operational routes.
+        // This means the truck is UNRESTRICTED — it will take any cargo anywhere.
+        // Score 0.8 (not 1.0, since a truck with a confirmed matching route is
+        // always a more reliable fit than one with no route data at all).
+        this.logger.debug(
+          `Truck ${truck.plateNumber}: no assigned routes — unrestricted, score 0.8`,
+        );
+        return 0.8;
       }
 
-      // Extract load origin and destination
-      const loadOrigin = load.origin.city || load.origin.address;
-      const loadDestination = load.destination.city || load.destination.address;
+      this.logger.debug(
+        `Route check: load ${originCity}→${destinationCity} vs truck ${truck.plateNumber} (${truckRoutes.length} routes)`,
+      );
 
-      this.logger.debug(`Comparing load route: ${loadOrigin} → ${loadDestination}`);
-
-      // Check each truck route for compatibility
+      // ── 4. Score each truck route; keep the best ───────────────────────────
       let bestRouteScore = 0;
+
       for (const truckRoute of truckRoutes) {
         if (!truckRoute.route) continue;
 
         const route = truckRoute.route;
-        this.logger.debug(`Checking truck route: ${route.origin} → ${route.destination}`);
+        const originMatch = this.compareLocations(originCity, route.origin);
+        const destinationMatch = this.compareLocations(destinationCity, route.destination);
 
         let routeScore = 0;
 
-        // 1. EXACT MATCH: Origin and destination match exactly (1.0 score)
-        const originMatch = this.compareLocations(loadOrigin, route.origin);
-        const destinationMatch = this.compareLocations(loadDestination, route.destination);
-
         if (originMatch && destinationMatch) {
+          // ── Perfect match: truck runs exactly this corridor ────────────────
           routeScore = 1.0;
-          this.logger.debug(`✅ Exact route match found!`);
-        }
-        // 2. PARTIAL MATCH: Either origin or destination matches (0.7 score)
-        else if (originMatch || destinationMatch) {
-          routeScore = 0.7;
-          this.logger.debug(`✅ Partial route match (${originMatch ? 'origin' : 'destination'} matches)`);
-        }
-        // 3. ROUTE TYPE COMPATIBILITY: Check if route type is suitable for cargo
-        else {
-          // Check route type compatibility
+
+        } else if (originMatch && !destinationMatch) {
+          // ── Shared origin but different destination ────────────────────────
+          // This is the Mombasa→Kigali vs Mombasa→Zimbabwe case.
+          // Check whether the cargo destination lies geographically ON the
+          // truck's corridor using the "detour ratio" test:
+          //   If dist(truckOrigin→cargoDest) + dist(cargoDest→truckDest)
+          //       ≈ dist(truckOrigin→truckDest)
+          // …then the destination is on or near the route.
+          // We allow up to a 25 % detour tolerance.
+          const onCorridor = this.isDestinationOnCorridor(
+            route, cargoDeliveryLat, cargoDeliveryLon,
+          );
+
+          if (onCorridor) {
+            // Cargo destination is along the truck's route — valid sub-trip
+            routeScore = 0.8;
+            this.logger.debug(
+              `Truck ${truck.plateNumber}: cargo dest is on corridor (${route.origin}→${route.destination}) → 0.8`,
+            );
+          } else {
+            // Truck is heading a different direction — penalise heavily
+            routeScore = 0.2;
+            this.logger.debug(
+              `Truck ${truck.plateNumber}: shared origin but destinations diverge ` +
+              `(route→${route.destination}, cargo→${destinationCity}) → 0.2`,
+            );
+          }
+
+        } else if (!originMatch && destinationMatch) {
+          // ── Truck ends at cargo's destination but starts elsewhere ─────────
+          // Could be a return-leg / repositioning opportunity — low but non-zero
+          routeScore = 0.1;
+
+        } else {
+          // ── No endpoint match — fall back to route-type compatibility ──────
           const routeTypeScore = this.calculateRouteTypeCompatibility(route, load);
-          routeScore = routeTypeScore * 0.5; // Max 0.5 for route type only
-          this.logger.debug(`Route type compatibility: ${routeTypeScore.toFixed(2)}`);
+          routeScore = routeTypeScore * 0.4;
         }
 
-        // Keep the best matching route score
-        if (routeScore > bestRouteScore) {
-          bestRouteScore = routeScore;
-        }
+        if (routeScore > bestRouteScore) bestRouteScore = routeScore;
       }
 
-      this.logger.debug(`Best route score for truck ${truck.plateNumber}: ${bestRouteScore.toFixed(2)}`);
+      this.logger.debug(
+        `Truck ${truck.plateNumber} best route score: ${bestRouteScore.toFixed(2)}`,
+      );
       return bestRouteScore;
     } catch (error) {
       this.logger.error(`Error calculating route score: ${error.message}`);
-      return 0.5; // Return neutral score on error
+      return 0.5;
     }
+  }
+
+  /**
+   * Returns true when the cargo's delivery point lies on (or very close to)
+   * the straight-line corridor between the truck route's origin and destination.
+   *
+   * We use the "detour ratio" test:
+   *   dist(routeOrigin → cargoDest) + dist(cargoDest → routeDest)
+   *     ≤  dist(routeOrigin → routeDest) × (1 + DETOUR_TOLERANCE)
+   *
+   * A 25 % tolerance handles realistic road curves and slight off-corridor stops.
+   * If the route has no geo-coordinates, falls back to string-contains check.
+   */
+  private isDestinationOnCorridor(
+    route: Route,
+    cargoDestLat: number | null,
+    cargoDestLon: number | null,
+  ): boolean {
+    const DETOUR_TOLERANCE = 0.25; // 25 % extra distance allowed
+
+    const rOriginLat = route.originLat != null ? Number(route.originLat) : null;
+    const rOriginLon = route.originLng != null ? Number(route.originLng) : null;
+    const rDestLat = route.destinationLat != null ? Number(route.destinationLat) : null;
+    const rDestLon = route.destinationLng != null ? Number(route.destinationLng) : null;
+
+    // ── Geo path: all four coordinates must be present ─────────────────────
+    if (
+      rOriginLat != null && rOriginLon != null &&
+      rDestLat != null && rDestLon != null &&
+      cargoDestLat != null && cargoDestLon != null
+    ) {
+      const directDist = this.calculateHaversineDistance(
+        rOriginLat, rOriginLon, rDestLat, rDestLon,
+      );
+      if (directDist === 0) return true; // degenerate route — same point
+
+      const viaDetour =
+        this.calculateHaversineDistance(rOriginLat, rOriginLon, cargoDestLat, cargoDestLon) +
+        this.calculateHaversineDistance(cargoDestLat, cargoDestLon, rDestLat, rDestLon);
+
+      const isOnPath = viaDetour <= directDist * (1 + DETOUR_TOLERANCE);
+      this.logger.debug(
+        `Corridor check: directDist=${directDist.toFixed(0)}km ` +
+        `viaDetour=${viaDetour.toFixed(0)}km onPath=${isOnPath}`,
+      );
+      return isOnPath;
+    }
+
+    // ── Fallback: no coordinates — treat as NOT on corridor (conservative) ──
+    return false;
   }
 
   /**
@@ -2384,25 +2718,26 @@ export class MatchingService {
   }
 
   /**
-   * Calculate route type compatibility score
-   * Different route types (highway, city, rural, mixed) suit different cargo types
+   * Calculate route type compatibility score.
+   * Used only as a fallback when no endpoint matches exist.
    */
   private calculateRouteTypeCompatibility(route: Route, load: Load): number {
-    let score = 0.5; // Base compatibility
+    let score = 0.5;
 
-    // Calculate cargo route distance if origin/destination available
+    // Resolve cargo route distance from JSONB location coordinates only
+    const pickupCoords = load.pickupLocation?.locationData?.coordinates;
+    const deliveryCoords = load.deliveryLocation?.locationData?.coordinates;
+
     let cargoDistance = 0;
-    if (load.origin && load.destination && 
-        load.origin.lat && load.origin.lng && 
-        load.destination.lat && load.destination.lng) {
+    if (pickupCoords && deliveryCoords) {
       cargoDistance = this.calculateHaversineDistance(
-        load.origin.lat, load.origin.lng,
-        load.destination.lat, load.destination.lng
+        pickupCoords.latitude, pickupCoords.longitude,
+        deliveryCoords.latitude, deliveryCoords.longitude,
       );
     }
 
-    // Highway routes are good for long-distance, time-critical cargo
-    if (route.routeType === 'highway') {
+    // Highway routes: best for long-distance or time-critical cargo
+    if (route.routeType === RouteType.HIGHWAY) {
       if (load.isTimeCritical || load.urgencyLevel === UrgencyLevel.CRITICAL) {
         score += 0.3;
       }
@@ -2411,26 +2746,26 @@ export class MatchingService {
       }
     }
 
-    // City routes are good for local deliveries
-    if (route.routeType === 'city') {
+    // City routes: best for short local deliveries with loading facilities
+    if (route.routeType === RouteType.CITY) {
       if (cargoDistance > 0 && cargoDistance < 50) {
         score += 0.3;
       }
       if (load.requiresForklift || load.requiresLoadingDock) {
-        score += 0.2; // City routes often have better loading facilities
+        score += 0.2;
       }
     }
 
-    // Rural routes may have limitations
-    if (route.routeType === 'rural') {
+    // Rural routes: penalty for hazmat/reefer (limited emergency services)
+    if (route.routeType === RouteType.RURAL) {
       if (load.isHazardous || load.requiresRefrigeration) {
-        score -= 0.2; // Rural routes may lack emergency services
+        score -= 0.2;
       }
     }
 
-    // Mixed routes are versatile
-    if (route.routeType === 'mixed') {
-      score += 0.2; // Bonus for versatility
+    // Mixed routes: versatile, small bonus
+    if (route.routeType === RouteType.MIXED) {
+      score += 0.2;
     }
 
     return Math.max(0, Math.min(score, 1.0));
@@ -2657,8 +2992,11 @@ export class MatchingService {
     }
 
     // If load has specific origin/destination with route constraints
-    if (load.origin && load.destination) {
-      if (load.truckRequirements?.requiredFeatures?.includes('ESCORT') || 
+    // Use pickupLocation/deliveryLocation getters (locations[] JSONB) as primary source
+    const hasResolvedLocations = !!(load.pickupLocation || load.origin)
+      && !!(load.deliveryLocation || load.destination);
+    if (hasResolvedLocations) {
+      if (load.truckRequirements?.requiredFeatures?.includes('ESCORT') ||
           load.truckRequirements?.requiredFeatures?.includes('HEAVY_DUTY')) {
         weights.routeCompatibility += 0.15;
         weights.distance -= 0.10;

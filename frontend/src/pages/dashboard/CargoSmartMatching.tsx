@@ -309,26 +309,31 @@ const CargoSmartMatching: React.FC = () => {
       {/* Results */}
       {!loading && matchedTrucks.length > 0 && (
         <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-          {/* ── Top 3 Qualified Trucks Banner ── */}
+          {/* ── Top 5 Qualified Trucks Banner ── */}
           {(() => {
-            const top3 = filteredTrucks.slice(0, 3);
+            const top5 = filteredTrucks.slice(0, 5);
             const rankColors = [
               'border-yellow-400 bg-yellow-50',
               'border-slate-300 bg-slate-50',
               'border-amber-600 bg-amber-50',
+              'border-green-400 bg-green-50',
+              'border-blue-300 bg-blue-50',
             ];
-            const rankLabels = ['#1 Best Match', '#2', '#3'];
-            const rankTextColors = ['text-yellow-700', 'text-slate-600', 'text-amber-800'];
-            if (top3.length === 0) return null;
+            const rankLabels = ['#1 Best Match', '#2', '#3', '#4', '#5'];
+            const rankTextColors = [
+              'text-yellow-700', 'text-slate-600', 'text-amber-800',
+              'text-green-700', 'text-blue-700',
+            ];
+            if (top5.length === 0) return null;
             return (
               <div className="px-6 pt-6 pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
                   <Brain className="w-4 h-4 text-[#345E85]" />
-                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Top {top3.length} Qualified Trucks</h2>
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Top {top5.length} Qualified Trucks</h2>
                   <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-widest">Review &amp; select one to proceed</span>
                 </div>
-                <div className={`grid gap-3 ${top3.length === 1 ? 'grid-cols-1' : top3.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
-                  {top3.map((truck, idx) => (
+                <div className={`grid gap-3 ${top5.length <= 2 ? `grid-cols-1 md:grid-cols-${top5.length}` : top5.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-3 lg:grid-cols-5'}`}>
+                  {top5.map((truck, idx) => (
                     <button
                       key={truck.id}
                       onClick={() => setSelectedTruck(truck)}
@@ -367,9 +372,9 @@ const CargoSmartMatching: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {matchedTrucks.length > 3 && (
+                {matchedTrucks.length > 5 && (
                   <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                    + {matchedTrucks.length - 3} more trucks available in the full list below
+                    + {matchedTrucks.length - 5} more trucks available in the full list below
                   </p>
                 )}
               </div>

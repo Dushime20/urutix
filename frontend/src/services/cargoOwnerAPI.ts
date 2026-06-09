@@ -17,6 +17,14 @@ export const cargoOwnerAPI = {
       ...preferences
     }),
 
+  // Get top-5 POTENTIAL candidates for a specific load (FRS §6.8)
+  getCandidatesForLoad: (loadId: string) =>
+    api.get(`/matching/cargo-owner/candidates/${loadId}`),
+
+  // Send a match request to a specific truck (cargo owner selects from candidates)
+  requestMatch: (loadId: string, truckId: string) =>
+    api.post('/matching/request', { loadId, truckId }),
+
   // Bidding/Auction System
   createAuction: (loadId: string, auctionSettings: any) =>
     api.post('/bidding/auctions', {

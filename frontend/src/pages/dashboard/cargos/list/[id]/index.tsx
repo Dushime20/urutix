@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import type { Cargo } from "@/types/cargo";
 import { loadsAPI } from "@/services/load";
 import { documentApi } from "@/services/documents/documentApi";
+import { cargoOwnerAPI } from "@/services/cargoOwnerAPI";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
@@ -46,6 +47,179 @@ import {
 import { useParams } from "react-router-dom";
 import { useSearchParamsState } from "@/hooks/useSearchParamsState";
 
+// ─── TopMatchCandidates ────────────────────────────────────────────────────
+// Fetches and renders the top-5 POTENTIAL match candidates for a load.
+// These are the engine-scored candidates the cargo owner reviews and selects from.
+const rankBorder = [
+  'border-yellow-400',
+  'border-slate-300',
+  'border-amber-500',
+  'border-green-400',
+  'border-blue-300',
+];
+const rankLabel = ['#1 Best', '#2', '#3', '#4', '#5'];
+
+const TopMatchCandidates: React.FC<{ cargoId: string; offeredPrice?: number }> = ({ cargoId, offeredPrice }) => {
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cargoId) return;
+    setLoading(true);
+    cargoOwnerAPI.getCandidatesForLoad(cargoId)
+      .then((res: any) => {
+        const data = Array.isArray(res.data?.data) ? res.data.data : [];
+        setCandidates(data);
+      })
+      .catch(() => setCandidates([]))
+      .finally(() => setLoading(false));
+  }, [cargoId]);
+
+  const handleSelect = async (truckId: string) => {
+    setRequesting(truckId);
+    try {
+      await cargoOwnerAPI.requestMatch(cargoId, truckId);
+      toast.success('Match request sent to truck owner');
+      // Refresh list so the requested truck shows updated status
+      const res: any = await cargoOwnerAPI.getCandidatesForLoad(cargoId);
+      const data = Array.isArray(res.data?.data) ? res.data.data : [];
+      setCandidates(data);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to send match request');
+    } finally {
+      setRequesting(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full" />
+          <h3 className="text-lg font-semibold text-gray-900">Top Match Candidates</h3>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <span className="ml-3 text-sm text-gray-500">Loading candidates…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (candidates.length === 0) {
+    return (
+      <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full" />
+          <h3 className="text-lg font-semibold text-gray-900">Top Match Candidates</h3>
+        </div>
+        <div className="text-center py-8 text-gray-400">
+          <p className="text-sm">No candidates yet. Run Smart Matching to find trucks.</p>
+          <a
+            href={`/dashboard/smart-matching?cargoId=${cargoId}`}
+            className="mt-3 inline-block text-xs font-semibold text-blue-600 hover:underline"
+          >
+            Go to Smart Matching →
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full" />
+          <h3 className="text-lg font-semibold text-gray-900">
+            Top {candidates.length} Match Candidates
+          </h3>
+        </div>
+        <a
+          href={`/dashboard/smart-matching?cargoId=${cargoId}`}
+          className="text-xs font-semibold text-blue-600 hover:underline"
+        >
+          Run new match →
+        </a>
+      </div>
+
+      <div className="space-y-3">
+        {candidates.map((c: any, idx: number) => {
+          const matchDetails = c.matchDetails || {};
+          const truck = c.truck || {};
+          const owner = truck.owner || {};
+          const profile = owner.profile || {};
+          const ownerName = c.ownerName || `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Unknown Carrier';
+          const score = Math.round((c.score || matchDetails.overallScore || 0) * 100);
+          const estimatedCost = matchDetails.estimatedCost ?? matchDetails.recommendedPrice ?? 0;
+          const distanceKm = matchDetails.distanceKm ?? 0;
+          const isRequested = c.status === 'REQUESTED' || c.status === 'ACCEPTED';
+
+          return (
+            <div
+              key={c.id}
+              className={`rounded-xl border-2 ${rankBorder[idx] || 'border-gray-200'} bg-gradient-to-r from-gray-50 to-white p-4`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded-full">
+                      {rankLabel[idx]}
+                    </span>
+                    <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                      {score}% match
+                    </span>
+                    {isRequested && (
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                        {c.status === 'ACCEPTED' ? '✓ Accepted' : 'Requested'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{ownerName}</p>
+                  <p className="text-xs text-gray-500">
+                    {truck.truckType || 'Truck'} · {truck.make || ''} {truck.model || ''} · {truck.plateNumber || ''}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-gray-900">
+                    {estimatedCost > 0 ? formatCurrency(estimatedCost) : '—'}
+                  </p>
+                  <p className="text-xs text-gray-400">{distanceKm > 0 ? `${distanceKm.toLocaleString()} km` : ''}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mt-2 mb-3">
+                {truck.hasGps && <span className="text-[9px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">GPS</span>}
+                {truck.hasRefrigeration && <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Fridge</span>}
+                {truck.hasHazmatPermit && <span className="text-[9px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Hazmat</span>}
+                {truck.averageRating > 0 && (
+                  <span className="text-[9px] font-bold bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200">
+                    ★ {Number(truck.averageRating).toFixed(1)}
+                  </span>
+                )}
+                {c.ownerVerified && <span className="text-[9px] font-bold bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-200">Verified</span>}
+              </div>
+
+              {!isRequested && (
+                <Button
+                  size="sm"
+                  className="w-full h-8 text-xs font-bold"
+                  onClick={() => handleSelect(truck.id)}
+                  disabled={requesting === truck.id}
+                >
+                  {requesting === truck.id ? 'Sending…' : 'Select This Truck'}
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
 const CargoDetails = () => {
   const { cargoId: id } = useParams();
   const cargoId = useMemo(() => id || "", [id]);
@@ -966,130 +1140,8 @@ const CargoDetails = () => {
                     </div>
                   </div>
 
-                  {/* Top Matches */}
-                  <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                      <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full mr-3"></div>
-                      Top Matches
-                    </h3>
-
-                    <div className="space-y-4">
-                      {[
-                        {
-                          name: "Premium Transport Co.",
-                          matchScore: "94%",
-                          rating: "4.8",
-                          truckType: "Refrigerated Box Truck",
-                          capacity: `${formatWeight(
-                            cargo.weight + 500
-                          )} / ${formatVolume((cargo.volume || 0) + 200)}`,
-                          price: formatCurrency(
-                            (cargo.offeredPrice || 0) * 1.1
-                          ),
-                          color: "green",
-                        },
-                        {
-                          name: "Express Logistics Ltd.",
-                          matchScore: "87%",
-                          rating: "4.6",
-                          truckType: "Flatbed Truck",
-                          capacity: `${formatWeight(
-                            cargo.weight + 300
-                          )} / ${formatVolume((cargo.volume || 0) + 150)}`,
-                          price: formatCurrency(
-                            (cargo.offeredPrice || 0) * 0.95
-                          ),
-                          color: "blue",
-                        },
-                        {
-                          name: "Reliable Haulage",
-                          matchScore: "82%",
-                          rating: "4.4",
-                          truckType: "Box Truck",
-                          capacity: `${formatWeight(
-                            cargo.weight + 200
-                          )} / ${formatVolume((cargo.volume || 0) + 100)}`,
-                          price: formatCurrency(
-                            (cargo.offeredPrice || 0) * 0.88
-                          ),
-                          color: "yellow",
-                        },
-                      ].map((match, index) => (
-                        <div
-                          key={index}
-                          className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div
-                                className={`w-3 h-3 bg-${match.color}-500 rounded-full`}
-                              ></div>
-                              <span className="font-medium text-gray-900">
-                                {match.name}
-                              </span>
-                              <span
-                                className={`px-2 py-1 bg-${match.color}-100 text-${match.color}-800 text-xs rounded-full font-medium`}
-                              >
-                                {match.matchScore} Match
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Star className="w-4 h-4 text-yellow-500" />
-                              <span className="text-sm text-gray-600">
-                                {match.rating}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                            <div>
-                              <span className="text-xs text-gray-500">
-                                Truck Type
-                              </span>
-                              <p className="text-sm font-medium text-gray-900">
-                                {match.truckType}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-500">
-                                Capacity
-                              </span>
-                              <p className="text-sm font-medium text-gray-900">
-                                {match.capacity}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-500">
-                                Price
-                              </span>
-                              <p className="text-sm font-medium text-gray-900">
-                                {match.price}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Button size="sm" className="h-8 px-3 rounded-lg">
-                              Contact
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-3 rounded-lg"
-                            >
-                              View Details
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-3 rounded-lg"
-                            >
-                              Save
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  {/* Top 5 Match Candidates — real data from the matching engine */}
+                  <TopMatchCandidates cargoId={cargoId} offeredPrice={cargo.offeredPrice} />
                   </div>
                 </div>
               )}
