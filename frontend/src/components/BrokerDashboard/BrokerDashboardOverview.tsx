@@ -163,7 +163,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
         <StatCard
           title="Pending Income"
           value={fmt(totalPending + totalApproved)}
-          subtitle={`avg rate ${avgCommRate.toFixed(1)}%`}
+          subtitle={`avg rate ${Number(avgCommRate).toFixed(1)}%`}
           icon={<Clock className="w-5 h-5" />}
           color="warning"
           variant="premium"
@@ -477,7 +477,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
                         {c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`}
                       </td>
                       <td className="py-2.5 pr-4 text-gray-600 dark:text-gray-400">{fmt(c.loadAmount || 0)}</td>
-                      <td className="py-2.5 pr-4 text-gray-600 dark:text-gray-400">{(c.commissionRate || 0).toFixed(1)}%</td>
+                      <td className="py-2.5 pr-4 text-gray-600 dark:text-gray-400">{Number(c.commissionRate || 0).toFixed(1)}%</td>
                       <td className="py-2.5 pr-4 font-bold text-gray-900 dark:text-white">{fmt(c.commissionAmount || 0)}</td>
                       <td className="py-2.5 pr-4">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[c.status] || 'bg-gray-100 text-gray-500'}`}>
