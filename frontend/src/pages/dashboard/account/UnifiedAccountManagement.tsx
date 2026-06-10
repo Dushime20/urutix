@@ -12,6 +12,7 @@ import { TranslatedText } from "@/components/translated-text";
 import { useAuth } from "@/contexts/AuthContext";
 import TruckOwnerProfilePage from "@/pages/TruckOwnerProfilePage";
 import TruckOwnerSettingsPage from "@/pages/TruckOwnerSettingsPage";
+import CargoOwnerProfile from "@/pages/cargo-owner/CargoOwnerProfile";
 
 type TabType = "profile" | "settings";
 
@@ -127,6 +128,8 @@ const UnifiedAccountManagement = () => {
           <div className="">
             {activeTab === "profile" && (user?.role === "TRUCK_OWNER" ? (
               <TruckOwnerProfilePage />
+            ) : user?.role === "CARGO_OWNER" || user?.role === "CARGO_RECEIVER" ? (
+              <CargoOwnerProfile />
             ) : (
               <div className="p-4 sm:p-8"><Profile /></div>
             ))}

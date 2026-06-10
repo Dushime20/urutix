@@ -153,6 +153,7 @@ const UnifiedFinancialManagement = lazy(() => import('./pages/dashboard/financia
 const UnifiedDocumentManagement = lazy(() => import('./pages/dashboard/documents'));
 const InvoiceViewer = lazy(() => import('./components/CargoOwner/InvoiceViewer'));
 const ReceiverCargosPage = lazy(() => import('./pages/cargo-owner/ReceiverCargosPage'));
+const CargoOwnerProfile = lazy(() => import('./pages/cargo-owner/CargoOwnerProfile'));
 const CargoInspectionPage = lazy(() => import('./pages/cargo-owner/CargoInspectionPage'));
 const ReceiptViewer = lazy(() => import('./components/Lender/ReceiptViewer'));
 
@@ -296,7 +297,7 @@ function App() {
                       <Route path="inspections" element={<UnifiedTrackingManagement />} />
                       <Route path="multi-modal" element={<MultiModalTracking />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
-                      <Route path="profile" element={<UnifiedAccountManagement />} />
+                      <Route path="profile" element={<CargoOwnerProfile />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />
                       <Route path="payments" element={<UnifiedFinancialManagement />} />
                       <Route path="pending-payments" element={<UnifiedFinancialManagement />} />
@@ -356,7 +357,7 @@ function App() {
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<UnifiedTrackingManagement />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
-                      <Route path="profile" element={<UnifiedAccountManagement />} />
+                      <Route path="profile" element={<CargoOwnerProfile />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />
                       <Route path="payments" element={<UnifiedFinancialManagement />} />
                       <Route path="pending-payments" element={<UnifiedFinancialManagement />} />
