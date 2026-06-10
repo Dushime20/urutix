@@ -180,6 +180,28 @@ export class TripCompletionService {
     // First ensure trip completion payment is created
     const { payment } = await this.handleTripCompletion(tripId, tenantId, 'CARGO_RECEIVER_CONFIRMATION');
 
+    // ── Mark the load as DELIVERED now that the receiver has confirmed ────────
+    // The inspection in ReceiversService already does this, but we guard here
+    // as a safety net for any flow that reaches this method directly.
+    try {
+      const trip = await this.tripRepository.findOne({
+        where: { id: tripId },
+        relations: ['load'],
+      });
+      if (trip?.load) {
+        const { LoadStatus } = await import('../../../entities/load.entity');
+        if (trip.load.status !== LoadStatus.DELIVERED && trip.load.status !== LoadStatus.COMPLETED) {
+          trip.load.status = LoadStatus.DELIVERED;
+          await this.loadRepository.save(trip.load);
+          this.logger.log(`Load ${trip.load.id} status set to DELIVERED via cargo receiver confirmation`);
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Failed to mark load as DELIVERED during receiver confirmation: ${err.message}`);
+      // Non-fatal — payment was already saved
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Update payment metadata to include receiver confirmation
     payment.metadata = {
       ...payment.metadata,
@@ -209,12 +231,12 @@ export class TripCompletionService {
         priority: 'HIGH' as any,
         actionUrl: `/dashboard/pending-payments`,
         actionText: 'Pay Now',
-        metadata: { 
-          paymentId: payment.id, 
+        metadata: {
+          paymentId: payment.id,
           tripId,
           receiverConfirmed: true,
-          receiverName: receiver.profile?.firstName ? 
-            `${receiver.profile.firstName} ${receiver.profile.lastName}`.trim() : 
+          receiverName: receiver.profile?.firstName ?
+            `${receiver.profile.firstName} ${receiver.profile.lastName}`.trim() :
             receiver.email
         },
       } as any);

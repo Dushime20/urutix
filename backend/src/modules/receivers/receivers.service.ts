@@ -721,6 +721,20 @@ export class ReceiversService {
 
     const savedInspection = await this.cargoInspectionRepository.save(inspection);
 
+    // ── When the receiver completes inspection the cargo has been physically
+    //    delivered and accepted.  Update the load status to DELIVERED so all
+    //    dashboard views reflect the real state.
+    if (inspectionStatus === InspectionStatus.COMPLETED) {
+      try {
+        const { LoadStatus } = await import('../../entities/load.entity');
+        cargo.status = LoadStatus.DELIVERED;
+        await this.loadRepository.save(cargo);
+        this.logger.log(`Load ${cargoId} status set to DELIVERED after receiver inspection`);
+      } catch (err) {
+        this.logger.error(`Failed to mark load ${cargoId} as DELIVERED: ${err.message}`);
+      }
+    }
+
     // If inspection is completed successfully, update ePOD status and trigger payment
     if (inspectionStatus === InspectionStatus.COMPLETED) {
       // Find the ePOD directly via the load → trip join, avoiding fragile string-based repo lookup
