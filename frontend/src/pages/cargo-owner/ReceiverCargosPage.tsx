@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import receiverService from '../../services/receiverService';
 import { FaBox, FaCalendarAlt, FaClipboardCheck, FaCheckCircle } from 'react-icons/fa';
-import { Search, Grid, Table, Package, User, Eye } from 'lucide-react';
+import { Search, Grid, Table, Package, User, Eye, X } from 'lucide-react';
 import CargoDetailsModal from '../../components/CargoDetailsModal';
 import FilterSelect from '../../components/common/FilterSelect';
 import { cn } from '../../utils/cn';
@@ -21,6 +21,8 @@ interface Cargo {
   status: string;
   weight?: number;
   volume?: number;
+  inspectionStatus?: string;   // injected by getCargosByReceiverId
+  inspection?: any;            // injected by getCargosByReceiverId
   assignedTruck?: {
     id: string;
     plateNumber: string;
@@ -38,13 +40,44 @@ interface Cargo {
   };
 }
 
+// Human-readable label for any status value coming from the API
+const STATUS_LABELS: Record<string, string> = {
+  DRAFT: 'Draft',
+  CREATED: 'Created',
+  PUBLISHED: 'Published',
+  PENDING_CONFIRMATION: 'Pending Confirmation',
+  ASSIGNED: 'Assigned',
+  LOADED: 'Loaded',
+  IN_TRANSIT: 'In Transit',
+  DELIVERED: 'Delivered',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  CLOSED: 'Closed',
+};
+
+// Human-readable label for cargo type values
+const CARGO_TYPE_LABELS: Record<string, string> = {
+  GENERAL: 'General',
+  FRAGILE: 'Fragile',
+  HAZARDOUS: 'Hazardous',
+  REFRIGERATED: 'Refrigerated',
+  LIQUID: 'Liquid',
+  OVERSIZED: 'Oversized',
+  VALUABLE: 'Valuable',
+  CONTAINER: 'Container',
+  BULK: 'Bulk',
+  LIVESTOCK: 'Livestock',
+  VEHICLE: 'Vehicle',
+  ELECTRONICS: 'Electronics',
+  PHARMACEUTICALS: 'Pharmaceuticals',
+};
+
 const ReceiverCargosPage: React.FC = () => {
   const {  } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [inspectionStatuses, setInspectionStatuses] = useState<Record<string, any>>({});
   const [selectedCargoId, setSelectedCargoId] = useState<string | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
@@ -74,7 +107,6 @@ const ReceiverCargosPage: React.FC = () => {
       if (cargoToView) {
         setSelectedCargoId(viewId);
         setShowDetailsModal(true);
-        // Clean up URL without reload
         window.history.replaceState({}, '', '/dashboard/cargos/my-cargos');
       }
     }
@@ -83,22 +115,10 @@ const ReceiverCargosPage: React.FC = () => {
   const loadMyCargos = async () => {
     try {
       setLoading(true);
+      // getCargosByReceiverId already injects inspectionStatus + inspection
+      // on every cargo object, so no separate loop needed
       const data = await receiverService.getMyCargos();
-      setCargos(data);
-      
-      // Load inspection statuses for all cargos
-      const statuses: Record<string, any> = {};
-      for (const cargo of data) {
-        try {
-          const inspection = await receiverService.getCargoInspection(cargo.id);
-          if (inspection) {
-            statuses[cargo.id] = inspection;
-          }
-        } catch (error) {
-          // No inspection found, that's fine
-        }
-      }
-      setInspectionStatuses(statuses);
+      setCargos(Array.isArray(data) ? data : []);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load your cargos');
     } finally {
@@ -106,13 +126,32 @@ const ReceiverCargosPage: React.FC = () => {
     }
   };
 
+  // ── Dynamic filter options derived from the actual data ──────────────────────
+  // This ensures every status/type that comes from the API is selectable,
+  // regardless of what the backend returns.
+  const statusOptions = useMemo(() => {
+    const unique = [...new Set(cargos.map(c => c.status).filter(Boolean))].sort();
+    return unique.map(s => ({
+      value: s,
+      label: STATUS_LABELS[s] ?? s.replace(/_/g, ' '),
+    }));
+  }, [cargos]);
+
+  const cargoTypeOptions = useMemo(() => {
+    const unique = [...new Set(cargos.map(c => c.cargoType).filter(Boolean))].sort();
+    return unique.map(t => ({
+      value: t,
+      label: CARGO_TYPE_LABELS[t] ?? t.replace(/_/g, ' '),
+    }));
+  }, [cargos]);
+
   const filteredCargos = useMemo(() => {
     let filtered = cargos;
 
-    if (searchTerm && searchTerm.trim()) {
+    if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(
-        (cargo) => 
+        (cargo) =>
           cargo.title?.toLowerCase().includes(searchLower) ||
           cargo.description?.toLowerCase().includes(searchLower) ||
           cargo.cargoType?.toLowerCase().includes(searchLower) ||
@@ -121,16 +160,37 @@ const ReceiverCargosPage: React.FC = () => {
       );
     }
 
+    // Status filter: compare uppercase to be safe against inconsistent casing
     if (statusFilter) {
-      filtered = filtered.filter((cargo) => cargo.status === statusFilter);
+      filtered = filtered.filter(
+        (cargo) => (cargo.status ?? '').toUpperCase() === statusFilter.toUpperCase()
+      );
     }
 
+    // Cargo type filter: compare uppercase
     if (cargoTypeFilter) {
-      filtered = filtered.filter((cargo) => cargo.cargoType === cargoTypeFilter);
+      filtered = filtered.filter(
+        (cargo) => (cargo.cargoType ?? '').toUpperCase() === cargoTypeFilter.toUpperCase()
+      );
     }
 
     return filtered;
   }, [cargos, searchTerm, statusFilter, cargoTypeFilter]);
+
+  // Helper: resolve inspection status from the cargo object itself
+  // (backend injects inspectionStatus + inspection directly on the cargo)
+  const isInspectionDone = (cargo: Cargo): boolean =>
+    cargo.inspectionStatus === 'COMPLETED' ||
+    cargo.inspection?.status === 'COMPLETED' ||
+    cargo.inspection?.allItemsVerified === true;
+
+  const hasActiveFilters = searchTerm || statusFilter || cargoTypeFilter;
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setCargoTypeFilter('');
+  };
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -201,12 +261,7 @@ const ReceiverCargosPage: React.FC = () => {
                 label="Status"
                 value={statusFilter}
                 placeholder="ALL STATES"
-                options={[
-                  { value: "ASSIGNED", label: "Assigned" },
-                  { value: "IN_TRANSIT", label: "In Transit" },
-                  { value: "DELIVERED", label: "Delivered" },
-                  { value: "COMPLETED", label: "Completed" },
-                ]}
+                options={statusOptions}
                 onChange={setStatusFilter}
               />
             </div>
@@ -216,16 +271,20 @@ const ReceiverCargosPage: React.FC = () => {
                 label="Cargo Type"
                 value={cargoTypeFilter}
                 placeholder="ALL TYPES"
-                options={[
-                   { value: "GENERAL", label: "General" },
-                   { value: "FRAGILE", label: "Fragile" },
-                   { value: "HAZARDOUS", label: "Hazardous" },
-                   { value: "REFRIGERATED", label: "Refrigerated" },
-                   { value: "LIQUID", label: "Liquid" },
-                ]}
+                options={cargoTypeOptions}
                 onChange={setCargoTypeFilter}
               />
             </div>
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                title="Clear all filters"
+                className="self-end flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-red-500 bg-red-50 border border-red-100 hover:bg-red-100 transition-all"
+              >
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl p-1 border border-slate-100 self-end lg:self-center">
@@ -257,6 +316,24 @@ const ReceiverCargosPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Results count */}
+      {!loading && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {filteredCargos.length} of {cargos.length} cargo{cargos.length !== 1 ? 's' : ''}
+            {hasActiveFilters ? ' matching filters' : ' total'}
+          </p>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-[9px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors"
+            >
+              <X className="w-3 h-3" /> Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       {filteredCargos.length === 0 ? (
         <div className="bg-white rounded-[3rem] border border-slate-100 border-dashed p-16 sm:p-24 text-center">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
@@ -264,10 +341,18 @@ const ReceiverCargosPage: React.FC = () => {
           </div>
           <h3 className="text-xl font-black text-slate-900 tracking-tight">Inventory Empty</h3>
           <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-sm mx-auto leading-relaxed">
-            {searchTerm || statusFilter || cargoTypeFilter 
+            {hasActiveFilters
               ? "Zero payloads match your authorization query parameters." 
               : "No cargos have been assigned to your endpoint yet."}
           </p>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="mt-4 text-[9px] font-black uppercase tracking-widest text-primary-600 hover:underline"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -360,7 +445,7 @@ const ReceiverCargosPage: React.FC = () => {
                          Full Logic
                       </button>
 
-                      {inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified ? (
+                      {isInspectionDone(cargo) ? (
                         <button
                           onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-all text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm active:scale-95"
@@ -438,7 +523,7 @@ const ReceiverCargosPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap">
-                         {inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified ? (
+                         {isInspectionDone(cargo) ? (
                              <span className="inline-flex items-center gap-2 text-[9px] text-emerald-600 font-black uppercase tracking-widest">
                                  <FaCheckCircle className="w-3 h-3" />
                                  Verified
@@ -456,11 +541,11 @@ const ReceiverCargosPage: React.FC = () => {
                                 onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
                                 className={cn(
                                     "p-2.5 rounded-xl transition-all active:scale-90 shadow-sm border",
-                                    (inspectionStatuses[cargo.id]?.status === 'COMPLETED' || inspectionStatuses[cargo.id]?.allItemsVerified)
+                                    isInspectionDone(cargo)
                                         ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
                                         : "bg-primary-50 text-primary-600 border-primary-100 hover:bg-primary-100"
                                 )}
-                                title={inspectionStatuses[cargo.id]?.status === 'COMPLETED' ? "View Logic" : "Inspect Node"}
+                                title={isInspectionDone(cargo) ? "View Inspection History" : "Inspect Cargo"}
                             >
                                 <FaClipboardCheck className="w-4 h-4" />
                             </button>
