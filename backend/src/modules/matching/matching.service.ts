@@ -2010,14 +2010,45 @@ export class MatchingService {
       const overallScore = this.calculateWeightedScore(factors, weights);
 
       // Calculate supporting metrics using ROUTE distance (pickup → delivery), not truck-to-pickup
-      const pickup = load.pickupLocation?.locationData?.coordinates;
-      const delivery = load.deliveryLocation?.locationData?.coordinates;
-      const routeDistanceKm = (pickup && delivery)
-        ? this.calculateHaversineDistance(pickup.latitude, pickup.longitude, delivery.latitude, delivery.longitude)
-        : distanceKm; // fallback to truck-to-pickup if no route coords
+      const pickupLoc = load.pickupLocation;
+      const deliveryLoc = load.deliveryLocation;
+      
+      // Calculate the actual route distance (origin → destination)
+      let routeDistanceKm = 0;
+      
+      if (pickupLoc?.locationData?.coordinates && deliveryLoc?.locationData?.coordinates) {
+        const pickupCoords = pickupLoc.locationData.coordinates;
+        const deliveryCoords = deliveryLoc.locationData.coordinates;
+        
+        if (pickupCoords.latitude && pickupCoords.longitude && deliveryCoords.latitude && deliveryCoords.longitude) {
+          routeDistanceKm = this.calculateHaversineDistance(
+            pickupCoords.latitude, 
+            pickupCoords.longitude, 
+            deliveryCoords.latitude, 
+            deliveryCoords.longitude
+          );
+          
+          this.logger.debug(
+            `Load ${load.id} route: ${pickupCoords.latitude.toFixed(4)},${pickupCoords.longitude.toFixed(4)} → ` +
+            `${deliveryCoords.latitude.toFixed(4)},${deliveryCoords.longitude.toFixed(4)} = ${routeDistanceKm.toFixed(1)}km`
+          );
+        }
+      }
+      
+      // Every load has pickup and delivery locations — routeDistanceKm must be
+      // calculated from real coordinates. If it is still 0 here something is
+      // genuinely wrong with this specific load's data; log it but do NOT
+      // substitute a fake distance.
+      if (routeDistanceKm === 0) {
+        this.logger.error(
+          `Load ${load.id}: route distance is 0. ` +
+          `pickupLocation coords: ${JSON.stringify(pickupLoc?.locationData?.coordinates)} ` +
+          `deliveryLocation coords: ${JSON.stringify(deliveryLoc?.locationData?.coordinates)}`,
+        );
+      }
 
       const estimatedCost = this.estimateCost(routeDistanceKm, loadWeight, truck);
-      const estimatedRevenue = this.estimateRevenue(routeDistanceKm, loadWeight);
+      const estimatedRevenue = this.estimateRevenue(routeDistanceKm, loadWeight, load);
       const profitMargin = estimatedRevenue > 0
         ? ((estimatedRevenue - estimatedCost) / estimatedRevenue)
         : 0;
@@ -3166,31 +3197,30 @@ export class MatchingService {
 
   /**
    * Calculate the route distance (pickup → delivery) for a load.
-   * This is used to check if the load's route fits within a truck's max operating distance.
-   * Returns 0 if coordinates are not available (no rejection in that case).
+   * Every load has pickup and delivery locations — no fallback values.
+   * Returns the haversine distance in km, or throws if coordinates are missing.
    */
   private calculateRouteDistance(load: Load): number {
-    try {
-      const pickup = load.pickupLocation;
-      const delivery = load.deliveryLocation;
+    const pickup   = load.pickupLocation;
+    const delivery = load.deliveryLocation;
 
-      if (!pickup?.locationData?.coordinates || !delivery?.locationData?.coordinates) {
-        return 0; // Can't calculate — don't reject
-      }
+    const pLat = pickup?.locationData?.coordinates?.latitude;
+    const pLon = pickup?.locationData?.coordinates?.longitude;
+    const dLat = delivery?.locationData?.coordinates?.latitude;
+    const dLon = delivery?.locationData?.coordinates?.longitude;
 
-      const pickupLat = pickup.locationData.coordinates.latitude;
-      const pickupLon = pickup.locationData.coordinates.longitude;
-      const deliveryLat = delivery.locationData.coordinates.latitude;
-      const deliveryLon = delivery.locationData.coordinates.longitude;
-
-      if (!pickupLat || !pickupLon || !deliveryLat || !deliveryLon) {
-        return 0;
-      }
-
-      return this.calculateHaversineDistance(pickupLat, pickupLon, deliveryLat, deliveryLon);
-    } catch {
-      return 0; // On error, don't reject
+    if (!pLat || !pLon || !dLat || !dLon) {
+      this.logger.error(
+        `calculateRouteDistance: Load ${load.id} is missing route coordinates. ` +
+        `pickup=${JSON.stringify(pickup?.locationData?.coordinates)} ` +
+        `delivery=${JSON.stringify(delivery?.locationData?.coordinates)}`,
+      );
+      // Return 0 — caller will skip the maxDistance gate for this truck
+      // rather than incorrectly rejecting or accepting it.
+      return 0;
     }
+
+    return this.calculateHaversineDistance(pLat, pLon, dLat, dLon);
   }
 
   private calculateDistance(load: Load, truck: Truck): number {
@@ -3267,42 +3297,60 @@ export class MatchingService {
     weightKg: number,
     truck: Truck,
   ): number {
-    // Use a realistic per-tonne-km rate for African freight market
-    // Base rate: ~$0.08 per tonne-km (typical East Africa road freight)
+    // Per tonne-km rate — East Africa road freight
+    // 0.08 per tonne-km (local currency unit, same as the load's currencyCode)
     const tonneKm = (weightKg / 1000) * distanceKm;
-    const baseRate = 0.08; // $0.08 per tonne-km
-
-    // Minimum floor: $50 regardless of distance (short haul minimum)
-    const baseCost = Math.max(tonneKm * baseRate, 50);
+    const baseCost = tonneKm * 0.08;
 
     // Truck-specific surcharges
     let surcharge = 1.0;
-    if (truck.hasRefrigeration) surcharge += 0.25; // 25% for reefer
-    if (truck.hasHazmatPermit) surcharge += 0.15;  // 15% for hazmat
-    if (truck.fuelType === FuelType.ELECTRIC) surcharge -= 0.05; // 5% discount for EV
+    if (truck.hasRefrigeration)               surcharge += 0.25; // +25% reefer
+    if (truck.hasHazmatPermit)                surcharge += 0.15; // +15% hazmat
+    if (truck.fuelType === FuelType.ELECTRIC) surcharge -= 0.05; // −5% EV
 
     return Math.round(baseCost * surcharge * 100) / 100;
   }
 
-  private estimateRevenue(distanceKm: number, weightKg: number): number {
-    // Market rate slightly above cost — $0.10 per tonne-km
+  private estimateRevenue(distanceKm: number, weightKg: number, load?: Load): number {
+    // Use the cargo owner's offered price — it is the real expected revenue.
+    if (load) {
+      const offered = Number(load.offeredPrice);
+      if (offered > 0) {
+        this.logger.debug(`estimateRevenue: using offeredPrice ${offered} for load ${load.id}`);
+        return offered;
+      }
+    }
+
+    // offeredPrice not set — calculate from real route distance.
+    // distanceKm here is always the haversine pickup→delivery distance (no fallback).
     const tonneKm = (weightKg / 1000) * distanceKm;
-    return Math.max(tonneKm * 0.10, 60);
+    const calculated = tonneKm * 0.10;
+    this.logger.debug(`estimateRevenue: calculated ${calculated} (${tonneKm} tonne-km × 0.10)`);
+    return calculated;
   }
 
   private getMarketAverageCost(load: Load): number {
-    // Estimate route distance from load locations
-    const pickup = load.pickupLocation?.locationData?.coordinates;
+    // Prefer the cargo owner's offered price — it is the real market signal.
+    const offered = Number(load.offeredPrice);
+    if (offered > 0) return offered;
+
+    // Every load has pickup and delivery locations — calculate real route distance.
+    const pickup   = load.pickupLocation?.locationData?.coordinates;
     const delivery = load.deliveryLocation?.locationData?.coordinates;
-    let routeKm = 200; // default 200 km if no coordinates
-    if (pickup && delivery) {
-      routeKm = this.calculateHaversineDistance(
-        pickup.latitude, pickup.longitude,
-        delivery.latitude, delivery.longitude,
-      ) || 200;
+
+    if (!pickup?.latitude || !pickup?.longitude || !delivery?.latitude || !delivery?.longitude) {
+      this.logger.error(
+        `getMarketAverageCost: Load ${load.id} missing route coordinates.`,
+      );
+      return 0;
     }
+
+    const routeKm = this.calculateHaversineDistance(
+      pickup.latitude, pickup.longitude,
+      delivery.latitude, delivery.longitude,
+    );
     const tonneKm = (Number(load.weight) / 1000) * routeKm;
-    return Math.max(tonneKm * 0.09, 50); // $0.09/tonne-km market average
+    return Math.max(tonneKm * 0.09, 50);
   }
 
   private calculateDimensionalCompatibility(truck: Truck, load: Load): number {
