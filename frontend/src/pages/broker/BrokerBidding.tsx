@@ -6,6 +6,7 @@ import BidHistory from '../../components/Bidding/BidHistory';
 import BidAnalytics from '../../components/Bidding/BidAnalytics';
 import CreateAuction from '../../components/Bidding/CreateAuction';
 import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, Zap, Shield, ArrowRight } from 'lucide-react';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 const BrokerBidding: React.FC = () => {
   const [activeTab, setActiveTab] = useState('auctions');
@@ -48,15 +49,15 @@ const BrokerBidding: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Bidding Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
-            <Gavel size={24} className="text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-[#345E85]/10 dark:bg-white/10 border border-[#345E85]/20 dark:border-white/20 flex items-center justify-center">
+            <Gavel size={24} className="text-[#345E85] dark:text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Bidding</h1>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">Bidding</h1>
             <p className="text-slate-400 text-sm font-bold uppercase">System Stats</p>
           </div>
         </div>
@@ -76,24 +77,10 @@ const BrokerBidding: React.FC = () => {
 
       {/* Statistics Board */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {[
-          { label: 'Auctions', value: stats.totalAuctions, icon: Gavel },
-          { label: 'Active', value: stats.activeBids, icon: Users },
-          { label: 'Liquidity', value: stats.totalValue >= 1000 ? `$${(stats.totalValue / 1000).toFixed(1)}K` : `$${stats.totalValue.toLocaleString()}`, icon: DollarSign },
-          { label: 'Win Rate', value: `${stats.successRate}%`, icon: Activity }
-        ].map((stat, i) => (
-          <div key={i} className="group bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <div className="relative z-10 space-y-6">
-              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50">
-                <stat.icon size={18} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
-              </div>
-            </div>
-          </div>
-        ))}
+        <StatCard title="Auctions" value={stats.totalAuctions} icon={<Gavel size={20} />} color="primary" variant="classic" />
+        <StatCard title="Active" value={stats.activeBids} icon={<Users size={20} />} color="info" variant="classic" />
+        <StatCard title="Liquidity" value={stats.totalValue >= 1000 ? `$${(stats.totalValue / 1000).toFixed(1)}K` : `$${stats.totalValue.toLocaleString()}`} icon={<DollarSign size={20} />} color="success" variant="classic" />
+        <StatCard title="Win Rate" value={`${stats.successRate}%`} icon={<Activity size={20} />} color="warning" variant="classic" />
       </div>
 
       {/* Tabs Terminal */}

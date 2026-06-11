@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type EscrowAccount, type CreateEscrowData, type FundEscrowData, type ReleaseEscrowData } from '../../services/brokerApi';
 import { Wallet, Plus, Search, DollarSign, CheckCircle2, Clock, Loader2, Eye, ArrowUpCircle, ArrowDownCircle, Shield, TrendingUp, Activity, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 const EscrowManagement: React.FC = () => {
   const { user } = useAuth();
@@ -100,15 +101,15 @@ const EscrowManagement: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Payments Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
-            <Wallet size={24} className="text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-[#345E85]/10 dark:bg-white/10 border border-[#345E85]/20 dark:border-white/20 flex items-center justify-center">
+            <Wallet size={24} className="text-[#345E85] dark:text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Escrow</h1>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">Escrow</h1>
             <p className="text-slate-400 text-sm font-bold uppercase">Payments & Settlements</p>
           </div>
         </div>
@@ -133,24 +134,10 @@ const EscrowManagement: React.FC = () => {
 
       {/* Financial Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {[
-          { label: 'Total Volume', value: `${escrows.reduce((sum, e) => sum + (e.totalAmount || 0), 0).toLocaleString()} KES`, sub: 'Total Contract Value', icon: DollarSign, color: 'primary' },
-          { label: 'Liquid Funds', value: `${escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0).toLocaleString()} KES`, sub: 'Locked in Escrow', icon: Shield, color: 'emerald' },
-          { label: 'Total Released', value: `${escrows.reduce((sum, e) => sum + (e.releasedAmount || 0), 0).toLocaleString()} KES`, sub: 'Successful Payouts', icon: CheckCircle2, color: 'indigo' },
-          { label: 'Commission', value: `${escrows.reduce((sum, e) => sum + (e.commissionAmount || 0), 0).toLocaleString()} KES`, sub: 'Earnings Balance', icon: TrendingUp, color: 'amber' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:bg-primary-50 transition-colors dark:bg-slate-800/50"></div>
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all mb-6 dark:bg-slate-800/50">
-                <stat.icon size={20} />
-              </div>
-              <p className="text-sm font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase mt-1">{stat.sub}</p>
-            </div>
-          </div>
-        ))}
+        <StatCard title="Total Volume" value={`${escrows.reduce((sum, e) => sum + (e.totalAmount || 0), 0).toLocaleString()} KES`} subtitle="Total Contract Value" icon={<DollarSign size={20} />} color="primary" variant="classic" />
+        <StatCard title="Liquid Funds" value={`${escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0).toLocaleString()} KES`} subtitle="Locked in Escrow" icon={<Shield size={20} />} color="emerald" variant="classic" />
+        <StatCard title="Total Released" value={`${escrows.reduce((sum, e) => sum + (e.releasedAmount || 0), 0).toLocaleString()} KES`} subtitle="Successful Payouts" icon={<CheckCircle2 size={20} />} color="success" variant="classic" />
+        <StatCard title="Commission" value={`${escrows.reduce((sum, e) => sum + (e.commissionAmount || 0), 0).toLocaleString()} KES`} subtitle="Earnings Balance" icon={<TrendingUp size={20} />} color="warning" variant="classic" />
       </div>
 
       {/* Terminal Grid */}
@@ -249,7 +236,7 @@ const EscrowManagement: React.FC = () => {
         )}
       </div>
 
-      {showCreateModal && <CreateEscrowModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateCreateEscrow} />}
+      {showCreateModal && <CreateEscrowModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateEscrow} />}
       {showFundModal && selectedEscrow && <FundEscrowModal escrow={selectedEscrow} onClose={() => { setShowFundModal(false); setSelectedEscrow(null); }} onSubmit={(data) => handleFundEscrow(selectedEscrow.id, data)} />}
       {showReleaseModal && selectedEscrow && <ReleaseEscrowModal escrow={selectedEscrow} onClose={() => { setShowReleaseModal(false); setSelectedEscrow(null); }} onSubmit={(data) => handleReleaseEscrow(selectedEscrow.id, data)} />}
       {selectedEscrow && !showFundModal && !showReleaseModal && <ViewEscrowModal escrow={selectedEscrow} onClose={() => setSelectedEscrow(null)} />}
@@ -257,7 +244,6 @@ const EscrowManagement: React.FC = () => {
   );
 };
 
-// ... Modal components updated to Enlite Prime style ...
 const CreateEscrowModal: React.FC<{ onClose: () => void, onSubmit: (data: CreateEscrowData) => void }> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState<CreateEscrowData>({
     loadId: '',
@@ -329,7 +315,7 @@ const CreateEscrowModal: React.FC<{ onClose: () => void, onSubmit: (data: Create
           <div className="flex justify-end gap-6 pt-12 border-t border-slate-50 dark:border-slate-800/50">
             <button type="button" onClick={onClose} className="px-12 py-6 text-sm font-bold uppercase text-slate-400 hover:text-slate-900 transition-colors">Cancel</button>
             <button type="submit" disabled={submitting} className="px-16 py-6 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase shadow-2xl hover:bg-primary-600 transition-all flex items-center gap-4 dark:bg-slate-950">
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
               Create Escrow
             </button>
           </div>
@@ -422,7 +408,6 @@ const ViewEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void }> 
   );
 };
 
-// ... Placeholder for Fund/Release modals (simplified) ...
 const FundEscrowModal: React.FC<{ escrow: EscrowAccount, onClose: () => void, onSubmit: (data: FundEscrowData) => void }> = ({ escrow, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<FundEscrowData>({ amount: escrow.totalAmount - escrow.fundedAmount, paymentMethod: 'Bank Transfer', paymentReference: '' });
   const [submitting, setSubmitting] = useState(false);

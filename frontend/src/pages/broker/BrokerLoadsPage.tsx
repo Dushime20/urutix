@@ -204,15 +204,15 @@ const BrokerLoadsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 sm:px-9 md:px-10 lg:px-12 xl:px-14 space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Loads Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
-            <Package size={24} className="text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-[#345E85]/10 dark:bg-white/10 border border-[#345E85]/20 dark:border-white/20 flex items-center justify-center">
+            <Package size={24} className="text-[#345E85] dark:text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Loads</h1>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">Loads</h1>
             <p className="text-slate-400 text-sm font-bold uppercase tracking-[0.3em]">{filteredLoads.length} AVAILABLE</p>
           </div>
         </div>

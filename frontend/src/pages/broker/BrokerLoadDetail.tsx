@@ -121,15 +121,15 @@ const BrokerLoadDetail: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-32">
       {/* Ultra-Compact Detail Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
           <button onClick={() => navigate('/dashboard/broker/loads')} className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white hover:text-slate-900 transition-all backdrop-blur-xl">
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">{load.title}</h1>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">{load.title}</h1>
             <p className="text-slate-400 text-sm font-bold uppercase">#{load.id.substring(0, 8).toUpperCase()}</p>
           </div>
           <span className={`px-4 py-1.5 rounded-xl text-[8px] font-bold uppercase border shadow-lg ${getStatusPrimeStyle(load.status)}`}>

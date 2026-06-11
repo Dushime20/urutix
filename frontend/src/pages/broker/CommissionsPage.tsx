@@ -17,6 +17,7 @@ import {
   Shield,
   ArrowRight
 } from 'lucide-react';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 const CommissionsPage: React.FC = () => {
   const { user } = useAuth();
@@ -80,15 +81,15 @@ const CommissionsPage: React.FC = () => {
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
       {/* Ultra-Compact Yield Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
+      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
         
         <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
-            <DollarSign size={24} className="text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-[#345E85]/10 dark:bg-white/10 border border-[#345E85]/20 dark:border-white/20 flex items-center justify-center">
+            <DollarSign size={24} className="text-[#345E85] dark:text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Yields</h1>
+            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">Yields</h1>
             <p className="text-slate-400 text-sm font-bold uppercase">Financial Audit</p>
           </div>
         </div>
@@ -99,7 +100,7 @@ const CommissionsPage: React.FC = () => {
              <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">KES Revenue</p>
            </div>
            <div className="flex gap-4">
-             <button className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl text-sm font-bold uppercase hover:bg-white hover:text-slate-900 transition-all">Export</button>
+             <button className="px-8 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 dark:hover:bg-white/10 transition-all">Export</button>
              <button onClick={() => window.location.href='/dashboard/broker/payouts'} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
                <ArrowUpRight size={14} /> Payout
              </button>
@@ -109,25 +110,9 @@ const CommissionsPage: React.FC = () => {
 
       {/* Statistics Board */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[
-          { label: 'Revenue System', value: stats.totalEarned, sub: 'Authorized Payouts', icon: DollarSign, isCount: false },
-          { label: 'Pending Pipeline', value: stats.totalPending, sub: 'In Clearance Cycle', icon: Clock, isCount: false },
-          { label: 'Total Records', value: stats.total, sub: 'Facilitations Processed', icon: Activity, isCount: true }
-        ].map((stat, i) => (
-          <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <div className="relative z-10 space-y-6">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50">
-                <stat.icon size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
-                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                  {stat.isCount ? stat.value : `${stat.value.toLocaleString()} KES`}
-                </h3>
-              </div>
-            </div>
-          </div>
-        ))}
+        <StatCard title="Revenue System" value={`${stats.totalEarned.toLocaleString()} KES`} subtitle="Authorized Payouts" icon={<DollarSign size={20} />} color="success" variant="classic" />
+        <StatCard title="Pending Pipeline" value={`${stats.totalPending.toLocaleString()} KES`} subtitle="In Clearance Cycle" icon={<Clock size={20} />} color="warning" variant="classic" />
+        <StatCard title="Total Records" value={stats.total} subtitle="Facilitations Processed" icon={<Activity size={20} />} color="info" variant="classic" />
       </div>
 
       {/* Audit Controls */}
