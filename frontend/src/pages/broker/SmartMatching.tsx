@@ -1,379 +1,674 @@
+/**
+ * Broker Smart Matching Page
+ *
+ * Identical UI to /dashboard/smart-matching (CargoSmartMatching.tsx) but
+ * scoped for brokers:
+ *  - Loads come from the broker's assigned load list (GET /brokers/:id/loads)
+ *  - Matching engine is the same AI endpoint (POST /matching/find-matches)
+ *  - Truck selection sends a match request on behalf of the cargo owner
+ *    (POST /matching/request)
+ */
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { brokerAPI, type MatchRecommendation } from '../../services/brokerApi';
-import { Brain, TrendingUp, Package, Route, Loader2, Sparkles, Zap, Target, Shield, Star, CheckCircle2, XCircle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  FaTruck, FaStar, FaMapMarkerAlt, FaClock, FaWeightHanging,
+  FaShieldAlt, FaThermometerHalf, FaRoute, FaCheck, FaTimes,
+  FaChartLine, FaChartBar, FaSearch, FaFilter,
+} from 'react-icons/fa';
+import { Brain, Zap, Target, ArrowLeft, RefreshCw, Package } from 'lucide-react';
+import { cargoOwnerAPI, type MatchedTruck, type MarketInsights } from '../../services/cargoOwnerAPI';
+import { brokerAPI } from '../../services/brokerApi';
+import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
+import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
-const SmartMatching: React.FC = () => {
+const BrokerSmartMatching: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const [recommendations, setRecommendations] = useState<MatchRecommendation[]>([]);
+  const preselectedLoadId = searchParams.get('loadId') || searchParams.get('cargoId') || '';
+
+  const [loads, setLoads] = useState<any[]>([]);
+  const [selectedLoadId, setSelectedLoadId] = useState(preselectedLoadId);
+  const [matchedTrucks, setMatchedTrucks] = useState<MatchedTruck[]>([]);
+  const [marketInsights, setMarketInsights] = useState<MarketInsights | null>(null);
+  const [selectedTruck, setSelectedTruck] = useState<MatchedTruck | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedLoadId, setSelectedLoadId] = useState(searchParams.get('loadId') || '');
-  const [selectedRecommendation, setSelectedRecommendation] = useState<MatchRecommendation | null>(null);
+  const [loadsLoading, setLoadsLoading] = useState(true);
+  const [showDetails, setShowDetails] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'table' | 'comparison'>('list');
+  const [compareList, setCompareList] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'score' | 'cost' | 'rating' | 'distance'>('score');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filters, setFilters] = useState({
+    minScore: 0, maxCost: 0, minRating: 0,
+    truckType: '', hasGPS: false, hasRefrigeration: false, hasHazmat: false,
+  });
 
+  // Load the broker's assigned loads on mount
   useEffect(() => {
-    const loadId = searchParams.get('loadId');
-    if (loadId) {
-      setSelectedLoadId(loadId);
-      setTimeout(() => {
-        handleGenerateRecommendations(loadId);
-      }, 500);
-    }
-  }, [searchParams]);
-
-  const handleGenerateRecommendations = async (loadId?: string) => {
-    const idToUse = loadId || selectedLoadId;
-    if (!idToUse) {
-      toast.error('Load ID Required');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await brokerAPI.generateRecommendations(idToUse);
-      setRecommendations(response.data || []);
-      if (response.data && response.data.length > 0) {
-        toast.success(`Search Complete: ${response.data.length} matches found.`);
+    const loadBrokerLoads = async () => {
+      if (!user?.id) return;
+      setLoadsLoading(true);
+      try {
+        const res = await brokerAPI.getBrokerLoads(user.id);
+        const raw = res.data?.data || res.data || [];
+        const eligible = (Array.isArray(raw) ? raw : []).filter(
+          (l: any) => l.status === 'CREATED' || l.status === 'PUBLISHED' || l.status === 'ASSIGNED'
+        );
+        setLoads(eligible);
+        // Auto-run if a load ID was passed in URL
+        if (preselectedLoadId && eligible.find((l: any) => l.id === preselectedLoadId)) {
+          findMatches(preselectedLoadId);
+        }
+      } catch {
+        toast.error('Failed to load assigned cargo');
+      } finally {
+        setLoadsLoading(false);
       }
+    };
+    loadBrokerLoads();
+  }, [user?.id]);
+
+  const findMatches = async (loadId?: string) => {
+    const id = loadId || selectedLoadId;
+    if (!id) { toast.error('Please select a cargo first'); return; }
+    setLoading(true);
+    setMatchedTrucks([]);
+    setSelectedTruck(null);
+    try {
+      const load = loads.find((l: any) => l.id === id);
+      const [matchesRes, insightsRes] = await Promise.all([
+        cargoOwnerAPI.findMatches(id, {
+          minRating: 0,
+          maxCost: load ? (Number(load.loadValue) || 0) * 0.3 : undefined,
+          requiresRefrigeration: load?.requiresRefrigeration,
+          requiresHazmat: load?.isHazardous,
+          isTimeCritical: load?.urgencyLevel === 'CRITICAL',
+          includeDrivers: true,
+          limit: 15,
+        }),
+        cargoOwnerAPI.getMarketInsights().catch(() => ({ data: null })),
+      ]);
+
+      const responseBody = matchesRes.data;
+      const rawMatches = Array.isArray(responseBody)
+        ? responseBody
+        : Array.isArray(responseBody?.data)
+          ? responseBody.data
+          : Array.isArray(responseBody?.matches)
+            ? responseBody.matches
+            : [];
+
+      if (rawMatches.length > 0 && rawMatches.length < 3) {
+        toast('Only ' + rawMatches.length + ' qualified truck(s) found for this cargo', { icon: '⚠️' });
+      }
+
+      const trucks: MatchedTruck[] = rawMatches.map((m: any) => ({
+        id: m.truckId || m.id,
+        score: Math.round((m.overallScore || 0) * 100),
+        estimatedCost: m.estimatedCost || 0,
+        estimatedTime: m.estimatedDeliveryTime || 0,
+        distance: m.distanceKm || 0,
+        matchReason: m.matchReason || '',
+        successProbability: m.successProbability || 0,
+        riskScore: m.riskScore || 0,
+        confidence: m.confidence || 0,
+        truck: {
+          id: m.truckId || m.id,
+          plateNumber: m.plateNumber || '',
+          make: m.truckMake || '',
+          model: m.truckModel || '',
+          year: m.year || 0,
+          capacityWeight: m.capacityWeight || 0,
+          capacityVolume: Number(m.capacityVolume) || 0,
+          truckType: m.truckType || '',
+          hasRefrigeration: m.hasRefrigeration || false,
+          hasHazmatPermit: m.hasHazmatPermit || false,
+          hasGpsTracking: m.hasGps || false,
+          hasTemperatureMonitoring: false,
+          hasSecurityMonitoring: false,
+          insuranceCoverage: 0,
+        },
+        driver: {
+          id: m.driverId || '',
+          firstName: m.driverName?.split(' ')[0] || 'N/A',
+          lastName: m.driverName?.split(' ').slice(1).join(' ') || '',
+          rating: Number(m.driverRating) || Number(m.truckRating) || 0,
+          experience: 0,
+          endorsements: [],
+          certifications: [],
+        },
+        truckOwner: {
+          id: m.ownerId || '',
+          name: m.ownerName || 'Unknown',
+          rating: Number(m.ownerRating) || 0,
+          verified: m.ownerVerified || false,
+        },
+      }));
+
+      setMatchedTrucks(trucks);
+      if (insightsRes.data) setMarketInsights(insightsRes.data);
+      if (trucks.length === 0) toast('No matches found for this cargo', { icon: '🔍' });
+      else toast.success(`Found ${trucks.length} qualified truck${trucks.length === 1 ? '' : 's'}`);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Matching failed');
+      toast.error(err?.response?.data?.message || 'Matching failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAcceptRecommendation = async (recommendationId: string) => {
-    try {
-      await brokerAPI.acceptRecommendation(recommendationId);
-      toast.success('Recommendation Accepted');
-      if (selectedLoadId) {
-        const response = await brokerAPI.getRecommendations(selectedLoadId);
-        setRecommendations(response.data || []);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Action failed');
-    }
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 80) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (score >= 70) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    return 'text-red-600 bg-red-50 border-red-200';
   };
 
-  const getRecommendationTypeIcon = (type: string) => {
-    switch (type) {
-      case 'AI_POWERED': return <Brain className="w-5 h-5" />;
-      case 'ROUTE_OPTIMIZED': return <Route className="w-5 h-5" />;
-      case 'BUNDLING_OPPORTUNITY': return <Package className="w-5 h-5" />;
-      case 'BACKHAUL_IDENTIFIED': return <TrendingUp className="w-5 h-5" />;
-      default: return <Sparkles className="w-5 h-5" />;
-    }
-  };
+  const filteredTrucks = matchedTrucks
+    .filter(t => {
+      if (filters.minScore && t.score < filters.minScore) return false;
+      if (filters.maxCost && t.estimatedCost > filters.maxCost) return false;
+      if (filters.minRating && t.driver?.rating < filters.minRating) return false;
+      if (filters.truckType && t.truck?.truckType !== filters.truckType) return false;
+      if (filters.hasGPS && !t.truck?.hasGpsTracking) return false;
+      if (filters.hasRefrigeration && !t.truck?.hasRefrigeration) return false;
+      if (filters.hasHazmat && !t.truck?.hasHazmatPermit) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      let diff = 0;
+      if (sortBy === 'score') diff = a.score - b.score;
+      else if (sortBy === 'cost') diff = a.estimatedCost - b.estimatedCost;
+      else if (sortBy === 'rating') diff = (a.driver?.rating || 0) - (b.driver?.rating || 0);
+      else if (sortBy === 'distance') diff = a.distance - b.distance;
+      return sortOrder === 'asc' ? diff : -diff;
+    });
 
-  if (loading && recommendations.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="relative">
-          <div className="w-24 h-24 rounded-full border-t-4 border-primary-600 animate-spin"></div>
-          <Brain className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-600 w-10 h-10 animate-pulse" />
-        </div>
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-slate-400">Finding Best Matches...</p>
-      </div>
+  const toggleCompare = (id: string) => {
+    setCompareList(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 3 ? [...prev, id] : prev
     );
-  }
+  };
+
+  const selectedLoad = loads.find((l: any) => l.id === selectedLoadId);
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
-      {/* Ultra-Compact Smart Header */}
-      <div className="relative overflow-hidden bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl flex items-center justify-between group dark:bg-slate-950">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
-        
-        <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-xl">
-            <Target size={24} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1">Quick Matching</h1>
-            <p className="text-slate-400 text-sm font-bold uppercase">{recommendations.length} Active Matches</p>
-          </div>
-        </div>
-        
-        <div className="relative z-10 hidden md:flex items-center gap-4">
-          <input
-            type="text"
-            placeholder="Load ID..."
-            value={selectedLoadId}
-            onChange={(e) => setSelectedLoadId(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-bold placeholder:text-slate-600 focus:ring-2 focus:ring-primary-500/50 transition-all outline-none w-48 shadow-2xl backdrop-blur-md"
-          />
+    <div className="space-y-6 pb-16">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => handleGenerateRecommendations()}
-            disabled={loading || !selectedLoadId}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-bold uppercase px-8 py-2.5 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30 text-sm"
+            onClick={() => navigate('/dashboard/broker')}
+            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors"
           >
-            {loading ? <Loader2 className="animate-spin" size={14} /> : <Zap size={14} />}
-            {loading ? 'Searching...' : 'Find Matches'}
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-[#345E85]/10 rounded-lg">
+                <Target className="w-4 h-4 text-[#345E85]" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85]">AI Engine · Broker</span>
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Smart Matching</h1>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+              Find the best trucks for your assigned cargo
+            </p>
+          </div>
         </div>
+        {matchedTrucks.length > 0 && (
+          <button
+            onClick={() => findMatches()}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </button>
+        )}
       </div>
 
-      {/* Recommendations Infrastructure */}
-      {!loading && recommendations.length === 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { title: 'Match Score', desc: '98.4% success rate in matching cargo with the best truck.', icon: <Target className="text-primary-600" /> },
-            { title: 'Max Profits', desc: 'Identify more ways to save money and increase your earnings.', icon: <TrendingUp className="text-primary-600" /> },
-            { title: 'Safe Delivery', desc: 'Reliability screening across all registered carriers.', icon: <Shield className="text-primary-600" /> }
-          ].map((feature, i) => (
-            <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group dark:bg-slate-900 dark:border-slate-800">
-              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-primary-600 group-hover:text-white transition-all dark:bg-slate-800/50">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-3 dark:text-white">{feature.title}</h3>
-              <p className="text-slate-500 text-sm font-medium leading-relaxed dark:text-slate-400">{feature.desc}</p>
-            </div>
-          ))}
+      {/* Cargo Selector */}
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+        <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">Select Assigned Cargo to Match</h2>
+        {loadsLoading ? (
+          <div className="flex items-center gap-3 text-slate-400">
+            <div className="w-4 h-4 border-2 border-slate-200 border-t-[#345E85] rounded-full animate-spin" />
+            <span className="text-xs font-bold uppercase tracking-widest">Loading assigned cargos...</span>
+          </div>
+        ) : loads.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <Package className="w-10 h-10 text-slate-200" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              No assigned cargos found. Wait for a cargo owner to assign cargo to you.
+            </p>
+            <button
+              onClick={() => navigate('/dashboard/broker/loads')}
+              className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+            >
+              View Loads
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-3">
+            <select
+              value={selectedLoadId}
+              onChange={e => setSelectedLoadId(e.target.value)}
+              className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 focus:outline-none focus:border-[#345E85] focus:ring-1 focus:ring-[#345E85]/20 transition-all"
+            >
+              <option value="">— Choose an assigned cargo —</option>
+              {loads.map((l: any) => (
+                <option key={l.id} value={l.id}>
+                  {l.title || `Cargo ${l.id.slice(0, 8)}`} · {l.weight}kg · {l.status}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => findMatches()}
+              disabled={!selectedLoadId || loading}
+              className="flex items-center gap-2 px-6 py-3 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 disabled:cursor-not-allowed text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+            >
+              {loading ? (
+                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Matching...</>
+              ) : (
+                <><Zap className="w-3.5 h-3.5" /> Find Matches</>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Selected cargo summary */}
+        {selectedLoad && (
+          <div className="mt-4 flex flex-wrap gap-3 pt-4 border-t border-slate-50">
+            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
+              <FaWeightHanging className="text-[#345E85]" /> {selectedLoad.weight} kg
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
+              <Package className="w-3 h-3 text-[#345E85]" /> {selectedLoad.cargoType || 'General'}
+            </span>
+            {selectedLoad.requiresRefrigeration && (
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+                <FaThermometerHalf /> Refrigerated
+              </span>
+            )}
+            {selectedLoad.isHazardous && (
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg">
+                <FaShieldAlt /> Hazardous
+              </span>
+            )}
+            {selectedLoad.pickupDate && (
+              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
+                <FaClock className="text-[#345E85]" /> Pickup: {new Date(selectedLoad.pickupDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Loading state */}
+      {loading && (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-16 flex flex-col items-center gap-6">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full border-t-4 border-[#345E85] animate-spin" />
+            <Brain className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#345E85] w-8 h-8 animate-pulse" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-black text-slate-900 uppercase tracking-widest mb-1">AI Matching in Progress</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analyzing cargo specs and available trucks...</p>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-12">
-          <div className="flex items-end justify-between px-4">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Best Matches</h2>
-              <p className="text-slate-400 font-bold uppercase text-sm mt-1">Found {recommendations.length} Matches</p>
+      )}
+
+      {/* Results */}
+      {!loading && matchedTrucks.length > 0 && (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          {/* ── Top 5 Qualified Trucks Banner ── */}
+          {(() => {
+            const top5 = filteredTrucks.slice(0, 5);
+            const rankColors = [
+              'border-yellow-400 bg-yellow-50',
+              'border-slate-300 bg-slate-50',
+              'border-amber-600 bg-amber-50',
+              'border-green-400 bg-green-50',
+              'border-blue-300 bg-blue-50',
+            ];
+            const rankLabels = ['#1 Best Match', '#2', '#3', '#4', '#5'];
+            const rankTextColors = [
+              'text-yellow-700', 'text-slate-600', 'text-amber-800',
+              'text-green-700', 'text-blue-700',
+            ];
+            if (top5.length === 0) return null;
+            return (
+              <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <Brain className="w-4 h-4 text-[#345E85]" />
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Top {top5.length} Qualified Trucks</h2>
+                  <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-widest">Review &amp; select one to proceed</span>
+                </div>
+                <div className={`grid gap-3 ${top5.length <= 2 ? `grid-cols-1 md:grid-cols-${top5.length}` : top5.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-3 lg:grid-cols-5'}`}>
+                  {top5.map((truck, idx) => (
+                    <button
+                      key={truck.id}
+                      onClick={() => setSelectedTruck(truck)}
+                      className={`relative text-left rounded-2xl border-2 p-4 transition-all ${rankColors[idx]} ${selectedTruck?.id === truck.id ? 'ring-2 ring-[#345E85] ring-offset-1' : 'hover:ring-1 hover:ring-[#345E85]/40'}`}
+                    >
+                      <span className={`absolute top-3 right-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${rankTextColors[idx]} bg-white/70`}>
+                        {rankLabels[idx]}
+                      </span>
+                      <div className="mb-2 pr-16">
+                        <p className="text-xs font-black text-slate-900 leading-tight">{truck.truckOwner?.name || 'Unknown Owner'}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">{truck.truck?.make} {truck.truck?.model} · {truck.truck?.truckType}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(truck.score)}`}>
+                          <FaStar className="w-2 h-2" /> {truck.score}%
+                        </span>
+                        <span className="text-[9px] font-black text-slate-700 bg-white/60 px-2 py-0.5 rounded-full border border-slate-200">
+                          ${truck.estimatedCost?.toLocaleString()}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-500 bg-white/60 px-2 py-0.5 rounded-full border border-slate-200">
+                          {truck.distance} km · {truck.estimatedTime}h
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {truck.truck?.hasGpsTracking && <span className="text-[8px] font-black bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">GPS</span>}
+                        {truck.truck?.hasRefrigeration && <span className="text-[8px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Fridge</span>}
+                        {truck.truck?.hasHazmatPermit && <span className="text-[8px] font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Hazmat</span>}
+                        <span className="text-[8px] font-bold text-slate-500 px-1.5 py-0.5 rounded bg-white/60 border border-slate-200">
+                          ★ {truck.driver?.rating || '—'}
+                        </span>
+                      </div>
+                      <div className={`text-[9px] font-black uppercase tracking-widest py-1.5 text-center rounded-xl ${selectedTruck?.id === truck.id ? 'bg-[#345E85] text-white' : 'bg-white/70 text-[#345E85] border border-[#345E85]/30'}`}>
+                        {selectedTruck?.id === truck.id ? '✓ Selected' : 'Select This Truck'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {matchedTrucks.length > 5 && (
+                  <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                    + {matchedTrucks.length - 5} more trucks available in the full list below
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Controls bar */}
+          <div className="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex bg-slate-50 p-1 rounded-xl gap-1">
+                {(['list', 'table', 'comparison'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    {mode === 'comparison' ? `Compare (${compareList.length}/3)` : mode}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {filteredTrucks.length} of {matchedTrucks.length} matches
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as any)}
+                className="text-[10px] font-black uppercase tracking-widest border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 outline-none"
+              >
+                <option value="score">Score</option>
+                <option value="cost">Cost</option>
+                <option value="rating">Rating</option>
+                <option value="distance">Distance</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(p => p === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-[10px] font-black text-slate-500 hover:bg-slate-100 transition-colors"
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-8">
-            {recommendations.map((rec, index) => (
-              <div key={rec.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col lg:flex-row hover:shadow-2xl transition-all duration-500 group dark:bg-slate-900 dark:border-slate-800">
-                <div className={`lg:w-80 p-10 flex flex-col justify-between items-center text-center ${index === 0 ? 'bg-primary-600 text-white' : 'bg-slate-50 text-slate-900'}`}>
-                  <div>
-                    <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 ${index === 0 ? 'bg-white/20 backdrop-blur-md' : 'bg-white shadow-lg'}`}>
-                      {index === 0 ? <Star size={32} /> : getRecommendationTypeIcon(rec.recommendationType)}
-                    </div>
-                    <p className={`text-sm font-bold uppercase tracking-[0.2em] mb-2 ${index === 0 ? 'text-primary-200' : 'text-slate-400'}`}>
-                      {index === 0 ? 'Best Match' : rec.recommendationType.replace('_', ' ')}
-                    </p>
-                    <h4 className="text-2xl font-bold tracking-tight mb-8">Match #{rec.id.slice(0, 6)}</h4>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <p className="text-5xl font-bold">{rec.matchScore}%</p>
-                    <p className={`text-sm font-bold uppercase opacity-60`}>Match Score</p>
-                  </div>
-                </div>
+          {/* Filters */}
+          <div className="px-6 py-3 border-b border-slate-50 bg-slate-50/50 flex flex-wrap gap-3 items-center">
+            <FaFilter className="text-slate-300 text-xs" />
+            <input type="number" min="0" max="100" placeholder="Min score" value={filters.minScore || ''}
+              onChange={e => setFilters(p => ({ ...p, minScore: Number(e.target.value) }))}
+              className="w-24 px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:border-[#345E85]" />
+            <input type="number" min="0" placeholder="Max cost" value={filters.maxCost || ''}
+              onChange={e => setFilters(p => ({ ...p, maxCost: Number(e.target.value) }))}
+              className="w-28 px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white outline-none focus:border-[#345E85]" />
+            {[
+              { key: 'hasGPS', label: 'GPS' },
+              { key: 'hasRefrigeration', label: 'Fridge' },
+              { key: 'hasHazmat', label: 'Hazmat' },
+            ].map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 cursor-pointer">
+                <input type="checkbox" checked={(filters as any)[key]}
+                  onChange={e => setFilters(p => ({ ...p, [key]: e.target.checked }))} className="rounded" />
+                {label}
+              </label>
+            ))}
+            <button
+              onClick={() => setFilters({ minScore: 0, maxCost: 0, minRating: 0, truckType: '', hasGPS: false, hasRefrigeration: false, hasHazmat: false })}
+              className="text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline ml-auto"
+            >
+              Reset
+            </button>
+          </div>
 
-                <div className="flex-1 p-10 lg:p-12">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 pb-10 border-b border-slate-50 dark:border-slate-800/50">
-                    <div>
-                      <p className="text-sm font-bold text-slate-400 uppercase mb-2">Distance Score</p>
-                      <p className="text-xl font-bold text-slate-900 dark:text-white">{rec.matchingFactors.distanceScore}%</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-400 uppercase mb-2">Capacity</p>
-                      <p className="text-xl font-bold text-slate-900 dark:text-white">{rec.matchingFactors.capacityUtilization}%</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-400 uppercase mb-2">Reliability</p>
-                      <p className="text-xl font-bold text-slate-900 dark:text-white">{rec.matchingFactors.reliabilityScore}%</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-primary-600 uppercase mb-2">Savings</p>
-                      <p className="text-xl font-bold text-primary-600">{rec.routeOptimization?.fuelSavings.toFixed(1)} km</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row gap-6 mb-10">
-                    {rec.bundlingOpportunity && (
-                      <div className="flex-1 bg-emerald-50 rounded-3xl p-6 border border-emerald-100/50">
-                        <div className="flex items-center gap-3 mb-2 text-emerald-700">
-                          <Package size={18} className="font-bold" />
-                          <span className="text-sm font-bold uppercase">Bundle Opportunity</span>
+          {/* List View */}
+          {viewMode === 'list' && (
+            <div className="divide-y divide-slate-50">
+              {filteredTrucks.map(truck => (
+                <div
+                  key={truck.id}
+                  onClick={() => setSelectedTruck(truck)}
+                  className={`p-6 cursor-pointer transition-all hover:bg-slate-50/50 ${selectedTruck?.id === truck.id ? 'bg-blue-50/50 border-l-4 border-[#345E85]' : ''}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <input type="checkbox" checked={compareList.includes(truck.id)}
+                        onChange={() => toggleCompare(truck.id)}
+                        disabled={!compareList.includes(truck.id) && compareList.length >= 3}
+                        className="mt-1 rounded" onClick={e => e.stopPropagation()} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h3 className="text-sm font-black text-slate-900">{truck.truckOwner?.name || 'Unknown Owner'}</h3>
+                          <span className="text-[10px] font-bold text-slate-400">{truck.truck?.make} {truck.truck?.model} · {truck.truck?.truckType}</span>
                         </div>
-                        <p className="text-sm font-bold text-emerald-800 leading-snug">
-                          {rec.bundlingOpportunity.bundledLoadIds.length} loads merging • Savings: {rec.bundlingOpportunity.totalSavings.toLocaleString()}
-                        </p>
-                      </div>
-                    )}
-                    {rec.backhaulOpportunity && (
-                      <div className="flex-1 bg-primary-50 rounded-3xl p-6 border border-primary-100/50">
-                        <div className="flex items-center gap-3 mb-2 text-primary-700">
-                          <TrendingUp size={18} />
-                          <span className="text-sm font-bold uppercase">Backhaul Opportunity</span>
+                        <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-3">
+                          <span className="flex items-center gap-1"><FaMapMarkerAlt className="text-[#345E85]" /> {truck.distance} km</span>
+                          <span className="flex items-center gap-1"><FaClock className="text-[#345E85]" /> {truck.estimatedTime}h</span>
+                          <span className="flex items-center gap-1"><FaStar className="text-yellow-400" /> {truck.driver?.rating} ★</span>
+                          <span className="flex items-center gap-1"><FaShieldAlt className="text-slate-400" /> Risk: {Math.round((truck.riskScore || 0) * 100)}%</span>
                         </div>
-                        <p className="text-sm font-bold text-primary-800 leading-snug">
-                          Reverse route found • Revenue: {rec.backhaulOpportunity.totalRevenue.toLocaleString()}
-                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {truck.truck?.hasGpsTracking && <span className="text-[9px] font-black uppercase tracking-widest bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">GPS</span>}
+                          {truck.truck?.hasRefrigeration && <span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">Fridge</span>}
+                          {truck.truck?.hasHazmatPermit && <span className="text-[9px] font-black uppercase tracking-widest bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full">Hazmat</span>}
+                        </div>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between gap-6 pt-4">
-                    <div className="hidden md:block">
-                      <p className="text-sm font-bold text-slate-300 uppercase tracking-[0.2em]">Match Info</p>
-                      <p className="text-xs font-bold text-slate-400 mt-1 line-clamp-1">{rec.aiInsights?.recommendations[0] || 'Optimized parameters identified for this load.'}</p>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <button 
-                        onClick={() => setSelectedRecommendation(rec)}
-                        className="px-8 py-4 bg-slate-50 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 transition-all border border-slate-100 dark:bg-slate-800/50 dark:text-white dark:border-slate-800"
-                      >
-                        Details
-                      </button>
-                      {rec.status === 'PENDING' ? (
-                        <button 
-                          onClick={() => handleAcceptRecommendation(rec.id)}
-                          className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-200 hover:scale-105 active:scale-95 transition-all"
-                        >
-                          Accept
-                        </button>
-                      ) : (
-                        <div className="px-10 py-4 bg-emerald-50 text-emerald-600 rounded-2xl text-sm font-bold uppercase flex items-center gap-2">
-                          <CheckCircle2 size={14} /> Active
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getScoreColor(truck.score)}`}>
+                        <FaStar className="w-2.5 h-2.5" /> {truck.score}%
+                      </span>
+                      <span className="text-lg font-black text-slate-900">${truck.estimatedCost?.toLocaleString()}</span>
+                      {selectedTruck?.id === truck.id && (
+                        <div className="w-5 h-5 bg-[#345E85] rounded-full flex items-center justify-center">
+                          <FaCheck className="text-white text-[8px]" />
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {selectedRecommendation && (
-        <RecommendationDetailsModal
-          recommendation={selectedRecommendation}
-          onClose={() => setSelectedRecommendation(null)}
-          onAccept={handleAcceptRecommendation}
-        />
-      )}
-    </div>
-  );
-};
-
-const RecommendationDetailsModal: React.FC<{
-  recommendation: MatchRecommendation;
-  onClose: () => void;
-  onAccept: (id: string) => void;
-}> = ({ recommendation, onClose, onAccept }) => {
-  return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-6 animate-fade-in" onClick={onClose}>
-      <div 
-        className="bg-white rounded-[3.5rem] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.3)] max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-slide-up dark:bg-slate-900"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-12 border-b border-white/5 flex items-center justify-between bg-slate-900 text-white shadow-2xl dark:bg-slate-950">
-          <div>
-            <span className="text-sm font-bold text-primary-400 uppercase tracking-[0.4em] mb-2 block">Analysis</span>
-            <h2 className="text-3xl font-bold text-white">Match Details</h2>
-          </div>
-          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white/10 rounded-2xl shadow-sm text-white hover:text-red-400 transition-colors border border-white/10">
-            <XCircle size={24} />
-          </button>
-        </div>
-
-        <div className="p-12 overflow-y-auto custom-scrollbar flex-1 space-y-12">
-          {/* Key Stats Block */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="bg-slate-50 p-6 rounded-3xl dark:bg-slate-800/50">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Match Score</p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{recommendation.matchScore}%</p>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-3xl dark:bg-slate-800/50">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Confidence</p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white">{recommendation.confidenceLevel}%</p>
-            </div>
-            <div className="bg-emerald-50 p-6 rounded-3xl">
-              <p className="text-xs font-bold text-emerald-600 uppercase mb-2">Success Rate</p>
-              <p className="text-3xl font-bold text-emerald-700">{recommendation.aiInsights.predictedSuccessRate.toFixed(1)}%</p>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-3xl dark:bg-slate-800/50">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Status</p>
-              <p className="text-xl font-bold text-slate-700 uppercase mt-1 dark:text-slate-200">{recommendation.status}</p>
-            </div>
-          </div>
-
-          {/* Route Details */}
-          {recommendation.routeOptimization && (
-            <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-                <Route size={18} className="text-primary-600" /> Route Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30 dark:border-slate-800">
-                  <p className="text-sm font-bold text-slate-400 uppercase mb-1">Optimized Distance</p>
-                  <p className="text-xl font-bold text-slate-900 dark:text-white">{recommendation.routeOptimization.optimizedDistance.toFixed(2)} km</p>
+                  {showDetails === truck.id && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Driver</p>
+                        <p className="text-sm font-bold text-slate-700">{truck.driver?.firstName} {truck.driver?.lastName}</p>
+                        <p className="text-xs text-slate-500">{truck.driver?.experience} yrs experience · {truck.driver?.endorsements?.join(', ')}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Truck</p>
+                        <p className="text-sm font-bold text-slate-700">{truck.truck?.make} {truck.truck?.model} ({truck.truck?.year})</p>
+                        <p className="text-xs text-slate-500">Capacity: {truck.truck?.capacityWeight} kg</p>
+                      </div>
+                    </div>
+                  )}
+                  <button onClick={e => { e.stopPropagation(); setShowDetails(showDetails === truck.id ? null : truck.id); }}
+                    className="mt-3 text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline">
+                    {showDetails === truck.id ? 'Hide Details' : 'View Details'}
+                  </button>
                 </div>
-                <div className="border border-slate-100 p-6 rounded-3xl bg-slate-50/30 dark:border-slate-800">
-                  <p className="text-sm font-bold text-slate-400 uppercase mb-1">Time Estimate</p>
-                  <p className="text-xl font-bold text-slate-900 dark:text-white">{Math.round(recommendation.routeOptimization.estimatedTime / 60)} Hours</p>
-                </div>
-                <div className="border border-emerald-100 p-6 rounded-3xl bg-emerald-50/20">
-                  <p className="text-sm font-bold text-emerald-600 uppercase mb-1">Savings</p>
-                  <p className="text-xl font-bold text-emerald-700">{recommendation.routeOptimization.fuelSavings.toFixed(2)} km</p>
-                </div>
-              </div>
+              ))}
             </div>
           )}
 
-          {/* Recommendations Block */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-                <Brain size={18} className="text-primary-600" /> Recommendations
-              </h3>
-              <div className="space-y-3">
-                {recommendation.aiInsights.recommendations.map((insight, idx) => (
-                  <div key={idx} className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-800/50 dark:border-slate-800">
-                    <div className="w-1.5 h-1.5 bg-primary-500 rounded-full mt-1.5 shrink-0"></div>
-                    <p className="text-sm font-bold text-slate-600 leading-relaxed dark:text-slate-300">{insight}</p>
-                  </div>
-                ))}
-              </div>
+          {/* Table View */}
+          {viewMode === 'table' && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50/50 border-b border-slate-100">
+                  <tr>
+                    {['Owner / Truck', 'Score', 'Cost', 'Distance', 'Time', 'Rating', 'Features', ''].map(h => (
+                      <th key={h} className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredTrucks.map(truck => (
+                    <tr key={truck.id} className={`hover:bg-slate-50/50 transition-colors ${selectedTruck?.id === truck.id ? 'bg-blue-50/50' : ''}`}>
+                      <td className="px-5 py-3">
+                        <p className="font-black text-slate-900 text-xs">{truck.truckOwner?.name}</p>
+                        <p className="text-[10px] text-slate-400">{truck.truck?.make} {truck.truck?.model}</p>
+                      </td>
+                      <td className="px-5 py-3"><span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(truck.score)}`}>{truck.score}%</span></td>
+                      <td className="px-5 py-3 font-black text-slate-900 text-xs">${truck.estimatedCost?.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-xs text-slate-500">{truck.distance} km</td>
+                      <td className="px-5 py-3 text-xs text-slate-500">{truck.estimatedTime}h</td>
+                      <td className="px-5 py-3 text-xs text-slate-500">{truck.driver?.rating} ★</td>
+                      <td className="px-5 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {truck.truck?.hasGpsTracking && <span className="text-[8px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-black">GPS</span>}
+                          {truck.truck?.hasRefrigeration && <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black">Fridge</span>}
+                          {truck.truck?.hasHazmatPermit && <span className="text-[8px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-black">Hazmat</span>}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <button onClick={() => setSelectedTruck(truck)} className="text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline">Select</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            
-            <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-                <Shield size={18} className="text-rose-500" /> Risk Factors
-              </h3>
-              <div className="space-y-3">
-                {recommendation.aiInsights.riskFactors.length > 0 ? recommendation.aiInsights.riskFactors.map((risk, idx) => (
-                  <div key={idx} className="flex gap-4 p-4 bg-rose-50 rounded-2xl border border-rose-100/50">
-                    <div className="w-1.5 h-1.5 bg-rose-500 rounded-full mt-1.5 shrink-0"></div>
-                    <p className="text-sm font-bold text-rose-700 leading-relaxed">{risk}</p>
-                  </div>
-                )) : (
-                  <div className="flex flex-col items-center justify-center p-12 bg-emerald-50 rounded-3xl border border-emerald-100/30 text-emerald-600">
-                    <CheckCircle2 size={32} className="mb-4" />
-                    <p className="text-sm font-bold uppercase">Minimal Risk Detected</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+          )}
 
-        <div className="p-10 bg-slate-900 flex items-center justify-between dark:bg-slate-950">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-primary-400">
-              <Shield size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Stability Check</p>
-              <p className="text-xs font-bold text-white">Verified Secure</p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <button onClick={onClose} className="px-8 py-4 bg-white/10 text-white rounded-2xl text-sm font-bold uppercase hover:bg-white/20 transition-all">Close</button>
-            {recommendation.status === 'PENDING' && (
-              <button 
-                onClick={() => onAccept(recommendation.id)}
-                className="px-10 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-2xl shadow-primary-900/40 hover:scale-105 active:scale-95 transition-all"
+          {/* Comparison View */}
+          {viewMode === 'comparison' && (() => {
+            const items = filteredTrucks.filter(t => compareList.includes(t.id));
+            if (items.length === 0) return (
+              <div className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Check boxes in list view to compare up to 3 trucks
+              </div>
+            );
+            const rows = [
+              { label: 'Score',       render: (t: MatchedTruck) => <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(t.score)}`}>{t.score}%</span> },
+              { label: 'Cost',        render: (t: MatchedTruck) => <span className="font-black text-slate-900">${t.estimatedCost?.toLocaleString()}</span> },
+              { label: 'Distance',    render: (t: MatchedTruck) => `${t.distance} km` },
+              { label: 'Est. Time',   render: (t: MatchedTruck) => `${t.estimatedTime}h` },
+              { label: 'Driver Rating', render: (t: MatchedTruck) => `${t.driver?.rating} ★` },
+              { label: 'GPS',         render: (t: MatchedTruck) => t.truck?.hasGpsTracking ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+              { label: 'Refrigeration', render: (t: MatchedTruck) => t.truck?.hasRefrigeration ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+              { label: 'Hazmat',      render: (t: MatchedTruck) => t.truck?.hasHazmatPermit ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+            ];
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50/50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 w-32">Criteria</th>
+                      {items.map(t => (
+                        <th key={t.id} className="px-5 py-3 text-center text-[9px] font-black uppercase tracking-[0.2em] text-slate-700">
+                          {t.truckOwner?.name}<br /><span className="text-slate-400 font-bold normal-case">{t.truck?.make} {t.truck?.model}</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {rows.map(row => (
+                      <tr key={row.label} className="hover:bg-slate-50/30">
+                        <td className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">{row.label}</td>
+                        {items.map(t => <td key={t.id} className="px-5 py-3 text-center text-xs text-slate-700">{row.render(t)}</td>)}
+                      </tr>
+                    ))}
+                    <tr>
+                      <td className="px-5 py-3" />
+                      {items.map(t => (
+                        <td key={t.id} className="px-5 py-3 text-center">
+                          <button onClick={() => setSelectedTruck(t)} className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors">Select</button>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+
+          {/* Confirm selection bar */}
+          {selectedTruck && (
+            <div className="px-6 py-4 border-t border-slate-100 bg-blue-50/50 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Selected</p>
+                <p className="text-sm font-black text-slate-900">
+                  {selectedTruck.truckOwner?.name} · {selectedTruck.score}% match · ${selectedTruck.estimatedCost?.toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await enhancedMatchingApi.requestMatch(selectedLoadId, selectedTruck.id);
+                    const matchId = res?.data?.data?.id || res?.data?.id || res?.id;
+                    if (matchId) {
+                      toast.success('Match request sent successfully');
+                      navigate('/dashboard/broker/loads');
+                    } else {
+                      toast.error('Could not get match ID from server');
+                    }
+                  } catch (err: any) {
+                    toast.error(err?.response?.data?.message || 'Failed to request match');
+                  }
+                }}
+                className="px-6 py-3 bg-[#345E85] hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
               >
-                Accept Strategy
+                Confirm Selection →
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Empty state after search */}
+      {!loading && matchedTrucks.length === 0 && selectedLoadId && (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-16 flex flex-col items-center gap-4 text-center">
+          <div className="size-16 bg-slate-50 rounded-2xl flex items-center justify-center">
+            <FaTruck className="text-slate-300 text-2xl" />
+          </div>
+          <p className="text-sm font-black text-slate-900 uppercase tracking-widest">No matches found</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-xs">
+            No trucks matched this cargo's requirements. Try a different cargo or check back later.
+          </p>
+          <button onClick={() => findMatches()} className="mt-2 px-5 py-2.5 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
+            Try Again
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
-export default SmartMatching;
+export default BrokerSmartMatching;
