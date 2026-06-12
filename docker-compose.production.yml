@@ -1,5 +1,7 @@
 services:
+  # ============================================================
   # PostgreSQL Database with PostGIS
+  # ============================================================
   postgres:
     image: postgis/postgis:15-3.4-alpine
     container_name: urutix_postgres
@@ -21,20 +23,28 @@ services:
       retries: 5
       start_period: 10s
 
+  # ============================================================
   # Redis Cache
+  # ============================================================
   redis:
     image: redis:7-alpine
     container_name: urutix_redis
     restart: unless-stopped
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
-    ports:
-      - "6399:6379"
     volumes:
       - redis_data:/data
     networks:
       - urutix_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Backend Service
+  # ============================================================
+  # Backend — NestJS API (port 3005)
+  # Accessible to host nginx at 127.0.0.1:3005
+  # ============================================================
   backend:
     build:
       context: ./backend
@@ -46,7 +56,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3005
@@ -64,7 +74,7 @@ services:
       REDIS_TLS: ${REDIS_TLS:-false}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://urutix.com}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
@@ -75,9 +85,9 @@ services:
       MOBILE_MONEY_CALLBACK_URL: ${MOBILE_MONEY_CALLBACK_URL}
       MOBILE_MONEY_CURRENCY: ${MOBILE_MONEY_CURRENCY:-RWF}
       MOBILE_MONEY_ACCOUNT_PHONE: ${MOBILE_MONEY_ACCOUNT_PHONE}
-      FRONTEND_URL: ${FRONTEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL:-https://urutix.com}
     ports:
-      - "${BACKEND_PORT:-3005}:3005"
+      - "127.0.0.1:3005:3005"   # Bind to localhost only — host nginx proxies this
     volumes:
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
@@ -90,68 +100,39 @@ services:
       retries: 3
       start_period: 40s
 
-  # Frontend Service
+  # ============================================================
+  # Frontend — React SPA served by nginx (port 5173)
+  # Accessible to host nginx at 127.0.0.1:5173
+  # ============================================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-        VITE_WEBSOCKET_URL: ${VITE_WEBSOCKET_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://urutix.com}
+        VITE_WEBSOCKET_URL: ${VITE_WEBSOCKET_URL:-wss://urutix.com}
     container_name: urutix_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "127.0.0.1:5173:5173"   # Bind to localhost only — host nginx proxies this
     networks:
       - urutix_network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
       start_period: 30s
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: urutix_nginx
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_started
-      frontend:
-        condition: service_started
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - certbot_www:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
-      - nginx_logs:/var/log/nginx
-    networks:
-      - urutix_network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Certbot - Let's Encrypt SSL certificate manager
-  certbot:
-    image: certbot/certbot:latest
-    container_name: urutix_certbot
-    restart: unless-stopped
-    volumes:
-      - certbot_www:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
-    # Renew certificates twice daily (certbot checks if renewal is needed)
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'"
-    networks:
-      - urutix_network
+  # ============================================================
+  # NOTE: No Docker nginx container.
+  # The host nginx (already running on ports 80/443 with SSL)
+  # acts as the reverse proxy. See nginx/setup-host-nginx.sh
+  # ============================================================
 
 networks:
   urutix_network:
@@ -168,10 +149,4 @@ volumes:
   backend_uploads:
     driver: local
   backend_logs:
-    driver: local
-  nginx_logs:
-    driver: local
-  certbot_www:
-    driver: local
-  certbot_conf:
     driver: local
