@@ -17,7 +17,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-NGINX_CONTAINER="sparkmonitoring-frontend-1"
+NGINX_CONTAINER="intelliprocure-nginx"
 CERT_PATH="/etc/letsencrypt/live/urutix.com"
 
 echo -e "${GREEN}=== urutix.com nginx setup ===${NC}"
@@ -100,7 +100,7 @@ server {
     client_max_body_size 50M;
 
     location /api/ {
-        proxy_pass http://urutix_backend:3005;
+        proxy_pass http://${GATEWAY}:3005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -112,7 +112,7 @@ server {
     }
 
     location /api/upload {
-        proxy_pass http://urutix_backend:3005;
+        proxy_pass http://${GATEWAY}:3005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -124,7 +124,7 @@ server {
     }
 
     location /socket.io/ {
-        proxy_pass http://urutix_backend:3005;
+        proxy_pass http://${GATEWAY}:3005;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \"upgrade\";
@@ -136,7 +136,7 @@ server {
     }
 
     location /uploads/ {
-        proxy_pass http://urutix_backend:3005;
+        proxy_pass http://${GATEWAY}:3005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         expires 30d;
@@ -150,7 +150,7 @@ server {
     }
 
     location / {
-        proxy_pass http://urutix_frontend:5173;
+        proxy_pass http://${GATEWAY}:5173;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
