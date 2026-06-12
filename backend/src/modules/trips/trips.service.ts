@@ -67,7 +67,8 @@ export class TripsService {
         .leftJoinAndSelect('trip.driver', 'driver')
         .leftJoinAndSelect('trip.load', 'load')
         .leftJoinAndSelect('trip.pickupLocation', 'pickupLocation')
-        .leftJoinAndSelect('trip.deliveryLocation', 'deliveryLocation');
+        .leftJoinAndSelect('trip.deliveryLocation', 'deliveryLocation')
+        .leftJoinAndSelect('trip.epod', 'epod'); // include ePOD submitted by driver
 
       // Filter by tenant and/or user
       if (userId) {

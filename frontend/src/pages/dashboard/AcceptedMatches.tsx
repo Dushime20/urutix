@@ -4,14 +4,14 @@ import api from '../../services/api';
 import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
 import {
   ArrowLeft, Package, Truck, MapPin, ArrowRight,
-  ChevronDown, ChevronUp, Shield,
-  CheckCircle, Zap, RefreshCw, Navigation,
+  ChevronDown, Shield,
+  CheckCircle, Zap, RefreshCw, Navigation, LayoutList, Table2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const CURRENCY_SYMBOL = '$';
 
 /** Haversine distance in km */
 const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -54,18 +54,15 @@ const getDistance = (match: any): string => {
  * Best available price:
  * trip.agreedPrice > matchDetails.estimatedCost > matchDetails.recommendedPrice > load.offeredPrice
  */
-const getPrice = (match: any): string => {
+const getPriceValue = (match: any): number | null => {
   const details = match.matchDetails ?? match.match_details;
   const trip = match.trip;
-
   const val =
     (trip?.agreedPrice != null ? Number(trip.agreedPrice) : null) ??
     (details?.estimatedCost != null ? Number(details.estimatedCost) : null) ??
     (details?.recommendedPrice != null ? Number(details.recommendedPrice) : null) ??
     (match.load?.offeredPrice != null ? Number(match.load.offeredPrice) : null);
-
-  if (val == null || isNaN(val)) return '—';
-  return `${CURRENCY_SYMBOL}${val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return val == null || isNaN(val) ? null : val;
 };
 
 const fmtDate = (d: any) => {
@@ -77,10 +74,16 @@ const fmtDate = (d: any) => {
 
 const AcceptedMatches: React.FC = () => {
   const navigate = useNavigate();
+  const { format: formatCurrency } = useCurrencyFormat();
+  const getPrice = (match: any): string => {
+    const val = getPriceValue(match);
+    return val == null ? '—' : formatCurrency(val);
+  };
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   const load = async () => {
     setLoading(true);
@@ -138,10 +141,31 @@ const AcceptedMatches: React.FC = () => {
             </p>
           </div>
         </div>
-        <button onClick={load}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          {sorted.length > 0 && !loading && (
+            <div className="flex bg-slate-50 p-1 rounded-xl gap-1">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                title="Card view"
+              >
+                <LayoutList className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                title="Table view"
+              >
+                <Table2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          <button onClick={load}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -166,8 +190,121 @@ const AcceptedMatches: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          <AnimatePresence>
-            {sorted.map(match => {
+          {/* ── TABLE VIEW ─────────────────────────────────────────── */}
+          {viewMode === 'table' && (
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      {['Status', 'Cargo', 'Weight', 'Truck', 'Truck Owner', 'Route', 'Distance', 'Est. Cost', 'Score', 'Pickup Date', 'Action'].map(h => (
+                        <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {sorted.map(match => {
+                      const details = match.matchDetails ?? match.match_details;
+                      return (
+                        <tr key={match.id} className="hover:bg-slate-50/60 transition-colors">
+                          {/* Status */}
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border whitespace-nowrap ${
+                              match.status === 'ACCEPTED'
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                : 'bg-slate-50 text-slate-500 border-slate-200'
+                            }`}>{match.status}</span>
+                          </td>
+                          {/* Cargo */}
+                          <td className="px-4 py-3 max-w-[160px]">
+                            <p className="font-black text-slate-900 text-xs truncate">{match.load?.title || `Cargo ${match.loadId?.slice(0, 8)}`}</p>
+                            <p className="text-[10px] text-slate-400 truncate">{match.load?.cargoType || '—'}</p>
+                          </td>
+                          {/* Weight */}
+                          <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                            {Number(match.load?.weight || 0).toLocaleString()} kg
+                          </td>
+                          {/* Truck */}
+                          <td className="px-4 py-3">
+                            <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{match.truck?.plateNumber || '—'}</p>
+                            <p className="text-[10px] text-slate-400">{`${match.truck?.make || ''} ${match.truck?.model || ''}`.trim() || '—'}</p>
+                          </td>
+                          {/* Truck Owner */}
+                          <td className="px-4 py-3 text-xs text-slate-600 max-w-[120px] truncate">
+                            {match.truck?.owner?.profile?.firstName
+                              ? `${match.truck.owner.profile.firstName} ${match.truck.owner.profile.lastName || ''}`.trim()
+                              : details?.ownerName || '—'}
+                          </td>
+                          {/* Route */}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
+                              <span className="truncate max-w-[70px]">
+                                {match.load?.origin?.city
+                                  || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
+                                  || '—'}
+                              </span>
+                              <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
+                              <span className="truncate max-w-[70px]">
+                                {match.load?.destination?.city
+                                  || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
+                                  || '—'}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Distance */}
+                          <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{getDistance(match)}</td>
+                          {/* Est. Cost */}
+                          <td className="px-4 py-3 text-xs font-black text-slate-900 whitespace-nowrap">{getPrice(match)}</td>
+                          {/* Score */}
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black border whitespace-nowrap ${
+                              (match.score || 0) >= 0.9 ? 'bg-green-50 text-green-600 border-green-200' :
+                              (match.score || 0) >= 0.8 ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                              (match.score || 0) >= 0.7 ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+                              'bg-red-50 text-red-600 border-red-200'
+                            }`}>{Math.round((match.score || 0) * 100)}%</span>
+                          </td>
+                          {/* Pickup Date */}
+                          <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{fmtDate(match.load?.pickupDate)}</td>
+                          {/* Action */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {match.status === 'ACCEPTED' && !match.trip && (
+                              <button
+                                onClick={() => handleCreateTrip(match.id)}
+                                disabled={processingId === match.id}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                              >
+                                {processingId === match.id
+                                  ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                  : <><CheckCircle className="w-3 h-3" /> Start Trip</>
+                                }
+                              </button>
+                            )}
+                            {match.status === 'ACCEPTED' && match.trip && (
+                              <button
+                                onClick={() => navigate('/dashboard/tracking')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                              >
+                                <Navigation className="w-3 h-3" /> Track
+                              </button>
+                            )}
+                            {match.status === 'REQUESTED' && (
+                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Awaiting...</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── CARDS VIEW ─────────────────────────────────────────── */}
+          {viewMode === 'cards' && (
+            <AnimatePresence>
+              {sorted.map(match => {
               const details = match.matchDetails ?? match.match_details;
               return (
                 <motion.div key={match.id}
@@ -328,6 +465,7 @@ const AcceptedMatches: React.FC = () => {
               );
             })}
           </AnimatePresence>
+          )}
         </div>
       )}
     </div>

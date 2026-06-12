@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import LanguageSwitcher from '../LanguageSwitcher';
+import CurrencySelector from '../common/CurrencySelector';
 
 interface FleetHeaderProps {
     maintenanceAlerts?: any[];
@@ -191,6 +192,9 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                     </button>
 
                     <LanguageSwitcher />
+
+                    {/* Currency Selector */}
+                    <CurrencySelector variant="compact" />
 
                     {/* User Profile */}
                     <div className="relative" ref={userMenuRef}>

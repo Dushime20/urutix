@@ -37,11 +37,13 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizard";
 import { getStatusColor, getStatusDisplayName } from "./utils";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
 type TabType = "all" | "active" | "drafts" | "create" | "template" | "bidding";
 
 const UnifiedCargoManagement = () => {
   const { user } = useAuth();
+  const { format: formatCurrency } = useCurrencyFormat();
   const location = useLocation();
   const navigate = useNavigate();
   const { confirm, DialogComponent } = useConfirmDialog();
@@ -936,7 +938,7 @@ const UnifiedCargoManagement = () => {
                                 </div>
                                 <div className="flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 p-2 rounded-xl">
                                   <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                                    {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
+                                    {load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <button onClick={() => handleViewClick(load)} className="p-2 text-slate-400 hover:text-[#345E85]"><Eye className="w-4 h-4" /></button>
@@ -998,7 +1000,7 @@ const UnifiedCargoManagement = () => {
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700 dark:text-slate-300">
-                                      {load.offeredPrice ? `$${load.offeredPrice.toLocaleString()}` : 'N/A'}
+                                      {load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                       <div className="flex items-center justify-end gap-1">

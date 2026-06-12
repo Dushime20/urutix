@@ -8,6 +8,7 @@ import {
   FaTruck, FaGasPump, FaTools, FaRoad, FaUserTie, FaShieldAlt
 } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface Expense {
   id: string;
@@ -132,12 +133,7 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
 
   const expenseColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  const { format: formatCurrency } = useCurrencyFormat();
 
   const getExpenseIcon = (type: string) => {
     const icons = {

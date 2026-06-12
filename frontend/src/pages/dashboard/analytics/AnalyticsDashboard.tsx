@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../contexts/AuthContext';
 import { analyticsApi } from '../../../services/analyticsApi';
@@ -183,13 +184,7 @@ export const AnalyticsDashboard: React.FC = () => {
 
   const isLoading = trendsLoading || summaryLoading || performanceLoading;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const { format: formatCurrency } = useCurrencyFormat();
 
   const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444'];
 

@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
   ManyToOne,
+  OneToOne,
   JoinColumn,
 } from 'typeorm';
 import { Trip } from './trip.entity';
@@ -32,7 +33,7 @@ export class Epod {
   @Column('uuid')
   tripId: string;
 
-  @ManyToOne(() => Trip, { nullable: true })
+  @OneToOne(() => Trip, (trip) => trip.epod, { nullable: true })
   @JoinColumn({ name: 'tripId' })
   trip?: Trip;
 

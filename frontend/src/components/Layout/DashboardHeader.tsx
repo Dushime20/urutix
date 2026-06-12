@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
+import CurrencySelector from '../common/CurrencySelector';
 import ContextualHelp from '../Help/ContextualHelp';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { TranslatedText } from '../translated-text';
@@ -539,7 +540,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             <div className="block">
               <CargoOwnerNotificationDropdown />
             </div>
-            <div className="hidden sm:flex items-center">
+            <div className="hidden sm:flex items-center gap-2">
+              <CurrencySelector variant="compact" />
               <ContextualHelp context={location.pathname} />
             </div>
             <div className="relative" ref={userMenuRef}>

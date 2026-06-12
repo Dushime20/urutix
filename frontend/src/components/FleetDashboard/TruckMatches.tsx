@@ -33,6 +33,7 @@ export const TruckMatches: React.FC = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [acceptedMatchDetails, setAcceptedMatchDetails] = useState<any>(null);
     const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
+    const [confirmMatch, setConfirmMatch] = useState<{ id: string; match: any } | null>(null);
 
     const loadMatches = async () => {
         setLoading(true);
@@ -182,10 +183,27 @@ export const TruckMatches: React.FC = () => {
                                                 <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Route Traverse</p>
                                                 <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300 text-sm">
                                                     <MapPin size={14} className="text-primary-400" />
-                                                    <span>{match.load?.origin?.city || 'Origin'}</span>
-                                                    <ArrowRight size={12} className="text-slate-300 dark:text-slate-600" />
-                                                    <span>{match.load?.destination?.city || 'Destination'}</span>
+                                                    <span className="truncate max-w-[180px]">
+                                                      {match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
+                                                        || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.address?.split(',')[0]
+                                                        || match.load?.origin?.city
+                                                        || 'Origin'}
+                                                    </span>
+                                                    <ArrowRight size={12} className="text-slate-300 dark:text-slate-600 shrink-0" />
+                                                    <span className="truncate max-w-[180px]">
+                                                      {match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
+                                                        || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.address?.split(',')[0]
+                                                        || match.load?.destination?.city
+                                                        || 'Destination'}
+                                                    </span>
                                                 </div>
+                                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                                                  {match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.address
+                                                    || match.load?.origin?.address || ''}
+                                                  {' → '}
+                                                  {match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.address
+                                                    || match.load?.destination?.address || ''}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -215,14 +233,16 @@ export const TruckMatches: React.FC = () => {
                                                             <DetailRow icon={<Weight size={12} />} label="Weight" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
                                                             <DetailRow icon={<DollarSign size={12} />} label="Value" value={match.load?.loadValue ? `$${Number(match.load.loadValue).toLocaleString()}` : '—'} />
                                                             <DetailRow icon={<MapPin size={12} />} label="Pickup" value={
-                                                                match.load?.origin?.city
-                                                                    ? `${match.load.origin.city}${match.load.origin.country ? ', ' + match.load.origin.country : ''}`
-                                                                    : match.load?.pickupLocation?.name || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city || '—'
+                                                                match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.address
+                                                                    || (match.load?.origin?.city
+                                                                        ? `${match.load.origin.city}${match.load.origin.country ? ', ' + match.load.origin.country : ''}`
+                                                                        : '—')
                                                             } />
                                                             <DetailRow icon={<MapPin size={12} />} label="Delivery" value={
-                                                                match.load?.destination?.city
-                                                                    ? `${match.load.destination.city}${match.load.destination.country ? ', ' + match.load.destination.country : ''}`
-                                                                    : match.load?.deliveryLocation?.name || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city || '—'
+                                                                match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.address
+                                                                    || (match.load?.destination?.city
+                                                                        ? `${match.load.destination.city}${match.load.destination.country ? ', ' + match.load.destination.country : ''}`
+                                                                        : '—')
                                                             } />
                                                             <DetailRow icon={<Clock size={12} />} label="Pickup Date" value={match.load?.pickupDate ? new Date(match.load.pickupDate).toLocaleDateString() : '—'} />
                                                             <DetailRow icon={<Clock size={12} />} label="Delivery Date" value={match.load?.deliveryDate ? new Date(match.load.deliveryDate).toLocaleDateString() : '—'} />
@@ -235,6 +255,17 @@ export const TruckMatches: React.FC = () => {
                                                             {match.load?.isFragile && <DetailRow icon={<AlertTriangle size={12} />} label="Fragile" value="Yes" warn />}
                                                             {match.load?.isHazardous && <DetailRow icon={<AlertTriangle size={12} />} label="Hazardous" value="Yes" warn />}
                                                             {match.load?.requiresRefrigeration && <DetailRow icon={<Thermometer size={12} />} label="Refrigeration" value="Required" />}
+                                                            {match.load?.requiresForklift && <DetailRow icon={<AlertTriangle size={12} />} label="Forklift" value="Required" />}
+                                                            {match.load?.requiresCrane && <DetailRow icon={<AlertTriangle size={12} />} label="Crane" value="Required" />}
+                                                            {match.load?.requiresLoadingDock && <DetailRow icon={<AlertTriangle size={12} />} label="Loading Dock" value="Required" />}
+                                                            {match.load?.requiresGpsMonitoring && <DetailRow icon={<Shield size={12} />} label="GPS Monitoring" value="Required" />}
+                                                            {match.load?.numberOfPieces && <DetailRow icon={<Package size={12} />} label="Pieces" value={Number(match.load.numberOfPieces).toLocaleString()} />}
+                                                            {match.load?.numberOfPallets && <DetailRow icon={<Package size={12} />} label="Pallets" value={Number(match.load.numberOfPallets).toLocaleString()} />}
+                                                            {match.load?.packagingType && <DetailRow icon={<Package size={12} />} label="Packaging" value={match.load.packagingType} />}
+                                                            {match.load?.length && <DetailRow icon={<Package size={12} />} label="Dimensions" value={`${match.load.length} × ${match.load.width} × ${match.load.height} m`} />}
+                                                            {match.load?.temperatureMin != null && <DetailRow icon={<Thermometer size={12} />} label="Temp Range" value={`${match.load.temperatureMin}°C – ${match.load.temperatureMax}°C`} />}
+                                                            {match.load?.specialHandlingInstructions && <DetailRow icon={<AlertTriangle size={12} />} label="Special Handling" value={match.load.specialHandlingInstructions} />}
+                                                            {match.load?.insuranceValue && <DetailRow icon={<Shield size={12} />} label="Insurance Value" value={`$${Number(match.load.insuranceValue).toLocaleString()}`} />}
                                                         </div>
 
                                                         {/* Match Scores */}
@@ -282,9 +313,9 @@ export const TruckMatches: React.FC = () => {
                                         {match.status === 'REQUESTED' && (
                                             <>
                                                 <button
-                                                    onClick={() => handleRespond(match.id, 'ACCEPTED', match)}
+                                                    onClick={() => setConfirmMatch({ id: match.id, match })}
                                                     disabled={processingMatchId === match.id}
-                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-primary-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20 disabled:opacity-50"
+                                                    className="flex items-center justify-center gap-2 px-8 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-[#345E85]/20 disabled:opacity-50"
                                                 >
                                                     {processingMatchId === match.id ? <Clock size={14} className="animate-spin" /> : <Check size={14} />}
                                                     Authorize Match
@@ -332,53 +363,161 @@ export const TruckMatches: React.FC = () => {
                 </div>
             </div >
 
-            {/* Success Portal Integration */}
+            {/* ── Authorize Confirmation Modal ───────────────────────── */}
+            <AnimatePresence>
+                {confirmMatch && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setConfirmMatch(null)}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                            className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-gray-800 shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="p-6 pb-4 border-b border-slate-100 dark:border-gray-800 flex items-center gap-3">
+                                <div className="size-10 bg-[#345E85]/10 rounded-xl flex items-center justify-center">
+                                    <CheckCircle2 size={20} className="text-[#345E85]" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Authorize Match</h2>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Review before confirming</p>
+                                </div>
+                            </div>
+
+                            {/* Match summary */}
+                            <div className="p-6 space-y-3">
+                                <div className="bg-slate-50 dark:bg-gray-800 rounded-xl p-4 space-y-2">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-widest">Cargo</span>
+                                        <span className="font-black text-slate-900 dark:text-white">{confirmMatch.match.load?.title || '—'}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-widest">Truck</span>
+                                        <span className="font-black text-slate-900 dark:text-white">{confirmMatch.match.truck?.plateNumber || '—'}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-widest">Route</span>
+                                        <span className="font-black text-slate-900 dark:text-white text-right max-w-[200px] truncate">
+                                            {confirmMatch.match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city || 'Origin'}
+                                            {' → '}
+                                            {confirmMatch.match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city || 'Destination'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-widest">Match Score</span>
+                                        <span className="font-black text-[#345E85]">{Math.round((confirmMatch.match.score || 0) * 100)}%</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-slate-400 font-bold uppercase tracking-widest">Weight</span>
+                                        <span className="font-black text-slate-900 dark:text-white">{Number(confirmMatch.match.load?.weight || 0).toLocaleString()} kg</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                                    By authorizing, you confirm your truck will handle this cargo. The cargo owner will be notified.
+                                </p>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="px-6 pb-6 flex gap-3">
+                                <button
+                                    onClick={() => setConfirmMatch(null)}
+                                    className="flex-1 h-10 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const { id, match } = confirmMatch;
+                                        setConfirmMatch(null);
+                                        await handleRespond(id, 'ACCEPTED', match);
+                                    }}
+                                    disabled={processingMatchId === confirmMatch.id}
+                                    className="flex-1 h-10 bg-[#345E85] hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#345E85]/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {processingMatchId === confirmMatch.id
+                                        ? <Clock size={13} className="animate-spin" />
+                                        : <Check size={13} />
+                                    }
+                                    Authorize
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Success Modal ───────────────────────────────────────── */}
             <AnimatePresence>
                 {showSuccessModal && acceptedMatchDetails && (
-                    <div className="fixed inset-0 bg-blue-950/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 transition-colors duration-200" onClick={() => setShowSuccessModal(false)}>
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => setShowSuccessModal(false)}>
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors duration-200"
+                            className="bg-white dark:bg-gray-900 rounded-2xl max-w-lg w-full overflow-hidden border border-slate-100 dark:border-gray-800 shadow-2xl"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-4 sm:p-5 bg-blue-500 text-white text-center relative overflow-hidden transition-colors duration-200">
+                            {/* Header — system color */}
+                            <div className="p-5 bg-[#345E85] text-white text-center relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-10"><Zap size={64} /></div>
                                 <div className="size-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
                                     <CheckCircle2 size={24} />
                                 </div>
-                                <h2 className="text-xl font-black tracking-tight mb-0.5">Protocol Active</h2>
-                                <p className="text-blue-100 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-200">Match Synchronized & Active</p>
+                                <h2 className="text-xl font-black tracking-tight mb-0.5">Match Authorized</h2>
+                                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">Synchronized & Active</p>
                             </div>
 
-                            <div className="p-4 sm:p-6 space-y-4">
-                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 sm:p-4 space-y-2 transition-colors duration-200 flex flex-col md:flex-row md:space-y-0 gap-2 md:gap-4 justify-between">
+                            <div className="p-5 space-y-4">
+                                {/* Summary row */}
+                                <div className="bg-slate-50 dark:bg-gray-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 justify-between">
                                     {[
                                         { l: 'Load Asset', v: acceptedMatchDetails.match.load?.title, i: Package },
                                         { l: 'Fleet Unit', v: acceptedMatchDetails.match.truck?.plateNumber, i: Truck },
-                                        { l: 'Route Matrix', v: `${acceptedMatchDetails.match.load?.origin?.city} → ${acceptedMatchDetails.match.load?.destination?.city}`, i: MapPin }
+                                        { l: 'Route', v: `${
+                                            acceptedMatchDetails.match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
+                                            || acceptedMatchDetails.match.load?.origin?.city
+                                            || 'Origin'
+                                        } → ${
+                                            acceptedMatchDetails.match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
+                                            || acceptedMatchDetails.match.load?.destination?.city
+                                            || 'Destination'
+                                        }`, i: MapPin }
                                     ].map((item, i) => (
                                         <div key={i} className="flex items-center gap-3 flex-1 min-w-0">
-                                            <div className="size-6 bg-white dark:bg-gray-900 rounded flex items-center justify-center text-blue-400 dark:text-blue-500 transition-colors duration-200 shrink-0"><item.i size={12} /></div>
-                                            <div className="min-w-0 flex-1 w-full">
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 transition-colors duration-200">{item.l}</p>
-                                                <p className="text-xs font-bold text-gray-900 dark:text-white transition-colors duration-200 truncate">{item.v}</p>
+                                            <div className="size-7 bg-[#345E85]/10 rounded-lg flex items-center justify-center text-[#345E85] shrink-0">
+                                                <item.i size={13} />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{item.l}</p>
+                                                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.v}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="p-3 sm:p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100/50 dark:border-blue-900/50 transition-colors duration-200">
-                                    <p className="text-[9px] sm:text-[10px] font-bold text-gray-800 dark:text-gray-200 leading-relaxed uppercase tracking-wider transition-colors duration-200">
-                                        <strong className="text-blue-500 dark:text-blue-400 transition-colors duration-200">Next Vector:</strong> Trip initialized. Advance to Trips Matrix for operational tracking.
+                                {/* Next step hint */}
+                                <div className="p-4 bg-[#345E85]/5 rounded-xl border border-[#345E85]/10">
+                                    <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 leading-relaxed uppercase tracking-wider">
+                                        <strong className="text-[#345E85]">Next step:</strong> Trip initialized. Go to the Trips dashboard for operational tracking.
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row gap-3 transition-colors duration-200 pt-0 border-t-0">
-                                <button onClick={() => setShowSuccessModal(false)} className="flex-1 h-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">Close Portal</button>
-                                <button onClick={handleViewTrip} className="flex-1 h-10 bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all duration-200">Trips Dashboard</button>
+                            {/* Footer */}
+                            <div className="px-5 pb-5 flex gap-3">
+                                <button
+                                    onClick={() => setShowSuccessModal(false)}
+                                    className="flex-1 h-10 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    onClick={handleViewTrip}
+                                    className="flex-1 h-10 bg-[#345E85] hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-[#345E85]/20"
+                                >
+                                    Trips Dashboard
+                                </button>
                             </div>
                         </motion.div>
                     </div>

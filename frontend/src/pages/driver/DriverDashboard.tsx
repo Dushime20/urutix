@@ -1,32 +1,32 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Truck,
-  DollarSign,
+  Activity,
+  ShieldCheck,
+  Trophy,
+  CheckCircle,
+  Clock,
   Shield,
-  FileText,
+  MessageSquare as MessageIcon,
+  Fuel as FuelIcon,
   Route,
-  Package,
   Home,
   Bell,
-  Fuel as FuelIcon,
-  Activity,
-  Cloud,
-  TrendingUp,
-  ShieldCheck,
-  Trophy
+  Truck,
+  DollarSign,
+  FileText,
+  Package,
 } from 'lucide-react';
-
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { driverApi } from '../../services/driverApi';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { TripsManagement } from '@/components/DriverDashboard/TripsManagement';
 import { FuelManagement } from '@/components/DriverDashboard/FuelManagement';
 import { WalletAdvances } from '@/components/DriverDashboard/WalletAdvances';
 import { DriverHeader } from '../../components/DriverDashboard/DriverHeader';
-import { DriverQuickStats } from '../../components/DriverDashboard/DriverQuickStats';
 import { TimeRangeSelector } from '../../components/DriverDashboard/TimeRangeSelector';
 import { DriverSkeleton } from '../../components/DriverDashboard/DriverSkeleton';
 import { DriverEarningsChart } from '@/components/DriverDashboard/DriverEarningsChart';
@@ -46,17 +46,13 @@ import { MonthlyLeaderboard } from '../../components/DriverDashboard/MonthlyLead
 import { IncidentReportModal } from '../../components/DriverDashboard/IncidentReportModal';
 import { PostTripChecklist } from '../../components/DriverDashboard/PostTripChecklist';
 import { PostTripChecklistModal } from '../../components/DriverDashboard/PostTripChecklistModal';
-import { WeatherMonitoring } from '../../components/DriverDashboard/WeatherMonitoring';
 import { RewardsTimeline } from '../../components/DriverDashboard/RewardsTimeline';
 import { MaintenanceHealth } from '../../components/DriverDashboard/MaintenanceHealth';
 import { MyTruck } from '../../components/DriverDashboard/MyTruck';
-import { TranslatedText } from '../../components/translated-text';
 import { DriverRouteMap } from '../../components/DriverDashboard/DriverRouteMap';
 import { DriverMessenger } from '../../components/DriverDashboard/DriverMessenger';
-import { TacticalMissionOverlay } from '../../components/DriverDashboard/TacticalMissionOverlay';
 import { CommunicationRelay } from '../../components/DriverDashboard/CommunicationRelay';
 import { messengerApi } from '../../services/messengerApi';
-import { MessageSquare as MessageIcon } from 'lucide-react';
 
 
 const DriverDashboard: React.FC = () => {
@@ -150,17 +146,6 @@ const DriverDashboard: React.FC = () => {
     enabled: !!driverId,
   });
 
-  const { data: upcomingTrips, isLoading: upcomingLoading } = useQuery({
-    queryKey: ['driver-upcoming-trips', driverId, timeRange],
-    queryFn: () => driverApi.getUpcomingTrips(driverId),
-    enabled: !!driverId,
-  });
-
-  const { data: announcements, isLoading: announcementsLoading } = useQuery({
-    queryKey: ['driver-announcements', driverId],
-    queryFn: () => driverApi.getAnnouncements(driverId),
-    enabled: !!driverId,
-  });
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -170,8 +155,6 @@ const DriverDashboard: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ['driver-stats'] }),
         queryClient.invalidateQueries({ queryKey: ['driver-trips'] }),
         queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] }),
-        queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] }),
-        queryClient.invalidateQueries({ queryKey: ['driver-announcements'] }),
         new Promise(resolve => setTimeout(resolve, 800))
       ]);
       setLastUpdated(new Date());
@@ -295,18 +278,7 @@ const DriverDashboard: React.FC = () => {
         tabs={tabs}
       />
 
-      {/* Active Mission Overlay - Only visible on Overview tab */}
-      {activeTab === 'overview' && currentTrip && (
-        <TacticalMissionOverlay
-          currentTrip={currentTrip}
-          onFocusMission={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          onQuickAction={(action: string) => {
-            if (action === 'refuel') setActiveTab('fuel');
-            else if (action === 'complete') handleTripAction('complete');
-            else if (action === 'report') setShowIncidentModal(true);
-          }}
-        />
-      )}
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 py-6 pb-28 lg:pb-6">
 
@@ -315,154 +287,238 @@ const DriverDashboard: React.FC = () => {
         </div>
 
         {activeTab === 'overview' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            {/* 🎯 Priority 0: Active Mission Command Center */}
-            {(currentTrip || driverLoading) && (
-              <section className="space-y-6">
-                <div className="flex items-center gap-3 px-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Live Mission Command</h3>
-                </div>
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                  <div className="xl:col-span-2">
-                    <DriverRouteMap trip={currentTrip} />
-                  </div>
-                  <div className="xl:col-span-1">
-                    {currentTrip ? (
-                      <CurrentTrip 
-                        trip={currentTrip as any} 
-                        onStart={() => handleTripAction('start')}
-                        onPause={() => handleTripAction('pause')}
-                        onResume={() => handleTripAction('resume')}
-                        onComplete={() => handleTripAction('complete')}
-                        onOpenRelay={() => setShowRelayModal(true)}
-                      />
-                    ) : (
-                      <DriverSkeleton />
-                    )}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* 📊 Priority 1: Performance Matrix */}
-            <div className="space-y-8">
-              <DriverQuickStats
-                stats={{
-                  totalTrips: stats?.totalTrips,
-                  totalEarnings: stats?.totalEarnings,
-                  rating: stats?.rating,
-                  completionRate: stats?.onTimeDeliveryRate,
-                  activeTrips: currentTrip ? 1 : 0,
-                  hoursWorked: stats?.hoursWorkedThisWeek
-                }}
-                hos={analytics?.hos}
-                isLoading={statsLoading || analyticsLoading}
-              />
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-[#345E85] rounded-[2.5rem] p-10 relative overflow-hidden group border border-white/5 shadow-2xl shadow-[#345E85]/20 transition-all hover:scale-[1.01]">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform group-hover:scale-125" />
-                    <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                        <div className="w-20 h-20 rounded-[2rem] bg-emerald-500 border border-emerald-400 rotate-12 flex items-center justify-center text-white shadow-xl shadow-emerald-500/20 shrink-0">
-                             <TrendingUp size={32} />
-                        </div>
-                        <div className="flex-1 text-center md:text-left">
-                            <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-2">Operational Excellence</h3>
-                            <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">You are in the Top 10% of Elite Drivers!</h2>
-                            <p className="text-blue-100/70 text-xs font-medium max-w-sm leading-relaxed">System Analysis: Your safety compliance and on-time performance are significantly above the regional average. Maintain this trajectory to secure the Platinum Shield.</p>
-                        </div>
-                        <div className="flex flex-col items-center md:items-end">
-                            <div className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest shadow-lg">
-                                Reward Pending: $20.00
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/40 flex flex-col justify-center group overflow-hidden relative">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform" />
-                    <div className="flex items-center gap-4 mb-6 relative z-10">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 shadow-sm">
-                             <Activity size={20} />
-                        </div>
-                        <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-widest">Consistency Matrix</h4>
-                    </div>
-                    <div className="flex items-end gap-3 text-5xl font-black text-[#0f172a] tracking-tighter relative z-10">
-                        12 <span className="text-sm text-slate-400 uppercase tracking-[0.2em] pb-2 italic">Days</span>
-                    </div>
-                    <p className="text-[10px] font-bold text-[#345E85] mt-3 uppercase tracking-widest relative z-10">Next Milestone: 15 Days for Safety Badge</p>
-                </div>
-              </div>
+          <div className="animate-in fade-in duration-500 w-full max-w-6xl mx-auto bg-slate-100 dark:bg-slate-900/50 p-4 sm:p-6 lg:p-8 rounded-[3rem]">
+            
+            {/* Header */}
+            <div className="mb-8 px-4">
+              <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">
+                Overview
+              </h1>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                {driver ? `${driver.firstName} ${driver.lastName}` : 'Active Personnel'} &nbsp;&bull;&nbsp; ID: {driverId.slice(-6).toUpperCase() || 'SYS-01'}
+              </p>
             </div>
 
-            {/* 📈 Secondary Metrics & Intel */}
-            {!currentTrip && (
-               <div className="bg-slate-50 border border-slate-100 rounded-[3rem] p-16 flex flex-col items-center justify-center text-center group">
-                  <div className="w-24 h-24 bg-white rounded-[2.5rem] border border-slate-100 flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform">
-                    <Route size={48} />
-                  </div>
-                  <h3 className="text-xl font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Awaiting Mission Deployment</h3>
-                  <p className="text-sm font-medium text-slate-500 italic px-8 max-w-md">No mission is currently executing. Once assigned, your tactical route tracking and cargo telemetry will appear here.</p>
-                  <button 
-                    onClick={() => setActiveTab('missions')}
-                    className="mt-10 px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
-                  >
-                    View Available Assignments
-                  </button>
-               </div>
-            )}
-
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <DriverEarningsChart
-                isLoading={analyticsLoading}
-                timeRange={timeRange}
-                data={analytics?.earnings}
-              />
-              <DriverPerformanceChart
-                data={analytics?.performance}
-                isLoading={analyticsLoading}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <QuickActions 
-                  driverId={driverId} 
-                  onTabChange={setActiveTab}
-                  onTripAction={handleTripAction}
-                  onEmergency={handleEmergency}
-                  onOpenRelay={() => setShowRelayModal(true)}
+            {/* Bento Grid */}
+            <div className="flex flex-col gap-4 sm:gap-6">
+              
+              {/* Top Row: Quick KPIs */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <StatCard
+                  title="Total Trips"
+                  value={statsLoading ? '...' : (stats?.totalTrips ?? 0)}
+                  icon={<Route size={20} />}
+                  variant="classic"
+                  color="primary"
+                />
+                <StatCard
+                  title="On-Time Rate"
+                  value={statsLoading ? '...' : `${Math.round(stats?.onTimeDeliveryRate ?? 0)}%`}
+                  icon={<CheckCircle size={20} />}
+                  variant="classic"
+                  color="success"
+                />
+                <StatCard
+                  title="Safety Score"
+                  value={statsLoading ? '...' : `${Math.round(stats?.safetyScore ?? 100)}`}
+                  icon={<Shield size={20} />}
+                  variant="classic"
+                  color="primary"
+                />
+                <StatCard
+                  title="Rating"
+                  value={statsLoading ? '...' : Number(stats?.rating ?? 0).toFixed(1)}
+                  icon={<Trophy size={20} />}
+                  variant="classic"
+                  color="warning"
                 />
               </div>
-              <div className="lg:col-span-1">
-                {currentTrip?.id && (
-                  <div className="space-y-6">
-                    <WeatherMonitoring 
-                      destination={{
-                        city: currentTrip.destination.city,
-                        state: currentTrip.destination.state
-                      }} 
-                    />
-                    <MaintenanceHealth />
+
+              {/* Middle Row: Active Mission (2/3) + Actions (1/3) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                
+                {/* Active Mission (Col span 2) */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between min-h-[300px]">
+                   <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Mission</h2>
+                     {analytics?.hos && (
+                       <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                         analytics.hos.status === 'Rest Required' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                         analytics.hos.status === 'Caution' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                         'bg-emerald-50 text-emerald-600 border-emerald-100'
+                       }`}>
+                         HOS: {analytics.hos.consecutiveDrivingHours.toFixed(1)}h / {analytics.hos.maxHoursPerShift}h
+                       </span>
+                     )}
+                   </div>
+                   {currentTrip ? (
+                      <div className="flex flex-col md:flex-row gap-8 h-full">
+                        <div className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-widest mb-2">Trip #{currentTrip.tripNumber || 'ACTIVE'}</p>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
+                              {currentTrip.origin.city || 'Origin'} <span className="text-slate-300 mx-2">→</span> {currentTrip.destination.city || 'Destination'}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-4 mb-4">
+                              <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status</p>
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase">{currentTrip.status.replace('_', ' ')}</p>
+                              </div>
+                              {currentTrip.estimatedArrival && (
+                                <div>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ETA</p>
+                                  <p className="text-sm font-black text-[#2b5271] dark:text-white">
+                                    {new Date(currentTrip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              )}
+                              {currentTrip.distance > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Distance</p>
+                                  <p className="text-sm font-black text-slate-700 dark:text-white">{currentTrip.distance} km</p>
+                                </div>
+                              )}
+                              {currentTrip.earnings > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Earnings</p>
+                                  <p className="text-sm font-black text-emerald-600">${Number(currentTrip.earnings).toLocaleString()}</p>
+                                </div>
+                              )}
+                            </div>
+                            {currentTrip.progress > 0 && (
+                              <div className="mb-4">
+                                <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                  <span>Progress</span>
+                                  <span>{currentTrip.progress}%</span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-[#2b5271] rounded-full transition-all duration-700"
+                                    style={{ width: `${Math.min(100, currentTrip.progress)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {currentTrip.cargo?.description && (
+                              <p className="text-[10px] text-slate-400 font-medium mb-4 truncate">
+                                📦 {currentTrip.cargo.description} · {currentTrip.cargo.weight.toLocaleString()} kg
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {currentTrip.status === 'PLANNED' && (
+                              <button
+                                onClick={() => handleTripAction('start')}
+                                className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                              >
+                                Start Trip
+                              </button>
+                            )}
+                            {currentTrip.status === 'IN_PROGRESS' && (
+                              <>
+                                <button
+                                  onClick={() => handleTripAction('pause')}
+                                  className="bg-amber-50 text-amber-600 border border-amber-100 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-colors"
+                                >
+                                  Pause
+                                </button>
+                                <button
+                                  onClick={() => handleTripAction('complete')}
+                                  className="bg-emerald-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors"
+                                >
+                                  Complete
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] p-4 flex flex-col justify-center overflow-hidden">
+                           <DriverRouteMap trip={currentTrip} />
+                        </div>
+                      </div>
+                   ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                        <Route size={40} className="text-slate-200 dark:text-slate-700 mb-4" />
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">No Active Mission</h3>
+                        <p className="text-sm font-bold text-slate-500 mb-6">You are currently unassigned.</p>
+                        <button
+                          onClick={() => setActiveTab('missions')}
+                          className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                        >
+                          View Schedule
+                        </button>
+                      </div>
+                   )}
+                </div>
+
+                {/* Actions (Col span 1) */}
+                <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 flex flex-col">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Hub</h2>
+                  <div className="grid grid-cols-1 gap-3 flex-1">
+                    <button 
+                      onClick={() => setActiveTab('messages')}
+                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-left hover:bg-slate-100 transition-colors flex items-center gap-4 group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-[#2b5271] group-hover:bg-[#2b5271] group-hover:text-white transition-colors">
+                        <MessageIcon size={20} />
+                      </div>
+                      <p className="text-xs font-black text-slate-700 dark:text-white uppercase tracking-widest">Dispatch</p>
+                    </button>
+                    <button 
+                      onClick={() => handleEmergency('accident')}
+                      className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl text-left hover:bg-rose-100 transition-colors flex items-center gap-4 group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                        <Shield size={20} />
+                      </div>
+                      <p className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Emergency</p>
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('fuel')}
+                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-left hover:bg-slate-100 transition-colors flex items-center gap-4 group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-[#2b5271] group-hover:bg-[#2b5271] group-hover:text-white transition-colors">
+                        <FuelIcon size={20} />
+                      </div>
+                      <p className="text-xs font-black text-slate-700 dark:text-white uppercase tracking-widest">Fuel Log</p>
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('checklist')}
+                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-left hover:bg-slate-100 transition-colors flex items-center gap-4 group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-[#2b5271] group-hover:bg-[#2b5271] group-hover:text-white transition-colors">
+                        <ShieldCheck size={20} />
+                      </div>
+                      <p className="text-xs font-black text-slate-700 dark:text-white uppercase tracking-widest">Inspection</p>
+                    </button>
                   </div>
-                )}
-                {!currentTrip?.id && (
-                  <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] p-8 flex flex-col items-center justify-center h-full text-center">
-                    <Cloud className="w-12 h-12 text-slate-200 mb-4" />
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      <TranslatedText text="Weather Intel Unavailable" />
-                    </p>
-                    <p className="text-xs font-medium text-slate-500 mt-1 max-w-[200px]">
-                      <TranslatedText text="Assign a trip to start monitoring destination weather." />
-                    </p>
-                  </div>
-                )}
+                </div>
+
               </div>
-            </div>
-            <UpcomingTrips trips={upcomingTrips as any} loading={upcomingLoading} />
-            <div className="pt-6">
-              <DriverAnnouncements announcements={announcements as any} loading={announcementsLoading} />
+
+              {/* Bottom Row: Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 h-[400px]">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Earnings Trend</h2>
+                  <div className="-mx-6 -my-6 sm:-mx-8 sm:-my-8 h-full">
+                    <DriverEarningsChart
+                      isLoading={analyticsLoading}
+                      timeRange={timeRange}
+                      data={analytics?.earnings}
+                    />
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 h-[400px]">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Performance Grade</h2>
+                  <div className="-mx-6 -my-6 sm:-mx-8 sm:-my-8 h-full">
+                    <DriverPerformanceChart
+                      data={analytics?.performance}
+                      isLoading={analyticsLoading}
+                    />
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         )}

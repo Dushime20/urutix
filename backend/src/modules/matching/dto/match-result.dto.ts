@@ -88,6 +88,10 @@ export class MatchResultDto {
   distanceKm: number;
 
   @IsNumber()
+  /** Pickup → delivery route distance (km). This is what drives estimatedCost, estimatedRevenue, and recommendedPrice. */
+  routeDistanceKm: number;
+
+  @IsNumber()
   estimatedCost: number;
 
   @IsNumber()

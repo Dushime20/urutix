@@ -41,13 +41,13 @@ interface DriverEarningsChartProps {
 
 export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, isLoading }) => {
   if (isLoading) {
-    return <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 animate-pulse h-[450px]" />;
+    return <div className="bg-transparent p-6 sm:p-8 h-full min-h-[350px]" />;
   }
 
   if (!data) {
     return (
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 h-[450px] flex flex-col items-center justify-center gap-3">
-        <Zap size={32} className="text-slate-200" />
+      <div className="bg-transparent p-6 sm:p-8 h-full min-h-[350px] flex flex-col items-center justify-center gap-3">
+        <Zap size={32} className="text-slate-300" />
         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No earnings data yet</p>
         <p className="text-xs text-slate-300">Complete trips to see your revenue chart</p>
       </div>
@@ -64,17 +64,17 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
       {
         label: 'Earnings',
         data: data.earnings,
-        borderColor: '#345E85',
-        backgroundColor: 'rgba(52, 94, 133, 0.05)',
+        borderColor: '#2b5271',
+        backgroundColor: 'transparent',
         borderWidth: 4,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#345E85',
-        pointBorderColor: 'white',
-        pointBorderWidth: 2,
+        fill: false,
+        tension: 0,
+        pointBackgroundColor: '#2b5271',
+        pointBorderColor: '#2b5271',
+        pointBorderWidth: 0,
         pointRadius: 0,
         pointHoverRadius: 8,
-        pointHoverBackgroundColor: '#345E85',
+        pointHoverBackgroundColor: '#2b5271',
         pointHoverBorderColor: 'white',
         pointHoverBorderWidth: 4,
       },
@@ -114,11 +114,11 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-2xl shadow-slate-200/40 relative overflow-hidden group"
+      className="bg-transparent p-6 sm:p-8 relative h-full flex flex-col"
     >
       <div className="flex items-start justify-between mb-10">
         <div className="flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-500">
+          <div className="w-14 h-14 bg-[#2b5271] flex items-center justify-center text-white">
             <Zap size={24} />
           </div>
           <div>
@@ -132,7 +132,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
             ${totalEarnings.toLocaleString()}
           </span>
           <div className="flex items-center justify-end gap-2 mt-1">
-            <div className="flex items-center gap-1 bg-blue-50 text-[#345E85] px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
+            <div className="flex items-center gap-1 text-[#2b5271] text-[9px] font-black uppercase tracking-widest">
               <TrendingUp size={10} />
               Live Data
             </div>
@@ -140,17 +140,16 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
         </div>
       </div>
 
-      <div className="h-64 relative">
-        <div className="absolute inset-0 bg-slate-50/50 rounded-3xl -z-10" />
+      <div className="flex-1 min-h-[150px] relative mt-6">
         <Line data={chartConfig} options={options as any} />
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mt-10 pt-10 border-t border-slate-50">
+      <div className="grid grid-cols-3 gap-4 sm:gap-6 mt-8">
         {stats.map((stat) => (
           <div key={stat.label} className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2 text-[#345E85]">
+            <div className="flex items-center justify-center gap-2 mb-2 text-[#2b5271]">
               <stat.icon size={12} />
-              <p className="text-[8px] font-black uppercase tracking-widest text-[#345E85]">{stat.label}</p>
+              <p className="text-[8px] font-black uppercase tracking-widest text-[#2b5271]">{stat.label}</p>
             </div>
             <p className="text-lg font-black text-[#0f172a] tracking-tight">{stat.value}</p>
           </div>

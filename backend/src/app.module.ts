@@ -48,6 +48,7 @@ import { RevenueModule } from './modules/revenue/revenue.module';
 import { CarrierTierModule } from './modules/carrier-tier/carrier-tier.module';
 import { CarrierMarketplaceModule } from './modules/carrier-marketplace/carrier-marketplace.module';
 import { GeofencingModule } from './modules/geofencing/geofencing.module';
+import { CurrencyModule } from './modules/currency/currency.module';
 import { ApiMarketplaceModule } from './modules/api-marketplace/api-marketplace.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -138,6 +139,7 @@ import { UserSession } from './entities/user-session.entity';
     CarrierMarketplaceModule,
     GeofencingModule,
     ApiMarketplaceModule,
+    CurrencyModule,
   ],
   controllers: [AppController],
   providers: [

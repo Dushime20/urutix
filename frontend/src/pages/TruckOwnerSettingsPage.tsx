@@ -47,6 +47,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { toast } from 'react-hot-toast';
+import CurrencySelector from '../components/common/CurrencySelector';
 
 interface TeamMember {
   id: string;
@@ -350,14 +351,10 @@ const TruckOwnerSettingsPage: React.FC = () => {
                                 </FormControl>
                               </Grid>
                               <Grid size={{ xs: 12, md: 6 }}>
-                                <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-2">LOCAL CURRENCY</Typography>
-                                <FormControl fullWidth sx={inputStyles}>
-                                  <Select value={settings.preferences.currency}>
-                                    <MenuItem value="KES">Kenyan Shilling (KES)</MenuItem>
-                                    <MenuItem value="USD">US Dollar (USD)</MenuItem>
-                                    <MenuItem value="UGX">Ugandan Shilling (UGX)</MenuItem>
-                                  </Select>
-                                </FormControl>
+                                <CurrencySelector variant="settings" />
+                                <p className="text-[10px] text-slate-400 mt-1.5 ml-2">
+                                  All monetary values will display in your selected currency.
+                                </p>
                               </Grid>
                               <Grid size={{ xs: 12 }}>
                                 <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-2">REGIONAL TIMEZONE</Typography>

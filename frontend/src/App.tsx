@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { PermissionProvider } from './contexts/PermissionContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { I18nProvider } from './contexts/i18n-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from 'react-hot-toast';
@@ -249,6 +250,7 @@ function App() {
         <ThemeProvider>
           <AuthProvider>
           <PermissionProvider>
+          <CurrencyProvider>
             <NotificationProvider>
               <Router>
                 <Suspense fallback={<PageLoadingFallback />}>
@@ -682,6 +684,7 @@ function App() {
                 </Suspense>
               </Router>
             </NotificationProvider>
+          </CurrencyProvider>
           </PermissionProvider>
         </AuthProvider>
       </ThemeProvider>

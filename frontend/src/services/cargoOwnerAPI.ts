@@ -104,6 +104,9 @@ export interface MatchedTruck {
   };
   score: number;
   estimatedCost: number;
+  estimatedRevenue: number;
+  profitMargin: number;
+  routeDistanceKm: number;
   estimatedTime: number;
   distance: number;
   matchReason: string;

@@ -148,7 +148,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           subtitle={`${stats.inTransit} in transit`}
           icon={<Package className="w-5 h-5" />}
           color="primary"
-          variant="modern"
+          variant="classic"
         />
         <StatCard
           title="Total Earned"
@@ -156,7 +156,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           subtitle="commissions paid"
           icon={<DollarSign className="w-5 h-5" />}
           color="success"
-          variant="modern"
+          variant="classic"
           trend={loading ? undefined : `${Math.abs(pct(totalEarned, totalEarned * 0.85))}%`}
           trendDirection={pct(totalEarned, totalEarned * 0.85) >= 0 ? 'up' : 'down'}
         />
@@ -166,7 +166,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           subtitle={`avg rate ${Number(avgCommRate).toFixed(1)}%`}
           icon={<Clock className="w-5 h-5" />}
           color="warning"
-          variant="modern"
+          variant="classic"
         />
         <StatCard
           title="Active Contracts"
@@ -174,7 +174,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           subtitle={`${pendingContracts} pending sig.`}
           icon={<FileText className="w-5 h-5" />}
           color="purple"
-          variant="modern"
+          variant="classic"
         />
         <StatCard
           title="Open Disputes"
@@ -182,7 +182,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           subtitle={`${resolvedDisputes} resolved`}
           icon={<Scale className="w-5 h-5" />}
           color="error"
-          variant="modern"
+          variant="classic"
         />
         <StatCard
           title="Escrow Held"
@@ -190,7 +190,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           subtitle={`${fmt(escrowReleased)} released`}
           icon={<ShieldCheck className="w-5 h-5" />}
           color="info"
-          variant="modern"
+          variant="classic"
         />
       </div>
 

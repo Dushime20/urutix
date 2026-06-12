@@ -162,6 +162,7 @@ export class MatchingController {
             availabilityScore: 0.92,
             specialRequirementsScore: 0.95,
             distanceKm: 150,
+            routeDistanceKm: 320,
             estimatedCost: 375,
             estimatedRevenue: 450,
             profitMargin: 0.17,

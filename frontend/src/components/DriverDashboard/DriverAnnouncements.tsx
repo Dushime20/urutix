@@ -25,34 +25,8 @@ interface DriverAnnouncementsProps {
 }
 
 export const DriverAnnouncements: React.FC<DriverAnnouncementsProps> = ({ announcements, loading }) => {
-  const mockAnnouncements: Announcement[] = [
-    {
-      id: '1',
-      title: 'New Safety Protocol for Port Operations',
-      content: 'Effective immediately, all drivers entering the main port must wear high-visibility vests and follow the new staging area guidelines.',
-      category: 'SAFETY',
-      timestamp: new Date().toISOString(),
-      read: false
-    },
-    {
-      id: '2',
-      title: 'Platform Maintenance: Sunday 2 AM',
-      content: 'The Urutix platform will be offline for 2 hours this Sunday for a performance update. Please plan your electronic logging accordingly.',
-      category: 'MAINTENANCE',
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      read: true
-    },
-    {
-      id: '3',
-      title: 'Fuel Subsidy Program Update',
-      content: 'The quarterly fuel subsidy has been adjusted to reflect current market rates. Check your Fuel Management tab for new rates.',
-      category: 'GENERAL',
-      timestamp: new Date(Date.now() - 172800000).toISOString(),
-      read: true
-    }
-  ];
-
-  const currentAnnouncements = announcements || mockAnnouncements;
+  // Only use real data — no mock fallback
+  const currentAnnouncements = announcements || [];
 
   const getCategoryStyles = (category: string) => {
     switch (category) {

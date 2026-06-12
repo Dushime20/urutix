@@ -187,6 +187,14 @@ function normalizeTrip(raw: any): Trip {
     deliveryTime: deliveryEntry?.scheduledDate || raw.plannedEndTime || load.deliveryDate || '',
     notes: raw.notes,
     pod: load.metadata?.pod,
+    // Map urgency to priority badge
+    priority: (() => {
+      const u = load.urgencyLevel || raw.urgencyLevel || '';
+      if (u === 'CRITICAL') return 'URGENT';
+      if (u === 'HIGH') return 'HIGH';
+      if (u === 'LOW') return 'LOW';
+      return 'MEDIUM';
+    })() as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
   };
 }
 

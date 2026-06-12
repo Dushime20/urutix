@@ -984,6 +984,7 @@ export class AIMatchingEngineService {
       ratingScore: scores.performanceScore,
       costScore: scores.priceScore,
       distanceKm: distance,
+      routeDistanceKm: distance, // ai-engine uses truck→pickup distance; route distance not separately calculated here
       estimatedCost,
       estimatedRevenue,
       profitMargin: (estimatedRevenue - estimatedCost) / estimatedRevenue,

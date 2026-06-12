@@ -78,6 +78,58 @@ interface CargoBid extends Cargo {
   totalBids?: number;
 }
 
+/**
+ * Build a human-readable address from a locationData object.
+ * Tries the explicit `address` field first, then assembles from parts.
+ * Falls back to coordinates if nothing else is available.
+ */
+const buildAddress = (loc: any): string => {
+  if (!loc) return '—';
+
+  // 1. Explicit full address string
+  if (loc.address && loc.address.trim()) return loc.address.trim();
+
+  // 2. Assemble from structured parts
+  const parts: string[] = [];
+  if (loc.name)       parts.push(loc.name);
+  if (loc.street)     parts.push(loc.street);
+  if (loc.city)       parts.push(loc.city);
+  if (loc.state)      parts.push(loc.state);
+  if (loc.country)    parts.push(loc.country);
+  if (loc.postalCode) parts.push(loc.postalCode);
+  if (parts.length)   return parts.join(', ');
+
+  // 3. Fallback to coordinates
+  const c = loc.coordinates;
+  if (c?.latitude != null && c?.longitude != null) {
+    return `${Number(c.latitude).toFixed(4)}, ${Number(c.longitude).toFixed(4)}`;
+  }
+
+  return '—';
+};
+
+/**
+ * Resolve the best available origin address from a load object.
+ * Priority: locations[PICKUP].locationData → load.origin
+ */
+const getOriginAddress = (load: any): string => {
+  const pickupLoc = load?.locations?.find((l: any) => l.type === 'PICKUP');
+  const fromLocations = buildAddress(pickupLoc?.locationData);
+  if (fromLocations !== '—') return fromLocations;
+  return buildAddress(load?.origin);
+};
+
+/**
+ * Resolve the best available destination address from a load object.
+ * Priority: locations[DELIVERY].locationData → load.destination
+ */
+const getDestinationAddress = (load: any): string => {
+  const deliveryLoc = load?.locations?.find((l: any) => l.type === 'DELIVERY');
+  const fromLocations = buildAddress(deliveryLoc?.locationData);
+  if (fromLocations !== '—') return fromLocations;
+  return buildAddress(load?.destination);
+};
+
 const FleetBidsPage: React.FC = () => {
   const [bids, setBids] = useState<CargoBid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,20 +202,20 @@ const FleetBidsPage: React.FC = () => {
           requiresTemperatureMonitoring: load.requiresTemperatureMonitoring,
           temperatureMin: parseFloat(load.temperatureMin || '0'),
           temperatureMax: parseFloat(load.temperatureMax || '0'),
-          pickupLocation: pickupLoc ? {
-            id: pickupLoc.id,
-            name: pickupLoc.locationData?.name || '',
-            address: pickupLoc.locationData?.address || '',
-            coordinates: pickupLoc.locationData?.coordinates || { latitude: 0, longitude: 0 },
+          pickupLocation: {
+            id: pickupLoc?.id || '',
+            name: pickupLoc?.locationData?.name || load.origin?.city || '',
+            address: getOriginAddress(load),
+            coordinates: pickupLoc?.locationData?.coordinates || { latitude: load.origin?.lat || 0, longitude: load.origin?.lng || 0 },
             locationType: 'WAREHOUSE',
-          } : undefined,
-          deliveryLocation: deliveryLoc ? {
-            id: deliveryLoc.id,
-            name: deliveryLoc.locationData?.name || '',
-            address: deliveryLoc.locationData?.address || '',
-            coordinates: deliveryLoc.locationData?.coordinates || { latitude: 0, longitude: 0 },
+          },
+          deliveryLocation: {
+            id: deliveryLoc?.id || '',
+            name: deliveryLoc?.locationData?.name || load.destination?.city || '',
+            address: getDestinationAddress(load),
+            coordinates: deliveryLoc?.locationData?.coordinates || { latitude: load.destination?.lat || 0, longitude: load.destination?.lng || 0 },
             locationType: 'WAREHOUSE',
-          } : undefined,
+          },
           cargoOwner: load.cargoOwner,
           auctionType: auction.auctionType,
           auctionEnd: auction.auctionEnd,

@@ -36,7 +36,7 @@ function Navbar() {
 
   return (
     <header style={{ backgroundColor: "#0D3D4A" }} className="fixed top-0 left-0 right-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16">
+      <div className="max-w-full px-6 lg:px-8 flex items-center justify-between h-16">
         <Link to="/">
           <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert" />
         </Link>
@@ -153,8 +153,8 @@ function Navbar() {
 function Hero() {
   return (
     <section
-      className="relative overflow-hidden pt-16"
-      style={{ backgroundColor: "#0D3D4A", minHeight: "580px" }}
+      className="relative overflow-hidden"
+      style={{ backgroundColor: "#0D3D4A", minHeight: "580px", marginTop: "64px" }}
     >
       {/* Diagonal bottom clip */}
       <div
@@ -178,13 +178,13 @@ function Hero() {
         style={{ background: "linear-gradient(to right, #0D3D4A 0%, transparent 60%)" }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-32">
+      <div className="relative z-10 max-w-full px-0 pt-8 pb-32">
         {/* Centered text */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center max-w-2xl mx-auto"
+          className="text-center max-w-4xl mx-auto px-6 lg:px-8"
         >
           <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-3">
             <TranslatedText text="Logistics Transport Solutions" />
@@ -258,7 +258,7 @@ function PartnerStrip() {
   ]
   return (
     <section className="bg-white py-10 mt-36">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-full px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center gap-10 lg:gap-16">
           {partners.map((p) => (
             <div key={p.name} className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors cursor-default">
@@ -282,7 +282,7 @@ function PartnerStrip() {
 function FeatureSection() {
   return (
     <section id="services" className="bg-white py-20">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-full px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <motion.div
@@ -379,7 +379,7 @@ function StatsBar() {
   ]
   return (
     <section style={{ backgroundColor: "#0D3D4A" }} className="py-14">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-full px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((s, i) => (
             <motion.div
@@ -429,7 +429,7 @@ function ServicesGrid() {
   ]
   return (
     <section id="projects" className="py-20" style={{ backgroundColor: "#F0F4F8" }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-full px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <span className="inline-block bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded mb-4">
@@ -493,7 +493,7 @@ function ServicesGrid() {
 function Footer() {
   return (
     <footer id="contact" style={{ backgroundColor: "#0D3D4A" }} className="pt-14 pb-6">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-full px-6 lg:px-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           <div>
             <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert mb-4" />

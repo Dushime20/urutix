@@ -15,6 +15,7 @@ import {
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import LanguageSwitcher from '../LanguageSwitcher';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
+import CurrencySelector from '../common/CurrencySelector';
 import { TranslatedText } from '../translated-text';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -125,9 +126,9 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                           setActiveTab(tab.id);
                         }
                       }}
-                      className={`flex items-center gap-2 px-5 py-2.5 text-[11px] font-black rounded-xl transition-all duration-300 whitespace-nowrap shrink-0 tracking-wider uppercase
+                      className={`flex items-center gap-2 px-5 py-2.5 text-[11px] font-black rounded-2xl transition-all duration-300 whitespace-nowrap shrink-0 tracking-wider uppercase
                         ${isTabActive
-                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
+                          ? 'bg-[#2b5271] dark:bg-[#2b5271] text-white'
                           : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'}
                       `}
                     >
@@ -144,7 +145,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                           initial={{ opacity: 0, y: 10, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-[110] overflow-hidden"
+                          className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 py-2 z-[110] overflow-hidden"
                         >
                           {tab.subItems?.map((subItem) => {
                              const SubIcon = subItem.icon;
@@ -195,6 +196,11 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               <CargoOwnerNotificationDropdown />
             </div>
 
+            {/* Currency selector */}
+            <div className="hidden lg:block">
+              <CurrencySelector variant="compact" />
+            </div>
+
             {/* Help Button */}
             <button
               className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-bold text-slate-600 dark:text-slate-400 text-[11px] tracking-wider uppercase"
@@ -209,7 +215,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
             <div className="relative pl-2 ml-1 border-l border-slate-100 dark:border-slate-800" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="h-10 w-10 rounded-full bg-[#1e293b] text-white flex items-center justify-center hover:opacity-90 transition-all shadow-lg shadow-slate-200/50 dark:shadow-none relative overflow-hidden group border-2 border-white dark:border-slate-800"
+                className="h-10 w-10 rounded-full bg-[#1e293b] text-white flex items-center justify-center hover:opacity-90 transition-all relative overflow-hidden group border-2 border-white dark:border-slate-800"
               >
                 {driver?.profileImage ? (
                   <img
@@ -228,7 +234,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-full right-0 mt-3 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden py-2 z-50 origin-top-right"
+                    className="absolute top-full right-0 mt-3 w-64 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden py-2 z-50 origin-top-right"
                   >
                     <div className="px-4 py-3 border-b border-slate-50 dark:border-slate-800 mb-2">
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
@@ -280,7 +286,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
       </div>
 
       {/* Mobile Bottom Tab Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-2xl shadow-slate-900/10">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-stretch">
           {/* Overview */}
           <button
@@ -356,7 +362,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed inset-y-0 left-0 w-[85%] sm:w-[320px] bg-white dark:bg-slate-900 shadow-2xl z-[250] flex flex-col"
+              className="lg:hidden fixed inset-y-0 left-0 w-[85%] sm:w-[320px] bg-white dark:bg-slate-900 z-[250] flex flex-col border-r border-slate-100 dark:border-slate-800"
             >
               <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
                 <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto" />

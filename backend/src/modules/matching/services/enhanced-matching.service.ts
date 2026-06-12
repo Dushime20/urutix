@@ -255,6 +255,7 @@ export class EnhancedMatchingService {
             ratingScore: truck.averageRating || 0,
             priceScore: s.priceScore,
             distanceKm: s.distance,
+            routeDistanceKm: s.distance, // enhanced service uses truck→pickup distance; route distance not separately calculated here
             estimatedCost: s.estimatedCost,
             estimatedRevenue: s.estimatedCost * 1.2,
             profitMargin: 0.2,

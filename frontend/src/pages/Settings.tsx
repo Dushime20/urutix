@@ -21,6 +21,7 @@ import { authAPI } from '../services/api';
 import { fetchAllUsers, createTenantUser, updateUser, deleteUser } from '../services/adminApi';
 import { TranslatedText } from '../components/translated-text';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import CurrencySelector from '../components/common/CurrencySelector';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 
@@ -796,18 +797,10 @@ const Settings: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                        Currency
-                      </label>
-                      <select
-                        value={preferences.currency}
-                        onChange={(e) => handlePreferenceChange('currency', e.target.value)}
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
-                      >
-                        <option value="USD">USD ($)</option>
-                        <option value="KES">KES (KSh)</option>
-                        <option value="EUR">EUR (€)</option>
-                      </select>
+                      <CurrencySelector variant="settings" />
+                      <p className="text-[10px] text-slate-400 mt-1.5">
+                        All monetary values across the platform will display in your selected currency.
+                      </p>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">

@@ -660,20 +660,25 @@ export class BiddingService {
 
     if (!existingTrip) {
       try {
-        // Get driver ID - use from bid details or assign a default driver from the truck
-        finalDriverId = driverId;
+        // Get driver ID — priority order:
+        // 1. Explicitly passed driverId (from bid details)
+        // 2. truck.currentDriverId — the driver currently assigned to this truck
+        // 3. truck.assignedDrivers[0] — legacy fallback
+        // 4. null — trip created without driver, can be assigned later
+        finalDriverId = driverId || null;
+
+        if (!finalDriverId && truck.currentDriverId) {
+          finalDriverId = truck.currentDriverId;
+          console.log(`Using truck.currentDriverId ${finalDriverId} for trip`);
+        }
+
+        if (!finalDriverId && truck.assignedDrivers && Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0) {
+          finalDriverId = truck.assignedDrivers[0].driverId;
+          console.log(`Using assignedDrivers[0] ${finalDriverId} for trip`);
+        }
+
         if (!finalDriverId) {
-          // Try to get the first assigned driver from the truck
-          if (truck.assignedDrivers && Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0) {
-            finalDriverId = truck.assignedDrivers[0].driverId;
-          } else {
-            // If no driver is specified, we'll need to handle this case
-            // For now, we'll create the trip without a driver and it can be assigned later
-            // Or we could throw an error requiring a driver
-            throw new BadRequestException(
-              'Driver must be specified in bid details or assigned to the truck before accepting the bid',
-            );
-          }
+          console.warn(`No driver found for truck ${truck.id} — trip will be created without a driver and can be assigned later`);
         }
 
         // Use load pickup/delivery dates for planned start/end times

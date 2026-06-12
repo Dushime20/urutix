@@ -11,9 +11,11 @@ import { fetchCargos } from '../../services/cargoApi';
 import type { MatchedTruck, MarketInsights } from '../../services/cargoOwnerAPI';
 import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const CargoSmartMatching: React.FC = () => {
   const navigate = useNavigate();
+  const { format: fmt } = useCurrencyFormat();
   const [searchParams] = useSearchParams();
   const preselectedCargoId = searchParams.get('cargoId') || '';
 
@@ -97,6 +99,9 @@ const CargoSmartMatching: React.FC = () => {
         id: m.truckId || m.id,
         score: Math.round((m.overallScore || 0) * 100),
         estimatedCost: m.estimatedCost || 0,
+        estimatedRevenue: m.estimatedRevenue || 0,
+        profitMargin: m.profitMargin || 0,
+        routeDistanceKm: m.routeDistanceKm || 0,
         estimatedTime: m.estimatedDeliveryTime || 0,
         distance: m.distanceKm || 0,
         matchReason: m.matchReason || '',
@@ -352,10 +357,13 @@ const CargoSmartMatching: React.FC = () => {
                           <FaStar className="w-2 h-2" /> {truck.score}%
                         </span>
                         <span className="text-[9px] font-black text-slate-700 bg-white/60 px-2 py-0.5 rounded-full border border-slate-200">
-                          ${truck.estimatedCost?.toLocaleString()}
+                          Cost {fmt(truck.estimatedCost)}
+                        </span>
+                        <span className="text-[9px] font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                          Rev {fmt(truck.estimatedRevenue)}
                         </span>
                         <span className="text-[9px] font-bold text-slate-500 bg-white/60 px-2 py-0.5 rounded-full border border-slate-200">
-                          {truck.distance} mi · {truck.estimatedTime}h
+                          {truck.routeDistanceKm} km · {truck.estimatedTime}h
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-3">
@@ -461,7 +469,7 @@ const CargoSmartMatching: React.FC = () => {
                           <span className="text-[10px] font-bold text-slate-400">{truck.truck?.make} {truck.truck?.model} · {truck.truck?.truckType}</span>
                         </div>
                         <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-3">
-                          <span className="flex items-center gap-1"><FaMapMarkerAlt className="text-[#345E85]" /> {truck.distance} mi</span>
+                          <span className="flex items-center gap-1"><FaMapMarkerAlt className="text-[#345E85]" /> {truck.routeDistanceKm} km route</span>
                           <span className="flex items-center gap-1"><FaClock className="text-[#345E85]" /> {truck.estimatedTime}h</span>
                           <span className="flex items-center gap-1"><FaStar className="text-yellow-400" /> {truck.driver?.rating} ★</span>
                           <span className="flex items-center gap-1"><FaShieldAlt className="text-slate-400" /> Risk: {Math.round((truck.riskScore || 0) * 100)}%</span>
@@ -477,7 +485,18 @@ const CargoSmartMatching: React.FC = () => {
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getScoreColor(truck.score)}`}>
                         <FaStar className="w-2.5 h-2.5" /> {truck.score}%
                       </span>
-                      <span className="text-lg font-black text-slate-900">${truck.estimatedCost?.toLocaleString()}</span>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Cost</p>
+                        <p className="text-lg font-black text-slate-900">{fmt(truck.estimatedCost)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Revenue</p>
+                        <p className="text-sm font-black text-green-600">{fmt(truck.estimatedRevenue)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Margin</p>
+                        <p className="text-xs font-black text-slate-600">{Math.round((truck.profitMargin || 0) * 100)}%</p>
+                      </div>
                       {selectedTruck?.id === truck.id && (
                         <div className="w-5 h-5 bg-[#345E85] rounded-full flex items-center justify-center">
                           <FaCheck className="text-white text-[8px]" />
@@ -488,7 +507,7 @@ const CargoSmartMatching: React.FC = () => {
 
                   {/* Expanded details */}
                   {showDetails === truck.id && (
-                    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Driver</p>
                         <p className="text-sm font-bold text-slate-700">{truck.driver?.firstName} {truck.driver?.lastName}</p>
@@ -498,6 +517,29 @@ const CargoSmartMatching: React.FC = () => {
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Truck</p>
                         <p className="text-sm font-bold text-slate-700">{truck.truck?.make} {truck.truck?.model} ({truck.truck?.year})</p>
                         <p className="text-xs text-slate-500">Capacity: {truck.truck?.capacityWeight} kg · Insurance: ${truck.truck?.insuranceCoverage?.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Financials</p>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-500">Route Distance</span>
+                            <span className="font-bold text-slate-700">{truck.routeDistanceKm} km</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-500">Est. Cost (carrier)</span>
+                            <span className="font-bold text-slate-900">{fmt(truck.estimatedCost)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-500">Est. Revenue</span>
+                            <span className="font-bold text-green-600">{fmt(truck.estimatedRevenue)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs border-t border-slate-100 pt-1 mt-1">
+                            <span className="text-slate-500">Profit Margin</span>
+                            <span className={`font-black ${(truck.profitMargin || 0) > 0.1 ? 'text-green-600' : 'text-orange-500'}`}>
+                              {Math.round((truck.profitMargin || 0) * 100)}%
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -516,7 +558,7 @@ const CargoSmartMatching: React.FC = () => {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50/50 border-b border-slate-100">
                   <tr>
-                    {['Owner / Truck', 'Score', 'Cost', 'Distance', 'Time', 'Rating', 'Features', ''].map(h => (
+                    {['Owner / Truck', 'Score', 'Cost (USD)', 'Revenue (USD)', 'Margin', 'Route Dist.', 'Time', 'Rating', 'Features', ''].map(h => (
                       <th key={h} className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{h}</th>
                     ))}
                   </tr>
@@ -529,8 +571,10 @@ const CargoSmartMatching: React.FC = () => {
                         <p className="text-[10px] text-slate-400">{truck.truck?.make} {truck.truck?.model}</p>
                       </td>
                       <td className="px-5 py-3"><span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(truck.score)}`}>{truck.score}%</span></td>
-                      <td className="px-5 py-3 font-black text-slate-900 text-xs">${truck.estimatedCost?.toLocaleString()}</td>
-                      <td className="px-5 py-3 text-xs text-slate-500">{truck.distance} mi</td>
+                      <td className="px-5 py-3 font-black text-slate-900 text-xs">{fmt(truck.estimatedCost)}</td>
+                      <td className="px-5 py-3 font-black text-green-600 text-xs">{fmt(truck.estimatedRevenue)}</td>
+                      <td className="px-5 py-3 text-xs font-bold text-slate-600">{Math.round((truck.profitMargin || 0) * 100)}%</td>
+                      <td className="px-5 py-3 text-xs text-slate-500">{truck.routeDistanceKm} km</td>
                       <td className="px-5 py-3 text-xs text-slate-500">{truck.estimatedTime}h</td>
                       <td className="px-5 py-3 text-xs text-slate-500">{truck.driver?.rating} ★</td>
                       <td className="px-5 py-3">
@@ -560,7 +604,7 @@ const CargoSmartMatching: React.FC = () => {
             );
             const rows = [
               { label: 'Score', render: (t: MatchedTruck) => <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(t.score)}`}>{t.score}%</span> },
-              { label: 'Cost', render: (t: MatchedTruck) => <span className="font-black text-slate-900">${t.estimatedCost?.toLocaleString()}</span> },
+              { label: 'Cost', render: (t: MatchedTruck) => <span className="font-black text-slate-900">{fmt(t.estimatedCost)}</span> },
               { label: 'Distance', render: (t: MatchedTruck) => `${t.distance} mi` },
               { label: 'Est. Time', render: (t: MatchedTruck) => `${t.estimatedTime}h` },
               { label: 'Driver Rating', render: (t: MatchedTruck) => `${t.driver?.rating} ★` },
@@ -608,7 +652,7 @@ const CargoSmartMatching: React.FC = () => {
             <div className="px-6 py-4 border-t border-slate-100 bg-blue-50/50 flex items-center justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Selected</p>
-                <p className="text-sm font-black text-slate-900">{selectedTruck.truckOwner?.name} · {selectedTruck.score}% match · ${selectedTruck.estimatedCost?.toLocaleString()}</p>
+                <p className="text-sm font-black text-slate-900">{selectedTruck.truckOwner?.name} · {selectedTruck.score}% match · {fmt(selectedTruck.estimatedCost)}</p>
               </div>
               <button
                 onClick={async () => {

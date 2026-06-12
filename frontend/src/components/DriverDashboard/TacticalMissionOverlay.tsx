@@ -31,7 +31,7 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
       label: 'ETA', 
       value: '14:45', 
       icon: Clock, 
-      color: 'text-blue-500',
+      color: 'text-[#2b5271]',
       description: 'Scheduled arrival'
     },
     { 
@@ -58,21 +58,21 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
       className="relative z-[60] px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 pt-6"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/40 overflow-hidden">
-          <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 gap-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden relative group">
+          <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 gap-6 relative z-10">
             
             {/* Mission Identifier */}
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="relative shrink-0">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-[#2b5271] rounded-2xl flex items-center justify-center text-white">
                   <Rocket size={20} className="animate-pulse" />
                 </div>
-                <div className="absolute -top-0.5 -right-0.5 h-3 w-3 sm:h-4 sm:w-4 bg-emerald-500 border-2 border-slate-900 rounded-full animate-ping" />
+                <div className="absolute -top-0.5 -right-0.5 h-3 w-3 sm:h-4 sm:w-4 bg-emerald-500 border-2 border-slate-900 rounded-full" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Active Mission</p>
-                  <span className="h-1 w-1 rounded-full bg-blue-400/30" />
+                  <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-[0.3em]">Active Mission</p>
+                  <span className="h-1 w-1 rounded-full bg-[#2b5271]/30" />
                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">{currentTrip.tripNumber}</p>
                 </div>
                 <h3 className="text-lg font-black text-white uppercase tracking-tight truncate max-w-[200px]">
@@ -139,11 +139,11 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
           </div>
           
           {/* Progress Indicator */}
-          <div className="h-0.5 w-full bg-white/5">
+          <div className="h-1 w-full bg-slate-800 relative">
              <motion.div 
                initial={{ width: 0 }}
-               animate={{ width: '65%' }}
-               className="h-full bg-gradient-to-r from-blue-600 via-blue-400 to-emerald-500 shadow-[0_0_10px_rgba(37,99,235,0.5)]"
+               animate={{ width: `${currentTrip.progress || 65}%` }}
+               className="h-full bg-[#2b5271]"
              />
           </div>
         </div>

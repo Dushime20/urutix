@@ -28,6 +28,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { cn } from '../utils/cn';
 import ModernLoader from '../components/common/ModernLoader';
 import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+
+/**
+ * Build a full URL for a backend-served file.
+ * Handles both absolute URLs (already http/https) and relative paths
+ * like /uploads/epod/... stored in the database.
+ */
+const buildFileUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const base = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3005/api')
+    .replace(/\/api$/, '')   // strip /api suffix
+    .replace(/\/$/, '');     // strip trailing slash
+  const filePath = path.replace(/^\/+/, ''); // strip leading slashes
+  return `${base}/${filePath}`;
+};
 
 interface Trip {
   id: string;
@@ -259,7 +275,12 @@ const TripManagement: React.FC = () => {
     setShowAssignPanel(false);
     setSelectedDriverId('');
     setTruckDrivers([]);
-    if (trip.status === 'COMPLETED') {
+    // Use ePOD already embedded in the trip response — no extra API call needed
+    const rawEpod = (trip as any)._raw?.epod ?? null;
+    if (rawEpod) {
+      setEpod(rawEpod);
+    } else if (trip.status === 'COMPLETED') {
+      // Fallback: fetch separately for older trips not yet including epod in response
       fetchEpodForTrip(trip.id);
     } else {
       setEpod(null);
@@ -296,13 +317,7 @@ const TripManagement: React.FC = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const { format: formatCurrency } = useCurrencyFormat();
 
   if (loading) {
     return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
@@ -461,10 +476,10 @@ const TripManagement: React.FC = () => {
                         {getStatusIcon(trip.status)}
                         {trip.status.replace('_', ' ')}
                       </span>
-                      {trip.pod && (
+                      {(trip as any)._raw?.epod && (
                         <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 flex items-center gap-1 shadow-sm">
                           <CheckCircle size={8} />
-                          POD
+                          ePOD
                         </span>
                       )}
                     </div>
@@ -567,10 +582,10 @@ const TripManagement: React.FC = () => {
                               {getStatusIcon(trip.status)}
                               {trip.status.replace('_', ' ')}
                             </span>
-                            {trip.pod && (
+                            {(trip as any)._raw?.epod && (
                               <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 flex items-center justify-center w-fit shadow-sm">
                                 <CheckCircle size={8} className="mr-1" />
-                                POD Ready
+                                ePOD Ready
                               </span>
                             )}
                           </div>
@@ -888,7 +903,7 @@ const TripManagement: React.FC = () => {
                 </TSection>
 
                 {/* ── ePOD ── */}
-                {selectedTrip.status === 'COMPLETED' && (
+                {(epod || selectedTrip.status === 'COMPLETED') && (
                   <TSection title="Electronic Proof of Delivery (ePOD)" badge={epod ? epod.status : undefined}>
                     {epodLoading ? (
                       <div className="flex items-center justify-center gap-3 py-6">
@@ -980,9 +995,10 @@ const TripManagement: React.FC = () => {
                             </div>
                             <div className="bg-white p-3 rounded-xl border border-slate-200">
                               <img
-                                src={epod.signatureFileUrl.startsWith('http') ? epod.signatureFileUrl : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001'}/${epod.signatureFileUrl}`}
+                                src={buildFileUrl(epod.signatureFileUrl)}
                                 alt="Signature"
                                 className="max-h-24 mx-auto object-contain"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                               />
                             </div>
                           </div>
@@ -996,17 +1012,21 @@ const TripManagement: React.FC = () => {
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Delivery Photos ({epod.photoUrls.length})</p>
                             </div>
                             <div className="grid grid-cols-3 gap-2">
-                              {epod.photoUrls.map((url: string, i: number) => (
-                                <a key={i} href={url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001'}/${url}`} target="_blank" rel="noreferrer">
-                                  <div className="h-24 rounded-xl overflow-hidden border border-slate-200 hover:border-[#345E85] transition-colors">
-                                    <img
-                                      src={url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001'}/${url}`}
-                                      alt={`Photo ${i + 1}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                </a>
-                              ))}
+                              {epod.photoUrls.map((url: string, i: number) => {
+                                const fullUrl = buildFileUrl(url);
+                                return (
+                                  <a key={i} href={fullUrl} target="_blank" rel="noreferrer">
+                                    <div className="h-24 rounded-xl overflow-hidden border border-slate-200 hover:border-[#345E85] transition-colors">
+                                      <img
+                                        src={fullUrl}
+                                        alt={`Photo ${i + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs">Failed</div>'; }}
+                                      />
+                                    </div>
+                                  </a>
+                                );
+                              })}
                             </div>
                           </div>
                         )}

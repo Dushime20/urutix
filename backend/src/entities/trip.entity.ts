@@ -11,12 +11,14 @@ import {
   DeleteDateColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   Index,
   JoinColumn,
 } from 'typeorm';
 import { Load } from './load.entity';
 import { Truck } from './truck.entity';
 import { Driver } from './driver.entity';
+import { Epod } from './epod.entity';
 
 export enum TripStatus {
   PLANNED = 'PLANNED',
@@ -192,4 +194,8 @@ export class Trip {
   // Removed events relationship to avoid circular dependency
   // @OneToMany('TripEvent', 'trip')
   // events: TripEvent[];
+
+  // ePOD submitted by driver for this trip (one trip = one ePOD)
+  @OneToOne(() => Epod, (epod) => epod.trip, { nullable: true, eager: false })
+  epod?: Epod;
 }

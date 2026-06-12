@@ -42,6 +42,18 @@ import { HungarianAlgorithm } from './algorithms/hungarian.algorithm';
 import { GeneticAlgorithm } from './algorithms/genetic.algorithm';
 import { TopsisAlgorithm } from './algorithms/topsis.algorithm';
 
+// Freight rate constants (business logic — not environment config)
+import {
+  BASE_COST_USD_PER_KM,
+  COST_COMPONENTS_USD_PER_KM,
+  REGIONAL_MULTIPLIERS,
+  DEFAULT_REGIONAL_MULTIPLIER,
+  TRUCK_SURCHARGES,
+  CARRIER_MARKUP_OVER_COST,
+  MARKET_BENCHMARK_MARKUP,
+  MINIMUM_COST_USD,
+} from './constants/freight-rates.constants';
+
 // Enhanced services for consolidated matching
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
@@ -2047,14 +2059,17 @@ export class MatchingService {
         );
       }
 
-      const estimatedCost = this.estimateCost(routeDistanceKm, loadWeight, truck);
+      const estimatedCost    = this.estimateCost(routeDistanceKm, loadWeight, truck);
       const estimatedRevenue = this.estimateRevenue(routeDistanceKm, loadWeight, load);
-      const profitMargin = estimatedRevenue > 0
+      const costBreakdown    = this.estimateCostBreakdown(routeDistanceKm, loadWeight, truck);
+      const profitMargin     = estimatedRevenue > 0
         ? ((estimatedRevenue - estimatedCost) / estimatedRevenue)
         : 0;
       const estimatedDeliveryTime = this.estimateDeliveryTime(routeDistanceKm, load);
       const riskScore = Math.max(0, 1 - overallScore);
-      const marketAverage = this.getMarketAverageCost(load);
+      // Pass the already-computed routeDistanceKm so getMarketAverageCost does
+      // not re-run haversine — the distance is already known at this point.
+      const marketAverage   = this.getMarketAverageCost(load, routeDistanceKm);
       const recommendedPrice = marketAverage * 1.1;
 
       // Get driver info if requested
@@ -2102,9 +2117,15 @@ export class MatchingService {
         ratingScore: factors.ratingScore,
         costScore: factors.costScore,
         distanceKm: Math.round(distanceKm * 10) / 10,
+        routeDistanceKm: Math.round(routeDistanceKm * 10) / 10,
         estimatedCost: Math.round(estimatedCost * 100) / 100,
         estimatedRevenue: Math.round(estimatedRevenue * 100) / 100,
         profitMargin: Math.round(profitMargin * 100) / 100,
+        // Cost breakdown (all USD)
+        fuelCost:         costBreakdown.fuelCost,
+        laborCost:        costBreakdown.laborCost,
+        maintenanceCost:  costBreakdown.maintenanceCost,
+        insuranceCost:    costBreakdown.insuranceCost,
         truckMake: truck.make || 'Unknown',
         truckModel: truck.model || 'Unknown',
         plateNumber: truck.plateNumber || 'N/A',
@@ -3292,27 +3313,58 @@ export class MatchingService {
     return deg * (Math.PI / 180);
   }
 
+  /**
+   * Estimate the total operating cost for the carrier to run this trip.
+   *
+   * Formula (see freight-rates.constants.ts for full explanation):
+   *   baseCost     = routeDistanceKm × BASE_COST_USD_PER_KM × regionalMultiplier
+   *   loadFactor   = weightKg / truckCapacityKg  (clamped 0.10 – 1.00)
+   *   adjustedCost = baseCost × (0.40 + 0.60 × loadFactor)
+   *   finalCost    = adjustedCost × surchargeMultiplier
+   *
+   * The 0.40/0.60 split represents fixed vs variable costs:
+   *   Fixed  (40%) — driver wages, insurance, truck payment → always incurred
+   *   Variable (60%) — fuel, maintenance → scale with utilisation
+   */
   private estimateCost(
-    distanceKm: number,
+    routeDistanceKm: number,
     weightKg: number,
     truck: Truck,
   ): number {
-    // Per tonne-km rate — East Africa road freight
-    // 0.08 per tonne-km (local currency unit, same as the load's currencyCode)
-    const tonneKm = (weightKg / 1000) * distanceKm;
-    const baseCost = tonneKm * 0.08;
+    // 1. Determine regional multiplier from truck's pickup country
+    //    (We use the load's pickup country as the operating region proxy)
+    const country = (truck as any).currentCountry ?? '';
+    const regionalMultiplier =
+      REGIONAL_MULTIPLIERS[country?.toUpperCase?.()] ?? DEFAULT_REGIONAL_MULTIPLIER;
 
-    // Truck-specific surcharges
+    // 2. Base cost: USD per km × distance × regional adjustment
+    const baseCost = routeDistanceKm * BASE_COST_USD_PER_KM * regionalMultiplier;
+
+    // 3. Load factor adjustment — penalise low utilisation
+    const capacityKg = Number(truck.capacityWeight) || weightKg; // fallback to load weight
+    const loadFactor = Math.min(Math.max(weightKg / capacityKg, 0.10), 1.00);
+    const utilisationAdjustedCost = baseCost * (0.40 + 0.60 * loadFactor);
+
+    // 4. Truck-specific surcharges
     let surcharge = 1.0;
-    if (truck.hasRefrigeration)               surcharge += 0.25; // +25% reefer
-    if (truck.hasHazmatPermit)                surcharge += 0.15; // +15% hazmat
-    if (truck.fuelType === FuelType.ELECTRIC) surcharge -= 0.05; // −5% EV
+    if (truck.hasRefrigeration)               surcharge += TRUCK_SURCHARGES.REFRIGERATION;
+    if (truck.hasHazmatPermit)                surcharge += TRUCK_SURCHARGES.HAZMAT;
+    if (truck.fuelType === FuelType.ELECTRIC) surcharge -= TRUCK_SURCHARGES.ELECTRIC_DISCOUNT;
 
-    return Math.round(baseCost * surcharge * 100) / 100;
+    const finalCost = utilisationAdjustedCost * surcharge;
+
+    // 5. Enforce minimum floor
+    return Math.round(Math.max(finalCost, MINIMUM_COST_USD) * 100) / 100;
   }
 
-  private estimateRevenue(distanceKm: number, weightKg: number, load?: Load): number {
-    // Use the cargo owner's offered price — it is the real expected revenue.
+  /**
+   * Estimate the revenue the carrier expects to earn from this trip.
+   *
+   * Priority:
+   *   1. Use cargo owner's offeredPrice — the definitive market signal.
+   *   2. Fall back to cost + standard carrier markup (20%).
+   */
+  private estimateRevenue(routeDistanceKm: number, weightKg: number, load?: Load): number {
     if (load) {
       const offered = Number(load.offeredPrice);
       if (offered > 0) {
@@ -3321,36 +3373,65 @@ export class MatchingService {
       }
     }
 
-    // offeredPrice not set — calculate from real route distance.
-    // distanceKm here is always the haversine pickup→delivery distance (no fallback).
-    const tonneKm = (weightKg / 1000) * distanceKm;
-    const calculated = tonneKm * 0.10;
-    this.logger.debug(`estimateRevenue: calculated ${calculated} (${tonneKm} tonne-km × 0.10)`);
+    // No offered price — derive from cost with carrier markup
+    const cost = this.estimateCost(routeDistanceKm, weightKg, {} as Truck);
+    const calculated = Math.round(cost * (1 + CARRIER_MARKUP_OVER_COST) * 100) / 100;
+    this.logger.debug(
+      `estimateRevenue: cost=${cost} + ${CARRIER_MARKUP_OVER_COST * 100}% markup = ${calculated}`,
+    );
     return calculated;
   }
 
-  private getMarketAverageCost(load: Load): number {
-    // Prefer the cargo owner's offered price — it is the real market signal.
+  /**
+   * Market average cost — used as the benchmark for recommendedPrice.
+   * Returns offeredPrice if set, otherwise cost + market benchmark markup.
+   */
+  private getMarketAverageCost(load: Load, distanceKm?: number): number {
     const offered = Number(load.offeredPrice);
     if (offered > 0) return offered;
 
-    // Every load has pickup and delivery locations — calculate real route distance.
-    const pickup   = load.pickupLocation?.locationData?.coordinates;
-    const delivery = load.deliveryLocation?.locationData?.coordinates;
+    let routeKm = distanceKm ?? 0;
 
-    if (!pickup?.latitude || !pickup?.longitude || !delivery?.latitude || !delivery?.longitude) {
-      this.logger.error(
-        `getMarketAverageCost: Load ${load.id} missing route coordinates.`,
+    if (!routeKm) {
+      const pickup   = load.pickupLocation?.locationData?.coordinates;
+      const delivery = load.deliveryLocation?.locationData?.coordinates;
+
+      if (!pickup?.latitude || !pickup?.longitude || !delivery?.latitude || !delivery?.longitude) {
+        this.logger.error(`getMarketAverageCost: Load ${load.id} missing route coordinates.`);
+        return 0;
+      }
+
+      routeKm = this.calculateHaversineDistance(
+        pickup.latitude, pickup.longitude,
+        delivery.latitude, delivery.longitude,
       );
-      return 0;
     }
 
-    const routeKm = this.calculateHaversineDistance(
-      pickup.latitude, pickup.longitude,
-      delivery.latitude, delivery.longitude,
-    );
-    const tonneKm = (Number(load.weight) / 1000) * routeKm;
-    return Math.max(tonneKm * 0.09, 50);
+    const baseCost = this.estimateCost(routeKm, Number(load.weight), {} as Truck);
+    return Math.round(baseCost * (1 + MARKET_BENCHMARK_MARKUP) * 100) / 100;
+  }
+
+  /**
+   * Return a per-component cost breakdown for the DTO.
+   * Mirrors the estimateCost formula but returns each line item separately.
+   */
+  private estimateCostBreakdown(
+    routeDistanceKm: number,
+    weightKg: number,
+    truck: Truck,
+  ): { fuelCost: number; laborCost: number; maintenanceCost: number; insuranceCost: number } {
+    const country = (truck as any).currentCountry ?? '';
+    const rm = REGIONAL_MULTIPLIERS[country?.toUpperCase?.()] ?? DEFAULT_REGIONAL_MULTIPLIER;
+    const capacityKg = Number(truck.capacityWeight) || weightKg;
+    const lf = Math.min(Math.max(weightKg / capacityKg, 0.10), 1.00);
+    const utilAdj = 0.40 + 0.60 * lf;
+
+    const fuel        = Math.round(routeDistanceKm * COST_COMPONENTS_USD_PER_KM.fuel        * rm * utilAdj * 100) / 100;
+    const labor       = Math.round(routeDistanceKm * (COST_COMPONENTS_USD_PER_KM.driverWages + COST_COMPONENTS_USD_PER_KM.driverBenefits) * rm * utilAdj * 100) / 100;
+    const maintenance = Math.round(routeDistanceKm * COST_COMPONENTS_USD_PER_KM.maintenance  * rm * utilAdj * 100) / 100;
+    const insurance   = Math.round(routeDistanceKm * COST_COMPONENTS_USD_PER_KM.insurance    * rm * utilAdj * 100) / 100;
+
+    return { fuelCost: fuel, laborCost: labor, maintenanceCost: maintenance, insuranceCost: insurance };
   }
 
   private calculateDimensionalCompatibility(truck: Truck, load: Load): number {
