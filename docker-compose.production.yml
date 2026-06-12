@@ -140,6 +140,10 @@ networks:
     ipam:
       config:
         - subnet: 172.31.0.0/16
+  # Shared network with sparkmonitoring-frontend-1 (the host nginx container)
+  # This allows sparkmonitoring nginx to reach urutix containers by name
+  sparkmonitoring_locwise_net:
+    external: true
 
 volumes:
   postgres_data:
