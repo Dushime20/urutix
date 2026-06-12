@@ -19,7 +19,20 @@ import React, {
   ReactNode,
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import currencyApi, { CurrencyMeta, RateMap } from '../services/currencyApi';
+import currencyApi from '../services/currencyApi';
+
+export interface CurrencyMeta {
+  code: string;
+  name: string;
+  symbol: string;
+  locale: string;
+  decimals: number;
+  flag: string;
+}
+
+export interface RateMap {
+  [code: string]: number;
+}
 
 // ── Inline currency metadata (mirrors backend constants) ─────────────────────
 // This avoids an extra API call for the metadata which rarely changes.

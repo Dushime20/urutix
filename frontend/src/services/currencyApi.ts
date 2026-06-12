@@ -1,17 +1,5 @@
 import api from './api';
-
-export interface CurrencyMeta {
-  code: string;
-  name: string;
-  symbol: string;
-  locale: string;
-  decimals: number;
-  flag: string;
-}
-
-export interface RateMap {
-  [code: string]: number;
-}
+import type { CurrencyMeta, RateMap } from '../contexts/CurrencyContext';
 
 export interface ConvertResult {
   originalAmount: number;
