@@ -1,10 +1,8 @@
 #!/bin/bash
 # ============================================================
-# urutix.com nginx setup script
-# Injects urutix.com config into the shared nginx container
-# that owns ports 80/443 on this server.
-#
-# Safe: only ADDS a new config file, never modifies existing ones.
+# urutix.com nginx setup
+# Injects urutix.com config into sparkmonitoring-frontend-1
+# which is the shared nginx container owning ports 80/443.
 #
 # Usage:
 #   chmod +x nginx/setup-host-nginx.sh
@@ -19,110 +17,168 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONF_FILE="$SCRIPT_DIR/urutix.com.conf"
+NGINX_CONTAINER="sparkmonitoring-frontend-1"
+CERT_PATH="/etc/letsencrypt/live/urutix.com"
 
 echo -e "${GREEN}=== urutix.com nginx setup ===${NC}"
 
 # ---------------------------------------------------------------
-# Step 1: Find the nginx container that owns port 80
+# Step 1: Verify the nginx container is running
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[1/6] Finding nginx container on port 80/443...${NC}"
+echo -e "${YELLOW}[1/5] Checking $NGINX_CONTAINER is running...${NC}"
 
-NGINX_CONTAINER=""
-for cid in $(docker ps -q); do
-  PORTS=$(docker inspect "$cid" --format '{{json .NetworkSettings.Ports}}')
-  if echo "$PORTS" | grep -q '"80/tcp"'; then
-    NGINX_CONTAINER=$(docker inspect "$cid" --format '{{.Name}}' | sed 's|/||')
-    break
-  fi
-done
-
-# Fallback: find by process name
-if [ -z "$NGINX_CONTAINER" ]; then
-  NGINX_PID=$(pgrep -f "nginx: master process" | head -1)
-  if [ -n "$NGINX_PID" ]; then
-    NGINX_CONTAINER=$(docker inspect $(docker ps -q) --format '{{.Name}} {{.State.Pid}}' | grep "$NGINX_PID" | awk '{print $1}' | sed 's|/||')
-  fi
-fi
-
-if [ -z "$NGINX_CONTAINER" ]; then
-  echo -e "${RED}ERROR: Could not find nginx container owning port 80.${NC}"
+if ! docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
+  echo -e "${RED}ERROR: Container $NGINX_CONTAINER is not running.${NC}"
+  docker ps --format 'table {{.Names}}\t{{.Status}}'
   exit 1
 fi
-
-echo "Found nginx container: $NGINX_CONTAINER"
-
-# ---------------------------------------------------------------
-# Step 2: Detect Docker bridge gateway IP
-# ---------------------------------------------------------------
-echo -e "${YELLOW}[2/6] Detecting Docker bridge gateway IP...${NC}"
-
-GATEWAY=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null)
-if [ -z "$GATEWAY" ]; then
-  GATEWAY="172.17.0.1"
-fi
-echo "Docker gateway IP: $GATEWAY"
-
-# Update the conf file with the correct gateway IP
-sed -i "s|172\.17\.0\.1|$GATEWAY|g" "$CONF_FILE"
+echo "Container is running ✓"
 
 # ---------------------------------------------------------------
-# Step 3: Copy SSL certs into the container
+# Step 2: Copy SSL certs into the container (as root)
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[3/6] Copying SSL certificates into container...${NC}"
-
-CERT_PATH="/etc/letsencrypt/live/urutix.com"
+echo -e "${YELLOW}[2/5] Copying SSL certificates into container...${NC}"
 
 if [ ! -f "$CERT_PATH/fullchain.pem" ]; then
-  echo -e "${RED}ERROR: SSL cert not found at $CERT_PATH/fullchain.pem${NC}"
-  echo "Run certbot first: sudo certbot --nginx -d urutix.com -d www.urutix.com"
+  echo -e "${RED}ERROR: SSL cert not found at $CERT_PATH${NC}"
   exit 1
 fi
 
-# Create ssl directory inside container
-docker exec "$NGINX_CONTAINER" mkdir -p /etc/nginx/ssl/urutix.com
-
+docker exec --user root "$NGINX_CONTAINER" mkdir -p /etc/nginx/ssl/urutix.com
 docker cp "$CERT_PATH/fullchain.pem" "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/fullchain.pem"
 docker cp "$CERT_PATH/privkey.pem"   "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/privkey.pem"
-docker cp "$CERT_PATH/chain.pem"     "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/chain.pem" 2>/dev/null || true
 
-echo "SSL certs copied."
-
-# ---------------------------------------------------------------
-# Step 4: Update conf to use container-local cert paths
-# ---------------------------------------------------------------
-echo -e "${YELLOW}[4/6] Updating cert paths in config...${NC}"
-
-# Create a temp copy with container-internal cert paths
-TMP_CONF=$(mktemp)
-sed 's|/etc/letsencrypt/live/urutix.com|/etc/nginx/ssl/urutix.com|g' "$CONF_FILE" > "$TMP_CONF"
+echo "SSL certs copied ✓"
 
 # ---------------------------------------------------------------
-# Step 5: Inject config into the nginx container
+# Step 3: Build the config with container-internal cert paths
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[5/6] Injecting urutix.com.conf into $NGINX_CONTAINER...${NC}"
+echo -e "${YELLOW}[3/5] Injecting urutix.com.conf...${NC}"
 
-docker cp "$TMP_CONF" "$NGINX_CONTAINER:/etc/nginx/conf.d/urutix.com.conf"
-rm -f "$TMP_CONF"
+# Detect Docker bridge gateway IP
+GATEWAY=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || echo "172.17.0.1")
 
-echo "Config injected."
+# Write config directly into container
+docker exec --user root "$NGINX_CONTAINER" sh -c "cat > /etc/nginx/conf.d/urutix.com.conf << 'NGINXCONF'
+server {
+    listen 80;
+    server_name urutix.com www.urutix.com;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://urutix.com\$request_uri; }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name www.urutix.com;
+    ssl_certificate /etc/nginx/ssl/urutix.com/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/urutix.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    return 301 https://urutix.com\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name urutix.com;
+
+    ssl_certificate /etc/nginx/ssl/urutix.com/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/urutix.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+
+    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains; preload\" always;
+    add_header X-Frame-Options \"SAMEORIGIN\" always;
+    add_header X-Content-Type-Options \"nosniff\" always;
+    add_header X-XSS-Protection \"1; mode=block\" always;
+
+    client_max_body_size 50M;
+
+    location /api/ {
+        proxy_pass http://${GATEWAY}:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Connection \"\";
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    location /api/upload {
+        proxy_pass http://${GATEWAY}:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_connect_timeout 300s;
+        proxy_read_timeout 300s;
+        client_max_body_size 50M;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://${GATEWAY}:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \"upgrade\";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 7d;
+    }
+
+    location /uploads/ {
+        proxy_pass http://${GATEWAY}:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        expires 30d;
+        add_header Cache-Control \"public, immutable\";
+    }
+
+    location /health {
+        access_log off;
+        return 200 \"healthy\n\";
+        add_header Content-Type text/plain;
+    }
+
+    location / {
+        proxy_pass http://${GATEWAY}:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        add_header Cache-Control \"no-cache, no-store, must-revalidate\";
+    }
+}
+NGINXCONF"
+
+echo "Config injected ✓"
 
 # ---------------------------------------------------------------
-# Step 6: Test and reload nginx
+# Step 4: Test nginx config
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[6/6] Testing and reloading nginx...${NC}"
-
+echo -e "${YELLOW}[4/5] Testing nginx config...${NC}"
 docker exec "$NGINX_CONTAINER" nginx -t
+
+# ---------------------------------------------------------------
+# Step 5: Reload nginx
+# ---------------------------------------------------------------
+echo -e "${YELLOW}[5/5] Reloading nginx...${NC}"
 docker exec "$NGINX_CONTAINER" nginx -s reload
 
-echo ""
-echo -e "${GREEN}✅ Done! urutix.com is now configured.${NC}"
-echo ""
-echo "Verifying..."
 sleep 2
 
-HTTP=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 5 http://urutix.com/health 2>/dev/null || echo "000")
-HTTPS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 https://urutix.com/health 2>/dev/null || echo "000")
+# ---------------------------------------------------------------
+# Verify
+# ---------------------------------------------------------------
+echo ""
+HTTPS=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 5 https://urutix.com/health || echo "000")
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://urutix.com/health || echo "000")
 
 echo "  http://urutix.com/health  → $HTTP"
 echo "  https://urutix.com/health → $HTTPS"
@@ -132,6 +188,6 @@ if [ "$HTTPS" = "200" ]; then
   echo -e "${GREEN}🚀 https://urutix.com is LIVE!${NC}"
 else
   echo ""
-  echo -e "${YELLOW}HTTPS returned $HTTPS — check logs:${NC}"
+  echo -e "${YELLOW}Check nginx error log:${NC}"
   echo "  docker exec $NGINX_CONTAINER cat /var/log/nginx/error.log | tail -20"
 fi
