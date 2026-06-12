@@ -126,7 +126,7 @@ export class EmailService {
         '❌ This is REQUIRED for email links to work correctly.\n' +
         '❌ Please add FRONTEND_URL to your .env file:\n' +
         '❌   For development: FRONTEND_URL=http://localhost:5173\n' +
-        '❌   For production: FRONTEND_URL=http://38.242.224.199:5173\n' +
+        '❌   For production: FRONTEND_URL=https://urutix.com\n' +
         '❌   Or use your domain: FRONTEND_URL=https://yourdomain.com';
       
       this.logger.error(errorMessage);

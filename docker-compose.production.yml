@@ -110,7 +110,7 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://urutix.com}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://urutix.com/api}
         VITE_WEBSOCKET_URL: ${VITE_WEBSOCKET_URL:-wss://urutix.com}
     container_name: urutix_frontend
     restart: unless-stopped
