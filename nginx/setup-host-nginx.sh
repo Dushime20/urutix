@@ -1,7 +1,10 @@
 #!/bin/bash
 # ============================================================
-# Setup nginx to proxy urutix.com → Docker containers
-# Handles both systemd nginx and Dockerized nginx
+# urutix.com nginx setup script
+# Injects urutix.com config into the shared nginx container
+# that owns ports 80/443 on this server.
+#
+# Safe: only ADDS a new config file, never modifies existing ones.
 #
 # Usage:
 #   chmod +x nginx/setup-host-nginx.sh
@@ -16,211 +19,119 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONF_FILE="$SCRIPT_DIR/urutix.com.conf"
 
-echo -e "${GREEN}=== urutix.com nginx proxy setup ===${NC}"
-
-# ---------------------------------------------------------------
-# Step 1: Remove any conflicting config we added previously
-# ---------------------------------------------------------------
-echo -e "${YELLOW}[1/5] Cleaning up conflicting configs...${NC}"
-rm -f /etc/nginx/sites-enabled/urutix.com
-rm -f /etc/nginx/sites-available/urutix.com
-echo "Done."
+echo -e "${GREEN}=== urutix.com nginx setup ===${NC}"
 
 # ---------------------------------------------------------------
-# Step 2: Find the existing urutix config (created by certbot)
+# Step 1: Find the nginx container that owns port 80
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[2/5] Locating existing urutix nginx config...${NC}"
+echo -e "${YELLOW}[1/6] Finding nginx container on port 80/443...${NC}"
 
-EXISTING_CONF=""
-for f in /etc/nginx/sites-enabled/urutix /etc/nginx/sites-available/urutix; do
-  if [ -f "$f" ]; then
-    EXISTING_CONF="$f"
+NGINX_CONTAINER=""
+for cid in $(docker ps -q); do
+  PORTS=$(docker inspect "$cid" --format '{{json .NetworkSettings.Ports}}')
+  if echo "$PORTS" | grep -q '"80/tcp"'; then
+    NGINX_CONTAINER=$(docker inspect "$cid" --format '{{.Name}}' | sed 's|/||')
     break
   fi
 done
 
-if [ -z "$EXISTING_CONF" ]; then
-  echo -e "${RED}ERROR: Could not find existing urutix nginx config.${NC}"
-  echo "Expected at /etc/nginx/sites-enabled/urutix or /etc/nginx/sites-available/urutix"
+# Fallback: find by process name
+if [ -z "$NGINX_CONTAINER" ]; then
+  NGINX_PID=$(pgrep -f "nginx: master process" | head -1)
+  if [ -n "$NGINX_PID" ]; then
+    NGINX_CONTAINER=$(docker inspect $(docker ps -q) --format '{{.Name}} {{.State.Pid}}' | grep "$NGINX_PID" | awk '{print $1}' | sed 's|/||')
+  fi
+fi
+
+if [ -z "$NGINX_CONTAINER" ]; then
+  echo -e "${RED}ERROR: Could not find nginx container owning port 80.${NC}"
   exit 1
 fi
 
-echo "Found: $EXISTING_CONF"
+echo "Found nginx container: $NGINX_CONTAINER"
 
 # ---------------------------------------------------------------
-# Step 3: Overwrite the existing config with full proxy rules
+# Step 2: Detect Docker bridge gateway IP
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[3/5] Writing full proxy config to $EXISTING_CONF...${NC}"
+echo -e "${YELLOW}[2/6] Detecting Docker bridge gateway IP...${NC}"
 
-cat > "$EXISTING_CONF" << 'EOF'
-# urutix.com nginx config
-# Managed by: nginx/setup-host-nginx.sh
-# SSL certificates managed by Certbot
+GATEWAY=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null)
+if [ -z "$GATEWAY" ]; then
+  GATEWAY="172.17.0.1"
+fi
+echo "Docker gateway IP: $GATEWAY"
 
-server {
-    listen 80;
-    server_name urutix.com www.urutix.com;
-
-    # Let's Encrypt renewal
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
-
-    location / {
-        return 301 https://urutix.com$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name www.urutix.com;
-
-    ssl_certificate /etc/letsencrypt/live/urutix.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/urutix.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    return 301 https://urutix.com$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name urutix.com;
-
-    ssl_certificate /etc/letsencrypt/live/urutix.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/urutix.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-
-    client_max_body_size 50M;
-
-    # Backend API
-    location /api/ {
-        proxy_pass http://127.0.0.1:3005;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Connection "";
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-        proxy_buffering on;
-        proxy_buffer_size 128k;
-        proxy_buffers 4 256k;
-        proxy_busy_buffers_size 256k;
-    }
-
-    # File uploads
-    location /api/upload {
-        proxy_pass http://127.0.0.1:3005;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 300s;
-        proxy_send_timeout 300s;
-        proxy_read_timeout 300s;
-        client_max_body_size 50M;
-    }
-
-    # WebSocket (Socket.IO)
-    location /socket.io/ {
-        proxy_pass http://127.0.0.1:3005;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 7d;
-        proxy_send_timeout 7d;
-        proxy_read_timeout 7d;
-    }
-
-    # Uploaded static files
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:3005;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Health check
-    location /health {
-        access_log off;
-        return 200 "healthy\n";
-        add_header Content-Type text/plain;
-    }
-
-    # Frontend SPA
-    location / {
-        proxy_pass http://127.0.0.1:5173;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-    }
-}
-EOF
-
-echo "Config written."
+# Update the conf file with the correct gateway IP
+sed -i "s|172\.17\.0\.1|$GATEWAY|g" "$CONF_FILE"
 
 # ---------------------------------------------------------------
-# Step 4: Test nginx config
+# Step 3: Copy SSL certs into the container
 # ---------------------------------------------------------------
-echo -e "${YELLOW}[4/5] Testing nginx config...${NC}"
-nginx -t
+echo -e "${YELLOW}[3/6] Copying SSL certificates into container...${NC}"
 
-# ---------------------------------------------------------------
-# Step 5: Reload nginx (handles both systemd and Docker nginx)
-# ---------------------------------------------------------------
-echo -e "${YELLOW}[5/5] Reloading nginx...${NC}"
+CERT_PATH="/etc/letsencrypt/live/urutix.com"
 
-if systemctl is-active --quiet nginx; then
-    # systemd managed
-    systemctl reload nginx
-    echo "Reloaded via systemd."
-else
-    # Find the nginx Docker container and send reload signal
-    NGINX_CONTAINER=$(docker ps --filter "ancestor=nginx" --format "{{.Names}}" | head -1)
-    if [ -n "$NGINX_CONTAINER" ]; then
-        docker exec "$NGINX_CONTAINER" nginx -s reload
-        echo "Reloaded Docker container: $NGINX_CONTAINER"
-    else
-        # Send signal directly to master nginx process
-        NGINX_PID=$(pgrep -f "nginx: master process" | head -1)
-        if [ -n "$NGINX_PID" ]; then
-            kill -HUP "$NGINX_PID"
-            echo "Reloaded via HUP signal to PID $NGINX_PID"
-        else
-            echo -e "${RED}Could not find nginx process to reload.${NC}"
-            exit 1
-        fi
-    fi
+if [ ! -f "$CERT_PATH/fullchain.pem" ]; then
+  echo -e "${RED}ERROR: SSL cert not found at $CERT_PATH/fullchain.pem${NC}"
+  echo "Run certbot first: sudo certbot --nginx -d urutix.com -d www.urutix.com"
+  exit 1
 fi
 
+# Create ssl directory inside container
+docker exec "$NGINX_CONTAINER" mkdir -p /etc/nginx/ssl/urutix.com
+
+docker cp "$CERT_PATH/fullchain.pem" "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/fullchain.pem"
+docker cp "$CERT_PATH/privkey.pem"   "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/privkey.pem"
+docker cp "$CERT_PATH/chain.pem"     "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/chain.pem" 2>/dev/null || true
+
+echo "SSL certs copied."
+
+# ---------------------------------------------------------------
+# Step 4: Update conf to use container-local cert paths
+# ---------------------------------------------------------------
+echo -e "${YELLOW}[4/6] Updating cert paths in config...${NC}"
+
+# Create a temp copy with container-internal cert paths
+TMP_CONF=$(mktemp)
+sed 's|/etc/letsencrypt/live/urutix.com|/etc/nginx/ssl/urutix.com|g' "$CONF_FILE" > "$TMP_CONF"
+
+# ---------------------------------------------------------------
+# Step 5: Inject config into the nginx container
+# ---------------------------------------------------------------
+echo -e "${YELLOW}[5/6] Injecting urutix.com.conf into $NGINX_CONTAINER...${NC}"
+
+docker cp "$TMP_CONF" "$NGINX_CONTAINER:/etc/nginx/conf.d/urutix.com.conf"
+rm -f "$TMP_CONF"
+
+echo "Config injected."
+
+# ---------------------------------------------------------------
+# Step 6: Test and reload nginx
+# ---------------------------------------------------------------
+echo -e "${YELLOW}[6/6] Testing and reloading nginx...${NC}"
+
+docker exec "$NGINX_CONTAINER" nginx -t
+docker exec "$NGINX_CONTAINER" nginx -s reload
+
 echo ""
-echo -e "${GREEN}✅ nginx configured for urutix.com${NC}"
+echo -e "${GREEN}✅ Done! urutix.com is now configured.${NC}"
 echo ""
-echo "Now start Docker containers:"
-echo "  docker compose -f docker-compose.production.yml up -d"
-echo ""
-echo "Then verify:"
-echo "  curl -I https://urutix.com"
+echo "Verifying..."
+sleep 2
+
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 5 http://urutix.com/health 2>/dev/null || echo "000")
+HTTPS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 https://urutix.com/health 2>/dev/null || echo "000")
+
+echo "  http://urutix.com/health  → $HTTP"
+echo "  https://urutix.com/health → $HTTPS"
+
+if [ "$HTTPS" = "200" ]; then
+  echo ""
+  echo -e "${GREEN}🚀 https://urutix.com is LIVE!${NC}"
+else
+  echo ""
+  echo -e "${YELLOW}HTTPS returned $HTTPS — check logs:${NC}"
+  echo "  docker exec $NGINX_CONTAINER cat /var/log/nginx/error.log | tail -20"
+fi
