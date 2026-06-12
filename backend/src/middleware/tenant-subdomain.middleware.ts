@@ -26,8 +26,8 @@ export class TenantSubdomainMiddleware implements NestMiddleware {
       return next();
     }
 
-    // For development: localhost:3000 or 127.0.0.1:3000
-    if (parts.length < 2) {
+    // Skip if bare domain (e.g., urutix.com) or localhost
+    if (parts.length <= 2) {
       return next();
     }
 
