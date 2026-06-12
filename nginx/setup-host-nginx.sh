@@ -70,7 +70,8 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name www.urutix.com;
     ssl_certificate /etc/nginx/ssl/urutix.com/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/urutix.com/privkey.pem;
@@ -80,7 +81,8 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name urutix.com;
 
     ssl_certificate /etc/nginx/ssl/urutix.com/fullchain.pem;
@@ -98,7 +100,7 @@ server {
     client_max_body_size 50M;
 
     location /api/ {
-        proxy_pass http://${GATEWAY}:3005;
+        proxy_pass http://urutix_backend:3005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -110,7 +112,7 @@ server {
     }
 
     location /api/upload {
-        proxy_pass http://${GATEWAY}:3005;
+        proxy_pass http://urutix_backend:3005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -122,7 +124,7 @@ server {
     }
 
     location /socket.io/ {
-        proxy_pass http://${GATEWAY}:3005;
+        proxy_pass http://urutix_backend:3005;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \"upgrade\";
@@ -134,7 +136,7 @@ server {
     }
 
     location /uploads/ {
-        proxy_pass http://${GATEWAY}:3005;
+        proxy_pass http://urutix_backend:3005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         expires 30d;
@@ -148,7 +150,7 @@ server {
     }
 
     location / {
-        proxy_pass http://${GATEWAY}:5173;
+        proxy_pass http://urutix_frontend:5173;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
