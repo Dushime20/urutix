@@ -17,7 +17,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-NGINX_CONTAINER="intelliprocure-nginx"
+NGINX_CONTAINER="sparkmonitoring-proxy-1"
 CERT_PATH="/etc/letsencrypt/live/urutix.com"
 
 echo -e "${GREEN}=== urutix.com nginx setup ===${NC}"
