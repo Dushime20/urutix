@@ -45,8 +45,10 @@ if [ ! -f "$CERT_PATH/fullchain.pem" ]; then
 fi
 
 docker exec --user root "$NGINX_CONTAINER" mkdir -p /etc/nginx/ssl/urutix.com
-docker cp "$CERT_PATH/fullchain.pem" "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/fullchain.pem"
-docker cp "$CERT_PATH/privkey.pem"   "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/privkey.pem"
+
+# Resolve symlinks before copying — Let's Encrypt uses symlinks to archive
+docker cp "$(readlink -f $CERT_PATH/fullchain.pem)" "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/fullchain.pem"
+docker cp "$(readlink -f $CERT_PATH/privkey.pem)"   "$NGINX_CONTAINER:/etc/nginx/ssl/urutix.com/privkey.pem"
 
 echo "SSL certs copied ✓"
 
