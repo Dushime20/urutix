@@ -1,23 +1,17 @@
 #!/bin/bash
-# ============================================================
-# DIAGNOSTIC SCRIPT
-# We need to find exactly what is holding port 443 on your server
-# ============================================================
+echo "=== NGINX CONFIG DUMP ==="
+echo "1. Checking sites-enabled:"
+cat /etc/nginx/sites-enabled/*urutix* 2>/dev/null || echo "Not found in sites-enabled"
 
-echo "=== URUTIX PORT DIAGNOSTICS ==="
+echo -e "\n2. Checking conf.d:"
+cat /etc/nginx/conf.d/*urutix* 2>/dev/null || echo "Not found in conf.d"
 
-echo -e "\n[1] Which process is holding port 443 on the Host?"
-netstat -tulpn | grep :443 || echo "netstat not found or nothing on 443"
+echo -e "\n3. Checking nginx.conf for includes:"
+grep "include" /etc/nginx/nginx.conf 2>/dev/null || echo "nginx.conf not found"
 
-echo -e "\n[2] Which Docker container is holding port 443?"
-docker ps --format "table {{.Names}}\t{{.Ports}}" | grep 443 || echo "No docker container holds 443"
+echo -e "\n4. Checking where certs are located on host:"
+ls -la /etc/letsencrypt/live/urutix.com/ 2>/dev/null || echo "Certs not in standard letsencrypt folder"
 
-echo -e "\n[3] List all proxy/nginx containers:"
-docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" | grep -iE "nginx|proxy" || echo "No nginx/proxy containers found"
-
-echo -e "\n[4] Localhost curl test:"
-curl -I -k https://127.0.0.1/health || echo "Curl failed"
-
-echo -e "\n============================================="
-echo "Please copy this ENTIRE output back to the chat!"
-echo "============================================="
+echo -e "\n5. Testing localhost connection directly to Docker proxy:"
+curl -I http://localhost:5173/health || echo "Cannot reach frontend on localhost:5173"
+curl -I http://localhost:3005/api/health || echo "Cannot reach backend on localhost:3005"
