@@ -99,6 +99,7 @@ const BorrowerRow: React.FC<{
   showLender?: boolean;
   onViewDetails?: (borrower: Borrower) => void;
 }> = ({ borrower, openActionRow, setOpenActionRow, showLender = false, onViewDetails }) => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   return (
     <tr className="hover:bg-[#fafafa]/50 transition-colors group">
       <td className="px-8 py-6 whitespace-nowrap">
@@ -406,7 +407,7 @@ const AdminBorrowersPage: React.FC = () => {
       title={<TranslatedText text="Borrower Management" />}
       description={<TranslatedText text="Comprehensive overview and management of all borrowers" />}
       actions={
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3 md:gap-4">
           <button
             onClick={() => setGroupByLender(!groupByLender)}
             className="px-4 py-2.5 bg-white border border-gray-100 hover:border-gray-200 text-slate-600 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"

@@ -43,7 +43,7 @@ const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
                                 </p>
                             </div>
                             {actions && (
-                                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
+                                <div className="flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500 w-full md:w-auto mt-2 md:mt-0">
                                     {actions}
                                 </div>
                             )}

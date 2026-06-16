@@ -211,7 +211,7 @@ const ActivityLogs: React.FC = () => {
             title={<TranslatedText text="Activity Logs & Sessions" />}
             description={<TranslatedText text="Monitor user activities, track sessions, and detect suspicious behavior across the platform" />}
             actions={
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4">
                     {socketConnected && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>

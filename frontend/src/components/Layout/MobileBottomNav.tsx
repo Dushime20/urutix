@@ -18,10 +18,60 @@ const MobileBottomNav: React.FC = () => {
     const location = useLocation();
     const { unreadCount } = useNotifications();
 
+    const getHomePath = () => {
+        if (!user) return '/dashboard';
+        switch (user.role) {
+            case 'SUPER_ADMIN': return '/admin';
+            case 'ADMIN': return '/admin-operational';
+            case 'TENANT_ADMIN': return '/tenant-admin';
+            case 'TRUCK_OWNER': return '/dashboard/fleet';
+            case 'DRIVER': return '/dashboard/driver';
+            case 'BROKER': return '/dashboard/broker';
+            case 'CUSTOMS_OFFICER': return '/dashboard/customs';
+            case 'LENDER': return '/lender';
+            case 'CARGO_OWNER': 
+            case 'CARGO_RECEIVER':
+            default: return '/dashboard';
+        }
+    };
+
+    const getProfilePath = () => {
+        if (!user) return '/dashboard/settings';
+        switch (user.role) {
+            case 'SUPER_ADMIN': return '/admin/profile';
+            case 'ADMIN': return '/admin-operational/profile';
+            case 'TENANT_ADMIN': return '/tenant-admin/profile';
+            case 'TRUCK_OWNER': return '/dashboard/profile/fleet';
+            case 'DRIVER': return '/dashboard/driver/profile';
+            case 'BROKER': return '/dashboard/broker';
+            case 'CUSTOMS_OFFICER': return '/dashboard/customs';
+            case 'LENDER': return '/lender';
+            case 'CARGO_OWNER': 
+            case 'CARGO_RECEIVER':
+            default: return '/dashboard/settings';
+        }
+    };
+
+    const getNotificationsPath = () => {
+        if (!user) return '/dashboard/notifications';
+        switch (user.role) {
+            case 'SUPER_ADMIN': return '/admin/activity-logs';
+            case 'ADMIN': return '/admin-operational/activity-logs';
+            case 'TENANT_ADMIN': return '/tenant-admin/activity-logs';
+            case 'TRUCK_OWNER': return '/dashboard/fleet'; 
+            case 'DRIVER': return '/dashboard/driver/notifications';
+            case 'BROKER': return '/dashboard/broker';
+            case 'CUSTOMS_OFFICER': return '/dashboard/customs'; 
+            case 'LENDER': return '/lender';
+            case 'CARGO_OWNER': 
+            case 'CARGO_RECEIVER':
+            default: return '/dashboard/notifications';
+        }
+    };
+
     // Base navigation items for all users
-    const homePath = user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : '/dashboard';
     const navItems: NavItem[] = [
-        { icon: Home, label: 'Home', path: homePath },
+        { icon: Home, label: 'Home', path: getHomePath() },
     ];
 
     // Role-specific primary actions
@@ -33,7 +83,6 @@ const MobileBottomNav: React.FC = () => {
         navItems.push({ icon: Package, label: 'Cargos', path: user.role === 'CARGO_OWNER' ? '/dashboard/cargos/list' : '/cargo-owner/cargos/my-cargos' });
         navItems.push({ icon: PlusCircle, label: 'Create', path: '/dashboard/cargos/create' });
     } else if (user?.role === 'DRIVER') {
-        navItems.push({ icon: Home, label: 'Overview', path: '/dashboard/driver' });
         navItems.push({ icon: Activity, label: 'Missions', path: '/dashboard/driver/missions' });
         navItems.push({ icon: DollarSign, label: 'Finance', path: '/dashboard/driver/finance' });
         navItems.push({ icon: MessageSquare, label: 'Chat', path: '/dashboard/driver/messages' });
@@ -47,9 +96,8 @@ const MobileBottomNav: React.FC = () => {
     }
 
     // Common items — Bell gets the live unread count
-    navItems.push({ icon: Bell, label: 'Alerts', path: '/dashboard/notifications', count: unreadCount > 0 ? unreadCount : undefined });
-    const profilePath = user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : '/dashboard/settings';
-    navItems.push({ icon: User, label: 'Profile', path: profilePath });
+    navItems.push({ icon: Bell, label: 'Alerts', path: getNotificationsPath(), count: unreadCount > 0 ? unreadCount : undefined });
+    navItems.push({ icon: User, label: 'Profile', path: getProfilePath() });
 
     // Ensure we only show 5 items max for better UI
     const finalItems = navItems.slice(0, 5);

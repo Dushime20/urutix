@@ -183,7 +183,7 @@ const AnalyticsManagement: React.FC = () => {
       title={<TranslatedText text="Analytics Command Center" />}
       description={<TranslatedText text="Live platform intelligence, user demographics, and operational health matrix" />}
       actions={
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <Select
               value={timeRange}

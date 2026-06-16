@@ -130,7 +130,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                     </button>
 
                     {showUserMenu && (
-                        <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute right-0 mt-3 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2.5 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="px-4 py-3 mb-1">
                                 <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Identity" /></p>
                                 <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{user?.email || 'admin@urutix.com'}</p>

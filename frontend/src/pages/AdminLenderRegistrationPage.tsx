@@ -302,7 +302,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
       title="Lender Management"
       description="Comprehensive overview and management of lending partners"
       actions={
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3 md:gap-4">
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
             className="px-4 py-2.5 bg-white border border-gray-100 hover:border-gray-200 text-slate-600 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
