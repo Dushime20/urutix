@@ -14,10 +14,12 @@ import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 import ModernNavCard from '../components/Admin/ModernNavCard';
 import { motion } from 'framer-motion';
 import ModernLoader from '../components/common/ModernLoader';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [loading, setLoading] = useState(true);
   const [kpiData, setKpiData] = useState<AdminKPI | null>(null);
   const [analyticsData, setAnalyticsData] = useState<AdminAnalytics | null>(null);
@@ -152,7 +154,7 @@ const AdminDashboard: React.FC = () => {
       icon: FaMoneyBillWave,
       color: 'yellow',
       path: '/admin/financial',
-      stats: financialData ? `$${(financialData.totalRevenue / 1000).toFixed(0)}k revenue` : 'Loading...',
+      stats: financialData ? `${fmtMoney(financialData.totalRevenue)} revenue` : 'Loading...',
     },
   ];
 
@@ -238,7 +240,7 @@ const AdminDashboard: React.FC = () => {
           />
           <StatCard
             title="Revenue"
-            value={`$${(financialData?.totalRevenue || 0).toLocaleString()}`}
+            value={fmtMoney(financialData?.totalRevenue || 0)}
             icon={<FaMoneyBillWave size={22} />}
             trend={`${calculateGrowth(financialData?.totalRevenue || 0)}%`}
             trendDirection="up"
@@ -338,7 +340,7 @@ const AdminDashboard: React.FC = () => {
                     Payment processed
                   </p>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                    Amount: <span className="text-gray-700">${payment.amount?.toLocaleString() || 'N/A'}</span>
+                    Amount: <span className="text-gray-700">{fmtMoney(payment.amount) || 'N/A'}</span>
                   </p>
                 </div>
                 <span className="text-[10px] font-black text-gray-300 group-hover:text-gray-500 uppercase">

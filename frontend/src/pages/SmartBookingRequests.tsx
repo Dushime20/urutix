@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaSearch, FaSpinner, FaTruck, FaMapMarkerAlt, FaDollarSign } from 'react-icons/fa';
 import { smartBookingApi, type BookingRequest } from '../services/smartBookingApi';
 import toast from 'react-hot-toast';
@@ -7,6 +8,7 @@ import { cn } from '../utils/cn';
 type TabType = 'pending' | 'accepted' | 'rejected' | 'all';
 
 const SmartBookingRequests: React.FC = () => {
+    const { compact: fmtMoney } = useCurrencyFormat();
     const [activeTab, setActiveTab] = useState<TabType>('pending');
     const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
     const [filteredRequests, setFilteredRequests] = useState<BookingRequest[]>([]);
@@ -232,8 +234,8 @@ const SmartBookingRequests: React.FC = () => {
                                         <span className="text-xs font-medium text-gray-500">Offered Price</span>
                                         <div className="flex items-center gap-1 mt-1">
                                             <FaDollarSign className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                                            <span className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                                                ${request.offeredPrice.toLocaleString()}
+                                                <span className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+                                                {fmtMoney(request.offeredPrice)}
                                             </span>
                                         </div>
                                     </div>

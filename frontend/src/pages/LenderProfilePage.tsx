@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -85,6 +86,7 @@ interface LenderProfile {
 
 
 const LenderProfilePage: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const [profile, setProfile] = useState<LenderProfile | null>(null);
   const [activeTab, setActiveTab] = useState('personal');
@@ -875,7 +877,7 @@ const LenderProfilePage: React.FC = () => {
                 />
               </div>
             ) : (
-              <p className="text-gray-900">${profile.business.lendingCapacity.minLoanAmount.toLocaleString()}</p>
+              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.minLoanAmount)}</p>
             )}
           </div>
 
@@ -892,7 +894,7 @@ const LenderProfilePage: React.FC = () => {
                 />
               </div>
             ) : (
-              <p className="text-gray-900">${profile.business.lendingCapacity.maxLoanAmount.toLocaleString()}</p>
+              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.maxLoanAmount)}</p>
             )}
           </div>
 
@@ -909,14 +911,14 @@ const LenderProfilePage: React.FC = () => {
                 />
               </div>
             ) : (
-              <p className="text-gray-900">${profile.business.lendingCapacity.totalCapacity.toLocaleString()}</p>
+              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.totalCapacity)}</p>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Available Capacity</label>
             <div className="flex items-center gap-4">
-              <p className="text-gray-900">${profile.business.lendingCapacity.availableCapacity.toLocaleString()}</p>
+              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.availableCapacity)}</p>
               <div className="flex-1 bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full"

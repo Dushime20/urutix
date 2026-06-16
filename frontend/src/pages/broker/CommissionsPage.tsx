@@ -18,8 +18,10 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const CommissionsPage: React.FC = () => {
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const [commissions, setCommissions] = useState<BrokerCommission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,8 +98,8 @@ const CommissionsPage: React.FC = () => {
 
         <div className="relative z-10 flex items-center gap-12 mr-4">
            <div className="text-center hidden md:block">
-             <p className="text-xl font-bold leading-none text-emerald-400">{stats.totalEarned.toLocaleString()}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">KES Revenue</p>
+             <p className="text-xl font-bold leading-none text-emerald-400">{fmtMoney(stats.totalEarned)}</p>
+             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Revenue</p>
            </div>
            <div className="flex gap-4">
              <button className="px-8 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white rounded-2xl text-sm font-bold uppercase hover:bg-slate-100 dark:hover:bg-white/10 transition-all">Export</button>
@@ -110,8 +112,8 @@ const CommissionsPage: React.FC = () => {
 
       {/* Statistics Board */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <StatCard title="Revenue System" value={`${stats.totalEarned.toLocaleString()} KES`} subtitle="Authorized Payouts" icon={<DollarSign size={20} />} color="success" variant="classic" />
-        <StatCard title="Pending Pipeline" value={`${stats.totalPending.toLocaleString()} KES`} subtitle="In Clearance Cycle" icon={<Clock size={20} />} color="warning" variant="classic" />
+        <StatCard title="Revenue System" value={fmtMoney(stats.totalEarned)} subtitle="Authorized Payouts" icon={<DollarSign size={20} />} color="success" variant="classic" />
+        <StatCard title="Pending Pipeline" value={fmtMoney(stats.totalPending)} subtitle="In Clearance Cycle" icon={<Clock size={20} />} color="warning" variant="classic" />
         <StatCard title="Total Records" value={stats.total} subtitle="Facilitations Processed" icon={<Activity size={20} />} color="info" variant="classic" />
       </div>
 
@@ -176,13 +178,13 @@ const CommissionsPage: React.FC = () => {
                     <p className="text-sm font-bold text-slate-900 uppercase italic group-hover:text-primary-600 transition-colors dark:text-white">#{comm.loadId.substring(0, 10).toUpperCase()}</p>
                   </td>
                   <td className="px-10 py-10 text-xs font-bold text-slate-700 dark:text-slate-200">
-                    {comm.loadAmount.toLocaleString()} KES
+                    {fmtFull(comm.loadAmount)}
                   </td>
                   <td className="px-10 py-10">
                     <span className="text-xs font-bold text-primary-500 bg-primary-50 px-3 py-1 rounded-lg border border-primary-100">{comm.commissionRate}%</span>
                   </td>
                   <td className="px-10 py-10">
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">{comm.commissionAmount.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">{fmtFull(comm.commissionAmount)}</p>
                   </td>
                   <td className="px-10 py-10">
                     <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase border shadow-sm ${getStatusPrimeStyle(comm.status)}`}>

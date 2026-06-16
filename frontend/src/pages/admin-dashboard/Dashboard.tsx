@@ -14,6 +14,7 @@ import {
 import { CardSkeleton } from '../../components/common/LoadingSkeletons';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import { StatCard } from '../../components/EnliteUI';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 /* ── Types ─────────────────────────────────────────────────────── */
 interface RevenuePoint  { day: string; revenue: number; trips: number }
@@ -90,10 +91,8 @@ const TenantOperationalDashboard: React.FC = () => {
 
   const currency = charts?.kpi?.currency || 'USD';
 
-  const fmtCurrency = (n: number) =>
-    n >= 1_000_000 ? `${currency} ${(n / 1_000_000).toFixed(1)}M`
-    : n >= 1_000   ? `${currency} ${(n / 1_000).toFixed(1)}K`
-                   : `${currency} ${n.toLocaleString()}`;
+  const { compact } = useCurrencyFormat();
+  const fmtCurrency = (n: number) => compact(n);
 
   /* ── Loading skeleton ── */
   if (loading) return (

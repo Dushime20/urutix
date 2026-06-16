@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FaTimes, FaDollarSign, FaInfoCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface AdvancePaymentRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +22,7 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
   currency,
   onSuccess,
 }) => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const [formData, setFormData] = useState({
     requestedAmount: '',
     reason: '',
@@ -71,13 +73,7 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

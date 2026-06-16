@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { fetchUsers } from '../services/adminApi';
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
@@ -157,7 +158,7 @@ const BorrowerRow: React.FC<{
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
             <p className="text-xs font-black text-gray-900 tracking-tight">{borrower.totalLoans} Issuances</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RWF {(borrower.totalBorrowed / 1000000).toFixed(1)}M</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{fmtMoney(borrower.totalBorrowed)}</p>
           </div>
           <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
@@ -204,6 +205,7 @@ const BorrowerRow: React.FC<{
 };
 
 const AdminBorrowersPage: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [borrowers, setBorrowers] = useState<Borrower[]>([]);
   const [analytics, setAnalytics] = useState<BorrowerAnalytics | null>(null);
   const [fetching, setFetching] = useState(true);
@@ -460,7 +462,7 @@ const AdminBorrowersPage: React.FC = () => {
             />
             <StatCard
               title={<TranslatedText text="Total Issuance (RWF)" />}
-              value={`${(analytics.totalAmountBorrowed / 1000000).toFixed(1)}M`}
+              value={fmtMoney(analytics.totalAmountBorrowed)}
               icon={<DollarSign size={22} />}
               color="primary"
               variant="classic"
@@ -631,7 +633,7 @@ const AdminBorrowersPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs font-black text-gray-900 tracking-tight">RWF {(group.borrowers.reduce((sum, b) => sum + b.outstandingAmount, 0) / 1000000).toFixed(1)}M</div>
+                          <div className="text-xs font-black text-gray-900 tracking-tight">{fmtMoney(group.borrowers.reduce((sum, b) => sum + b.outstandingAmount, 0))}</div>
                           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">OUTSTANDING EXPOSURE</div>
                         </div>
                       </div>
@@ -726,7 +728,7 @@ const AdminBorrowersPage: React.FC = () => {
               <span>{sorted.length} borrower{sorted.length !== 1 && 's'} shown</span>
               <div className="flex items-center gap-3">
                 <span className="hidden sm:inline">Sorted by {sortBy} ({sortDir})</span>
-                <span>Total Outstanding: RWF {(sorted.reduce((acc, b) => acc + b.outstandingAmount, 0) / 1000000).toFixed(1)}M</span>
+                <span>Total Outstanding: {fmtMoney(sorted.reduce((acc, b) => acc + b.outstandingAmount, 0))}</span>
               </div>
             </div>
           </div>
@@ -786,7 +788,7 @@ const AdminBorrowersPage: React.FC = () => {
                         </div>
                         <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-50">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Exposure Ratio</p>
-                          <p className="text-2xl font-black text-gray-900 tracking-tight">RWF {(selectedBorrower.outstandingAmount / 1000000).toFixed(1)}M</p>
+                          <p className="text-2xl font-black text-gray-900 tracking-tight">{fmtMoney(selectedBorrower.outstandingAmount)}</p>
                           <div className="mt-2 text-[9px] font-black text-slate-400 uppercase tracking-tighter">{((selectedBorrower.outstandingAmount / (selectedBorrower.totalBorrowed || 1)) * 100).toFixed(0)}% Utilization</div>
                         </div>
                         <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-50">

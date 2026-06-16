@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import {
   Gift,
   CheckCircle,
@@ -40,6 +41,7 @@ interface RewardStats {
 }
 
 const UserRewards: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [stats, setStats] = useState<RewardStats | null>(null);
@@ -200,14 +202,14 @@ const UserRewards: React.FC = () => {
             value={stats.totalRewards}
             icon={<Award />}
             color="primary"
-            subtitle={`Total Value: ${(stats.totalValue || 0).toLocaleString()} KES`}
+            subtitle={`Total Value: ${fmtMoney(stats.totalValue || 0)}`}
           />
           <StatCard
             title="Active Rewards"
             value={stats.activeRewards}
             icon={<CheckCircle />}
             color="success"
-            subtitle={`Available: ${(stats.activeValue || 0).toLocaleString()} KES`}
+            subtitle={`Available: ${fmtMoney(stats.activeValue || 0)}`}
           />
           <StatCard
             title="Redeemed"
@@ -261,7 +263,7 @@ const UserRewards: React.FC = () => {
                       <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
                         <span className="flex items-center gap-1">
                           <TrendingUp size={12} />
-                          {(reward.amount || 0).toLocaleString()} {reward.currency || 'KES'}
+                          {fmtMoney(reward.amount || 0)}
                         </span>
                         <span>•</span>
                         <span>{new Date(reward.createdAt).toLocaleDateString()}</span>

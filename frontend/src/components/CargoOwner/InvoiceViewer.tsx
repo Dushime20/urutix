@@ -16,6 +16,7 @@ import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -49,6 +50,7 @@ interface InvoiceItem {
 }
 
 const InvoiceViewer: React.FC = () => {
+  const { format: formatCurrency, compact: fmtMoney, compactIn: fmtIn } = useCurrencyFormat();
   const { user } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
@@ -99,12 +101,7 @@ const InvoiceViewer: React.FC = () => {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

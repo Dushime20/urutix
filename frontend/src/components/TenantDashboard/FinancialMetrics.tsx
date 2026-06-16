@@ -23,6 +23,7 @@ import {
 } from 'chart.js';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // Register Chart.js components
 ChartJS.register(
@@ -45,6 +46,7 @@ interface FinancialMetricsProps {
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) => {
   const { tSync } = useTranslation();
+  const { format: formatCurrency } = useCurrencyFormat();
   const [timeRange, setTimeRange] = useState('30d');
   const [activeTab, setActiveTab] = useState<'overview' | 'breakdown' | 'history'>('overview');
 
@@ -193,14 +195,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
     return financialMetrics;
   }, [financialMetrics]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-RW', {
-      style: 'currency',
-      currency: 'RWF',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const getTrendIcon = (value: number) => {
     return value >= 0

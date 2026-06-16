@@ -26,11 +26,13 @@ import toast from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { SmartFuelFinder } from './SmartFuelFinder';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface FuelManagementProps {
   driverId: string;
 }
 
 export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [showLogForm, setShowLogForm] = useState(false);
   
@@ -131,12 +133,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
     enabled: !!driverId,
   });
 
-  const formatCurrency = (amount: number | string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(Number(amount));
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">

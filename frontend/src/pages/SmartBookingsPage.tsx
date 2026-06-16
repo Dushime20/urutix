@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { useNavigate } from 'react-router-dom';
 import logoUrutiX from '../assets/logo-urutix.svg';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,6 +29,7 @@ import {
 import ModernLoader from '../components/common/ModernLoader';
 
 const SmartBookingsPage: React.FC = () => {
+    const { compact: fmtMoney } = useCurrencyFormat();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [bookings, setBookings] = useState<any[]>([]);
@@ -391,7 +393,7 @@ const SmartBookingsPage: React.FC = () => {
                                         <div className="text-right">
                                             <div className="text-sm text-gray-500">Price</div>
                                             <div className="text-xl font-black text-gray-900">
-                                                ${booking.price?.toLocaleString()}
+                                                    {booking.price != null ? fmtMoney(booking.price) : '—'}
                                             </div>
                                         </div>
                                     </div>

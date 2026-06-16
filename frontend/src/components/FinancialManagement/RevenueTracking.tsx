@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface Revenue {
   id: string;
   tripId: string;
@@ -45,6 +46,7 @@ interface Trip {
 }
 
 const RevenueTracking: React.FC = () => {
+  const { format: formatCurrency, compact: fmtMoney, compactIn: fmtIn } = useCurrencyFormat();
   const [revenues, setRevenues] = useState<Revenue[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [filters, setFilters] = useState({
@@ -207,12 +209,7 @@ const RevenueTracking: React.FC = () => {
     return paymentMethod ? paymentMethod.icon : FaCreditCard;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

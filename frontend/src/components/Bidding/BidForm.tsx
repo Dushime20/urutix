@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { DollarSign, Calendar, Truck, TrendingUp, Info, ShieldCheck, AlertCircle, X, ChevronRight } from 'lucide-react';
 import { fleetApi, type Truck as FleetTruck } from '../../services/fleetApi';
 
@@ -26,6 +27,7 @@ interface BidFormProps {
 }
 
 const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
   const [formData, setFormData] = useState({
     bidAmount: '',
     bidCurrency: 'USD',
@@ -155,12 +157,7 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => fmtFull(amount);
 
   const renderAuctionSummary = () => (
     <div className="bg-gray-50/50 dark:bg-slate-950/50 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 mb-8 relative overflow-hidden group">
@@ -431,7 +428,8 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
       </div>
     </div>
   );
-   const renderSuccessProbability = () => (
+
+   const renderSuccessProbability = () => (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 p-8 mb-8 text-center relative overflow-hidden group shadow-sm transition-all hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-blue-500/10">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 dark:from-slate-950/20 to-transparent transition-opacity"></div>
       <div className="relative">

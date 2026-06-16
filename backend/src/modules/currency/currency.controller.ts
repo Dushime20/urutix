@@ -2,16 +2,19 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Query,
   Body,
+  Param,
   UseGuards,
   Request,
-  Patch,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrencyService } from './currency.service';
-import { SUPPORTED_CURRENCIES, RateMap } from './constants/currencies';
+import { CurrencyService, CreateCurrencyDto, UpdateCurrencyDto } from './currency.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfile } from '../../entities/user-profile.entity';
@@ -25,11 +28,14 @@ export class CurrencyController {
     private readonly profileRepo: Repository<UserProfile>,
   ) {}
 
-  /** Get all supported currencies with metadata */
+  // ─── Public endpoints ─────────────────────────────────────────────────────
+
+  /** Get all active supported currencies from DB */
   @Get('supported')
-  @ApiOperation({ summary: 'Get list of all supported currencies' })
-  getSupportedCurrencies() {
-    return { currencies: SUPPORTED_CURRENCIES };
+  @ApiOperation({ summary: 'Get list of all active supported currencies' })
+  async getSupportedCurrencies() {
+    const currencies = await this.currencyService.getSupportedCurrencies();
+    return { currencies };
   }
 
   /** Get current exchange rates (base = USD) */
@@ -53,16 +59,8 @@ export class CurrencyController {
     return this.currencyService.convert(Number(amount), from?.toUpperCase(), to?.toUpperCase());
   }
 
-  /** Force refresh rates from external provider (admin only) */
-  @Post('refresh')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Force refresh exchange rates from external provider' })
-  async forceRefresh() {
-    return this.currencyService.forceRefresh();
-  }
+  // ─── Authenticated user preference ───────────────────────────────────────
 
-  /** Get authenticated user's preferred currency */
   @Get('preference')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -73,7 +71,6 @@ export class CurrencyController {
     return { preferredCurrency: currency };
   }
 
-  /** Set authenticated user's preferred currency */
   @Patch('preference')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -83,19 +80,83 @@ export class CurrencyController {
     @Body() body: { preferredCurrency: string },
   ) {
     const code = body.preferredCurrency?.toUpperCase();
-    const supported = SUPPORTED_CURRENCIES.find(c => c.code === code);
-    if (!supported) {
+    const supported = await this.currencyService.getSupportedCurrencies();
+    if (!supported.find(c => c.code === code)) {
       return { error: `Currency '${code}' is not supported` };
     }
-
     const profile = await this.profileRepo.findOne({ where: { userId: req.user.id } });
-    if (!profile) {
-      return { error: 'User profile not found' };
-    }
-
+    if (!profile) return { error: 'User profile not found' };
     profile.preferences = { ...(profile.preferences ?? {}), preferredCurrency: code };
     await this.profileRepo.save(profile);
-
     return { message: 'Preferred currency updated', preferredCurrency: code };
+  }
+
+  // ─── Admin-only: force refresh ────────────────────────────────────────────
+
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Force refresh exchange rates from external provider' })
+  async forceRefresh() {
+    return this.currencyService.forceRefresh();
+  }
+
+  // ─── Super-admin CRUD ─────────────────────────────────────────────────────
+
+  /** Get ALL currencies (active + inactive) — super admin only */
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Get all currencies including inactive' })
+  async getAllCurrencies(@Request() req) {
+    this.assertAdmin(req.user);
+    const currencies = await this.currencyService.getAllCurrencies();
+    return { currencies };
+  }
+
+  /** Create a new currency */
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Create a new supported currency' })
+  async createCurrency(@Request() req, @Body() dto: CreateCurrencyDto) {
+    this.assertAdmin(req.user);
+    const currency = await this.currencyService.createCurrency(dto);
+    return { message: `Currency '${currency.code}' created`, currency };
+  }
+
+  /** Update an existing currency */
+  @Patch(':code')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Update a currency (name, symbol, active status, manual rate, etc.)' })
+  async updateCurrency(
+    @Request() req,
+    @Param('code') code: string,
+    @Body() dto: UpdateCurrencyDto,
+  ) {
+    this.assertAdmin(req.user);
+    const currency = await this.currencyService.updateCurrency(code, dto);
+    return { message: `Currency '${currency.code}' updated`, currency };
+  }
+
+  /** Delete a currency */
+  @Delete(':code')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Delete a currency (cannot delete USD base currency)' })
+  async deleteCurrency(@Request() req, @Param('code') code: string) {
+    this.assertAdmin(req.user);
+    return this.currencyService.deleteCurrency(code);
+  }
+
+  // ─── Helper ──────────────────────────────────────────────────────────────
+
+  private assertAdmin(user: any): void {
+    const adminRoles = ['SUPER_ADMIN', 'ADMIN'];
+    if (!adminRoles.includes(user?.role)) {
+      throw new Error('Forbidden: admin access required');
+    }
   }
 }

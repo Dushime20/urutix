@@ -8,8 +8,11 @@ import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+
 const OperationalAdminFinancial: React.FC = () => {
   const { user } = useAuth();
+  const { format: formatCurrency } = useCurrencyFormat();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<FinancialMetrics | null>(null);
   const [timeRange, setTimeRange] = useState('7d');
@@ -35,12 +38,7 @@ const OperationalAdminFinancial: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number = 0) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   return (
     <OperationalPageLayout

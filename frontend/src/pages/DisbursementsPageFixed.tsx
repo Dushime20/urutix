@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { LendingApi } from '../services/lending/lendingApi';
 import { 
   FaMoneyBillWave, 
@@ -59,6 +60,7 @@ interface Disbursement {
 }
 
 const DisbursementsPage: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [disbursements, setDisbursements] = useState<Disbursement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -266,7 +268,7 @@ const DisbursementsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Amount</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${disbursementStats.totalAmount.toLocaleString()}
+                  {fmtMoney(disbursementStats.totalAmount)}
                 </p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -275,7 +277,7 @@ const DisbursementsPage: React.FC = () => {
             </div>
             <div className="mt-2 flex items-center text-sm">
               <span className="text-gray-600">
-                Disbursed: ${disbursementStats.disbursedAmount.toLocaleString()}
+                Disbursed: {fmtMoney(disbursementStats.disbursedAmount)}
               </span>
             </div>
           </div>
@@ -433,7 +435,7 @@ const DisbursementsPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${disbursement.amount.toLocaleString()}
+                      {fmtMoney(disbursement.amount)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(disbursement.status)}`}>
@@ -558,7 +560,7 @@ const DisbursementsPage: React.FC = () => {
                   <div className="space-y-2 text-sm">
                     <div><strong>Loan ID:</strong> {selectedDisbursement.loanId}</div>
                     <div><strong>Borrower:</strong> {selectedDisbursement.borrowerName}</div>
-                    <div><strong>Amount:</strong> ${selectedDisbursement.amount.toLocaleString()}</div>
+                    <div><strong>Amount:</strong> {fmtMoney(selectedDisbursement.amount)}</div>
                     <div><strong>Interest Rate:</strong> {selectedDisbursement.interestRate}%</div>
                     <div><strong>Term:</strong> {selectedDisbursement.termMonths} months</div>
                     <div><strong>Purpose:</strong> {selectedDisbursement.purpose}</div>
@@ -613,7 +615,7 @@ const DisbursementsPage: React.FC = () => {
                     <div><strong>Risk Score:</strong> {selectedDisbursement.riskScore}/10</div>
                     <div><strong>Credit Score:</strong> {selectedDisbursement.creditScore}</div>
                     {selectedDisbursement.collateralValue && (
-                      <div><strong>Collateral Value:</strong> ${selectedDisbursement.collateralValue.toLocaleString()}</div>
+                      <div><strong>Collateral Value:</strong> {fmtMoney(selectedDisbursement.collateralValue)}</div>
                     )}
                   </div>
                 </div>

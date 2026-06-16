@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface FinancialReport {
   id: string;
   type: 'profit_loss' | 'cash_flow' | 'tax_summary' | 'expense_analysis' | 'revenue_analysis';
@@ -62,6 +63,7 @@ interface CashFlowData {
 }
 
 const FinancialReports: React.FC = () => {
+  const { format: formatCurrency, compact: fmtMoney, compactIn: fmtIn } = useCurrencyFormat();
   const [reports, setReports] = useState<FinancialReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<FinancialReport | null>(null);
   const [showReportViewer, setShowReportViewer] = useState(false);
@@ -189,12 +191,7 @@ const FinancialReports: React.FC = () => {
     return colors[status] || 'text-gray-600 bg-gray-100';
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

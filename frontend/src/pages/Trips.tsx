@@ -4,8 +4,10 @@ import { Plus, Filter, Search, Eye, Edit, Trash2, Truck, User, MapPin, Calendar 
 import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const Trips = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
@@ -144,7 +146,7 @@ const Trips = () => {
                       <span>Planned: {new Date(trip.plannedStartTime).toLocaleDateString()}</span>
                     </div>
                     <span>•</span>
-                    <span>${trip.agreedPrice?.toLocaleString()}</span>
+                    <span>{trip.agreedPrice != null ? fmtMoney(trip.agreedPrice) : '—'}</span>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">

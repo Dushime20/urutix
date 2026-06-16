@@ -12,6 +12,7 @@ import {
 import { tripsAPI } from '../../services/api';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface TripCostAnalysisProps {
   tripId?: string;
   onTripSelect?: (tripId: string) => void;
@@ -37,6 +38,7 @@ interface ProfitabilityAnalysis {
 }
 
 const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelect }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const [selectedTripId, setSelectedTripId] = useState<string | undefined>(tripId);
   const [costInputs, setCostInputs] = useState<CostBreakdown>({
     fuelCost: 0,
@@ -123,13 +125,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
     };
   }, [trip, totalCost]);
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const handleCostChange = (field: keyof CostBreakdown, value: number) => {
     setCostInputs(prev => ({

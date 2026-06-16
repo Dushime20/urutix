@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+
 import { createPortal } from 'react-dom';
+
 import { X, User, DollarSign, Building2, Mail, CheckCircle, AlertCircle } from 'lucide-react';
+
 import { brokerAPI } from '@/services/brokerApi';
+
 import toast from 'react-hot-toast';
+
 
 interface Broker {
   id: string;
@@ -35,6 +41,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
   onBrokerAssigned,
   onSkip,
 }) => {
+  const { format: fmtFull } = useCurrencyFormat();
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loading, setLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
@@ -219,10 +226,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                           <div className="flex justify-between">
                             <span className="text-gray-600">Commission Amount:</span>
                             <span className="font-medium text-gray-900">
-                              {new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD',
-                              }).format(commissionAmount)}
+                              {fmtFull(commissionAmount)}
                             </span>
                           </div>
                         )}
@@ -284,10 +288,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Load Value:</span>
                 <span className="text-lg font-semibold text-gray-900">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  }).format(loadValue)}
+                  {fmtFull(loadValue)}
                 </span>
               </div>
             </div>
@@ -366,11 +367,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                         )}
                         {broker.totalCommissionEarned !== undefined && (
                           <div className="text-xs text-gray-500">
-                            Earned: {new Intl.NumberFormat('en-US', {
-                              style: 'currency',
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                            }).format(broker.totalCommissionEarned)}
+                            Earned: {fmtFull(broker.totalCommissionEarned)}
                           </div>
                         )}
                       </div>
@@ -401,11 +398,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                   <div className="flex items-center space-x-1">
                     <DollarSign className="w-4 h-4" />
                     <span className="font-medium">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
-                        minimumFractionDigits: 0,
-                      }).format(commissionAmount)}
+                      {fmtFull(commissionAmount)}
                     </span>
                   </div>
                 )}
@@ -413,13 +406,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
             </div>
             {selectedBrokerId && loadValue > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Commission amount: {commissionRate}% of {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                }).format(loadValue)} = {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                }).format(commissionAmount)}
+                Commission amount: {commissionRate}% of {fmtFull(loadValue)} = {fmtFull(commissionAmount)}
               </p>
             )}
           </div>

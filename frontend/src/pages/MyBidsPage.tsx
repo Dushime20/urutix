@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { compactCurrency } from '../utils/formatNumber';
 import { FaSearch, FaSortAmountUp, FaSortAmountDown } from 'react-icons/fa';
 import { Grid, Table } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -119,13 +121,8 @@ const MyBidsPage: React.FC = () => {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
-  // Simple utility functions
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
-  };
+  // Currency formatting — respects user's preferred currency, compact K/M
+  const { compactIn: formatCurrency } = useCurrencyFormat();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

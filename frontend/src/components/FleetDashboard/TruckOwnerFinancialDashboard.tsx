@@ -17,6 +17,7 @@ import { paymentsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import AdvancePaymentRequestModal from './AdvancePaymentRequestModal';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface PaymentForecast {
   id: string;
   tripId: string;
@@ -40,6 +41,7 @@ interface FinancialSummary {
 }
 
 const TruckOwnerFinancialDashboard: React.FC = () => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState('30'); // days
@@ -268,13 +270,7 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   return (
     <div className="space-y-4">

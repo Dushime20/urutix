@@ -13,12 +13,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const fmt = (n: number) =>
-  n >= 1_000_000
-    ? `$${(n / 1_000_000).toFixed(1)}M`
-    : n >= 1_000
-    ? `$${(n / 1_000).toFixed(1)}K`
-    : `$${n.toFixed(0)}`;
+const fmt = (n: number | string | null | undefined) => {
+  const num = Number(n) || 0;
+  return num >= 1_000_000
+    ? `$${(num / 1_000_000).toFixed(1)}M`
+    : num >= 1_000
+    ? `$${(num / 1_000).toFixed(1)}K`
+    : `$${num.toFixed(0)}`;
+};
 
 const pct = (a: number, b: number) =>
   b === 0 ? 0 : Math.round(((a - b) / b) * 100);
@@ -85,8 +87,8 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
   const avgCommRate    = brokerStats?.averageCommissionRate ?? 0;
   const totalLoads     = brokerStats?.totalLoads     ?? stats.totalAssigned;
 
-  const escrowFunded   = escrows.filter(e => e.status === 'FUNDED').reduce((s, e) => s + (e.totalAmount || 0), 0);
-  const escrowReleased = escrows.filter(e => e.status === 'RELEASED').reduce((s, e) => s + (e.totalAmount || 0), 0);
+  const escrowFunded   = escrows.filter(e => e.status === 'FUNDED').reduce((s, e) => s + (Number(e.totalAmount) || 0), 0);
+  const escrowReleased = escrows.filter(e => e.status === 'RELEASED').reduce((s, e) => s + (Number(e.totalAmount) || 0), 0);
 
   const openDisputes   = disputes.filter(d => ['OPEN', 'UNDER_REVIEW', 'MEDIATION'].includes(d.status)).length;
   const resolvedDisputes = disputes.filter(d => d.status === 'RESOLVED').length;
@@ -108,9 +110,9 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
       const d = new Date(c.createdAt);
       const key = d.toLocaleString('default', { month: 'short', year: '2-digit' });
       if (!months[key]) return;
-      if (c.status === 'PAID')     months[key].earned   += c.commissionAmount || 0;
-      if (c.status === 'PENDING')  months[key].pending  += c.commissionAmount || 0;
-      if (c.status === 'APPROVED') months[key].approved += c.commissionAmount || 0;
+      if (c.status === 'PAID')     months[key].earned   += Number(c.commissionAmount) || 0;
+      if (c.status === 'PENDING')  months[key].pending  += Number(c.commissionAmount) || 0;
+      if (c.status === 'APPROVED') months[key].approved += Number(c.commissionAmount) || 0;
     });
     return Object.values(months);
   }, [commissions]);
@@ -214,7 +216,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                 <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip formatter={(v: number) => fmt(v)} />
+                <Tooltip formatter={(v) => fmt(v as number)} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10 }} />
                 <Area type="monotone" dataKey="earned"   name="Paid"     stroke="#10B981" fill="#10B981" fillOpacity={0.1} strokeWidth={2} dot={false} />
                 <Area type="monotone" dataKey="approved" name="Approved" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.1} strokeWidth={2} dot={false} />
@@ -238,7 +240,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
               <YAxis tickFormatter={v => fmt(v)} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(v: number) => fmt(v)} cursor={{ fill: 'transparent' }} />
+              <Tooltip formatter={(v) => fmt(v as number)} cursor={{ fill: 'transparent' }} />
               <Bar dataKey="value" name="Amount" radius={[4, 4, 0, 0]}>
                 {commBarData.map((entry, i) => (
                   <Cell key={i} fill={entry.fill} />
@@ -379,9 +381,9 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
                       <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200 max-w-[120px] truncate">
                         {c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`}
                       </td>
-                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(c.loadAmount || 0)}</td>
+                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(c.loadAmount)}</td>
                       <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{Number(c.commissionRate || 0).toFixed(1)}%</td>
-                      <td className="py-3 pr-4 font-bold text-gray-900 dark:text-white">{fmt(c.commissionAmount || 0)}</td>
+                      <td className="py-3 pr-4 font-bold text-gray-900 dark:text-white">{fmt(c.commissionAmount)}</td>
                       <td className="py-3 pr-4">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[c.status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
                           {c.status}

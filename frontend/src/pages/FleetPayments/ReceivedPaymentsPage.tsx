@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
 import { TrendingUp, Clock, CheckCircle, AlertCircle, Inbox, Building, User } from 'lucide-react';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
-const fmt = (v: number, currency = 'RWF') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0 }).format(v);
+// fmt replaced by useCurrencyFormat hook
 
 const statusStyle: Record<string, string> = {
   pending:    'bg-amber-100 text-amber-700',
@@ -17,6 +17,7 @@ const statusStyle: Record<string, string> = {
 };
 
 const ReceivedPaymentsPage = () => {
+  const { compactIn: fmt } = useCurrencyFormat();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'cargo_owner' | 'lender'>('ALL');

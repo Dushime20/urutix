@@ -35,6 +35,8 @@ interface PaymentInfo {
 }
 
 const TruckOwnerFinancialManagement: React.FC = () => {
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
+  const formatCurrency = (amount: number, _currency?: string) => fmtFull(amount);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'payment-info' | 'payment-tracking'>('payment-info');
@@ -133,13 +135,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
     savePaymentInfoMutation.mutate(paymentInfo);
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

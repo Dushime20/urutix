@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   BarChart2,
   DollarSign,
@@ -29,6 +30,7 @@ interface BidAnalyticsProps {
 const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
   const [analytics, setAnalytics] = useState<{
     totalBids: number;
     successfulBids: number;
@@ -107,13 +109,7 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => fmtFull(amount);
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);

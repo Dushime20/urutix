@@ -19,17 +19,12 @@ import { EnhancedTable, type Column } from '../../components/EnliteUI/Tables/Enh
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi } from '../../services/analyticsApi';
 import DataCard from '../../components/EnliteUI/Cards/DataCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
-// ── Currency ──────────────────────────────────────────────────────────────────
-const CURRENCY_SYMBOL = '$';
-const fmtMoney = (v: number | null | undefined) => {
-  if (v == null || isNaN(v)) return `${CURRENCY_SYMBOL}—`;
-  return `${CURRENCY_SYMBOL}${v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-};
-const fmtPct  = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : `${v.toFixed(1)}%`;
-const fmtNum  = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : v.toLocaleString('en-US');
-const fmtHrs  = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : `${v.toFixed(1)} h`;
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Formatters (non-currency) ─────────────────────────────────────────────────
+const fmtPct = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : `${v.toFixed(1)}%`;
+const fmtNum = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : v.toLocaleString('en-US');
+const fmtHrs = (v: number | null | undefined) => v == null || isNaN(v) ? '—' : `${v.toFixed(1)} h`;
 
 interface TabPanelProps { children?: React.ReactNode; index: number; value: number; }
 function TabPanel({ children, value, index, ...other }: TabPanelProps) {
@@ -43,6 +38,7 @@ function TabPanel({ children, value, index, ...other }: TabPanelProps) {
 export const OperationalAnalytics: React.FC = () => {
   const { user } = useAuth();
   const [tabValue, setTabValue] = useState(0);
+  const { compact: fmtMoney, currency } = useCurrencyFormat();
 
   const { data: performanceData, isLoading: performanceLoading, error: performanceError } = useQuery({
     queryKey: ['analytics', 'operational', 'performance', user?.tenantId],
@@ -86,7 +82,7 @@ export const OperationalAnalytics: React.FC = () => {
   const routeColumns: Column[] = [
     { key: 'route',               label: 'TRANSIT ROUTE',  width: '200px' },
     { key: 'shipmentCount',       label: 'VOLUME',         width: '100px', align: 'right', render: (v) => fmtNum(v) },
-    { key: 'averageCost',         label: `AVG COST (${CURRENCY_SYMBOL})`, width: '140px', align: 'right', render: (v) => fmtMoney(v) },
+    { key: 'averageCost', label: `AVG COST (${currency})`, width: '140px', align: 'right', render: (v) => fmtMoney(v) },
     { key: 'onTimeRate',          label: 'ON-TIME %',      width: '110px', align: 'right', render: (v) => fmtPct(v) },
     { key: 'averageTransitTime',  label: 'TRANSIT TIME',   width: '130px', align: 'right', render: (v) => fmtHrs(v) },
   ];

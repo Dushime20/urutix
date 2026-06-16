@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { lendingApi } from '../services/lending/lendingApi';
@@ -932,7 +933,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
         <StatCard title="Total Requests" value={analytics?.totalRequests ?? 0} icon={<FileText size={18} />} color="primary" variant="classic" />
         <StatCard title="Pending" value={analytics?.pendingRequests ?? 0} icon={<Clock size={18} />} color="primary" variant="classic" />
         <StatCard title="Approved" value={analytics?.approvedRequests ?? 0} icon={<CheckCircle size={18} />} color="primary" variant="classic" />
-        <StatCard title="Total Requested" value={`$${((analytics?.totalAmountRequested ?? 0) / 1000).toFixed(1)}K`} icon={<Banknote size={18} />} color="primary" variant="classic" />
+        <StatCard title="Total Requested" value={fmtMoney(analytics?.totalAmountRequested ?? 0)} icon={<Banknote size={18} />} color="primary" variant="classic" />
       </div>
 
       {/* Search */}
@@ -1004,10 +1005,10 @@ const TruckOwnerLoanRequestsView: React.FC<{
 
                     {/* Amount */}
                     <td className="px-6 py-4">
-                      <p className="text-sm font-black text-slate-900">${req.requested_amount.toLocaleString()}</p>
+                      <p className="text-sm font-black text-slate-900">{fmtMoney(req.requested_amount)}</p>
                       {req.approved_amount != null && (
                         <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
-                          ✓ Approved: ${req.approved_amount.toLocaleString()}
+                          ✓ Approved: {fmtMoney(req.approved_amount)}
                         </p>
                       )}
                     </td>
@@ -1028,7 +1029,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
                               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
                                 {s.type}
                               </span>
-                              <span className="text-xs font-bold text-slate-800">${s.amount.toLocaleString()}</span>
+                              <span className="text-xs font-bold text-slate-800">{fmtMoney(s.amount)}</span>
                             </div>
                           ))}
                         </div>
@@ -1109,6 +1110,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
 };
 
 const EnhancedLoanRequestsPage: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const { user, accessToken } = useAuth();
   const isTruckOwner = user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER';
   const isCargoOwner = user?.role === 'CARGO_OWNER';
@@ -1652,7 +1654,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               </div>
               <div className="bg-slate-50 rounded-2xl p-6 mb-6 border border-slate-100">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Disbursement Amount</p>
-                <p className="text-3xl font-black text-slate-900">RWF {(selectedLoanForPayment.approved_amount ?? selectedLoanForPayment.requested_amount).toLocaleString()}</p>
+                <p className="text-3xl font-black text-slate-900">{fmtMoney(selectedLoanForPayment.approved_amount ?? selectedLoanForPayment.requested_amount)}</p>
                 {pendingApprovalPayload && (
                   <p className="text-[10px] text-slate-500 mt-2">
                     Term: <span className="font-bold">{pendingApprovalPayload.loanTermMonths} months</span>

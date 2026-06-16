@@ -1,7 +1,9 @@
 import React from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaTruck, FaStar, FaCheckCircle } from 'react-icons/fa';
 
 const MatchResults: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -29,7 +31,7 @@ const MatchResults: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Price:</span>
-                  <span className="font-medium">${(2500 + match * 200).toLocaleString()}</span>
+                  <span className="font-medium">{fmtMoney(2500 + match * 200)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">ETA:</span>

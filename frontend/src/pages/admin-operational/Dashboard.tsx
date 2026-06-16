@@ -17,6 +17,7 @@ import {
 import { TranslatedText } from '../../components/translated-text';
 import { StatCard } from '../../components/EnliteUI';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 
@@ -62,6 +63,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 /* ─── Main dashboard ────────────────────────────────────────────── */
 
 const AdminOperationalDashboard: React.FC = () => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const navigate = useNavigate();
   const [revenueRange, setRevenueRange] = useState<7 | 30>(7);
   const [data, setData] = useState<DashboardCharts | null>(null);
@@ -92,14 +94,7 @@ const AdminOperationalDashboard: React.FC = () => {
   const bidActivity = data?.bidActivity ?? [];
   const recentActivity = data?.recentActivity ?? [];
 
-  const currency = data?.kpi?.currency || 'USD';
-
-  const formatCurrency = (n: number) =>
-    n >= 1_000_000
-      ? `${currency} ${(n / 1_000_000).toFixed(1)}M`
-      : n >= 1_000
-      ? `${currency} ${(n / 1_000).toFixed(1)}K`
-      : `${currency} ${n.toLocaleString()}`;
+  // formatCurrency provided by useCurrencyFormat hook above
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -29,6 +30,7 @@ import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 type FilterStatus = 'all' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'RECONCILED';
 
 const DriverAdvanceRequestsPage: React.FC = () => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('PENDING');
   const [selectedAdvance, setSelectedAdvance] = useState<any>(null);
@@ -103,8 +105,7 @@ const DriverAdvanceRequestsPage: React.FC = () => {
     onError: () => toast.error('Failed to reject advance'),
   });
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(amount) || 0);
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleString('en-US', {

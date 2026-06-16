@@ -10,8 +10,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const FleetAnalytics: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [activeTab, setActiveTab] = useState('overview');
   const [tcoData, setTcoData] = useState<TCOAnalysis | null>(null);
   const [tcoLoading, setTcoLoading] = useState(false);
@@ -144,7 +146,7 @@ const FleetAnalytics: React.FC = () => {
                         )}>{log.status}</span>
                       </td>
                       <td className="py-4 text-right text-xs font-black text-[#0f172a] dark:text-white">
-                        {log.cost ? `$${Number(log.cost).toLocaleString()}` : '—'}
+                        {log.cost ? fmtMoney(Number(log.cost)) : '—'}
                       </td>
                     </tr>
                   ))}
@@ -201,7 +203,7 @@ const FleetAnalytics: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <CircularStatCard
             title="Total Spend"
-            value={`$${Number(fuelStats?.totalSpend || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            value={fmtMoney(Number(fuelStats?.totalSpend || 0))}
             icon={DollarSign}
             colorClass="bg-blue-50 text-blue-600"
             secondaryColor="text-blue-600"
@@ -338,7 +340,7 @@ const FleetAnalytics: React.FC = () => {
           />
           <CircularStatCard
             title="Revenue"
-            value={totalRevenue !== null ? `$${(totalRevenue / 1000).toFixed(1)}k` : '—'}
+            value={totalRevenue !== null ? fmtMoney(totalRevenue) : '—'}
             icon={DollarSign}
             colorClass="bg-amber-50 text-amber-600"
             secondaryColor="text-amber-600"

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import type { 
   EnhancedCargoData 
 } from '../../services/enhancedCargoApi';
@@ -12,20 +14,11 @@ const EnhancedCargoDisplay: React.FC<EnhancedCargoDisplayProps> = ({
   cargoData, 
   showIntelligence = true 
 }) => {
+  const { compactIn: formatCurrency } = useCurrencyFormat();
   const [activeTab, setActiveTab] = useState<'overview' | 'intelligence' | 'analytics'>('overview');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  const formatCurrency = (amount: number | undefined, currency: string | undefined) => {
-    if (amount === undefined || amount === null) amount = 0;
-    if (!currency) currency = 'USD';
-    
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const getStatusColor = (status: string | undefined) => {
     if (!status) return 'bg-gray-500'; // Default color for undefined status

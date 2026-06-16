@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
@@ -8,6 +9,7 @@ import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
 
 const TruckBidsPage: React.FC = () => {
+	const { compact: fmtBid } = useCurrencyFormat();
 	const [auctions, setAuctions] = useState<any[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
@@ -568,7 +570,7 @@ const TruckBidsPage: React.FC = () => {
 														<div className="flex flex-col items-start gap-1">
 															<span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Price</span>
 															<span className="text-2xl font-black text-emerald-600 italic">
-																{a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '$-.--'}
+																{a.currentBid ? fmtBid(a.currentBid) : '—'}
 															</span>
 														</div>
 														<div className="text-right">
@@ -674,7 +676,7 @@ const TruckBidsPage: React.FC = () => {
 													</span>
 												</td>
 												<td className="px-6 py-4">
-													<div className="font-bold text-gray-900">{a.currentBid ? biddingHelpers.formatCurrency(a.currentBid) : '—'}</div>
+													<div className="font-bold text-gray-900">{a.currentBid ? fmtBid(a.currentBid) : '—'}</div>
 													<div className="text-xs text-gray-500">Current Bid</div>
 												</td>
 												<td className="px-6 py-4">
@@ -732,7 +734,7 @@ const TruckBidsPage: React.FC = () => {
 									/>
 								</div>
 								<div className="text-sm font-medium text-gray-400">
-									Reserve price: {selectedAuction.reservePrice ? biddingHelpers.formatCurrency(selectedAuction.reservePrice) : '$0.00'}
+									Reserve price: {selectedAuction.reservePrice ? fmtBid(selectedAuction.reservePrice) : '—'}
 								</div>
 							</div>
 
@@ -862,8 +864,8 @@ const TruckBidsPage: React.FC = () => {
 									/>
 								</div>
 								<div className="flex items-center gap-4 text-xs font-medium">
-									<span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">Floor: {biddingHelpers.formatCurrency(selectedAuction.currentBid || selectedAuction.reservePrice || 0)}</span>
-									<span className="text-gray-400">Min. Increment: {biddingHelpers.formatCurrency(selectedAuction.minimumBidIncrement || 100)}</span>
+									<span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">Floor: {fmtBid(selectedAuction.currentBid || selectedAuction.reservePrice || 0)}</span>
+									<span className="text-gray-400">Min. Increment: {fmtBid(selectedAuction.minimumBidIncrement || 100)}</span>
 								</div>
 							</div>
 

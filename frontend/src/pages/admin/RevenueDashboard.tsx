@@ -11,6 +11,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { StatCard } from '../../components/EnliteUI';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const RevenueDashboard: React.FC = () => {
   const [from, setFrom] = useState('');
@@ -21,7 +22,9 @@ const RevenueDashboard: React.FC = () => {
     queryFn: () => revenueApi.getSummary(from || undefined, to || undefined),
   });
 
-  const fmt = (n: number) => `KES ${Number(n ?? 0).toLocaleString()}`;
+  const { format: fmt } = useCurrencyFormat();
+
+  // fmt now respects user's preferred currency and converts from USD
 
   return (
     <AdminPageLayout

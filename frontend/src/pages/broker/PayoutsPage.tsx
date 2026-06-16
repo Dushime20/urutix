@@ -17,8 +17,10 @@ import {
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const PayoutsPage: React.FC = () => {
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const [commissions, setCommissions] = useState<BrokerCommission[]>([]);
   const [payoutRequests, setPayoutRequests] = useState<any[]>([]);
@@ -106,7 +108,7 @@ const PayoutsPage: React.FC = () => {
 
         <div className="relative z-10 flex items-center gap-12 mr-4 text-right">
            <div className="text-center hidden md:block">
-             <p className="text-xl font-bold leading-none text-primary-400">${commissions.reduce((sum, c) => sum + c.commissionAmount, 0).toLocaleString()}</p>
+             <p className="text-xl font-bold leading-none text-primary-400">{fmtMoney(commissions.reduce((sum, c) => sum + c.commissionAmount, 0))}</p>
              <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Available Balance</p>
            </div>
            <div className="h-10 w-px bg-white/10 mx-2 hidden md:block"></div>
@@ -148,7 +150,7 @@ const PayoutsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-10">
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-slate-900 dark:text-white">${comm.commissionAmount.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{fmtFull(comm.commissionAmount)}</p>
                         <p className="text-xs font-bold text-slate-400 uppercase">Yield Net</p>
                       </div>
                       <button onClick={() => { setSelectedCommission(comm); setShowRequestModal(true); }} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-900/10 hover:scale-105 active:scale-95 transition-all">Draw</button>
@@ -177,7 +179,7 @@ const PayoutsPage: React.FC = () => {
                     {payoutRequests.map((req) => (
                       <tr key={req.id} className="group hover:bg-slate-50/50 transition-all">
                         <td className="px-8 py-6 text-xs font-bold text-slate-900 uppercase italic dark:text-white">PAY-{req.id.substring(0, 8)}</td>
-                        <td className="px-8 py-6 text-sm font-bold text-slate-900 dark:text-white">${req.amount.toLocaleString()}</td>
+                        <td className="px-8 py-6 text-sm font-bold text-slate-900 dark:text-white">{fmtFull(req.amount)}</td>
                         <td className="px-8 py-6">
                            <span className={`px-4 py-1 rounded-lg text-xs font-bold uppercase ${getStatusPrimeStyle(req.status)} border`}>
                              {req.status}
@@ -198,7 +200,7 @@ const PayoutsPage: React.FC = () => {
               <div className="absolute top-0 right-0 p-8 opacity-5"><Zap size={100} /></div>
               <p className="text-sm font-bold text-slate-500 uppercase mb-6 dark:text-slate-400">Aggregate Balance</p>
               <h3 className="text-5xl font-bold text-white mb-12">
-                ${commissions.reduce((sum, c) => sum + c.commissionAmount, 0).toLocaleString()}
+                {fmtMoney(commissions.reduce((sum, c) => sum + c.commissionAmount, 0))}
               </h3>
               <div className="pt-8 border-t border-white/10 flex items-center justify-between">
                  <div>
@@ -245,12 +247,12 @@ const PayoutsPage: React.FC = () => {
                  <div className="bg-slate-50 p-10 rounded-[2rem] border border-slate-100 space-y-6 dark:bg-slate-800/50 dark:border-slate-800">
                     <div className="flex justify-between items-center text-sm font-bold text-slate-400 uppercase">
                        <span>Yield Target</span>
-                       <span className="text-slate-900 dark:text-white">${selectedCommission.commissionAmount.toLocaleString()}</span>
+                       <span className="text-slate-900 dark:text-white">{fmtFull(selectedCommission.commissionAmount)}</span>
                     </div>
                     <div className="h-px bg-slate-200"></div>
                     <div className="flex justify-between items-center">
                        <span className="text-sm font-bold text-slate-900 uppercase dark:text-white">Net Liquidity</span>
-                       <span className="text-4xl font-bold text-primary-600">${selectedCommission.commissionAmount.toLocaleString()}</span>
+                       <span className="text-4xl font-bold text-primary-600">{fmtFull(selectedCommission.commissionAmount)}</span>
                     </div>
                  </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaEdit, FaTrash, FaRocket, FaSave, FaMapMarkerAlt, 
@@ -10,6 +11,7 @@ import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import toast from 'react-hot-toast';
 
 const DraftsManagementPage: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const navigate = useNavigate();
   const { confirm, DialogComponent } = useConfirmDialog();
   const [drafts, setDrafts] = useState<DraftCargoResponse[]>([]);
@@ -217,7 +219,7 @@ const DraftsManagementPage: React.FC = () => {
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <FaDollarSign className="w-4 h-4 mr-2 text-gray-400" />
-                        ${draft.loadValue?.toLocaleString() || 'N/A'}
+                        {draft.loadValue != null ? fmtMoney(draft.loadValue) : 'N/A'}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <FaCalendar className="w-4 h-4 mr-2 text-gray-400" />

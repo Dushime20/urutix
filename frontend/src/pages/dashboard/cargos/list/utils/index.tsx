@@ -568,14 +568,17 @@ export const formatCurrency = (
   currency: string = "USD"
 ) => {
   const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (isNaN(numAmount)) return "$0";
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numAmount);
+  if (isNaN(numAmount)) return "0";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numAmount);
+  } catch {
+    return `${currency} ${numAmount.toFixed(0)}`;
+  }
 };
 
 export const isLoadingConfirmable = (status: string) => {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import {
   CreditCard,
   CheckCircle2,
@@ -41,6 +42,7 @@ interface Invoice {
 }
 
 export const PaymentManagement: React.FC = () => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -67,9 +69,7 @@ export const PaymentManagement: React.FC = () => {
     overdue: invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + inv.amount, 0)
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const getStatusStyle = (status: string) => {
     switch (status) {

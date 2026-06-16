@@ -5,10 +5,12 @@ import type { LoanRequest } from '../types/loanRequest';
 import { DollarSign, FileText, Clock, TrendingUp, Calendar, ChevronRight, Plus, Download, RefreshCw, Calculator, Percent, ShieldCheck } from 'lucide-react';
 import DashboardHeader from '../components/Dashboard/Layout/DashboardHeader';
 import { useNavigate } from 'react-router-dom';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const CargoFinancingPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { compact: fmtMoney } = useCurrencyFormat();
     const [loans, setLoans] = useState<LoanRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -130,7 +132,7 @@ const CargoFinancingPage = () => {
                                     <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10">
                                         <div className="flex justify-between text-sm mb-3">
                                             <span className="font-medium text-indigo-100">Loan Amount</span>
-                                            <span className="font-bold text-xl">${calcAmount.toLocaleString()}</span>
+                                            <span className="font-bold text-xl">{fmtMoney(calcAmount)}</span>
                                         </div>
                                         <input
                                             type="range"
@@ -183,16 +185,16 @@ const CargoFinancingPage = () => {
 
                                     <div className="flex justify-between items-center pb-4 border-b border-gray-100">
                                         <span className="text-sm font-medium text-gray-500">Total Interest</span>
-                                        <span className="font-bold text-lg text-gray-900">${(totalRepayment - calcAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span className="font-bold text-lg text-gray-900">{fmtMoney(totalRepayment - calcAmount)}</span>
                                     </div>
 
                                     <div className="pt-2">
                                         <span className="text-sm font-medium text-gray-500 block mb-1">Estimated Monthly Payment</span>
-                                        <span className="text-4xl font-black text-indigo-600 tracking-tight">${monthlyPayment.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span className="text-4xl font-black text-indigo-600 tracking-tight">{fmtMoney(monthlyPayment)}</span>
                                     </div>
 
                                     <button className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 mt-2 flex items-center justify-center gap-2">
-                                        Apply for ${calcAmount.toLocaleString()}
+                                        Apply for {fmtMoney(calcAmount)}
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
                                 </div>

@@ -59,9 +59,11 @@ import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
 import PendingDeliveriesList from '../components/CargoReceiver/PendingDeliveriesList';
 import CargoOwnerEpodDashboard from '../components/CargoOwner/CargoOwnerEpodDashboard';
-import { formatNumber, formatCurrency } from '../utils/formatNumber';
+import { formatNumber } from '../utils/formatNumber';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const Dashboard = () => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const { user } = useAuth();
   const navigate = useNavigate();
 

@@ -25,8 +25,9 @@ interface FleetOverviewProps {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmt = (n: number, currency = 'RWF') =>
-  new Intl.NumberFormat('en-RW', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+
+// fmt is replaced per-component via useCurrencyFormat hook
 
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
@@ -535,6 +536,7 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
   trucks, drivers, analytics, loading, onRefresh,
   onAddTruck, onAddDriver,
 }) => {
+  const { format: fmtFull, compact: fmt } = useCurrencyFormat();
   const navigate = useNavigate();
 
   // Derived fleet stats

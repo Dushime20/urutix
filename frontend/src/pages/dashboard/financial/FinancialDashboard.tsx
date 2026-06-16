@@ -35,6 +35,7 @@ import { financialAPI } from '@/services/api';
 import { fuelApi } from '@/services/fuelApi';
 import { tenantApi } from '@/services/tenantApi';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 
 const FinancialDashboard: React.FC = () => {
   const location = useLocation();
@@ -131,13 +132,7 @@ const FinancialDashboard: React.FC = () => {
     }));
   }, [recentInvoices]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const { compact: formatCurrency } = useCurrencyFormat();
 
   const advanceChartData = useMemo(() => {
     if (!advanceStats) return [];

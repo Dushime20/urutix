@@ -18,11 +18,13 @@ import { driverApi } from '../../services/driverApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface WalletAdvancesProps {
   driverId: string;
 }
 
 export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
+  const { format: formatCurrency, compact: fmtMoney, compactIn: fmtIn } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -96,13 +98,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
     requestAdvanceMutation.mutate({ tripId: tripId || undefined, amount: advanceAmount, notes: advanceNotes });
   };
 
-  const formatCurrency = (amount: number | string) => {
-    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(numericAmount || 0);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">

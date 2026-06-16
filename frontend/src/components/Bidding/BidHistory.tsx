@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   Eye,
   Trash2,
@@ -69,6 +70,7 @@ interface BidHistoryProps {
 }
 
 const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
+  const { compactIn: fmtBid } = useCurrencyFormat();
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,7 +183,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
     const confirmed = await confirm({
       title: 'Accept Bid',
       message: `Are you sure you want to accept this bid?\n\n` +
-        `Bid Amount: ${biddingHelpers.formatCurrency(bid.bidAmount, bid.bidCurrency)}\n` +
+        `Bid Amount: ${fmtBid(bid.bidAmount, bid.bidCurrency)}\n` +
         `Load: ${bid.load?.title || 'N/A'}\n\n` +
         `This will assign the load to the truck owner and close the auction. The assigned driver will see it in their cargo management dashboard.`,
       confirmText: 'Accept Bid',
@@ -230,12 +232,7 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
 
 
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

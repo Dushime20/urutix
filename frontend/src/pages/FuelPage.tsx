@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { motion } from 'framer-motion';
 import {
     Fuel,
@@ -37,6 +38,7 @@ import {
 
 
 const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
+    const { compact: fmtMoney } = useCurrencyFormat();
     const [stats, setStats] = useState<any>(null);
     const [logs, setLogs] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -170,7 +172,7 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                     >
                         <CircularStatCard
                             title="Total Spend"
-                            value={`$${Number(stats?.totalCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            value={fmtMoney(Number(stats?.totalCost || 0))}
                             icon={DollarSign}
                             colorClass="bg-blue-50 text-blue-600"
                             secondaryColor="text-blue-600"

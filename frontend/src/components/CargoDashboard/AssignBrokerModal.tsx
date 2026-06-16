@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, DollarSign, TrendingUp, Mail, Building2 } from 'lucide-react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { TranslatedText } from '../translated-text';
 import { brokerAPI } from '../../services/brokerApi';
 import toast from 'react-hot-toast';
@@ -41,6 +42,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>(currentBrokerId || '');
   const [commissionRate, setCommissionRate] = useState<number>(5.0);
   const [searchTerm, setSearchTerm] = useState('');
+  const { format: fmtFull, compact: fmtMoney, formatIn: fmtIn } = useCurrencyFormat();
 
   // Fetch available brokers
   useEffect(() => {
@@ -269,10 +271,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600"><TranslatedText text="Load Value" />:</span>
                 <span className="text-lg font-semibold text-gray-900">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  }).format(loadValue)}
+                  {fmtFull(loadValue)}
                 </span>
               </div>
             </div>
@@ -361,11 +360,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                         )}
                         {broker.totalCommissionEarned !== undefined && (
                           <div className="text-xs text-gray-500">
-                            Earned: {new Intl.NumberFormat('en-US', {
-                              style: 'currency',
-                              currency: 'USD',
-                              minimumFractionDigits: 0,
-                            }).format(broker.totalCommissionEarned)}
+                            Earned: {fmtMoney(broker.totalCommissionEarned)}
                           </div>
                         )}
                       </div>
@@ -411,11 +406,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                   <div className="flex items-center space-x-1">
                     <DollarSign className="w-4 h-4" />
                     <span className="font-medium">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
-                        minimumFractionDigits: 0,
-                      }).format(commissionAmount)}
+                      {fmtMoney(commissionAmount)}
                     </span>
                   </div>
                 )}
@@ -423,13 +414,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
             </div>
             {selectedBrokerId && loadValue > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Commission amount: {commissionRate}% of {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                }).format(loadValue)} = {new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                }).format(commissionAmount)}
+                Commission amount: {commissionRate}% of {fmtFull(loadValue)} = {fmtFull(commissionAmount)}
               </p>
             )}
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaFileInvoice, FaDownload, FaPrint, FaTimes, FaCheckCircle } from 'react-icons/fa';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 export interface Receipt {
   id: string;
@@ -49,15 +50,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onDownload,
   onPrint,
 }) => {
+  const { compactIn: formatCurrency } = useCurrencyFormat();
   if (!isOpen || !receipt) return null;
-
-  const formatCurrency = (amount: number, currency: string = 'KES') => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

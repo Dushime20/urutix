@@ -13,6 +13,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { adminAPI } from '../../services/adminApi';
 import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Transaction {
   id: string;
@@ -52,6 +53,7 @@ interface RealFinancialData {
 }
 
 const FinancialAdminDashboard: React.FC = () => {
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -305,7 +307,7 @@ const FinancialAdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title={<TranslatedText text="Total Revenue" />}
-            value={`$${(metrics.totalRevenue / 1000).toFixed(0)}k`}
+            value={fmtMoney(metrics.totalRevenue)}
             icon={<DollarSign size={18} />}
             trend={`${metrics.monthlyGrowth}%`}
             trendDirection="up"
@@ -317,7 +319,7 @@ const FinancialAdminDashboard: React.FC = () => {
             title={<TranslatedText text="Transactions" />}
             value={metrics.totalTransactions.toLocaleString()}
             icon={<Activity size={18} />}
-            trend={`$${metrics.averageTransactionValue} AVG`}
+            trend={`${fmtMoney(metrics.averageTransactionValue)} AVG`}
             trendDirection="neutral"
             color="primary"
             variant="classic"
@@ -325,7 +327,7 @@ const FinancialAdminDashboard: React.FC = () => {
           />
           <StatCard
             title={<TranslatedText text="Pending" />}
-            value={`$${(metrics.pendingAmount / 1000).toFixed(0)}k`}
+            value={fmtMoney(metrics.pendingAmount)}
             icon={<Timer size={18} />}
             trend={`${transactions.filter(t => t.status === 'pending').length} TXN`}
             trendDirection="neutral"
@@ -335,7 +337,7 @@ const FinancialAdminDashboard: React.FC = () => {
           />
           <StatCard
             title={<TranslatedText text="Escrow Balance" />}
-            value={`$${(metrics.escrowBalance / 1000).toFixed(0)}k`}
+            value={fmtMoney(metrics.escrowBalance)}
             icon={<PiggyBank size={18} />}
             trend="SECURED"
             trendDirection="neutral"
@@ -372,7 +374,7 @@ const FinancialAdminDashboard: React.FC = () => {
                     </div>
                     <div className="absolute -top-6 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1">
                       <span className="text-[10px] font-black text-[#2c5173] bg-primary-50 px-2 py-0.5 rounded-md border border-primary-100 leading-none flex items-center gap-1">
-                        ${(revenue / 1000).toFixed(1)}k
+                        {fmtMoney(revenue)}
                       </span>
                     </div>
                   </div>
@@ -394,7 +396,7 @@ const FinancialAdminDashboard: React.FC = () => {
                     <Receipt size={14} />
                   </div>
                 </div>
-                <span className="text-lg font-black text-gray-900 tracking-tight">${(metrics.platformFees / 1000).toFixed(1)}k</span>
+                <span className="text-lg font-black text-gray-900 tracking-tight">{fmtMoney(metrics.platformFees)}</span>
                 <div className="mt-2 w-full bg-gray-100 h-1 rounded-full overflow-hidden">
                   <div className="bg-[#2c5173] h-full w-[65%]" />
                 </div>
@@ -566,9 +568,9 @@ const FinancialAdminDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-5">
                         <div className="space-y-1">
-                          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">${transaction.amount.toLocaleString()}</div>
+                          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{fmtFull(transaction.amount)}</div>
                           <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                            NET: ${transaction.netAmount.toLocaleString()}
+                            NET: {fmtFull(transaction.netAmount)}
                           </div>
                         </div>
                       </td>
@@ -697,15 +699,15 @@ const FinancialAdminDashboard: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GROSS AMOUNT</span>
-                      <span className="text-sm font-black text-white tracking-tight">${selectedTransaction.amount.toLocaleString()} {selectedTransaction.currency}</span>
+                      <span className="text-sm font-black text-white tracking-tight">{fmtFull(selectedTransaction.amount)}</span>
                     </div>
                     <div className="flex justify-between items-center text-rose-400">
                       <span className="text-[10px] font-black uppercase tracking-widest">NETWORK FEES</span>
-                      <span className="text-sm font-black tracking-tight">-${selectedTransaction.fees.toLocaleString()}</span>
+                      <span className="text-sm font-black tracking-tight">-{fmtFull(selectedTransaction.fees)}</span>
                     </div>
                     <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                       <span className="text-[10px] font-black text-white uppercase tracking-widest">NET SETTLEMENT</span>
-                      <span className="text-2xl font-black text-emerald-400 tracking-tight">${selectedTransaction.netAmount.toLocaleString()}</span>
+                      <span className="text-2xl font-black text-emerald-400 tracking-tight">{fmtFull(selectedTransaction.netAmount)}</span>
                     </div>
                   </div>
                 </div>

@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
 import { AlertCircle, CheckCircle, DollarSign, Inbox, ChevronLeft, ChevronRight, Building, User } from 'lucide-react';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
-const fmt = (v: number, currency = 'RWF') =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 0 }).format(v);
+// fmt replaced by useCurrencyFormat hook
 
 const methodLabel: Record<string, string> = {
   credit_card: 'Card',
@@ -18,6 +18,7 @@ const methodLabel: Record<string, string> = {
 const PAGE_SIZE = 20;
 
 const FleetTransactionHistoryPage = () => {
+  const { compactIn: fmt } = useCurrencyFormat();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'cargo_owner' | 'lender'>('ALL');

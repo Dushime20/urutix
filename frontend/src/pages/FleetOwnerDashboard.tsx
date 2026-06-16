@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -54,6 +55,7 @@ interface DashboardStats {
 }
 
 const FleetOwnerDashboard: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -580,7 +582,7 @@ const FleetOwnerDashboard: React.FC = () => {
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fuel Costs</p>
             <div className="flex items-end gap-3 mb-4">
               <span className="text-3xl font-black text-gray-900">
-                ${fuelStats?.totalCost ? (fuelStats.totalCost / 1000).toFixed(1) + 'k' : '0'}
+                {fuelStats?.totalCost ? fmtMoney(fuelStats.totalCost) : '0'}
               </span>
             </div>
             <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${fuelStats?.avgMpg > 6 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-orange-600 bg-orange-50 border-orange-200'}`}>
@@ -617,7 +619,7 @@ const FleetOwnerDashboard: React.FC = () => {
             <div className="absolute top-4 right-4 text-amber-500"><FaDollarSign className="w-5 h-5" /></div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Revenue (MTD)</p>
             <div className="flex items-end gap-3 mb-4">
-              <span className="text-3xl font-black text-gray-900">KES 2.4M</span>
+              <span className="text-3xl font-black text-gray-900">{fmtMoney(2400000)}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
               <FaChartLine /> <strong>+12%</strong> monthly growth

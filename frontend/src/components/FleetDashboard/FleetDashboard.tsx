@@ -56,6 +56,7 @@ import { FleetOverview } from './FleetOverview';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 import { useCargoOwnerLayout } from '@/contexts/CargoOwnerLayoutContext';
 
@@ -89,6 +90,7 @@ const fleetIcon = new Icon({
 
 
 export const FleetDashboard: React.FC = () => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading: authLoading, accessToken } = useAuth();
@@ -296,14 +298,7 @@ export const FleetDashboard: React.FC = () => {
     }
   }, []);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 1
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
 
 

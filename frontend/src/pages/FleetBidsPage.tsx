@@ -40,6 +40,7 @@ import { FleetFooter } from '../components/FleetDashboard/FleetFooter';
 import QuickBidModal from '../components/Fleet/QuickBidModal';
 import logoUrutiX from '../assets/logo-urutix.png';
 import { biddingAPI } from '../services/biddingApi';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface AuctionWithLoad {
   id: string;
@@ -131,6 +132,7 @@ const getDestinationAddress = (load: any): string => {
 };
 
 const FleetBidsPage: React.FC = () => {
+  const { compactIn: formatCurrency } = useCurrencyFormat();
   const [bids, setBids] = useState<CargoBid[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -335,13 +337,7 @@ const FleetBidsPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesCargoType;
   });
 
-  const formatCurrency = (amount: number, currency: string = 'KES') => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

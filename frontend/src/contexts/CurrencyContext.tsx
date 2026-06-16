@@ -8,7 +8,7 @@
  *  - convert(amount, from?, to?)  : convert between currencies
  *  - format(amount, from?)        : format as locale-aware string in preferred currency
  *  - formatIn(amount, currency, from?) : format in a specific currency
- *  - supportedCurrencies: full list with metadata
+ *  - supportedCurrencies: list from the DB (dynamic, managed by super-admin)
  */
 import React, {
   createContext,
@@ -16,6 +16,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -34,31 +35,15 @@ export interface RateMap {
   [code: string]: number;
 }
 
-// ── Inline currency metadata (mirrors backend constants) ─────────────────────
-// This avoids an extra API call for the metadata which rarely changes.
-
-const CURRENCIES: CurrencyMeta[] = [
+// ── Fallback list — used only while the API loads on first render ─────────────
+// This prevents a flash of broken formatting. The real list comes from the DB.
+const FALLBACK_CURRENCIES: CurrencyMeta[] = [
   { code: 'USD', name: 'US Dollar',          symbol: '$',    locale: 'en-US', decimals: 2, flag: '🇺🇸' },
   { code: 'EUR', name: 'Euro',               symbol: '€',    locale: 'de-DE', decimals: 2, flag: '🇪🇺' },
   { code: 'GBP', name: 'British Pound',      symbol: '£',    locale: 'en-GB', decimals: 2, flag: '🇬🇧' },
-  { code: 'JPY', name: 'Japanese Yen',       symbol: '¥',    locale: 'ja-JP', decimals: 0, flag: '🇯🇵' },
-  { code: 'CHF', name: 'Swiss Franc',        symbol: 'CHF',  locale: 'de-CH', decimals: 2, flag: '🇨🇭' },
-  { code: 'AUD', name: 'Australian Dollar',  symbol: 'A$',   locale: 'en-AU', decimals: 2, flag: '🇦🇺' },
-  { code: 'CAD', name: 'Canadian Dollar',    symbol: 'C$',   locale: 'en-CA', decimals: 2, flag: '🇨🇦' },
-  { code: 'CNY', name: 'Chinese Yuan',       symbol: '¥',    locale: 'zh-CN', decimals: 2, flag: '🇨🇳' },
   { code: 'RWF', name: 'Rwandan Franc',      symbol: 'FRw',  locale: 'rw-RW', decimals: 0, flag: '🇷🇼' },
   { code: 'KES', name: 'Kenyan Shilling',    symbol: 'KSh',  locale: 'sw-KE', decimals: 0, flag: '🇰🇪' },
-  { code: 'UGX', name: 'Ugandan Shilling',   symbol: 'USh',  locale: 'sw-UG', decimals: 0, flag: '🇺🇬' },
-  { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh',  locale: 'sw-TZ', decimals: 0, flag: '🇹🇿' },
-  { code: 'ZAR', name: 'South African Rand', symbol: 'R',    locale: 'en-ZA', decimals: 2, flag: '🇿🇦' },
-  { code: 'NGN', name: 'Nigerian Naira',     symbol: '₦',    locale: 'en-NG', decimals: 2, flag: '🇳🇬' },
-  { code: 'EGP', name: 'Egyptian Pound',     symbol: 'E£',   locale: 'ar-EG', decimals: 2, flag: '🇪🇬' },
-  { code: 'INR', name: 'Indian Rupee',       symbol: '₹',    locale: 'en-IN', decimals: 2, flag: '🇮🇳' },
-  { code: 'AED', name: 'UAE Dirham',         symbol: 'AED',  locale: 'ar-AE', decimals: 2, flag: '🇦🇪' },
-  { code: 'SAR', name: 'Saudi Riyal',        symbol: 'SAR',  locale: 'ar-SA', decimals: 2, flag: '🇸🇦' },
 ];
-
-const CURRENCY_MAP = new Map<string, CurrencyMeta>(CURRENCIES.map(c => [c.code, c]));
 
 // ── Context shape ─────────────────────────────────────────────────────────────
 
@@ -69,6 +54,7 @@ interface CurrencyContextValue {
   ratesUpdatedAt: string | null;
   ratesLoading: boolean;
   supportedCurrencies: CurrencyMeta[];
+  supportedCurrenciesLoading: boolean;
   /** Convert amount (stored as fromCurrency, default USD) to preferredCurrency */
   convert: (amount: number, fromCurrency?: string) => number;
   /** Format amount in the user's preferred currency */
@@ -86,30 +72,49 @@ const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 const LOCAL_KEY = 'urutix_preferred_currency';
 
 export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialise from localStorage so there's no flash of wrong currency
   const [preferredCurrency, _setPreferredCurrency] = useState<string>(() => {
     return localStorage.getItem(LOCAL_KEY) ?? 'USD';
   });
 
-  // Fetch exchange rates — refresh every 60 minutes
+  // ── Fetch supported currencies from DB (refreshed every 10 minutes) ───────
+  const { data: supportedData, isLoading: supportedCurrenciesLoading } = useQuery({
+    queryKey: ['supported-currencies'],
+    queryFn: () => currencyApi.getSupportedCurrencies(),
+    staleTime: 10 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
+    retry: 2,
+    // On failure keep the fallback list
+    placeholderData: FALLBACK_CURRENCIES,
+  });
+
+  const supportedCurrencies: CurrencyMeta[] = supportedData ?? FALLBACK_CURRENCIES;
+
+  // ── Build a lookup map from the live list ─────────────────────────────────
+  const currencyMap = useMemo(
+    () => new Map<string, CurrencyMeta>(supportedCurrencies.map(c => [c.code, c])),
+    [supportedCurrencies],
+  );
+
+  // ── Fetch exchange rates (refreshed every 60 minutes) ─────────────────────
   const { data: ratesData, isLoading: ratesLoading } = useQuery({
     queryKey: ['exchange-rates'],
     queryFn: () => currencyApi.getRates(),
-    staleTime: 60 * 60 * 1000,  // 1 hour
+    staleTime: 60 * 60 * 1000,
     refetchInterval: 60 * 60 * 1000,
     retry: 2,
   });
 
   const rates: RateMap = { USD: 1, ...(ratesData?.rates ?? {}) };
 
-  // Load user preference from backend on mount (if authenticated)
+  // ── Load user preference from backend on mount (if authenticated) ─────────
   useEffect(() => {
-    currencyApi.getPreference()
+    currencyApi
+      .getPreference()
       .then(code => {
         _setPreferredCurrency(code);
         localStorage.setItem(LOCAL_KEY, code);
       })
-      .catch(() => { /* not authenticated — stay with local value */ });
+      .catch(() => {});
   }, []);
 
   const setPreferredCurrency = useCallback(async (code: string) => {
@@ -118,11 +123,11 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
       await currencyApi.setPreference(code);
     } catch {
-      // non-critical — local state already updated
+      // non-critical
     }
   }, []);
 
-  // ── Conversion helpers ───────────────────────────────────────────────────
+  // ── Conversion helpers ────────────────────────────────────────────────────
 
   const convertValue = useCallback(
     (amount: number, fromCurrency = 'USD', toCurrency = preferredCurrency): number => {
@@ -138,7 +143,7 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const formatAmount = useCallback(
     (amount: number, targetCurrency: string): string => {
-      const meta = CURRENCY_MAP.get(targetCurrency);
+      const meta = currencyMap.get(targetCurrency);
       if (!meta) return `${targetCurrency} ${amount.toFixed(2)}`;
       try {
         return new Intl.NumberFormat(meta.locale, {
@@ -151,11 +156,12 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
         return `${meta.symbol} ${amount.toFixed(meta.decimals)}`;
       }
     },
-    [],
+    [currencyMap],
   );
 
   const convert = useCallback(
-    (amount: number, fromCurrency = 'USD') => convertValue(amount, fromCurrency, preferredCurrency),
+    (amount: number, fromCurrency = 'USD') =>
+      convertValue(amount, fromCurrency, preferredCurrency),
     [convertValue, preferredCurrency],
   );
 
@@ -175,7 +181,10 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     [convertValue, formatAmount],
   );
 
-  const getCurrencyMeta = useCallback((code: string) => CURRENCY_MAP.get(code), []);
+  const getCurrencyMeta = useCallback(
+    (code: string) => currencyMap.get(code),
+    [currencyMap],
+  );
 
   return (
     <CurrencyContext.Provider
@@ -185,7 +194,8 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
         rates,
         ratesUpdatedAt: ratesData?.updatedAt ?? null,
         ratesLoading,
-        supportedCurrencies: CURRENCIES,
+        supportedCurrencies,
+        supportedCurrenciesLoading,
         convert,
         format,
         formatIn,
@@ -205,4 +215,7 @@ export const useCurrency = (): CurrencyContextValue => {
   return ctx;
 };
 
-export { CURRENCIES as SUPPORTED_CURRENCIES, CURRENCY_MAP };
+// Keep named exports for any code that still imports SUPPORTED_CURRENCIES / CURRENCY_MAP
+// These are now derived from the fallback list — they will be correct for most cases
+// and the live data is always available via useCurrency().supportedCurrencies
+export { FALLBACK_CURRENCIES as SUPPORTED_CURRENCIES };

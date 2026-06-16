@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
 import { AlertCircle, Clock, AlertTriangle, Inbox, DollarSign } from 'lucide-react';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
+// fmt replaced by useCurrencyFormat hook
 
 const urgencyOf = (dueDate?: string) => {
   if (!dueDate) return 'pending';
@@ -16,6 +16,7 @@ const urgencyOf = (dueDate?: string) => {
 };
 
 const FleetPendingPaymentsPage = () => {
+  const { compact: fmt } = useCurrencyFormat();
   const [search, setSearch] = useState('');
   const [urgencyFilter, setUrgencyFilter] = useState('ALL');
 

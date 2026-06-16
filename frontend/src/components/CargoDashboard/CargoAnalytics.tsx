@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, DollarSign, Clock, CheckCircle, Package, AlertTriangle } from 'lucide-react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Cargo {
   id: string;
@@ -16,6 +17,7 @@ interface CargoAnalyticsProps {
 }
 
 export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
+  const { format: fmtFull } = useCurrencyFormat();
   // Calculate analytics
   const analytics = useMemo(() => {
     const totalValue = cargos.reduce((sum, cargo) => sum + (cargo.loadValue || 0), 0);
@@ -61,14 +63,7 @@ export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
   }, [cargos]);
 
   // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const formatCurrency = (value: number) => fmtFull(value);
 
   // Get status color
   const getStatusColor = (status: string) => {

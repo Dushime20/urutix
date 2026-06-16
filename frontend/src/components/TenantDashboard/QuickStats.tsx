@@ -7,6 +7,7 @@ import {
 import { motion } from 'framer-motion';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Metrics {
   totalRevenue: number;
@@ -25,14 +26,7 @@ interface QuickStatsProps {
 
 const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
   const { tSync } = useTranslation();
-  const formatCurrency = (amount: number | undefined) => {
-    return new Intl.NumberFormat('en-RW', {
-      style: 'currency',
-      currency: 'RWF',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
+  const { format: formatCurrency } = useCurrencyFormat();
 
   const formatNumber = (num: number | undefined) => {
     return new Intl.NumberFormat('en-US').format(num || 0);

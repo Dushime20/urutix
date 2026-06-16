@@ -1,11 +1,13 @@
 import React from 'react';
 import { type TCOAnalysis } from '../../../services/fleetApi';
+import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
 
 interface TCOChartsProps {
     data: TCOAnalysis;
 }
 
 const TCOCharts: React.FC<TCOChartsProps> = ({ data }) => {
+    const { compact: fmtMoney } = useCurrencyFormat();
     // Simple SVG Donut Chart for Cost Breakdown
     const total = data.totalCost;
     const fuelP = (data.breakdown.fuel / total) * 100;
@@ -47,7 +49,7 @@ const TCOCharts: React.FC<TCOChartsProps> = ({ data }) => {
                         <circle cx="50" cy="50" fill="transparent" r="40" stroke="#10b981" strokeWidth="12" strokeDasharray={`${laborDash} ${c}`} strokeDashoffset={laborOffset} className="opacity-90" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tight">${(data.totalCost / 1000).toFixed(1)}k</span>
+                        <span className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tight">{fmtMoney(data.totalCost)}</span>
                         <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">TOTAL</span>
                     </div>
                 </div>
@@ -104,8 +106,8 @@ const TCOCharts: React.FC<TCOChartsProps> = ({ data }) => {
                             {data.vehicleBreakdown.map(v => (
                                 <tr key={v.truckId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group transition-colors">
                                     <td className="py-3 text-xs font-black text-[#0f172a] dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors uppercase tracking-tight">{v.plateNumber}</td>
-                                    <td className="py-3 text-xs font-bold text-right text-slate-600 dark:text-slate-400">${v.cpm.toFixed(2)}</td>
-                                    <td className="py-3 text-xs font-black text-right text-[#0f172a] dark:text-white">${v.totalCost.toLocaleString()}</td>
+                                    <td className="py-3 text-xs font-bold text-right text-slate-600 dark:text-slate-400">{fmtMoney(v.cpm)}</td>
+                                    <td className="py-3 text-xs font-black text-right text-[#0f172a] dark:text-white">{fmtMoney(v.totalCost)}</td>
                                     <td className="py-3 text-center">
                                         <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border
                                             ${v.topExpenseCategory === 'Fuel' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :

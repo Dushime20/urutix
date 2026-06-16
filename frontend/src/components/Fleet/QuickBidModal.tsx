@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { biddingAPI, type BidData } from '../../services/biddingApi';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface CargoBid {
   id: string;
   title: string;
@@ -127,13 +128,7 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
 
   if (!isOpen || !cargo) return null;
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">

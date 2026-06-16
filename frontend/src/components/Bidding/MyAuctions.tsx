@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
     Gavel,
     Clock,
@@ -79,6 +80,9 @@ interface Auction {
 }
 
 const MyAuctions: React.FC = () => {
+    const { compact: _fmtCompact } = useCurrencyFormat();
+    const formatCurrency = (amount?: number) =>
+        amount == null ? '—' : _fmtCompact(amount);
     const [auctions, setAuctions] = useState<Auction[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedAuction, setExpandedAuction] = useState<string | null>(null);
@@ -272,10 +276,7 @@ const MyAuctions: React.FC = () => {
         });
     };
 
-    const formatCurrency = (amount?: number) => {
-        if (!amount && amount !== 0) return '$--.--';
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-    };
+    // formatCurrency provided by useCurrencyFormat hook above
 
     const getTimeRemaining = (endDate: string) => {
         const now = new Date();

@@ -3,6 +3,7 @@ import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { StatCard } from '../components/EnliteUI';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import {
   Trash2, Plus, Key, Mail,
   Phone, Building2, MoreHorizontal,
@@ -43,6 +44,7 @@ interface LenderAnalytics {
 }
 
 const AdminLenderRegistrationPage: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -362,7 +364,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
             />
             <StatCard
               title="Financial Flow"
-              value={`M ${((analytics?.totalAmountDisbursed || 0) / 1000000).toFixed(1)}`}
+              value={fmtMoney(analytics?.totalAmountDisbursed || 0)}
               icon={<DollarSign size={22} />}
               color="primary"
               variant="classic"
@@ -653,7 +655,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="space-y-1">
                           <p className="text-sm font-black text-gray-900 tracking-tight">{(l.totalLoans || 0).toLocaleString()} <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black ml-1">Issued</span></p>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RWF {((l.totalAmount || 0) / 1000000).toFixed(1)}M Flow</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{fmtMoney(l.totalAmount || 0)} Flow</p>
                         </div>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
@@ -761,7 +763,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
           <div className="bg-[#fafafa]/50 px-8 py-4 border-t border-gray-50 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operational Agents: {sorted.length}</span>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Cache: M {((sorted.reduce((acc, l) => acc + (l.totalAmount || 0), 0) / 1000000)).toFixed(2)}</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Cache: {fmtMoney(sorted.reduce((acc, l) => acc + (l.totalAmount || 0), 0))}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">System Status: Optimal</span>
@@ -885,7 +887,7 @@ const AdminLenderRegistrationPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ceiling Matrix</p>
-                      <p className="text-sm font-black text-gray-900 tracking-tight">RWF {((selectedLender.maxLoanAmount || 0) / 1000000).toFixed(1)}M</p>
+                      <p className="text-sm font-black text-gray-900 tracking-tight">{fmtMoney(selectedLender.maxLoanAmount || 0)}</p>
                     </div>
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registry Timestamp</p>

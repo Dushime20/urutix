@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { driverApi, type Trip } from '../../services/driverApi';
@@ -41,6 +42,7 @@ interface TripStats {
 }
 
 const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
 
@@ -259,7 +261,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
           { label: 'Total Trips', value: stats.totalTrips, icon: Navigation, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Active', value: stats.activeTrips, icon: Truck, color: 'text-sky-600', bg: 'bg-sky-50' },
           { label: 'Scheduled', value: stats.scheduledTrips, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Revenue', value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(stats.totalRevenue), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+          { label: 'Revenue', value: fmtMoney(stats.totalRevenue), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }
         ].map((stat, idx) => (
           <div
             key={idx}
@@ -501,7 +503,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <div className="flex-1 w-full md:w-auto flex flex-row md:flex-col items-center md:items-end justify-between gap-2 pl-0 md:pl-8 border-t md:border-t-0 md:border-l border-slate-50 pt-4 md:pt-0">
                   <div className="text-right">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Yield</span>
-                    <span className="text-lg font-black text-primary-950">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(Number(trip.earnings || 0))}</span>
+                    <span className="text-lg font-black text-primary-950">{fmtMoney(Number(trip.earnings || 0))}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right hidden sm:block">
@@ -611,7 +613,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <div>
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Value</span>
                   <p className="text-xl font-black text-primary-500">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(selectedTrip.earnings || 0))}
+                    {fmtMoney(Number(selectedTrip.earnings || 0))}
                   </p>
                 </div>
                 <button

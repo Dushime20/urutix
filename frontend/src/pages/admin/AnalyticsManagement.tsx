@@ -44,6 +44,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { StatCard, DataCard } from '../../components/EnliteUI';
 import { adminAPI } from '../../services/adminApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 ChartJS.register(
   CategoryScale,
@@ -94,6 +95,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AnalyticsManagement: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const { theme } = useTheme();
   const [tabValue, setTabValue] = useState(0);
   const [timeRange, setTimeRange] = useState('7d');
@@ -279,7 +281,7 @@ const AnalyticsManagement: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title={<TranslatedText text="AGGREGATE REVENUE" />}
-              value={`$${((overviewData?.stats?.totalRevenue || 0) / 1000).toFixed(1)}k`}
+              value={fmtMoney(overviewData?.stats?.totalRevenue || 0)}
               subtitle={<TranslatedText text="GROSS REVENUE STREAM" />}
               icon={<MoneyIcon />}
               trend={`${overviewData?.stats?.totalTrips || 0} trips`}
@@ -418,7 +420,7 @@ const AnalyticsManagement: React.FC = () => {
              />
              <StatCard
                 title="AVG LOAD VALUE"
-                value={`$${(cargoData?.stats?.avgLoadValue || 0).toFixed(0)}`}
+                value={fmtMoney(cargoData?.stats?.avgLoadValue || 0)}
                 subtitle="CANCELLED"
                 trend={`${cargoData?.stats?.cancelledLoads || 0}`}
                 trendDirection="down"

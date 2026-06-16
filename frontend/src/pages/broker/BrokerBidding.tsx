@@ -7,8 +7,10 @@ import BidAnalytics from '../../components/Bidding/BidAnalytics';
 import CreateAuction from '../../components/Bidding/CreateAuction';
 import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, Zap, Shield, ArrowRight } from 'lucide-react';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const BrokerBidding: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [activeTab, setActiveTab] = useState('auctions');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,7 @@ const BrokerBidding: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <StatCard title="Auctions" value={stats.totalAuctions} icon={<Gavel size={20} />} color="primary" variant="classic" />
         <StatCard title="Active" value={stats.activeBids} icon={<Users size={20} />} color="info" variant="classic" />
-        <StatCard title="Liquidity" value={stats.totalValue >= 1000 ? `$${(stats.totalValue / 1000).toFixed(1)}K` : `$${stats.totalValue.toLocaleString()}`} icon={<DollarSign size={20} />} color="success" variant="classic" />
+        <StatCard title="Liquidity" value={fmtMoney(stats.totalValue)} icon={<DollarSign size={20} />} color="success" variant="classic" />
         <StatCard title="Win Rate" value={`${stats.successRate}%`} icon={<Activity size={20} />} color="warning" variant="classic" />
       </div>
 

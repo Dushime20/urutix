@@ -56,7 +56,10 @@ interface Bid {
   };
 }
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+
 const BiddingManagement: React.FC = () => {
+  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
   const qc = useQueryClient();
 
   // Fetch bids from API
@@ -298,7 +301,7 @@ const BiddingManagement: React.FC = () => {
         />
         <StatCard
           title={<TranslatedText text="Total Value" />}
-          value={`$${stats.totalValue.toLocaleString()}`}
+          value={fmtMoney(stats.totalValue)}
           icon={<FaDollarSign />}
           color="primary"
           variant="classic"
@@ -418,7 +421,7 @@ const BiddingManagement: React.FC = () => {
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
                         <div className="text-xs text-gray-900">
-                          <div className="text-sm font-bold text-gray-900">${(bid.bidAmount || 0).toLocaleString()}</div>
+                          <div className="text-sm font-bold text-gray-900">{fmtFull(bid.bidAmount || 0)}</div>
                           <div className="text-[10px] text-gray-500 flex items-center gap-1">
                             <FaTruck className="w-2.5 h-2.5" />
                             {bid.load?.weight ? `${bid.load.weight.toLocaleString()} kg` : 'N/A'}
@@ -541,7 +544,7 @@ const BiddingManagement: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Bid Amount" /></div>
-                  <div className="text-sm font-bold text-gray-900">${(selectedBid.bidAmount || 0).toLocaleString()}</div>
+                  <div className="text-sm font-bold text-gray-900">{fmtFull(selectedBid.bidAmount || 0)}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Load Weight" /></div>

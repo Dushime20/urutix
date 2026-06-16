@@ -27,6 +27,7 @@ interface CargoModalProps {
 }
 
 export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
+  const { format: formatCurrency, compact: fmtMoney, compactIn: fmtIn } = useCurrencyFormat();
   if (!cargo) return null;
 
   const formatDate = (dateString: string) => {
@@ -44,13 +45,7 @@ export const CargoModal: React.FC<CargoModalProps> = ({ cargo, onClose }) => {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    if (!amount) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD'
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   const getStatusColor = (status: string) => {
     const statusColors: Record<string, string> = {

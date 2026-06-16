@@ -8,14 +8,7 @@ import {
 import ModernLoader from '../components/common/ModernLoader';
 import api from '../services/api';
 import { StatCard } from '../components/EnliteUI/Cards/StatCard';
-
-// ── RWF formatter (ISO 4217) ─────────────────────────────────────────────────
-const fmtRWF = (n: number): string => {
-  if (n >= 1_000_000_000) return `RWF ${(n / 1_000_000_000).toFixed(2)} B`;
-  if (n >= 1_000_000)     return `RWF ${(n / 1_000_000).toFixed(1)} M`;
-  if (n >= 1_000)         return `RWF ${(n / 1_000).toFixed(0)} K`;
-  return `RWF ${n.toLocaleString('en-RW')}`;
-};
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const fmtPct = (n: number | null | undefined, decimals = 2): string =>
   n != null ? `${Number(n).toFixed(decimals)}%` : '—';
@@ -55,6 +48,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; sub?: stri
 // ── Main page ─────────────────────────────────────────────────────────────────
 const PortfolioAnalyticsPage: React.FC = () => {
   const { user } = useAuth();
+  const { compact: fmtRWF } = useCurrencyFormat();
   const [months, setMonths] = useState<number>(12);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -39,6 +39,7 @@ import {
 } from 'recharts';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
 
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface TruckAnalyticsProps {
   trucks: any[];
   analytics?: any;
@@ -47,6 +48,7 @@ interface TruckAnalyticsProps {
 }
 
 export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks, analytics, fuelStats, tcoData }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const calculateCargoAlignmentStats = () => {
     const stats = {
       totalTrucks: trucks.length,
@@ -131,13 +133,7 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks, analytic
 
   const stats = calculateCargoAlignmentStats();
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      maximumFractionDigits: 0
-    }).format(val);
-  };
+  // formatCurrency provided by useCurrencyFormat hook
 
   // Trend Data for Charts - Derived from props
   const trendData = useMemo(() => {

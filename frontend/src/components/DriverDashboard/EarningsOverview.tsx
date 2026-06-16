@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   BarChart3,
   Download,
@@ -40,6 +41,7 @@ interface EarningsOverviewProps {
 }
 
 export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) => {
+  const { compact: formatCurrency } = useCurrencyFormat();
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [showDetails, setShowDetails] = useState(false);
 
@@ -49,8 +51,7 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
     enabled: !!driverId,
   });
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const currentData = earnings ?? [];
   const hasData = currentData.length > 0 && currentData.some(d => d.netEarnings > 0 || d.trips > 0);

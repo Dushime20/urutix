@@ -9,6 +9,7 @@ import {
 import { Line, Bar } from "react-chartjs-2";
 import { TranslatedText } from "../translated-text";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useCurrencyFormat } from "../../hooks/useCurrencyFormat";
 import FilterSelect from "@/components/common/FilterSelect";
 import { tenantApi } from '../../services/tenantApi';
 import { loadsAPI } from '../../services/load';
@@ -19,6 +20,7 @@ interface CargoAnalyticsProps {
 
 const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
   const { tSync } = useTranslation();
+  const { compact: formatCurrency, format: formatFullCurrency } = useCurrencyFormat();
   const [selectedFilter, setSelectedFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [timeRange, setTimeRange] = useState("7d");
@@ -128,24 +130,7 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `RF ${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `RF ${(amount / 1000).toFixed(1)}K`;
-    } else {
-      return `RF ${amount.toLocaleString()}`;
-    }
-  };
-
-  const formatFullCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-RW', {
-      style: 'currency',
-      currency: 'RWF',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // formatCurrency and formatFullCurrency provided by useCurrencyFormat hook above
 
   const shipmentTrendData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],

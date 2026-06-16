@@ -4,6 +4,7 @@ import { FaSearch, FaFilter, FaTruck, FaBox, FaDollarSign, FaCheckCircle, FaFile
 import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { ReceiptModal, type Receipt } from '../components/FleetDashboard/ReceiptModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface InTransitTruck {
   id: string;
@@ -72,6 +73,8 @@ const generateDummyPrice = () => {
 };
 
 const FleetPaymentManagement: React.FC = () => {
+  const { compactIn: _fmtCompact } = useCurrencyFormat();
+  const formatCurrency = (amount: number, currency: string) => _fmtCompact(amount, currency);
   const [trucks, setTrucks] = useState<InTransitTruck[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -185,15 +188,7 @@ const FleetPaymentManagement: React.FC = () => {
     setShowReceiptModal(true);
   };
 
-  // Helper for formatting currency
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // formatCurrency provided by useCurrencyFormat hook above
 
   const filteredTrucks = trucks.filter(truck => {
     const matchesSearch =

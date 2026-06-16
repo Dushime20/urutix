@@ -3,9 +3,11 @@ import { fuelApi } from '../../../services/fuelApi';
 import { useAuth } from '../../../contexts/AuthContext';
 import { DollarSign, Check, X, Clock, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
 
 export const FuelAdvancesTab: React.FC = () => {
     const { user } = useAuth();
+    const { compact: formatCurrency } = useCurrencyFormat();
     const [pendingAdvances, setPendingAdvances] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<any>(null);
@@ -55,8 +57,7 @@ export const FuelAdvancesTab: React.FC = () => {
         }
     };
 
-    const formatCurrency = (val: number) =>
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+    // formatCurrency provided by useCurrencyFormat hook above
 
     return (
         <div className="space-y-6">

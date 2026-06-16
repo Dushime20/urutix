@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   FaCheck,
   FaTimes,
@@ -58,6 +59,7 @@ interface SubscriptionPlan {
 }
 
 const SubscriptionPlans: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions' | 'marketplace'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
@@ -948,7 +950,7 @@ const SubscriptionPlans: React.FC = () => {
                             <span className="font-black">Credit Consumption Trend:</span> 
                             <span className="font-black text-emerald-700"> Sold</span> = credits sold to partners via marketplace. 
                             <span className="font-black text-red-700"> Used in Ops</span> = credits deducted by cargo operations. 
-                            <span className="font-black text-amber-700"> Earned</span> = bonus credits from marketplace & bid revenue (${ (marketplaceStatsData?.data?.totalRevenue ?? creditAccountData?.data?.revenueFromMarketplaceSales ?? 0).toLocaleString()} total).
+                            <span className="font-black text-amber-700"> Earned</span> = bonus credits from marketplace & bid revenue ({fmtMoney(marketplaceStatsData?.data?.totalRevenue ?? creditAccountData?.data?.revenueFromMarketplaceSales ?? 0)} total).
                           </div>
                         </div>
                       </div>

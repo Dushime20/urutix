@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -32,6 +33,7 @@ interface MarketplaceStats {
 }
 
 const CreditMarketplace: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -166,7 +168,7 @@ const CreditMarketplace: React.FC = () => {
             </span>
           </div>
           <div className="text-3xl font-black text-slate-900 mb-1">
-            ${stats.totalRevenue.toLocaleString()}
+            {fmtMoney(stats.totalRevenue)}
           </div>
           <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">Total Revenue</div>
         </div>

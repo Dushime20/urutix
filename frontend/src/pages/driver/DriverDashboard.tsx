@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useLocation } from 'react-router-dom';
 import {
   Activity,
@@ -56,6 +57,7 @@ import { messengerApi } from '../../services/messengerApi';
 
 
 const DriverDashboard: React.FC = () => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
@@ -381,7 +383,7 @@ const DriverDashboard: React.FC = () => {
                               {currentTrip.earnings > 0 && (
                                 <div>
                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Earnings</p>
-                                  <p className="text-sm font-black text-emerald-600">${Number(currentTrip.earnings).toLocaleString()}</p>
+                                  <p className="text-sm font-black text-emerald-600">{fmtMoney(Number(currentTrip.earnings))}</p>
                                 </div>
                               )}
                             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner, FaEye, FaMapMarkerAlt, FaSync, FaSearch } from 'react-icons/fa';
 import { TrucksList } from '../components/FleetDashboard/TrucksList';
 import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
@@ -11,7 +12,8 @@ import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
 import ModernLoader from '../components/common/ModernLoader';
 
 const UnifiedFleetManagement: React.FC = () => {
-  const { user: _user } = useAuth(); // Keep for potential future use or context check
+  const { compact: fmtMoney } = useCurrencyFormat();
+  const { user: _user } = useAuth();
   const [activeTab, setActiveTab] = useState<'add-truck' | 'my-trucks' | 'active-trips' | 'view-trucks'>('my-trucks');
   const [showTruckForm, setShowTruckForm] = useState(false);
   const [editingTruck, setEditingTruck] = useState<any>(null);
@@ -436,7 +438,7 @@ const UnifiedFleetManagement: React.FC = () => {
                         {trip.agreedPrice && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Price:</span>
-                            <span className="text-gray-900 font-semibold">${trip.agreedPrice.toLocaleString()}</span>
+                            <span className="text-gray-900 font-semibold">{fmtMoney(trip.agreedPrice)}</span>
                           </div>
                         )}
                         {trip.truckId && (

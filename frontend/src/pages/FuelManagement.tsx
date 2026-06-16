@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import {
     FaGasPump,
     FaTruck,
@@ -23,6 +24,7 @@ import { cn } from '../utils/cn';
 type TabType = 'all' | 'flagged';
 
 const FuelManagement: React.FC = () => {
+    const { compact: fmtMoney } = useCurrencyFormat();
     const [activeTab, setActiveTab] = useState<TabType>('all');
     const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
     const [filteredLogs, setFilteredLogs] = useState<FuelLog[]>([]);
@@ -178,7 +180,7 @@ const FuelManagement: React.FC = () => {
                                 <div>
                                     <p className="text-xs sm:text-sm font-medium text-gray-600">Total Fuel Spend (MO)</p>
                                     <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                                        ${statistics.totalSpend.toLocaleString()}
+                                        {fmtMoney(statistics.totalSpend)}
                                     </p>
                                     <p className="text-xs text-emerald-600 font-medium mt-1">
                                         ↗ +4.2% vs last month

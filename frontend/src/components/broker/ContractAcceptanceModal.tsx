@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { X, FileText, CheckCircle, AlertCircle, User, DollarSign, Calendar } from 'lucide-react';
 import { brokerAPI } from '../../services/brokerApi';
 import toast from 'react-hot-toast';
@@ -51,6 +52,7 @@ const ContractAcceptanceModal: React.FC<ContractAcceptanceModalProps> = ({
   const [contract, setContract] = useState<LoadContract | null>(null);
   const [loading, setLoading] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  const { formatIn: fmtIn } = useCurrencyFormat();
 
   useEffect(() => {
     if (isOpen && contractId) {
@@ -186,10 +188,7 @@ const ContractAcceptanceModal: React.FC<ContractAcceptanceModalProps> = ({
               <p className="text-sm text-gray-700">{contract.load?.title || 'N/A'}</p>
               {contract.load?.loadValue && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Load Value: {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: contract.currencyCode || 'USD',
-                  }).format(contract.load.loadValue)}
+                  Load Value: {fmtIn(contract.load.loadValue, contract.currencyCode || 'USD')}
                 </p>
               )}
             </div>
@@ -205,10 +204,7 @@ const ContractAcceptanceModal: React.FC<ContractAcceptanceModalProps> = ({
               <div>
                 <span className="text-gray-600">Agreed Rate:</span>
                 <span className="font-medium text-gray-900 ml-2">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: contract.currencyCode || 'USD',
-                  }).format(contract.agreedRate)}
+                  {fmtIn(contract.agreedRate, contract.currencyCode || 'USD')}
                 </span>
               </div>
               <div>
@@ -218,10 +214,7 @@ const ContractAcceptanceModal: React.FC<ContractAcceptanceModalProps> = ({
               <div>
                 <span className="text-gray-600">Commission Amount:</span>
                 <span className="font-medium text-gray-900 ml-2">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: contract.currencyCode || 'USD',
-                  }).format(contract.commissionAmount)}
+                  {fmtIn(contract.commissionAmount, contract.currencyCode || 'USD')}
                 </span>
               </div>
               {contract.paymentTerms && (

@@ -28,7 +28,7 @@ import {
     ChevronRight,
     UserCheck,
     ArrowRight,
-    Mail
+    Mail,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';

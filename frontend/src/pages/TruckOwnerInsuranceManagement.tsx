@@ -91,7 +91,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Total Coverage</p>
-                <p className="text-lg font-semibold text-gray-900">$2.5M</p>
+                <p className="text-lg font-semibold text-gray-900">$2.5M (static demo)</p>
               </div>
             </div>
           </div>

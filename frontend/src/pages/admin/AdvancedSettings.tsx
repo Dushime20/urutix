@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Bell,
   Shield,
@@ -9,36 +9,16 @@ import {
   AlertTriangle,
   Clock,
   Globe,
-  Server,
-  Zap
+  Zap,
 } from 'lucide-react';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
-import ModernLoader from '../../components/common/ModernLoader';
 
 const AdvancedSettings: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [twoFactorAuth, setTwoFactorAuth] = useState(false);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-
-  if (loading) {
-    return (
-      <AdminPageLayout
-        title={<TranslatedText text="Advanced Settings" />}
-        description={<TranslatedText text="Configure system-wide settings and preferences" />}
-      >
-        <ModernLoader isLoading={true} type="page" showStats={false} />
-      </AdminPageLayout>
-    );
-  }
+  const [pushNotifications, setPushNotifications]   = useState(true);
+  const [twoFactorAuth, setTwoFactorAuth]           = useState(false);
+  const [maintenanceMode, setMaintenanceMode]       = useState(false);
 
   return (
     <AdminPageLayout
@@ -53,7 +33,9 @@ const AdvancedSettings: React.FC = () => {
               <Bell size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="Notification Settings" /></h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                <TranslatedText text="Notification Settings" />
+              </h3>
               <p className="text-xs text-slate-500"><TranslatedText text="Configure system notifications" /></p>
             </div>
           </div>
@@ -63,31 +45,14 @@ const AdvancedSettings: React.FC = () => {
                 <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Email Notifications" /></h4>
                 <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Receive email alerts for important events" /></p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={emailNotifications}
-                  onChange={(e) => setEmailNotifications(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
-              </label>
+              <Toggle checked={emailNotifications} onChange={setEmailNotifications} />
             </div>
-
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
               <div>
                 <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Push Notifications" /></h4>
                 <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Receive push notifications in browser" /></p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pushNotifications}
-                  onChange={(e) => setPushNotifications(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
-              </label>
+              <Toggle checked={pushNotifications} onChange={setPushNotifications} />
             </div>
           </div>
         </div>
@@ -99,7 +64,9 @@ const AdvancedSettings: React.FC = () => {
               <Shield size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="Security Settings" /></h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                <TranslatedText text="Security Settings" />
+              </h3>
               <p className="text-xs text-slate-500"><TranslatedText text="Manage security and authentication" /></p>
             </div>
           </div>
@@ -109,23 +76,14 @@ const AdvancedSettings: React.FC = () => {
                 <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Two-Factor Authentication" /></h4>
                 <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Add an extra layer of security" /></p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={twoFactorAuth}
-                  onChange={(e) => setTwoFactorAuth(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
-              </label>
+              <Toggle checked={twoFactorAuth} onChange={setTwoFactorAuth} />
             </div>
-
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                 <Clock size={12} />
                 <TranslatedText text="Session Timeout" />
               </label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none bg-gray-50">
+              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none bg-gray-50">
                 <option><TranslatedText text="15 minutes" /></option>
                 <option><TranslatedText text="30 minutes" /></option>
                 <option><TranslatedText text="1 hour" /></option>
@@ -142,7 +100,9 @@ const AdvancedSettings: React.FC = () => {
               <SettingsIcon size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="System Settings" /></h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                <TranslatedText text="System Settings" />
+              </h3>
               <p className="text-xs text-slate-500"><TranslatedText text="Configure system behavior" /></p>
             </div>
           </div>
@@ -157,23 +117,14 @@ const AdvancedSettings: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-0.5"><TranslatedText text="Put system in maintenance mode" /></p>
                 </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={maintenanceMode}
-                  onChange={(e) => setMaintenanceMode(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]"></div>
-              </label>
+              <Toggle checked={maintenanceMode} onChange={setMaintenanceMode} />
             </div>
-
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                 <Globe size={12} />
                 <TranslatedText text="Timezone" />
               </label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none bg-gray-50">
+              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none bg-gray-50">
                 <option>UTC</option>
                 <option>Africa/Nairobi (EAT)</option>
                 <option>America/New_York (EST)</option>
@@ -190,35 +141,30 @@ const AdvancedSettings: React.FC = () => {
               <Zap size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight"><TranslatedText text="Quick Actions" /></h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                <TranslatedText text="Quick Actions" />
+              </h3>
               <p className="text-xs text-slate-500"><TranslatedText text="Common administrative tasks" /></p>
             </div>
           </div>
           <div className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
-                <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Database size={20} />
-                </div>
-                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Backup Database" /></h4>
-                <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Create a comprehensive system backup" /></p>
-              </button>
-
-              <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
-                <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Mail size={20} />
-                </div>
-                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Test Email" /></h4>
-                <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Send a test email to verify SMTP settings" /></p>
-              </button>
-
-              <button className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left">
-                <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Trash2 size={20} />
-                </div>
-                <h4 className="text-sm font-bold text-gray-900"><TranslatedText text="Clear Cache" /></h4>
-                <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Flush system cache and temporary files" /></p>
-              </button>
+              {[
+                { icon: <Database size={20} />, title: 'Backup Database',  sub: 'Create a comprehensive system backup' },
+                { icon: <Mail size={20} />,     title: 'Test Email',       sub: 'Send a test email to verify SMTP settings' },
+                { icon: <Trash2 size={20} />,   title: 'Clear Cache',      sub: 'Flush system cache and temporary files' },
+              ].map(action => (
+                <button
+                  key={action.title}
+                  className="p-6 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all group text-left"
+                >
+                  <div className="w-10 h-10 bg-slate-50 text-[#2c5173] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    {action.icon}
+                  </div>
+                  <h4 className="text-sm font-bold text-gray-900"><TranslatedText text={action.title} /></h4>
+                  <p className="text-xs text-slate-500 mt-1"><TranslatedText text={action.sub} /></p>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -226,5 +172,15 @@ const AdvancedSettings: React.FC = () => {
     </AdminPageLayout>
   );
 };
+
+const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }> = ({
+  checked, onChange, disabled,
+}) => (
+  <label className={`relative inline-flex items-center ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+    <input type="checkbox" checked={checked} disabled={disabled}
+      onChange={e => onChange(e.target.checked)} className="sr-only peer" />
+    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2c5173]" />
+  </label>
+);
 
 export default AdvancedSettings;
