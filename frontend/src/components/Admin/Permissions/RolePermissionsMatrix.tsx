@@ -28,11 +28,31 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
         queryFn: permissionApi.listAllPermissions
     });
 
-    // Fetch existing role matrix
-    const { data: roleMatrix = [], isLoading: isLoadingMatrix } = useQuery({
+    // Fetch existing role matrix — backend returns { roles, permissions }
+    // We normalise it here into a flat { role, permission } array so the rest
+    // of the component can just call hasPermission(role, permName).
+    const { data: rawMatrix, isLoading: isLoadingMatrix } = useQuery({
         queryKey: ['admin-role-matrix'],
         queryFn: permissionApi.getRoleMatrix
     });
+
+    // Normalise: [{role, permission}] from the roles[].permissions[] nesting
+    const roleMatrix: { role: string; permission: string }[] = useMemo(() => {
+        if (!rawMatrix) return [];
+        // If the backend returns a flat array directly (legacy shape), keep it
+        if (Array.isArray(rawMatrix)) return rawMatrix;
+        // New shape: { roles: [{name, permissions:[{name}]}], permissions: [] }
+        const rolesList: any[] = rawMatrix.roles ?? rawMatrix.data?.roles ?? [];
+        const flat: { role: string; permission: string }[] = [];
+        rolesList.forEach((r: any) => {
+            const perms: any[] = Array.isArray(r.permissions) ? r.permissions : [];
+            perms.forEach((p: any) => {
+                const permKey = p.name ?? `${p.resource}.${p.action}`;
+                flat.push({ role: r.name, permission: permKey });
+            });
+        });
+        return flat;
+    }, [rawMatrix]);
 
     // Determine current state helper
     const hasPermission = (role: string, permission: string) => {
