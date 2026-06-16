@@ -3,8 +3,9 @@ import {
   FaUsers, FaEdit, FaTrash, FaPlus, FaSearch, FaDownload,
   FaEye, FaUserCheck, FaUserTimes, FaShieldAlt, FaFilter,
   FaSort, FaEllipsisV, FaCheck, FaTimes, FaBan, FaUnlock,
-  FaEnvelope, FaPhone, FaMapMarkerAlt, FaCalendarAlt
+  FaEnvelope, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaKey,
 } from 'react-icons/fa';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,6 +13,10 @@ import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
+import { RolePermissionsMatrix } from '../../components/Admin/Permissions/RolePermissionsMatrix';
+import { permissionApi } from '../../services/permissionApi';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 interface User {
   id: string;
@@ -30,117 +35,264 @@ interface User {
   totalRevenue?: number;
 }
 
+// ── Per-User Permissions Modal ─────────────────────────────────────────────
+const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ user, onClose }) => {
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+
+  const { data: detail, isLoading } = useQuery({
+    queryKey: ['user-perm-detail', user.id],
+    queryFn: () => permissionApi.getUserPermissionDetail(user.id),
+  });
+
+  const { mutate: grantPerm, isPending: granting } = useMutation({
+    mutationFn: ({ permission }: { permission: string }) =>
+      permissionApi.grantPermission(user.id, permission, reason || undefined, expiresAt ? new Date(expiresAt) : undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-perm-detail', user.id] });
+      toast.success('Permission granted');
+    },
+    onError: () => toast.error('Failed to grant permission'),
+  });
+
+  const { mutate: revokePerm, isPending: revoking } = useMutation({
+    mutationFn: ({ permission }: { permission: string }) =>
+      permissionApi.revokePermission(user.id, permission),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-perm-detail', user.id] });
+      toast.success('Permission revoked');
+    },
+    onError: () => toast.error('Failed to revoke permission'),
+  });
+
+  const { mutate: denyPerm, isPending: denying } = useMutation({
+    mutationFn: ({ permission }: { permission: string }) =>
+      permissionApi.denyPermission(user.id, permission, reason || undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-perm-detail', user.id] });
+      toast.success('Permission denied');
+    },
+    onError: () => toast.error('Failed to deny permission'),
+  });
+
+  // Group permissions by resource
+  const grouped: Record<string, typeof detail.permissions> = {};
+  (detail?.permissions || []).forEach((p: any) => {
+    const resource = p.resource || p.code?.split('.')[0] || 'other';
+    if (!grouped[resource]) grouped[resource] = [];
+    grouped[resource].push(p);
+  });
+
+  const sourceLabel = (source: string) => {
+    const map: Record<string, string> = {
+      role: 'Role default',
+      user_granted: 'Manually granted',
+      user_denied: 'Manually denied',
+      none: 'Not assigned',
+    };
+    return map[source] || source;
+  };
+
+  const sourceColor = (source: string) => {
+    const map: Record<string, string> = {
+      role: 'text-blue-600 bg-blue-50',
+      user_granted: 'text-emerald-700 bg-emerald-50',
+      user_denied: 'text-red-700 bg-red-50',
+      none: 'text-slate-500 bg-slate-50',
+    };
+    return map[source] || 'text-slate-500 bg-slate-50';
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#2c5173] flex items-center justify-center text-white font-black text-sm">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-800">{user.name}</h2>
+              <p className="text-xs text-slate-400 font-semibold">{user.email} · <span className="text-[#2c5173]">{user.role}</span></p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
+            <FaTimes />
+          </button>
+        </div>
+
+        {/* Optional reason + expiry fields */}
+        <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[180px]">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Reason (optional)</label>
+            <input
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder="e.g. Temporary access for audit"
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Expires (optional)</label>
+            <input
+              type="date"
+              value={expiresAt}
+              onChange={e => setExpiresAt(e.target.value)}
+              className="px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+            />
+          </div>
+          <p className="text-[10px] text-slate-400 self-center">
+            <FaKey className="inline mr-1" />
+            Click <span className="font-black text-emerald-600">Grant</span>, <span className="font-black text-red-600">Deny</span>, or <span className="font-black text-slate-600">Reset</span> to manage overrides.
+          </p>
+        </div>
+
+        {/* Permissions list */}
+        <div className="overflow-y-auto flex-1 px-6 py-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2c5173]" />
+            </div>
+          ) : !detail?.permissions?.length ? (
+            <div className="text-center py-12 text-slate-400 text-sm">No permissions defined for this role yet.</div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([resource, perms]) => (
+                <div key={resource}>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <span className="w-1 h-3 bg-[#2c5173] rounded-full inline-block" />
+                    {resource}
+                    <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[9px]">{(perms as any[]).length}</span>
+                  </p>
+                  <div className="space-y-1.5">
+                    {(perms as any[]).map((p: any) => (
+                      <div key={p.id || p.code} className="flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${p.effective ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                          <div>
+                            <p className="text-xs font-bold text-slate-700 font-mono">{p.action || p.code}</p>
+                            {p.description && <p className="text-[10px] text-slate-400">{p.description}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide ${sourceColor(p.source)}`}>
+                            {sourceLabel(p.source)}
+                          </span>
+                          {/* Grant */}
+                          <button
+                            onClick={() => grantPerm({ permission: p.name || p.code })}
+                            disabled={granting}
+                            title="Grant override"
+                            className="px-2.5 py-1.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50"
+                          >
+                            Grant
+                          </button>
+                          {/* Deny */}
+                          <button
+                            onClick={() => denyPerm({ permission: p.name || p.code })}
+                            disabled={denying}
+                            title="Deny override"
+                            className="px-2.5 py-1.5 bg-red-100 text-red-700 text-[10px] font-black rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
+                          >
+                            Deny
+                          </button>
+                          {/* Reset — only shown when there's a manual override */}
+                          {(p.source === 'user_granted' || p.source === 'user_denied') && (
+                            <button
+                              onClick={() => revokePerm({ permission: p.name || p.code })}
+                              disabled={revoking}
+                              title="Reset to role default"
+                              className="px-2.5 py-1.5 bg-slate-200 text-slate-600 text-[10px] font-black rounded-lg hover:bg-slate-300 transition-colors disabled:opacity-50"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 flex justify-end">
+          <button onClick={onClose} className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type ActiveTab = 'users' | 'role-permissions';
+
 const UserManagement: React.FC = () => {
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('users');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const { hasPermission } = usePermission();
   const { tSync } = useTranslation();
+  const queryClient = useQueryClient();
+
+  const isSuperAdmin = authUser?.role === 'SUPER_ADMIN';
 
   // Permission-based access control with role fallback
   const canManageUsers = hasPermission('user:manage') ||
     hasPermission('user:update') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'TENANT_ADMIN';
+    authUser?.role === 'ADMIN' ||
+    authUser?.role === 'SUPER_ADMIN' ||
+    authUser?.role === 'TENANT_ADMIN';
 
   const canCreateUsers = hasPermission('user:create') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'TENANT_ADMIN';
+    authUser?.role === 'ADMIN' ||
+    authUser?.role === 'SUPER_ADMIN' ||
+    authUser?.role === 'TENANT_ADMIN';
 
   const canDeleteUsers = hasPermission('user:delete') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN';
+    authUser?.role === 'ADMIN' ||
+    authUser?.role === 'SUPER_ADMIN';
 
   const canViewUsers = hasPermission('user:view') ||
     hasPermission('user:manage') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'TENANT_ADMIN';
+    authUser?.role === 'ADMIN' ||
+    authUser?.role === 'SUPER_ADMIN' ||
+    authUser?.role === 'TENANT_ADMIN';
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      email: 'cargo@test.com',
-      name: 'John Cargo',
-      role: 'CARGO_OWNER',
-      status: 'active',
-      joinDate: '2024-01-15',
-      lastLogin: '2024-08-09 10:30',
-      phone: '+250 788 123 456',
-      company: 'TransCorp Ltd',
-      location: 'Kigali, Rwanda',
-      verificationStatus: 'verified',
-      totalShipments: 45,
-      totalRevenue: 2500000
+  // ── Real user data from backend ────────────────────────────────────────────
+  const { data: usersData, isLoading: usersLoading, refetch } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const res = await api.get('/users');
+      return res.data as any[];
     },
-    {
-      id: '2',
-      email: 'driver@test.com',
-      name: 'Mike Driver',
-      role: 'DRIVER',
-      status: 'active',
-      joinDate: '2024-02-20',
-      lastLogin: '2024-08-09 09:15',
-      phone: '+250 789 456 789',
-      company: 'FastTrans Fleet',
-      location: 'Nairobi, Kenya',
-      verificationStatus: 'verified',
-      totalShipments: 89,
-      totalRevenue: 1800000
-    },
-    {
-      id: '3',
-      email: 'owner@test.com',
-      name: 'Sarah Owner',
-      role: 'TRUCK_OWNER',
-      status: 'pending',
-      joinDate: '2024-08-08',
-      lastLogin: 'Never',
-      phone: '+250 787 987 654',
-      company: 'Green Logistics',
-      location: 'Kampala, Uganda',
-      verificationStatus: 'pending',
-      totalShipments: 0,
-      totalRevenue: 0
-    },
-    {
-      id: '4',
-      email: 'admin@test.com',
-      name: 'Admin User',
-      role: 'ADMIN',
-      status: 'active',
-      joinDate: '2024-01-01',
-      lastLogin: '2024-08-09 11:45',
-      phone: '+250 786 111 222',
-      company: 'UrutiX Platform',
-      location: 'Kigali, Rwanda',
-      verificationStatus: 'verified',
-      totalShipments: 0,
-      totalRevenue: 0
-    },
-    {
-      id: '5',
-      email: 'fleet@test.com',
-      name: 'David Fleet',
-      role: 'TRUCK_OWNER',
-      status: 'suspended',
-      joinDate: '2024-03-10',
-      lastLogin: '2024-08-05 14:20',
-      phone: '+250 785 333 444',
-      company: 'Mega Transport',
-      location: 'Dar es Salaam, Tanzania',
-      verificationStatus: 'verified',
-      totalShipments: 23,
-      totalRevenue: 950000
-    }
-  ]);
+    retry: 1,
+  });
+
+  // Normalize backend data to local User shape
+  const users: User[] = (usersData || []).map((u: any) => ({
+    id: u.id,
+    email: u.email,
+    name: u.profile
+      ? `${u.profile.firstName || ''} ${u.profile.lastName || ''}`.trim() || u.email
+      : u.email,
+    role: u.role || 'UNKNOWN',
+    status: (u.status || 'active').toLowerCase() as User['status'],
+    joinDate: u.createdAt || new Date().toISOString(),
+    lastLogin: u.lastLoginAt || 'Never',
+    phone: u.phone || u.profile?.phone,
+    company: u.profile?.companyName,
+    location: u.profile?.location,
+    verificationStatus: u.emailVerifiedAt ? 'verified' : 'pending',
+    totalShipments: u.totalShipments,
+    totalRevenue: u.totalRevenue,
+  }));
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -152,6 +304,10 @@ const UserManagement: React.FC = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showBulkActions, setShowBulkActions] = useState(false);
+
+  // Per-user permissions modal
+  const [showPermModal, setShowPermModal] = useState(false);
+  const [permUser, setPermUser] = useState<User | null>(null);
 
   useEffect(() => {
     setShowBulkActions(selectedUsers.length > 0);
@@ -231,25 +387,34 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
-    switch (action) {
-      case 'activate':
-        setUsers(prev => prev.map(user =>
-          selectedUsers.includes(user.id) ? { ...user, status: 'active' as const } : user
-        ));
-        break;
-      case 'suspend':
-        setUsers(prev => prev.map(user =>
-          selectedUsers.includes(user.id) ? { ...user, status: 'suspended' as const } : user
-        ));
-        break;
-      case 'delete':
-        if (confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) {
-          setUsers(prev => prev.filter(user => !selectedUsers.includes(user.id)));
-        }
-        break;
+  const handleBulkAction = async (action: string) => {
+    if (action === 'delete') {
+      if (!confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) return;
+    }
+    // Optimistic local update — refresh after
+    try {
+      await Promise.all(selectedUsers.map(id => {
+        if (action === 'activate') return api.put(`/users/${id}`, { status: 'ACTIVE' });
+        if (action === 'suspend')  return api.put(`/users/${id}`, { status: 'SUSPENDED' });
+        if (action === 'delete')   return api.delete(`/users/${id}`);
+        return Promise.resolve();
+      }));
+      toast.success(`Bulk ${action} applied to ${selectedUsers.length} user(s)`);
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    } catch {
+      toast.error(`Bulk ${action} partially failed — please refresh`);
     }
     setSelectedUsers([]);
+  };
+
+  const handleStatusChange = async (userId: string, newStatus: User['status']) => {
+    try {
+      await api.put(`/users/${userId}`, { status: newStatus.toUpperCase() });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast.success('User status updated');
+    } catch {
+      toast.error('Failed to update status');
+    }
   };
 
   const openUserModal = (user: User) => {
@@ -262,13 +427,12 @@ const UserManagement: React.FC = () => {
     setSelectedUser(null);
   };
 
-  const handleStatusChange = (userId: string, newStatus: User['status']) => {
-    setUsers(prev => prev.map(user =>
-      user.id === userId ? { ...user, status: newStatus } : user
-    ));
+  const openPermModal = (user: User) => {
+    setPermUser(user);
+    setShowPermModal(true);
   };
 
-  if (loading) {
+  if (usersLoading && !usersData) {
     return (
       <AdminPageLayout
         title={<TranslatedText text="User Management" />}
@@ -298,7 +462,38 @@ const UserManagement: React.FC = () => {
         </>
       }
     >
-      {/* Enhanced Filters */}
+      {/* ── Tab Navigation ──────────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-slate-100 mb-6 overflow-hidden">
+        <div className="border-b border-slate-100 bg-slate-50/50">
+          <nav className="flex gap-1 px-6">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2 ${activeTab === 'users' ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            >
+              <FaUsers size={12} />
+              <TranslatedText text="Users" />
+              <span className="ml-1 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[9px] font-black">{users.length}</span>
+            </button>
+            {isSuperAdmin && (
+              <button
+                onClick={() => setActiveTab('role-permissions')}
+                className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2 ${activeTab === 'role-permissions' ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              >
+                <FaShieldAlt size={12} />
+                <TranslatedText text="Role Permissions" />
+              </button>
+            )}
+          </nav>
+        </div>
+      </div>
+
+      {/* ── Role Permissions Tab ─────────────────────────────────────────── */}
+      {activeTab === 'role-permissions' && (
+        <RolePermissionsMatrix />
+      )}
+
+      {/* ── Users Tab ───────────────────────────────────────────────────── */}
+      {activeTab === 'users' && (<>
       <div className="bg-white rounded-lg p-4 lg:p-6 border border-transparent">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div className="relative lg:col-span-2">
@@ -496,8 +691,12 @@ const UserManagement: React.FC = () => {
                           <FaEdit />
                         </button>
                       )}
-                      {canManageUsers && (
-                        <button className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors" title={tSync("Permissions")}>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() => openPermModal(user)}
+                          className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors"
+                          title={tSync("Manage Permissions")}
+                        >
                           <FaShieldAlt />
                         </button>
                       )}
@@ -656,8 +855,14 @@ const UserManagement: React.FC = () => {
                     <TranslatedText text="Edit User" />
                   </button>
                 )}
-                <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors">
-                  <TranslatedText text="Send Message" />
+                <button
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
+                  onClick={() => {
+                    closeUserModal();
+                    if (isSuperAdmin && selectedUser) openPermModal(selectedUser);
+                  }}
+                >
+                  {isSuperAdmin ? <TranslatedText text="Manage Permissions" /> : <TranslatedText text="Send Message" />}
                 </button>
                 {canDeleteUsers && (
                   <button className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg transition-colors">
@@ -669,6 +874,12 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ── Per-User Permissions Modal ───────────────────────────────────── */}
+      {showPermModal && permUser && (
+        <UserPermissionsModal user={permUser} onClose={() => { setShowPermModal(false); setPermUser(null); }} />
+      )}
+      </>)}
     </AdminPageLayout>
   );
 };
