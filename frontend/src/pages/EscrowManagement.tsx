@@ -24,6 +24,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import { adminAPI } from '../services/adminApi';
 import { StatCard } from '../components/EnliteUI';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface EscrowAccount {
   id: string;
@@ -53,6 +54,7 @@ interface EscrowStats {
 }
 
 const EscrowManagement: React.FC = () => {
+  const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedEscrow, setSelectedEscrow] = useState<EscrowAccount | null>(null);
@@ -148,13 +150,6 @@ const EscrowManagement: React.FC = () => {
     });
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
-  };
-
   return (
     <AdminPageLayout
       title={<TranslatedText text="Escrow Management" />}
@@ -191,7 +186,7 @@ const EscrowManagement: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           title={<TranslatedText text="Total in Escrow" />}
-          value={formatCurrency(stats.totalInEscrow, 'USD')}
+          value={fmtMoney(stats.totalInEscrow)}
           icon={<Banknote className="w-5 h-5" />}
           color="primary"
           variant="classic"
@@ -323,7 +318,7 @@ const EscrowManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-black text-gray-900">
-                        {formatCurrency(account.amount, account.currency)}
+                        {fmtFull(account.amount)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -395,7 +390,7 @@ const EscrowManagement: React.FC = () => {
               <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-center">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><TranslatedText text="Escrow Amount" /></div>
                 <div className="text-4xl font-black text-gray-900">
-                  {formatCurrency(selectedEscrow.amount, selectedEscrow.currency)}
+                  {fmtFull(selectedEscrow.amount)}
                 </div>
               </div>
 

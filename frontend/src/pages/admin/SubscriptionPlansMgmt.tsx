@@ -16,6 +16,7 @@ import api from '../../services/api';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // --- Interfaces ---
 interface PlanFeatures {
@@ -58,6 +59,7 @@ const DEFAULT_FEATURES: PlanFeatures = {
 };
 
 const SubscriptionPlansMgmt: React.FC = () => {
+  const { format: fmtFull } = useCurrencyFormat();
   const navigate = useNavigate();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,7 +245,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                 <div className="flex flex-col gap-1">
                   <div className="text-center py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Credit Economics</div>
-                    <div className="text-2xl font-black text-[#2c5173] dark:text-blue-400">${plan.pricePerCredit || 0.15}</div>
+                    <div className="text-2xl font-black text-[#2c5173] dark:text-blue-400">{fmtFull(plan.pricePerCredit || 0.15)}</div>
                     <div className="text-xs text-slate-500">per credit</div>
                   </div>
                 </div>
@@ -255,7 +257,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl space-y-3 mt-2 border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-semibold text-slate-600 dark:text-slate-400">Price per Credit:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">${plan.pricePerCredit || 0.15}</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{fmtFull(plan.pricePerCredit || 0.15)}</span>
                   </div>
                   
                   <div className="flex items-center justify-between text-sm">
@@ -356,7 +358,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Price per Credit ($)</label>
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Price per Credit</label>
                     <input
                       type="number"
                       step="0.01"
@@ -445,9 +447,9 @@ const SubscriptionPlansMgmt: React.FC = () => {
                     {currentPlan.pricePerCredit && (
                       <div className="pt-2 border-t border-blue-100 dark:border-blue-800">
                         <div className="flex items-center justify-between text-sm">
-                           <span className="text-slate-600 dark:text-slate-400">Tenant's Cost (USD):</span>
+                           <span className="text-slate-600 dark:text-slate-400">Tenant's Cost:</span>
                           <span className="font-black text-emerald-600 dark:text-emerald-400">
-                            ${(currentPlan.creditsPerTonTenant * 10 * currentPlan.pricePerCredit).toFixed(2)}
+                            {fmtFull(currentPlan.creditsPerTonTenant * 10 * currentPlan.pricePerCredit)}
                           </span>
                         </div>
                       </div>

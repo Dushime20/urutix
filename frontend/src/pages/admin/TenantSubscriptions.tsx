@@ -7,6 +7,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   FaCreditCard,
   FaSearch,
@@ -54,6 +55,7 @@ interface TenantSubscription {
 }
 
 const TenantSubscriptions: React.FC = () => {
+  const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -192,9 +194,7 @@ const TenantSubscriptions: React.FC = () => {
     },
     {
       label: 'Total Revenue',
-      value: `$${Number(subscriptions.reduce((sum, s) => {
-        return sum + (s.paidAmount || 0);
-      }, 0)).toFixed(2)}`,
+      value: fmtMoney(subscriptions.reduce((sum, s) => sum + (s.paidAmount || 0), 0)),
       icon: FaChartLine,
       color: 'from-purple-500 to-purple-600',
       description: 'Total payments received',
@@ -274,7 +274,7 @@ const TenantSubscriptions: React.FC = () => {
           />
           <StatCard
             title={<TranslatedText text="Total Revenue" />}
-            value={`$${Number(subscriptions.reduce((sum, s) => sum + (s.paidAmount || 0), 0)).toFixed(2)}`}
+            value={fmtMoney(subscriptions.reduce((sum, s) => sum + (s.paidAmount || 0), 0))}
             icon={<FaChartLine className="w-5 h-5" />}
             color="primary"
             variant="classic"
@@ -417,11 +417,11 @@ const TenantSubscriptions: React.FC = () => {
                         <div className="font-medium text-slate-900 capitalize">{subscription.billingCycle}</div>
                         <div className="text-xs text-slate-500">
                           {subscription.plan.pricePerCredit && Number(subscription.plan.pricePerCredit) > 0
-                            ? `$${Number(subscription.plan.pricePerCredit).toFixed(4)}/credit`
+                            ? `${fmtFull(subscription.plan.pricePerCredit)}/credit`
                             : subscription.billingCycle === 'monthly' && subscription.plan.priceMonthly
-                              ? `$${Number(subscription.plan.priceMonthly).toFixed(2)}/mo`
+                              ? `${fmtFull(subscription.plan.priceMonthly)}/mo`
                               : subscription.plan.priceYearly
-                                ? `$${Number(subscription.plan.priceYearly).toFixed(2)}/yr`
+                                ? `${fmtFull(subscription.plan.priceYearly)}/yr`
                                 : 'N/A'
                           }
                         </div>
@@ -433,12 +433,12 @@ const TenantSubscriptions: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-green-600">
-                          ${(subscription.paidAmount || 0).toFixed(2)}
+                          {fmtFull(subscription.paidAmount || 0)}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-blue-600">
-                          ${(subscription.totalAmount || 0).toFixed(2)}
+                          {fmtFull(subscription.totalAmount || 0)}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -582,19 +582,19 @@ const TenantSubscriptions: React.FC = () => {
                     <div>
                       <div className="text-sm text-slate-600">Paid Amount</div>
                       <div className="text-2xl font-bold text-green-600">
-                        ${(selectedSubscription.paidAmount || 0).toFixed(2)}
+                        {fmtFull(selectedSubscription.paidAmount || 0)}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-slate-600">Total Amount</div>
                       <div className="text-2xl font-bold text-blue-600">
-                        ${(selectedSubscription.totalAmount || 0).toFixed(2)}
+                        {fmtFull(selectedSubscription.totalAmount || 0)}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-slate-600">Outstanding</div>
                       <div className="text-2xl font-bold text-orange-600">
-                        ${((selectedSubscription.totalAmount || 0) - (selectedSubscription.paidAmount || 0)).toFixed(2)}
+                        {fmtFull((selectedSubscription.totalAmount || 0) - (selectedSubscription.paidAmount || 0))}
                       </div>
                     </div>
                   </div>
