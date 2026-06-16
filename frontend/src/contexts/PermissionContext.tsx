@@ -39,7 +39,6 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
     const { user } = useAuth();
     const [permissions, setPermissions] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [rolePermissionsCache, setRolePermissionsCache] = useState<Record<string, string[]>>({});
 
     const fetchPermissions = async () => {
         if (!user) {
@@ -55,9 +54,7 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
 
             // Fetch user-specific permissions
             const response = await axios.get(`${baseURL}/auth/permissions`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             let userPermissions: string[] = [];
@@ -65,55 +62,31 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
                 userPermissions = response.data.data || response.data.data?.permissions || [];
             }
 
-            // Fetch role-based permissions from database if not cached
-            // Only fetch if user is an admin (others won't have access to this endpoint)
+            // For admins: also fetch per-user permission detail from RBAC system
             const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user.role);
-            let rolePermissions: string[] = [];
-
-            if (user.role && isAdmin && !rolePermissionsCache[user.role]) {
+            if (isAdmin) {
                 try {
-                    const rolesResponse = await axios.get(`${baseURL}/admin/permissions/roles`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
+                    const detailRes = await axios.get(`${baseURL}/admin/permissions/users/${user.id}/detail`, {
+                        headers: { Authorization: `Bearer ${token}` }
                     });
-
-                    const roles = rolesResponse.data?.data || [];
-                    const role = roles.find((r: any) => r.name === user.role);
-
-                    if (role) {
-                        rolePermissions = role.permissions.map((p: any) => `${p.resource}:${p.action}`);
-
-                        // Cache role permissions
-                        setRolePermissionsCache(prev => ({
-                            ...prev,
-                            [user.role]: rolePermissions
-                        }));
+                    if (detailRes.data?.success && detailRes.data?.data?.permissions) {
+                        const rbacPerms = (detailRes.data.data.permissions as any[])
+                            .filter((p: any) => p.effective)
+                            .map((p: any) => p.code);
+                        userPermissions = Array.from(new Set([...userPermissions, ...rbacPerms]));
                     }
-                } catch (roleError: any) {
-                    // Silently handle 403 errors (user doesn't have admin access)
-                    // This is expected for non-admin users
-                    if (roleError?.response?.status !== 403) {
-                        console.warn('Could not fetch role permissions from database, using user permissions only:', roleError);
-                    }
+                } catch (_) {
+                    // Non-critical: fall back to role-based
                 }
-            } else if (user.role && rolePermissionsCache[user.role]) {
-                rolePermissions = rolePermissionsCache[user.role];
             }
 
-            // Merge user-specific and role-based permissions (user-specific takes precedence)
-            const allPermissions = Array.from(new Set([...rolePermissions, ...userPermissions]));
-            setPermissions(allPermissions);
+            setPermissions(userPermissions);
 
         } catch (error: any) {
             console.error('Error fetching permissions:', error);
-
-            // If it's a 500 error, the permissions system might not be set up yet
-            // Set empty permissions array and continue (don't block the app)
             if (error?.response?.status === 500) {
-                console.warn('Permissions system not available (500 error). Using role-based access only.');
+                console.warn('Permissions system not available. Using role-based access only.');
             }
-
             setPermissions([]);
         } finally {
             setIsLoading(false);

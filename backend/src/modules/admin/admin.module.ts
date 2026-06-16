@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { getDataSourceToken } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
-import { OperationalAdminController } from './operational-admin.controller';
-import { AdminService } from './admin.service';
+import { OperationalAdminController } from './operational-admin.controller';import { AdminService } from './admin.service';
 import { UsersModule } from '../users/users.module';
 import { User } from '../../entities/user.entity';
 import { Payment } from '../../entities/payment.entity';
@@ -67,6 +68,7 @@ import { PermissionHelper } from '../../utils/permission-helper';
 import { SecurityEvent } from '../../entities/security-event.entity';
 import { SecurityCenterController } from './security-center.controller';
 import { SecurityCenterService } from '../../services/security-center.service';
+import { PermissionTableInitService } from '../../services/permission-table-init.service';
 
 // Tenant Management imports
 import { TenantManagementController } from './tenant-management.controller';
@@ -152,6 +154,8 @@ import { TenantManagementController } from './tenant-management.controller';
     SecurityCenterService,
     // Permission utilities
     PermissionHelper,
+    // Permission table initializer (creates tables + seeds data at startup)
+    PermissionTableInitService,
     // EmailService is imported from EnhancedAuthModule, don't redeclare it here
   ],
   exports: [
