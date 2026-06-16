@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, ChevronDown, LogOut, Settings, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server } from 'lucide-react';
+import { Search, User, ChevronDown, LogOut, Settings, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server, DollarSign, ShieldCheck, Gavel, FileText, Landmark, UserCircle, FileCheck, Tags, CreditCard, Key, ClipboardList, Bell, UserCheck, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminNotificationDropdown from './AdminNotificationDropdown';
 import ThemeToggle from '../Theme/ThemeToggle';
@@ -232,10 +232,46 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                         ]
                                     },
                                     {
+                                        title: 'Financial',
+                                        items: [
+                                            { label: 'Transactions', icon: DollarSign, path: '/admin/financial' },
+                                            { label: 'Escrow', icon: ShieldCheck, path: '/admin/escrow-management' },
+                                            { label: 'Disputes', icon: Gavel, path: '/admin/disputes' },
+                                            { label: 'Bidding', icon: FileText, path: '/admin/bidding' },
+                                        ]
+                                    },
+                                    {
+                                        title: 'Lending',
+                                        items: [
+                                            { label: 'Lenders', icon: Landmark, path: '/admin/lenders/register' },
+                                            { label: 'Borrowers', icon: UserCircle, path: '/admin/borrowers' },
+                                        ]
+                                    },
+                                    {
+                                        title: 'Subscription',
+                                        items: [
+                                            { label: 'Subscriptions', icon: FileCheck, path: '/admin/subscriptions' },
+                                            { label: 'Subscription Plans', icon: FileText, path: '/admin/subscription-plans' },
+                                            { label: 'Pricing Rules', icon: Tags, path: '/admin/pricing-rules' },
+                                            { label: 'Credit Usage', icon: CreditCard, path: '/admin/credit-usage' },
+                                        ]
+                                    },
+                                    {
+                                        title: 'Security',
+                                        items: [
+                                            { label: 'Permissions', icon: Shield, path: '/admin/permissions' },
+                                            { label: 'Roles', icon: UserCheck, path: '/admin/roles' },
+                                            { label: 'Enhanced Permissions', icon: Key, path: '/admin/enhanced-permissions' },
+                                            { label: 'Activity Logs', icon: ClipboardList, path: '/admin/activity-logs' },
+                                        ]
+                                    },
+                                    {
                                         title: 'System',
                                         items: [
                                             { label: 'Monitoring', icon: Server, path: '/admin/monitoring' },
-                                            { label: 'Advanced Settings', icon: Settings, path: '/admin/advanced-settings' },
+                                            { label: 'Bulk Email', icon: Mail, path: '/admin/bulk-email' },
+                                            { label: 'Onboarding', icon: Bell, path: '/admin/onboarding' },
+                                            { label: 'Settings', icon: Settings, path: '/admin/advanced-settings' },
                                         ]
                                     }
                                 ].map((category, idx) => (

@@ -232,9 +232,13 @@ export class CurrencyService {
       if (rates.length > 0) {
         this.cacheUpdatedAt = rates[0].fetchedAt;
         this.logger.log(`✅ Loaded ${rates.length} exchange rates from DB`);
+      } else {
+        // DB has no rates yet — apply bootstrap so the API doesn't return empty
+        this.applyBootstrapRates();
       }
     } catch (err) {
       this.logger.warn(`Could not load rates from DB: ${err.message}`);
+      this.applyBootstrapRates();
     }
   }
 
@@ -251,6 +255,7 @@ export class CurrencyService {
       let fetchedRates: RateMap = {};
       let source = 'unknown';
 
+      // Provider 1: open.er-api.com (free, no key required)
       try {
         const res = await axios.get(
           `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`,
@@ -260,18 +265,42 @@ export class CurrencyService {
           fetchedRates = res.data.rates;
           source = 'open.er-api.com';
         }
-      } catch {
+      } catch { /* try next */ }
+
+      // Provider 2: fawazahmed0 currency API (free, no key required, GitHub CDN)
+      if (Object.keys(fetchedRates).length === 0) {
         try {
+          const today = new Date().toISOString().slice(0, 10);
           const res2 = await axios.get(
-            `https://api.exchangerate.host/latest?base=${BASE_CURRENCY}&symbols=${targetCodes.join(',')}`,
+            `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${today}/v1/currencies/${BASE_CURRENCY.toLowerCase()}.json`,
             { timeout: 8000 },
           );
-          if (res2.data?.rates) {
-            fetchedRates = res2.data.rates;
-            source = 'exchangerate.host';
+          const nested = res2.data?.[BASE_CURRENCY.toLowerCase()];
+          if (nested && typeof nested === 'object') {
+            // Convert keys to uppercase to match our convention
+            Object.entries(nested).forEach(([k, v]) => {
+              fetchedRates[k.toUpperCase()] = Number(v);
+            });
+            source = 'fawazahmed0-cdn';
           }
-        } catch (err2) {
-          this.logger.warn(`Both rate providers failed: ${err2.message}. Using cached rates.`);
+        } catch { /* try next */ }
+      }
+
+      // Provider 3: frankfurter.app (free, ECB rates, no key required)
+      if (Object.keys(fetchedRates).length === 0) {
+        try {
+          const res3 = await axios.get(
+            `https://api.frankfurter.app/latest?from=${BASE_CURRENCY}`,
+            { timeout: 8000 },
+          );
+          if (res3.data?.rates) {
+            fetchedRates = { ...res3.data.rates };
+            source = 'frankfurter.app';
+          }
+        } catch (err3) {
+          this.logger.warn(`All rate providers failed: ${err3.message}. Using cached/bootstrap rates.`);
+          // Apply bootstrap rates for currencies missing from cache
+          this.applyBootstrapRates();
           return;
         }
       }
@@ -320,6 +349,7 @@ export class CurrencyService {
   /** Fetch rate for a single currency (used after adding a new one). */
   private async fetchSingleRate(code: string): Promise<void> {
     try {
+      // Try primary provider first
       const res = await axios.get(
         `https://open.er-api.com/v6/latest/${BASE_CURRENCY}`,
         { timeout: 8000 },
@@ -334,9 +364,68 @@ export class CurrencyService {
         });
         this.rateCache[code] = rate;
         this.logger.log(`✅ Fetched rate for new currency ${code}: ${rate}`);
+        return;
+      }
+    } catch { /* fall through */ }
+
+    // Fallback: fawazahmed0 CDN
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const res2 = await axios.get(
+        `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${today}/v1/currencies/${BASE_CURRENCY.toLowerCase()}.json`,
+        { timeout: 8000 },
+      );
+      const nested = res2.data?.[BASE_CURRENCY.toLowerCase()];
+      const rate = nested?.[code.toLowerCase()];
+      if (rate != null) {
+        await this.exchangeRateRepo.save({
+          baseCurrency: BASE_CURRENCY,
+          targetCurrency: code,
+          rate,
+          source: 'fawazahmed0-cdn',
+        });
+        this.rateCache[code] = Number(rate);
+        this.logger.log(`✅ Fetched rate for ${code} from fawazahmed0: ${rate}`);
       }
     } catch (err) {
       this.logger.warn(`Could not fetch rate for ${code}: ${err.message}`);
+    }
+  }
+
+  /**
+   * Apply approximate bootstrap rates for currencies not yet in cache.
+   * Used only as a last resort when all live providers are unreachable.
+   * These are approximate mid-market rates vs USD — updated periodically.
+   */
+  private applyBootstrapRates(): void {
+    const bootstrap: RateMap = {
+      EUR: 0.92,
+      GBP: 0.79,
+      JPY: 149.50,
+      CHF: 0.90,
+      AUD: 1.53,
+      CAD: 1.36,
+      CNY: 7.24,
+      RWF: 1469.00,
+      KES: 132.00,
+      UGX: 3750.00,
+      TZS: 2650.00,
+      ZAR: 18.60,
+      NGN: 1580.00,
+      EGP: 48.50,
+      INR: 83.20,
+      AED: 3.67,
+      SAR: 3.75,
+    };
+    let applied = 0;
+    Object.entries(bootstrap).forEach(([code, rate]) => {
+      if (!this.rateCache[code]) {
+        this.rateCache[code] = rate;
+        applied++;
+      }
+    });
+    if (applied > 0) {
+      this.logger.warn(`⚠️ Applied ${applied} bootstrap fallback rates (live APIs unreachable)`);
     }
   }
 

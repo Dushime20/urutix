@@ -1,4 +1,4 @@
-﻿import { useState } from "react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import {
@@ -211,13 +211,7 @@ function Hero() {
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.9, delay: 0.3 }}
-        className="absolute z-20"
-        style={{
-          bottom: "-90px",
-          left: "-40px",
-          width: "480px",
-          height: "480px",
-        }}
+        className="absolute z-0 pointer-events-none w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] lg:w-[480px] lg:h-[480px] left-4 lg:left-8 -bottom-12 lg:-bottom-24"
       >
         {/* Outer ring */}
         <div

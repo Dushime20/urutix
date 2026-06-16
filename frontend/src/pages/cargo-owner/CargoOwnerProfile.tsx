@@ -3,10 +3,11 @@ import {
   User, Mail, Phone, Building2, Shield, Calendar,
   Edit3, Save, X, CheckCircle2, Key, Clock, Activity,
   Lock, Eye, EyeOff, RefreshCw, Package, TrendingUp,
-  Star, MapPin, Globe, FileText,
+  Star, MapPin, Globe, FileText, Settings,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
+import CurrencySelector from '../../components/common/CurrencySelector';
 import toast from 'react-hot-toast';
 
 // ─── shared micro-components ──────────────────────────────────────────────────
@@ -113,7 +114,7 @@ const Badge: React.FC<{ label: string; color: string }> = ({ label, color }) => 
   </span>
 );
 
-type Tab = 'profile' | 'password';
+type Tab = 'profile' | 'password' | 'preferences';
 
 // ─── main ─────────────────────────────────────────────────────────────────────
 
@@ -269,8 +270,9 @@ const CargoOwnerProfile: React.FC = () => {
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
       <div className="flex gap-1 bg-gray-100 dark:bg-slate-800 rounded-xl p-1 w-fit">
         {([
-          { key: 'profile',  label: 'Profile Info',     icon: <User size={14} /> },
-          { key: 'password', label: 'Change Password',  icon: <Lock size={14} /> },
+          { key: 'profile',     label: 'Profile Info',     icon: <User size={14} /> },
+          { key: 'password',    label: 'Change Password',  icon: <Lock size={14} /> },
+          { key: 'preferences', label: 'Preferences',      icon: <Settings size={14} /> },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -570,6 +572,23 @@ const CargoOwnerProfile: React.FC = () => {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Preferences tab ───────────────────────────────────────────────── */}
+      {tab === 'preferences' && (
+        <div className="max-w-2xl space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-gray-100 dark:border-slate-800">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Settings size={15} className="text-[#345E85]" /> Display Preferences
+            </h3>
+            <div className="space-y-2">
+              <CurrencySelector variant="settings" />
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-relaxed">
+                All monetary values across the platform will display in your selected currency. Changes take effect immediately.
+              </p>
             </div>
           </div>
         </div>

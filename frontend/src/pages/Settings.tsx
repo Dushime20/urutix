@@ -22,7 +22,8 @@ import {
   X,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import currencyApi, {
+import currencyApi from '../services/currencyApi';
+import type {
   AdminCurrency,
   CreateCurrencyPayload,
   UpdateCurrencyPayload,

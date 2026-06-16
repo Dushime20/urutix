@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../translated-text';
 import { motion } from 'framer-motion';
+import CurrencySelector from '../common/CurrencySelector';
 
 export const DriverSettings: React.FC = () => {
   const { logout } = useAuth();
@@ -124,6 +125,13 @@ export const DriverSettings: React.FC = () => {
                 </div>
               </div>
               <Toggle checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
+            </div>
+
+            <div className="pt-2 border-t border-slate-50 space-y-2">
+              <CurrencySelector variant="settings" />
+              <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                All monetary values on the platform will display in your selected currency. Changes take effect immediately.
+              </p>
             </div>
           </div>
         </section>

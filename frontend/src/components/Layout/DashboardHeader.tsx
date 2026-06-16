@@ -564,7 +564,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                           user?.role === 'TENANT_ADMIN' ? '/tenant-admin/settings' :
                           user?.role === 'BROKER' ? '/dashboard/broker/profile' :
                           user?.role === 'TRUCK_OWNER' ? '/dashboard/fleet/settings' :
-                          user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' :
+                          user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs/profile' :
                           '/dashboard/settings'}
                       onClick={() => setShowUserMenu(false)}
                       className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
@@ -799,6 +799,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lang</span>
                         <LanguageSwitcher />
                       </div>
+                    </div>
+                    <div className="mt-1 pt-1 border-t border-slate-100 dark:border-slate-700 px-1.5 pb-0.5 flex items-center justify-between">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Currency</span>
+                      <CurrencySelector variant="compact" />
                     </div>
                   </div>
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type Broker } from '../../services/brokerApi';
 import DocumentUpload from '../../components/broker/DocumentUpload';
+import CurrencySelector from '../../components/common/CurrencySelector';
 import { 
   User, 
   Building2, 
@@ -18,7 +19,9 @@ import {
   Shield,
   Activity,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Settings,
+  Palette,
 } from 'lucide-react';
 
 const BrokerProfile: React.FC = () => {
@@ -28,6 +31,7 @@ const BrokerProfile: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'profile' | 'preferences'>('profile');
 
   useEffect(() => {
     if (user && user.role === 'BROKER') {
@@ -117,6 +121,32 @@ const BrokerProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex gap-2 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 w-fit">
+        {[
+          { id: 'profile' as const, label: 'Profile', icon: User },
+          { id: 'preferences' as const, label: 'Preferences', icon: Settings },
+        ].map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white dark:bg-slate-900 text-[#345E85] dark:text-blue-400 shadow-sm border border-slate-200 dark:border-slate-700'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <Icon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab: Profile */}
+      {activeTab === 'profile' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
         {/* Compliance Guard */}
         <div className="lg:col-span-1 space-y-10">
@@ -212,6 +242,28 @@ const BrokerProfile: React.FC = () => {
           </div>
         </div>
       </div>
+      )} {/* end activeTab === 'profile' */}
+
+      {/* Tab: Preferences */}
+      {activeTab === 'preferences' && (
+        <div className="space-y-8 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 md:p-14 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase flex items-center gap-3 mb-10">
+              <Palette size={18} className="text-[#345E85]" /> Display Preferences
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl">
+              {/* Currency */}
+              <div>
+                <CurrencySelector variant="settings" />
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                  All monetary values across the platform will display in your selected currency.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )} {/* end activeTab === 'preferences' */}
+
     </div>
   );
 };

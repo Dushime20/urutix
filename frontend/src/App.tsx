@@ -195,6 +195,7 @@ const ClearedShipmentsPage = lazy(() => import('./pages/customs/ClearedShipments
 const CheckpointsPage = lazy(() => import('./pages/customs/CheckpointsPage'));
 const CustomsAnalyticsPage = lazy(() => import('./pages/customs/CustomsAnalyticsPage'));
 const CustomsAuditPage = lazy(() => import('./pages/customs/CustomsAuditPage'));
+const CustomsOfficerProfilePage = lazy(() => import('./pages/customs/CustomsOfficerProfilePage'));
 
 // Broker Pages
 const SimpleBrokerDashboard = lazy(() => import('./pages/broker/BrokerDashboard'));
@@ -675,6 +676,8 @@ function App() {
                       <Route path="analytics" element={<CustomsAnalyticsPage />} />
                       <Route path="audit" element={<CustomsAuditPage />} />
                       <Route path="reports" element={<CustomsAuditPage />} />
+                      <Route path="profile" element={<CustomsOfficerProfilePage />} />
+                      <Route path="settings" element={<CustomsOfficerProfilePage />} />
                     </Route>
                     <Route path="/customs" element={<Navigate to="/dashboard/customs" replace />} />
 

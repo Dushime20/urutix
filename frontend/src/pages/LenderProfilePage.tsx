@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
+import CurrencySelector from '../components/common/CurrencySelector';
 import {
   User,
   Building,
@@ -1233,16 +1234,10 @@ const LenderProfilePage: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-              <select
-                value={profile.preferences.currency}
-                onChange={(e) => handleInputChange('preferences', 'currency', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="USD">USD - US Dollar</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="GBP">GBP - British Pound</option>
-                <option value="CAD">CAD - Canadian Dollar</option>
-              </select>
+              <CurrencySelector variant="settings" />
+              <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
+                All monetary values across the platform will display in your selected currency. Changes take effect immediately.
+              </p>
             </div>
 
             <div>

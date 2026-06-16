@@ -3,6 +3,7 @@ import { authAPI, fleetAPI } from '../services/api';
 import { documentApi } from '../services/documents/documentApi';
 import { useAuth } from '../contexts/AuthContext';
 import ModernLoader from '../components/common/ModernLoader';
+import CurrencySelector from '../components/common/CurrencySelector';
 import { 
   User, 
   Building, 
@@ -786,23 +787,11 @@ const TruckOwnerProfilePage: React.FC = () => {
                     />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-4">PREFERRED SETTLEMENT CURRENCY</Typography>
-                    <TextField 
-                      select
-                      fullWidth 
-                      value={profile.preferences?.currency || 'USD'}
-                      onChange={(e) => handleInputChange('preferences', 'currency', e.target.value)}
-                      sx={inputStyles}
-                      InputProps={{
-                        startAdornment: <InputAdornment position="start"><CreditCard size={16} className="text-slate-400" /></InputAdornment>,
-                      }}
-                    >
-                      {CURRENCIES.map((currency) => (
-                        <MenuItem key={currency.code} value={currency.code} className="font-bold text-slate-700">
-                          {currency.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                    <Typography className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-4">PREFERRED DISPLAY CURRENCY</Typography>
+                    <CurrencySelector variant="settings" />
+                    <p className="text-[10px] text-slate-400 mt-1.5 ml-2">
+                      All monetary values will display in your selected currency. Changes take effect immediately.
+                    </p>
                   </Grid>
                 </Grid>
               </div>

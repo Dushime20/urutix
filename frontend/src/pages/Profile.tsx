@@ -15,6 +15,7 @@ import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 import { toast } from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
+import CurrencySelector from '../components/common/CurrencySelector';
 
 // Helper for BarChart if needed, or just use plain icon
 const BarChart = ({ size }: { size: number }) => (
@@ -679,7 +680,14 @@ const Profile: React.FC = () => {
                             </select>
                          </div>
                       </div>
-                      
+
+                      <div className="space-y-2">
+                         <CurrencySelector variant="settings" />
+                         <p className="text-[10px] text-slate-400 pl-1 leading-relaxed">
+                            All monetary values across the platform will display in your selected currency. Changes take effect immediately.
+                         </p>
+                      </div>
+
                       <div className="md:col-span-2">
                          <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-5">

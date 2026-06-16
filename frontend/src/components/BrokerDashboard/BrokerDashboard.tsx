@@ -4,6 +4,7 @@ import { BrokerDashboardOverview } from './BrokerDashboardOverview';
 import { brokerAPI } from '../../services/brokerApi';
 import { biddingAPI } from '../../services/biddingApi-fixed';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 import DashboardHeader from '../Layout/DashboardHeader';
 import DashboardFooter from '../Layout/DashboardFooter';
@@ -11,6 +12,7 @@ import { DashboardSkeleton } from '../common/LoadingSkeletons';
 
 export const BrokerDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { compact } = useCurrencyFormat();
 
   
   // Real data states
@@ -49,7 +51,7 @@ export const BrokerDashboard: React.FC = () => {
           id: auc.id || auc._id,
           cargoTitle: auc.loadId ? `Load ${auc.loadId.substring(0,6)}` : 'Auction',
           bidsCount: auc.bidsCount || 0,
-          lowestBid: `$${auc.lowestBid || 0}`,
+          lowestBid: compact(auc.lowestBid || 0),
           timeLeft: new Date(auc.auctionEnd) > new Date() ? 'Active' : 'Ended',
           status: auc.status === 'CLOSING' ? 'closing' : 'active'
         }));

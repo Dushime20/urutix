@@ -67,6 +67,29 @@ interface CurrencyContextValue {
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
+// ── Bootstrap rates (USD base) — placeholder while live rates load ────────────
+// Approximate mid-market rates. Replaced by live data as soon as the backend responds.
+const BOOTSTRAP_RATES: RateMap = {
+  USD: 1,
+  EUR: 0.92,
+  GBP: 0.79,
+  JPY: 149.50,
+  CHF: 0.90,
+  AUD: 1.53,
+  CAD: 1.36,
+  CNY: 7.24,
+  RWF: 1469.00,
+  KES: 132.00,
+  UGX: 3750.00,
+  TZS: 2650.00,
+  ZAR: 18.60,
+  NGN: 1580.00,
+  EGP: 48.50,
+  INR: 83.20,
+  AED: 3.67,
+  SAR: 3.75,
+};
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 const LOCAL_KEY = 'urutix_preferred_currency';
@@ -102,9 +125,11 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     staleTime: 60 * 60 * 1000,
     refetchInterval: 60 * 60 * 1000,
     retry: 2,
+    // Use bootstrap rates as placeholder so conversion works instantly on first render
+    placeholderData: { base: 'USD', rates: BOOTSTRAP_RATES, updatedAt: null },
   });
 
-  const rates: RateMap = { USD: 1, ...(ratesData?.rates ?? {}) };
+  const rates: RateMap = { USD: 1, ...(ratesData?.rates ?? BOOTSTRAP_RATES) };
 
   // ── Load user preference from backend on mount (if authenticated) ─────────
   useEffect(() => {
@@ -215,7 +240,6 @@ export const useCurrency = (): CurrencyContextValue => {
   return ctx;
 };
 
-// Keep named exports for any code that still imports SUPPORTED_CURRENCIES / CURRENCY_MAP
-// These are now derived from the fallback list — they will be correct for most cases
-// and the live data is always available via useCurrency().supportedCurrencies
+// Keep named exports for any code that still imports SUPPORTED_CURRENCIES
+// The live data is always available via useCurrency().supportedCurrencies
 export { FALLBACK_CURRENCIES as SUPPORTED_CURRENCIES };

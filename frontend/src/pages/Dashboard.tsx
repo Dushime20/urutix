@@ -82,6 +82,7 @@ const CargoOwnerDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { DialogComponent } = useConfirmDialog();
+  const { compact: formatCurrency } = useCurrencyFormat();
 
   // Onboarding state
   const shouldShowOnboarding = useShouldShowOnboarding();

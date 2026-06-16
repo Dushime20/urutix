@@ -11,16 +11,9 @@ import {
 import { brokerAPI } from '../../services/brokerApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const fmt = (n: number | string | null | undefined) => {
-  const num = Number(n) || 0;
-  return num >= 1_000_000
-    ? `$${(num / 1_000_000).toFixed(1)}M`
-    : num >= 1_000
-    ? `$${(num / 1_000).toFixed(1)}K`
-    : `$${num.toFixed(0)}`;
-};
 
 const pct = (a: number, b: number) =>
   b === 0 ? 0 : Math.round(((a - b) / b) * 100);
@@ -39,6 +32,7 @@ interface BrokerDashboardOverviewProps {
 
 export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = ({ stats }) => {
   const { user } = useAuth();
+  const { compact: fmt } = useCurrencyFormat();
 
   // ── extended stats from API ──────────────────────────────────────────────────
   const [brokerStats, setBrokerStats] = useState<any>(null);

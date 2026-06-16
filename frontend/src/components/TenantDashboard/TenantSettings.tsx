@@ -9,6 +9,7 @@ import { tenantApi, type TenantInfo } from '../../services/tenantApi';
 import { toast } from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import CurrencySelector from '../common/CurrencySelector';
 
 interface TenantSettingsProps {
     tenantId: string;
@@ -226,16 +227,10 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                     <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight mb-4"><TranslatedText text="Localization" /></h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Currency" /></label>
-                                            <div className="relative">
-                                                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
-                                                <select className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 appearance-none">
-                                                    <option>USD ($)</option>
-                                                    <option>KES (KSh)</option>
-                                                    <option>EUR (€)</option>
-                                                    <option>RWF (RWF)</option>
-                                                </select>
-                                            </div>
+                                            <CurrencySelector variant="settings" />
+                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                                                Changes take effect immediately across the platform.
+                                            </p>
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Timezone" /></label>
