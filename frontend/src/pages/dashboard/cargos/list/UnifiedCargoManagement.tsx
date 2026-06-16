@@ -39,7 +39,7 @@ import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizar
 import { getStatusColor, getStatusDisplayName } from "./utils";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 
-type TabType = "all" | "active" | "drafts" | "create" | "template" | "bidding";
+type TabType = "all" | "active" | "drafts" | "broker-managed" | "create" | "template" | "bidding";
 
 const UnifiedCargoManagement = () => {
   const { user } = useAuth();
@@ -55,6 +55,7 @@ const UnifiedCargoManagement = () => {
 
     if (tabParam === "template") return "template";
     if (tabParam === "drafts") return "drafts";
+    if (tabParam === "broker-managed") return "broker-managed";
     if (location.pathname.includes("/cargos/create")) return "create";
     if (location.pathname.includes("/cargos/active")) return "active";
     if (location.pathname.includes("/bidding")) return "bidding";
@@ -96,6 +97,8 @@ const UnifiedCargoManagement = () => {
       navigate(`${basePath}/cargos/active`, { replace: true });
     } else if (tab === "drafts") {
       navigate(`${basePath}/cargos/list?tab=drafts`, { replace: true });
+    } else if (tab === "broker-managed") {
+      navigate(`${basePath}/cargos/list?tab=broker-managed`, { replace: true });
     } else if (tab === "bidding") {
       navigate(`${basePath}/bidding`, { replace: true });
     } else {
@@ -292,24 +295,45 @@ const UnifiedCargoManagement = () => {
     };
   }, [loadsData, queryClient, searchTerm, statusFilter, cargoTypeFilter]);
 
-  // Filter for active shipments
+  // Filter for active shipments (exclude broker-managed)
   const activeLoads = useMemo(() => {
     return loadsData.filter(
       (load: any) =>
-        load.status === "IN_TRANSIT" ||
-        load.status === "ASSIGNED" ||
-        load.status === "PUBLISHED"
+        !load.brokerId &&
+        !load.broker &&
+        (load.status === "IN_TRANSIT" ||
+          load.status === "ASSIGNED" ||
+          load.status === "PUBLISHED")
     );
   }, [loadsData]);
 
-  // Filter for drafts
+  // Filter for drafts (exclude broker-managed)
   const draftLoads = useMemo(() => {
-    return loadsData.filter((load: any) => load.status === "DRAFT");
+    return loadsData.filter((load: any) => load.status === "DRAFT" && !load.brokerId && !load.broker);
+  }, [loadsData]);
+
+  // Broker-managed cargos — cargo owner has no more action on these
+  const brokerManagedLoads = useMemo(() => {
+    return loadsData.filter((load: any) => !!(load.brokerId || load.broker));
   }, [loadsData]);
 
   // Filter loads based on search and filters
   const filteredLoads = useMemo(() => {
-    let filtered = activeTab === "active" ? activeLoads : activeTab === "drafts" ? draftLoads : loadsData.filter((load: any) => load.status !== "DRAFT");
+    // "all" and "active" never show broker-managed cargo (owner has no action)
+    // "broker-managed" shows only broker-assigned cargo
+    let filtered =
+      activeTab === "active"
+        ? activeLoads
+        : activeTab === "drafts"
+        ? draftLoads
+        : activeTab === "broker-managed"
+        ? brokerManagedLoads
+        : loadsData.filter(
+            (load: any) =>
+              load.status !== "DRAFT" &&
+              !load.brokerId &&
+              !load.broker
+          );
 
     if (searchTerm && searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
@@ -347,8 +371,10 @@ const UnifiedCargoManagement = () => {
   // Statistics - only calculate what's needed for tab badges
   // Full statistics are available in the analytics page
   const stats = useMemo(() => {
+    // Exclude broker-managed from the total shown to owners
+    const ownerActionable = loadsData.filter((load: any) => !load.brokerId && !load.broker);
     return {
-      total: loadsData.length,
+      total: ownerActionable.length,
     };
   }, [loadsData]);
 
@@ -618,6 +644,15 @@ const UnifiedCargoManagement = () => {
       icon: FileText,
       count: draftLoads.length,
     },
+    // Show broker-managed tab only if at least one cargo has a broker
+    ...(brokerManagedLoads.length > 0
+      ? [{
+          id: "broker-managed" as TabType,
+          label: "Managed by Broker",
+          icon: Users,
+          count: brokerManagedLoads.length,
+        }]
+      : []),
     {
       id: "create" as TabType,
       label: "Create Cargo",
@@ -628,7 +663,7 @@ const UnifiedCargoManagement = () => {
       label: "Create from Template",
       icon: FileText,
     },
-    // Hide bidding tab if broker is assigned
+    // Hide bidding tab if any broker is assigned (broker handles bidding)
     ...(!hasBrokerAssigned ? [{
       id: "bidding" as TabType,
       label: "Bidding",
@@ -717,7 +752,7 @@ const UnifiedCargoManagement = () => {
 
             {/* Tab Content */}
             <div className="p-3 sm:p-4 md:p-6 pt-3 sm:pt-4 md:pt-6">
-              {/* Filters - Only show for list views */}
+              {/* Filters - Only show for owner-action list views */}
               {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
                 <div className="mb-4 sm:mb-8">
                   <div className="flex flex-col gap-4 w-full">
@@ -856,8 +891,8 @@ const UnifiedCargoManagement = () => {
                 </div>
               )}
 
-              {/* All Cargo / Active / Drafts Tab */}
-              {(activeTab === "all" || activeTab === "active" || activeTab === "drafts") && (
+              {/* All Cargo / Active / Drafts / Broker-Managed Tab */}
+              {(activeTab === "all" || activeTab === "active" || activeTab === "drafts" || activeTab === "broker-managed") && (
                 <div>
                   {isLoading ? (
                     <div className="text-center py-8 sm:py-12">
@@ -874,14 +909,16 @@ const UnifiedCargoManagement = () => {
                     <div className="text-center py-8 sm:py-12 px-3 sm:px-4">
                       <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 dark:text-slate-600 mx-auto mb-3 sm:mb-4" />
                       <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">
-                        No cargo found
+                        {activeTab === "broker-managed" ? "No broker-managed cargo" : "No cargo found"}
                       </h3>
                       <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mb-4">
                         {activeTab === "active"
                           ? "No active shipments at the moment."
                           : activeTab === "drafts"
-                            ? "No saved drafts. Start creating cargo to save drafts."
-                            : "Create your first cargo shipment to get started."}
+                          ? "No saved drafts. Start creating cargo to save drafts."
+                          : activeTab === "broker-managed"
+                          ? "None of your cargo has been assigned to a broker yet."
+                          : "Create your first cargo shipment to get started."}
                       </p>
                       {!isReceiver && (activeTab === "all" || activeTab === "drafts") && (
                         <div className="mt-8 flex justify-center">
@@ -897,6 +934,18 @@ const UnifiedCargoManagement = () => {
                     </div>
                   ) : (
                     <>
+                      {/* Broker-managed info banner */}
+                      {activeTab === "broker-managed" && (
+                        <div className="mb-4 flex items-start gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl">
+                          <Users className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-black text-purple-800 dark:text-purple-300 uppercase tracking-wide">Managed by Broker</p>
+                            <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                              These cargo records have been handed off to a broker. You can view details and track progress, but no further owner actions are required.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       {viewMode === 'card' ? (
                         <div className="space-y-2 sm:space-y-3 w-full overflow-hidden">
                           {filteredLoads.map((load: any) => (
@@ -904,12 +953,13 @@ const UnifiedCargoManagement = () => {
                               key={load.id}
                               load={load}
                               handleViewClick={handleViewClick}
-                              handleConfirmLoading={isReceiver ? undefined : handleConfirmLoading}
-                              handleDeleteCargo={isReceiver ? undefined : handleDeleteCargo}
-                              handleEditCargo={isReceiver ? undefined : handleEditCargo}
-                              handleAssignBroker={isReceiver ? undefined : handleAssignBroker}
+                              // No owner actions on broker-managed cargo
+                              handleConfirmLoading={isReceiver || activeTab === "broker-managed" ? undefined : handleConfirmLoading}
+                              handleDeleteCargo={isReceiver || activeTab === "broker-managed" ? undefined : handleDeleteCargo}
+                              handleEditCargo={isReceiver || activeTab === "broker-managed" ? undefined : handleEditCargo}
+                              handleAssignBroker={isReceiver || activeTab === "broker-managed" ? undefined : handleAssignBroker}
                               handleUnassignBroker={isReceiver ? undefined : handleUnassignBroker}
-                              handleAssignReceiver={isReceiver ? undefined : handleAssignReceiver}
+                              handleAssignReceiver={isReceiver || activeTab === "broker-managed" ? undefined : handleAssignReceiver}
                             />
                           ))}
                         </div>

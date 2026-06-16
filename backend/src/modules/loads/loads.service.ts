@@ -910,10 +910,10 @@ export class LoadsService {
           where: brokerIds.map((userId) => ({ userId })),
         });
 
-        // Fetch broker user emails
+        // Fetch broker user emails, phone and status
         const brokerUsers = await this.userRepository.find({
           where: brokerIds.map((id) => ({ id })),
-          select: ['id', 'email'],
+          select: ['id', 'email', 'phone', 'status'],
         });
 
         this.logger.debug(`Found ${brokerProfiles.length} broker profiles and ${brokerUsers.length} broker users`);
@@ -923,25 +923,29 @@ export class LoadsService {
         );
 
         const userMap = new Map(
-          brokerUsers.map((user) => [user.id, user.email]),
+          brokerUsers.map((user) => [user.id, user]),
         );
 
         // Map profiles and emails to broker objects
         loads.forEach((load) => {
           if (load.brokerId) {
+            const brokerUser = userMap.get(load.brokerId);
             // If broker relation isn't loaded, create a broker object
             if (!load.broker) {
-              const brokerEmail = userMap.get(load.brokerId) || 'Broker Assigned';
+              const brokerEmail = brokerUser?.email || 'Broker Assigned';
               (load as any).broker = {
                 id: load.brokerId,
                 email: brokerEmail,
+                phone: brokerUser?.phone,
+                status: brokerUser?.status,
               };
-            } else if (!load.broker.email) {
-              // If broker exists but no email, fetch it
-              const brokerEmail = userMap.get(load.brokerId);
-              if (brokerEmail) {
-                load.broker.email = brokerEmail;
+            } else {
+              if (!load.broker.email && brokerUser?.email) {
+                load.broker.email = brokerUser.email;
               }
+              // Attach phone and status to broker object
+              (load.broker as any).phone = brokerUser?.phone;
+              (load.broker as any).status = brokerUser?.status;
             }
 
             const profile = profileMap.get(load.brokerId);
@@ -1083,6 +1087,15 @@ export class LoadsService {
         });
         if (brokerProfile) {
           (load.broker as any).profile = brokerProfile;
+        }
+        // Also attach phone and status from User entity
+        const brokerUser = await this.userRepository.findOne({
+          where: { id: load.brokerId },
+          select: ['id', 'email', 'phone', 'status'],
+        });
+        if (brokerUser) {
+          (load.broker as any).phone = brokerUser.phone;
+          (load.broker as any).status = brokerUser.status;
         }
       }
 
@@ -4119,6 +4132,8 @@ export class LoadsService {
           return {
             id: load.broker.id,
             email: load.broker.email,
+            phone: (load.broker as any).phone,
+            status: (load.broker as any).status,
             profile: brokerProfile
               ? {
                 firstName: brokerProfile.firstName,
@@ -4133,6 +4148,8 @@ export class LoadsService {
         return {
           id: load.brokerId,
           email: 'Broker Assigned',
+          phone: undefined,
+          status: undefined,
           profile: undefined,
         };
       })(),

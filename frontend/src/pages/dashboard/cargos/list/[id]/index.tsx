@@ -10,6 +10,14 @@ import {
   Send,
   Download,
   Upload,
+  Briefcase,
+  Mail,
+  Phone,
+  Building2,
+  ShieldCheck,
+  User,
+  ExternalLink,
+  Calendar,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Cargo } from "@/types/cargo";
@@ -46,6 +54,143 @@ import {
 } from "../utils";
 import { useParams } from "react-router-dom";
 import { useSearchParamsState } from "@/hooks/useSearchParamsState";
+
+// ─── AssignedBrokerCard ──────────────────────────────────────────────────────
+const AssignedBrokerCard: React.FC<{ cargo: any }> = ({ cargo }) => {
+  if (!cargo?.brokerId && !cargo?.broker) return null;
+
+  const broker = cargo.broker || {};
+  const profile = broker.profile || {};
+
+  const brokerName =
+    profile.firstName && profile.lastName
+      ? `${profile.firstName} ${profile.lastName}`.trim()
+      : profile.firstName || profile.lastName || broker.email || "Assigned Broker";
+
+  const companyName = profile.companyName;
+  const email = broker.email;
+  const phone = broker.phone;
+  const status = broker.status;
+  const brokerId = broker.id || cargo.brokerId;
+  const assignedAt = cargo.updatedAt;
+
+  const statusColors: Record<string, string> = {
+    ACTIVE: "bg-emerald-100 text-emerald-700",
+    SUSPENDED: "bg-red-100 text-red-700",
+    INACTIVE: "bg-gray-100 text-gray-600",
+    PENDING_VERIFICATION: "bg-yellow-100 text-yellow-700",
+  };
+  const statusLabel = status ? status.replace(/_/g, " ") : "Active";
+  const statusClass = statusColors[status] || "bg-emerald-100 text-emerald-700";
+
+  return (
+    <div className="bg-white rounded-xl border border-purple-200 shadow-sm overflow-hidden">
+      {/* Header band */}
+      <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-6 py-4 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+          <Briefcase className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <p className="text-xs font-black text-purple-200 uppercase tracking-widest">Assigned Broker</p>
+          <p className="text-base font-black text-white leading-tight">{brokerName}</p>
+        </div>
+        <span className={`ml-auto px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${statusClass}`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {companyName && (
+          <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+            <Building2 className="w-4 h-4 text-purple-500 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Company</p>
+              <p className="text-sm font-semibold text-gray-900">{companyName}</p>
+            </div>
+          </div>
+        )}
+
+        {email && (
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</p>
+              <a href={`mailto:${email}`} className="text-sm font-semibold text-purple-600 hover:underline break-all">
+                {email}
+              </a>
+            </div>
+          </div>
+        )}
+
+        {phone && (
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Phone</p>
+              <a href={`tel:${phone}`} className="text-sm font-semibold text-gray-900 hover:text-purple-600">
+                {phone}
+              </a>
+            </div>
+          </div>
+        )}
+
+        {brokerId && (
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Broker ID</p>
+              <p className="text-xs font-mono text-gray-600 break-all">{brokerId}</p>
+            </div>
+          </div>
+        )}
+
+        {assignedAt && (
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assignment Date</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {new Date(assignedAt).toLocaleDateString(undefined, {
+                  year: "numeric", month: "short", day: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="px-6 pb-4 flex flex-wrap gap-2">
+        {email && (
+          <a
+            href={`mailto:${email}`}
+            className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-xs font-black rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            Contact Broker
+          </a>
+        )}
+        {phone && (
+          <a
+            href={`tel:${phone}`}
+            className="flex items-center gap-1.5 px-4 py-2 bg-white border border-purple-200 text-purple-700 text-xs font-black rounded-lg hover:bg-purple-50 transition-colors"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            Call Broker
+          </a>
+        )}
+      </div>
+
+      {/* Footer notice */}
+      <div className="px-6 py-3 bg-purple-50 border-t border-purple-100">
+        <p className="text-[10px] text-purple-600 font-semibold">
+          This cargo is managed by the assigned broker. Contact them for status updates and operational changes.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // ─── TopMatchCandidates ────────────────────────────────────────────────────
 // Fetches and renders the top-5 POTENTIAL match candidates for a load.
@@ -490,6 +635,8 @@ const CargoDetails = () => {
               {activeTab === "overview" && (
                 <div className="space-y-6">
                   <CargoOverviewSection cargo={cargo} />
+                  {/* Assigned Broker Section — only shown when a broker is assigned */}
+                  <AssignedBrokerCard cargo={cargo} />
                   {/* <CargoActionsSection
                     isEditing={isEditing}
                     isTrackingEnabled={isTrackingEnabled}
@@ -1140,8 +1287,10 @@ const CargoDetails = () => {
                     </div>
                   </div>
 
-                  {/* Top 5 Match Candidates — real data from the matching engine */}
-                  <TopMatchCandidates cargoId={cargoId} offeredPrice={cargo.offeredPrice} />
+                  {/* Top 5 Match Candidates — hidden when broker is managing this cargo */}
+                  {!cargo.brokerId && !cargo.broker && (
+                    <TopMatchCandidates cargoId={cargoId} offeredPrice={cargo.offeredPrice} />
+                  )}
                   </div>
                 </div>
               )}

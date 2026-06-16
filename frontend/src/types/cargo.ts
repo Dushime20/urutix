@@ -119,6 +119,9 @@ export interface Cargo {
   broker?: {
     id: string;
     email: string;
+    phone?: string;
+    status?: string;
+    assignedAt?: string;
     profile?: {
       firstName?: string;
       lastName?: string;
