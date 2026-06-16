@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { 
   CheckCircle2, 
   Clock, 

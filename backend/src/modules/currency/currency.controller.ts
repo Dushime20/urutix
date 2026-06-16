@@ -34,8 +34,26 @@ export class CurrencyController {
   @Get('supported')
   @ApiOperation({ summary: 'Get list of all active supported currencies' })
   async getSupportedCurrencies() {
-    const currencies = await this.currencyService.getSupportedCurrencies();
-    return { currencies };
+    try {
+      const currencies = await this.currencyService.getSupportedCurrencies();
+      return { currencies };
+    } catch (err) {
+      // DB not ready yet (table not migrated, connection issue, etc.)
+      // Return the bootstrap list so the frontend can still function.
+      return {
+        currencies: [
+          { code: 'USD', name: 'US Dollar',          symbol: '$',    locale: 'en-US', decimals: 2, flag: '🇺🇸', isActive: true },
+          { code: 'EUR', name: 'Euro',               symbol: '€',    locale: 'de-DE', decimals: 2, flag: '🇪🇺', isActive: true },
+          { code: 'GBP', name: 'British Pound',      symbol: '£',    locale: 'en-GB', decimals: 2, flag: '🇬🇧', isActive: true },
+          { code: 'RWF', name: 'Rwandan Franc',      symbol: 'FRw',  locale: 'rw-RW', decimals: 0, flag: '🇷🇼', isActive: true },
+          { code: 'KES', name: 'Kenyan Shilling',    symbol: 'KSh',  locale: 'sw-KE', decimals: 0, flag: '🇰🇪', isActive: true },
+          { code: 'UGX', name: 'Ugandan Shilling',   symbol: 'USh',  locale: 'sw-UG', decimals: 0, flag: '🇺🇬', isActive: true },
+          { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh',  locale: 'sw-TZ', decimals: 0, flag: '🇹🇿', isActive: true },
+          { code: 'ZAR', name: 'South African Rand', symbol: 'R',    locale: 'en-ZA', decimals: 2, flag: '🇿🇦', isActive: true },
+          { code: 'NGN', name: 'Nigerian Naira',     symbol: '₦',    locale: 'en-NG', decimals: 2, flag: '🇳🇬', isActive: true },
+        ],
+      };
+    }
   }
 
   /** Get current exchange rates (base = USD) */
