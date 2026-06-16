@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { tenantApi } from '../../services/tenantApi';
 import { toast } from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { format } from 'date-fns';
 import { useTranslation } from '../../hooks/useTranslation';
 import { TranslatedText } from '../translated-text';
@@ -39,6 +40,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
 }) => {
     const { tSync } = useTranslation();
     const queryClient = useQueryClient();
+    const { format: fmtCurrency } = useCurrencyFormat();
     const [activeTab, setActiveTab] = useState<'overview' | 'credits' | 'history'>('overview');
     const [adjustAmount, setAdjustAmount] = useState<number>(0);
     const [adjustReason, setAdjustReason] = useState<string>('');
@@ -558,7 +560,7 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
 
                                         <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
                                             <div className="flex items-baseline gap-1 mb-6">
-                                                <span className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">${plan.priceMonthly}</span>
+                                                <span className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">{fmtCurrency(plan.priceMonthly)}</span>
                                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">/mo</span>
                                             </div>
                                             <button

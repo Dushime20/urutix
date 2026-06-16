@@ -23,9 +23,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 export const TruckMatches: React.FC = () => {
     const navigate = useNavigate();
+    const { format: formatCurrency } = useCurrencyFormat();
     const [matches, setMatches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -231,7 +233,7 @@ export const TruckMatches: React.FC = () => {
                                                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Cargo Details</p>
                                                             <DetailRow icon={<Package size={12} />} label="Type" value={match.load?.cargoType || '—'} />
                                                             <DetailRow icon={<Weight size={12} />} label="Weight" value={`${Number(match.load?.weight || 0).toLocaleString()} kg`} />
-                                                            <DetailRow icon={<DollarSign size={12} />} label="Value" value={match.load?.loadValue ? `$${Number(match.load.loadValue).toLocaleString()}` : '—'} />
+                                                            <DetailRow icon={<DollarSign size={12} />} label="Value" value={match.load?.loadValue ? formatCurrency(Number(match.load.loadValue)) : '—'} />
                                                             <DetailRow icon={<MapPin size={12} />} label="Pickup" value={
                                                                 match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.address
                                                                     || (match.load?.origin?.city
@@ -247,10 +249,10 @@ export const TruckMatches: React.FC = () => {
                                                             <DetailRow icon={<Clock size={12} />} label="Pickup Date" value={match.load?.pickupDate ? new Date(match.load.pickupDate).toLocaleDateString() : '—'} />
                                                             <DetailRow icon={<Clock size={12} />} label="Delivery Date" value={match.load?.deliveryDate ? new Date(match.load.deliveryDate).toLocaleDateString() : '—'} />
                                                             {(match.load?.offeredPrice || match.matchDetails?.recommendedPrice) && (
-                                                                <DetailRow icon={<DollarSign size={12} />} label="Offered Price" value={`$${Number(match.load?.offeredPrice || match.matchDetails?.recommendedPrice).toLocaleString()}`} />
+                                                                <DetailRow icon={<DollarSign size={12} />} label="Offered Price" value={formatCurrency(Number(match.load?.offeredPrice || match.matchDetails?.recommendedPrice))} />
                                                             )}
                                                             {match.matchDetails?.estimatedCost && (
-                                                                <DetailRow icon={<DollarSign size={12} />} label="Suggested Price" value={`$${Number(match.matchDetails.estimatedCost).toLocaleString()}`} />
+                                                                <DetailRow icon={<DollarSign size={12} />} label="Suggested Price" value={formatCurrency(Number(match.matchDetails.estimatedCost))} />
                                                             )}
                                                             {match.load?.isFragile && <DetailRow icon={<AlertTriangle size={12} />} label="Fragile" value="Yes" warn />}
                                                             {match.load?.isHazardous && <DetailRow icon={<AlertTriangle size={12} />} label="Hazardous" value="Yes" warn />}
@@ -265,7 +267,7 @@ export const TruckMatches: React.FC = () => {
                                                             {match.load?.length && <DetailRow icon={<Package size={12} />} label="Dimensions" value={`${match.load.length} × ${match.load.width} × ${match.load.height} m`} />}
                                                             {match.load?.temperatureMin != null && <DetailRow icon={<Thermometer size={12} />} label="Temp Range" value={`${match.load.temperatureMin}°C – ${match.load.temperatureMax}°C`} />}
                                                             {match.load?.specialHandlingInstructions && <DetailRow icon={<AlertTriangle size={12} />} label="Special Handling" value={match.load.specialHandlingInstructions} />}
-                                                            {match.load?.insuranceValue && <DetailRow icon={<Shield size={12} />} label="Insurance Value" value={`$${Number(match.load.insuranceValue).toLocaleString()}`} />}
+                                                            {match.load?.insuranceValue && <DetailRow icon={<Shield size={12} />} label="Insurance Value" value={formatCurrency(Number(match.load.insuranceValue))} />}
                                                         </div>
 
                                                         {/* Match Scores */}
@@ -280,7 +282,7 @@ export const TruckMatches: React.FC = () => {
                                                                 <ScoreBar label="Availability" value={match.matchDetails.availabilityScore} />
                                                             </>}
                                                             {match.matchDetails?.estimatedCost && (
-                                                                <DetailRow icon={<DollarSign size={12} />} label="Est. Cost" value={`$${Number(match.matchDetails.estimatedCost).toLocaleString()}`} />
+                                                                <DetailRow icon={<DollarSign size={12} />} label="Est. Cost" value={formatCurrency(Number(match.matchDetails.estimatedCost))} />
                                                             )}
                                                             {match.matchDetails?.distanceKm && (
                                                                 <DetailRow icon={<MapPin size={12} />} label="Distance" value={`${match.matchDetails.distanceKm} km`} />
@@ -551,3 +553,4 @@ const ScoreBar = ({ label, value }: { label: string; value: number }) => {
         </div>
     );
 };
+

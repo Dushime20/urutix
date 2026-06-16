@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import DashboardHeader from '../../components/Layout/DashboardHeader';
 import DashboardFooter from '../../components/Layout/DashboardFooter';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   Package,
   DollarSign,
@@ -24,6 +25,7 @@ import {
 const SimpleBrokerDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { compact } = useCurrencyFormat();
 
   return (
     <div className="min-h-screen bg-[#FDFDFF] pb-24">
@@ -79,7 +81,7 @@ const SimpleBrokerDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard
             title="Net Revenue"
-            value="$12,450"
+            value={compact(12450)}
             subtitle="commissions earned"
             icon={<DollarSign className="w-5 h-5" />}
             color="success"
@@ -97,7 +99,7 @@ const SimpleBrokerDashboard: React.FC = () => {
           />
           <StatCard
             title="Pipeline"
-            value="$3,200"
+            value={compact(3200)}
             subtitle="reserved commission"
             icon={<Clock className="w-5 h-5" />}
             color="warning"

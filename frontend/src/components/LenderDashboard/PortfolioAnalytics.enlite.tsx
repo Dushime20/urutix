@@ -16,6 +16,7 @@ import {
 import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 export interface PortfolioData {
     totalLoans: number;
@@ -71,11 +72,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
     onExport,
     children
 }) => {
-    const formatCurrency = (amount: number) => {
-        if (amount >= 1000000) return `RWF ${(amount / 1000000).toFixed(1)}M`;
-        if (amount >= 1000) return `RWF ${(amount / 1000).toFixed(0)}K`;
-        return `RWF ${amount.toLocaleString()}`;
-    };
+    const { compact: formatCurrency } = useCurrencyFormat();
 
     const riskColumns = [
         {

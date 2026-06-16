@@ -26,6 +26,7 @@ import { cn } from '@/utils/cn';
 import { TranslatedText } from '../translated-text';
 import LocationIntelModal from '../Dashboard/Widgets/LocationIntelModal';
 import { CargoHealthModal } from './CargoHealthModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // removed useTranslation to fix lint error
 
@@ -96,6 +97,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
   onOpenRelay,
   hos,
 }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const [isPaused, setIsPaused] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
   const [showCargoHealth, setShowCargoHealth] = useState(false);
@@ -358,7 +360,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
             { label: 'Distance', value: `${trip.distance} KM`, icon: Navigation },
             { label: 'Duration', value: formatDuration(trip.estimatedDuration), icon: Clock },
             { label: 'Cargo Health', value: 'OPTIMAL', icon: Thermometer, color: 'text-emerald-500' },
-            { label: 'Earnings', value: `$${trip.earnings}`, icon: Zap, color: 'text-amber-500' },
+            { label: 'Earnings', value: formatCurrency(trip.earnings), icon: Zap, color: 'text-amber-500' },
           ].map((stat) => (
             <div 
               key={stat.label} 

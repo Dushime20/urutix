@@ -18,6 +18,7 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,13 +69,6 @@ const statusStyle: Record<string, string> = {
     failed:    'bg-slate-50 text-slate-600 border-slate-100',
 };
 
-const formatAmount = (amount: number | null): string => {
-    if (amount === null) return '—';
-    if (amount >= 1_000_000) return `USD ${(amount / 1_000_000).toFixed(2)}M`;
-    if (amount >= 1_000)    return `USD ${(amount / 1_000).toFixed(2)}K`;
-    return `USD ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', {
@@ -94,6 +88,10 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
     loans,
     summary,
 }) => {
+    const { format: fmtCurrency } = useCurrencyFormat();
+    // Wrapper that handles null gracefully
+    const formatAmount = (amount: number | null): string => amount === null ? '—' : fmtCurrency(amount);
+
     const [searchTerm, setSearchTerm]     = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [detailLoan, setDetailLoan]     = useState<any | null>(null);
@@ -140,7 +138,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
             render: (_: any, l: InterestLoan) => (
                 <div className="flex flex-col">
                     <span className="font-black text-slate-900 text-[11px]">
-                        {formatAmount(l.approvedAmount ?? l.requestedAmount)}
+                        {fmtCurrency(l.approvedAmount ?? l.requestedAmount)}
                     </span>
                     <span className="text-[9px] font-bold text-slate-400 uppercase truncate max-w-[140px]">
                         {l.purpose ?? '—'}
@@ -154,11 +152,11 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
             render: (_: any, l: InterestLoan) => (
                 <div className="flex flex-col">
                     <span className="font-black text-emerald-600 text-[12px]">
-                        {formatAmount(l.totalInterestPaid > 0 ? l.totalInterestPaid : null)}
+                        {fmtCurrency(l.totalInterestPaid > 0 ? l.totalInterestPaid : null)}
                     </span>
                     {l.contractedInterest !== null && (
                         <span className="text-[9px] font-bold text-slate-400 uppercase">
-                            of {formatAmount(l.contractedInterest)} contracted
+                            of {fmtCurrency(l.contractedInterest)} contracted
                         </span>
                     )}
                 </div>
@@ -175,7 +173,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
                 }`}>
                     {l.outstandingInterest !== null
                         ? l.outstandingInterest > 0
-                            ? formatAmount(l.outstandingInterest)
+                            ? fmtCurrency(l.outstandingInterest)
                             : 'Settled'
                         : '—'}
                 </span>
@@ -190,7 +188,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
                         {l.repaymentCount} payment{l.repaymentCount !== 1 ? 's' : ''}
                     </span>
                     <span className="text-[9px] font-bold text-slate-400 uppercase">
-                        {formatAmount(l.totalRepaid)} total
+                        {fmtCurrency(l.totalRepaid)} total
                     </span>
                 </div>
             ),
@@ -246,7 +244,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Interest Collected"
-                    value={summary ? formatAmount(summary.totalInterestCollected > 0 ? summary.totalInterestCollected : null) : 'N/A'}
+                    value={summary ? fmtCurrency(summary.totalInterestCollected > 0 ? summary.totalInterestCollected : null) : 'N/A'}
                     subtitle={summary ? `Across ${summary.totalLoans} loan${summary.totalLoans !== 1 ? 's' : ''}` : 'Loading...'}
                     icon={<DollarSign size={24} />}
                     color="success"
@@ -254,7 +252,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
                 <StatCard
                     title="Outstanding Interest"
                     value={summary?.totalOutstandingInterest != null
-                        ? formatAmount(summary.totalOutstandingInterest > 0 ? summary.totalOutstandingInterest : null)
+                        ? fmtCurrency(summary.totalOutstandingInterest > 0 ? summary.totalOutstandingInterest : null)
                         : 'N/A'}
                     subtitle={summary?.totalOutstandingInterest != null
                         ? summary.totalOutstandingInterest > 0 ? 'Receivable' : 'All settled'
@@ -293,7 +291,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Principal Deployed</p>
                         <p className="text-sm font-black text-slate-900">
-                            {formatAmount(summary.totalPrincipalDeployed)}
+                            {fmtCurrency(summary.totalPrincipalDeployed)}
                             <span className="ml-2 text-[10px] font-bold text-slate-400">
                                 across {summary.totalLoans} loan{summary.totalLoans !== 1 ? 's' : ''}
                             </span>
@@ -326,7 +324,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
                                     </span>
                                     <div className="text-right">
                                         <p className="text-[11px] font-black text-slate-700">{cnt}</p>
-                                        <p className="text-[9px] text-slate-400">{formatAmount(exposure)}</p>
+                                        <p className="text-[9px] text-slate-400">{fmtCurrency(exposure)}</p>
                                     </div>
                                 </div>
                             );
@@ -366,7 +364,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
                                 </p>
                             </div>
                             <p className="text-xs font-bold text-emerald-700">
-                                {formatAmount(
+                                {fmtCurrency(
                                     loans.filter(l => l.status === 'repaid')
                                          .reduce((s, l) => s + l.totalInterestPaid, 0)
                                 )} interest collected
@@ -448,3 +446,5 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
 };
 
 export default InterestTrackingEnlite;
+
+

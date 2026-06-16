@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, User, DollarSign, Calendar, MapPin, Package, FileText, AlertCircle, CheckCircle, TrendingUp, Percent, Receipt } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface LoanDetailModalProps {
   loan: any;
@@ -8,11 +9,8 @@ interface LoanDetailModalProps {
 }
 
 const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   if (!loan) return null;
-
-  const formatCurrency = (amount: number) => {
-    return `USD ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -194,7 +192,7 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
               ? principal + totalInterest + (originationFee ?? 0) : null;
             const monthlyInstalment = totalRepayable != null && termMonths != null && termMonths > 0
               ? totalRepayable / termMonths : null;
-            const fmtMoney = (n: number) => `USD ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const fmtMoney = (n: number) => formatCurrency(n);
             const fmt = (n: number | null) => n != null ? fmtMoney(n) : '—';
 
             return (

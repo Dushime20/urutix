@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTools, FaExclamationTriangle, FaCheckCircle, FaMoneyBillWave } from 'react-icons/fa';
+import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
 
 interface MaintenanceStatsCardsProps {
     stats: {
@@ -12,6 +13,7 @@ interface MaintenanceStatsCardsProps {
 }
 
 const MaintenanceStatsCards: React.FC<MaintenanceStatsCardsProps> = ({ stats, loading }) => {
+    const { format: formatCurrency } = useCurrencyFormat();
     if (loading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -25,7 +27,7 @@ const MaintenanceStatsCards: React.FC<MaintenanceStatsCardsProps> = ({ stats, lo
     const cards = [
         {
             title: 'Monthly Cost',
-            value: `$${Math.round(stats.totalCost).toLocaleString()}`,
+            value: formatCurrency(Math.round(stats.totalCost)),
             icon: FaMoneyBillWave,
             color: 'text-green-600',
             bg: 'bg-green-100'

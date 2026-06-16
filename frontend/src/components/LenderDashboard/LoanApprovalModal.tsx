@@ -24,6 +24,7 @@ import {
   CalendarDays, DollarSign, Clock, Info,
   Percent, BarChart3, TrendingUp, ArrowRight, ChevronLeft,
 } from 'lucide-react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 export interface LoanApprovalPayload {
   approvedAmount: number;
@@ -39,8 +40,7 @@ interface Props {
 }
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
-const fmtUSD = (n: number) =>
-  `USD ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// fmtUSD is now provided via useCurrencyFormat hook inside the component
 
 const fmtPct = (n: number | null | undefined) =>
   n != null ? `${Number(n).toFixed(2)}%` : '—';
@@ -70,6 +70,7 @@ const Field: React.FC<{ label: string; value: React.ReactNode; sub?: string; acc
 // ────────────────────────────────────────────────────────────────────────────
 
 const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
+  const { format: fmtUSD, currency } = useCurrencyFormat();
   const [step, setStep] = useState<'terms' | 'preview' | 'processing' | 'success' | 'error'>('terms');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -398,7 +399,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                       <DollarSign className="w-3.5 h-3.5 text-slate-400" /> Approved Amount
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">USD</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">{currency}</span>
                       <input type="number" min={1} max={loan.requested_amount} step={0.01}
                         value={approvedAmount}
                         onChange={e => setApprovedAmount(parseFloat(e.target.value) || 0)}
@@ -687,3 +688,4 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
 };
 
 export default LoanApprovalModal;
+

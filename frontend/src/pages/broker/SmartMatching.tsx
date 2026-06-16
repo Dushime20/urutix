@@ -575,7 +575,7 @@ const BrokerSmartMatching: React.FC = () => {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50/50 border-b border-slate-100">
                   <tr>
-                    {['Owner / Truck', 'Score', 'Cost (USD)', 'Revenue (USD)', 'Margin', 'Route Dist.', 'Time', 'Rating', 'Features', ''].map(h => (
+                    {['Owner / Truck', 'Score', 'Cost', 'Revenue', 'Margin', 'Route Dist.', 'Time', 'Rating', 'Features', ''].map(h => (
                       <th key={h} className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{h}</th>
                     ))}
                   </tr>

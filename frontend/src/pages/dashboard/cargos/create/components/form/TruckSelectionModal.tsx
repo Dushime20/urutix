@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
+import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 import type { TruckMatch } from "../../types/truck";
 import type { CargoFormData } from "../../types/cargo";
 import { checkTruckCompatibility, type CargoTruckCompatibility } from "@/services/enhancedCargoApi";
@@ -43,6 +44,7 @@ const TruckSelectionModal: React.FC<TruckSelectionModalProps> = ({
   onTruckSelected,
   cargoData,
 }) => {
+  const { format: fmtCurrency } = useCurrencyFormat();
   const [matches, setMatches] = useState<TruckMatch[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,12 +131,7 @@ const TruckSelectionModal: React.FC<TruckSelectionModalProps> = ({
     return "bg-red-100";
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => fmtCurrency(amount);
 
   const formatDistance = (km: number) => {
     return `${km.toFixed(1)} km`;

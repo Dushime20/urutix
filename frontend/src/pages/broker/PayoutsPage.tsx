@@ -63,7 +63,7 @@ const PayoutsPage: React.FC = () => {
       await brokerAPI.requestPayout(selectedCommission.id, {
         brokerId: user!.id,
         amount: selectedCommission.commissionAmount,
-        currency: 'USD'
+        currency: user?.preferredCurrency || 'USD'
       });
       toast.success('Payout request submitted');
       setShowRequestModal(false);
@@ -218,7 +218,7 @@ const PayoutsPage: React.FC = () => {
               <div className="space-y-6">
                  {[
                    'Commissions must be fully APPROVED.',
-                   'Minimum draw amount: $100.00.',
+                   `Minimum draw amount: ${fmtFull(100)}.`,
                    'Cycle: 2-3 Business Days.'
                  ].map((term, i) => (
                    <div key={i} className="flex gap-4">

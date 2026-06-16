@@ -5,6 +5,7 @@ import {
   FaBoxes, FaLock, FaLocationArrow, FaThermometerQuarter, FaMapPin, FaCalendar,
   FaDollarSign, FaCogs, FaCameraRetro, FaChartLine
 } from 'react-icons/fa';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // Temporary fix for module import issue
 // import type { Cargo } from '../../types/cargo';
@@ -147,6 +148,7 @@ const EnhancedCargoTable: React.FC<EnhancedCargoTableProps> = ({
   onEnhancedView,
   loading = false
 }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   // Ensure cargos is always an array
   const safeCargos = Array.isArray(cargos) ? cargos : [];
   
@@ -498,13 +500,13 @@ const EnhancedCargoTable: React.FC<EnhancedCargoTableProps> = ({
                             {hasValue(cargo.loadValue) && (
                               <div>
                                 <span className="font-medium">Load Value:</span>
-                                <span className="text-gray-600"> ${cargo.loadValue?.toLocaleString()}</span>
+                                <span className="text-gray-600"> {formatCurrency(cargo.loadValue)}</span>
                               </div>
                             )}
                             {hasValue(cargo.offeredPrice) && (
                               <div>
                                 <span className="font-medium">Offered Price:</span>
-                                <span className="text-gray-600"> ${cargo.offeredPrice?.toLocaleString()}</span>
+                                <span className="text-gray-600"> {formatCurrency(cargo.offeredPrice)}</span>
                               </div>
                             )}
                           </div>
@@ -579,7 +581,7 @@ const EnhancedCargoTable: React.FC<EnhancedCargoTableProps> = ({
                             {cargo.insuranceValue && (
                               <div>
                                 <span className="font-medium">Insurance Value:</span>
-                                <span className="text-gray-600"> ${cargo.insuranceValue?.toLocaleString()}</span>
+                                <span className="text-gray-600"> {formatCurrency(cargo.insuranceValue)}</span>
                               </div>
                             )}
                             {cargo.requiresGpsMonitoring && (
@@ -660,3 +662,4 @@ const EnhancedCargoTable: React.FC<EnhancedCargoTableProps> = ({
 };
 
 export default EnhancedCargoTable; 
+

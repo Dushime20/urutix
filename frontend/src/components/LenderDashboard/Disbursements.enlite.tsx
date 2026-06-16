@@ -15,6 +15,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import StatCard from '../EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
@@ -60,12 +61,7 @@ const statusStyle: Record<string, string> = {
     on_hold:   'bg-orange-50 text-orange-700 border-orange-100',
 };
 
-const formatAmount = (amount: number | null): string => {
-    if (amount === null) return '—';
-    if (amount >= 1_000_000) return `USD ${(amount / 1_000_000).toFixed(2)}M`;
-    if (amount >= 1_000)    return `USD ${(amount / 1_000).toFixed(2)}K`;
-    return `USD ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
+const formatAmount = (amount: number | null): string => amount === null ? '—' : amount.toLocaleString(); // placeholder — real fmt injected in components
 
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';

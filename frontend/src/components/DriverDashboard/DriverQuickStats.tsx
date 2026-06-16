@@ -1,6 +1,7 @@
 import { Truck, DollarSign, Star, Clock, Activity, CheckCircle, Award, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TranslatedText } from '../translated-text';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface DriverQuickStatsProps {
   stats: {
@@ -87,6 +88,7 @@ const DashboardStatCard = ({ title, value, icon: Icon, delay = 0, isAward = fals
 );
 
 export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, hos, isLoading }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
@@ -106,7 +108,7 @@ export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, hos, 
     },
     {
       label: 'Earnings',
-      value: `$${Math.round(stats.totalEarnings || 0).toLocaleString()}`,
+      value: formatCurrency(Math.round(stats.totalEarnings || 0)),
       icon: DollarSign,
       percentage: 75,
     },
@@ -199,3 +201,4 @@ export const DriverQuickStats: React.FC<DriverQuickStatsProps> = ({ stats, hos, 
     </div>
   );
 };
+

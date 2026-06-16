@@ -57,6 +57,9 @@ import { FuelLog } from './../entities/fuel-log.entity';
 import { MaintenanceLog } from './../entities/maintenance-log.entity';
 
 
+import { Currency } from './../entities/currency.entity';
+import { ExchangeRate } from './../entities/exchange-rate.entity';
+
 // Financial entities
 import {
   Invoice,
@@ -190,6 +193,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LoanTerms,
     Borrower,
     RouteTruck,
+    Currency,
+    ExchangeRate,
     // Financial entities
     Invoice,
     InvoiceItem,
@@ -341,6 +346,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     LoanTerms,
     Borrower,
     RouteTruck,
+    Currency,
+    ExchangeRate,
     // Financial entities
     Invoice,
     InvoiceItem,

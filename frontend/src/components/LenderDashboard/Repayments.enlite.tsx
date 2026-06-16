@@ -17,6 +17,7 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,12 +52,7 @@ const statusStyle: Record<string, string> = {
     completed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
 };
 
-const formatAmount = (amount: number | null): string => {
-    if (amount === null) return '—';
-    if (amount >= 1_000_000) return `USD ${(amount / 1_000_000).toFixed(2)}M`;
-    if (amount >= 1_000)    return `USD ${(amount / 1_000).toFixed(2)}K`;
-    return `USD ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
+const formatAmount = (amount: number | null): string => amount === null ? '—' : amount.toLocaleString(); // replaced by hook inside component
 
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';

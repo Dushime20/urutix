@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tenantApi, type Bid } from '../../services/tenantApi';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface TenantBiddingProps {
     tenantId: string;
@@ -14,6 +15,7 @@ interface TenantBiddingProps {
 
 const TenantBidding: React.FC<TenantBiddingProps> = ({ tenantId }) => {
     const { tSync } = useTranslation();
+    const { format: formatCurrency } = useCurrencyFormat();
     const [filter] = useState('all');
 
     const { data: bids = [], isLoading } = useQuery({
@@ -104,7 +106,7 @@ const TenantBidding: React.FC<TenantBiddingProps> = ({ tenantId }) => {
                                             </div>
                                         </td>
                                         <td className="py-4">
-                                            <div className="font-black text-slate-800 dark:text-slate-100">${bid.amount.toLocaleString()}</div>
+                                            <div className="font-black text-slate-800 dark:text-slate-100">{formatCurrency(bid.amount)}</div>
                                         </td>
                                         <td className="py-4">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${bid.status === 'accepted' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' :
@@ -144,3 +146,4 @@ const TenantBidding: React.FC<TenantBiddingProps> = ({ tenantId }) => {
 };
 
 export default TenantBidding;
+

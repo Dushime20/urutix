@@ -2,12 +2,14 @@ import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type EscrowAccount, type CreateEscrowData, type FundEscrowData, type ReleaseEscrowData } from '../../services/brokerApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { Wallet, Plus, Search, DollarSign, CheckCircle2, Clock, Loader2, Eye, ArrowUpCircle, ArrowDownCircle, Shield, TrendingUp, Activity, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 const EscrowManagement: React.FC = () => {
   const { user } = useAuth();
+  const { compact: fmtMoney, formatIn } = useCurrencyFormat();
   const [escrows, setEscrows] = useState<EscrowAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -134,10 +136,10 @@ const EscrowManagement: React.FC = () => {
 
       {/* Financial Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StatCard title="Total Volume" value={`${escrows.reduce((sum, e) => sum + (e.totalAmount || 0), 0).toLocaleString()} KES`} subtitle="Total Contract Value" icon={<DollarSign size={20} />} color="primary" variant="classic" />
-        <StatCard title="Liquid Funds" value={`${escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0).toLocaleString()} KES`} subtitle="Locked in Escrow" icon={<Shield size={20} />} color="emerald" variant="classic" />
-        <StatCard title="Total Released" value={`${escrows.reduce((sum, e) => sum + (e.releasedAmount || 0), 0).toLocaleString()} KES`} subtitle="Successful Payouts" icon={<CheckCircle2 size={20} />} color="success" variant="classic" />
-        <StatCard title="Commission" value={`${escrows.reduce((sum, e) => sum + (e.commissionAmount || 0), 0).toLocaleString()} KES`} subtitle="Earnings Balance" icon={<TrendingUp size={20} />} color="warning" variant="classic" />
+        <StatCard title="Total Volume" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.totalAmount || 0), 0))} subtitle="Total Contract Value" icon={<DollarSign size={20} />} color="primary" variant="classic" />
+        <StatCard title="Liquid Funds" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0))} subtitle="Locked in Escrow" icon={<Shield size={20} />} color="emerald" variant="classic" />
+        <StatCard title="Total Released" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.releasedAmount || 0), 0))} subtitle="Successful Payouts" icon={<CheckCircle2 size={20} />} color="success" variant="classic" />
+        <StatCard title="Commission" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.commissionAmount || 0), 0))} subtitle="Earnings Balance" icon={<TrendingUp size={20} />} color="warning" variant="classic" />
       </div>
 
       {/* Terminal Grid */}
@@ -198,11 +200,11 @@ const EscrowManagement: React.FC = () => {
                 <div className="grid grid-cols-2 gap-6 mb-8 pt-8 border-t border-slate-50 dark:border-slate-800/50">
                   <div>
                     <p className="text-sm font-bold text-slate-400 uppercase mb-1">Total</p>
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">{escrow.totalAmount.toLocaleString()} <span className="text-sm text-slate-300 font-bold uppercase">{escrow.currencyCode}</span></p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatIn(escrow.totalAmount, escrow.currencyCode)}</p>
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-400 uppercase mb-1">Funded</p>
-                    <p className="text-lg font-bold text-emerald-600">{escrow.fundedAmount.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-emerald-600">{formatIn(escrow.fundedAmount, escrow.currencyCode)}</p>
                   </div>
                 </div>
 

@@ -13,6 +13,7 @@ import { financialAPI, fleetAPI, tripsAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Expense {
   id: string;
@@ -37,6 +38,7 @@ interface Expense {
 
 const ExpenseManagement: React.FC = () => {
   const queryClient = useQueryClient();
+  const { format: formatCurrency } = useCurrencyFormat();
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewExpense, setViewExpense] = useState<Expense | null>(null);
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
@@ -168,7 +170,7 @@ const ExpenseManagement: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-8 bg-slate-50/30 dark:bg-slate-900/10 rounded-[3rem] border border-slate-100/50 dark:border-slate-800">
         <StatCard 
           title="Total Burn" 
-          value={`$${stats.total.toLocaleString()}`} 
+          value={formatCurrency(stats.total)} 
           icon={<TrendingUp size={24} />} 
           subtitle="Operational Expenses"
           color="primary"
@@ -176,7 +178,7 @@ const ExpenseManagement: React.FC = () => {
         />
         <StatCard 
           title="Pending Approval" 
-          value={`$${stats.pending.toLocaleString()}`} 
+          value={formatCurrency(stats.pending)} 
           icon={<Clock size={24} />} 
           subtitle="Awaiting Review"
           color="primary"
@@ -184,7 +186,7 @@ const ExpenseManagement: React.FC = () => {
         />
         <StatCard 
           title="Tax Deductible" 
-          value={`$${stats.taxSaved.toLocaleString()}`} 
+          value={formatCurrency(stats.taxSaved)} 
           icon={<ShieldCheck size={24} />} 
           subtitle="Estimated Savings"
           color="primary"
@@ -713,3 +715,4 @@ const ExpenseManagement: React.FC = () => {
 };
 
 export default ExpenseManagement;
+

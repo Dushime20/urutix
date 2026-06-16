@@ -40,6 +40,7 @@ import DocumentUploadModal from '../documents/DocumentUploadModal';
 import { cn } from '../../utils/cn';
 import { CircularStatCard } from '../EnliteUI/Cards/StatCard';
 import { DriverBreakManagement } from './DriverBreakManagement';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 type StatusOption = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ON_LEAVE' | 'TERMINATED' | '';
 type AvailabilityOption = 'AVAILABLE' | 'UNAVAILABLE' | 'IN_TRANSIT' | '';
@@ -51,6 +52,7 @@ interface DriversListProps {
 }
 
 export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDriver, refreshTrigger }) => {
+	const { format: fmtCurrency } = useCurrencyFormat();
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
@@ -477,9 +479,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 											<InfoRow label="Employment Type" value={selectedDriver.employmentType?.replace('_', ' ') || 'N/A'} />
 											<InfoRow label="Hire Date" value={selectedDriver.hireDate ? new Date(selectedDriver.hireDate).toLocaleDateString() : 'N/A'} />
 											<InfoRow label="Experience" value={`${selectedDriver.experience || 0} years`} />
-											<InfoRow label="Hourly Rate" value={selectedDriver.hourlyRate ? `$${Number(selectedDriver.hourlyRate).toFixed(2)}` : 'N/A'} />
-											<InfoRow label="Mileage Rate" value={selectedDriver.mileageRate ? `$${Number(selectedDriver.mileageRate).toFixed(2)}/mile` : 'N/A'} />
-											<InfoRow label="Total Earnings" value={selectedDriver.totalEarnings ? `$${Number(selectedDriver.totalEarnings).toLocaleString()}` : '$0'} />
+											<InfoRow label="Hourly Rate" value={selectedDriver.hourlyRate ? fmtCurrency(Number(selectedDriver.hourlyRate)) : 'N/A'} />
+											<InfoRow label="Mileage Rate" value={selectedDriver.mileageRate ? `${fmtCurrency(Number(selectedDriver.mileageRate))}/mile` : 'N/A'} />
+											<InfoRow label="Total Earnings" value={fmtCurrency(selectedDriver.totalEarnings ? Number(selectedDriver.totalEarnings) : 0)} />
 										</div>
 									</div>
 								</div>
@@ -718,3 +720,4 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 		<span className="text-[11px] font-black text-slate-900 dark:text-white text-right flex-1">{value}</span>
 	</div>
 );
+

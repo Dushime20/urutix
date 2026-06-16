@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaCertificate, FaShieldAlt, FaUserGraduate, FaDollarSign } from 'react-icons/fa';
+import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
 
 interface CertificationsStepProps {
   formData: any;
@@ -10,6 +11,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
   formData,
   handleInputChange,
 }) => {
+  const { currency } = useCurrencyFormat();
   const handleCertificationToggle = (certification: string) => {
     handleInputChange('certifications', {
       ...formData.certifications,
@@ -122,7 +124,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Aggregate Coverage (USD)</label>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Aggregate Coverage ({currency})</label>
             <input
               type="number"
               value={formData.certifications?.maxInsuranceCoverage || ''}

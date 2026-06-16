@@ -4,9 +4,11 @@ import { FaBalanceScale, FaChartLine, FaHandshake, FaInfoCircle, FaBell, FaExcla
 import { getMarketRates, getCompetitorRates, getHistoricalRates, estimatePrice } from '../../services/pricingApi';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const PricingCalculatorWidget: React.FC = () => {
   const queryClient = useQueryClient();
+  const { format: fmt } = useCurrencyFormat();
   const [route, setRoute] = useState<string[]>([]);
   const [cargo, setCargo] = useState({ weight: '', volume: '', special: '' });
   const [season, setSeason] = useState('normal');
@@ -138,15 +140,15 @@ const PricingCalculatorWidget: React.FC = () => {
         <div className="mb-4 p-2 bg-gray-50 rounded flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <FaChartLine className="text-blue-600" />
-            <span className="font-semibold">Estimated Price:</span> ${price.toFixed(2)}
+            <span className="font-semibold">Estimated Price:</span> {fmt(price)}
             <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${confidence > 90 ? 'bg-green-100 text-green-800' : confidence > 80 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>Confidence: {confidence}%</span>
-            {aiPrediction !== null && <span className="ml-2 text-purple-600">AI Predicted: ${aiPrediction.toFixed(2)}</span>}
+            {aiPrediction !== null && <span className="ml-2 text-purple-600">AI Predicted: {fmt(aiPrediction)}</span>}
           </div>
           <div className="flex gap-2 items-center">
             <FaInfoCircle className="text-gray-500" />
-            <span>Market Rate: ${marketRates[marketRates.length - 1] || 0}</span>
-            <span>Competitor Avg: ${competitorRates[competitorRates.length - 1] || 0}</span>
-            <span className="text-green-600 font-semibold">Savings: ${Math.max(0, (competitorRates[competitorRates.length - 1] || 0) - (price || 0)).toFixed(2)}</span>
+            <span>Market Rate: {fmt(marketRates[marketRates.length - 1] || 0)}</span>
+            <span>Competitor Avg: {fmt(competitorRates[competitorRates.length - 1] || 0)}</span>
+            <span className="text-green-600 font-semibold">Savings: {fmt(Math.max(0, (competitorRates[competitorRates.length - 1] || 0) - (price || 0)))}</span>
           </div>
           <div className="flex gap-4 mt-2">
             <span className="text-blue-600">Volatility: {volatility}%</span>

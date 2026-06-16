@@ -14,6 +14,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import { StatCard } from '../components/EnliteUI';
 import { cn } from '../utils/cn';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface Trip {
   id: string;
@@ -63,6 +64,8 @@ interface Tenant {
 }
 
 const AdminTrips: React.FC = () => {
+  const { format: formatCurrency } = useCurrencyFormat();
+  
   // Fetch data
   const { data: trips, isLoading, error } = useQuery({
     queryKey: ['admin-all-trips'],
@@ -304,10 +307,6 @@ const AdminTrips: React.FC = () => {
 
   const formatDistance = (km: number) => `${(km || 0).toLocaleString()} km`;
   const formatWeight = (kg: number) => `${((kg || 0) / 1000).toFixed(1)} t`;
-  const formatCurrency = (val: number) => {
-    const numVal = Number(val) || 0;
-    return `$${numVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
   const formatDateTime = (dateStr: string | null | undefined) => {
     if (!dateStr) return '---';
     return new Date(dateStr).toLocaleString();

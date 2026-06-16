@@ -2,6 +2,7 @@ import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerStatistics } from '../../services/brokerApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -30,6 +31,7 @@ import {
 
 const BrokerAnalytics: React.FC = () => {
   const { user } = useAuth();
+  const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const [statistics, setStatistics] = useState<BrokerStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
@@ -113,8 +115,8 @@ const BrokerAnalytics: React.FC = () => {
       {/* Primary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Revenue', value: `$${(statistics?.totalCommissions ?? 0).toLocaleString()}`, icon: DollarSign },
-          { label: 'Settled', value: `$${(statistics?.totalEarned ?? 0).toLocaleString()}`, icon: TrendingUp },
+          { label: 'Revenue', value: fmtMoney(statistics?.totalCommissions ?? 0), icon: DollarSign },
+          { label: 'Settled', value: fmtMoney(statistics?.totalEarned ?? 0), icon: TrendingUp },
           { label: 'Loads', value: statistics?.totalLoads || 0, icon: Package },
           { label: 'Yield', value: `${(statistics?.averageCommissionRate ?? 0).toFixed(1)}%`, icon: Activity },
         ].map((stat, i) => (
@@ -205,9 +207,9 @@ const BrokerAnalytics: React.FC = () => {
         <h2 className="text-2xl font-bold text-slate-900 uppercase italic dark:text-white">Strategic Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {[
-            { label: 'Yield per Load', value: `$${((statistics?.totalCommissions || 0) / (statistics?.totalLoads || 1)).toFixed(2)}` },
-            { label: 'Pipeline Reserve', value: `$${statistics?.totalPending.toLocaleString() || '0.00'}` },
-            { label: 'Authorized Earnings', value: `$${statistics?.totalApproved.toLocaleString() || '0.00'}` },
+            { label: 'Yield per Load', value: fmtFull((statistics?.totalCommissions || 0) / (statistics?.totalLoads || 1)) },
+            { label: 'Pipeline Reserve', value: fmtMoney(statistics?.totalPending ?? 0) },
+            { label: 'Authorized Earnings', value: fmtMoney(statistics?.totalApproved ?? 0) },
           ].map((item, index) => (
             <div key={index} className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:bg-white transition-all shadow-sm dark:bg-slate-800/50 dark:border-slate-800">
               <p className="text-sm font-bold text-slate-400 uppercase mb-4">{item.label}</p>

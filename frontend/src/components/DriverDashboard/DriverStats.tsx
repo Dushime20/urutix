@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface DriverStatsProps {
   stats?: {
@@ -28,6 +29,7 @@ interface DriverStatsProps {
 }
 
 export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -76,7 +78,7 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
     },
     {
       title: 'Total Earnings',
-      value: `$${currentStats.totalEarnings.toLocaleString()}`,
+      value: formatCurrency(currentStats.totalEarnings),
       icon: DollarSign,
       color: 'yellow',
       change: '+15%',

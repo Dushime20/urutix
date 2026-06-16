@@ -12,6 +12,7 @@ import {
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const BRAND = '#2c5173';
 
@@ -31,13 +32,11 @@ const RISK_CONFIG: Record<string, { bg: string; text: string; bar: string; label
   CRITICAL: { bg: 'bg-red-900',     text: 'text-white',       bar: 'bg-red-600',     label: 'Critical Risk', pct: 100 },
 };
 
-const fmt = (n: number | null | undefined, currency = 'USD') =>
-  n != null ? `${currency} ${Number(n).toLocaleString()}` : null;
-
 const InspectionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { format: fmtCurrency } = useCurrencyFormat();
 
   const [actionNotes, setActionNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -222,13 +221,13 @@ const InspectionDetailPage: React.FC = () => {
             {(ins.declaredValue || ins.dutyAmount || ins.taxAmount) && (
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {ins.declaredValue && (
-                  <StatCard title="Declared Value" value={fmt(ins.declaredValue, cur) ?? '—'} icon={<DollarSign size={16} />} color="primary" variant="classic" />
+                  <StatCard title="Declared Value" value={fmtCurrency(ins.declaredValue)} icon={<DollarSign size={16} />} color="primary" variant="classic" />
                 )}
                 {ins.dutyAmount && (
-                  <StatCard title="Duty Amount" value={fmt(ins.dutyAmount, cur) ?? '—'} icon={<DollarSign size={16} />} color="primary" variant="classic" />
+                  <StatCard title="Duty Amount" value={fmtCurrency(ins.dutyAmount)} icon={<DollarSign size={16} />} color="primary" variant="classic" />
                 )}
                 {ins.taxAmount && (
-                  <StatCard title="Tax Amount" value={fmt(ins.taxAmount, cur) ?? '—'} icon={<DollarSign size={16} />} color="primary" variant="classic" />
+                  <StatCard title="Tax Amount" value={fmtCurrency(ins.taxAmount)} icon={<DollarSign size={16} />} color="primary" variant="classic" />
                 )}
               </div>
             )}

@@ -19,6 +19,7 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,14 +59,6 @@ const statusStyle: Record<string, string> = {
     on_hold:    'bg-orange-50 text-orange-700 border-orange-100',
 };
 
-const formatAmount = (amount: number | null): string => {
-    if (amount === null) return '—';
-    const abs = Math.abs(amount);
-    if (abs >= 1_000_000) return `USD ${(abs / 1_000_000).toFixed(2)}M`;
-    if (abs >= 1_000)    return `USD ${(abs / 1_000).toFixed(2)}K`;
-    return `USD ${abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', {
@@ -87,6 +80,12 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
     const [typeFilter, setTypeFilter]     = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [detailLoan, setDetailLoan]     = useState<any | null>(null);
+    const { format: fmtCurrency } = useCurrencyFormat();
+    // Context-aware formatter — preserves sign for inflow/outflow display
+    const formatAmount = (amount: number | null): string => {
+        if (amount === null) return '—';
+        return fmtCurrency(Math.abs(amount));
+    };
 
     // ── Derived stats — only from real data ───────────────────────────────────
 
@@ -181,17 +180,17 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                         e.amount > 0 ? 'text-emerald-600' : 'text-rose-600'
                     }`}>
                         {e.amount !== null
-                            ? `${e.amount > 0 ? '+' : '−'}${formatAmount(e.amount)}`
+                            ? `${e.amount > 0 ? '+' : '−'}${fmtCurrency(Math.abs(e.amount))}`
                             : '—'}
                     </span>
                     {/* Show interest/principal breakdown for repayments */}
                     {e.source === 'repayment' && (e.interestPaid != null || e.principalPaid != null) && (
                         <div className="flex gap-2 justify-end text-[9px] font-bold uppercase">
                             {e.principalPaid != null && e.principalPaid > 0 && (
-                                <span className="text-[#345E85]">P: {formatAmount(e.principalPaid)}</span>
+                                <span className="text-[#345E85]">P: {fmtCurrency(e.principalPaid)}</span>
                             )}
                             {e.interestPaid != null && e.interestPaid > 0 && (
-                                <span className="text-emerald-600">I: {formatAmount(e.interestPaid)}</span>
+                                <span className="text-emerald-600">I: {fmtCurrency(e.interestPaid)}</span>
                             )}
                         </div>
                     )}
@@ -256,7 +255,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                 />
                 <StatCard
                     title="Capital Outflow"
-                    value={totalOutflow > 0 ? formatAmount(totalOutflow) : 'N/A'}
+                    value={totalOutflow > 0 ? fmtCurrency(totalOutflow) : 'N/A'}
                     subtitle={`${disbursements.length} disbursement${disbursements.length !== 1 ? 's' : ''}`}
                     icon={<TrendingDown size={24} />}
                     color="error"
@@ -264,7 +263,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                 />
                 <StatCard
                     title="Capital Inflow"
-                    value={totalInflow > 0 ? formatAmount(totalInflow) : 'N/A'}
+                    value={totalInflow > 0 ? fmtCurrency(totalInflow) : 'N/A'}
                     subtitle={`${repayments.length} repayment${repayments.length !== 1 ? 's' : ''}`}
                     icon={<TrendingUp size={24} />}
                     color="success"
@@ -272,7 +271,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                 />
                 <StatCard
                     title="Interest Collected"
-                    value={totalInterestCollected > 0 ? formatAmount(totalInterestCollected) : 'N/A'}
+                    value={totalInterestCollected > 0 ? fmtCurrency(totalInterestCollected) : 'N/A'}
                     subtitle={totalInterestCollected > 0 ? 'From repayment records' : 'No interest recorded'}
                     icon={<DollarSign size={24} />}
                     color="secondary"
@@ -419,3 +418,5 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
 };
 
 export default HistoryEnlite;
+
+

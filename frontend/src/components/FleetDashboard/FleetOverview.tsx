@@ -354,6 +354,7 @@ function AlertsPanel({ trucks, drivers }: { trucks: any[]; drivers: any[] }) {
 // ── Revenue Trend Bar Chart ───────────────────────────────────────────────────
 
 function RevenueTrendChart({ analytics }: { analytics: any }) {
+  const { compact: fmt } = useCurrencyFormat();
   // Build 7-day mock trend from analytics data (real data would come from API)
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const base = analytics?.totalRevenue ? analytics.totalRevenue / 7 : 50000;

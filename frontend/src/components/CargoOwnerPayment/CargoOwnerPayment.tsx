@@ -26,6 +26,7 @@ import {
   formatCurrency,
   formatPercentage
 } from '../../utils/paymentCalculations';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Load {
   id: string;
@@ -86,6 +87,7 @@ type PaymentMode = 'direct' | 'loan';
 
 const CargoOwnerPayment: React.FC = () => {
   const { user } = useAuth();
+  const { format: fmtCurrency } = useCurrencyFormat();
   const [loads, setLoads] = useState<Load[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLoad, setSelectedLoad] = useState<Load | null>(null);
@@ -766,7 +768,7 @@ const CargoOwnerPayment: React.FC = () => {
                 <div className="flex items-center text-sm text-gray-600">
                   <DollarSign className="w-4 h-4 mr-2" />
                   <span className="font-semibold">
-                    {load.offeredPrice ? `${load.currencyCode || load.currency || 'USD'} ${load.offeredPrice.toLocaleString()}` : 'Amount not set'}
+                    {load.offeredPrice ? fmtCurrency(load.offeredPrice) : 'Amount not set'}
                   </span>
                 </div>
                 {load.pickupDate && (
@@ -813,7 +815,7 @@ const CargoOwnerPayment: React.FC = () => {
               </div>
               <p className="text-gray-600 mt-1">{selectedLoad.title}</p>
               <p className="text-lg font-semibold text-gray-900 mt-2">
-                Transportation Amount: {selectedLoad.currencyCode || selectedLoad.currency || 'USD'} {selectedLoad.offeredPrice?.toLocaleString() || '0'}
+                Transportation Amount: {fmtCurrency(selectedLoad.offeredPrice || 0)}
               </p>
 
               {/* Advance Payment Calculation Display */}
@@ -881,7 +883,7 @@ const CargoOwnerPayment: React.FC = () => {
                     <span className={`text-lg font-bold ${
                       walletBalance >= (Number(paymentAmount) || 0) ? 'text-green-700' : 'text-amber-700'
                     }`}>
-                      {selectedLoad?.currencyCode || 'USD'} {walletBalance.toLocaleString()}
+                      {fmtCurrency(walletBalance)}
                     </span>
                   </div>
                   {walletBalance < (Number(paymentAmount) || 0) && (

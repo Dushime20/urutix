@@ -22,6 +22,7 @@ import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 import LoanApprovalModal from './LoanApprovalModal';
 import type { LoanApprovalPayload } from './LoanApprovalModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface LoanRequestsEnliteProps {
     loading: boolean;
@@ -87,7 +88,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             sortable: true,
             render: (amount: number, row: any) => (
                 <div className="space-y-1">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">USD {(amount / 1000).toFixed(1)}K</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">{formatAmount(amount)}</p>
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold border border-blue-100 dark:border-blue-800/50 italic">
                             {row.interest_rate}% APR
@@ -232,7 +233,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard title="Total Applications" value={analytics?.totalRequests ?? 0} subtitle="Lifetime requests" icon={<FileText size={18} />} color="primary" variant="classic" />
                 <StatCard title="Pending Approval" value={analytics?.pendingRequests ?? 0} subtitle="Requires attention" icon={<Clock size={18} />} color="primary" variant="classic" />
-                <StatCard title="Capital Requested" value={`USD ${(analytics?.totalAmountRequested / 1000 || 0).toFixed(1)}K`} subtitle="Pipeline volume" icon={<DollarSign size={18} />} color="primary" variant="classic" />
+                <StatCard title="Capital Requested" value={`${formatAmount((analytics?.totalAmountRequested / 1000 || 0))}K`} subtitle="Pipeline volume" icon={<DollarSign size={18} />} color="primary" variant="classic" />
                 <StatCard title="Approval Rate" value={`${analytics?.approvalRate?.toFixed(1) || 0}%`} subtitle={`Avg risk: ${analytics?.averageRiskScore?.toFixed(0) || 0}%`} icon={<Shield size={18} />} color="primary" variant="classic" />
             </div>
 

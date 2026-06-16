@@ -24,6 +24,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
+import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface Tenant {
   id: string;
@@ -62,6 +63,7 @@ interface Tenant {
 const AdminTenants: React.FC = () => {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { format: formatCurrency } = useCurrencyFormat();
 
   // Form state
   const [name, setName] = useState('');
@@ -559,7 +561,7 @@ const AdminTenants: React.FC = () => {
         />
         <StatCard
           title={<TranslatedText text="Total Revenue" />}
-          value={`$${tenants.reduce((sum: number, t: Tenant) => sum + (t.revenue || 0), 0).toLocaleString()}`}
+          value={formatCurrency(tenants.reduce((sum: number, t: Tenant) => sum + (t.revenue || 0), 0))}
           icon={<TrendingUp size={22} />}
           color="primary"
           variant="classic"

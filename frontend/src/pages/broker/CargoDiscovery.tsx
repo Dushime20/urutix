@@ -2,6 +2,7 @@ import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { brokerAPI } from '../../services/brokerApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { 
   Package, 
   Search, 
@@ -45,6 +46,7 @@ type SortBy = 'newest' | 'value-high' | 'value-low' | 'urgent' | 'recommended';
 const CargoDiscovery: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { currency: currencyCode } = useCurrencyFormat();
   const [loads, setLoads] = useState<Load[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -190,7 +192,7 @@ const CargoDiscovery: React.FC = () => {
             </div>
             <div className="space-y-2">
                <p className="text-sm font-bold text-slate-400 uppercase ml-2">Floor Price</p>
-               <input type="number" value={filters.minValue} onChange={e => setFilters({...filters, minValue: e.target.value})} placeholder="Min USD" className="w-full bg-slate-50/50 rounded-xl px-6 py-4 text-sm font-bold uppercase text-slate-900 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all dark:text-white" />
+               <input type="number" value={filters.minValue} onChange={e => setFilters({...filters, minValue: e.target.value})} placeholder={`Min ${currencyCode}`} className="w-full bg-slate-50/50 rounded-xl px-6 py-4 text-sm font-bold uppercase text-slate-900 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all dark:text-white" />
             </div>
             <div className="flex items-end">
                <button onClick={clearFilters} className="w-full py-4 text-sm font-bold uppercase text-rose-500 hover:bg-rose-50 rounded-xl transition-all">Clear Selection</button>

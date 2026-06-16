@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lendingApi } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import LoanApprovalModal from './LoanApprovalModal';
 import {
   DollarSign, Briefcase, AlertTriangle, Activity,
@@ -49,6 +50,7 @@ const StatCard: React.FC<{
 const LenderDashboardEnlite: React.FC = () => {
   const { user, accessToken } = useAuth();
   const navigate = useNavigate();
+  const { format: formatCurrency } = useCurrencyFormat();
 
   const [dashboardData, setDashboardData]   = useState<any>(null);
   const [analyticsData, setAnalyticsData]   = useState<any>(null);
@@ -177,7 +179,7 @@ const LenderDashboardEnlite: React.FC = () => {
         />
         <StatCard
           title="Outstanding"
-          value={`$${(outstanding / 1000).toFixed(1)}K`}
+          value={formatCurrency(outstanding)}
           icon={<Banknote size={18} className="text-emerald-600" />}
           color="bg-emerald-50"
           sub="Total disbursed capital"
@@ -210,7 +212,7 @@ const LenderDashboardEnlite: React.FC = () => {
           value={`${roi.toFixed(1)}%`}
           icon={<Percent size={18} className="text-purple-600" />}
           color="bg-purple-50"
-          sub={`$${(interestCollected / 1000).toFixed(1)}K interest`}
+          sub={formatCurrency(interestCollected) + " interest"}
           loading={loading}
         />
       </div>
@@ -230,9 +232,9 @@ const LenderDashboardEnlite: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { label: 'Total Requests', value: analyticsData.totalLoans ?? 0 },
-              { label: 'Total Amount', value: `$${((analyticsData.totalAmount ?? 0) / 1000).toFixed(1)}K` },
+              { label: 'Total Amount', value: formatCurrency(analyticsData.totalAmount ?? 0) },
               { label: 'Success Rate', value: `${(analyticsData.successRate ?? 0).toFixed(1)}%` },
-              { label: 'Avg Loan Size', value: `$${((analyticsData.averageLoanSize ?? 0) / 1000).toFixed(1)}K` },
+              { label: 'Avg Loan Size', value: formatCurrency(analyticsData.averageLoanSize ?? 0) },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl font-black text-slate-900">{value}</p>
@@ -318,9 +320,9 @@ const LenderDashboardEnlite: React.FC = () => {
 
                       {/* Amount */}
                       <td className="px-6 py-4">
-                        <p className="text-sm font-black text-slate-900">${amount.toLocaleString()}</p>
+                        <p className="text-sm font-black text-slate-900">{formatCurrency(amount)}</p>
                         {approvedAmt != null && (
-                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ ${approvedAmt.toLocaleString()}</p>
+                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ {formatCurrency(approvedAmt)}</p>
                         )}
                       </td>
 
@@ -336,7 +338,7 @@ const LenderDashboardEnlite: React.FC = () => {
                             {split.map((s, i) => (
                               <div key={i} className="flex items-center gap-1.5">
                                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{s.type}</span>
-                                <span className="text-xs font-bold text-slate-700">${s.amount.toLocaleString()}</span>
+                                <span className="text-xs font-bold text-slate-700">{formatCurrency(s.amount)}</span>
                               </div>
                             ))}
                           </div>
@@ -451,3 +453,4 @@ const LenderDashboardEnlite: React.FC = () => {
 };
 
 export default LenderDashboardEnlite;
+

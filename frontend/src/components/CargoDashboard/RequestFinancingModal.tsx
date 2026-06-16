@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, DollarSign, Calendar, FileText, TrendingUp } from 'lucide-react';
 import loanRequestService from '../../services/loanRequestService';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Cargo {
     id: string;
@@ -26,6 +27,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
     cargo,
     onSuccess,
 }) => {
+    const { format: formatCurrency } = formatCurrency();
     const [loading, setLoading] = useState(false);
     const [loanAmount, setLoanAmount] = useState<number>(0);
     const [loanTerm, setLoanTerm] = useState<number>(30);
@@ -49,7 +51,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
         }
 
         if (loanAmount > maxLoanAmount) {
-            toast.error(`Loan amount cannot exceed ${maxLoanAmount.toLocaleString()} (80% of cargo value)`);
+            toast.error(`Loan amount cannot exceed ${formatCurrency(maxLoanAmount)} (80% of cargo value)`);
             return;
         }
 
@@ -123,10 +125,10 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                 <strong>Route:</strong> {cargo.pickupLocation?.name || 'N/A'} → {cargo.deliveryLocation?.name || 'N/A'}
                             </p>
                             <p className="text-primary-700">
-                                <strong>Cargo Value:</strong> ${cargoValue.toLocaleString()}
+                                <strong>Cargo Value:</strong> {formatCurrency(cargoValue)}
                             </p>
                             <p className="text-primary-700">
-                                <strong>Max Loan Amount:</strong> ${maxLoanAmount.toLocaleString()} (80% of value)
+                                <strong>Max Loan Amount:</strong> {formatCurrency(maxLoanAmount)} (80% of value)
                             </p>
                         </div>
                     </div>
@@ -152,7 +154,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                 />
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                                Maximum: ${maxLoanAmount.toLocaleString()}
+                                Maximum: {formatCurrency(maxLoanAmount)}
                             </p>
                         </div>
 
@@ -204,11 +206,11 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                 <div className="grid grid-cols-2 gap-3 text-sm">
                                     <div>
                                         <p className="text-gray-600">Loan Amount</p>
-                                        <p className="font-semibold text-gray-900">${loanAmount.toLocaleString()}</p>
+                                        <p className="font-semibold text-gray-900">{formatCurrency(loanAmount)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600">Interest (2%/month)</p>
-                                        <p className="font-semibold text-gray-900">${interestAmount.toLocaleString()}</p>
+                                        <p className="font-semibold text-gray-900">{formatCurrency(interestAmount)}</p>
                                     </div>
                                     <div>
                                         <p className="text-gray-600">Loan Term</p>
@@ -216,7 +218,7 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
                                     </div>
                                     <div>
                                         <p className="text-gray-600">Total Repayment</p>
-                                        <p className="font-semibold text-primary-600">${totalRepayment.toLocaleString()}</p>
+                                        <p className="font-semibold text-primary-600">{formatCurrency(totalRepayment)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -255,3 +257,5 @@ export const RequestFinancingModal: React.FC<RequestFinancingModalProps> = ({
         </div>
     );
 };
+
+

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerLoad, type LoadContract } from '../../services/brokerApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceModal';
 import FilterSelect from '../../components/common/FilterSelect';
 import {
@@ -24,6 +25,7 @@ import { generateBrokerContract, type BrokerContractData } from '@/templates/bro
 const BrokerLoadsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [loads, setLoads] = useState<BrokerLoad[]>([]);
   const [contracts, setContracts] = useState<Map<string, LoadContract>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -292,7 +294,7 @@ const BrokerLoadsPage: React.FC = () => {
                   <div className="space-y-4 mb-10 pt-6 border-t border-slate-50 dark:border-slate-800/50">
                     <div className="flex items-center justify-between">
                        <p className="text-sm font-bold text-slate-400 uppercase">Rate</p>
-                       <p className="text-lg font-bold text-slate-900 dark:text-white">{load.loadValue?.toLocaleString()} <span className="text-sm font-bold text-slate-300">KES</span></p>
+                       <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
                     </div>
                     {load.brokerCommissionRate && (
                        <div className="flex items-center justify-between">
@@ -367,7 +369,7 @@ const BrokerLoadsPage: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-10 py-10 text-right">
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">${load.loadValue?.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
                     {load.brokerCommissionRate && <p className="text-xs font-bold text-primary-500 uppercase">Comm: {load.brokerCommissionRate}%</p>}
                   </td>
                   <td className="px-10 py-10 text-right">

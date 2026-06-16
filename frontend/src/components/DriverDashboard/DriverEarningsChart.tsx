@@ -2,6 +2,7 @@ import React from 'react';
 import { Line } from 'react-chartjs-2';
 import { TrendingUp, Zap, BarChart3, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -40,6 +41,7 @@ interface DriverEarningsChartProps {
 }
 
 export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, isLoading }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   if (isLoading) {
     return <div className="bg-transparent p-6 sm:p-8 h-full min-h-[350px]" />;
   }
@@ -92,7 +94,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
         bodyFont: { family: 'Inter', size: 12, weight: 'bold' as const },
         padding: 16,
         displayColors: false,
-        callbacks: { label: (ctx: any) => `$${ctx.parsed.y.toLocaleString()}` },
+        callbacks: { label: (ctx: any) => formatCurrency(ctx.parsed.y) },
       },
     },
     scales: {
@@ -106,7 +108,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
 
   const stats = [
     { label: 'Total Trips', value: totalTrips, icon: BarChart3 },
-    { label: 'Avg. Per Trip', value: `$${avgPerTrip.toLocaleString()}`, icon: Activity },
+    { label: 'Avg. Per Trip', value: formatCurrency(avgPerTrip), icon: Activity },
     { label: 'Performance Grade', value: data.performanceGrade ?? '-', icon: Zap },
   ];
 
@@ -129,7 +131,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
 
         <div className="text-right">
           <span className="text-2xl font-black text-[#0f172a] tracking-tight">
-            ${totalEarnings.toLocaleString()}
+            {formatCurrency(totalEarnings)}
           </span>
           <div className="flex items-center justify-end gap-2 mt-1">
             <div className="flex items-center gap-1 text-[#2b5271] text-[9px] font-black uppercase tracking-widest">

@@ -21,6 +21,7 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,12 +75,7 @@ const scoreColor = (score: number | null): string => {
     return 'text-rose-600';
 };
 
-const formatAmount = (amount: number | null): string => {
-    if (amount === null) return '—';
-    if (amount >= 1_000_000) return `USD ${(amount / 1_000_000).toFixed(2)}M`;
-    if (amount >= 1_000)    return `USD ${(amount / 1_000).toFixed(1)}K`;
-    return `USD ${amount.toLocaleString()}`;
-};
+const formatAmount = (amount: number | null): string => amount === null ? '—' : amount.toLocaleString(); // replaced by hook inside component
 
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';

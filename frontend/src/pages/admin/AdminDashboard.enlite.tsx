@@ -8,6 +8,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { StatCard, DataCard, EnhancedTable, Column } from '../../components/EnliteUI';
 import api from '../../services/api';
 import { TranslatedText } from '../../components/translated-text';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface DashboardStats {
   totalTenants: number;
@@ -31,6 +32,7 @@ interface RecentActivity {
 const AdminDashboardEnlite: React.FC = () => {
   const [sortKey, setSortKey] = useState<string>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const { format: formatCurrency } = useCurrencyFormat();
 
   // Fetch dashboard stats
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
@@ -152,7 +154,7 @@ const AdminDashboardEnlite: React.FC = () => {
 
           <StatCard
             title={<TranslatedText text="Monthly Revenue" />}
-            value={`$${stats?.monthlyRevenue?.toLocaleString() || 0}`}
+            value={formatCurrency(stats?.monthlyRevenue || 0)}
             icon={<FaChartLine />}
             trend="+23%"
             trendDirection="up"
