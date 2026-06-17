@@ -441,6 +441,7 @@ const EnhancedPermissions: React.FC = () => {
     }
 
     return (
+        <>
         <AdminPageLayout
             title={<TranslatedText text="Permissions & Roles" />}
             description={<TranslatedText text="Manage roles, permissions, and access control across the platform" />}
@@ -762,6 +763,7 @@ const EnhancedPermissions: React.FC = () => {
                 isSaving={bulkAssignMutation.isPending}
             />
         )}
+        </>
     );
 };
 
