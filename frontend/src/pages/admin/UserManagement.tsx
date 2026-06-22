@@ -230,6 +230,137 @@ const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ u
   );
 };
 
+// ── Add New Permission Panel (superadmin only) ─────────────────────────────
+const CATEGORIES = [
+  'user_management', 'cargo_management', 'fleet_management', 'driver_management',
+  'trip_management', 'bidding', 'matching', 'broker_management', 'receiver_management',
+  'financial', 'credits', 'lending', 'analytics', 'tracking', 'documents', 'customs',
+  'safety', 'maintenance', 'insurance', 'fuel', 'notifications', 'ratings', 'rewards',
+  'marketplace', 'communication', 'system_admin', 'admin', 'tenant', 'security',
+];
+
+const AddPermissionPanel: React.FC = () => {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [resource, setResource] = useState('');
+  const [action, setAction] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+
+  const { mutate: createPerm, isPending } = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/admin/permissions/create', {
+        resource: resource.trim().toLowerCase().replace(/\s+/g, '_'),
+        action: action.trim().toLowerCase().replace(/\s+/g, '_'),
+        description: description.trim() || undefined,
+        category: (customCategory.trim() || category || 'other').toLowerCase().replace(/\s+/g, '_'),
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-role-matrix'] });
+      queryClient.invalidateQueries({ queryKey: ['modal-all-permissions'] });
+      toast.success(`Permission "${resource}.${action}" created`);
+      setResource(''); setAction(''); setDescription(''); setCategory(''); setCustomCategory('');
+      setOpen(false);
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Failed to create permission'),
+  });
+
+  return (
+    <div className="mb-4">
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+        >
+          <FaPlus size={11} /> Add New Permission
+        </button>
+      ) : (
+        <div className="bg-white border border-[#2c5173]/20 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <FaShieldAlt className="text-[#2c5173]" size={14} />
+              Add New Permission
+            </h3>
+            <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700">
+              <FaTimes size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Resource *</label>
+              <input
+                value={resource}
+                onChange={e => setResource(e.target.value)}
+                placeholder="e.g. cargo, fleet, users"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Action *</label>
+              <input
+                value={action}
+                onChange={e => setAction(e.target.value)}
+                placeholder="e.g. view, create, edit"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Category</label>
+              <select
+                value={category}
+                onChange={e => { setCategory(e.target.value); setCustomCategory(''); }}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+              >
+                <option value="">Select category…</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="__custom__">Custom…</option>
+              </select>
+              {category === '__custom__' && (
+                <input
+                  value={customCategory}
+                  onChange={e => setCustomCategory(e.target.value)}
+                  placeholder="custom_category"
+                  className="mt-1 w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+                />
+              )}
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Description</label>
+              <input
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="What this permission allows"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-[10px] text-slate-400">
+              Permission will be created as <code className="font-mono text-[#2c5173]">{resource || 'resource'}.{action || 'action'}</code>
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setOpen(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-black hover:bg-slate-200 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={() => createPerm()}
+                disabled={isPending || !resource.trim() || !action.trim()}
+                className="px-4 py-2 bg-[#2c5173] text-white rounded-lg text-xs font-black hover:bg-[#1e3850] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                {isPending ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating…</> : <><FaCheck size={10} /> Create Permission</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 type ActiveTab = 'users' | 'role-permissions';
 
 const UserManagement: React.FC = () => {
@@ -489,7 +620,11 @@ const UserManagement: React.FC = () => {
 
       {/* ── Role Permissions Tab ─────────────────────────────────────────── */}
       {activeTab === 'role-permissions' && (
-        <RolePermissionsMatrix />
+        <>
+          {/* Add New Permission Panel */}
+          <AddPermissionPanel />
+          <RolePermissionsMatrix />
+        </>
       )}
 
       {/* ── Users Tab ───────────────────────────────────────────────────── */}

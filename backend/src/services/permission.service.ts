@@ -85,8 +85,6 @@ export class RolePermissionService {
      * Get all roles
      */
     async getAllRoles(): Promise<Role[]> {
-        // Use raw SQL query instead of TypeORM relations
-        // because role_permissions table uses 'role' column (string) not 'role_id' (UUID)
         const query = `
             SELECT 
                 r.id,
@@ -107,19 +105,17 @@ export class RolePermissionService {
                     '[]'
                 ) as permissions
             FROM roles r
-            LEFT JOIN role_permissions rp ON r.name = rp.role
+            LEFT JOIN role_permissions rp ON r.id = rp.role_id
             LEFT JOIN permissions p ON rp.permission_id = p.id
             GROUP BY r.id, r.name, r.description, r.is_system, r.created_at, r.updated_at
             ORDER BY r.name ASC
         `;
 
         const roles = await this.roleRepository.manager.query(query);
-        
-        // Parse JSON permissions back to objects
         return roles.map(role => ({
             ...role,
-            permissions: typeof role.permissions === 'string' 
-                ? JSON.parse(role.permissions) 
+            permissions: typeof role.permissions === 'string'
+                ? JSON.parse(role.permissions)
                 : role.permissions
         }));
     }
@@ -128,8 +124,6 @@ export class RolePermissionService {
      * Get role by ID
      */
     async getRoleById(id: string): Promise<Role> {
-        // Use raw SQL query instead of TypeORM relations
-        // because role_permissions table uses 'role' column (string) not 'role_id' (UUID)
         const query = `
             SELECT 
                 r.id,
@@ -150,7 +144,7 @@ export class RolePermissionService {
                     '[]'
                 ) as permissions
             FROM roles r
-            LEFT JOIN role_permissions rp ON r.name = rp.role
+            LEFT JOIN role_permissions rp ON r.id = rp.role_id
             LEFT JOIN permissions p ON rp.permission_id = p.id
             WHERE r.id = $1
             GROUP BY r.id, r.name, r.description, r.is_system, r.created_at, r.updated_at
@@ -163,10 +157,8 @@ export class RolePermissionService {
         }
 
         const role = roles[0];
-        
-        // Parse JSON permissions back to objects
-        role.permissions = typeof role.permissions === 'string' 
-            ? JSON.parse(role.permissions) 
+        role.permissions = typeof role.permissions === 'string'
+            ? JSON.parse(role.permissions)
             : role.permissions;
 
         return role;
@@ -189,7 +181,6 @@ export class RolePermissionService {
         await queryRunner.startTransaction();
 
         try {
-            // Create the role
             const result = await queryRunner.query(
                 `INSERT INTO roles (name, description, is_system, created_at, updated_at)
                  VALUES ($1, $2, false, NOW(), NOW())
@@ -199,22 +190,19 @@ export class RolePermissionService {
 
             const role = result[0];
 
-            // Assign permissions if provided
-            // Note: role_permissions uses 'role' column (string) not 'role_id'
+            // Assign permissions using role_id UUID FK
             if (data.permissionIds && data.permissionIds.length > 0) {
                 for (const permissionId of data.permissionIds) {
                     await queryRunner.query(
-                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
-                         VALUES ($1, $2, NOW(), 'system')
-                         ON CONFLICT (role, permission_id) DO NOTHING`,
-                        [role.name, permissionId]
+                        `INSERT INTO role_permissions (role_id, permission_id)
+                         VALUES ($1, $2)
+                         ON CONFLICT (role_id, permission_id) DO NOTHING`,
+                        [role.id, permissionId]
                     );
                 }
             }
 
             await queryRunner.commitTransaction();
-
-            // Return role with permissions
             return await this.getRoleById(role.id);
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -239,24 +227,20 @@ export class RolePermissionService {
         await queryRunner.startTransaction();
 
         try {
-            // Update role name and description
             const updates: string[] = [];
             const values: any[] = [];
             let paramIndex = 1;
 
             if (data.name !== undefined) {
-                // Check if new name conflicts with existing role
                 if (data.name !== role.name) {
                     const nameConflict = await queryRunner.query(
                         'SELECT id FROM roles WHERE name = $1 AND id != $2',
                         [data.name, id]
                     );
-
                     if (nameConflict.length > 0) {
                         throw new BadRequestException(`Role with name '${data.name}' already exists`);
                     }
                 }
-
                 updates.push(`name = $${paramIndex++}`);
                 values.push(data.name);
             }
@@ -269,40 +253,29 @@ export class RolePermissionService {
             if (updates.length > 0) {
                 updates.push(`updated_at = NOW()`);
                 values.push(id);
-
                 await queryRunner.query(
                     `UPDATE roles SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
                     values
                 );
             }
 
-            // Update permissions if provided
-            // Note: role_permissions uses 'role' column (string) not 'role_id'
+            // Update permissions using role_id UUID FK
             if (data.permissionIds !== undefined) {
-                const roleName = data.name || role.name;
-
-                // Delete existing permissions
                 await queryRunner.query(
-                    'DELETE FROM role_permissions WHERE role = $1',
-                    [roleName]
+                    'DELETE FROM role_permissions WHERE role_id = $1',
+                    [id]
                 );
-
-                // Insert new permissions
-                if (data.permissionIds.length > 0) {
-                    for (const permissionId of data.permissionIds) {
-                        await queryRunner.query(
-                            `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
-                             VALUES ($1, $2, NOW(), 'system')
-                             ON CONFLICT (role, permission_id) DO NOTHING`,
-                            [roleName, permissionId]
-                        );
-                    }
+                for (const permissionId of data.permissionIds) {
+                    await queryRunner.query(
+                        `INSERT INTO role_permissions (role_id, permission_id)
+                         VALUES ($1, $2)
+                         ON CONFLICT (role_id, permission_id) DO NOTHING`,
+                        [id, permissionId]
+                    );
                 }
             }
 
             await queryRunner.commitTransaction();
-
-            // Return updated role
             return await this.getRoleById(id);
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -322,7 +295,6 @@ export class RolePermissionService {
             throw new BadRequestException('Cannot delete system roles');
         }
 
-        // Check if any users have this role
         const usersWithRole = await this.roleRepository.manager.query(
             'SELECT COUNT(*) as count FROM users WHERE role = $1',
             [role.name]
@@ -337,19 +309,9 @@ export class RolePermissionService {
         await queryRunner.startTransaction();
 
         try {
-            // Delete role permissions first
-            // Note: role_permissions uses 'role' column (string) not 'role_id'
-            await queryRunner.query(
-                'DELETE FROM role_permissions WHERE role = $1',
-                [role.name]
-            );
-
-            // Delete the role
-            await queryRunner.query(
-                'DELETE FROM roles WHERE id = $1',
-                [id]
-            );
-
+            // role_permissions has ON DELETE CASCADE from roles.id, but delete explicitly for safety
+            await queryRunner.query('DELETE FROM role_permissions WHERE role_id = $1', [id]);
+            await queryRunner.query('DELETE FROM roles WHERE id = $1', [id]);
             await queryRunner.commitTransaction();
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -485,41 +447,30 @@ export class RolePermissionService {
      * Bulk assign permissions to role
      */
     async bulkAssignPermissions(roleId: string, permissionIds: string[]): Promise<Role> {
-        // Get role first to check if it exists and is not a system role
         const role = await this.getRoleById(roleId);
 
-        if (role.isSystem) {
-            throw new BadRequestException('Cannot modify system roles');
-        }
-
-        // Use raw SQL to delete and insert permissions
-        // because role_permissions table uses 'role' column (string) not 'role_id' (UUID)
         const queryRunner = this.roleRepository.manager.connection.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
-            // Delete existing permissions for this role
+            // Delete existing permissions using role_id UUID FK
             await queryRunner.query(
-                'DELETE FROM role_permissions WHERE role = $1',
-                [role.name]
+                'DELETE FROM role_permissions WHERE role_id = $1',
+                [roleId]
             );
 
-            // Insert new permissions
-            if (permissionIds && permissionIds.length > 0) {
-                for (const permissionId of permissionIds) {
-                    await queryRunner.query(
-                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
-                         VALUES ($1, $2, NOW(), 'system')
-                         ON CONFLICT (role, permission_id) DO NOTHING`,
-                        [role.name, permissionId]
-                    );
-                }
+            // Insert new permissions using role_id UUID FK
+            for (const permissionId of (permissionIds || [])) {
+                await queryRunner.query(
+                    `INSERT INTO role_permissions (role_id, permission_id)
+                     VALUES ($1, $2)
+                     ON CONFLICT (role_id, permission_id) DO NOTHING`,
+                    [roleId, permissionId]
+                );
             }
 
             await queryRunner.commitTransaction();
-
-            // Return updated role
             return await this.getRoleById(roleId);
         } catch (error) {
             await queryRunner.rollbackTransaction();

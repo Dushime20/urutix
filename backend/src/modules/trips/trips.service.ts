@@ -17,6 +17,8 @@ import { UserRole } from '../../entities/user.entity';
 import { SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 import { EmailService } from '../auth/services/email.service';
 import { EmergencyRematchService } from '../matching/services/emergency-rematch.service';
+import { TripLocation } from '../tracking/entities/trip-location.entity';
+import { TrackingGateway } from '../tracking/tracking.gateway';
 
 @Injectable()
 export class TripsService {
@@ -40,6 +42,9 @@ export class TripsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly emailService: EmailService,
     @Optional() private readonly emergencyRematchService?: EmergencyRematchService,
+    @Optional() @InjectRepository(TripLocation)
+    private readonly tripLocationRepository?: Repository<TripLocation>,
+    @Optional() private readonly trackingGateway?: TrackingGateway,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
@@ -261,8 +266,101 @@ export class TripsService {
     return savedTrip;
   }
 
+  /**
+   * HTTP fallback: save a GPS location update for an active trip.
+   * Also broadcasts the update through the WebSocket gateway so
+   * stakeholders watching in real-time see the pin move.
+   */
+  async updateTripLocation(
+    tripId: string,
+    locationData: {
+      latitude: number;
+      longitude: number;
+      speed?: number;
+      heading?: number;
+      accuracy?: number;
+      batteryLevel?: number;
+      isMoving?: boolean;
+      timestamp: Date;
+    },
+    tenantId: string,
+    userId: string,
+  ): Promise<TripLocation | null> {
+    const trip = await this.tripRepository.findOne({ where: { id: tripId, tenantId } });
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    // Only allow location updates on active trips
+    if (trip.status !== TripStatus.IN_PROGRESS) {
+      throw new BadRequestException('Cannot update location: trip is not in progress');
+    }
+
+    // Update trip's currentLocation column
+    trip.currentLocation = {
+      type: 'Point',
+      coordinates: [locationData.longitude, locationData.latitude],
+    } as any;
+    trip.locationUpdatedAt = new Date();
+
+    // Optionally update ETA (simple distance-based calculation)
+    await this.tripRepository.save(trip);
+
+    // Save to trip_locations history
+    let savedLocation: TripLocation | null = null;
+    if (this.tripLocationRepository) {
+      const location = this.tripLocationRepository.create({
+        tripId,
+        driverId: trip.driverId,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        speed: locationData.speed,
+        heading: locationData.heading,
+        accuracy: locationData.accuracy,
+        batteryLevel: locationData.batteryLevel,
+        isMoving: locationData.isMoving ?? true,
+        timestamp: locationData.timestamp,
+      });
+      savedLocation = await this.tripLocationRepository.save(location);
+    }
+
+    // Broadcast via WebSocket so connected stakeholders see live update
+    if (this.trackingGateway) {
+      await this.trackingGateway.broadcastLocationUpdate(tripId, {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        speed: locationData.speed,
+        heading: locationData.heading,
+        timestamp: locationData.timestamp,
+      });
+    }
+
+    return savedLocation;
+  }
+
+  /**
+   * Return all recorded GPS points for a trip, ordered chronologically.
+   * Used for route playback and journey history.
+   */
+  async getTripRoute(
+    tripId: string,
+    tenantId: string,
+  ): Promise<{ locations: TripLocation[]; trip: Trip }> {
+    const trip = await this.tripRepository.findOne({
+      where: { id: tripId, tenantId },
+      relations: ['load', 'truck', 'driver', 'pickupLocation', 'deliveryLocation'],
+    });
+    if (!trip) throw new NotFoundException('Trip not found');
+
+    const locations = this.tripLocationRepository
+      ? await this.tripLocationRepository.find({
+          where: { tripId },
+          order: { timestamp: 'ASC' },
+        })
+      : [];
+
+    return { locations, trip };
+  }
+
   async remove(id: string, tenantId: string): Promise<void> {
-    const trip = await this.findOne(id, tenantId);
     await this.tripRepository.softDelete(id);
   }
 

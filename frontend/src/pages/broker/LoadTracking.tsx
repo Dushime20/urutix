@@ -1,7 +1,13 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { io, Socket } from 'socket.io-client';
 import { brokerAPI } from '../../services/brokerApi';
+import api from '../../services/api';
+import { getApiBaseUrl } from '../../config/environment';
 import { 
   MapPin, 
   Package, 
@@ -10,13 +16,30 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowLeft,
-  Loader2,
   Navigation,
   Activity,
   Zap,
   Shield,
-  ArrowRight
+  Radio,
+  WifiOff,
+  Gauge,
+  Target,
 } from 'lucide-react';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+const truckIcon = new L.Icon({ iconUrl, iconRetinaUrl, shadowUrl: iconShadow, iconSize: [28, 42], iconAnchor: [14, 42], popupAnchor: [0, -42], shadowSize: [41, 41] });
+const pinIcon = (color: string) => new L.Icon({
+  iconUrl: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32"><path d="M12 0C7.58 0 4 3.58 4 8c0 7 8 20 8 20s8-13 8-20c0-4.42-3.58-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" fill="${color}" stroke="white" stroke-width="1"/></svg>`)}`,
+  iconSize: [24, 32], iconAnchor: [12, 32], popupAnchor: [0, -32],
+});
+
+function MapPanner({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => { map.setView([lat, lng], map.getZoom(), { animate: true, duration: 1.2 }); }, [lat, lng, map]);
+  return null;
+}
 
 interface TrackingEvent {
   id: string;
@@ -52,16 +75,74 @@ const LoadTracking: React.FC = () => {
   const [tracking, setTracking] = useState<LoadTracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number; speed?: number; ts: string } | null>(null);
+  const [routePath, setRoutePath] = useState<[number, number][]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [driverOnline, setDriverOnline] = useState(false);
+  const [liveFlash, setLiveFlash] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (loadId) {
-      loadTracking();
-      const interval = setInterval(loadTracking, 30000);
+      loadTrackingData();
+      const interval = setInterval(loadTrackingData, 30000);
       return () => clearInterval(interval);
     }
   }, [loadId]);
 
-  const loadTracking = async () => {
+  // ── Connect socket when we have a tripId ─────────────────────────────────
+  useEffect(() => {
+    if (!tracking?.tripId) return;
+    const token = localStorage.getItem('accessToken') ?? localStorage.getItem('jwtToken');
+    if (!token) return;
+
+    const baseUrl = getApiBaseUrl().replace('/api', '');
+    const socket = io(`${baseUrl}/tracking`, { auth: { token }, transports: ['websocket', 'polling'], reconnection: true });
+
+    socket.on('connect', () => { setWsConnected(true); socket.emit('join:trip', { tripId: tracking.tripId }); });
+    socket.on('disconnect', () => { setWsConnected(false); setDriverOnline(false); });
+
+    socket.on('trip:joined', (d: any) => {
+      if (d.currentLocation?.latitude) {
+        setLiveLocation({ lat: d.currentLocation.latitude, lng: d.currentLocation.longitude, ts: d.timestamp ?? new Date().toISOString() });
+        setDriverOnline(true);
+      }
+    });
+
+    socket.on('location:updated', (d: any) => {
+      const lat = d.location?.latitude, lng = d.location?.longitude;
+      if (!lat) return;
+      setLiveLocation({ lat, lng, speed: d.location?.speed, ts: d.timestamp ?? new Date().toISOString() });
+      setDriverOnline(true);
+      setLiveFlash(true); setTimeout(() => setLiveFlash(false), 2000);
+      setRoutePath(prev => {
+        const last = prev[prev.length - 1];
+        if (last && last[0] === lat && last[1] === lng) return prev;
+        return [...prev, [lat, lng]];
+      });
+      if (d.eta?.eta) setTracking(prev => prev ? { ...prev, estimatedArrival: d.eta.eta } : prev);
+    });
+
+    socketRef.current = socket;
+    return () => { socket.emit('leave:trip', { tripId: tracking.tripId }); socket.disconnect(); socketRef.current = null; };
+  }, [tracking?.tripId]);
+
+  // ── Fetch route history when we have a tripId ────────────────────────────
+  useEffect(() => {
+    if (!tracking?.tripId) return;
+    api.get(`/trips/${tracking.tripId}/route`)
+      .then(res => {
+        const locs: any[] = res.data?.data?.locations ?? [];
+        if (!locs.length) return;
+        setRoutePath(locs.map((l: any) => [Number(l.latitude), Number(l.longitude)]));
+        const last = locs[locs.length - 1];
+        setLiveLocation({ lat: Number(last.latitude), lng: Number(last.longitude), speed: last.speed, ts: last.timestamp ?? new Date().toISOString() });
+        setDriverOnline(true);
+      })
+      .catch(() => {});
+  }, [tracking?.tripId]);
+
+  const loadTrackingData = async () => {
     if (!loadId) return;
 
     try {
@@ -161,55 +242,106 @@ const LoadTracking: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-        {/* Vector Point Analysis */}
-        <div className="lg:col-span-1 space-y-10">
-          <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
+        {/* Left panel: Live map + Vector point */}
+        <div className="lg:col-span-1 space-y-8">
+          {/* ── Live Map ───────────────────────────────────────────── */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-slate-50 dark:border-slate-800">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <Navigation size={12} className="text-[#345E85]" /> Live Position
+              </span>
+              <span className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest ${driverOnline ? 'text-emerald-500' : 'text-slate-400'}`}>
+                <span className={`w-2 h-2 rounded-full ${driverOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                {wsConnected ? (driverOnline ? 'Live' : 'Waiting…') : <><WifiOff size={10} /> Offline</>}
+                {liveFlash && <span className="ml-1 text-emerald-500">Updated</span>}
+              </span>
+            </div>
+            <MapContainer
+              center={liveLocation ? [liveLocation.lat, liveLocation.lng] : [-1.29, 36.82]}
+              zoom={liveLocation ? 12 : 6}
+              style={{ height: '280px', width: '100%' }}
+              scrollWheelZoom
+            >
+              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {liveLocation && <MapPanner lat={liveLocation.lat} lng={liveLocation.lng} />}
+              {routePath.length > 1 && <Polyline positions={routePath} color="#345E85" weight={4} opacity={0.85} />}
+              {liveLocation && (
+                <Marker position={[liveLocation.lat, liveLocation.lng]} icon={truckIcon}>
+                  <Popup>
+                    <strong>Live Position</strong><br />
+                    {liveLocation.speed != null && <>Speed: {liveLocation.speed} km/h<br /></>}
+                    {new Date(liveLocation.ts).toLocaleTimeString()}
+                  </Popup>
+                </Marker>
+              )}
+            </MapContainer>
+          </div>
+
+          {/* Vector coords */}
+          <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
             <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-              <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Vector Point
+              <div className="w-2 h-2 bg-[#345E85] rounded-full" /> GPS Coordinates
             </h3>
-            {tracking.currentLocation ? (
-              <div className="space-y-6">
-                <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center gap-6 dark:bg-slate-800/50 dark:border-slate-800">
-                   <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0 dark:bg-slate-950"><MapPin size={20} /></div>
-                   <p className="text-xs font-bold uppercase text-slate-900 leading-tight dark:text-white">{tracking.currentLocation.address || 'Geo-Coordinates Locked'}</p>
+            {liveLocation ? (
+              <div className="space-y-4">
+                <div className="flex justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Latitude</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{liveLocation.lat.toFixed(6)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Longitude</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{liveLocation.lng.toFixed(6)}</p>
+                  </div>
                 </div>
-                <div className="px-8 flex justify-between">
-                   <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Lateral</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{tracking.currentLocation.latitude.toFixed(6)}</p>
-                   </div>
-                   <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Longitudinal</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{tracking.currentLocation.longitude.toFixed(6)}</p>
-                   </div>
+                {liveLocation.speed != null && (
+                  <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-2xl border border-purple-100">
+                    <Gauge size={16} className="text-purple-600" />
+                    <div>
+                      <p className="text-[9px] font-black text-purple-400 uppercase">Speed</p>
+                      <p className="text-sm font-bold text-purple-700">{liveLocation.speed} km/h</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <Clock size={14} className="text-slate-400" />
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">Last update: {new Date(liveLocation.ts).toLocaleTimeString()}</p>
                 </div>
-                {tracking.tripId && (
-                  <button onClick={() => window.open(`/dashboard/tracking/trips/${tracking.tripId}`)} className="w-full py-5 bg-slate-50 border border-slate-100 text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-3 dark:bg-slate-800/50 dark:text-white dark:border-slate-800">
-                    <Navigation size={16} /> Open Map Terminal
+                {tracking?.tripId && (
+                  <button
+                    onClick={() => navigate(`/dashboard/tracking/trips/${tracking.tripId}`)}
+                    className="w-full py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0f172a] transition-all flex items-center justify-center gap-2"
+                  >
+                    <Navigation size={14} /> Full Trip Tracker
                   </button>
                 )}
               </div>
             ) : (
-              <div className="p-12 text-center bg-slate-50 rounded-[2rem] opacity-50 space-y-4 dark:bg-slate-800/50">
-                 <Zap className="w-10 h-10 text-slate-200 mx-auto" />
-                 <p className="text-sm font-bold text-slate-300 uppercase">Waiting for coordinate lock.</p>
+              <div className="p-10 text-center bg-slate-50 rounded-[2rem] opacity-50 space-y-3 dark:bg-slate-800/50">
+                <Zap className="w-10 h-10 text-slate-200 mx-auto" />
+                <p className="text-[10px] font-bold text-slate-300 uppercase">Awaiting coordinate lock</p>
               </div>
             )}
           </div>
 
-          <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden group dark:bg-slate-950">
-             <div className="absolute top-0 right-0 p-8 opacity-5"><Clock size={120} /></div>
-             <p className="text-xs font-bold text-slate-500 uppercase mb-4 dark:text-slate-400">ETA Projection</p>
-             <h3 className="text-4xl font-bold text-white mb-8 italic">
-               {tracking.estimatedArrival ? new Date(tracking.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'STABLE'}
-             </h3>
-             <div className="pt-6 border-t border-white/10 flex items-center justify-between">
-                <div>
-                   <p className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Date Projection</p>
-                   <p className="text-xs font-bold text-primary-400">{tracking.estimatedArrival ? new Date(tracking.estimatedArrival).toLocaleDateString() : 'Awaiting Calculation'}</p>
-                </div>
-                <Activity size={24} className="text-primary-500 animate-pulse" />
-             </div>
+          {/* ETA card */}
+          <div className="bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden dark:bg-slate-950">
+            <div className="absolute top-0 right-0 p-8 opacity-5"><Clock size={100} /></div>
+            <p className="text-[9px] font-black text-slate-500 uppercase mb-3">ETA Projection</p>
+            <h3 className="text-3xl font-bold text-white mb-6 italic">
+              {tracking?.estimatedArrival
+                ? new Date(tracking.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'STABLE'}
+            </h3>
+            <div className="pt-5 border-t border-white/10 flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase">Date</p>
+                <p className="text-[10px] font-bold text-[#345E85]">
+                  {tracking?.estimatedArrival ? new Date(tracking.estimatedArrival).toLocaleDateString() : 'Pending'}
+                </p>
+              </div>
+              <Activity size={22} className="text-[#345E85] animate-pulse" />
+            </div>
           </div>
         </div>
 

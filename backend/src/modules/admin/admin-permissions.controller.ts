@@ -350,6 +350,30 @@ export class AdminPermissionsController {
         return { success: true, message: 'Permissions assigned successfully' };
     }
 
+    // ── Create a new permission ────────────────────────────────────────────────
+    @Post('create')
+    @Roles(UserRole.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Create a new system permission' })
+    async createPermission(@Body() dto: { resource: string; action: string; description?: string; category?: string }, @Req() req: Request) {
+        const adminId = req['user']?.userId;
+        // Check for duplicate
+        const existing = await this.dataSource.query(
+            'SELECT id FROM permissions WHERE resource = $1 AND action = $2',
+            [dto.resource, dto.action],
+        );
+        if (existing.length > 0) {
+            return { success: false, message: `Permission "${dto.resource}.${dto.action}" already exists` };
+        }
+        const result = await this.dataSource.query(
+            `INSERT INTO permissions (resource, action, description, category)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, resource, action, description, category`,
+            [dto.resource, dto.action, dto.description || null, dto.category || 'other'],
+        );
+        this.logger.log(`Permission ${dto.resource}.${dto.action} created by ${adminId}`);
+        return { success: true, data: result[0], message: 'Permission created successfully' };
+    }
+
     // ── Private helpers ────────────────────────────────────────────────────────
     private async logAudit(
         qr: any, action: string, entityType: string, entityId: string,

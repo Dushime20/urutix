@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import CurrencySelector from '../common/CurrencySelector';
@@ -84,7 +84,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Smart Matching', path: `${basePath}/smart-matching` },
             { label: 'Accepted Matches', path: `${basePath}/accepted-matches` },
             { label: 'Freight Bidding', path: `${basePath}/bidding` },
-            { label: 'Live Tracking', path: `${basePath}/tracking` },
+            { label: '🔴 Live Tracking', path: `${basePath}/tracking` },
             { label: 'Multi-Modal Flow', path: `${basePath}/multi-modal` },
             { label: 'Receiver Directory', path: `${basePath}/receivers` },
             { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
@@ -103,6 +103,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
           ]
         },
+        { label: '🔴 Track', path: `${basePath}/tracking`, icon: Radio },
       ];
     }
 
@@ -118,7 +119,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Auctions', path: '/dashboard/broker/bidding' },
             { label: 'Smart Matching', path: '/dashboard/broker/smart-matching' },
             { label: 'Bidding', path: '/dashboard/broker/bidding' },
-            { label: 'Tracking', path: '/dashboard/broker/tracking' },
+            { label: '🔴 Live Tracking', path: '/dashboard/broker/tracking' },
           ]
         },
         {
@@ -131,7 +132,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Escrow Management', path: '/dashboard/broker/escrow' },
             { label: 'Credit Assessment', path: '/dashboard/broker/credit-management' },
           ]
-        }
+        },
+        { label: '🔴 Track', path: '/dashboard/broker/tracking', icon: Radio },
       ];
     }
 
@@ -144,7 +146,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Route,
           subItems: [
             { label: 'My Assignments', path: '/dashboard/driver/trips' },
-            { label: 'Live Mission tracking', path: '/dashboard/driver/tracking' },
+            { label: '🔴 Live Tracking', path: '/dashboard/driver/tracking' },
             { label: 'Inspection & Cargo', path: '/dashboard/driver/cargo' },
             { label: 'Operational Announcements', path: '/dashboard/driver/announcements' },
           ]
@@ -162,6 +164,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           ]
         },
         { label: 'Account', path: '/dashboard/driver/profile', icon: User },
+        { label: '🔴 Track', path: '/dashboard/driver/tracking', icon: Radio },
       ];
     }
 
@@ -188,6 +191,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Route,
           subItems: [
             { label: 'Active Trips', path: '/dashboard/trips' },
+            { label: '🔴 Live Tracking', path: '/dashboard/fleet/tracking' },
             { label: 'Freight Bidding', path: '/dashboard/fleet/bids' },
             { label: 'Route Planning', path: '/dashboard/fleet/routes' },
             { label: 'Financial Hub', path: '/dashboard/fleet/financial' },
@@ -196,6 +200,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Performance Analytics', path: '/dashboard/fleet/analytics' },
           ]
         },
+        { label: '🔴 Track', path: '/dashboard/fleet/tracking', icon: Radio },
       ];
     }
 

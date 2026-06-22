@@ -419,6 +419,55 @@ export class TripsController {
     return { success: true, message: 'Trip resumed successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
   }
 
+  @Post(':id/location')
+  @ApiOperation({ summary: 'Update trip location', description: 'HTTP endpoint for drivers to push GPS coordinates (fallback to WebSocket)' })
+  @ApiParam({ name: 'id', description: 'Trip ID' })
+  @ApiOkResponse({ description: 'Location updated successfully' })
+  async updateLocation(
+    @Param('id') id: string,
+    @Body() body: {
+      latitude: number;
+      longitude: number;
+      speed?: number;
+      heading?: number;
+      accuracy?: number;
+      batteryLevel?: number;
+      isMoving?: boolean;
+      timestamp?: string;
+    },
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const result = await this.tripsService.updateTripLocation(id, {
+      ...body,
+      timestamp: body.timestamp ? new Date(body.timestamp) : new Date(),
+    }, req.user.tenantId, req.user.userId);
+    return {
+      success: true,
+      message: 'Location updated successfully',
+      data: result,
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get(':id/route')
+  @ApiOperation({ summary: 'Get trip route history', description: 'Returns all recorded GPS coordinates for a trip (for route playback)' })
+  @ApiParam({ name: 'id', description: 'Trip ID' })
+  @ApiOkResponse({ description: 'Trip route retrieved successfully' })
+  async getTripRoute(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const route = await this.tripsService.getTripRoute(id, req.user.tenantId);
+    return {
+      success: true,
+      message: 'Trip route retrieved successfully',
+      data: route,
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete trip',

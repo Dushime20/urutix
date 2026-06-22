@@ -3,11 +3,312 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { permissionApi } from '../../../services/permissionApi';
 import {
     FaCheck, FaTimes, FaSpinner, FaFilter, FaDownload, FaCopy,
-    FaChartBar, FaInfoCircle, FaLock, FaUnlock, FaCheckDouble
+    FaChartBar, FaInfoCircle, FaLock, FaUnlock, FaCheckDouble,
+    FaShieldAlt, FaChevronDown, FaChevronRight, FaSearch,
 } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { UserRole } from '@/types/permission.types';
 import type { Permission } from '@/types/permission.types';
+
+// ── Role colour palette ────────────────────────────────────────────────────
+const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    SUPER_ADMIN:  { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200', dot: 'bg-purple-500'  },
+    ADMIN:        { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',   dot: 'bg-blue-500'    },
+    CARGO_OWNER:  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',  dot: 'bg-amber-500'   },
+    TRUCK_OWNER:  { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-200',  dot: 'bg-green-500'   },
+    DRIVER:       { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',   dot: 'bg-teal-500'    },
+    BROKER:       { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200', dot: 'bg-orange-500'  },
+    AGENT:        { bg: 'bg-cyan-50',    text: 'text-cyan-700',    border: 'border-cyan-200',   dot: 'bg-cyan-500'    },
+    LENDER:       { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200', dot: 'bg-indigo-500'  },
+};
+const roleColor = (role: string) =>
+    ROLE_COLORS[role] ?? { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-400' };
+
+// ── RoleDetailModal ────────────────────────────────────────────────────────
+interface RoleDetailModalProps {
+    role: string;
+    onClose: () => void;
+    onSaved: () => void;
+}
+
+const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSaved }) => {
+    const queryClient = useQueryClient();
+    const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+    const isSuperAdmin = role === 'SUPER_ADMIN';
+    const colors = roleColor(role);
+
+    // ── Fetch all system permissions ─────────────────────────────────────────
+    const { data: allPermsRaw = [], isLoading: loadingPerms } = useQuery({
+        queryKey: ['modal-all-permissions'],
+        queryFn: async () => {
+            const res = await import('../../../services/api').then(m => m.default.get('/admin/permissions/list'));
+            return res.data || [];
+        },
+    });
+
+    // ── Fetch this role's current permissions ─────────────────────────────────
+    const { data: roleData, isLoading: loadingRole } = useQuery({
+        queryKey: ['modal-role-detail', role],
+        queryFn: async () => {
+            const api = await import('../../../services/api').then(m => m.default);
+            // Try to find the role by name from the matrix endpoint
+            const res = await api.get('/admin/permissions/roles/matrix');
+            const matrix = res.data;
+            const rolesList: any[] = matrix?.roles ?? matrix?.data?.roles ?? [];
+            return rolesList.find((r: any) => r.name === role) ?? null;
+        },
+    });
+
+    const isLoading = loadingPerms || loadingRole;
+
+    // Normalise all permissions — ensure .name is always set
+    const allPerms: any[] = useMemo(() =>
+        (allPermsRaw as any[]).map((p: any) => ({
+            ...p,
+            name: p.name ?? `${p.resource}.${p.action}`,
+        })),
+    [allPermsRaw]);
+
+    // IDs currently granted to this role
+    const grantedIds = useMemo((): Set<string> => {
+        if (isSuperAdmin) return new Set(allPerms.map(p => p.id));
+        const granted: any[] = roleData?.permissions ?? [];
+        return new Set(granted.map((p: any) => p.id).filter(Boolean));
+    }, [roleData, allPerms, isSuperAdmin]);
+
+    // Local checkbox state (initialised once data loads)
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [initialised, setInitialised] = useState(false);
+
+    // Initialise selected from grantedIds when data arrives
+    React.useEffect(() => {
+        if (!isLoading && !initialised && allPerms.length > 0) {
+            setSelected(new Set(grantedIds));
+            setInitialised(true);
+        }
+    }, [isLoading, initialised, grantedIds, allPerms.length]);
+
+    const isDirty = useMemo(() => {
+        if (!initialised) return false;
+        if (grantedIds.size !== selected.size) return true;
+        for (const id of selected) if (!grantedIds.has(id)) return true;
+        return false;
+    }, [selected, grantedIds, initialised]);
+
+    // Bulk-assign mutation (uses role ID)
+    const { mutate: bulkAssign, isPending: isSaving } = useMutation({
+        mutationFn: async (permIds: string[]) => {
+            if (!roleData?.id) throw new Error('Role ID not found');
+            const api = await import('../../../services/api').then(m => m.default);
+            const res = await api.post(`/admin/permissions/roles/${roleData.id}/bulk-assign`, { permissionIds: permIds });
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-role-matrix'] });
+            queryClient.invalidateQueries({ queryKey: ['modal-role-detail', role] });
+            toast.success(`Permissions updated for ${role.replace(/_/g, ' ')}`);
+            onSaved();
+            onClose();
+        },
+        onError: () => toast.error('Failed to save permissions'),
+    });
+
+    // Grouping
+    const grouped = useMemo(() => {
+        const groups: Record<string, any[]> = {};
+        allPerms.forEach(p => {
+            const key = p.resource || 'other';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(p);
+        });
+        return groups;
+    }, [allPerms]);
+
+    const resources = Object.keys(grouped).sort();
+    const total = allPerms.length;
+    const grantedCount = selected.size;
+    const pct = total > 0 ? Math.round((grantedCount / total) * 100) : 0;
+
+    const toggleGroup = (resource: string) =>
+        setCollapsed(prev => { const n = new Set(prev); n.has(resource) ? n.delete(resource) : n.add(resource); return n; });
+
+    const toggleGroupSelect = (resource: string) => {
+        const perms = grouped[resource] || [];
+        const allChecked = perms.every(p => selected.has(p.id));
+        setSelected(prev => {
+            const n = new Set(prev);
+            perms.forEach(p => allChecked ? n.delete(p.id) : n.add(p.id));
+            return n;
+        });
+    };
+
+    const togglePerm = (id: string) =>
+        setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-[24px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+
+                {/* Header */}
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl ${colors.bg} ${colors.text}`}>
+                            <FaShieldAlt size={18} />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                                {role.replace(/_/g, ' ')}
+                                {isSuperAdmin && (
+                                    <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">
+                                        Immutable
+                                    </span>
+                                )}
+                            </h2>
+                            <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                {isLoading ? 'Loading…' : `${grantedCount} of ${total} permissions granted (${pct}%)`}
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
+                        <FaTimes />
+                    </button>
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-1 bg-slate-100">
+                    <div className={`h-full ${colors.dot} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                </div>
+
+                {/* Permissions list */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-16">
+                            <FaSpinner className="animate-spin text-[#2c5173] text-2xl" />
+                        </div>
+                    ) : (
+                        <>
+                            {isSuperAdmin && (
+                                <div className="flex items-center gap-2 p-3 bg-purple-50 border border-purple-100 rounded-xl text-xs text-purple-700 font-semibold">
+                                    <FaLock size={11} />
+                                    SUPER_ADMIN has all permissions by default and cannot be modified.
+                                </div>
+                            )}
+                            {resources.length === 0 ? (
+                                <div className="text-center py-10 text-slate-400 text-sm">No permissions found.</div>
+                            ) : (
+                                resources.map(resource => {
+                                    const perms = grouped[resource];
+                                    const checkedInGroup = perms.filter(p => selected.has(p.id)).length;
+                                    const allGroupChecked = checkedInGroup === perms.length;
+                                    const isCollapsed = collapsed.has(resource);
+                                    return (
+                                        <div key={resource} className="border border-slate-100 rounded-2xl overflow-hidden">
+                                            {/* Group header */}
+                                            <div
+                                                className="flex items-center justify-between px-4 py-3 bg-slate-50/80 cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                                                onClick={() => toggleGroup(resource)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {isCollapsed
+                                                        ? <FaChevronRight size={11} className="text-slate-400" />
+                                                        : <FaChevronDown size={11} className="text-slate-400" />
+                                                    }
+                                                    <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{resource}</span>
+                                                    <span className="text-[9px] bg-white border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-bold">
+                                                        {checkedInGroup}/{perms.length}
+                                                    </span>
+                                                </div>
+                                                {!isSuperAdmin && (
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); toggleGroupSelect(resource); }}
+                                                        className={`text-[10px] font-black px-3 py-1 rounded-lg transition-colors ${
+                                                            allGroupChecked
+                                                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                                : 'bg-[#2c5173]/10 text-[#2c5173] hover:bg-[#2c5173]/20'
+                                                        }`}
+                                                    >
+                                                        {allGroupChecked ? 'Deselect All' : 'Select All'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {/* Permission rows */}
+                                            {!isCollapsed && (
+                                                <div className="divide-y divide-slate-50">
+                                                    {perms.map(p => {
+                                                        const checked = isSuperAdmin ? true : selected.has(p.id);
+                                                        return (
+                                                            <label
+                                                                key={p.id}
+                                                                className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                                                                    !isSuperAdmin ? 'cursor-pointer hover:bg-slate-50' : 'cursor-not-allowed opacity-70'
+                                                                } ${checked ? 'bg-emerald-50/40' : ''}`}
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={checked}
+                                                                    disabled={isSuperAdmin}
+                                                                    onChange={() => !isSuperAdmin && togglePerm(p.id)}
+                                                                    className="w-4 h-4 rounded border-slate-300 text-[#2c5173] focus:ring-[#2c5173] focus:ring-offset-0 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                                                                />
+                                                                <div className="min-w-0 flex-1">
+                                                                    <span className="text-xs font-bold text-slate-700 font-mono">
+                                                                        {p.name || `${p.resource}.${p.action}`}
+                                                                    </span>
+                                                                    {p.description && (
+                                                                        <p className="text-[10px] text-slate-400 mt-0.5">{p.description}</p>
+                                                                    )}
+                                                                </div>
+                                                                {checked && (
+                                                                    <span className="flex-shrink-0 text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                                                        Granted
+                                                                    </span>
+                                                                )}
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4">
+                    <p className="text-xs text-slate-400">
+                        {isSuperAdmin ? (
+                            <span className="text-purple-600 font-semibold flex items-center gap-1.5"><FaLock size={10} /> Read-only</span>
+                        ) : isDirty ? (
+                            <span className="text-amber-600 font-bold">⚠ Unsaved changes</span>
+                        ) : (
+                            'No changes'
+                        )}
+                    </p>
+                    <div className="flex gap-3">
+                        <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors">
+                            {isSuperAdmin ? 'Close' : 'Cancel'}
+                        </button>
+                        {!isSuperAdmin && (
+                            <button
+                                onClick={() => bulkAssign(Array.from(selected))}
+                                disabled={isSaving || !isDirty}
+                                className="px-5 py-2.5 bg-[#2c5173] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#1e3850] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                            >
+                                {isSaving
+                                    ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>
+                                    : <><FaCheck size={11} /> Save Changes</>
+                                }
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 interface RolePermissionsMatrixProps {
     className?: string;
@@ -21,6 +322,8 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
     const [showStats, setShowStats] = useState(false);
     const [bulkMode, setBulkMode] = useState(false);
     const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+    // ── Role detail modal state ────────────────────────────────────────────
+    const [activeRoleModal, setActiveRoleModal] = useState<string | null>(null);
 
     // Fetch all permissions
     const { data: permissions = [], isLoading: isLoadingPermissions } = useQuery({
@@ -52,6 +355,31 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
             });
         });
         return flat;
+    }, [rawMatrix]);
+
+    // ── All permissions (full list) from rawMatrix.permissions ───────────────
+    // rawMatrix.permissions contains every permission in the system.
+    // Fallback to the listAllPermissions query result if not present.
+    const allPermissionsForModal: Permission[] = useMemo(() => {
+        if (!rawMatrix) return permissions as Permission[];
+        const fromMatrix: any[] = rawMatrix.permissions ?? rawMatrix.data?.permissions ?? [];
+        if (fromMatrix.length > 0) {
+            // Ensure each permission has a .name field (resource.action)
+            return fromMatrix.map((p: any) => ({
+                ...p,
+                name: p.name ?? `${p.resource}.${p.action}`,
+            }));
+        }
+        return permissions as Permission[];
+    }, [rawMatrix, permissions]);
+
+    // ── Map role name → role id (for bulk-assign endpoint) ───────────────────
+    const roleIdMap = useMemo((): Record<string, string> => {
+        if (!rawMatrix || Array.isArray(rawMatrix)) return {};
+        const rolesList: any[] = rawMatrix.roles ?? rawMatrix.data?.roles ?? [];
+        const map: Record<string, string> = {};
+        rolesList.forEach((r: any) => { if (r.id && r.name) map[r.name] = r.id; });
+        return map;
     }, [rawMatrix]);
 
     // Determine current state helper
@@ -225,6 +553,16 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
 
     return (
         <div className={`space-y-6 ${className}`}>
+
+            {/* ── Role Detail Modal (opened from column header) ─────────────── */}
+            {activeRoleModal && (
+                <RoleDetailModal
+                    role={activeRoleModal}
+                    onClose={() => setActiveRoleModal(null)}
+                    onSaved={() => queryClient.invalidateQueries({ queryKey: ['admin-role-matrix'] })}
+                />
+            )}
+
             {/* Enhanced Controls Bar */}
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
                 <div className="flex flex-wrap gap-4 items-center justify-between">
@@ -402,7 +740,13 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                     <th key={role} className="px-4 py-4 text-center font-bold text-slate-700 min-w-[110px] group">
                                         <div className="flex flex-col items-center gap-1">
                                             <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Role</span>
-                                            <span className="text-sm">{role.replace('_', ' ')}</span>
+                                            <button
+                                                onClick={() => setActiveRoleModal(role)}
+                                                title={`View / edit ${role} permissions`}
+                                                className="text-sm hover:text-indigo-600 hover:underline transition-colors"
+                                            >
+                                                {role.replace('_', ' ')}
+                                            </button>
                                             {role !== 'SUPER_ADMIN' && (
                                                 <button
                                                     onClick={() => {

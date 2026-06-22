@@ -897,6 +897,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
   search: string;
   onSearchChange: (v: string) => void;
 }> = ({ requests, analytics, loading, error, onNewRequest, onRefresh, search, onSearchChange }) => {
+  const { compact: fmtMoney } = useCurrencyFormat();
   const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
 
   const filtered = requests.filter(r =>

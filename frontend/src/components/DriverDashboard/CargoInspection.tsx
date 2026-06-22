@@ -319,48 +319,45 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight">Cargo Inspection</h2>
-          <p className="text-slate-400 font-medium text-sm">Follow protocol to ensure safe transport</p>
+          <h2 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-tight">Cargo Inspection</h2>
+          <p className="text-slate-400 font-medium text-xs sm:text-sm">Follow protocol to ensure safe transport</p>
         </div>
-        <button
-          onClick={onCancel}
-          className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
-        >
-          <X className="w-6 h-6" />
+        <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+          <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Modern Stepper */}
-      <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm overflow-x-auto custom-scrollbar">
-        <div className="flex items-center justify-between min-w-[500px] relative px-4 md:px-12">
-          {/* Line Background */}
-          <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-100 -z-10" />
-
+      {/* Stepper */}
+      <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm overflow-x-auto">
+        <div className="flex items-center justify-between min-w-[320px] relative px-2 sm:px-8">
+          <div className="absolute left-4 right-4 top-5 h-0.5 bg-slate-100 -z-10" />
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = inspectionStep === step.id;
             const isCompleted = steps.findIndex(s => s.id === inspectionStep) > index;
-
             return (
-              <div key={step.id} className="flex flex-col items-center gap-2 bg-white px-2">
-                <button 
+              <div key={step.id} className="flex flex-col items-center gap-1.5 bg-white px-1">
+                <button
                   onClick={() => {
                     const stepIdx = steps.findIndex(s => s.id === step.id);
                     const currentIdx = steps.findIndex(s => s.id === inspectionStep);
                     if (stepIdx < currentIdx) setInspectionStep(step.id as any);
                   }}
-                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive ? 'border-[#345E85] bg-[#345E85] text-white scale-110 shadow-lg shadow-blue-900/20' :
-                    isCompleted ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-200 bg-slate-50 text-slate-300'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                    isActive ? 'border-[#345E85] bg-[#345E85] text-white scale-110 shadow-lg shadow-blue-900/20' :
+                    isCompleted ? 'border-emerald-500 bg-emerald-500 text-white' :
+                    'border-slate-200 bg-slate-50 text-slate-300'
                   }`}
                 >
-                  {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                  {isCompleted ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </button>
-                <span className={`text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-[#345E85]' : isCompleted ? 'text-emerald-600' : 'text-slate-300'
-                  }`}>
+                <span className={`text-[9px] font-black uppercase tracking-wider whitespace-nowrap hidden sm:block ${
+                  isActive ? 'text-[#345E85]' : isCompleted ? 'text-emerald-600' : 'text-slate-300'
+                }`}>
                   <TranslatedText text={step.label} />
                 </span>
               </div>
@@ -380,51 +377,44 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         >
           {/* OVERVIEW STEP */}
           {inspectionStep === 'overview' && (
-            <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
-                <Info className="w-4 h-4 text-slate-400" />
-                Verify Cargo Details
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-7">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-5 flex items-center gap-2">
+                <Info className="w-4 h-4 text-slate-400" /> Verify Cargo Details
               </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div className="space-y-4">
-                  <div className="flex justify-between p-4 bg-slate-50 rounded-xl">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Name</span>
-                    <span className="font-bold text-slate-900">{cargo.name}</span>
-                  </div>
-                  <div className="flex justify-between p-4 bg-slate-50 rounded-xl">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Qty / Weight</span>
-                    <span className="font-bold text-slate-900">{cargo.quantity} units / {cargo.weight} kg</span>
-                  </div>
-                  <div className="flex justify-between p-4 bg-slate-50 rounded-xl">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Category</span>
-                    <span className="font-bold text-slate-900">{cargo.category}</span>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
+                <div className="space-y-3">
+                  {[
+                    { label: 'Name', value: cargo.name },
+                    { label: 'Qty / Weight', value: `${cargo.quantity} units / ${cargo.weight} kg` },
+                    { label: 'Category', value: cargo.category },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl gap-3">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide flex-shrink-0">{item.label}</span>
+                      <span className="text-xs font-bold text-slate-900 text-right">{item.value}</span>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="space-y-4">
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Special Handling</h4>
-                  <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Special Handling</h4>
+                  <div className="flex flex-wrap gap-1.5">
                     {cargo.specialRequirements.map((req, i) => (
-                      <span key={i} className="px-3 py-1.5 bg-blue-50 text-[#345E85] text-xs font-bold rounded-lg border border-blue-100">
-                        {req}
-                      </span>
+                      <span key={i} className="px-2.5 py-1 bg-blue-50 text-[#345E85] text-[10px] font-bold rounded-lg border border-blue-100">{req}</span>
                     ))}
                     {cargo.hazardous && (
-                      <span className="px-3 py-1.5 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100 flex items-center gap-1">
+                      <span className="px-2.5 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-lg border border-red-100 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> Hazardous
                       </span>
+                    )}
+                    {cargo.specialRequirements.length === 0 && !cargo.hazardous && (
+                      <span className="text-xs text-slate-400 italic">None</span>
                     )}
                   </div>
                 </div>
               </div>
-
               <div className="flex justify-end">
-                <button
-                  onClick={() => setInspectionStep('physical')}
-                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
-                >
-                  Begin Physical Check <ArrowRight className="w-4 h-4" />
+                <button onClick={() => setInspectionStep('physical')}
+                  className="w-full sm:w-auto px-5 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                  Begin Physical Check <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -432,8 +422,8 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
           {/* PHYSICAL STEP */}
           {inspectionStep === 'physical' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { id: 'packaging', label: 'Packaging Integrity', description: 'Visibly intact, no dents' },
                   { id: 'seals', label: 'Seals & Closures', description: 'Tamper-proof seals present' },
@@ -446,72 +436,60 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                 ].map((item) => {
                   const status = checklistStatus[item.id];
                   return (
-                    <div key={item.id} className={`p-4 rounded-xl border-2 transition-all ${status === 'passed' ? 'bg-emerald-50/50 border-emerald-100' :
-                        status === 'failed' ? 'bg-red-50/50 border-red-100' :
-                          'bg-white border-slate-100'
-                      }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-slate-700">{item.label}</h4>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleChecklistItem(item.id, 'passed')}
-                            className={`p-1.5 rounded-lg transition-colors ${status === 'passed' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
-                          >
-                            <CheckCircle className="w-5 h-5" />
+                    <div key={item.id} className={`p-3 rounded-xl border-2 transition-all ${status === 'passed' ? 'bg-emerald-50/50 border-emerald-100' : status === 'failed' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-100'}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-slate-700 truncate">{item.label}</h4>
+                          <p className="text-[10px] text-slate-400 font-medium">{item.description}</p>
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <button onClick={() => handleChecklistItem(item.id, 'passed')}
+                            className={`p-1.5 rounded-lg transition-colors ${status === 'passed' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}>
+                            <CheckCircle className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleChecklistItem(item.id, 'failed')}
-                            className={`p-1.5 rounded-lg transition-colors ${status === 'failed' ? 'bg-red-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
-                          >
-                            <XCircle className="w-5 h-5" />
+                          <button onClick={() => handleChecklistItem(item.id, 'failed')}
+                            className={`p-1.5 rounded-lg transition-colors ${status === 'failed' ? 'bg-red-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}>
+                            <XCircle className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
-                      <p className="text-xs text-slate-500 font-medium">{item.description}</p>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Camera className="w-4 h-4 text-slate-400" /> Photo Evidence
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-[#345E85] hover:bg-blue-50 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-[#345E85] hover:bg-blue-50 transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 group">
                     <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploadingPhoto} className="hidden" />
-                    <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center transition-colors">
-                      {uploadingPhoto ? <div className="w-5 h-5 border-2 border-[#345E85] border-t-transparent rounded-full animate-spin" /> : <Upload className="w-5 h-5 text-[#345E85]" />}
+                    <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center transition-colors">
+                      {uploadingPhoto ? <div className="w-4 h-4 border-2 border-[#345E85] border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4 text-[#345E85]" />}
                     </div>
-                    <span className="text-xs font-bold text-slate-400 group-hover:text-[#345E85]">Upload</span>
+                    <span className="text-[9px] font-bold text-slate-400 group-hover:text-[#345E85]">Upload</span>
                   </label>
-
                   {uploadedPhotos.map((photo) => (
                     <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden group border border-slate-100 shadow-sm">
                       <img src={photo.url} alt="Evidence" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => removePhoto(photo.id)}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-md"
-                      >
-                        <X className="w-3 h-3" />
+                      <button onClick={() => removePhoto(photo.id)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
+                        <X className="w-2.5 h-2.5" />
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-between pt-4">
-                <button
-                  onClick={() => setInspectionStep('overview')}
-                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
-                >
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button onClick={() => setInspectionStep('overview')}
+                  className="flex-1 sm:flex-none px-5 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all">
                   Back
                 </button>
-                <button
-                  onClick={() => setInspectionStep('documentation')}
-                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
-                >
-                  Next Step <ArrowRight className="w-4 h-4" />
+                <button onClick={() => setInspectionStep('documentation')}
+                  className="flex-1 px-5 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                  Next Step <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -568,18 +546,14 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                 </div>
               </div>
 
-              <div className="flex justify-between pt-4">
-                <button
-                  onClick={() => setInspectionStep('physical')}
-                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
-                >
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button onClick={() => setInspectionStep('physical')}
+                  className="flex-1 sm:flex-none px-5 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all">
                   <TranslatedText text="Back" />
                 </button>
-                <button
-                  onClick={() => setInspectionStep('securement')}
-                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
-                >
-                  <TranslatedText text="Securement Check" /> <ArrowRight className="w-4 h-4" />
+                <button onClick={() => setInspectionStep('securement')}
+                  className="flex-1 px-5 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                  <TranslatedText text="Securement Check" /> <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -587,14 +561,13 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
           {/* SECUREMENT STEP */}
           {inspectionStep === 'securement' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-slate-400" />
                   <TranslatedText text="Loading & Securement Check" />
                 </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { id: 'straps', label: 'Ratchet Straps & Chains', description: 'Tensioned and double-locked' },
                     { id: 'weightDist', label: 'Load Distribution', description: 'Weight centered over axles' },
@@ -603,50 +576,37 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                   ].map((item) => {
                     const status = checklistStatus[item.id];
                     return (
-                      <div key={item.id} className={`p-4 rounded-xl border-2 transition-all ${status === 'passed' ? 'bg-emerald-50 border-emerald-100' :
-                          status === 'failed' ? 'bg-red-50 border-red-100' :
-                            'bg-white border-slate-100'
-                        }`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-bold text-slate-700 text-sm">
-                            <TranslatedText text={item.label} />
-                          </h4>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => handleChecklistItem(item.id, 'passed')}
-                              className={`p-1.5 rounded-lg transition-colors ${status === 'passed' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
-                            >
+                      <div key={item.id} className={`p-3 rounded-xl border-2 transition-all ${status === 'passed' ? 'bg-emerald-50 border-emerald-100' : status === 'failed' ? 'bg-red-50 border-red-100' : 'bg-white border-slate-100'}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-slate-700 truncate"><TranslatedText text={item.label} /></h4>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight italic"><TranslatedText text={item.description} /></p>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button onClick={() => handleChecklistItem(item.id, 'passed')}
+                              className={`p-1.5 rounded-lg transition-colors ${status === 'passed' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}>
                               <CheckCircle className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => handleChecklistItem(item.id, 'failed')}
-                              className={`p-1.5 rounded-lg transition-colors ${status === 'failed' ? 'bg-red-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}
-                            >
+                            <button onClick={() => handleChecklistItem(item.id, 'failed')}
+                              className={`p-1.5 rounded-lg transition-colors ${status === 'failed' ? 'bg-red-500 text-white shadow-md' : 'text-slate-300 hover:bg-slate-50'}`}>
                               <XCircle className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight italic">
-                           <TranslatedText text={item.description} />
-                        </p>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="flex justify-between pt-4">
-                <button
-                  onClick={() => setInspectionStep('documentation')}
-                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
-                >
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button onClick={() => setInspectionStep('documentation')}
+                  className="flex-1 sm:flex-none px-5 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all">
                   <TranslatedText text="Back" />
                 </button>
-                <button
-                  onClick={() => setInspectionStep('final')}
-                  className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
-                >
-                  <TranslatedText text="Review & Sign" /> <ArrowRight className="w-4 h-4" />
+                <button onClick={() => setInspectionStep('final')}
+                  className="flex-1 px-5 py-3 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                  <TranslatedText text="Review & Sign" /> <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -654,53 +614,55 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
           {/* FINAL STEP */}
           {inspectionStep === 'final' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 p-8">
-                <div className="flex flex-col gap-6">
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-2">Final Remarks</h3>
-                    <p className="text-slate-500 text-sm mb-4">Please provide any final notes or observations regarding this inspection.</p>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-1">Final Remarks</h3>
+                    <p className="text-slate-400 text-xs mb-3">Add any final notes or observations about this inspection.</p>
                     <textarea
                       value={inspectionResult.notes}
                       onChange={(e) => setInspectionResult(prev => ({ ...prev, notes: e.target.value }))}
                       placeholder="Enter detailed inspection notes here..."
-                      className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] resize-none transition-all"
+                      className="w-full h-28 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] resize-none transition-all"
                     />
                   </div>
 
-                  <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Inspection Summary</h4>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">Inspection Summary</h4>
                     <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Physical Checks Passed</span>
-                        <span className="font-bold text-slate-900">{Object.values(checklistStatus).filter(s => s === 'passed').length} / {Object.keys(checklistStatus).length}</span>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500">Physical Checks Passed</span>
+                        <span className="font-bold text-slate-900">
+                          {Object.values(checklistStatus).filter(s => s === 'passed').length} / {Object.keys(checklistStatus).length}
+                        </span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Documents Verified</span>
-                        <span className="font-bold text-slate-900">{Object.values(documentStatus).filter(s => s === 'verified').length} / {cargo.documents.length}</span>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500">Documents Verified</span>
+                        <span className="font-bold text-slate-900">
+                          {Object.values(documentStatus).filter(s => s === 'verified').length} / {cargo.documents.length}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-between pt-4">
-                <button
-                  onClick={() => setInspectionStep('documentation')}
-                  className="px-6 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all"
-                >
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button onClick={() => setInspectionStep('securement')}
+                  className="flex-1 sm:flex-none px-5 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition-all">
                   Back
                 </button>
                 <button
                   onClick={handleInspectionComplete}
-                  className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all ${!inspectionResult.notes
+                  disabled={!inspectionResult.notes}
+                  className={`flex-1 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all ${
+                    !inspectionResult.notes
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                       : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/20'
-                    }`}
-                  disabled={!inspectionResult.notes}
+                  }`}
                 >
-                  <Save className="w-4 h-4" />
-                  Submit Inspection
+                  <Save className="w-3.5 h-3.5" /> Submit Inspection
                 </button>
               </div>
             </div>

@@ -97,10 +97,10 @@ export class PermissionService {
             `SELECT p.resource, p.action
        FROM permissions p
        INNER JOIN role_permissions rp ON p.id = rp.permission_id
-       WHERE rp.role = $1`,
+       INNER JOIN roles r ON rp.role_id = r.id
+       WHERE r.name = $1`,
             [role]
         );
-
         return result.map((row: any) => `${row.resource}:${row.action}`);
     }
 
@@ -109,7 +109,7 @@ export class PermissionService {
      * Returns roles with their permissions and all available permissions
      */
     async getAllRolePermissionsMatrix(): Promise<{ roles: any[]; permissions: any[] }> {
-        // Get all roles with their permissions
+        // Get all roles with their permissions using role_id UUID FK
         const rolesQuery = `
             SELECT 
                 r.id,
@@ -120,7 +120,7 @@ export class PermissionService {
                     json_agg(
                         json_build_object(
                             'id', p.id,
-                            'name', p.name,
+                            'name', CONCAT(p.resource, '.', p.action),
                             'resource', p.resource,
                             'action', p.action,
                             'description', p.description,
@@ -130,7 +130,7 @@ export class PermissionService {
                     '[]'
                 ) as permissions
             FROM roles r
-            LEFT JOIN role_permissions rp ON r.name = rp.role
+            LEFT JOIN role_permissions rp ON r.id = rp.role_id
             LEFT JOIN permissions p ON rp.permission_id = p.id
             GROUP BY r.id, r.name, r.description, r.is_system
             ORDER BY r.name
@@ -171,26 +171,27 @@ export class PermissionService {
         await queryRunner.startTransaction();
 
         try {
-            // Get permission ID
+            // Resolve role UUID
+            const roleRows = await queryRunner.query(
+                'SELECT id FROM roles WHERE name = $1', [role]
+            );
+            if (!roleRows.length) throw new Error(`Role "${role}" not found`);
+            const roleId = roleRows[0].id;
+
+            // Resolve permission UUID
             const permissionId = await this.getPermissionIdByName(permissionName);
 
-            // Insert into role_permissions
+            // Insert into role_permissions (uses role_id UUID FK)
             await queryRunner.query(
-                `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
-                 VALUES ($1, $2, NOW(), $3)
-                 ON CONFLICT (role, permission_id) DO NOTHING`,
-                [role, permissionId, grantedBy]
+                `INSERT INTO role_permissions (role_id, permission_id)
+                 VALUES ($1, $2)
+                 ON CONFLICT (role_id, permission_id) DO NOTHING`,
+                [roleId, permissionId]
             );
 
-            // Log audit
             await this.logAudit(
-                'grant_role_permission',
-                'role',
-                role,
-                grantedBy,
-                { permission: permissionName },
-                auditContext,
-                queryRunner
+                'grant_role_permission', 'role', role, grantedBy,
+                { permission: permissionName }, auditContext, queryRunner
             );
 
             await queryRunner.commitTransaction();
@@ -216,24 +217,25 @@ export class PermissionService {
         await queryRunner.startTransaction();
 
         try {
-            // Get permission ID
+            // Resolve role UUID
+            const roleRows = await queryRunner.query(
+                'SELECT id FROM roles WHERE name = $1', [role]
+            );
+            if (!roleRows.length) throw new Error(`Role "${role}" not found`);
+            const roleId = roleRows[0].id;
+
+            // Resolve permission UUID
             const permissionId = await this.getPermissionIdByName(permissionName);
 
-            // Delete from role_permissions
+            // Delete from role_permissions using role_id UUID FK
             await queryRunner.query(
-                'DELETE FROM role_permissions WHERE role = $1 AND permission_id = $2',
-                [role, permissionId]
+                'DELETE FROM role_permissions WHERE role_id = $1 AND permission_id = $2',
+                [roleId, permissionId]
             );
 
-            // Log audit
             await this.logAudit(
-                'revoke_role_permission',
-                'role',
-                role,
-                revokedBy,
-                { permission: permissionName },
-                auditContext,
-                queryRunner
+                'revoke_role_permission', 'role', role, revokedBy,
+                { permission: permissionName }, auditContext, queryRunner
             );
 
             await queryRunner.commitTransaction();
@@ -515,7 +517,7 @@ export class PermissionService {
         up.reason,
         up.expires_at
        FROM users u
-       LEFT JOIN role_permissions rp ON u.role = rp.role
+       LEFT JOIN role_permissions rp ON rp.role_id = (SELECT id FROM roles WHERE name = u.role LIMIT 1)
        LEFT JOIN permissions p ON rp.permission_id = p.id
        LEFT JOIN user_permissions up ON u.id = up.user_id AND p.id = up.permission_id
        WHERE u.id = $1 AND (up.id IS NULL OR up.is_granted = true)
@@ -604,16 +606,15 @@ export class PermissionService {
              ORDER BY is_system DESC, name ASC`
         );
 
-        // Get permissions for each role
-        // Note: role_permissions table uses 'role' column (string) not 'role_id' (UUID)
+        // Get permissions for each role using role_id UUID FK
         for (const role of roles) {
             const permissions = await this.dataSource.query(
                 `SELECT p.id, p.resource, p.action, p.description
                  FROM permissions p
                  INNER JOIN role_permissions rp ON p.id = rp.permission_id
-                 WHERE rp.role = $1
+                 WHERE rp.role_id = $1
                  ORDER BY p.resource, p.action`,
-                [role.name]
+                [role.id]
             );
             role.permissions = permissions;
         }
@@ -655,15 +656,14 @@ export class PermissionService {
 
             const role = result[0];
 
-            // Assign permissions if provided
+            // Assign permissions if provided using role_id UUID FK
             if (permissionIds && permissionIds.length > 0) {
                 for (const permissionId of permissionIds) {
-                    // Note: role_permissions uses 'role' column (string) not 'role_id'
                     await queryRunner.query(
-                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
-                         VALUES ($1, $2, NOW(), $3)
-                         ON CONFLICT (role, permission_id) DO NOTHING`,
-                        [role.name, permissionId, createdBy]
+                        `INSERT INTO role_permissions (role_id, permission_id)
+                         VALUES ($1, $2)
+                         ON CONFLICT (role_id, permission_id) DO NOTHING`,
+                        [role.id, permissionId]
                     );
                 }
             }
@@ -855,50 +855,33 @@ export class PermissionService {
         await queryRunner.startTransaction();
 
         try {
-            // Check if role exists and is not a system role
+            // Verify role exists (allow system roles — superadmin can edit them)
             const existing = await queryRunner.query(
-                'SELECT id, name, is_system as "isSystem" FROM roles WHERE id = $1',
+                'SELECT id, name FROM roles WHERE id = $1',
+                [roleId]
+            );
+            if (existing.length === 0) throw new Error('Role not found');
+
+            // Remove all existing permissions for this role using role_id UUID FK
+            await queryRunner.query(
+                'DELETE FROM role_permissions WHERE role_id = $1',
                 [roleId]
             );
 
-            if (existing.length === 0) {
-                throw new Error('Role not found');
+            // Add new permissions using role_id UUID FK
+            for (const permissionId of (permissionIds || [])) {
+                await queryRunner.query(
+                    `INSERT INTO role_permissions (role_id, permission_id)
+                     VALUES ($1, $2)
+                     ON CONFLICT (role_id, permission_id) DO NOTHING`,
+                    [roleId, permissionId]
+                );
             }
 
-            if (existing[0].isSystem) {
-                throw new Error('Cannot modify permissions for system roles');
-            }
-
-            const roleName = existing[0].name;
-
-            // Remove all existing permissions for this role
-            // Note: role_permissions uses 'role' column (string) not 'role_id'
-            await queryRunner.query(
-                'DELETE FROM role_permissions WHERE role = $1',
-                [roleName]
-            );
-
-            // Add new permissions
-            if (permissionIds && permissionIds.length > 0) {
-                for (const permissionId of permissionIds) {
-                    await queryRunner.query(
-                        `INSERT INTO role_permissions (role, permission_id, granted_at, granted_by)
-                         VALUES ($1, $2, NOW(), $3)
-                         ON CONFLICT (role, permission_id) DO NOTHING`,
-                        [roleName, permissionId, grantedBy]
-                    );
-                }
-            }
-
-            // Log audit
             await this.logAudit(
-                'bulk_assign_permissions',
-                'role',
-                roleId,
-                grantedBy,
+                'bulk_assign_permissions', 'role', roleId, grantedBy,
                 { permissionIds, count: permissionIds.length },
-                undefined,
-                queryRunner
+                undefined, queryRunner
             );
 
             await queryRunner.commitTransaction();
@@ -933,15 +916,14 @@ export class PermissionService {
 
         const role = roles[0];
 
-        // Get permissions for this role
-        // Note: role_permissions uses 'role' column (string) not 'role_id'
+        // Get permissions for this role using role_id UUID FK
         const permissions = await this.dataSource.query(
             `SELECT p.id, p.resource, p.action, p.description
              FROM permissions p
              INNER JOIN role_permissions rp ON p.id = rp.permission_id
-             WHERE rp.role = $1
+             WHERE rp.role_id = $1
              ORDER BY p.resource, p.action`,
-            [role.name]
+            [role.id]
         );
 
         role.permissions = permissions;

@@ -117,4 +117,10 @@ export const permissionApi = {
     const response = await api.post('/admin/permissions/roles/revoke', { role, permission });
     return response.data;
   },
+
+  // ── Bulk assign permissions to a role by role ID ──────────────────────────
+  bulkAssignRolePermissions: async (roleId: string, permissionIds: string[]) => {
+    const response = await api.post(`/admin/permissions/roles/${roleId}/bulk-assign`, { permissionIds });
+    return response.data;
+  },
 };

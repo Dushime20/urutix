@@ -27,6 +27,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 import FuelEntryModal from '../FleetDashboard/Fuel/FuelEntryModal';
+import { ActiveTripTracker } from './ActiveTripTracker';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DriverTripsProps {
   driverId: string;
@@ -54,6 +56,8 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showFuelModal, setShowFuelModal] = useState(false);
+  const [showLiveTracker, setShowLiveTracker] = useState(false);
+  const { user } = useAuth();
 
   // Fetch current trip
   const { data: currentTrip, isLoading: currentTripLoading } = useQuery({
@@ -332,6 +336,13 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 >
                   <Fuel className="w-4 h-4" /> Record Fuel
                 </button>
+                {/* Live Tracking button — shows the GPS map for this active trip */}
+                <button
+                  onClick={() => setShowLiveTracker(true)}
+                  className="px-5 py-3 bg-[#345E85] text-white hover:bg-[#0f172a] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md"
+                >
+                  <Radio className="w-4 h-4 animate-pulse" /> Live Map
+                </button>
               </div>
             </div>
 
@@ -562,6 +573,13 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                       <button onClick={() => handleTripAction(selectedTrip.id, 'complete')} className="py-4 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-colors shadow-lg shadow-primary-200 flex items-center justify-center gap-2 sm:col-span-2">
                         <CheckCircle2 size={14} /> Complete Mission
                       </button>
+                      {/* Live GPS map button inside detail modal */}
+                      <button
+                        onClick={() => { setShowDetailsModal(false); setShowLiveTracker(true); }}
+                        className="py-4 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0f172a] transition-colors flex items-center justify-center gap-2 sm:col-span-2"
+                      >
+                        <Radio size={14} className="animate-pulse" /> Open Live Map
+                      </button>
                     </>
                   )}
                 </div>
@@ -637,6 +655,72 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
           queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
         }}
       />
+
+      {/* ── Live GPS Tracking overlay for active trip ───────────────── */}
+      <AnimatePresence>
+        {showLiveTracker && currentTrip && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto"
+            onClick={() => setShowLiveTracker(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-6 overflow-hidden border border-slate-100"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#0f172a]">
+                <div className="flex items-center gap-3">
+                  <Radio size={18} className="text-emerald-400 animate-pulse" />
+                  <span className="text-sm font-black text-white uppercase tracking-widest">
+                    GPS Tracking · #{currentTrip.tripNumber}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowLiveTracker(false)}
+                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* ActiveTripTracker — broadcasts GPS, shows live map */}
+              <div className="p-6">
+                <ActiveTripTracker
+                  trip={{
+                    id: currentTrip.id,
+                    tripNumber: currentTrip.tripNumber,
+                    status: currentTrip.status,
+                    origin: {
+                      address: currentTrip.origin?.address ?? '',
+                      city: currentTrip.origin?.city ?? '',
+                      coordinates: currentTrip.origin?.coordinates,
+                    },
+                    destination: {
+                      address: currentTrip.destination?.address ?? '',
+                      city: currentTrip.destination?.city ?? '',
+                      coordinates: currentTrip.destination?.coordinates,
+                    },
+                    estimatedArrival: currentTrip.estimatedArrival,
+                    cargo: currentTrip.cargo,
+                  }}
+                  driverId={driverId}
+                  onTripEnded={() => {
+                    setShowLiveTracker(false);
+                    queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
+                    queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
+                  }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
