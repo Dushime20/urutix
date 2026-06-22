@@ -292,7 +292,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-[1]">
         {/* Header with icon and trend */}
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 ${colors.bg} rounded-xl`}>

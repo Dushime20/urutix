@@ -37,10 +37,21 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const truckIcon = new L.Icon({ iconUrl, iconRetinaUrl, shadowUrl: iconShadow, iconSize: [32, 48], iconAnchor: [16, 48], popupAnchor: [0, -48], shadowSize: [41, 41] });
-const makePin = (color: string) => new L.Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32"><path d="M12 0C7.58 0 4 3.58 4 8c0 7 8 20 8 20s8-13 8-20c0-4.42-3.58-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" fill="${color}" stroke="white" stroke-width="1"/></svg>`)}`,
-  iconSize: [24, 32], iconAnchor: [12, 32], popupAnchor: [0, -32],
+
+// Labeled A / B pins — clear on any map tile
+const makeLabelPin = (label: string, bg: string) => new L.Icon({
+  iconUrl: `data:image/svg+xml;base64,${btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48" width="36" height="48">
+      <path d="M18 0C8.06 0 0 8.06 0 18c0 12.15 18 30 18 30S36 30.15 36 18C36 8.06 27.94 0 18 0z" fill="${bg}" stroke="white" stroke-width="2"/>
+      <circle cx="18" cy="18" r="10" fill="white" opacity="0.25"/>
+      <text x="18" y="23" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="white">${label}</text>
+    </svg>
+  `)}`,
+  iconSize: [36, 48], iconAnchor: [18, 48], popupAnchor: [0, -52],
 });
+
+const startPin = makeLabelPin('A', '#10b981'); // green — origin
+const endPin   = makeLabelPin('B', '#ef4444'); // red   — destination
 
 // Auto-pan when driver moves
 function MapPanner({ lat, lng }: { lat: number; lng: number }) {
@@ -115,11 +126,32 @@ export const TripTracker: React.FC<{ tripId: string }> = ({ tripId }) => {
         const load = raw.load ?? {};
         const truck = raw.truck ?? {};
         const driver = raw.driver ?? {};
-        const pickup = raw.pickupLocation ?? load.pickupLocation ?? {};
-        const delivery = raw.deliveryLocation ?? load.deliveryLocation ?? {};
 
-        const getCoord = (loc: any, idx: 0 | 1, fallback: number) =>
-          loc?.coordinates?.coordinates?.[idx] ?? loc?.coordinates?.[idx] ?? fallback;
+        // Resolve locations from load.locations[] (LoadLocation[]) first, then fall back
+        const locations: any[]  = load.locations ?? [];
+        const pickupEntry        = locations.find((l: any) => l.type === 'PICKUP');
+        const deliveryEntry      = locations.find((l: any) => l.type === 'DELIVERY');
+        const pickup    = pickupEntry?.locationData  ?? raw.pickupLocation  ?? load.pickupLocation  ?? load.origin      ?? {};
+        const delivery  = deliveryEntry?.locationData ?? raw.deliveryLocation ?? load.deliveryLocation ?? load.destination ?? {};
+
+        // Resolve coordinates from all possible shapes the backend may return
+        const resolveLatLng = (loc: any): { lat: number; lng: number } => {
+          if (!loc) return { lat: 0, lng: 0 };
+          // { coordinates: { latitude, longitude } }  — LoadLocation.locationData
+          if (typeof loc.coordinates?.latitude === 'number')
+            return { lat: loc.coordinates.latitude, lng: loc.coordinates.longitude };
+          // { coordinates: { coordinates: [lng, lat] } }  — PostGIS via Location entity
+          if (Array.isArray(loc.coordinates?.coordinates) && loc.coordinates.coordinates.length === 2)
+            return { lat: loc.coordinates.coordinates[1], lng: loc.coordinates.coordinates[0] };
+          // { lat, lng }  — Address interface
+          if (typeof loc.lat === 'number') return { lat: loc.lat, lng: loc.lng };
+          // { latitude, longitude }  — flat
+          if (typeof loc.latitude === 'number') return { lat: loc.latitude, lng: loc.longitude };
+          return { lat: 0, lng: 0 };
+        };
+
+        const pCoords = resolveLatLng(pickup);
+        const dCoords = resolveLatLng(delivery);
 
         setTrip({
           id: raw.id,
@@ -128,14 +160,14 @@ export const TripTracker: React.FC<{ tripId: string }> = ({ tripId }) => {
           origin: {
             address: pickup.address ?? pickup.name ?? 'Pickup',
             city: pickup.city ?? '',
-            lat: getCoord(pickup, 1, -1.29),
-            lng: getCoord(pickup, 0, 36.82),
+            lat: pCoords.lat,
+            lng: pCoords.lng,
           },
           destination: {
             address: delivery.address ?? delivery.name ?? 'Delivery',
             city: delivery.city ?? '',
-            lat: getCoord(delivery, 1, -4.04),
-            lng: getCoord(delivery, 0, 39.67),
+            lat: dCoords.lat,
+            lng: dCoords.lng,
           },
           driver: {
             name: driver.firstName ? `${driver.firstName} ${driver.lastName ?? ''}`.trim() : 'Assigned Driver',
@@ -355,14 +387,28 @@ export const TripTracker: React.FC<{ tripId: string }> = ({ tripId }) => {
             {/* Breadcrumb route */}
             {routePath.length > 1 && <Polyline positions={routePath} color="#345E85" weight={4} opacity={0.85} dashArray={undefined} />}
 
-            {/* Origin pin */}
-            <Marker position={[trip.origin.lat, trip.origin.lng]} icon={makePin('#10b981')}>
-              <Popup><strong className="text-emerald-600">Origin</strong><br />{trip.origin.address}<br />{trip.origin.city}</Popup>
+            {/* Origin pin — A (green) */}
+            <Marker position={[trip.origin.lat, trip.origin.lng]} icon={startPin}>
+              <Popup>
+                <div className="text-xs space-y-0.5 min-w-[140px]">
+                  <p className="font-black text-emerald-600 uppercase tracking-widest">🅐 Start / Pickup</p>
+                  <p className="font-semibold text-slate-700">{trip.origin.address}</p>
+                  {trip.origin.city && <p className="text-slate-500">{trip.origin.city}</p>}
+                  {trip.actualStart && <p className="text-slate-400 text-[10px]">Departed: {new Date(trip.actualStart).toLocaleString()}</p>}
+                </div>
+              </Popup>
             </Marker>
 
-            {/* Destination pin */}
-            <Marker position={[trip.destination.lat, trip.destination.lng]} icon={makePin('#ef4444')}>
-              <Popup><strong className="text-red-600">Destination</strong><br />{trip.destination.address}<br />{trip.destination.city}</Popup>
+            {/* Destination pin — B (red) */}
+            <Marker position={[trip.destination.lat, trip.destination.lng]} icon={endPin}>
+              <Popup>
+                <div className="text-xs space-y-0.5 min-w-[140px]">
+                  <p className="font-black text-red-600 uppercase tracking-widest">🅑 End / Delivery</p>
+                  <p className="font-semibold text-slate-700">{trip.destination.address}</p>
+                  {trip.destination.city && <p className="text-slate-500">{trip.destination.city}</p>}
+                  <p className="text-slate-400 text-[10px]">ETA: {etaCountdown(trip.estimatedArrival)}</p>
+                </div>
+              </Popup>
             </Marker>
 
             {/* Live truck */}
@@ -380,6 +426,32 @@ export const TripTracker: React.FC<{ tripId: string }> = ({ tripId }) => {
               </Marker>
             )}
           </MapContainer>
+
+          {/* Map legend */}
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 px-4 py-2.5 border-t border-slate-50 bg-white">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Legend:</span>
+            <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+              <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">A</span>
+              Start / Pickup
+            </span>
+            <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+              <span className="inline-flex w-5 h-5 rounded-full bg-red-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">B</span>
+              End / Delivery
+            </span>
+            <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+              <span className="w-4 h-4 rounded bg-[#345E85] flex-shrink-0 flex items-center justify-center">
+                <svg viewBox="0 0 10 10" width="10" height="10" fill="white">
+                  <rect x="1" y="3" width="8" height="5" rx="1"/>
+                  <rect x="3" y="1" width="4" height="3" rx="0.5"/>
+                </svg>
+              </span>
+              Live Truck
+            </span>
+            <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+              <span className="inline-block w-6 h-1 rounded-full bg-[#345E85]" />
+              GPS Route
+            </span>
+          </div>
         </div>
 
         {/* Side panel — full width on mobile (below map), 1/3 on desktop */}

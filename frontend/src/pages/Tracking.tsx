@@ -31,10 +31,24 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // ── Leaflet icon setup ───────────────────────────────────────────────────────
 const truckIcon = new Icon({ iconUrl, iconRetinaUrl, shadowUrl: iconShadow, iconSize: [28, 42], iconAnchor: [14, 42], popupAnchor: [0, -42], shadowSize: [41, 41] });
-const makePin = (color: string) => new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="${color}"/></svg>`)}`,
-  iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -28],
+
+// Labeled A / B pin with circle + letter — highly visible on any map tile
+const makeLabelPin = (label: string, bg: string, text = '#fff') => new Icon({
+  iconUrl: `data:image/svg+xml;base64,${btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48" width="36" height="48">
+      <path d="M18 0C8.06 0 0 8.06 0 18c0 12.15 18 30 18 30S36 30.15 36 18C36 8.06 27.94 0 18 0z" fill="${bg}" stroke="white" stroke-width="2"/>
+      <circle cx="18" cy="18" r="10" fill="white" opacity="0.25"/>
+      <text x="18" y="23" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="${text}">${label}</text>
+    </svg>
+  `)}`,
+  iconSize: [36, 48], iconAnchor: [18, 48], popupAnchor: [0, -50],
 });
+
+const startPin    = makeLabelPin('A', '#10b981');   // green  — pickup / start
+const endPin      = makeLabelPin('B', '#ef4444');   // red    — delivery / end
+const fleetPin    = makeLabelPin('●', '#345E85');   // blue   — other fleet truck
+
+const makePin = fleetPin; // kept for backward compat
 
 function MapPanner({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
@@ -118,27 +132,58 @@ const Tracking: React.FC = () => {
 
   // ── buildShipment ──────────────────────────────────────────────────────────
   const buildShipment = useCallback((trip: any): Shipment => {
-    const load     = trip.load ?? {};
-    const truck    = trip.truck ?? {};
-    const driver   = trip.driver ?? {};
-    const pickup   = load.pickupLocation ?? {};
-    const delivery = load.deliveryLocation ?? {};
-    const pLat = pickup.coordinates?.coordinates?.[1]   ?? pickup.lat   ?? -1.29;
-    const pLng = pickup.coordinates?.coordinates?.[0]   ?? pickup.lng   ?? 36.82;
-    const dLat = delivery.coordinates?.coordinates?.[1] ?? delivery.lat ?? -4.04;
-    const dLng = delivery.coordinates?.coordinates?.[0] ?? delivery.lng ?? 39.67;
+    const load   = trip.load ?? {};
+    const truck  = trip.truck ?? {};
+    const driver = trip.driver ?? {};
+
+    // Locations come from load.locations[] (LoadLocation[]) or load.pickupLocation / deliveryLocation
+    const locations: any[]  = load.locations ?? [];
+    const pickupEntry        = locations.find((l: any) => l.type === 'PICKUP');
+    const deliveryEntry      = locations.find((l: any) => l.type === 'DELIVERY');
+    const pickupData         = pickupEntry?.locationData  ?? load.pickupLocation  ?? load.origin      ?? {};
+    const deliveryData       = deliveryEntry?.locationData ?? load.deliveryLocation ?? load.destination ?? {};
+
+    // Extract [lat, lng] from all possible coordinate shapes the backend returns
+    const extractCoords = (loc: any): [number, number] | null => {
+      if (!loc) return null;
+      // { coordinates: { latitude, longitude } } — LoadLocation.locationData
+      if (typeof loc.coordinates?.latitude === 'number')
+        return [loc.coordinates.latitude, loc.coordinates.longitude];
+      // { coordinates: { coordinates: [lng, lat] } } — PostGIS GeoJSON via Location entity
+      if (Array.isArray(loc.coordinates?.coordinates) && loc.coordinates.coordinates.length === 2)
+        return [loc.coordinates.coordinates[1], loc.coordinates.coordinates[0]];
+      // { lat, lng } — Address interface
+      if (typeof loc.lat === 'number') return [loc.lat, loc.lng];
+      // { latitude, longitude } — flat
+      if (typeof loc.latitude === 'number') return [loc.latitude, loc.longitude];
+      return null;
+    };
+
+    const pCoords = extractCoords(pickupData);
+    const dCoords = extractCoords(deliveryData);
+
+    const pLat = pCoords?.[0] ?? null;
+    const pLng = pCoords?.[1] ?? null;
+    const dLat = dCoords?.[0] ?? null;
+    const dLng = dCoords?.[1] ?? null;
+
     const rawStatus = trip.status ?? 'PLANNED';
     const status    = mapStatus(rawStatus);
     const progress  = status === 'DELIVERED' ? 100 : status === 'IN_TRANSIT' ? 50 : status === 'DELAYED' ? 35 : 0;
+
+    const pickupName   = pickupData.name   ?? pickupData.city   ?? pickupData.address  ?? 'Pickup';
+    const deliveryName = deliveryData.name ?? deliveryData.city ?? deliveryData.address ?? 'Delivery';
+    const pickupAddr   = pickupData.address   ?? pickupData.city   ?? '';
+    const deliveryAddr = deliveryData.address ?? deliveryData.city ?? '';
 
     return {
       id: trip.id, tripId: trip.id,
       cargoId: trip.tripNumber ?? trip.id.slice(0, 8).toUpperCase(),
       cargoTitle: load.title ?? load.cargoType ?? `Trip ${trip.tripNumber ?? trip.id.slice(0, 8)}`,
       status, rawStatus,
-      pickupLocation:  { name: pickup.city ?? 'Pickup', address: pickup.address ?? pickup.city ?? '', latitude: pLat, longitude: pLng },
-      deliveryLocation:{ name: delivery.city ?? 'Delivery', address: delivery.address ?? delivery.city ?? '', latitude: dLat, longitude: dLng },
-      currentLocation: { latitude: pLat, longitude: pLng, timestamp: trip.updatedAt ?? new Date().toISOString() },
+      pickupLocation:   { name: pickupName,   address: pickupAddr,   latitude: pLat!, longitude: pLng! },
+      deliveryLocation: { name: deliveryName, address: deliveryAddr, latitude: dLat!, longitude: dLng! },
+      currentLocation:  { latitude: pLat!, longitude: pLng!, timestamp: trip.updatedAt ?? new Date().toISOString() },
       routeHistory: [],
       driver:  { name: driver.firstName ? `${driver.firstName} ${driver.lastName ?? ''}`.trim() : 'Assigned Driver', phone: driver.phone ?? '' },
       vehicle: { plateNumber: truck.plateNumber ?? '—', type: truck.truckType ?? truck.model ?? 'Truck' },
@@ -147,9 +192,9 @@ const Tracking: React.FC = () => {
       actualEnd:    trip.actualEndTime,
       progress,
       milestones: [
-        { type: 'PICKUP',    location: pickup.city   ?? 'Pickup',   timestamp: trip.actualStartTime, status: trip.actualStartTime ? 'COMPLETED' : 'PENDING' },
-        { type: 'EN_ROUTE',  location: 'En Route',                  status: rawStatus === 'IN_PROGRESS' ? 'CURRENT' : rawStatus === 'COMPLETED' ? 'COMPLETED' : 'PENDING' },
-        { type: 'DELIVERED', location: delivery.city ?? 'Delivery', timestamp: trip.actualEndTime,   status: trip.actualEndTime ? 'COMPLETED' : 'PENDING' },
+        { type: 'PICKUP',    location: pickupName,   timestamp: trip.actualStartTime, status: trip.actualStartTime ? 'COMPLETED' : 'PENDING' },
+        { type: 'EN_ROUTE',  location: 'En Route',                                    status: rawStatus === 'IN_PROGRESS' ? 'CURRENT' : rawStatus === 'COMPLETED' ? 'COMPLETED' : 'PENDING' },
+        { type: 'DELIVERED', location: deliveryName, timestamp: trip.actualEndTime,   status: trip.actualEndTime ? 'COMPLETED' : 'PENDING' },
       ],
       driverOnline: false,
     };
@@ -581,21 +626,33 @@ const Tracking: React.FC = () => {
                     />
                   )}
 
-                  {/* Pickup pin */}
-                  <Marker position={[selected.pickupLocation.latitude, selected.pickupLocation.longitude]} icon={makePin('#10b981')}>
-                    <Popup>
-                      <strong className="text-emerald-600">Pickup</strong><br />
-                      {selected.pickupLocation.address || selected.pickupLocation.name}
-                    </Popup>
-                  </Marker>
+                  {/* Pickup pin — A (green) */}
+                  {selected.pickupLocation.latitude != null && (
+                    <Marker position={[selected.pickupLocation.latitude, selected.pickupLocation.longitude]} icon={startPin}>
+                      <Popup>
+                        <div className="text-xs space-y-0.5 min-w-[140px]">
+                          <p className="font-black text-emerald-600 uppercase tracking-widest">🅐 Start / Pickup</p>
+                          <p className="font-semibold text-slate-700">{selected.pickupLocation.name}</p>
+                          {selected.pickupLocation.address && <p className="text-slate-500">{selected.pickupLocation.address}</p>}
+                          {selected.actualPickup && <p className="text-slate-400 text-[10px]">Departed: {new Date(selected.actualPickup).toLocaleString()}</p>}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )}
 
-                  {/* Delivery pin */}
-                  <Marker position={[selected.deliveryLocation.latitude, selected.deliveryLocation.longitude]} icon={makePin('#ef4444')}>
-                    <Popup>
-                      <strong className="text-red-600">Delivery</strong><br />
-                      {selected.deliveryLocation.address || selected.deliveryLocation.name}
-                    </Popup>
-                  </Marker>
+                  {/* Delivery pin — B (red) */}
+                  {selected.deliveryLocation.latitude != null && (
+                    <Marker position={[selected.deliveryLocation.latitude, selected.deliveryLocation.longitude]} icon={endPin}>
+                      <Popup>
+                        <div className="text-xs space-y-0.5 min-w-[140px]">
+                          <p className="font-black text-red-600 uppercase tracking-widest">🅑 End / Delivery</p>
+                          <p className="font-semibold text-slate-700">{selected.deliveryLocation.name}</p>
+                          {selected.deliveryLocation.address && <p className="text-slate-500">{selected.deliveryLocation.address}</p>}
+                          {selected.actualEnd && <p className="text-slate-400 text-[10px]">Arrived: {new Date(selected.actualEnd).toLocaleString()}</p>}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )}
 
                   {/* Live truck — only show if driver has position */}
                   {(isActive(selected) || selected.routeHistory.length > 0) && (
@@ -619,7 +676,7 @@ const Tracking: React.FC = () => {
 
               {/* No selection — show all active trucks */}
               {!selected && allShipments.filter(isActive).map(s => (
-                <Marker key={s.id} position={[s.currentLocation.latitude, s.currentLocation.longitude]} icon={makePin('#345E85')}>
+                <Marker key={s.id} position={[s.currentLocation.latitude, s.currentLocation.longitude]} icon={fleetPin}>
                   <Popup>
                     <strong>{s.cargoTitle}</strong><br />
                     {s.driver.name} · {s.vehicle.plateNumber}
@@ -627,6 +684,33 @@ const Tracking: React.FC = () => {
                 </Marker>
               ))}
             </MapContainer>
+
+            {/* Map legend */}
+            <div className="flex items-center gap-3 px-4 py-2.5 border-t border-slate-50 bg-white flex-wrap">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Legend:</span>
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+                <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 items-center justify-center text-white font-black text-[9px]">A</span>
+                Pickup / Start
+              </span>
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+                <span className="inline-flex w-5 h-5 rounded-full bg-red-500 items-center justify-center text-white font-black text-[9px]">B</span>
+                Delivery / End
+              </span>
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+                <span className="inline-flex w-4 h-4 rounded-sm bg-[#345E85] items-center justify-center">
+                  <svg viewBox="0 0 10 10" width="10" height="10" fill="white"><rect x="1" y="3" width="8" height="5" rx="1"/><rect x="3" y="1" width="4" height="3" rx="0.5"/></svg>
+                </span>
+                Live Truck
+              </span>
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+                <span className="inline-block w-6 h-1 rounded-full bg-[#345E85]" />
+                Active Route
+              </span>
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+                <span className="inline-block w-6 h-1 rounded-full bg-emerald-500" />
+                Completed Route
+              </span>
+            </div>
           </div>
 
           {/* Detail panel — shown when a trip is selected */}

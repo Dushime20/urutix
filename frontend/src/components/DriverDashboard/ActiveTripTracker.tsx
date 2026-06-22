@@ -53,17 +53,20 @@ const truckIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const destinationIcon = new L.Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
-      <circle cx="12" cy="12" r="10" fill="#10b981" stroke="white" stroke-width="2"/>
-      <path d="M8 12l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+// Labeled A / B pins — consistent with the rest of the tracking system
+const makeLabelPin = (label: string, bg: string) => new L.Icon({
+  iconUrl: `data:image/svg+xml;base64,${btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48" width="36" height="48">
+      <path d="M18 0C8.06 0 0 8.06 0 18c0 12.15 18 30 18 30S36 30.15 36 18C36 8.06 27.94 0 18 0z" fill="${bg}" stroke="white" stroke-width="2"/>
+      <circle cx="18" cy="18" r="10" fill="white" opacity="0.25"/>
+      <text x="18" y="23" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="white">${label}</text>
     </svg>
-  `),
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
+  `)}`,
+  iconSize: [36, 48], iconAnchor: [18, 48], popupAnchor: [0, -52],
 });
+
+const startPin = makeLabelPin('A', '#10b981'); // green — origin/pickup
+const endPin   = makeLabelPin('B', '#ef4444'); // red   — destination/delivery
 
 // Auto-pan the map when the driver moves
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
@@ -313,46 +316,75 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             />
           )}
 
-          {/* Driver marker */}
+          {/* Driver marker — live position */}
           {hasPosition && (
             <Marker
               position={[currentPosition!.latitude, currentPosition!.longitude]}
               icon={truckIcon}
             >
               <Popup>
-                <strong>Your position</strong>
-                <br />
-                {currentPosition!.latitude.toFixed(5)},{' '}
-                {currentPosition!.longitude.toFixed(5)}
-                {currentPosition!.speed != null && (
-                  <>
-                    <br />
-                    Speed: {currentPosition!.speed} km/h
-                  </>
-                )}
+                <div className="text-xs space-y-0.5 min-w-[130px]">
+                  <p className="font-black text-[#345E85] uppercase">Your Position</p>
+                  {currentPosition!.speed != null && <p>Speed: <strong>{currentPosition!.speed} km/h</strong></p>}
+                  <p className="text-slate-400 text-[10px]">{currentPosition!.latitude.toFixed(5)}, {currentPosition!.longitude.toFixed(5)}</p>
+                </div>
               </Popup>
             </Marker>
           )}
 
-          {/* Destination marker */}
-          {trip.destination.coordinates && (
+          {/* Origin pin — A (green) */}
+          {trip.origin.coordinates && trip.origin.coordinates[0] !== 0 && (
             <Marker
-              position={[
-                trip.destination.coordinates[0],
-                trip.destination.coordinates[1],
-              ]}
-              icon={destinationIcon}
+              position={[trip.origin.coordinates[0], trip.origin.coordinates[1]]}
+              icon={startPin}
             >
               <Popup>
-                <strong>Destination</strong>
-                <br />
-                {trip.destination.address}
-                <br />
-                {trip.destination.city}
+                <div className="text-xs space-y-0.5 min-w-[140px]">
+                  <p className="font-black text-emerald-600 uppercase tracking-widest">🅐 Start / Pickup</p>
+                  <p className="font-semibold text-slate-700">{trip.origin.address}</p>
+                  {trip.origin.city && <p className="text-slate-500">{trip.origin.city}</p>}
+                </div>
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Destination pin — B (red) */}
+          {trip.destination.coordinates && trip.destination.coordinates[0] !== 0 && (
+            <Marker
+              position={[trip.destination.coordinates[0], trip.destination.coordinates[1]]}
+              icon={endPin}
+            >
+              <Popup>
+                <div className="text-xs space-y-0.5 min-w-[140px]">
+                  <p className="font-black text-red-600 uppercase tracking-widest">🅑 End / Delivery</p>
+                  <p className="font-semibold text-slate-700">{trip.destination.address}</p>
+                  {trip.destination.city && <p className="text-slate-500">{trip.destination.city}</p>}
+                  {trip.estimatedArrival && <p className="text-slate-400 text-[10px]">ETA: {new Date(trip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
+                </div>
               </Popup>
             </Marker>
           )}
         </MapContainer>
+
+        {/* Map legend */}
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 px-3 py-2 border-t border-slate-50 bg-white">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Legend:</span>
+          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+            <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">A</span>
+            Start
+          </span>
+          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+            <span className="inline-flex w-5 h-5 rounded-full bg-red-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">B</span>
+            Destination
+          </span>
+          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+            <span className="inline-block w-5 h-1 rounded-full bg-[#345E85]" /> Your Route
+          </span>
+          <span className={cn('ml-auto flex items-center gap-1.5 text-[9px] font-black uppercase', isTracking ? 'text-emerald-600' : 'text-slate-400')}>
+            <span className={cn('w-2 h-2 rounded-full', isTracking ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300')} />
+            {isTracking ? 'Broadcasting GPS' : 'GPS acquiring…'}
+          </span>
+        </div>
       </div>
 
       {/* ── Route summary ────────────────────────────────────────────── */}
