@@ -302,4 +302,44 @@ export const lendingAPI = {
   getLenderPolicies: (id: string) => api.get(`/lending/lenders/${id}/policies`),
 };
 
+// ─── Disputes API ──────────────────────────────────────────────────────────────
+
+export const disputesAPI = {
+  // CRUD
+  create: (data: any) => api.post('/disputes', data),
+  getAll: (params?: any) => api.get('/disputes', { params }),
+  getById: (id: string) => api.get(`/disputes/${id}`),
+  update: (id: string, data: any) => api.patch(`/disputes/${id}`, data),
+  delete: (id: string) => api.delete(`/disputes/${id}`),
+
+  // Comments
+  addComment: (id: string, data: { message: string; isInternal?: boolean }) =>
+    api.post(`/disputes/${id}/comments`, data),
+  getComments: (id: string) => api.get(`/disputes/${id}/comments`),
+
+  // Attachments
+  uploadAttachment: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/disputes/${id}/attachments`, formData);
+  },
+  getAttachments: (id: string) => api.get(`/disputes/${id}/attachments`),
+
+  // Timeline & resolutions
+  getTimeline: (id: string) => api.get(`/disputes/${id}/timeline`),
+  getResolutions: (id: string) => api.get(`/disputes/${id}/resolutions`),
+
+  // Admin actions
+  resolve: (id: string, data: { decision: string; resolutionSummary: string; adminNotes?: string }) =>
+    api.post(`/disputes/${id}/resolve`, data),
+  close: (id: string) => api.post(`/disputes/${id}/close`),
+  reopen: (id: string, reason?: string) => api.post(`/disputes/${id}/reopen`, { reason }),
+  changeStatus: (id: string, status: string, reason?: string) =>
+    api.patch(`/disputes/${id}/status`, { status, reason }),
+
+  // Analytics
+  getAnalytics: (period?: string) =>
+    api.get('/disputes/analytics', { params: period ? { period } : {} }),
+};
+
 export default api; 

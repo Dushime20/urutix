@@ -15,6 +15,13 @@ import { RefreshToken } from './../entities/refresh-token.entity';
 import { PasswordResetToken } from './../entities/password-reset-token.entity';
 import { EmailVerificationToken } from './../entities/email-verification-token.entity';
 import { Dispute } from './../entities/dispute.entity';
+import {
+  DisputeV2,
+  DisputeMessage,
+  DisputeAttachment,
+  DisputeResolutionRecord,
+  DisputeAuditLog,
+} from './../entities/dispute-v2.entity';
 import { AuditLog } from './../entities/audit-log.entity';
 import { TripLocation } from './../modules/tracking/entities/trip-location.entity';
 import { Geofence } from './../modules/tracking/entities/geofence.entity';
@@ -285,6 +292,12 @@ export const databaseConfig: TypeOrmModuleOptions = {
     // Customs entities
     CustomsInspection,
     CustomsCheckpoint,
+    // Dispute Resolution V2 entities
+    DisputeV2,
+    DisputeMessage,
+    DisputeAttachment,
+    DisputeResolutionRecord,
+    DisputeAuditLog,
   ],
   synchronize: process.env.DB_SYNCHRONIZE === 'true',
   autoLoadEntities: false,
@@ -434,6 +447,12 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     // Customs entities
     CustomsInspection,
     CustomsCheckpoint,
+    // Dispute Resolution V2 entities
+    DisputeV2,
+    DisputeMessage,
+    DisputeAttachment,
+    DisputeResolutionRecord,
+    DisputeAuditLog,
   ],
   synchronize: true,
   autoLoadEntities: false,

@@ -104,6 +104,44 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
         }
 
+        // ─── Dispute real-time events ───────────────────────────────────────────
+        socketInstance.on('dispute_created', (data: any) => {
+            toast(data.message || 'New dispute created', {
+                icon: '⚖️',
+                duration: 5000,
+                style: { border: '1px solid #2c5173', padding: '12px', color: '#2c5173' },
+            });
+        });
+
+        socketInstance.on('dispute_updated', (data: any) => {
+            toast(data.message || 'Dispute updated', {
+                icon: '📋',
+                duration: 4000,
+                style: { border: '1px solid #f59e0b', padding: '12px', color: '#92400e' },
+            });
+        });
+
+        socketInstance.on('dispute_resolved', (data: any) => {
+            toast.success(data.message || 'Dispute resolved', {
+                icon: '✅',
+                duration: 6000,
+            });
+        });
+
+        socketInstance.on('dispute_closed', (data: any) => {
+            toast(data.message || 'Dispute closed', {
+                icon: '🔒',
+                duration: 4000,
+            });
+        });
+
+        socketInstance.on('dispute_message_added', (data: any) => {
+            toast(data.message || 'New message on dispute', {
+                icon: '💬',
+                duration: 3000,
+            });
+        });
+
         setSocket(socketInstance);
 
         return () => {

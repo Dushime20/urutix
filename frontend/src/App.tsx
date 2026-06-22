@@ -108,6 +108,9 @@ const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 
+// Dispute Resolution System
+const DisputeResolutionCenter = lazy(() => import('./pages/admin/DisputeResolutionCenter'));
+const UserDisputesPage = lazy(() => import('./pages/dashboard/disputes'));
 // ─── New Feature Pages ────────────────────────────────────────────────────────
 const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
 const ComplianceDashboard = lazy(() => import('./pages/shared/ComplianceDashboard'));
@@ -145,6 +148,7 @@ const ContractNegotiation = lazy(() => import('./pages/ContractNegotiation'));
 const EscrowManagement = lazy(() => import('./pages/EscrowManagement'));
 const DisputeResolution = lazy(() => import('./pages/DisputeResolution'));
 const TripTracking = lazy(() => import('./pages/TripTracking'));
+const LiveTracking = lazy(() => import('./pages/Tracking'));
 
 const DeliveryConfirmation = lazy(() => import('./pages/DeliveryConfirmation'));
 const SettlementProcessing = lazy(() => import('./pages/SettlementProcessing'));
@@ -296,7 +300,8 @@ function App() {
                       <Route path="analytics/financial" element={<UnifiedFinancialManagement />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
-                      <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="tracking" element={<LiveTracking />} />
+                      <Route path="tracking/trips/:tripId" element={<TripTracking />} />
                       <Route path="inspections" element={<UnifiedTrackingManagement />} />
                       <Route path="multi-modal" element={<MultiModalTracking />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
@@ -337,6 +342,7 @@ function App() {
                       <Route path="epod-reports" element={<CargoOwnerEpodDashboard />} />
                       <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
                       <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
+                      <Route path="disputes" element={<UserDisputesPage />} />
                     </Route>
 
                     {/* Cargo Owner Routes (alias for /dashboard) */}
@@ -358,7 +364,8 @@ function App() {
                       <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
-                      <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="tracking" element={<LiveTracking />} />
+                      <Route path="tracking/trips/:tripId" element={<TripTracking />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
                       <Route path="profile" element={<CargoOwnerProfile />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />
@@ -440,6 +447,11 @@ function App() {
                       <Route path="backhaul" element={<BackhaulMatchingPage />} />
                       <Route path="tier" element={<CarrierTierPage />} />
                       <Route path="load-map" element={<LoadMapPage />} />
+                      {/* Live GPS Tracking */}
+                      <Route path="tracking" element={<LiveTracking />} />
+                      <Route path="tracking/trips/:tripId" element={<TripTracking />} />
+                      <Route path="trip-tracking/:tripId" element={<TripTracking />} />
+                      <Route path="disputes" element={<UserDisputesPage />} />
                     </Route>
 
                     {/* Profile Route for Truck Owner */}
@@ -468,7 +480,9 @@ function App() {
                       <Route path="earnings" element={<DriverDashboard />} />
                       <Route path="safety" element={<DriverDashboard />} />
                       <Route path="documents" element={<DriverDashboard />} />
-                      <Route path="tracking" element={<DriverDashboard />} />
+                      <Route path="tracking" element={<LiveTracking />} />
+                      <Route path="tracking/trips/:tripId" element={<TripTracking />} />
+                      <Route path="trip-tracking/:tripId" element={<TripTracking />} />
                       <Route path="analytics" element={<DriverDashboard />} />
                       <Route path="notifications" element={<DriverDashboard />} />
                       <Route path="profile" element={<DriverDashboard />} />
@@ -477,6 +491,7 @@ function App() {
                       <Route path="ratings" element={<UnifiedReputationManagement />} />
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
+                      <Route path="disputes" element={<UserDisputesPage />} />
                     </Route>
 
                     {/* Admin Routes - Super Admin (System Level) */}
@@ -546,10 +561,10 @@ function App() {
                       <Route path="analytics" element={<AdminAnalytics />} />
                       <Route path="monitoring" element={<MonitoringDashboard />} />
                       <Route path="bidding" element={<BiddingManagement />} />
-                      <Route path="disputes" element={<DisputeManagement />} />
+                      <Route path="disputes" element={<DisputeResolutionCenter />} />
                       <Route path="financial" element={<FinancialAdminDashboard />} />
                       <Route path="transaction-monitoring" element={<TransactionFlow />} />
-                      <Route path="dispute-management" element={<DisputeResolution />} />
+                      <Route path="dispute-management" element={<DisputeResolutionCenter />} />
                       <Route path="escrow-management" element={<EscrowManagement />} />
                       <Route path="users" element={<AdminUsers />} />
                       <Route path="trucks" element={<AdminTrucks />} />
@@ -630,6 +645,7 @@ function App() {
                       <Route path="financial" element={<UnifiedFinancialManagement />} />
                       <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="receipts" element={<ReceiptViewer />} />
+                      <Route path="disputes" element={<UserDisputesPage />} />
                     </Route>
 
                     {/* Broker Routes */}
@@ -639,7 +655,9 @@ function App() {
                       <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
                       <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
                       <Route path="bidding" element={<BrokerBidding />} />
-                      <Route path="tracking" element={<UnifiedTrackingManagement />} />
+                      <Route path="tracking" element={<LiveTracking />} />
+                      <Route path="tracking/trips/:tripId" element={<TripTracking />} />
+                      <Route path="trip-tracking/:tripId" element={<TripTracking />} />
                       <Route path="discovery" element={<CargoDiscovery />} />
                       <Route path="deals" element={<DealFacilitation />} />
                       <Route path="commissions" element={<CommissionsPage />} />
@@ -651,7 +669,7 @@ function App() {
                       {/* Critical Features Routes */}
                       <Route path="contracts" element={<ContractManagement />} />
                       <Route path="insurance" element={<InsuranceVerification />} />
-                      <Route path="disputes" element={<BrokerDisputeResolution />} />
+                      <Route path="disputes" element={<UserDisputesPage />} />
                       <Route path="escrow" element={<BrokerEscrowManagement />} />
                       <Route path="documents" element={<DocumentManagement />} />
                       {/* Intelligence Features Routes */}
