@@ -74,7 +74,8 @@
     "seed:users": "ts-node src/scripts/seed-users.ts",
     "seed:matching": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-data.ts",
     "seed:matching-demo": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-demo.ts",
-    "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts"
+    "seed:matching-algorithms": "ts-node -r tsconfig-paths/register src/scripts/seed-matching-algorithms-test.ts",
+    "seed:permissions": "node seed-permissions.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
