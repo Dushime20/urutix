@@ -32,15 +32,24 @@ const MonitoringDashboard: React.FC = () => {
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
 
   // Fetch activity logs
-  const { data: activityLogs, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
+  const { data: activityLogsResponse, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ['activity-logs'],
     queryFn: async () => {
       const res = await api.get('/admin/activity-logs?limit=10');
-      return res.data as ActivityLog[];
+      return res.data;
     },
     refetchInterval: autoRefresh ? refreshInterval : false,
     retry: 1,
   });
+
+  // Safely extract activity logs from response
+  const activityLogs = Array.isArray(activityLogsResponse) 
+    ? activityLogsResponse 
+    : Array.isArray(activityLogsResponse?.data) 
+      ? activityLogsResponse.data 
+      : Array.isArray(activityLogsResponse?.logs)
+        ? activityLogsResponse.logs
+        : [];
 
   // Mock system metrics (replace with real API calls)
   const systemMetrics: SystemMetric[] = [
@@ -129,7 +138,7 @@ const MonitoringDashboard: React.FC = () => {
     }
   };
 
-  if (logsLoading && !activityLogs) {
+  if (logsLoading && activityLogs.length === 0) {
     return (
       <AdminPageLayout
         title={<TranslatedText text="System Monitoring" />}
@@ -244,7 +253,7 @@ const MonitoringDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
-                {!activityLogs || activityLogs.length === 0 ? (
+                {activityLogs.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
                       <TranslatedText text="No recent activity" />

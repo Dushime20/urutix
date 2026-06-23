@@ -55,8 +55,8 @@ const MobileBottomNav: React.FC = () => {
     const getNotificationsPath = () => {
         if (!user) return '/dashboard/notifications';
         switch (user.role) {
-            case 'SUPER_ADMIN': return '/admin/monitoring';
-            case 'ADMIN': return '/admin-operational/monitoring';
+            case 'SUPER_ADMIN': return '/admin/notifications';
+            case 'ADMIN': return '/admin-operational/notifications';
             case 'TENANT_ADMIN': return '/tenant-admin/notifications';
             case 'TRUCK_OWNER': return '/dashboard/fleet/notifications'; 
             case 'DRIVER': return '/dashboard/driver/notifications';
