@@ -160,15 +160,30 @@ async function seedPermissions() {
 
     for (const perm of permissions) {
       const permName = `${perm.resource}:${perm.action}`;
-      const result = await client.query(
-        `INSERT INTO permissions (name, resource, action, description, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, NOW(), NOW())
-         ON CONFLICT (name) DO UPDATE 
-         SET description = EXCLUDED.description, updated_at = NOW()
-         RETURNING id`,
-        [permName, perm.resource, perm.action, perm.description]
+      
+      // Check if permission already exists
+      const existing = await client.query(
+        `SELECT id FROM permissions WHERE resource = $1 AND action = $2`,
+        [perm.resource, perm.action]
       );
-      permissionIds[permName] = result.rows[0].id;
+      
+      if (existing.rows.length > 0) {
+        // Update existing permission
+        await client.query(
+          `UPDATE permissions SET description = $1 WHERE resource = $2 AND action = $3`,
+          [perm.description, perm.resource, perm.action]
+        );
+        permissionIds[permName] = existing.rows[0].id;
+      } else {
+        // Insert new permission
+        const result = await client.query(
+          `INSERT INTO permissions (resource, action, description, category, created_at)
+           VALUES ($1, $2, $3, $4, NOW())
+           RETURNING id`,
+          [perm.resource, perm.action, perm.description, 'system']
+        );
+        permissionIds[permName] = result.rows[0].id;
+      }
       permissionCount++;
     }
     console.log(`✅ Seeded ${permissionCount} permissions`);
