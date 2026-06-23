@@ -10,7 +10,9 @@ const RoleManagement = () => {
             title={<TranslatedText text="Role Definitions" />}
             description={<TranslatedText text="Global default permissions for each role" />}
         >
-            <RolePermissionsMatrix />
+            <div className="safe-bottom">
+                <RolePermissionsMatrix />
+            </div>
         </AdminPageLayout>
     );
 };

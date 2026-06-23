@@ -94,16 +94,20 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
         return matchesSearch;
     });
 
-    if (loading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
+    if (loading) return (
+        <div className="p-8 flex justify-center bg-white dark:bg-slate-900 h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        </div>
+    );
 
     return (
-        <div className="bg-white dark:bg-slate-800 h-full flex flex-col">
+        <div className="bg-white dark:bg-slate-900 h-full flex flex-col">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900/80">
                 <div>
-                    <h2 className="text-lg font-bold dark:text-white">{userName}</h2>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">{userName}</h2>
                     <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800 border border-blue-200`}>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
                             {userRole}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -111,21 +115,28 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
                         </span>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors">
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <button
+                    onClick={onClose}
+                    className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full transition-colors text-gray-500 dark:text-slate-400"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 dark:border-gray-700 px-6">
+            <div className="flex border-b border-gray-200 dark:border-slate-800 px-6 bg-white dark:bg-slate-900">
                 <button
-                    className={`px-4 py-3 text-sm font-medium ${activeTab === 'permissions' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'permissions'
+                        ? 'border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
                     onClick={() => setActiveTab('permissions')}
                 >
                     Permissions
                 </button>
                 <button
-                    className={`px-4 py-3 text-sm font-medium ${activeTab === 'audit' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'audit'
+                        ? 'border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}
                     onClick={() => setActiveTab('audit')}
                 >
                     Audit Log
@@ -133,20 +144,20 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900">
                 {activeTab === 'permissions' ? (
                     <div className="space-y-6">
                         {/* Grant New Override */}
-                        <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                        <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40">
                             <h3 className="text-sm font-bold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                                 Grant Permission Override
                             </h3>
                             <form onSubmit={handleGrant} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                                 <div className="md:col-span-5">
-                                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Permission</label>
+                                    <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Permission</label>
                                     <select
-                                        className="w-full border-gray-200 rounded-lg text-sm focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-600 dark:text-white"
+                                        className="w-full border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-3 py-2"
                                         value={grantForm.permission}
                                         onChange={e => setGrantForm({ ...grantForm, permission: e.target.value })}
                                         required
@@ -158,16 +169,17 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
                                     </select>
                                 </div>
                                 <div className="md:col-span-4">
-                                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Reason (Optional)</label>
+                                    <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Reason (Optional)</label>
                                     <input
                                         type="text"
-                                        className="w-full border-gray-200 rounded-lg text-sm focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-600 dark:text-white"
+                                        className="w-full border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-3 py-2 placeholder-gray-400 dark:placeholder-slate-500"
                                         value={grantForm.reason}
                                         onChange={e => setGrantForm({ ...grantForm, reason: e.target.value })}
+                                        placeholder="Reason for grant..."
                                     />
                                 </div>
                                 <div className="md:col-span-3">
-                                    <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+                                    <button type="submit" className="w-full bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow-sm">
                                         Grant Override
                                     </button>
                                 </div>
@@ -179,51 +191,79 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
                             <input
                                 type="text"
                                 placeholder="Search permissions..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 dark:bg-slate-900 dark:border-gray-700 dark:text-white"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
-                            <svg className="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <svg className="w-4 h-4 text-gray-400 dark:text-slate-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         </div>
 
                         {/* Permissions Grid */}
                         <div className="space-y-6">
                             {filteredResources.map(resource => (
                                 <div key={resource}>
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-slate-600"></span>
                                         {resource}
                                     </h3>
                                     <div className="grid grid-cols-1 gap-2">
-                                        {groupedPermissions[resource].filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.description?.toLowerCase().includes(searchTerm.toLowerCase())).map(perm => {
+                                        {groupedPermissions[resource].filter(p =>
+                                            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            p.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                                        ).map(perm => {
                                             const isEffective = userEffectivePermissions.includes(perm.name);
                                             const override = userOverrides.find(o => o.permission_id === perm.id);
-
-                                            // Determine status
-                                            // 1. Explicitly Granted by Role -> Green text
-                                            // 2. Explicitly Granted by Override -> Green Check Badge
-                                            // 3. Explicitly Denied by Override -> Red Ban Badge
-                                            // 4. Not Granted -> Gray
 
                                             let statusBadge = null;
                                             if (override) {
                                                 if (override.is_granted) {
-                                                    statusBadge = <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 font-medium flex items-center gap-1">Override: Granted <button onClick={() => handleRevoke(perm.name)} className="bg-white rounded-full p-0.5 hover:text-red-500 ml-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button></span>;
+                                                    statusBadge = (
+                                                        <span className="text-xs bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded border border-green-200 dark:border-green-800/50 font-medium flex items-center gap-1">
+                                                            Override: Granted
+                                                            <button
+                                                                onClick={() => handleRevoke(perm.name)}
+                                                                className="bg-white dark:bg-slate-700 rounded-full p-0.5 hover:text-red-500 dark:hover:text-red-400 ml-1"
+                                                            >
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                            </button>
+                                                        </span>
+                                                    );
                                                 } else {
-                                                    statusBadge = <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded border border-red-200 font-medium flex items-center gap-1">Override: Denied <button onClick={() => handleRevoke(perm.name)} className="bg-white rounded-full p-0.5 hover:text-red-500 ml-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button></span>;
+                                                    statusBadge = (
+                                                        <span className="text-xs bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded border border-red-200 dark:border-red-800/50 font-medium flex items-center gap-1">
+                                                            Override: Denied
+                                                            <button
+                                                                onClick={() => handleRevoke(perm.name)}
+                                                                className="bg-white dark:bg-slate-700 rounded-full p-0.5 hover:text-red-500 dark:hover:text-red-400 ml-1"
+                                                            >
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                            </button>
+                                                        </span>
+                                                    );
                                                 }
                                             } else if (isEffective) {
-                                                statusBadge = <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">Inherited from Role</span>;
+                                                statusBadge = (
+                                                    <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700">
+                                                        Inherited from Role
+                                                    </span>
+                                                );
                                             }
 
                                             return (
-                                                <div key={perm.id} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${isEffective ? 'bg-white border-green-200 shadow-sm' : 'bg-gray-50 border-gray-100 opacity-60 hover:opacity-100'}`}>
+                                                <div
+                                                    key={perm.id}
+                                                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                                                        isEffective
+                                                            ? 'bg-white dark:bg-slate-800/60 border-green-200 dark:border-green-800/40 shadow-sm'
+                                                            : 'bg-gray-50 dark:bg-slate-800/30 border-gray-100 dark:border-slate-800 opacity-60 hover:opacity-100'
+                                                    }`}
+                                                >
                                                     <div>
                                                         <div className="flex items-center gap-2">
-                                                            <span className={`w-2 h-2 rounded-full ${isEffective ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                                                            <span className={`text-sm font-medium ${isEffective ? 'text-gray-900' : 'text-gray-500'}`}>{perm.name}</span>
+                                                            <span className={`w-2 h-2 rounded-full ${isEffective ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600'}`}></span>
+                                                            <span className={`text-sm font-medium ${isEffective ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-slate-500'}`}>{perm.name}</span>
                                                         </div>
-                                                        <p className="text-xs text-gray-500 mt-0.5 ml-4">{perm.description}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-slate-500 mt-0.5 ml-4">{perm.description}</p>
                                                     </div>
                                                     <div>
                                                         {statusBadge}
@@ -242,16 +282,16 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
                         <div className="space-y-6">
                             {auditLog.map(log => (
                                 <div key={log.id} className="relative pl-10">
-                                    <div className="absolute left-2.5 top-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-slate-800 -translate-x-1/2"></div>
-                                    <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm">
+                                    <div className="absolute left-2.5 top-2 w-3 h-3 bg-blue-500 dark:bg-blue-400 rounded-full border-2 border-white dark:border-slate-900 -translate-x-1/2"></div>
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className="font-bold text-gray-900 dark:text-white text-sm">{log.action}</span>
-                                            <span className="text-xs text-gray-500">{format(new Date(log.created_at), 'MMM d, yyyy HH:mm')}</span>
+                                            <span className="text-xs text-gray-500 dark:text-slate-400">{format(new Date(log.created_at), 'MMM d, yyyy HH:mm')}</span>
                                         </div>
-                                        <div className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 p-2 rounded font-mono break-all">
+                                        <div className="text-xs text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-900/60 p-2 rounded font-mono break-all border border-transparent dark:border-slate-700/50">
                                             {JSON.stringify(log.changes, null, 2)}
                                         </div>
-                                        <div className="mt-2 text-xs text-gray-400 flex items-center gap-1">
+                                        <div className="mt-2 text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1">
                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                             By: {log.user_id || 'System'}
                                         </div>
@@ -259,7 +299,7 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({ user
                                 </div>
                             ))}
                             {auditLog.length === 0 && (
-                                <div className="text-center text-gray-500 py-8">No audit history found</div>
+                                <div className="text-center text-gray-500 dark:text-slate-500 py-8">No audit history found</div>
                             )}
                         </div>
                     </div>

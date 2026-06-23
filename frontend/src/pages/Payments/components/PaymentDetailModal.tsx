@@ -29,7 +29,7 @@ const PaymentDetailModal = ({ isOpen, onClose, payment, onPayNow }: PaymentDetai
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white rounded-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white rounded-3xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
         <DialogHeader className="p-6 pb-0 sticky top-0 bg-white z-10">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-black text-slate-900">

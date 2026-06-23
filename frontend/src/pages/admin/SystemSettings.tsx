@@ -647,6 +647,7 @@ const SystemSettings: React.FC = () => {
         )
       }
     >
+      <div className="safe-bottom">
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
@@ -684,6 +685,7 @@ const SystemSettings: React.FC = () => {
           </div>
           {renderContent()}
         </div>
+      </div>
       </div>
     </AdminPageLayout>
   );

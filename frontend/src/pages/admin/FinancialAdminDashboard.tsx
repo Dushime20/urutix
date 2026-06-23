@@ -279,6 +279,7 @@ const FinancialAdminDashboard: React.FC = () => {
         </button>
       }
     >
+      <div className="safe-bottom">
       {loading ? (
         <ModernLoader isLoading={true} type="dashboard" showStats={true} />
       ) : error ? (
@@ -759,6 +760,7 @@ const FinancialAdminDashboard: React.FC = () => {
         )}
       </div>
       )}
+      </div>
     </AdminPageLayout >
   );
 };

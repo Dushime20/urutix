@@ -855,7 +855,7 @@ const AdminRoutes: React.FC = () => {
       {/* Create Route Modal */}
       {canCreateRoutes && showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-gray-900"><TranslatedText text="Create New Route" /></h2>
@@ -1071,7 +1071,7 @@ const AdminRoutes: React.FC = () => {
       {/* Edit Route Modal */}
       {showEditModal && editingRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-gray-900"><TranslatedText text="Edit Route" /></h2>
@@ -1287,7 +1287,7 @@ const AdminRoutes: React.FC = () => {
       {/* Route Details Modal */}
       {showDetailsModal && selectedRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">

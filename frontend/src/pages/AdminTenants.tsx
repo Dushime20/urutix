@@ -762,7 +762,7 @@ const AdminTenants: React.FC = () => {
       {/* Create Tenant Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/20">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
             <div className="p-8 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -888,7 +888,7 @@ const AdminTenants: React.FC = () => {
       {/* Edit Tenant Modal */}
       {showEditModal && editingTenantId && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/20">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
             <div className="p-8 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -1116,7 +1116,7 @@ const AdminTenants: React.FC = () => {
       {/* Tenant Details Modal */}
       {showDetailsModal && selectedTenant && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto border border-white/20">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
             {/* Header */}
             <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 p-8 z-10">
               <div className="flex items-center justify-between">

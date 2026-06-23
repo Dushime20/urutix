@@ -31,7 +31,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const truckIcon = new L.Icon({ iconUrl, iconRetinaUrl, shadowUrl: iconShadow, iconSize: [28, 42], iconAnchor: [14, 42], popupAnchor: [0, -42], shadowSize: [41, 41] });
 const pinIcon = (color: string) => new L.Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32"><path d="M12 0C7.58 0 4 3.58 4 8c0 7 8 20 8 20s8-13 8-20c0-4.42-3.58-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" fill="${color}" stroke="white" stroke-width="1"/></svg>`)}`,
+  iconUrl: `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32"><path d="M12 0C7.58 0 4 3.58 4 8c0 7 8 20 8 20s8-13 8-20c0-4.42-3.58-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" fill="${color}" stroke="white" stroke-width="1"/></svg>`)))}`,
   iconSize: [24, 32], iconAnchor: [12, 32], popupAnchor: [0, -32],
 });
 

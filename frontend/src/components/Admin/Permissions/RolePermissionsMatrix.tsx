@@ -11,18 +11,18 @@ import { UserRole } from '@/types/permission.types';
 import type { Permission } from '@/types/permission.types';
 
 // ── Role colour palette ────────────────────────────────────────────────────
-const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-    SUPER_ADMIN:  { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200', dot: 'bg-purple-500'  },
-    ADMIN:        { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',   dot: 'bg-blue-500'    },
-    CARGO_OWNER:  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',  dot: 'bg-amber-500'   },
-    TRUCK_OWNER:  { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-200',  dot: 'bg-green-500'   },
-    DRIVER:       { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',   dot: 'bg-teal-500'    },
-    BROKER:       { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200', dot: 'bg-orange-500'  },
-    AGENT:        { bg: 'bg-cyan-50',    text: 'text-cyan-700',    border: 'border-cyan-200',   dot: 'bg-cyan-500'    },
-    LENDER:       { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200', dot: 'bg-indigo-500'  },
+const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string; darkBg: string; darkText: string; darkBorder: string }> = {
+    SUPER_ADMIN:  { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200', dot: 'bg-purple-500',  darkBg: 'dark:bg-purple-950/30',  darkText: 'dark:text-purple-300',  darkBorder: 'dark:border-purple-800/50'  },
+    ADMIN:        { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',   dot: 'bg-blue-500',    darkBg: 'dark:bg-blue-950/30',    darkText: 'dark:text-blue-300',    darkBorder: 'dark:border-blue-800/50'    },
+    CARGO_OWNER:  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',  dot: 'bg-amber-500',   darkBg: 'dark:bg-amber-950/30',   darkText: 'dark:text-amber-300',   darkBorder: 'dark:border-amber-800/50'   },
+    TRUCK_OWNER:  { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-200',  dot: 'bg-green-500',   darkBg: 'dark:bg-green-950/30',   darkText: 'dark:text-green-300',   darkBorder: 'dark:border-green-800/50'   },
+    DRIVER:       { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',   dot: 'bg-teal-500',    darkBg: 'dark:bg-teal-950/30',    darkText: 'dark:text-teal-300',    darkBorder: 'dark:border-teal-800/50'    },
+    BROKER:       { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200', dot: 'bg-orange-500',  darkBg: 'dark:bg-orange-950/30',  darkText: 'dark:text-orange-300',  darkBorder: 'dark:border-orange-800/50'  },
+    AGENT:        { bg: 'bg-cyan-50',    text: 'text-cyan-700',    border: 'border-cyan-200',   dot: 'bg-cyan-500',    darkBg: 'dark:bg-cyan-950/30',    darkText: 'dark:text-cyan-300',    darkBorder: 'dark:border-cyan-800/50'    },
+    LENDER:       { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200', dot: 'bg-indigo-500',  darkBg: 'dark:bg-indigo-950/30',  darkText: 'dark:text-indigo-300',  darkBorder: 'dark:border-indigo-800/50'  },
 };
 const roleColor = (role: string) =>
-    ROLE_COLORS[role] ?? { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-400' };
+    ROLE_COLORS[role] ?? { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-400', darkBg: 'dark:bg-slate-800/30', darkText: 'dark:text-slate-300', darkBorder: 'dark:border-slate-700' };
 
 // ── RoleDetailModal ────────────────────────────────────────────────────────
 interface RoleDetailModalProps {
@@ -147,35 +147,35 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
 
     return (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-[24px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-[24px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
 
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl ${colors.bg} ${colors.text}`}>
+                        <div className={`p-2.5 rounded-xl ${colors.bg} ${colors.text} ${colors.darkBg} ${colors.darkText}`}>
                             <FaShieldAlt size={18} />
                         </div>
                         <div>
-                            <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                            <h2 className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2">
                                 {role.replace(/_/g, ' ')}
                                 {isSuperAdmin && (
-                                    <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">
+                                    <span className="text-[9px] bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-black uppercase tracking-wider border border-transparent dark:border-purple-800/50">
                                         Immutable
                                     </span>
                                 )}
                             </h2>
-                            <p className="text-xs text-slate-400 font-medium mt-0.5">
+                            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
                                 {isLoading ? 'Loading…' : `${grantedCount} of ${total} permissions granted (${pct}%)`}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
                         <FaTimes />
                     </button>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-1 bg-slate-100">
+                <div className="h-1 bg-slate-100 dark:bg-slate-800">
                     <div className={`h-full ${colors.dot} transition-all duration-500`} style={{ width: `${pct}%` }} />
                 </div>
 
@@ -183,18 +183,18 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-16">
-                            <FaSpinner className="animate-spin text-[#2c5173] text-2xl" />
+                            <FaSpinner className="animate-spin text-indigo-600 dark:text-indigo-400 text-2xl" />
                         </div>
                     ) : (
                         <>
                             {isSuperAdmin && (
-                                <div className="flex items-center gap-2 p-3 bg-purple-50 border border-purple-100 rounded-xl text-xs text-purple-700 font-semibold">
+                                <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-800/40 rounded-xl text-xs text-purple-700 dark:text-purple-300 font-semibold">
                                     <FaLock size={11} />
                                     SUPER_ADMIN has all permissions by default and cannot be modified.
                                 </div>
                             )}
                             {resources.length === 0 ? (
-                                <div className="text-center py-10 text-slate-400 text-sm">No permissions found.</div>
+                                <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-sm">No permissions found.</div>
                             ) : (
                                 resources.map(resource => {
                                     const perms = grouped[resource];
@@ -202,19 +202,19 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
                                     const allGroupChecked = checkedInGroup === perms.length;
                                     const isCollapsed = collapsed.has(resource);
                                     return (
-                                        <div key={resource} className="border border-slate-100 rounded-2xl overflow-hidden">
+                                        <div key={resource} className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
                                             {/* Group header */}
                                             <div
-                                                className="flex items-center justify-between px-4 py-3 bg-slate-50/80 cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                                                className="flex items-center justify-between px-4 py-3 bg-slate-50/80 dark:bg-slate-800/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none"
                                                 onClick={() => toggleGroup(resource)}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     {isCollapsed
-                                                        ? <FaChevronRight size={11} className="text-slate-400" />
-                                                        : <FaChevronDown size={11} className="text-slate-400" />
+                                                        ? <FaChevronRight size={11} className="text-slate-400 dark:text-slate-500" />
+                                                        : <FaChevronDown size={11} className="text-slate-400 dark:text-slate-500" />
                                                     }
-                                                    <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{resource}</span>
-                                                    <span className="text-[9px] bg-white border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-bold">
+                                                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">{resource}</span>
+                                                    <span className="text-[9px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">
                                                         {checkedInGroup}/{perms.length}
                                                     </span>
                                                 </div>
@@ -223,8 +223,8 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
                                                         onClick={e => { e.stopPropagation(); toggleGroupSelect(resource); }}
                                                         className={`text-[10px] font-black px-3 py-1 rounded-lg transition-colors ${
                                                             allGroupChecked
-                                                                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                                                : 'bg-[#2c5173]/10 text-[#2c5173] hover:bg-[#2c5173]/20'
+                                                                ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50'
+                                                                : 'bg-indigo-100/60 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950/50'
                                                         }`}
                                                     >
                                                         {allGroupChecked ? 'Deselect All' : 'Select All'}
@@ -233,33 +233,33 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
                                             </div>
                                             {/* Permission rows */}
                                             {!isCollapsed && (
-                                                <div className="divide-y divide-slate-50">
+                                                <div className="divide-y divide-slate-50 dark:divide-slate-800">
                                                     {perms.map(p => {
                                                         const checked = isSuperAdmin ? true : selected.has(p.id);
                                                         return (
                                                             <label
                                                                 key={p.id}
                                                                 className={`flex items-center gap-3 px-4 py-3 transition-colors ${
-                                                                    !isSuperAdmin ? 'cursor-pointer hover:bg-slate-50' : 'cursor-not-allowed opacity-70'
-                                                                } ${checked ? 'bg-emerald-50/40' : ''}`}
+                                                                    !isSuperAdmin ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50' : 'cursor-not-allowed opacity-70'
+                                                                } ${checked ? 'bg-emerald-50/40 dark:bg-emerald-950/10' : ''}`}
                                                             >
                                                                 <input
                                                                     type="checkbox"
                                                                     checked={checked}
                                                                     disabled={isSuperAdmin}
                                                                     onChange={() => !isSuperAdmin && togglePerm(p.id)}
-                                                                    className="w-4 h-4 rounded border-slate-300 text-[#2c5173] focus:ring-[#2c5173] focus:ring-offset-0 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                                                                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 dark:bg-slate-800 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
                                                                 />
                                                                 <div className="min-w-0 flex-1">
-                                                                    <span className="text-xs font-bold text-slate-700 font-mono">
+                                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 font-mono">
                                                                         {p.name || `${p.resource}.${p.action}`}
                                                                     </span>
                                                                     {p.description && (
-                                                                        <p className="text-[10px] text-slate-400 mt-0.5">{p.description}</p>
+                                                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{p.description}</p>
                                                                     )}
                                                                 </div>
                                                                 {checked && (
-                                                                    <span className="flex-shrink-0 text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                                                    <span className="flex-shrink-0 text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 px-1.5 py-0.5 rounded">
                                                                         Granted
                                                                     </span>
                                                                 )}
@@ -277,25 +277,25 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4">
-                    <p className="text-xs text-slate-400">
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
                         {isSuperAdmin ? (
-                            <span className="text-purple-600 font-semibold flex items-center gap-1.5"><FaLock size={10} /> Read-only</span>
+                            <span className="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1.5"><FaLock size={10} /> Read-only</span>
                         ) : isDirty ? (
-                            <span className="text-amber-600 font-bold">⚠ Unsaved changes</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">⚠ Unsaved changes</span>
                         ) : (
                             'No changes'
                         )}
                     </p>
                     <div className="flex gap-3">
-                        <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors">
+                        <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                             {isSuperAdmin ? 'Close' : 'Cancel'}
                         </button>
                         {!isSuperAdmin && (
                             <button
                                 onClick={() => bulkAssign(Array.from(selected))}
                                 disabled={isSaving || !isDirty}
-                                className="px-5 py-2.5 bg-[#2c5173] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#1e3850] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                className="px-5 py-2.5 bg-indigo-600 dark:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700 dark:hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                             >
                                 {isSaving
                                     ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>
@@ -544,7 +544,7 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
     if (isLoadingPermissions || isLoadingMatrix) {
         return (
             <div className="flex h-96 items-center justify-center">
-                <FaSpinner className="animate-spin text-indigo-600 text-4xl" />
+                <FaSpinner className="animate-spin text-indigo-600 dark:text-indigo-400 text-4xl" />
             </div>
         );
     }
@@ -564,27 +564,27 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
             )}
 
             {/* Enhanced Controls Bar */}
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-900/40">
                 <div className="flex flex-wrap gap-4 items-center justify-between">
                     {/* Search */}
                     <div className="relative flex-1 min-w-[300px]">
                         <input
                             type="text"
                             placeholder="Search permissions, resources, or actions..."
-                            className="w-full px-4 py-2.5 pl-10 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm"
+                            className="w-full px-4 py-2.5 pl-10 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <span className="absolute left-3 top-3 text-indigo-400">🔍</span>
+                        <FaSearch className="absolute left-3 top-3 text-indigo-400 dark:text-indigo-500 w-4 h-4" />
                     </div>
 
                     {/* Resource Filter */}
                     <div className="flex items-center gap-2">
-                        <FaFilter className="text-indigo-600" />
+                        <FaFilter className="text-indigo-600 dark:text-indigo-400" />
                         <select
                             value={selectedResource}
                             onChange={(e) => setSelectedResource(e.target.value)}
-                            className="px-4 py-2.5 bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                            className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm font-medium text-slate-900 dark:text-white"
                         >
                             <option value="all">All Resources ({resourceList.length})</option>
                             {resourceList.map(resource => (
@@ -599,21 +599,21 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                     <div className="flex gap-2">
                         <button
                             onClick={() => setShowStats(!showStats)}
-                            className="px-4 py-2.5 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2 text-sm font-medium text-indigo-700"
+                            className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm font-medium text-indigo-700 dark:text-indigo-300"
                         >
                             <FaChartBar /> {showStats ? 'Hide' : 'Show'} Stats
                         </button>
                         <button
                             onClick={handleExport}
-                            className="px-4 py-2.5 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2 text-sm font-medium text-indigo-700"
+                            className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm font-medium text-indigo-700 dark:text-indigo-300"
                         >
                             <FaDownload /> Export
                         </button>
                         <button
                             onClick={() => setBulkMode(!bulkMode)}
                             className={`px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${bulkMode
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50'
+                                    ? 'bg-indigo-600 dark:bg-indigo-700 text-white'
+                                    : 'bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-700'
                                 }`}
                         >
                             <FaCheckDouble /> Bulk Mode
@@ -623,19 +623,19 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
 
                 {/* Bulk Operations Panel */}
                 {bulkMode && (
-                    <div className="mt-4 p-4 bg-white rounded-lg border border-indigo-200">
+                    <div className="mt-4 p-4 bg-white dark:bg-slate-800 rounded-lg border border-indigo-200 dark:border-slate-700">
                         <div className="flex items-center gap-4">
                             <select
                                 value={selectedRole || ''}
                                 onChange={(e) => setSelectedRole(e.target.value)}
-                                className="px-4 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                className="px-4 py-2 border border-indigo-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             >
                                 <option value="">Select Role</option>
                                 {roles.filter(r => r !== 'SUPER_ADMIN').map(role => (
                                     <option key={role} value={role}>{role.replace('_', ' ')}</option>
                                 ))}
                             </select>
-                            <span className="text-sm text-slate-600">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
                                 {selectedPermissions.size} permission(s) selected
                             </span>
                             <div className="flex gap-2 ml-auto">
@@ -659,7 +659,7 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                         setBulkMode(false);
                                         setSelectedRole(null);
                                     }}
-                                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 text-sm font-medium"
+                                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 text-sm font-medium"
                                 >
                                     Cancel
                                 </button>
@@ -673,11 +673,11 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
             {showStats && (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                     {stats.map(stat => (
-                        <div key={stat.role} className="bg-white rounded-lg p-4 border border-slate-200 hover:shadow-md transition-shadow">
-                            <div className="text-xs font-bold text-slate-500 mb-1">{stat.role.replace('_', ' ')}</div>
-                            <div className="text-2xl font-black text-indigo-600 mb-1">{stat.granted}</div>
-                            <div className="text-xs text-slate-500">of {stat.total} ({stat.percentage}%)</div>
-                            <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div key={stat.role} className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700 hover:shadow-md dark:hover:shadow-slate-900/50 transition-shadow">
+                            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">{stat.role.replace('_', ' ')}</div>
+                            <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mb-1">{stat.granted}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">of {stat.total} ({stat.percentage}%)</div>
+                            <div className="mt-2 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all"
                                     style={{ width: `${stat.percentage}%` }}
@@ -690,35 +690,35 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
 
             {/* Legend */}
             <div className="flex items-center gap-6 text-xs">
-                <div className="flex items-center gap-2 text-slate-600">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center">
-                        <FaCheck className="text-emerald-600" size={10} />
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
+                        <FaCheck className="text-emerald-600 dark:text-emerald-400" size={10} />
                     </div>
                     <span className="font-medium">Granted</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center">
-                        <FaTimes className="text-slate-300" size={10} />
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <FaTimes className="text-slate-300 dark:text-slate-600" size={10} />
                     </div>
                     <span className="font-medium">Revoked</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                    <FaInfoCircle className="text-indigo-500" />
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <FaInfoCircle className="text-indigo-500 dark:text-indigo-400" />
                     <span className="font-medium">Click to toggle • SUPER_ADMIN is immutable</span>
                 </div>
             </div>
 
             {/* Matrix Table */}
-            <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-indigo-200">
+                        <thead className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/80 border-b-2 border-indigo-200 dark:border-indigo-900/60">
                             <tr>
                                 {bulkMode && (
-                                    <th className="px-4 py-4 text-center font-bold text-slate-700 w-12 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">
+                                    <th className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300 w-12 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">
                                         <input
                                             type="checkbox"
-                                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-700"
                                             onChange={(e) => {
                                                 if (e.target.checked) {
                                                     const allPerms = new Set(permissions.map((p: any) => p.name));
@@ -730,20 +730,20 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                         />
                                     </th>
                                 )}
-                                <th className={`px-6 py-4 text-left font-bold text-slate-700 min-w-[250px] sticky ${bulkMode ? 'left-12' : 'left-0'} bg-slate-50 z-10 border-r border-slate-200`}>
+                                <th className={`px-6 py-4 text-left font-bold text-slate-700 dark:text-slate-200 min-w-[250px] sticky ${bulkMode ? 'left-12' : 'left-0'} bg-slate-50 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700`}>
                                     <div className="flex items-center gap-2">
-                                        <FaFilter className="text-indigo-500" />
+                                        <FaFilter className="text-indigo-500 dark:text-indigo-400" />
                                         Resource / Permission
                                     </div>
                                 </th>
                                 {roles.map(role => (
-                                    <th key={role} className="px-4 py-4 text-center font-bold text-slate-700 min-w-[110px] group">
+                                    <th key={role} className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-200 min-w-[110px] group">
                                         <div className="flex flex-col items-center gap-1">
-                                            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Role</span>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Role</span>
                                             <button
                                                 onClick={() => setActiveRoleModal(role)}
                                                 title={`View / edit ${role} permissions`}
-                                                className="text-sm hover:text-indigo-600 hover:underline transition-colors"
+                                                className="text-sm hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
                                             >
                                                 {role.replace('_', ' ')}
                                             </button>
@@ -755,7 +755,7 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                                             handleCopyRole(sourceRole, role);
                                                         }
                                                     }}
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-600 hover:text-indigo-700 flex items-center gap-1 mt-1"
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 mt-1"
                                                 >
                                                     <FaCopy size={8} /> Copy
                                                 </button>
@@ -765,16 +765,16 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {filteredResources.map(resource => (
                                 <React.Fragment key={resource}>
                                     {/* Resource Section Header */}
-                                    <tr className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
-                                        <td colSpan={roles.length + (bulkMode ? 2 : 1)} className="px-6 py-3 text-xs font-black text-indigo-700 uppercase tracking-wider border-y border-indigo-100">
+                                    <tr className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                                        <td colSpan={roles.length + (bulkMode ? 2 : 1)} className="px-6 py-3 text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider border-y border-indigo-100 dark:border-indigo-900/40">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-1 h-4 bg-indigo-500 rounded-full" />
+                                                <div className="w-1 h-4 bg-indigo-500 dark:bg-indigo-400 rounded-full" />
                                                 {resource}
-                                                <span className="ml-2 text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold">
+                                                <span className="ml-2 text-[10px] bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold border border-transparent dark:border-indigo-800/50">
                                                     {groupedPermissions[resource].length} permissions
                                                 </span>
                                             </div>
@@ -787,9 +787,9 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                             p.action.toLowerCase().includes(searchTerm.toLowerCase())
                                         )
                                         .map((p: any) => (
-                                            <tr key={p.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                            <tr key={p.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/10 transition-colors group">
                                                 {bulkMode && (
-                                                    <td className="px-4 py-3 text-center sticky left-0 bg-white group-hover:bg-indigo-50/30 z-10 border-r border-slate-100">
+                                                    <td className="px-4 py-3 text-center sticky left-0 bg-white dark:bg-slate-900 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-950/10 z-10 border-r border-slate-100 dark:border-slate-800">
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedPermissions.has(p.name)}
@@ -802,38 +802,40 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                                                 }
                                                                 setSelectedPermissions(newSet);
                                                             }}
-                                                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-800"
                                                         />
                                                     </td>
                                                 )}
-                                                <td className={`px-6 py-3 border-r border-slate-100 sticky ${bulkMode ? 'left-12' : 'left-0'} bg-white group-hover:bg-indigo-50/30 z-10`}>
+                                                <td className={`px-6 py-3 border-r border-slate-100 dark:border-slate-800 sticky ${bulkMode ? 'left-12' : 'left-0'} bg-white dark:bg-slate-900 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-950/10 z-10`}>
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0">
-                                                            <span className="text-xs font-bold text-indigo-700">
+                                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/50 dark:to-purple-950/50 flex items-center justify-center flex-shrink-0">
+                                                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
                                                                 {p.action.split(':')[1]?.charAt(0).toUpperCase() || 'P'}
                                                             </span>
                                                         </div>
                                                         <div>
-                                                            <div className="font-semibold text-slate-700">{p.action}</div>
-                                                            <div className="text-xs text-slate-400 font-mono mt-0.5">{p.name}</div>
+                                                            <div className="font-semibold text-slate-700 dark:text-slate-200">{p.action}</div>
+                                                            <div className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">{p.name}</div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 {roles.map(role => {
-                                                    const isGranted = hasPermission(role, p.name);
+                                                    // Use resource:action format for permission identifier
+                                                    const permissionId = p.name || `${p.resource}:${p.action}`;
+                                                    const isGranted = hasPermission(role, permissionId);
                                                     const isSuperAdmin = role === 'SUPER_ADMIN';
                                                     return (
-                                                        <td key={`${role}-${p.name}`} className="px-4 py-3 text-center">
+                                                        <td key={`${role}-${permissionId}`} className="px-4 py-3 text-center">
                                                             <div className="flex justify-center">
                                                                 <button
                                                                     disabled={isSuperAdmin}
-                                                                    onClick={() => handleToggle(role, p.name, isGranted)}
+                                                                    onClick={() => handleToggle(role, permissionId, isGranted)}
                                                                     title={isSuperAdmin ? 'SUPER_ADMIN permissions are immutable' : `Click to ${isGranted ? 'revoke' : 'grant'}`}
                                                                     className={`
                                                                         w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 font-bold
                                                                         ${isGranted
-                                                                            ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 hover:from-emerald-200 hover:to-emerald-300 shadow-sm'
-                                                                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-500'
+                                                                            ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-950/50 dark:to-emerald-900/50 text-emerald-700 dark:text-emerald-400 hover:from-emerald-200 hover:to-emerald-300 dark:hover:from-emerald-950/70 dark:hover:to-emerald-900/70 shadow-sm'
+                                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-500 dark:hover:text-slate-400'
                                                                         }
                                                                         ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110 active:scale-95'}
                                                                     `}
@@ -854,20 +856,20 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
             </div>
 
             {/* Summary Footer */}
-            <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200">
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-800/30 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-6">
-                        <span className="text-slate-600">
-                            <span className="font-bold text-slate-900">{permissions.length}</span> total permissions
+                        <span className="text-slate-600 dark:text-slate-400">
+                            <span className="font-bold text-slate-900 dark:text-white">{permissions.length}</span> total permissions
                         </span>
-                        <span className="text-slate-600">
-                            <span className="font-bold text-slate-900">{resourceList.length}</span> resources
+                        <span className="text-slate-600 dark:text-slate-400">
+                            <span className="font-bold text-slate-900 dark:text-white">{resourceList.length}</span> resources
                         </span>
-                        <span className="text-slate-600">
-                            <span className="font-bold text-slate-900">{roles.length}</span> roles
+                        <span className="text-slate-600 dark:text-slate-400">
+                            <span className="font-bold text-slate-900 dark:text-white">{roles.length}</span> roles
                         </span>
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-500 dark:text-slate-500">
                         Last updated: {new Date().toLocaleString()}
                     </div>
                 </div>

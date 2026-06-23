@@ -292,7 +292,7 @@ const BulkEmail: React.FC = () => {
       title={<TranslatedText text="Communications Hub" />}
       description={<TranslatedText text="Send campaigns to all tenants via Email, SMS, WhatsApp & In-App" />}
     >
-      <div className="space-y-6">
+      <div className="safe-bottom space-y-6">
 
         {/* ── Hero strip ── */}
         <div className="rounded-3xl p-6 flex items-center justify-between overflow-hidden relative bg-[#2c5173]">
@@ -823,7 +823,7 @@ const BulkEmail: React.FC = () => {
       {/* ── Template Modal ── */}
       {isTemplateModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="sticky top-0 bg-white/90 backdrop-blur-md px-8 py-5 border-b border-slate-100 flex items-center justify-between z-10">
               <div>
                 <h2 className="text-xl font-black text-slate-800"><TranslatedText text={editingTemplate ? 'Edit Template' : 'New Template'} /></h2>

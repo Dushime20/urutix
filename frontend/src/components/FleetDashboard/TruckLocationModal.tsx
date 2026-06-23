@@ -51,11 +51,11 @@ const MapRecenter: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
 
 const createMarkerIcon = (color: string) =>
   new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(`
+    iconUrl: `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(`
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 2C10.48 2 6 6.48 6 12c0 7 10 18 10 18s10-11 10-18c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="${color}" stroke="white" stroke-width="1"/>
       </svg>
-    `)}`,
+    `)))}`,
     iconSize: [32, 32],
     iconAnchor: [16, 32],
     popupAnchor: [0, -32],

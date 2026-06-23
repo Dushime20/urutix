@@ -253,11 +253,11 @@ const AdminDashboard: React.FC = () => {
         {/* Navigation Cards */}
         <div>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <span className="h-8 w-1.5 bg-[#2c5173] rounded-full"></span>
               <TranslatedText text="Management Sections" />
             </h2>
-            <div className="h-px flex-1 bg-gray-100 ml-6 hidden md:block"></div>
+            <div className="h-px flex-1 bg-gray-100 dark:bg-slate-800 ml-6 hidden md:block"></div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -281,23 +281,23 @@ const AdminDashboard: React.FC = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.5 }}
-          className="bg-white rounded-3xl p-8 border border-gray-100 overflow-hidden relative"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-gray-100 dark:border-slate-800 overflow-hidden relative"
         >
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gray-50 text-gray-400 rounded-2xl">
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500 rounded-2xl">
                 <FaHistory size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
                   <TranslatedText text="Recent Activity" />
                 </h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Live updates from the platform</p>
+                <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-1">Live updates from the platform</p>
               </div>
             </div>
             <button
               onClick={() => navigate('/admin/activity-logs')}
-              className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-xl text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 group"
+              className="px-4 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-xl text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 group"
             >
               <TranslatedText text="View Full Log" />
               <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -306,66 +306,66 @@ const AdminDashboard: React.FC = () => {
 
           <div className="space-y-4 relative z-10">
             {analyticsData?.recentTrips?.slice(0, 3).map((trip, index) => (
-              <div key={trip.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 hover:bg-gray-50 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 group">
+              <div key={trip.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 dark:hover:border-slate-700/50 group">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-white border border-gray-100 text-green-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
                     <FaRoute size={18} />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-black text-gray-800 uppercase tracking-tight">
+                  <p className="text-sm font-black text-gray-800 dark:text-slate-200 uppercase tracking-tight">
                     New trip scheduled
                   </p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
                     {typeof trip.origin === 'object' ? (trip.origin?.city || trip.origin?.address || 'Origin') : (trip.origin || 'Origin')} → {typeof trip.destination === 'object' ? (trip.destination?.city || trip.destination?.address || 'Destination') : (trip.destination || 'Destination')}
                   </p>
                 </div>
-                <span className="text-[10px] font-black text-gray-300 group-hover:text-gray-500 uppercase">
+                <span className="text-[10px] font-black text-gray-300 dark:text-slate-650 group-hover:text-gray-500 dark:group-hover:text-slate-400 uppercase">
                   {new Date(trip.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             )) || []}
             
             {analyticsData?.recentPayments?.slice(0, 2).map((payment, index) => (
-              <div key={payment.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 hover:bg-gray-50 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 group">
+              <div key={payment.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 dark:hover:border-slate-700/50 group">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-white border border-gray-100 text-blue-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
                     <FaMoneyBillWave size={18} />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 border-2 border-white rounded-full" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-black text-gray-800 uppercase tracking-tight">
+                  <p className="text-sm font-black text-gray-800 dark:text-slate-200 uppercase tracking-tight">
                     Payment processed
                   </p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                    Amount: <span className="text-gray-700">{fmtMoney(payment.amount) || 'N/A'}</span>
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+                    Amount: <span className="text-gray-700 dark:text-slate-300">{fmtMoney(payment.amount) || 'N/A'}</span>
                   </p>
                 </div>
-                <span className="text-[10px] font-black text-gray-300 group-hover:text-gray-500 uppercase">
+                <span className="text-[10px] font-black text-gray-300 dark:text-slate-650 group-hover:text-gray-500 dark:group-hover:text-slate-400 uppercase">
                   {new Date(payment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             )) || []}
 
             {kpiData?.alerts && kpiData.alerts > 0 && (
-              <div className="flex items-center gap-4 p-4 bg-red-50/50 hover:bg-red-50 rounded-2xl transition-all duration-300 border border-transparent hover:border-red-100 group">
+              <div className="flex items-center gap-4 p-4 bg-red-50/50 dark:bg-red-950/10 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all duration-300 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 group">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-white border border-red-100 text-red-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center">
                     <FaShieldAlt size={18} />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-black text-red-800 uppercase tracking-tight">
+                  <p className="text-sm font-black text-red-800 dark:text-red-450 uppercase tracking-tight">
                     System Alerts Active
                   </p>
-                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mt-0.5">
+                  <p className="text-[10px] font-bold text-red-600 dark:text-red-400/80 uppercase tracking-widest mt-0.5">
                     {kpiData.alerts} items require attention
                   </p>
                 </div>
-                <span className="text-[10px] font-black text-red-400 uppercase">
+                <span className="text-[10px] font-black text-red-400 dark:text-red-400/60 uppercase">
                   Required
                 </span>
               </div>

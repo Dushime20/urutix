@@ -435,7 +435,7 @@ const ReceiversPage: React.FC = () => {
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setShowAssignModal(false)} />
             <div className="relative bg-white rounded-[2rem] sm:rounded-[3rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in slide-in-from-top-8 duration-500">
-              <div className="p-6 sm:p-12 space-y-8 max-h-[90vh] overflow-y-auto">
+              <div className="p-6 sm:p-12 space-y-8 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-4 sm:gap-6">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 flex items-center justify-center shadow-inner">

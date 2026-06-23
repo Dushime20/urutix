@@ -244,7 +244,7 @@ const TruckSearchPage: React.FC = () => {
       {selectedTrip && (
         <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4" onClick={() => setSelectedTrip(null)}>
           <div
-            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal header */}

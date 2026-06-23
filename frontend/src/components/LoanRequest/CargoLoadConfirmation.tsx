@@ -96,7 +96,7 @@ const CargoLoadConfirmation: React.FC<CargoLoadConfirmationProps> = ({
   if (showLoanDetails && loanRequest) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[200]">
-        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
           <div className="p-6">
             {/* Header */}
             <div className="flex items-center space-x-3 mb-6">
@@ -219,7 +219,7 @@ const CargoLoadConfirmation: React.FC<CargoLoadConfirmationProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[200]">
-      <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center space-x-3 mb-6">

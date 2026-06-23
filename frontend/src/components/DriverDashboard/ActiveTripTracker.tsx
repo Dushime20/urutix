@@ -55,13 +55,13 @@ const truckIcon = new L.Icon({
 
 // Labeled A / B pins — consistent with the rest of the tracking system
 const makeLabelPin = (label: string, bg: string) => new L.Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa(`
+  iconUrl: `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48" width="36" height="48">
       <path d="M18 0C8.06 0 0 8.06 0 18c0 12.15 18 30 18 30S36 30.15 36 18C36 8.06 27.94 0 18 0z" fill="${bg}" stroke="white" stroke-width="2"/>
       <circle cx="18" cy="18" r="10" fill="white" opacity="0.25"/>
       <text x="18" y="23" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="white">${label}</text>
     </svg>
-  `)}`,
+  `)))}`,
   iconSize: [36, 48], iconAnchor: [18, 48], popupAnchor: [0, -52],
 });
 

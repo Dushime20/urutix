@@ -229,10 +229,14 @@ const AnalyticsManagement: React.FC = () => {
         </div>
       }
     >
+      <div className="safe-bottom">
       <Box sx={{ mb: 4, position: 'relative' }}>
         <Tabs 
           value={tabValue} 
           onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             '& .MuiTabs-flexContainer': { gap: 1 },
             '& .MuiTab-root': {
@@ -258,6 +262,12 @@ const AnalyticsManagement: React.FC = () => {
               height: 3,
               borderRadius: '3px',
               bottom: 8
+            },
+            '& .MuiTabs-scrollButtons': {
+              color: '#2c5173',
+              '&.Mui-disabled': {
+                opacity: 0.3
+              }
             }
           }}
         >
@@ -652,14 +662,14 @@ const AnalyticsManagement: React.FC = () => {
                 <DataCard title="PLATFORM RECORD COUNTS" subtitle="Total records across all database tables" icon={<GeoIcon />}>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6">
                       {[
-                        { label: 'USERS', value: systemData?.platform?.totalUsers || 0, color: '#2c5173' },
-                        { label: 'TRIPS', value: systemData?.platform?.totalTrips || 0, color: '#10b981' },
-                        { label: 'LOADS', value: systemData?.platform?.totalLoads || 0, color: '#f59e0b' },
-                        { label: 'TRUCKS', value: systemData?.platform?.totalTrucks || 0, color: '#8b5cf6' },
+                        { label: 'USERS', value: systemData?.platform?.totalUsers || 0, color: '#2c5173', darkColor: '#60a5fa' },
+                        { label: 'TRIPS', value: systemData?.platform?.totalTrips || 0, color: '#10b981', darkColor: '#34d399' },
+                        { label: 'LOADS', value: systemData?.platform?.totalLoads || 0, color: '#f59e0b', darkColor: '#fbbf24' },
+                        { label: 'TRUCKS', value: systemData?.platform?.totalTrucks || 0, color: '#8b5cf6', darkColor: '#a78bfa' },
                       ].map((item, i) => (
-                        <div key={i} className="text-center p-4 bg-slate-50 rounded-2xl">
-                          <p className="text-3xl font-black" style={{ color: item.color }}>{item.value}</p>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{item.label}</p>
+                        <div key={i} className="text-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-transparent dark:border-slate-800/85">
+                          <p className="text-3xl font-black" style={{ color: theme === 'dark' ? item.darkColor : item.color }}>{item.value}</p>
+                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">{item.label}</p>
                         </div>
                       ))}
                     </div>
@@ -720,6 +730,7 @@ const AnalyticsManagement: React.FC = () => {
             </div>
         </div>
       </TabPanel>
+      </div>
     </AdminPageLayout>
   );
 };

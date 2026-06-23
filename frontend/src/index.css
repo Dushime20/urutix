@@ -3,6 +3,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe area utilities for mobile bottom navigation */
+@layer utilities {
+  .safe-bottom {
+    @apply pb-20 lg:pb-6;
+  }
+  
+  .safe-bottom-form {
+    @apply pb-28 lg:pb-6;
+  }
+
+  .safe-bottom-modal {
+    @apply pb-24 lg:pb-8;
+  }
+}
+
 /* Marquee animation for alert bar */
 @keyframes marquee {
   0% { transform: translateX(10%); }

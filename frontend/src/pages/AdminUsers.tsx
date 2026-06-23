@@ -703,7 +703,7 @@ const AdminUsers: React.FC = () => {
       {
         showCreateModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent pb-24 lg:pb-8">
               <div className="p-6 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Create New User" /></h2>
@@ -793,12 +793,12 @@ const AdminUsers: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                     Email *
                   </label>
                   <input
                     type="email"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                     placeholder="Enter email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -806,14 +806,13 @@ const AdminUsers: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       Phone Number
                     </label>
                     <input
                       type="tel"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       placeholder="Enter phone number"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
@@ -821,14 +820,12 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
 
-
-
-                <div className="bg-primary-50 border border-primary-200 rounded-lg p-2">
+                <div className="bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-900/30 rounded-xl p-4">
                   <div className="flex items-start gap-1.5">
-                    <ShieldCheck className="text-primary-600 mt-0.5" size={12} />
+                    <ShieldCheck className="text-primary-600 dark:text-primary-400 mt-0.5" size={12} />
                     <div>
-                      <h4 className="font-semibold text-primary-900 text-xs">User Information</h4>
-                      <p className="text-[10px] text-primary-700 mt-0.5">
+                      <h4 className="font-black text-primary-900 dark:text-primary-300 text-xs uppercase tracking-tight">User Information</h4>
+                      <p className="text-[10px] text-primary-700 dark:text-primary-400/80 font-medium mt-1 leading-relaxed">
                         A new user account will be created. The user will receive an email with login instructions.
                       </p>
                     </div>
@@ -836,20 +833,20 @@ const AdminUsers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-2.5 border-t border-gray-200 flex justify-end gap-2">
+              <div className="p-6 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateUser}
                   disabled={isCreating || !tenantId || !email || !firstName || !lastName}
-                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
                 >
                   {isCreating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                   <span>{isCreating ? 'Creating...' : 'Create User'}</span>
@@ -863,11 +860,11 @@ const AdminUsers: React.FC = () => {
       {/* Edit User Modal */}
       {
         showEditModal && editingUserId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent">
-              <div className="p-3 border-b border-gray-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent pb-24 lg:pb-8">
+              <div className="p-6 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-gray-900">Edit User</h2>
+                  <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Edit User" /></h2>
                   <button
                     onClick={() => {
                       setShowEditModal(false);
@@ -880,16 +877,16 @@ const AdminUsers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 space-y-3">
+              <div className="p-6 space-y-6">
                 {/* Editable Email and Tenant */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       Email *
                     </label>
                     <input
                       type="email"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       placeholder="Enter email"
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
@@ -897,11 +894,11 @@ const AdminUsers: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       Tenant *
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       value={editTenantId}
                       onChange={(e) => setEditTenantId(e.target.value)}
                     >
@@ -912,14 +909,14 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       First Name *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       placeholder="Enter first name"
                       value={editFirstName}
                       onChange={(e) => setEditFirstName(e.target.value)}
@@ -927,12 +924,12 @@ const AdminUsers: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       Last Name *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       placeholder="Enter last name"
                       value={editLastName}
                       onChange={(e) => setEditLastName(e.target.value)}
@@ -941,62 +938,62 @@ const AdminUsers: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                     Phone
                   </label>
                   <input
                     type="tel"
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                     placeholder="Enter phone number"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       Role
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       value={editRole}
                       onChange={(e) => setEditRole(e.target.value)}
                     >
-                      <option value="SUPER_ADMIN">Super Admin</option>
-                      <option value="ADMIN">Admin</option>
-                      <option value="TENANT_ADMIN">Tenant Admin</option>
-                      <option value="CARGO_OWNER">Cargo Owner</option>
-                      <option value="TRUCK_OWNER">Truck Owner</option>
-                      <option value="DRIVER">Driver</option>
-                      <option value="AGENT">Agent</option>
-                      <option value="LENDER">Lender</option>
+                      <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="TENANT_ADMIN">TENANT ADMIN</option>
+                      <option value="CARGO_OWNER">CARGO OWNER</option>
+                      <option value="TRUCK_OWNER">TRUCK OWNER</option>
+                      <option value="DRIVER">DRIVER</option>
+                      <option value="AGENT">AGENT</option>
+                      <option value="LENDER">LENDER</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                       Status
                     </label>
                     <select
-                      className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       value={editStatus}
                       onChange={(e) => setEditStatus(e.target.value)}
                     >
-                      <option value="ACTIVE">Active</option>
-                      <option value="INACTIVE">Inactive</option>
-                      <option value="PENDING_VERIFICATION">Pending Verification</option>
-                      <option value="SUSPENDED">Suspended</option>
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="PENDING_VERIFICATION">PENDING VERIFICATION</option>
+                      <option value="SUSPENDED">SUSPENDED</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="bg-primary-50 border border-primary-200 rounded-lg p-2">
+                <div className="bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-900/30 rounded-xl p-4">
                   <div className="flex items-start gap-1.5">
-                    <ShieldCheck className="text-primary-600 mt-0.5" size={12} />
+                    <ShieldCheck className="text-primary-600 dark:text-primary-400 mt-0.5" size={12} />
                     <div>
-                      <h4 className="font-semibold text-primary-900 text-xs">Update Information</h4>
-                      <p className="text-[10px] text-primary-700 mt-0.5">
+                      <h4 className="font-black text-primary-900 dark:text-primary-300 text-xs uppercase tracking-tight">Update Information</h4>
+                      <p className="text-[10px] text-primary-700 dark:text-primary-400/80 font-medium mt-1 leading-relaxed">
                         Changes will be saved immediately. All fields can be edited.
                       </p>
                     </div>
@@ -1004,20 +1001,20 @@ const AdminUsers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-2.5 border-t border-gray-200 flex justify-end gap-2">
+              <div className="p-6 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
                 <button
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingUserId(null);
                   }}
-                  className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => updateUserMutation()}
                   disabled={isUpdating || !editFirstName || !editLastName}
-                  className="px-2.5 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
                 >
                   {isUpdating && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
                   <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
@@ -1032,8 +1029,8 @@ const AdminUsers: React.FC = () => {
       {
         showDetailsModal && selectedUser && (
           <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-[2rem] w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-transparent">
-              <div className="p-8 border-b border-gray-100">
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-4xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-transparent dark:border-slate-800">
+              <div className="p-8 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-xl bg-primary-600`}>
@@ -1041,30 +1038,30 @@ const AdminUsers: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                           {selectedUser.firstName && selectedUser.lastName
                             ? `${selectedUser.firstName} ${selectedUser.lastName}`
                             : selectedUser.email.split('@')[0]}
                         </h2>
-                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getRoleColor(selectedUser.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100`}>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${getRoleColor(selectedUser.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100 dark:border-primary-900/30`}>
                           {formatRole(selectedUser.role)}
                         </span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                           <Mail className="w-3.5 h-3.5 text-primary-400" />
                           {selectedUser.email}
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className={`w-2 h-2 rounded-full ${selectedUser.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatRole(selectedUser.status)}</span>
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{formatRole(selectedUser.status)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="p-3 text-slate-400 hover:text-gray-600 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all border border-transparent"
+                    className="p-3 text-slate-400 hover:text-gray-600 dark:hover:text-slate-350 rounded-2xl bg-gray-50 dark:bg-slate-800 transition-all border border-transparent"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1087,24 +1084,24 @@ const AdminUsers: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                   <div className="space-y-8">
                     <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                      <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-primary-500" />
                         Authentication Matrix
                       </h3>
                       <div className="space-y-6">
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Email</span>
-                          <span className="text-sm font-black text-gray-900 tracking-tight">{selectedUser.email}</span>
+                        <div className="flex justify-between items-center bg-[#fafafa] dark:bg-slate-800/40 p-4 rounded-2xl">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Platform Email</span>
+                          <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{selectedUser.email}</span>
                         </div>
                         {selectedUser.phone && (
-                          <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Secure Phone</span>
-                            <span className="text-sm font-black text-gray-900 tracking-tight">{selectedUser.phone}</span>
+                          <div className="flex justify-between items-center bg-[#fafafa] dark:bg-slate-800/40 p-4 rounded-2xl">
+                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Secure Phone</span>
+                            <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{selectedUser.phone}</span>
                           </div>
                         )}
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned Tenant</span>
-                          <span className="text-sm font-black text-gray-900 tracking-tight">{selectedUser.tenantName || 'N/A'}</span>
+                        <div className="flex justify-between items-center bg-[#fafafa] dark:bg-slate-800/40 p-4 rounded-2xl">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Assigned Tenant</span>
+                          <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{selectedUser.tenantName || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
@@ -1112,26 +1109,26 @@ const AdminUsers: React.FC = () => {
 
                   <div className="space-y-8">
                     <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                      <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         Lifecycle Meta
                       </h3>
                       <div className="space-y-6">
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registration Date</span>
-                          <span className="text-sm font-black text-gray-900 tracking-tight">{new Date(selectedUser.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+                        <div className="flex justify-between items-center bg-[#fafafa] dark:bg-slate-800/40 p-4 rounded-2xl">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Registration Date</span>
+                          <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{new Date(selectedUser.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Network Sync</span>
-                          <span className="text-sm font-black text-gray-900 tracking-tight">
+                        <div className="flex justify-between items-center bg-[#fafafa] dark:bg-slate-800/40 p-4 rounded-2xl">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Last Network Sync</span>
+                          <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">
                             {selectedUser.lastLoginAt
                               ? new Date(selectedUser.lastLoginAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
                               : 'NEVER'}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center bg-[#fafafa] p-4 rounded-2xl">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Verif</span>
-                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${selectedUser.emailVerifiedAt ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                        <div className="flex justify-between items-center bg-[#fafafa] dark:bg-slate-800/40 p-4 rounded-2xl">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Email Verif</span>
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${selectedUser.emailVerifiedAt ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' : 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'}`}>
                             {selectedUser.emailVerifiedAt ? 'VERIFIED' : 'PENDING'}
                           </span>
                         </div>
@@ -1141,7 +1138,7 @@ const AdminUsers: React.FC = () => {
                 </div>
 
                 <div className="space-y-8">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3">
+                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-rose-500" />
                     Security Procedures
                   </h3>
@@ -1187,7 +1184,7 @@ const AdminUsers: React.FC = () => {
       {/* Permission Editor Modal */}
       {/* Permission Drawer */}
       <div
-        className={`fixed inset-y-0 right-0 w-full max-w-2xl bg-white border-l border-transparent transform transition-transform duration-300 ease-in-out z-50 ${permissionUser ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-transparent dark:border-slate-800 transform transition-transform duration-300 ease-in-out z-50 ${permissionUser ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {permissionUser && (
           <UserPermissionEditor

@@ -171,7 +171,7 @@ const CreditPricingRules: React.FC = () => {
 
   return (
     <AdminPageLayout title={<TranslatedText text="Credit Pricing Rules" />}>
-      <div className="space-y-6">
+      <div className="safe-bottom space-y-6">
         {/* Info Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
           <FaInfoCircle className="text-blue-500 mt-1 flex-shrink-0" />

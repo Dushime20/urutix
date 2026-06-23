@@ -318,7 +318,7 @@ const Profile: React.FC = () => {
       </motion.div>
 
       {/* Main Tabs Navigation */}
-      <div className="flex flex-wrap gap-4 md:gap-8 border-b border-slate-100 pb-2">
+      <div className="flex flex-wrap gap-4 md:gap-8 border-b border-slate-100 dark:border-slate-800 pb-2">
         {[
           { id: 'personal', label: 'Personal Details', icon: User },
           ...(isTenantAdmin ? [{ id: 'organization', label: 'Company Info', icon: Building2 }] : []),
@@ -330,8 +330,8 @@ const Profile: React.FC = () => {
             onClick={() => setActiveTab(tab.id as any)}
             className={`flex items-center gap-3 pb-4 px-2 transition-all relative ${
               activeTab === tab.id 
-                ? 'text-primary-600' 
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'text-primary-600 dark:text-primary-400' 
+                : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350'
             }`}
           >
             <tab.icon size={18} />
@@ -350,59 +350,59 @@ const Profile: React.FC = () => {
         {/* Left Sidebar Info Card */}
         <div className="lg:col-span-4 space-y-8">
           {/* Node Health Card */}
-          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-hidden group">
+          <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden group">
             <div className="p-10 space-y-10">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Identity Verification</h3>
-                <div className="px-3 py-1 bg-emerald-50 rounded-lg text-[10px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-100">
+                <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Identity Verification</h3>
+                <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest border border-emerald-100 dark:border-emerald-900/30">
                   Confirmed
                 </div>
               </div>
 
               <div className="space-y-8">
                 <div className="flex items-center gap-5 group/item">
-                  <div className="p-4 bg-slate-50 rounded-[20px] border border-slate-100 group-hover/item:bg-primary-50 transition-colors">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-[20px] border border-slate-100 dark:border-slate-800/50 group-hover/item:bg-primary-50 dark:group-hover/item:bg-primary-950/30 transition-colors">
                     <Mail size={22} className="text-primary-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
-                    <p className="text-sm font-black text-slate-800 break-all">{user?.email}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Email Address</p>
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 break-all">{user?.email}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-5 group/item">
-                  <div className="p-4 bg-slate-50 rounded-[20px] border border-slate-100 group-hover/item:bg-primary-50 transition-colors">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-[20px] border border-slate-100 dark:border-slate-800/50 group-hover/item:bg-primary-50 dark:group-hover/item:bg-primary-950/30 transition-colors">
                     <Phone size={22} className="text-primary-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</p>
-                    <p className="text-sm font-black text-slate-800">{profile?.phone || 'Awaiting Input...'}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Phone Number</p>
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">{profile?.phone || 'Awaiting Input...'}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-5 group/item">
-                  <div className="p-4 bg-slate-50 rounded-[20px] border border-slate-100 group-hover/item:bg-primary-50 transition-colors">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-[20px] border border-slate-100 dark:border-slate-800/50 group-hover/item:bg-primary-50 dark:group-hover/item:bg-primary-950/30 transition-colors">
                     <Clock size={22} className="text-primary-500" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Joined</p>
-                    <p className="text-sm font-black text-slate-800">
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Joined</p>
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200">
                       {new Date(profile?.createdAt || '').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <hr className="border-slate-50" />
+              <hr className="border-slate-100 dark:border-slate-800" />
 
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Identity Status</h3>
-                   <button onClick={() => setShowKycManagement(true)} className="text-primary-500 text-[10px] font-black uppercase hover:underline">
+                   <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Identity Status</h3>
+                   <button onClick={() => setShowKycManagement(true)} className="text-primary-500 dark:text-primary-400 text-[10px] font-black uppercase hover:underline">
                      Verification Center
                    </button>
                 </div>
-                <div className="p-6 bg-primary-950 rounded-[32px] text-white relative overflow-hidden group/kyc-card">
+                <div className="p-6 bg-primary-950 dark:bg-slate-950/50 rounded-[32px] text-white relative overflow-hidden group/kyc-card border border-transparent dark:border-slate-800/80">
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover/kyc-card:scale-125 transition-transform duration-500">
                     <FileCheck size={80} />
                   </div>
@@ -411,7 +411,7 @@ const Profile: React.FC = () => {
                        <Shield size={20} className="text-primary-400" />
                        <span className="text-sm font-black uppercase tracking-tight">Level 2: Professional</span>
                     </div>
-                    <p className="text-[10px] text-white/50 font-medium leading-relaxed">
+                    <p className="text-[10px] text-white/50 dark:text-slate-400 font-medium leading-relaxed">
                       Your identity is fully verified. You have maximum operational limits enabled.
                     </p>
                   </div>
@@ -432,10 +432,10 @@ const Profile: React.FC = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="bg-white rounded-[48px] border border-slate-100 shadow-xl p-12 lg:p-16 space-y-12">
+                <div className="bg-white dark:bg-slate-900 rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-xl p-12 lg:p-16 space-y-12">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">First Name</label>
                       <div className="relative group/input">
                         <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within/input:text-primary-500 transition-colors" />
                         <input
@@ -443,14 +443,14 @@ const Profile: React.FC = () => {
                           type="text"
                           value={formData.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
-                          className="w-full pl-14 pr-7 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="w-full pl-14 pr-7 py-5 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-2 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed rounded-[24px] font-black text-sm"
                           placeholder="Enter your first name"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Last Name</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Last Name</label>
                       <div className="relative group/input">
                         <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within/input:text-primary-500 transition-colors" />
                         <input
@@ -458,28 +458,28 @@ const Profile: React.FC = () => {
                           type="text"
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
-                          className="w-full pl-14 pr-7 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="w-full pl-14 pr-7 py-5 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-2 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed rounded-[24px] font-black text-sm"
                           placeholder="Enter your last name"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-3 md:col-span-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Bio</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Professional Bio</label>
                       <div className="relative group/input">
                         <Info className="absolute left-6 top-6 w-4 h-4 text-slate-300 group-focus-within/input:text-primary-500 transition-colors" />
                         <textarea
                           disabled={!editing}
                           value={formData.bio}
                           onChange={(e) => handleInputChange('bio', e.target.value)}
-                          className="w-full pl-14 pr-7 py-6 bg-slate-50 border-2 border-transparent rounded-[32px] font-black text-sm focus:bg-white focus:border-primary-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed min-h-[160px] resize-none"
+                          className="w-full pl-14 pr-7 py-6 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-2 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed min-h-[160px] resize-none rounded-[32px] font-black text-sm"
                           placeholder="A short description about your professional background..."
                         />
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">City</label>
                       <div className="relative group/input">
                         <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within/input:text-primary-500 transition-colors" />
                         <input
@@ -487,14 +487,14 @@ const Profile: React.FC = () => {
                           type="text"
                           value={formData.city}
                           onChange={(e) => handleInputChange('city', e.target.value)}
-                          className="w-full pl-14 pr-7 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-500 outline-none transition-all disabled:opacity-60"
+                          className="w-full pl-14 pr-7 py-5 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-2 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all disabled:opacity-60 rounded-[24px] font-black text-sm"
                           placeholder="Current Sector"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Country</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Country</label>
                       <div className="relative group/input">
                         <Globe className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within/input:text-primary-500 transition-colors" />
                         <input
@@ -502,7 +502,7 @@ const Profile: React.FC = () => {
                           type="text"
                           value={formData.country}
                           onChange={(e) => handleInputChange('country', e.target.value)}
-                          className="w-full pl-14 pr-7 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] font-black text-sm focus:bg-white focus:border-primary-500 outline-none transition-all disabled:opacity-60"
+                          className="w-full pl-14 pr-7 py-5 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-2 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-primary-500 dark:focus:border-primary-400 outline-none transition-all disabled:opacity-60 rounded-[24px] font-black text-sm"
                           placeholder="Territorial Sovereign"
                         />
                       </div>
@@ -521,7 +521,7 @@ const Profile: React.FC = () => {
                 className="space-y-10"
               >
                 {/* Organization Node Card */}
-                <div className="bg-white rounded-[48px] border border-slate-100 shadow-xl p-12 lg:p-16 relative overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-xl p-12 lg:p-16 relative overflow-hidden">
                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                      <Building size={200} className="text-primary-500" />
                    </div>
@@ -532,8 +532,8 @@ const Profile: React.FC = () => {
                              {tenant.name?.[0] || 'O'}
                          </div>
                          <div>
-                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">{tenant.name || 'Organization'}</h2>
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Tenant ID: {tenant.id?.split('-')[0] || 'N/A'}</p>
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{tenant.name || 'Organization'}</h2>
+                            <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Tenant ID: {tenant.id?.split('-')[0] || 'N/A'}</p>
                          </div>
                       </div>
 
@@ -562,19 +562,19 @@ const Profile: React.FC = () => {
                       </div>
 
                       <div className="space-y-6 pt-6">
-                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Company Contact Information</h3>
+                         <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Company Contact Information</h3>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                             <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1">
-                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</span>
-                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo?.email || 'N/A'}</p>
+                             <div className="p-6 bg-slate-50/50 dark:bg-slate-800/40 rounded-[24px] border border-slate-50 dark:border-slate-800/50 space-y-1">
+                               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Email Address</span>
+                               <p className="text-sm font-black text-slate-800 dark:text-slate-200">{tenant.contactInfo?.email || 'N/A'}</p>
                             </div>
-                            <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1">
-                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</span>
-                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo?.phone || 'N/A'}</p>
+                            <div className="p-6 bg-slate-50/50 dark:bg-slate-800/40 rounded-[24px] border border-slate-50 dark:border-slate-800/50 space-y-1">
+                               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Phone Number</span>
+                               <p className="text-sm font-black text-slate-800 dark:text-slate-200">{tenant.contactInfo?.phone || 'N/A'}</p>
                             </div>
-                            <div className="p-6 bg-slate-50/50 rounded-[24px] border border-slate-50 space-y-1 md:col-span-2">
-                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Office Address</span>
-                               <p className="text-sm font-black text-slate-800">{tenant.contactInfo?.address || 'N/A'}</p>
+                            <div className="p-6 bg-slate-50/50 dark:bg-slate-800/40 rounded-[24px] border border-slate-50 dark:border-slate-800/50 space-y-1 md:col-span-2">
+                               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Office Address</span>
+                               <p className="text-sm font-black text-slate-800 dark:text-slate-200">{tenant.contactInfo?.address || 'N/A'}</p>
                             </div>
                          </div>
                       </div>
@@ -591,45 +591,45 @@ const Profile: React.FC = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="bg-white rounded-[48px] border border-slate-100 shadow-xl p-12 lg:p-16 space-y-12">
+                <div className="bg-white dark:bg-slate-900 rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-xl p-12 lg:p-16 space-y-12">
                    <div className="flex items-center gap-5">
-                      <div className="p-4 bg-primary-50 rounded-2xl">
+                      <div className="p-4 bg-primary-50 dark:bg-primary-950/20 rounded-2xl">
                          <Lock size={24} className="text-primary-500" />
                       </div>
                       <div>
-                         <h3 className="text-2xl font-black text-slate-900 tracking-tight">Security</h3>
-                         <p className="text-sm font-bold text-slate-400">Manage your account security and authentication</p>
+                         <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Security</h3>
+                         <p className="text-sm font-bold text-slate-400 dark:text-slate-500">Manage your account security and authentication</p>
                       </div>
                    </div>
 
                    <div className="space-y-6">
-                      <div className="p-10 border-2 border-slate-50 rounded-[40px] hover:border-primary-100 transition-all group">
+                      <div className="p-10 border-2 border-slate-50 dark:border-slate-800 rounded-[40px] hover:border-primary-100 dark:hover:border-primary-900/50 transition-all group">
                          <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                               <h4 className="text-lg font-black text-slate-800 tracking-tight">Change Password</h4>
-                               <p className="text-xs font-medium text-slate-500">Update your password regularly to keep your account safe.</p>
+                               <h4 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Change Password</h4>
+                               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Update your password regularly to keep your account safe.</p>
                             </div>
                             <button 
                               onClick={() => setShowPasswordModal(true)}
-                              className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all"
+                              className="px-8 py-3 bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black dark:hover:bg-slate-700 transition-all"
                             >
                                Initiate Change
                             </button>
                          </div>
                       </div>
 
-                      <div className="p-10 border-2 border-slate-50 rounded-[40px] hover:border-primary-100 transition-all flex items-center justify-between group">
+                      <div className="p-10 border-2 border-slate-50 dark:border-slate-800 rounded-[40px] hover:border-primary-100 dark:hover:border-primary-900/50 transition-all flex items-center justify-between group">
                          <div className="flex items-center gap-6">
-                            <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600">
+                            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
                                <Smartphone size={24} />
                             </div>
                             <div className="space-y-1">
-                               <h4 className="text-lg font-black text-slate-800 tracking-tight">Two-Factor Authentication</h4>
-                               <p className="text-xs font-medium text-slate-500">Access your account with an extra layer of security.</p>
+                               <h4 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Two-Factor Authentication</h4>
+                               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Access your account with an extra layer of security.</p>
                             </div>
                          </div>
-                         <div className="w-16 h-8 bg-emerald-100 rounded-full relative flex items-center px-1">
-                            <div className="w-6 h-6 bg-emerald-600 rounded-full translate-x-8 transition-transform" />
+                         <div className="w-16 h-8 bg-emerald-100 dark:bg-emerald-950/40 rounded-full relative flex items-center px-1">
+                            <div className="w-6 h-6 bg-emerald-600 dark:bg-emerald-500 rounded-full translate-x-8 transition-transform" />
                          </div>
                       </div>
                    </div>
@@ -645,61 +645,61 @@ const Profile: React.FC = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="bg-white rounded-[48px] border border-slate-100 shadow-xl p-12 lg:p-16 space-y-12">
+                <div className="bg-white dark:bg-slate-900 rounded-[48px] border border-slate-100 dark:border-slate-800 shadow-xl p-12 lg:p-16 space-y-12">
                    <div className="flex items-center gap-5">
-                      <div className="p-4 bg-amber-50 rounded-2xl">
-                         <Settings size={24} className="text-amber-600" />
+                      <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-2xl">
+                         <Settings size={24} className="text-amber-600 dark:text-amber-400" />
                       </div>
                       <div>
-                         <h3 className="text-2xl font-black text-slate-900 tracking-tight">Preferences</h3>
-                         <p className="text-sm font-bold text-slate-400">Customize your platform experience</p>
+                         <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Preferences</h3>
+                         <p className="text-sm font-bold text-slate-400 dark:text-slate-500">Customize your platform experience</p>
                       </div>
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-4">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Preferred Language</label>
+                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Preferred Language</label>
                          <div className="relative group">
                             <Languages className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
-                            <select className="w-full pl-14 pr-7 py-5 bg-slate-50 border-none rounded-[24px] font-black text-sm focus:ring-2 focus:ring-indigo-600 appearance-none">
-                               <option>English (Direct)</option>
-                               <option>Swahili (Regional)</option>
-                               <option>French (Global)</option>
+                            <select className="w-full pl-14 pr-7 py-5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-none rounded-[24px] font-black text-sm focus:ring-2 focus:ring-indigo-600 appearance-none">
+                               <option className="dark:bg-slate-900">English (Direct)</option>
+                               <option className="dark:bg-slate-900">Swahili (Regional)</option>
+                               <option className="dark:bg-slate-900">French (Global)</option>
                             </select>
                          </div>
                       </div>
 
                       <div className="space-y-4">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Timezone</label>
+                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Timezone</label>
                          <div className="relative group">
                             <Globe className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
-                            <select className="w-full pl-14 pr-7 py-5 bg-slate-50 border-none rounded-[24px] font-black text-sm focus:ring-2 focus:ring-indigo-600 appearance-none">
-                               <option>EAT (GMT+3:00)</option>
-                               <option>UTC (GMT+0:00)</option>
-                               <option>EST (GMT-5:00)</option>
+                            <select className="w-full pl-14 pr-7 py-5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-none rounded-[24px] font-black text-sm focus:ring-2 focus:ring-indigo-600 appearance-none">
+                               <option className="dark:bg-slate-900">EAT (GMT+3:00)</option>
+                               <option className="dark:bg-slate-900">UTC (GMT+0:00)</option>
+                               <option className="dark:bg-slate-900">EST (GMT-5:00)</option>
                             </select>
                          </div>
                       </div>
 
                       <div className="space-y-2">
                          <CurrencySelector variant="settings" />
-                         <p className="text-[10px] text-slate-400 pl-1 leading-relaxed">
+                         <p className="text-[10px] text-slate-400 dark:text-slate-500 pl-1 leading-relaxed">
                             All monetary values across the platform will display in your selected currency. Changes take effect immediately.
                          </p>
                       </div>
 
                       <div className="md:col-span-2">
-                         <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center justify-between">
+                         <div className="p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[32px] border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                             <div className="flex items-center gap-5">
-                               <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
+                               <div className="p-3 bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
                                   <Bell size={20} />
                                </div>
                                <div>
-                                  <p className="text-sm font-black text-slate-800">Critical System Alerts</p>
-                                  <p className="text-xs font-medium text-slate-500">Receive desktop notifications for urgent trip reversals.</p>
+                                  <p className="text-sm font-black text-slate-800 dark:text-slate-200">Critical System Alerts</p>
+                                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Receive desktop notifications for urgent trip reversals.</p>
                                </div>
                             </div>
-                            <div className="w-12 h-6 bg-indigo-600 rounded-full relative flex items-center px-1">
+                            <div className="w-12 h-6 bg-indigo-600 dark:bg-indigo-500 rounded-full relative flex items-center px-1">
                                <div className="w-4 h-4 bg-white rounded-full translate-x-6 transition-transform" />
                             </div>
                          </div>
@@ -726,19 +726,19 @@ const Profile: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden z-10"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[40px] border border-transparent dark:border-slate-800 shadow-2xl overflow-hidden z-10"
             >
               <div className="p-8 lg:p-12 space-y-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary-50 rounded-2xl text-primary-600">
+                    <div className="p-3 bg-primary-50 dark:bg-primary-950/20 rounded-2xl text-primary-600 dark:text-primary-400">
                       <Lock size={20} />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Update Password</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Update Password</h3>
                   </div>
                   <button 
                     onClick={() => setShowPasswordModal(false)}
-                    className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400"
+                    className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500"
                   >
                     <X size={20} />
                   </button>
@@ -746,37 +746,37 @@ const Profile: React.FC = () => {
 
                 <form onSubmit={handlePasswordChange} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Current Password</label>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Current Password</label>
                     <input
                       type="password"
                       required
                       value={passwordFormData.currentPassword}
                       onChange={(e) => setPasswordFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-none rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                       placeholder="••••••••"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">New Password</label>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">New Password</label>
                     <input
                       type="password"
                       required
                       value={passwordFormData.newPassword}
                       onChange={(e) => setPasswordFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-none rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                       placeholder="••••••••"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Confirm New Password</label>
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Confirm New Password</label>
                     <input
                       type="password"
                       required
                       value={passwordFormData.confirmPassword}
                       onChange={(e) => setPasswordFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-100 border-none rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                       placeholder="••••••••"
                     />
                   </div>

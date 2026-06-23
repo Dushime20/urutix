@@ -593,6 +593,7 @@ const UserManagement: React.FC = () => {
         </>
       }
     >
+      <div className="safe-bottom">
       {/* ── Tab Navigation ──────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-100 mb-6 overflow-hidden">
         <div className="border-b border-slate-100 bg-slate-50/50">
@@ -892,7 +893,7 @@ const UserManagement: React.FC = () => {
       {/* User Details Modal */}
       {showUserModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800"><TranslatedText text="User Details" /></h3>
               <button
@@ -1015,6 +1016,7 @@ const UserManagement: React.FC = () => {
         <UserPermissionsModal user={permUser} onClose={() => { setShowPermModal(false); setPermUser(null); }} />
       )}
       </>)}
+      </div>
     </AdminPageLayout>
   );
 };

@@ -361,7 +361,7 @@ const FuelManagement: React.FC = () => {
                 if (!open) resetForm();
                 setShowAddForm(open);
             }}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
                     <DialogHeader>
                         <DialogTitle>Add Fuel Log</DialogTitle>
                         <DialogDescription>Record a new fuel purchase</DialogDescription>

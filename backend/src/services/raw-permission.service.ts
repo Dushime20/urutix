@@ -12,7 +12,7 @@ export class PermissionService {
 
     /**
      * Convert permission name from resource:action format to permission ID
-     * Handles both formats: "resource:action" and "resource action"
+     * Handles both formats: "resource:action" and "resource.action"
      */
     private async getPermissionIdByName(permissionName: string): Promise<string> {
         // Try to parse as resource:action format
@@ -31,17 +31,21 @@ export class PermissionService {
             }
         }
         
-        // Fallback: try to find by name column
-        const result = await this.dataSource.query(
-            'SELECT id FROM permissions WHERE name = $1',
-            [permissionName]
-        );
-        
-        if (result.length > 0) {
-            return result[0].id;
+        // Try with dot separator (resource.action)
+        const dotParts = permissionName.split('.');
+        if (dotParts.length === 2) {
+            const [resource, action] = dotParts;
+            const result = await this.dataSource.query(
+                'SELECT id FROM permissions WHERE resource = $1 AND action = $2',
+                [resource.trim(), action.trim()]
+            );
+            
+            if (result.length > 0) {
+                return result[0].id;
+            }
         }
         
-        throw new Error(`Permission not found: ${permissionName}`);
+        throw new Error(`Permission not found: ${permissionName}. Format should be "resource:action" (e.g., "users:view_own")`);
     }
 
     /**
@@ -171,15 +175,39 @@ export class PermissionService {
         await queryRunner.startTransaction();
 
         try {
+            // Validate inputs
+            if (!role || !permissionName) {
+                throw new Error('Role and permission name are required');
+            }
+
             // Resolve role UUID
             const roleRows = await queryRunner.query(
                 'SELECT id FROM roles WHERE name = $1', [role]
             );
-            if (!roleRows.length) throw new Error(`Role "${role}" not found`);
+            if (!roleRows.length) {
+                throw new Error(`Role "${role}" not found in database. Available roles should be seeded first.`);
+            }
             const roleId = roleRows[0].id;
 
             // Resolve permission UUID
-            const permissionId = await this.getPermissionIdByName(permissionName);
+            let permissionId: string;
+            try {
+                permissionId = await this.getPermissionIdByName(permissionName);
+            } catch (error) {
+                throw new Error(`Permission "${permissionName}" not found. Ensure permissions are seeded. Format should be "resource:action" (e.g., "cargo:create")`);
+            }
+
+            // Check if already exists
+            const existing = await queryRunner.query(
+                'SELECT role_id FROM role_permissions WHERE role_id = $1 AND permission_id = $2',
+                [roleId, permissionId]
+            );
+
+            if (existing.length > 0) {
+                // Already exists, just return success
+                await queryRunner.commitTransaction();
+                return;
+            }
 
             // Insert into role_permissions (uses role_id UUID FK)
             await queryRunner.query(
@@ -540,22 +568,27 @@ export class PermissionService {
         auditContext?: AuditContext,
         queryRunner?: any
     ): Promise<void> {
-        const runner = queryRunner || this.dataSource;
+        try {
+            const runner = queryRunner || this.dataSource;
 
-        await runner.query(
-            `INSERT INTO permission_audit_log 
-       (action, entity_type, entity_id, user_id, changes, ip_address, user_agent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [
-                action,
-                entityType,
-                entityId,
-                userId,
-                JSON.stringify(changes),
-                auditContext?.ipAddress || null,
-                auditContext?.userAgent || null,
-            ]
-        );
+            await runner.query(
+                `INSERT INTO permission_audit_log 
+           (action, entity_type, entity_id, user_id, changes, ip_address, user_agent)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [
+                    action,
+                    entityType,
+                    entityId,
+                    userId,
+                    JSON.stringify(changes),
+                    auditContext?.ipAddress || null,
+                    auditContext?.userAgent || null,
+                ]
+            );
+        } catch (error) {
+            // Audit logging is optional - don't fail the operation if audit table doesn't exist
+            console.warn(`Failed to log audit trail: ${error.message}`);
+        }
     }
 
     /**

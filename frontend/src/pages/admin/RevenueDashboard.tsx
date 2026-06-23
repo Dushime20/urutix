@@ -31,6 +31,7 @@ const RevenueDashboard: React.FC = () => {
       title={<TranslatedText text="Revenue & Commission Engine" />}
       description={<TranslatedText text="Platform-wide GMV, fees collected, and broker commissions across all tenants." />}
     >
+      <div className="safe-bottom">
       {/* Date Filter */}
       <div className="flex flex-wrap gap-3 items-center mb-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
         <div className="flex items-center gap-2">
@@ -176,6 +177,7 @@ const RevenueDashboard: React.FC = () => {
           )}
         </div>
       )}
+      </div>
     </AdminPageLayout>
   );
 };

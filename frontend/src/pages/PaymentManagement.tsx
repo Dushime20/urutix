@@ -862,7 +862,7 @@ const PaymentManagement: React.FC = () => {
       {/* New Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               {selectedTransaction ? 'Edit Payment' : 'New Payment'}
             </h3>
@@ -1281,7 +1281,7 @@ const PaymentManagement: React.FC = () => {
       {/* New Request Modal */}
       {showRequestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               {selectedRequest ? 'Edit Payment Request' : 'New Payment Request'}
             </h3>

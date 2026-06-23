@@ -528,6 +528,7 @@ const PermissionManagement: React.FC = () => {
       title={<TranslatedText text="Permission Management" />}
       description={<TranslatedText text="Manage user-specific permissions and access control" />}
     >
+      <div className="safe-bottom">
       <div className="bg-white rounded-[24px] border border-gray-100 p-6">
         {/* Search & filter */}
         <form onSubmit={handleSearch} className="flex flex-wrap gap-3 mb-6">
@@ -628,6 +629,7 @@ const PermissionManagement: React.FC = () => {
             </table>
           </div>
         )}
+      </div>
       </div>
     </AdminPageLayout>
   );

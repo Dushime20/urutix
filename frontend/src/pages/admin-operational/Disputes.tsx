@@ -145,7 +145,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
+      <div className="bg-white rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-gray-100">
 
         {/* Header */}
         <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">

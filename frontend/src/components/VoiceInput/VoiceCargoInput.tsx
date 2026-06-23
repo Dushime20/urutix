@@ -261,7 +261,7 @@ export const VoiceCargoInput: React.FC<VoiceCargoInputProps> = ({ onDataCaptured
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
         {/* Header */}
         <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 text-white rounded-t-2xl">
           <div className="flex items-center justify-between mb-4">

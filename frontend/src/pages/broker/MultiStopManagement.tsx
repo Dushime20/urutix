@@ -165,7 +165,7 @@ const MultiStopManagement: React.FC = () => {
 
       {showCreateModal && (
         <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)}>
-          <div className="bg-white rounded-[4rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-up dark:bg-slate-900">
+          <div className="bg-white rounded-[4rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 animate-slide-up dark:bg-slate-900">
              <div className="p-16 bg-slate-900 text-white relative overflow-hidden dark:bg-slate-950">
                 <h2 className="text-4xl font-bold uppercase italic leading-none">Construct <br /><span className="text-primary-600">Trajectory</span></h2>
                 <div className="absolute top-0 right-0 p-12 opacity-5"><Zap size={120} /></div>

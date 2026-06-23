@@ -231,6 +231,7 @@ const FinancialDashboard: React.FC = () => {
       title={<TranslatedText text="Financial Dashboard" />}
       description={<TranslatedText text="Monitor transactions, revenue, and financial metrics" />}
     >
+      <div className="safe-bottom">
 
       {/* Financial Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -435,6 +436,7 @@ const FinancialDashboard: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </AdminPageLayout>
   );

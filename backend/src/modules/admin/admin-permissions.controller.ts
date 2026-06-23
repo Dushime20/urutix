@@ -277,11 +277,22 @@ export class AdminPermissionsController {
     @Roles(UserRole.SUPER_ADMIN)
     @ApiOperation({ summary: 'Grant a permission to a Role' })
     async grantRolePermission(@Body() dto: GrantRolePermissionDto, @Req() req: Request) {
-        const adminId = req['user']?.userId;
-        await this.permissionService.grantRolePermission(dto.role as UserRole, dto.permission, adminId, {
-            ipAddress: req.ip, userAgent: req.headers['user-agent'],
-        });
-        return { success: true, message: 'Role permission granted successfully' };
+        try {
+            const adminId = req['user']?.userId;
+            
+            if (!adminId) {
+                throw new Error('Admin user ID not found in request');
+            }
+            
+            await this.permissionService.grantRolePermission(dto.role as UserRole, dto.permission, adminId, {
+                ipAddress: req.ip, userAgent: req.headers['user-agent'],
+            });
+            
+            return { success: true, message: 'Role permission granted successfully' };
+        } catch (error) {
+            this.logger.error(`Failed to grant role permission: ${error.message}`, error.stack);
+            throw new Error(`Failed to grant permission "${dto.permission}" to role "${dto.role}": ${error.message}`);
+        }
     }
 
     @Post('roles/revoke')

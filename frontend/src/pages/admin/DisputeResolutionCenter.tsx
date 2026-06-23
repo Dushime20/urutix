@@ -106,6 +106,7 @@ const DisputeResolutionCenter: React.FC = () => {
         </div>
       }
     >
+      <div className="safe-bottom">
       {/* Analytics */}
       {analytics && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
@@ -210,6 +211,7 @@ const DisputeResolutionCenter: React.FC = () => {
       {showCreate && (
         <CreateDisputeModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); qc.invalidateQueries({ queryKey: ['disputes-admin'] }); }} />
       )}
+      </div>
     </AdminPageLayout>
   );
 };

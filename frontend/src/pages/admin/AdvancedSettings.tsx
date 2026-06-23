@@ -25,7 +25,7 @@ const AdvancedSettings: React.FC = () => {
       title={<TranslatedText text="Advanced Settings" />}
       description={<TranslatedText text="Configure system-wide settings and preferences" />}
     >
-      <div className="space-y-6">
+      <div className="safe-bottom space-y-6">
         {/* Notification Settings */}
         <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden animate-enter">
           <div className="p-6 border-b border-gray-100 flex items-center gap-3">

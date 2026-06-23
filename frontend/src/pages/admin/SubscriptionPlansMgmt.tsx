@@ -173,7 +173,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
         </button>
       }
     >
-      <div className="space-y-6">
+      <div className="safe-bottom space-y-6">
         
         {/* Controls */}
         <div className="flex flex-col md:flex-row justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">

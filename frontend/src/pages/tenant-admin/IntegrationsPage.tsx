@@ -259,7 +259,7 @@ const IntegrationsPage: React.FC = () => {
           {/* Create Webhook Modal */}
           {showWebhookForm && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mb-5 uppercase tracking-tight">
                   <TranslatedText text="Add Webhook" />
                 </h2>

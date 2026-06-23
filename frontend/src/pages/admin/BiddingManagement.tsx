@@ -268,6 +268,7 @@ const BiddingManagement: React.FC = () => {
       title={<TranslatedText text="Bidding Management" />}
       description={<TranslatedText text="Monitor and manage cargo bidding processes" />}
     >
+      <div className="safe-bottom">
 
       {/* Bidding Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
@@ -485,7 +486,7 @@ const BiddingManagement: React.FC = () => {
       {/* Bid Details Modal */}
       {showDetailsModal && selectedBid && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-900"><TranslatedText text="Bid Details" /></h3>
               <button
@@ -606,6 +607,7 @@ const BiddingManagement: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </AdminPageLayout>
   );
 };

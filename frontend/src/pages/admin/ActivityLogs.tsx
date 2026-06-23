@@ -241,6 +241,7 @@ const ActivityLogs: React.FC = () => {
                 </div>
             }
         >
+            <div className="safe-bottom">
 
              {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
@@ -802,6 +803,7 @@ const ActivityLogs: React.FC = () => {
                     </div>
                 </div>
             )}
+            </div>
         </AdminPageLayout>
     );
 };

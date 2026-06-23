@@ -184,7 +184,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ isOpen, onClose, onComp
 
       {/* Tour Modal */}
       <Dialog open={isOpen} onOpenChange={handleSkip}>
-        <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto z-[101]">
+        <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 z-[101]">
           <div className="relative">
             {/* Close button */}
             <button

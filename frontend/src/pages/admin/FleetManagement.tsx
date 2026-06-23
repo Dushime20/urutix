@@ -125,7 +125,7 @@ const FleetManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="safe-bottom space-y-6">
       {/* Custom Header for Tenant Admin */}
       <div className="bg-white rounded-xl p-8 border border-transparent">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

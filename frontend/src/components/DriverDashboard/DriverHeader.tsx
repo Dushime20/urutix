@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Bell,
-  HelpCircle,
   Settings,
   LogOut,
   User,
@@ -16,6 +15,7 @@ import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import LanguageSwitcher from '../LanguageSwitcher';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import CurrencySelector from '../common/CurrencySelector';
+import ThemeToggle from '../Theme/ThemeToggle';
 import { TranslatedText } from '../translated-text';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -201,15 +201,10 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               <CurrencySelector variant="compact" />
             </div>
 
-            {/* Help Button */}
-            <button
-              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-bold text-slate-600 dark:text-slate-400 text-[11px] tracking-wider uppercase"
-            >
-              <div className="w-6 h-6 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                <HelpCircle className="w-4 h-4 text-slate-400" />
-              </div>
-              <span className="hidden lg:inline"><TranslatedText text="HELP" /></span>
-            </button>
+            {/* Theme Toggle */}
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
 
             {/* User Profile */}
             <div className="relative pl-2 ml-1 border-l border-slate-100 dark:border-slate-800" ref={userMenuRef}>
