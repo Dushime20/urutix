@@ -83,6 +83,7 @@ const AdminRoutes = lazy(() => import('./pages/AdminRoutes'));
 const MonitoringDashboard = lazy(() => import('./pages/admin/MonitoringDashboard'));
 const BiddingManagement = lazy(() => import('./pages/admin/BiddingManagement'));
 const DisputeManagement = lazy(() => import('./pages/admin/DisputeManagement'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const OperationalAdminDisputes = lazy(() => import('./pages/admin-operational/Disputes'));
 const OperationalAdminTrips = lazy(() => import('./pages/admin-operational/Trips'));
 const OperationalAdminLoads = lazy(() => import('./pages/admin-operational/Loads'));
@@ -502,6 +503,7 @@ function App() {
                       <Route path="borrowers" element={<AdminBorrowersPage />} />
                       <Route path="analytics" element={<AdminAnalytics />} />
                       <Route path="monitoring" element={<MonitoringDashboard />} />
+                      <Route path="notifications" element={<NotificationsPage />} />
                       <Route path="bidding" element={<BiddingManagement />} />
                       <Route path="disputes" element={<DisputeManagement />} />
                       <Route path="financial" element={<FinancialAdminDashboard />} />
@@ -544,6 +546,7 @@ function App() {
                       <Route path="financial" element={<OperationalAdminFinancial />} />
                       <Route path="bidding" element={<OperationalAdminBidding />} />
                       <Route path="monitoring" element={<OperationalAdminMonitoring />} />
+                      <Route path="notifications" element={<NotificationsPage />} />
                       <Route path="activity-logs" element={<OperationalAdminActivityLogs />} />
                       <Route path="reports" element={<OperationalAdminReports />} />
                       <Route path="profile" element={<OperationalAdminProfile />} />
