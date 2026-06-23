@@ -356,7 +356,8 @@ export class AdminPermissionsController {
     @Roles(UserRole.SUPER_ADMIN)
     @ApiOperation({ summary: 'Bulk assign permissions to a role' })
     async bulkAssignPermissions(@Param('roleId') roleId: string, @Body() dto: any, @Req() req: Request) {
-        await this.permissionService.bulkAssignPermissions(roleId, dto.permissionIds || []);
+        const adminId = req['user']?.userId;
+        await this.permissionService.bulkAssignPermissions(roleId, dto.permissionIds || [], adminId);
         return { success: true, message: 'Permissions assigned successfully' };
     }
 
