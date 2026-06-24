@@ -43,7 +43,7 @@ function Navbar() {
           <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto brightness-0 invert" />
         </Link>
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-white/80">
-          {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
+          {["Home","Services","Team","Contact"].map(n => (
             <a key={n} href={`#${n.toLowerCase()}`} className="hover:text-white transition-colors">
               <TranslatedText text={n} />
             </a>
