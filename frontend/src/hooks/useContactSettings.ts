@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiBaseUrl } from '../config/environment';
 
 interface ContactSettings {
   phone: string;
@@ -20,7 +21,7 @@ export function useContactSettings() {
   useEffect(() => {
     const fetchContactSettings = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3005'}/api/settings/public/contact`);
+        const response = await axios.get(`${getApiBaseUrl()}/settings/public/contact`);
         setContact(response.data);
       } catch (error) {
         console.warn('Failed to fetch contact settings, using defaults', error);

@@ -41,6 +41,7 @@ import CurrencySelector from '../components/common/CurrencySelector';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import axios from 'axios';
+import { getApiBaseUrl } from '../config/environment';
 
 
 const Settings: React.FC = () => {
@@ -84,7 +85,7 @@ const Settings: React.FC = () => {
 
   const fetchContactSettings = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3005'}/api/settings/public/contact`);
+      const response = await axios.get(`${getApiBaseUrl()}/settings/public/contact`);
       setContactSettings(response.data);
     } catch (error) {
       console.error('Failed to fetch contact settings:', error);
@@ -96,7 +97,7 @@ const Settings: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3005'}/api/admin/settings/category/contact`,
+        `${getApiBaseUrl()}/admin/settings/category/contact`,
         contactSettings,
         { headers: { Authorization: `Bearer ${token}` } }
       );
