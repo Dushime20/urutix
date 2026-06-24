@@ -19,9 +19,9 @@ const SystemSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [contactSettings, setContactSettings] = useState({
-    phone: '+250788309463',
-    email: 'hello@urutix.com',
-    address: 'Kigali, Rwanda · Nairobi, Kenya',
+    phone: '',
+    email: '',
+    address: '',
   });
   const [isSavingContact, setIsSavingContact] = useState(false);
 

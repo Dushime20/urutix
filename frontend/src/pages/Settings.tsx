@@ -51,9 +51,9 @@ const Settings: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [contactSettings, setContactSettings] = useState({
-    phone: '+250788309463',
-    email: 'hello@urutix.com',
-    address: 'Kigali, Rwanda · Nairobi, Kenya',
+    phone: '',
+    email: '',
+    address: '',
   });
   const [isSavingContact, setIsSavingContact] = useState(false);
 
