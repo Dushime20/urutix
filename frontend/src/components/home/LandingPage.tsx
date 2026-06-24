@@ -11,6 +11,7 @@ import logoUrutiX from "../../assets/urutiX Logistics Logo (1).svg"
 import { useAuth } from "@/contexts/AuthContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { TranslatedText } from "@/components/translated-text"
+import { useContactSettings } from "@/hooks/useContactSettings"
 
 // ─── Role → dashboard route map ───────────────────────────────────────────────
 const ROLE_DASHBOARD: Record<string, string> = {
@@ -32,6 +33,7 @@ const ROLE_DASHBOARD: Record<string, string> = {
 function Navbar() {
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
+  const { contact } = useContactSettings()
   const dashboardPath = user ? (ROLE_DASHBOARD[user.role] ?? "/dashboard") : null
 
   return (
@@ -50,7 +52,9 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           <div className="flex items-center gap-2 text-white/70 text-sm">
             <Phone className="w-4 h-4 text-orange-400" />
-            <span>+1 800 123 4567</span>
+            <a href={`tel:${contact.phone}`} className="hover:text-white transition-colors">
+              {contact.phone}
+            </a>
           </div>
           <LanguageSwitcher variant="light" />
           {dashboardPath ? (
@@ -104,7 +108,7 @@ function Navbar() {
 
             {/* Nav links */}
             <nav className="flex-1 flex flex-col px-6 pt-6 gap-1 overflow-y-auto">
-              {["Home","Services","Projects","Team","Blog","Contact"].map(n => (
+              {["Home","Services","Team","Contact"].map(n => (
                 <a
                   key={n}
                   href={`#${n.toLowerCase()}`}
@@ -178,7 +182,7 @@ function Hero() {
         style={{ background: "linear-gradient(to right, #0D3D4A 0%, transparent 60%)" }}
       />
 
-      <div className="relative z-10 max-w-full px-0 pt-8 pb-32">
+      <div className="relative z-10 max-w-full px-0 pt-8 lg:pt-20 pb-32">
         {/* Centered text */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -190,10 +194,10 @@ function Hero() {
             <TranslatedText text="Logistics Transport Solutions" />
           </p>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
-            <TranslatedText text="Welcome To UrutiX Cargo Transport Services" />
+            <TranslatedText text="UrutiX Smart Logistics Platform" />
           </h1>
-          <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-lg mx-auto">
-            <TranslatedText text="We are your most trusted partner for smart cargo management tools, logistics solutions, and a clear view of your entire supply chain." />
+          <p className="text-white/60 text-xl leading-relaxed mb-8 max-w-lg mx-auto">
+            <TranslatedText text="UrutiX is a multi-tenant logistics and embedded-finance platform that turns Africa's fragmented road-freight market into a single, financeable, data-rich digital network. It connects cargo owners, truck owners, drivers, brokers, fleet operators, lenders, fuel suppliers, and insurers in one ecosystem — and lets any logistics organization launch its own branded marketplace on a shared core." />
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link
@@ -485,6 +489,8 @@ function ServicesGrid() {
 
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
 function Footer() {
+  const { contact } = useContactSettings()
+  
   return (
     <footer id="contact" style={{ backgroundColor: "#0D3D4A" }} className="pt-14 pb-6">
       <div className="max-w-full px-6 lg:px-8">
@@ -521,9 +527,9 @@ function Footer() {
           <div>
             <p className="text-white text-sm font-bold mb-4"><TranslatedText text="Contact" /></p>
             <ul className="space-y-3">
-              <li className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" /><span className="text-white/40 text-sm">Kigali, Rwanda · Nairobi, Kenya</span></li>
-              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-orange-400" /><a href="tel:+250700000000" className="text-white/40 text-sm hover:text-white/70">+250 700 000 000</a></li>
-              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-orange-400" /><a href="mailto:hello@urutix.com" className="text-white/40 text-sm hover:text-white/70">hello@urutix.com</a></li>
+              <li className="flex items-start gap-2"><MapPin className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" /><span className="text-white/40 text-sm">{contact.address}</span></li>
+              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-orange-400" /><a href={`tel:${contact.phone}`} className="text-white/40 text-sm hover:text-white/70">{contact.phone}</a></li>
+              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-orange-400" /><a href={`mailto:${contact.email}`} className="text-white/40 text-sm hover:text-white/70">{contact.email}</a></li>
             </ul>
           </div>
         </div>

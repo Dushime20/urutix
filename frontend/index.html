@@ -10,9 +10,220 @@
     <link rel="manifest" href="/manifest.json" />
     
     <title>UrutiX Smart Logistic</title>
+    
+    <style>
+      /* Loading Screen Styles */
+      #app-loader {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+      }
+      
+      #app-loader.loaded {
+        opacity: 0;
+        visibility: hidden;
+      }
+      
+      .loader-logo {
+        margin-bottom: 2rem;
+        animation: float 3s ease-in-out infinite;
+      }
+      
+      .loader-logo svg {
+        width: 80px;
+        height: 80px;
+        filter: drop-shadow(0 10px 20px rgba(34, 197, 94, 0.3));
+      }
+      
+      .loader-text {
+        color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        letter-spacing: 0.5px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      }
+      
+      .loader-spinner {
+        position: relative;
+        width: 60px;
+        height: 60px;
+      }
+      
+      .spinner-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 3px solid transparent;
+        border-top-color: #22c55e;
+        border-radius: 50%;
+        animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      }
+      
+      .spinner-ring:nth-child(1) {
+        animation-delay: -0.45s;
+        border-top-color: #22c55e;
+      }
+      
+      .spinner-ring:nth-child(2) {
+        animation-delay: -0.3s;
+        border-top-color: #10b981;
+      }
+      
+      .spinner-ring:nth-child(3) {
+        animation-delay: -0.15s;
+        border-top-color: #34d399;
+      }
+      
+      .loader-progress {
+        margin-top: 2rem;
+        width: 200px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      
+      .loader-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e 0%, #10b981 50%, #34d399 100%);
+        border-radius: 999px;
+        animation: progress 2s ease-in-out infinite;
+      }
+      
+      .loader-tagline {
+        margin-top: 1.5rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.875rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      @keyframes progress {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(0); }
+        100% { transform: translateX(100%); }
+      }
+      
+      /* Dark mode support */
+      @media (prefers-color-scheme: light) {
+        #app-loader {
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        .loader-text {
+          color: #0f172a;
+        }
+        .loader-tagline {
+          color: rgba(15, 23, 42, 0.6);
+        }
+        .loader-progress {
+          background: rgba(0, 0, 0, 0.1);
+        }
+      }
+      
+      /* Mobile optimization */
+      @media (max-width: 640px) {
+        .loader-logo svg {
+          width: 60px;
+          height: 60px;
+        }
+        .loader-text {
+          font-size: 1.25rem;
+        }
+        .loader-spinner {
+          width: 50px;
+          height: 50px;
+        }
+        .loader-progress {
+          width: 160px;
+        }
+      }
+    </style>
   </head>
   <body>
+    <!-- Professional Loading Screen -->
+    <div id="app-loader">
+      <div class="loader-logo">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Truck Icon -->
+          <path fill="url(#logoGradient)" d="M20,60 L40,60 L40,40 L60,40 L60,50 L70,50 L80,60 L80,70 L75,70 C75,75 71,79 66,79 C61,79 57,75 57,70 L43,70 C43,75 39,79 34,79 C29,79 25,75 25,70 L20,70 Z M50,35 L50,50 L70,50 L70,45 Z"/>
+          <!-- Wheels -->
+          <circle fill="#ffffff" cx="34" cy="70" r="4"/>
+          <circle fill="#ffffff" cx="66" cy="70" r="4"/>
+          <!-- Route Line -->
+          <path stroke="url(#logoGradient)" stroke-width="2" fill="none" stroke-dasharray="4,2" d="M10,85 Q30,80 50,85 T90,85" opacity="0.6"/>
+        </svg>
+      </div>
+      
+      <div class="loader-text">UrutiX</div>
+      
+      <div class="loader-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+      </div>
+      
+      <div class="loader-progress">
+        <div class="loader-progress-bar"></div>
+      </div>
+      
+      <div class="loader-tagline">Smart Logistics Platform</div>
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <script>
+      // Hide loader when app is ready
+      window.addEventListener('load', function() {
+        var loader = document.getElementById('app-loader');
+        var checkRoot = setInterval(function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            clearInterval(checkRoot);
+            setTimeout(function() {
+              if (loader) {
+                loader.classList.add('loaded');
+                setTimeout(function() {
+                  loader.remove();
+                }, 500);
+              }
+            }, 500);
+          }
+        }, 100);
+        
+        // Fallback: force hide after 5 seconds
+        setTimeout(function() {
+          clearInterval(checkRoot);
+          if (loader) {
+            loader.classList.add('loaded');
+            setTimeout(function() {
+              loader.remove();
+            }, 500);
+          }
+        }, 5000);
+      });
+    </script>
   </body>
 </html>

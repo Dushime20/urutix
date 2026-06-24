@@ -30,6 +30,7 @@ import { SystemSettings } from '../../entities/system-settings.entity';
 import { ActivityLogController } from './activity-log.controller';
 import { PermissionController } from './permission.controller';
 import { SystemSettingsController } from './system-settings.controller';
+import { PublicSettingsController } from './public-settings.controller';
 import { ActivityLogService } from '../../services/activity-log.service';
 import { RolePermissionService } from '../../services/permission.service';
 import { SystemSettingsService } from '../../services/system-settings.service';
@@ -122,6 +123,7 @@ import { TenantManagementController } from './tenant-management.controller';
     ActivityLogController,
     PermissionController,
     SystemSettingsController,
+    PublicSettingsController,
     // Bulk Email controller
     BulkEmailController,
     // System Health controllers
