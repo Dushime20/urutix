@@ -35,9 +35,9 @@ import {
   formatVolume,
   formatWeight,
   getLocationDisplay,
-  formatCurrency,
   isLoadingConfirmable,
 } from "../../utils";
+import { compactCurrency } from "@/utils/formatNumber";
 import type { Cargo } from "@/types/cargo";
 import SmCard from "./SmCard";
 import moment from "moment";
@@ -199,8 +199,8 @@ export default function LoadItem({
                             {formatWeight(load.weight)}
                          </span>
                          {load.offeredPrice && (
-                           <span className="text-primary-600 font-black">
-                              {formatCurrency(load.offeredPrice, load.currencyCode)}
+                           <span className="text-primary-600 font-black truncate" title={compactCurrency(load.offeredPrice, load.currencyCode)}>
+                              {compactCurrency(load.offeredPrice, load.currencyCode)}
                            </span>
                          )}
                       </div>
@@ -397,14 +397,14 @@ export default function LoadItem({
                 <SmCard
                   Icon={DollarSign}
                   title="Value"
-                  content={formatCurrency(load.loadValue, load.currencyCode)}
+                  content={compactCurrency(load.loadValue, load.currencyCode)}
                 />
 
                 {load.offeredPrice && (
                   <SmCard
                     Icon={TrendingUp}
                     title="Offered"
-                    content={formatCurrency(load.offeredPrice, load.currencyCode)}
+                    content={compactCurrency(load.offeredPrice, load.currencyCode)}
                   />
                 )}
 
@@ -776,14 +776,14 @@ export default function LoadItem({
             <SmCard
               Icon={DollarSign}
               title="Value"
-              content={formatCurrency(load.loadValue, load.currencyCode)}
+              content={compactCurrency(load.loadValue, load.currencyCode)}
             />
 
             {load.offeredPrice && (
               <SmCard
                 Icon={TrendingUp}
                 title="Offered"
-                content={formatCurrency(load.offeredPrice, load.currencyCode)}
+                content={compactCurrency(load.offeredPrice, load.currencyCode)}
               />
             )}
 

@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import {
-  formatCurrency,
   formatVolume,
   formatWeight,
   getCargoTypeDisplayName,
@@ -29,6 +28,7 @@ import {
   hasValidAddress,
   getAddressDisplay,
 } from "../../utils";
+import { compactCurrency } from "@/utils/formatNumber";
 import type { Cargo } from "@/types/cargo";
 import moment from "moment";
 
@@ -100,10 +100,10 @@ const CargoOverviewSection = ({ cargo }: CargoOverviewSectionProps) => {
 
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <DollarSign className="w-5 h-5 text-emerald-500" />
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <span className="text-sm text-gray-500">Value</span>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatCurrency(cargo.loadValue, cargo.currencyCode)}
+                    <p className="text-sm font-medium text-gray-900 truncate" title={compactCurrency(cargo.loadValue, cargo.currencyCode)}>
+                      {compactCurrency(cargo.loadValue, cargo.currencyCode)}
                     </p>
                   </div>
                 </div>
@@ -111,12 +111,12 @@ const CargoOverviewSection = ({ cargo }: CargoOverviewSectionProps) => {
                 {cargo.offeredPrice && (
                   <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <TrendingUp className="w-5 h-5 text-orange-500" />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <span className="text-sm text-gray-500">
                         Offered Price
                       </span>
-                      <p className="text-sm font-medium text-gray-900">
-                        {formatCurrency(cargo.offeredPrice, cargo.currencyCode)}
+                      <p className="text-sm font-medium text-gray-900 truncate" title={compactCurrency(cargo.offeredPrice, cargo.currencyCode)}>
+                        {compactCurrency(cargo.offeredPrice, cargo.currencyCode)}
                       </p>
                     </div>
                   </div>

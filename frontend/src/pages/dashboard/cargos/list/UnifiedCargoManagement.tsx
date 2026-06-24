@@ -38,6 +38,7 @@ import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizard";
 import { getStatusColor, getStatusDisplayName } from "./utils";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
+import { compactNumber } from "@/utils/formatNumber";
 
 type TabType = "all" | "active" | "drafts" | "broker-managed" | "create" | "template" | "bidding";
 
@@ -47,6 +48,22 @@ const UnifiedCargoManagement = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { confirm, DialogComponent } = useConfirmDialog();
+
+  // Helper to format currency in compact format with currency symbol
+  const formatCompactCurrency = (value: number) => {
+    const formatted = formatCurrency(value);
+    const numValue = Number(value);
+    
+    // Extract currency symbol from formatted string
+    const match = formatted.match(/^([^\d]+)/);
+    const symbol = match ? match[1] : '$';
+    
+    if (numValue >= 1_000_000_000) return `${symbol}${(numValue / 1_000_000_000).toFixed(1)}B`;
+    if (numValue >= 1_000_000) return `${symbol}${(numValue / 1_000_000).toFixed(1)}M`;
+    if (numValue >= 1_000) return `${symbol}${(numValue / 1_000).toFixed(1)}K`;
+    
+    return formatted;
+  };
 
   // Determine initial tab based on route and query params
   const getInitialTab = (): TabType => {
@@ -987,8 +1004,8 @@ const UnifiedCargoManagement = () => {
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 p-2 rounded-xl">
-                                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                                    {load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}
+                                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate" title={load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}>
+                                    {load.offeredPrice ? formatCompactCurrency(Number(load.offeredPrice)) : 'N/A'}
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <button onClick={() => handleViewClick(load)} className="p-2 text-slate-400 hover:text-[#345E85]"><Eye className="w-4 h-4" /></button>
@@ -1049,8 +1066,8 @@ const UnifiedCargoManagement = () => {
                                         {getStatusDisplayName(load.status)}
                                       </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700 dark:text-slate-300">
-                                      {load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700 dark:text-slate-300" title={load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}>
+                                      {load.offeredPrice ? formatCompactCurrency(Number(load.offeredPrice)) : 'N/A'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                       <div className="flex items-center justify-end gap-1">
