@@ -20,8 +20,10 @@ import {
   Send,
   MessageSquare,
   RefreshCw,
+  Package,
 } from 'lucide-react';
 import { customsApi } from '../../../services/customsApi';
+import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   IN_PROGRESS: {
@@ -130,17 +132,34 @@ export default function CargoCustomsInspectionsPage() {
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Inspections', value: stats.total, color: 'text-gray-900', bg: 'bg-white' },
-            { label: 'Cleared', value: stats.cleared, color: 'text-green-700', bg: 'bg-green-50' },
-            { label: 'In Progress', value: stats.pending, color: 'text-blue-700', bg: 'bg-blue-50' },
-            { label: 'Need Attention', value: stats.attention, color: 'text-red-700', bg: 'bg-red-50' },
-          ].map((s) => (
-            <div key={s.label} className={`${s.bg} rounded-xl border border-gray-100 p-4 shadow-sm`}>
-              <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            </div>
-          ))}
+          <StatCard
+            title="Total Inspections"
+            value={stats.total}
+            icon={<Package />}
+            color="secondary"
+            variant="classic"
+          />
+          <StatCard
+            title="Cleared"
+            value={stats.cleared}
+            icon={<CheckCircle />}
+            color="success"
+            variant="classic"
+          />
+          <StatCard
+            title="In Progress"
+            value={stats.pending}
+            icon={<Clock />}
+            color="info"
+            variant="classic"
+          />
+          <StatCard
+            title="Need Attention"
+            value={stats.attention}
+            icon={<AlertTriangle />}
+            color="error"
+            variant="classic"
+          />
         </div>
 
         {/* Filters */}
