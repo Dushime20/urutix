@@ -106,6 +106,7 @@ const SubscriptionPlansMgmt = lazy(() => import('./pages/admin/SubscriptionPlans
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
 const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
+const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
 const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 
@@ -525,6 +526,7 @@ function App() {
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
                       <Route path="activity-logs" element={<ActivityLogs />} />
                       <Route path="advanced-settings" element={<AdvancedSettings />} />
+                      <Route path="system-settings" element={<SystemSettings />} />
                       <Route path="component-showcase" element={<ComponentShowcase />} />
                       <Route path="bulk-email" element={<BulkEmail />} />
                       <Route path="reports" element={<Analytics />} />

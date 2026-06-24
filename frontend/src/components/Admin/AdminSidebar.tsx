@@ -114,6 +114,7 @@ const AdminSidebar: React.FC = () => {
                 { label: 'Bulk Email', icon: Mail, path: '/admin/bulk-email' },
                 { label: 'Onboarding', icon: Bell, path: '/admin/onboarding' },
                 { label: 'Settings', icon: Settings, path: '/admin/advanced-settings' },
+                { label: 'System Settings', icon: Settings, path: '/admin/system-settings' },
             ]
         },
     ];
