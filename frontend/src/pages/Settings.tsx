@@ -20,6 +20,9 @@ import {
   TrendingUp,
   Search,
   X,
+  Phone,
+  MapPin,
+  Save,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import currencyApi from '../services/currencyApi';
@@ -37,6 +40,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import CurrencySelector from '../components/common/CurrencySelector';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
+import axios from 'axios';
 
 
 const Settings: React.FC = () => {
@@ -45,9 +49,16 @@ const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [contactSettings, setContactSettings] = useState({
+    phone: '+250788309463',
+    email: 'hello@urutix.com',
+    address: 'Kigali, Rwanda · Nairobi, Kenya',
+  });
+  const [isSavingContact, setIsSavingContact] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
+    fetchContactSettings();
   }, [user]);
 
   const loadUserProfile = async () => {
@@ -68,6 +79,33 @@ const Settings: React.FC = () => {
       setUserProfile(user);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchContactSettings = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3005'}/api/settings/public/contact`);
+      setContactSettings(response.data);
+    } catch (error) {
+      console.error('Failed to fetch contact settings:', error);
+    }
+  };
+
+  const handleSaveContactSettings = async () => {
+    setIsSavingContact(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3005'}/api/admin/settings/category/contact`,
+        contactSettings,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Contact settings saved successfully!');
+    } catch (error) {
+      console.error('Failed to save contact settings:', error);
+      toast.error('Failed to save contact settings. Please try again.');
+    } finally {
+      setIsSavingContact(false);
     }
   };
 
@@ -444,6 +482,7 @@ const Settings: React.FC = () => {
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'preferences', label: 'Preferences', icon: Palette },
     { id: 'team', label: 'Team Management', icon: Users },
+    { id: 'system', label: 'System Settings', icon: Globe },
   ];
 
   const settingsContent = (
@@ -1108,6 +1147,104 @@ const Settings: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+            {activeTab === 'system' && (
+              <div className="space-y-8 animate-enter">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 rounded-lg mb-6">
+                  <div className="flex items-start gap-3">
+                    <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-1">
+                        <TranslatedText text="Public Contact Information" />
+                      </h4>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        <TranslatedText text="These settings control the contact information displayed on the public website (header and footer). Changes will be visible immediately to all visitors." />
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight mb-6 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-[#2c5173]" />
+                    <TranslatedText text="Website Contact Settings" />
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Phone className="w-3 h-3" />
+                        <TranslatedText text="Contact Phone Number" />
+                      </label>
+                      <input
+                        type="tel"
+                        value={contactSettings.phone}
+                        onChange={(e) => setContactSettings({ ...contactSettings, phone: e.target.value })}
+                        placeholder="+250788309463"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
+                      />
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                        <TranslatedText text="This phone number will be clickable on mobile devices (tel: link)" />
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Mail className="w-3 h-3" />
+                        <TranslatedText text="Contact Email" />
+                      </label>
+                      <input
+                        type="email"
+                        value={contactSettings.email}
+                        onChange={(e) => setContactSettings({ ...contactSettings, email: e.target.value })}
+                        placeholder="hello@urutix.com"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
+                      />
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                        <TranslatedText text="Primary contact email displayed on the website" />
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <MapPin className="w-3 h-3" />
+                        <TranslatedText text="Business Address" />
+                      </label>
+                      <input
+                        type="text"
+                        value={contactSettings.address}
+                        onChange={(e) => setContactSettings({ ...contactSettings, address: e.target.value })}
+                        placeholder="Kigali, Rwanda · Nairobi, Kenya"
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none"
+                      />
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                        <TranslatedText text="Business locations displayed in the footer" />
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between mt-8">
+                    <button
+                      onClick={fetchContactSettings}
+                      disabled={isSavingContact}
+                      className="px-6 py-3 bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-800 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isSavingContact ? 'animate-spin' : ''}`} />
+                      <TranslatedText text="Reset" />
+                    </button>
+                    
+                    <button
+                      onClick={handleSaveContactSettings}
+                      disabled={isSavingContact}
+                      className="px-8 py-3 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-[#2c5173]/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save className={`w-4 h-4 ${isSavingContact ? 'animate-spin' : ''}`} />
+                      <TranslatedText text={isSavingContact ? "Saving..." : "Save Changes"} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
       <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
         <DialogContent className="max-w-md p-0 overflow-hidden border-none bg-transparent">
