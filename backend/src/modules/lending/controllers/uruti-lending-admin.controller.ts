@@ -25,6 +25,7 @@ import { UserRole } from '../../../entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lender, LenderStatus } from '../../../entities/lender.entity';
+import { getEnvConfig } from '../../../config/env.config';
 import {
   ConfigureUrutiLendingDto,
   UrutiLendingConfigResponseDto,
@@ -101,7 +102,7 @@ export class UrutiLendingAdminController {
     );
 
     // Generate webhook URL
-    const baseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3002';
+    const { frontendUrl: baseUrl } = getEnvConfig();
     const webhookUrl = `${baseUrl}/api/platform/v1/loan_status_update`;
 
     return {
@@ -185,8 +186,7 @@ export class UrutiLendingAdminController {
 
 
     // Generate webhook URL
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3002';
+    const { frontendUrl } = getEnvConfig();
     const webhookUrl = `${frontendUrl}/api/platform/v1/loan_status_update`;
 
     return {

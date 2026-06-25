@@ -8,6 +8,7 @@ import { Truck } from '../../entities/truck.entity';
 import { User } from '../../entities/user.entity';
 import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
+import { getEnvConfig } from '../../config/env.config';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationService } from '../notifications/services/notification.service';
@@ -594,7 +595,7 @@ export class TripsService {
           priority: NotificationPriority.HIGH,
           entityType: EntityType.TRIP,
           entityId: trip.id,
-          actionUrl: `/dashboard/trips/${trip.id}`,
+          actionUrl: `/dashboard/trips`,
           actionText: 'View Trip Details',
           templateId: 'trip-completed-notification',
           metadata: {
@@ -808,9 +809,8 @@ export class TripsService {
   }): Promise<void> {
     const { email, recipientName, role, tripNumber, tripId, loadTitle, weightDisplay, creditsDeducted, creditsEarned } = params;
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
       const creditsUrl = `${frontendUrl}/dashboard/credits`;
-      const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
 
       const roleLabel = role === 'tenant_admin' ? 'Operational Cost' : 'Job Payment';
       const earnedRow = role === 'tenant_admin' && creditsEarned > 0
@@ -926,7 +926,7 @@ export class TripsService {
         priority: NotificationPriority.HIGH,
         entityType: EntityType.TRIP,
         entityId: trip.id,
-        actionUrl: `/dashboard/driver/trips?tripId=${trip.id}`,
+        actionUrl: `/dashboard/driver/trips`,
         actionText: 'View Trip',
         templateId: 'driver-assignment-notification',
         metadata: {
@@ -960,9 +960,8 @@ export class TripsService {
     pickupDate: string,
   ): Promise<void> {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      const tripUrl = `${frontendUrl}/dashboard/driver/trips?tripId=${trip.id}`;
-      const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+      const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
+      const tripUrl = `${frontendUrl}/dashboard/driver/trips`;
 
       const html = `
         <!DOCTYPE html>

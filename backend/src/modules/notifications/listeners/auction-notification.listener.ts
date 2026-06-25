@@ -80,7 +80,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/bidding/auctions/${payload.auctionId}`,
+        actionUrl: `/dashboard/bidding`,
         actionText: 'View Bid',
         metadata: {
           auctionId: payload.auctionId,
@@ -146,7 +146,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/bidding/my-bids/${payload.auctionId}`,
+        actionUrl: `/dashboard/bidding`,
         actionText: 'View Details',
         metadata: {
           auctionId: payload.auctionId,
@@ -187,7 +187,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: `/dashboard/bidding/auctions/${payload.auctionId}`,
+        actionUrl: `/dashboard/bidding`,
         actionText: 'View Auction',
         metadata: {
           auctionId: payload.auctionId,
@@ -252,7 +252,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/smart-matching/${payload.matchId}`,
+        actionUrl: `/dashboard/smart-matching`,
         actionText: 'View Match',
         metadata: {
           matchId: payload.matchId,
@@ -296,7 +296,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: `/dashboard/smart-matching/${payload.matchId}`,
+        actionUrl: `/dashboard/smart-matching`,
         actionText: 'View Match',
         metadata: {
           matchId: payload.matchId,

@@ -12,6 +12,7 @@ import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { getEnvConfig } from '../../config/env.config';
 
 import { Epod, EpodStatus } from '../../entities/epod.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
@@ -446,7 +447,7 @@ export class EpodService {
       category: NotificationCategory.TRIP,
       channel: NotificationChannel.IN_APP,
       priority: 'HIGH' as any,
-      actionUrl: `/dashboard/trips/${trip.id}/epod`,
+      actionUrl: `/dashboard/trips`,
       actionText: 'View ePOD & Invoice',
       metadata: { tripId: trip.id, epodId: epod.id },
     } as any);
@@ -462,7 +463,7 @@ export class EpodService {
         category: NotificationCategory.TRIP,
         channel: NotificationChannel.IN_APP,
         priority: 'NORMAL' as any,
-        actionUrl: `/dashboard/fleet/trips/${trip.id}`,
+        actionUrl: `/dashboard/fleet/trips`,
         actionText: 'View Trip',
         metadata: { tripId: trip.id, epodId: epod.id },
       } as any);
@@ -480,9 +481,8 @@ export class EpodService {
   ): Promise<void> {
     if (!cargoOwner.email) return;
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const invoiceUrl = `${frontendUrl}/dashboard/trips/${trip.id}/invoice`;
-    const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+    const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
+    const invoiceUrl = `${frontendUrl}/dashboard/trips`;
 
     const cargoOwnerName =
       (cargoOwner as any).profile?.companyName ||

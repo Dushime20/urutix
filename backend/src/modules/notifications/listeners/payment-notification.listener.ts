@@ -80,7 +80,7 @@ export class PaymentNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: `/dashboard/payments/${payload.paymentId}`,
+        actionUrl: `/dashboard/payments`,
         actionText: 'View Payment',
         metadata: {
           paymentId: payload.paymentId,
@@ -221,7 +221,7 @@ export class PaymentNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/payments/invoices/${payload.invoiceId}`,
+        actionUrl: `/dashboard/payments`,
         actionText: 'Make Payment',
         metadata: {
           invoiceId: payload.invoiceId,
@@ -284,7 +284,7 @@ export class PaymentNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/payments/invoices/${payload.invoiceId}`,
+        actionUrl: `/dashboard/payments`,
         actionText: 'View Invoice',
         metadata: {
           invoiceId: payload.invoiceId,

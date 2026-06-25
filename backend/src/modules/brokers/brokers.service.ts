@@ -10,6 +10,7 @@ import { Repository, FindOptionsWhere, Between } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Load } from '../../entities/load.entity';
+import { getEnvConfig } from '../../config/env.config';
 import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { BrokerCommission, CommissionStatus } from '../../entities/broker-commission.entity';
 import { Tenant } from '../../entities/tenant.entity';
@@ -181,7 +182,7 @@ export class BrokersService {
             );
           } else {
             // Fallback: use driver invitation email template (similar structure)
-            const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+            const frontendUrl = getEnvConfig().frontendUrl;
             const setupUrl = `${frontendUrl}/auth/setup-password?token=${token}&email=${encodeURIComponent(broker.email)}`;
             await (this.emailService as any).sendDriverPasswordSetupEmail(
               broker.email,

@@ -5,6 +5,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { getEnvConfig } from '../../../config/env.config';
 
 import { User } from '../../../entities/user.entity';
 import { Payment } from '../../../entities/payment.entity';
@@ -231,8 +232,7 @@ export class PaymentNotificationService {
     truckOwner: User,
     context: any,
   ): Promise<void> {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+    const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
 
     // Email to Cargo Owner (Payment Due)
     if (cargoOwner.email) {

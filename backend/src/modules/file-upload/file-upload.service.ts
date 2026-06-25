@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
+import { getEnvConfig } from '../../config/env.config';
 
 export interface FileUploadResult {
   fileName: string;
@@ -122,10 +123,7 @@ export class FileUploadService {
       const checksum = this.calculateChecksum(fileBuffer);
 
       // Generate URLs
-      const baseUrl = this.configService.get<string>(
-        'BASE_URL',
-        'http://localhost:3000',
-      );
+      const { backendUrl: baseUrl } = getEnvConfig();
       const fileUrl = `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
 
       let thumbnailUrl: string | undefined;
@@ -191,10 +189,7 @@ export class FileUploadService {
     // For now, we'll return the original file URL
     // In a production environment, you'd want to use a library like sharp or jimp
     // to generate actual thumbnails
-    const baseUrl = this.configService.get<string>(
-      'BASE_URL',
-      'http://localhost:3000',
-    );
+    const { backendUrl: baseUrl } = getEnvConfig();
     return `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
   }
 
@@ -211,10 +206,7 @@ export class FileUploadService {
     }
 
     const stats = fs.statSync(filePath);
-    const baseUrl = this.configService.get<string>(
-      'BASE_URL',
-      'http://localhost:3000',
-    );
+    const { backendUrl: baseUrl } = getEnvConfig();
     const fileUrl = `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
 
     return {

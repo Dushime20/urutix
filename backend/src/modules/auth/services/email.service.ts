@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { getEnvConfig } from '../../../config/env.config';
 
 @Injectable()
 export class EmailService {
@@ -125,7 +126,7 @@ export class EmailService {
         '❌ CRITICAL ERROR: FRONTEND_URL environment variable is not set!\n' +
         '❌ This is REQUIRED for email links to work correctly.\n' +
         '❌ Please add FRONTEND_URL to your .env file:\n' +
-        '❌   For development: FRONTEND_URL=http://localhost:5173\n' +
+        '❌   Set FRONTEND_URL to your actual server URL (e.g. http://your-ip:5173 or https://yourdomain.com)\n' +
         '❌   For production: FRONTEND_URL=https://urutix.com\n' +
         '❌   Or use your domain: FRONTEND_URL=https://yourdomain.com';
       
@@ -141,9 +142,7 @@ export class EmailService {
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     this.logger.log(`Sending verification email to ${email}`);
     this.logger.log(`Verification URL: ${verificationUrl}`);
@@ -172,14 +171,12 @@ export class EmailService {
     this.logger.log('========== PASSWORD RESET EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send password reset email to: ${email}`);
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const { frontendUrl } = getEnvConfig();
     const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
 
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     const smtpHost = this.configService.get<string>('SMTP_HOST');
     const smtpUser = this.configService.get<string>('SMTP_USER');
@@ -268,7 +265,6 @@ The UrutiX Team
       this.logger.error('   SMTP_PORT=465');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:5173');
       throw new Error('SMTP not configured. Cannot send password reset email.');
     }
     this.logger.log('========== PASSWORD RESET EMAIL SERVICE CALL END ==========');
@@ -283,9 +279,7 @@ The UrutiX Team
     this.logger.log('========== EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send driver password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
-    // This will work on whatever port the frontend is running on
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const { frontendUrl } = getEnvConfig();
     // Remove trailing slash if present and construct the full URL
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/driver/setup-password?token=${token}`;
@@ -293,9 +287,7 @@ The UrutiX Team
     this.logger.log(`📧 Password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -411,7 +403,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:3001');
       // Don't throw error if SMTP is not configured - just log warning
       // This allows driver creation to succeed even if email can't be sent
     }
@@ -426,14 +417,12 @@ This link will expire in 7 days.
     this.logger.log('========== EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send driver welcome email to: ${email}`);
     
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const { frontendUrl } = getEnvConfig();
     const loginUrl = `${frontendUrl.replace(/\/$/, '')}/auth`;
     
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     if (this.transporter) {
       try {
@@ -481,17 +470,15 @@ The UrutiX Team
     this.logger.log('========== LENDER EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send lender password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    // Construct the setup URL - use FRONTEND_URL from env
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/lender/setup-password?token=${token}`;
     
     this.logger.log(`📧 Lender password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -594,7 +581,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:3001');
       // Throw error so caller knows email failed
       throw new Error(errorMessage);
     }
@@ -611,17 +597,15 @@ This link will expire in 7 days.
     this.logger.log('========== TENANT EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send tenant password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:3001
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    // Construct the setup URL - use FRONTEND_URL from env
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/tenant/setup-password?token=${token}`;
     
     this.logger.log(`📧 Tenant password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -725,7 +709,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:3001');
       // Don't throw error if SMTP is not configured - just log warning
       // This allows tenant creation to succeed even if email can't be sent
     }
@@ -741,17 +724,15 @@ This link will expire in 7 days.
     this.logger.log('========== CARGO OWNER EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send cargo owner password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    // Construct the setup URL - use FRONTEND_URL from env
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/cargo-owner/setup-password?token=${token}`;
     
     this.logger.log(`📧 Cargo owner password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -858,7 +839,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:5173');
       // Don't throw error if SMTP is not configured - just log warning
       // This allows cargo owner creation to succeed even if email can't be sent
     }
@@ -874,17 +854,15 @@ This link will expire in 7 days.
     this.logger.log('========== BROKER EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send broker password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    // Construct the setup URL - use FRONTEND_URL from env
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/broker/setup-password?token=${token}`;
     
     this.logger.log(`📧 Broker password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -992,7 +970,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:5173');
       // Don't throw error if SMTP is not configured - just log warning
       // This allows broker creation to succeed even if email can't be sent
     }
@@ -1008,17 +985,15 @@ This link will expire in 7 days.
     this.logger.log('========== TRUCK OWNER EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send truck owner password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    // Construct the setup URL - use FRONTEND_URL from env
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/truck-owner/setup-password?token=${token}`;
     
     this.logger.log(`📧 Truck owner password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -1126,7 +1101,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:5173');
       // Don't throw error if SMTP is not configured - just log warning
       // This allows truck owner creation to succeed even if email can't be sent
     }
@@ -1142,17 +1116,15 @@ This link will expire in 7 days.
     this.logger.log('========== AGENT EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send agent password setup email to: ${email}`);
     
-    // Construct the setup URL - use FRONTEND_URL from env, or default to localhost:5173
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    // Construct the setup URL - use FRONTEND_URL from env
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/agent/setup-password?token=${token}`;
     
     this.logger.log(`📧 Agent password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Check SMTP configuration
     const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -1260,7 +1232,6 @@ This link will expire in 7 days.
       this.logger.error('   SMTP_PORT=587');
       this.logger.error('   SMTP_USER=your-email@gmail.com');
       this.logger.error('   SMTP_PASS=your-app-password');
-      this.logger.error('   FRONTEND_URL=http://localhost:5173');
       // Don't throw error if SMTP is not configured - just log warning
       // This allows agent creation to succeed even if email can't be sent
     }
@@ -1276,16 +1247,14 @@ This link will expire in 7 days.
     this.logger.log('========== CUSTOMS OFFICER EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send customs officer password setup email to: ${email}`);
 
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/customs-officer/setup-password?token=${token}`;
 
     this.logger.log(`📧 Customs Officer password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     if (this.transporter) {
       this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
@@ -1376,9 +1345,7 @@ This link will expire in 7 days.
 
     const smtpFrom =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     // Build the from address with optional display name
     const from = fromName ? `"${fromName}" <${smtpFrom}>` : smtpFrom;
@@ -1458,16 +1425,14 @@ This link will expire in 7 days.
     this.logger.log('========== RECEIVER INVITATION EMAIL SERVICE CALLED ==========');
     this.logger.log(`Attempting to send receiver invitation email to: ${email}`);
     
-    const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:5173';
+    const { frontendUrl } = getEnvConfig();
     const baseUrl = frontendUrl.replace(/\/$/, '');
     const setupUrl = `${baseUrl}/receiver/setup-password?token=${token}`;
     
     this.logger.log(`📧 Receiver password setup URL: ${setupUrl}`);
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     if (this.transporter) {
       this.logger.log('✅ SMTP transporter is configured, attempting to send email...');
@@ -1804,9 +1769,7 @@ This link will expire in 7 days.
   ): Promise<void> {
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     const subject = `New Load Assignment: ${loadTitle}`;
     const html = `
@@ -1848,9 +1811,7 @@ This link will expire in 7 days.
   ): Promise<void> {
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     const subject = `Commission Update for Load: ${loadTitle} - Status: ${status}`;
     const html = `
@@ -1890,9 +1851,7 @@ This link will expire in 7 days.
   ): Promise<void> {
     const fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      this.configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      this.configService.get<string>('SMTP_USER') ||
-      'noreply@urutix.com';
+      getEnvConfig().smtpFrom;
 
     const subject = `Commission Payout Request Submitted`;
     const html = `

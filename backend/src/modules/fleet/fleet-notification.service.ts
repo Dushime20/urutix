@@ -238,7 +238,7 @@ export class FleetNotificationService {
           maintenanceTitle: maintenance.title,
           nextDueDate: maintenance.nextDueDate,
           notificationKey: `maintenance-${truck.id}-${maintenance.id}`,
-          actionUrl: `/fleet/trucks/${truck.id}/maintenance`,
+          actionUrl: `/dashboard/fleet/trucks`,
         },
       };
 
@@ -289,7 +289,7 @@ export class FleetNotificationService {
           inspectionTitle: inspection.title,
           nextInspectionDate: inspection.nextInspectionDate,
           notificationKey: `inspection-${truck.id}-${inspection.id}`,
-          actionUrl: `/fleet/trucks/${truck.id}/inspections`,
+          actionUrl: `/dashboard/fleet/trucks`,
         },
       };
 
@@ -340,7 +340,7 @@ export class FleetNotificationService {
           policyType: insurance.policyType,
           endDate: insurance.endDate,
           notificationKey: `insurance-${truck.id}-${insurance.id}`,
-          actionUrl: `/fleet/trucks/${truck.id}/insurance`,
+          actionUrl: `/dashboard/fleet/trucks`,
         },
       };
 

@@ -61,7 +61,7 @@ export class CargoNotificationListener {
           shortMessage: `New cargo available: ${event.cargoDetails.title}`,
           channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
           requiresAction: true,
-          actionUrl: `/cargo/${event.cargoId}`,
+          actionUrl: `/dashboard/cargos`,
           actionText: 'View Cargo & Bid',
           metadata: {
             cargoId: event.cargoId,
@@ -97,7 +97,7 @@ export class CargoNotificationListener {
         shortMessage: `Assigned to truck ${event.assignmentDetails.truckPlateNumber}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: true,
-        actionUrl: `/trucks/${event.truckId}`,
+        actionUrl: `/dashboard/fleet/trucks`,
         actionText: 'View Truck Details',
         metadata: {
           truckId: event.truckId,
@@ -132,7 +132,7 @@ export class CargoNotificationListener {
         shortMessage: `New bid: $${event.bidDetails.amount}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: true,
-        actionUrl: `/cargo/${event.cargoId}/bids`,
+        actionUrl: `/dashboard/cargos`,
         actionText: 'Review Bids',
         metadata: {
           bidId: event.bidId,
@@ -168,7 +168,7 @@ export class CargoNotificationListener {
         shortMessage: `Bid accepted: $${event.bidDetails.amount}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: true,
-        actionUrl: `/cargo/${event.cargoId}`,
+        actionUrl: `/dashboard/cargos`,
         actionText: 'View Cargo Details',
         metadata: {
           bidId: event.bidId,
@@ -193,7 +193,7 @@ export class CargoNotificationListener {
           shortMessage: `New delivery: ${event.bidDetails.cargoTitle}`,
           channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
           requiresAction: true,
-          actionUrl: `/cargo/${event.cargoId}`,
+          actionUrl: `/dashboard/cargos`,
           actionText: 'View Delivery Details',
           metadata: {
             bidId: event.bidId,
@@ -229,7 +229,7 @@ export class CargoNotificationListener {
         shortMessage: `Trip started: ${event.tripDetails.cargoTitle}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: true,
-        actionUrl: event.tripDetails.trackingUrl || `/trips/${event.tripId}/track`,
+        actionUrl: event.tripDetails.trackingUrl || `/dashboard/tracking`,
         actionText: 'Track Shipment',
         metadata: {
           tripId: event.tripId,
@@ -253,7 +253,7 @@ export class CargoNotificationListener {
         shortMessage: `Trip started: ${event.tripDetails.cargoTitle}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: false,
-        actionUrl: `/trips/${event.tripId}`,
+        actionUrl: `/dashboard/trips`,
         actionText: 'View Trip',
         metadata: {
           tripId: event.tripId,
@@ -288,7 +288,7 @@ export class CargoNotificationListener {
         shortMessage: `Trip completed: ${event.tripDetails.cargoTitle}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: true,
-        actionUrl: `/trips/${event.tripId}`,
+        actionUrl: `/dashboard/trips`,
         actionText: 'View Trip Summary',
         metadata: {
           tripId: event.tripId,
@@ -312,7 +312,7 @@ export class CargoNotificationListener {
         shortMessage: `Trip completed: ${event.tripDetails.cargoTitle}`,
         channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
         requiresAction: false,
-        actionUrl: `/trips/${event.tripId}`,
+        actionUrl: `/dashboard/trips`,
         actionText: 'View Trip',
         metadata: {
           tripId: event.tripId,

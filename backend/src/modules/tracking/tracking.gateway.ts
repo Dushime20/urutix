@@ -9,6 +9,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { getEnvConfig } from '../../config/env.config';
 import {
   Injectable,
   Logger,
@@ -200,7 +201,7 @@ interface GatewayConfig {
 @WebSocketGateway({
   namespace: '/tracking',
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'],
+    origin: (process.env.FRONTEND_URL || '').split(',').map(u => u.trim()).filter(Boolean),
     credentials: true,
   },
   transports: ['websocket', 'polling'],

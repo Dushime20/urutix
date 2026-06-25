@@ -10,6 +10,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { getEnvConfig } from '../../config/env.config';
 import {
   Load,
   LoadStatus,
@@ -1256,7 +1257,7 @@ export class MatchingService {
         entityType: EntityType.TRIP,
         entityId: trip.id,
         requiresAction: true,
-        actionUrl: `/dashboard/trips/${trip.id}`,
+        actionUrl: `/dashboard/trips`,
         actionText: 'View Trip'
       });
       this.logger.log(`📧 Notification sent to Cargo Owner: ${load.cargoOwnerId}`);
@@ -1286,7 +1287,7 @@ export class MatchingService {
           entityType: EntityType.TRIP,
           entityId: trip.id,
           requiresAction: true,
-          actionUrl: `/dashboard/fleet/trips/${trip.id}`,
+          actionUrl: `/dashboard/fleet/trips`,
           actionText: 'View Trip'
         });
         this.logger.log(`📧 Notification sent to Truck Owner: ${truckOwnerId}`);
@@ -1332,9 +1333,8 @@ export class MatchingService {
             const pickupDate = trip.plannedStartTime
               ? new Date(trip.plannedStartTime).toLocaleDateString('en-US', { dateStyle: 'medium' })
               : 'TBD';
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-            const tripUrl = `${frontendUrl}/dashboard/driver/trips?tripId=${trip.id}`;
-            const fromAddress = process.env.SMTP_USER || 'noreply@urutix.com';
+            const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
+            const tripUrl = `${frontendUrl}/dashboard/driver/trips`;
 
             const html = `
               <!DOCTYPE html>
