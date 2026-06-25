@@ -28,17 +28,6 @@ export class EnhancedJwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(request: Request, payload: JwtPayload) {
     try {
-      this.logger.debug('🔐 JWT Strategy Validation Started');
-      this.logger.debug('JWT Payload:', {
-        sub: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        tenantId: payload.tenantId,
-        iat: new Date(payload.iat * 1000).toISOString(),
-        exp: new Date(payload.exp * 1000).toISOString(),
-      });
-
-      // Validate payload structure
       if (
         !payload.sub ||
         !payload.email ||
@@ -49,25 +38,15 @@ export class EnhancedJwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Invalid token payload');
       }
 
-      // Validate token expiration
       const now = Math.floor(Date.now() / 1000);
       if (payload.exp && payload.exp < now) {
-        this.logger.warn('JWT token has expired');
         throw new UnauthorizedException('Token has expired');
       }
 
-      // Note: Removed token issuance time validation to prevent clock skew issues
-
-      // Extract client information for security logging
       const clientIp = this.getClientIp(request);
       const userAgent = request.headers['user-agent'];
 
-      this.logger.debug(
-        `Token validation for user: ${payload.email} from IP: ${clientIp}`,
-      );
-
-      // Create user object with additional security context
-      const user = {
+      return {
         userId: payload.sub,
         email: payload.email,
         role: payload.role,
@@ -76,21 +55,10 @@ export class EnhancedJwtStrategy extends PassportStrategy(Strategy) {
         userAgent,
         tokenIssuedAt: new Date(payload.iat * 1000),
         tokenExpiresAt: new Date(payload.exp * 1000),
-        id: payload.sub, // Compatibility with controllers expecting .id
+        id: payload.sub,
       };
-
-      this.logger.debug('✅ JWT Strategy Validation Successful');
-      this.logger.debug('Extracted user info:', {
-        userId: user.userId,
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenantId,
-        clientIp: user.clientIp,
-      });
-
-      return user;
     } catch (error) {
-      this.logger.error(`JWT Strategy Validation Failed: ${error.message}`);
+      this.logger.error(`JWT validation failed: ${error.message}`);
       throw error;
     }
   }

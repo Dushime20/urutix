@@ -22,12 +22,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   handleRequest(err: any, user: any, info: any) {
     if (err || !user) {
-      console.log('❌ JwtAuthGuard Authorization Failed:', {
-        error: err?.message,
-        info: info?.message || info,
-        userAttached: !!user
-      });
-      // You can throw a custom exception here to give the frontend more info
       throw err || new UnauthorizedException();
     }
     return user;
