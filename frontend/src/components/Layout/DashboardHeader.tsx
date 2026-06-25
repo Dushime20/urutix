@@ -103,7 +103,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
           ]
         },
-        { label: '🔴 Track', path: `${basePath}/tracking`, icon: Radio },
       ];
     }
 
@@ -133,7 +132,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Credit Assessment', path: '/dashboard/broker/credit-management' },
           ]
         },
-        { label: '🔴 Track', path: '/dashboard/broker/tracking', icon: Radio },
       ];
     }
 
@@ -164,7 +162,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           ]
         },
         { label: 'Account', path: '/dashboard/driver/profile', icon: User },
-        { label: '🔴 Track', path: '/dashboard/driver/tracking', icon: Radio },
       ];
     }
 
@@ -200,7 +197,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Performance Analytics', path: '/dashboard/fleet/analytics' },
           ]
         },
-        { label: '🔴 Track', path: '/dashboard/fleet/tracking', icon: Radio },
       ];
     }
 
