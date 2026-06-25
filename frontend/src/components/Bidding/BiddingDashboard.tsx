@@ -22,6 +22,7 @@ import InactiveAuctions from './InactiveAuctions';
 import { cn } from '@/utils/cn';
 import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useLocation } from 'react-router-dom';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
@@ -34,6 +35,7 @@ const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
+  const { compact } = useCurrencyFormat();
   const [activeTab, setActiveTab] = useState(
     userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
       ? 'all-bids' 
@@ -93,24 +95,16 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         secondaryColor="text-emerald-600 dark:text-emerald-400"
       />
       <StatsCard
-        title="Bids Received"
-        value={(() => {
-          const rawValue = stats.totalValue;
-          let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
-          if (typeof value !== 'number') value = parseFloat(value as string) || 0;
-          return value.toLocaleString();
-        })()}
-        icon={Users}
+        title="Total Cargo Value"
+        value={compact(stats.totalValue)}
+        icon={DollarSign}
         colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
         secondaryColor="text-amber-600 dark:text-amber-400"
       />
       <StatsCard
-        title="Success Rate"
-        value={(() => {
-          const rate = Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate;
-          return `${rate}%`;
-        })()}
-        icon={DollarSign}
+        title="Auction Success Rate"
+        value={`${Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate}%`}
+        icon={TrendingUp}
         colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
         secondaryColor="text-purple-600 dark:text-purple-400"
       />
@@ -120,14 +114,14 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const renderTruckOwnerStats = () => (
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
       <StatsCard
-        title="Active Offers"
+        title="Available Auctions"
         value={stats.totalAuctions}
         icon={Gavel}
         colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
         secondaryColor="text-[#345E85] dark:text-blue-400"
       />
       <StatsCard
-        title="My Auctions"
+        title="Auctions Entered"
         value={stats.participatedAuctions || 0}
         icon={HistoryIcon}
         colorClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
@@ -141,25 +135,15 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         secondaryColor="text-emerald-600 dark:text-emerald-400"
       />
       <StatsCard
-        title="Total Volume"
-        value={(() => {
-          const rawValue = stats.totalValue;
-          let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
-          if (typeof value !== 'number') value = parseFloat(value as string) || 0;
-          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-          if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-          return value.toLocaleString();
-        })()}
+        title="Total Bid Value"
+        value={compact(stats.totalValue)}
         icon={DollarSign}
         colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
         secondaryColor="text-amber-600 dark:text-amber-400"
       />
       <StatsCard
         title="Win Rate"
-        value={(() => {
-          const rate = Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate;
-          return `${rate}%`;
-        })()}
+        value={`${Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate}%`}
         icon={TrendingUp}
         colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
         secondaryColor="text-purple-600 dark:text-purple-400"
@@ -330,25 +314,15 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         secondaryColor="text-emerald-600 dark:text-emerald-400"
       />
       <StatsCard
-        title="Total Value"
-        value={(() => {
-          const rawValue = stats.totalValue;
-          let value = Array.isArray(rawValue) ? rawValue.reduce((a: any, b: any) => a + (parseFloat(b) || 0), 0) : rawValue;
-          if (typeof value !== 'number') value = parseFloat(value as string) || 0;
-          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-          if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-          return value.toLocaleString();
-        })()}
+        title="Platform Bid Volume"
+        value={compact(stats.totalValue)}
         icon={DollarSign}
         colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
         secondaryColor="text-amber-600 dark:text-amber-400"
       />
       <StatsCard
         title="Success Rate"
-        value={(() => {
-          const rate = Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate;
-          return `${rate}%`;
-        })()}
+        value={`${Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate}%`}
         icon={TrendingUp}
         colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
         secondaryColor="text-purple-600 dark:text-purple-400"
