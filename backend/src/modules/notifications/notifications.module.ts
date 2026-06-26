@@ -12,9 +12,7 @@ import { Load } from '../../entities/load.entity';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { NotificationService } from './services/notification.service';
-// EmailService is re-exported from auth/services/email.service — same class token,
-// no wrapper, so EnhancedAuthModule's registered instance is reused directly.
-import { EmailService } from './services/email.service';
+// EmailService is re-exported from auth via EnhancedAuthModule
 import { SmsService } from './services/sms.service';
 import { PushService } from './services/push.service';
 import { InAppService } from './services/in-app.service';
@@ -65,7 +63,9 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     NotificationsService,
     NotificationService,
     PaymentNotificationService,
-    EmailService,
+    // EmailService is provided by EnhancedAuthModule — re-export the module
+    // so consumers of NotificationsModule can inject EmailService directly.
+    EnhancedAuthModule,
     SmsService,
     PushService,
     InAppService,
