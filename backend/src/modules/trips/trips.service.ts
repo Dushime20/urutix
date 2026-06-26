@@ -910,7 +910,7 @@ export class TripsService {
   }): Promise<void> {
     const { email, recipientName, role, tripNumber, tripId, loadTitle, weightDisplay, creditsDeducted, creditsEarned } = params;
     try {
-      const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
+      const { frontendUrl } = getEnvConfig();
       const creditsUrl = `${frontendUrl}/dashboard/credits`;
 
       const roleLabel = role === 'tenant_admin' ? 'Operational Cost' : 'Job Payment';
@@ -970,12 +970,11 @@ export class TripsService {
         ? `\nCredits Earned: +${creditsEarned} credits (from truck owner)\nNet: ${creditsEarned - creditsDeducted} credits`
         : '';
 
-      await (this.emailService as any).transporter?.sendMail({
-        from: fromAddress,
+      await this.emailService.sendGenericEmail({
         to: email,
         subject: `Credits Deducted – Trip ${tripNumber} Started | UrutiX`,
-        text: `Hi ${recipientName},\n\nCredits have been deducted for trip ${tripNumber}.\nCargo: ${loadTitle} (${weightDisplay} tons)\nDeduction Type: ${roleLabel}\nCredits Deducted: -${creditsDeducted} credits${netLine}\n\nView balance: ${creditsUrl}\n\nUrutiX Smart Logistics`,
-        html,
+        textBody: `Hi ${recipientName},\n\nCredits have been deducted for trip ${tripNumber}.\nCargo: ${loadTitle} (${weightDisplay} tons)\nDeduction Type: ${roleLabel}\nCredits Deducted: -${creditsDeducted} credits${netLine}\n\nView balance: ${creditsUrl}\n\nUrutiX Smart Logistics`,
+        htmlBody: html,
       });
 
       this.logger.log(`[TripsService] Credit deduction email sent to ${email}`);
@@ -1061,7 +1060,7 @@ export class TripsService {
     pickupDate: string,
   ): Promise<void> {
     try {
-      const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
+      const { frontendUrl } = getEnvConfig();
       const tripUrl = `${frontendUrl}/dashboard/driver/trips`;
 
       const html = `
@@ -1109,12 +1108,11 @@ export class TripsService {
 
       const text = `Hi ${driverName},\n\nYou have been assigned to trip ${trip.tripNumber}.\nCargo: ${cargoTitle}\nTruck: ${truckPlate}\nPlanned Start: ${pickupDate}\n\nView trip: ${tripUrl}\n\nUrutiX Smart Logistics`;
 
-      await (this.emailService as any).transporter?.sendMail({
-        from: fromAddress,
+      await this.emailService.sendGenericEmail({
         to: email,
         subject: `New Trip Assignment - ${trip.tripNumber} | UrutiX`,
-        text,
-        html,
+        textBody: text,
+        htmlBody: html,
       });
 
       this.logger.log(`[TripsService] Assignment email sent to driver ${email} for trip ${trip.id}`);

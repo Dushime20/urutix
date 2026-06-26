@@ -481,7 +481,7 @@ export class EpodService {
   ): Promise<void> {
     if (!cargoOwner.email) return;
 
-    const { frontendUrl, smtpFrom: fromAddress } = getEnvConfig();
+    const { frontendUrl } = getEnvConfig();
     const invoiceUrl = `${frontendUrl}/dashboard/trips`;
 
     const cargoOwnerName =
@@ -560,12 +560,11 @@ export class EpodService {
       </html>
     `;
 
-    await (this.emailService as any).transporter?.sendMail({
-      from: fromAddress,
-      to: cargoOwner.email,
-      subject: `Invoice ${invoice.invoiceNumber} — Trip ${trip.tripNumber} Completed | UrutiX`,
-      text: `Hi ${cargoOwnerName},\n\nYour cargo has been delivered. Invoice: ${invoice.invoiceNumber}\nTotal: ${invoice.currency} ${invoice.totalAmount}\nDue: ${new Date(invoice.dueDate).toLocaleDateString()}\n\nView: ${invoiceUrl}\n\nUrutiX Smart Logistics`,
-      html,
+    await this.emailService.sendGenericEmail({
+      to:       cargoOwner.email,
+      subject:  `Invoice ${invoice.invoiceNumber} — Trip ${trip.tripNumber} Completed | UrutiX`,
+      textBody: `Hi ${cargoOwnerName},\n\nYour cargo has been delivered. Invoice: ${invoice.invoiceNumber}\nTotal: ${invoice.currency} ${invoice.totalAmount}\nDue: ${new Date(invoice.dueDate).toLocaleDateString()}\n\nView: ${invoiceUrl}\n\nUrutiX Smart Logistics`,
+      htmlBody: html,
     });
 
     this.logger.log(`Invoice email sent to ${cargoOwner.email}`);
