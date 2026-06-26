@@ -24,12 +24,13 @@ import { AuctionWatch } from '../../entities/auction-watch.entity';
 import { AuctionView } from '../../entities/auction-view.entity';
 import { LoadContract, ContractStatus } from '../../entities/load-contract.entity';
 import { NotificationService } from '../notifications/notification.service';
-import { NotificationType, EntityType, NotificationCategory, NotificationChannel } from '../../entities/notification.entity';
+import { NotificationType, EntityType, NotificationCategory, NotificationChannel, NotificationPriority } from '../../entities/notification.entity';
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
 import { BidValidationService } from './services/bid-validation.service';
 import { CreditService } from '../../services/credit.service';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
+import { AvailabilityService } from '../availability/availability.service';
 
 export interface CreateBidDto {
   loadId: string;
@@ -158,6 +159,7 @@ export class BiddingService {
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
     private readonly bidValidationService: BidValidationService,
+    private readonly availabilityService: AvailabilityService,
   ) { }
 
   async createBid(
@@ -412,6 +414,22 @@ export class BiddingService {
        });
     }
 
+    // ── Availability Warning to Truck Owner (fire-and-forget) ─────────────────
+    // If the truck owner specified a truck or driver, check whether they overlap
+    // with any existing reservation for the proposed window.
+    // This is a WARNING only — it does not block the bid.
+    // The hard block happens at bid acceptance (acceptBid).
+    this.sendAvailabilityWarningIfNeeded(
+      savedBid.id,
+      truckOwnerId,
+      tenantId,
+      createBidDto,
+      load,
+    ).catch(err =>
+      console.error('[BiddingService] Availability warning check failed:', err),
+    );
+    // ─────────────────────────────────────────────────────────────────────────
+
     return savedBid;
   }
 
@@ -484,6 +502,80 @@ export class BiddingService {
 
     bid.status = BidStatus.WITHDRAWN;
     await this.bidRepository.save(bid);
+  }
+
+  /**
+   * Checks whether the truck/driver specified in a new bid are already occupied
+   * during the proposed shipment window.  If a conflict is found, an in-app
+   * notification is sent to the truck owner immediately — the bid is NOT blocked.
+   * The hard block happens at bid acceptance.
+   */
+  private async sendAvailabilityWarningIfNeeded(
+    bidId: string,
+    truckOwnerId: string,
+    tenantId: string,
+    dto: CreateBidDto,
+    load: any,
+  ): Promise<void> {
+    const truckId  = dto.bidDetails?.truckSpecifications?.truckId;
+    const driverId = dto.bidDetails?.driverInfo?.driverId;
+
+    if (!truckId && !driverId) return; // No specific resource selected, nothing to check
+
+    // Resolve the shipment window — same logic as acceptBid
+    const pickupDateTime   = load.pickupDate   || dto.proposedPickupDate   ||
+                             new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const deliveryDateTime = load.deliveryDate || dto.proposedDeliveryDate ||
+                             new Date(new Date(pickupDateTime).getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const conflicts = await this.availabilityService.findConflicts({
+      truckId,
+      driverId,
+      pickupDateTime:   new Date(pickupDateTime),
+      deliveryDateTime: new Date(deliveryDateTime),
+      tenantId,
+    });
+
+    if (conflicts.length === 0) return; // All clear
+
+    // Build a human-readable conflict summary
+    const conflictLines = conflicts.map(c => {
+      const pickup   = new Date(c.existingPickup).toLocaleDateString('en-US',   { month: 'short', day: 'numeric', year: 'numeric' });
+      const delivery = new Date(c.existingDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const resource = c.type === 'TRUCK' ? 'Truck' : 'Driver';
+      return `${resource} already assigned to Cargo ${c.conflictingCargoId.slice(0, 8)}… (${pickup} → ${delivery})`;
+    });
+
+    const pickupStr   = new Date(pickupDateTime).toLocaleDateString('en-US',   { month: 'short', day: 'numeric', year: 'numeric' });
+    const deliveryStr = new Date(deliveryDateTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    const message =
+      `⚠️ Scheduling Conflict Warning — Your bid for "${load.title || load.cargoType}" ` +
+      `(${pickupStr} → ${deliveryStr}) includes a resource that is already occupied:\n` +
+      conflictLines.join('\n') +
+      `\n\nYour bid has been submitted, but this assignment WILL be rejected if the bid is accepted. ` +
+      `Please update your bid with an available truck/driver before the auction ends.`;
+
+    // Notify the truck owner
+    await this.notificationService.createNotification({
+      recipientId: truckOwnerId,
+      tenantId,
+      title: '⚠️ Resource Already Occupied — Bid Warning',
+      message,
+      notificationType: NotificationType.GENERAL,
+      category:         NotificationCategory.CARGO,
+      channels:         [NotificationChannel.IN_APP],
+      entityType:       EntityType.CARGO,
+      entityId:         bidId,
+      requiresAction:   true,
+      actionUrl:        `/dashboard/bidding?view=my-bids&bidId=${bidId}`,
+      actionText:       'Update Bid',
+    });
+
+    console.warn(
+      `[BiddingService] Availability warning sent to truck owner ${truckOwnerId} for bid ${bidId}: ` +
+      conflictLines.join('; '),
+    );
   }
 
   async acceptBid(
@@ -697,6 +789,17 @@ export class BiddingService {
         // Generate unique trip number
         const tripNumber = `TRIP-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+        // ── Scheduling conflict check ─────────────────────────────────────
+        // Verify truck AND driver are both free during the planned window
+        await this.availabilityService.assertNoConflict({
+          truckId,
+          driverId: finalDriverId,
+          pickupDateTime: plannedStartTime,
+          deliveryDateTime: plannedEndTime,
+          tenantId,
+        });
+        // ─────────────────────────────────────────────────────────────────
+
         // Create the trip
         const newTrip = this.tripRepository.create({
           tenantId,
@@ -714,6 +817,23 @@ export class BiddingService {
         const savedTrip = await this.tripRepository.save(newTrip);
         tripId = savedTrip.id;
         console.log(`Trip ${savedTrip.id} created automatically for accepted bid ${bidId}`);
+
+        // ── Create reservation immediately after trip is saved ────────────
+        try {
+          await this.availabilityService.createReservation(
+            tenantId,
+            savedTrip.id,
+            bid.loadId,
+            truckId,
+            finalDriverId,
+            plannedStartTime,
+            plannedEndTime,
+          );
+        } catch (reservationError: any) {
+          console.error(`Failed to create reservation for trip ${savedTrip.id}:`, reservationError);
+          // Non-fatal: trip is created, reservation will be backfilled
+        }
+        // ─────────────────────────────────────────────────────────────────
       } catch (tripError: any) {
         // Log error but don't fail bid acceptance
         // Trip creation is important but shouldn't block the bid acceptance

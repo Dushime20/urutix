@@ -5,7 +5,7 @@ import { operationalAdminApi } from '../../services/operationalAdminApi';
 import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminLoads: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loads, setLoads] = useState<any[]>([]);
@@ -22,8 +22,8 @@ const OperationalAdminLoads: React.FC = () => {
       const res = await operationalAdminApi.getLoads();
       const raw: any[] = Array.isArray(res) ? res : res?.loads ?? res?.data ?? res?.items ?? [];
       setLoads(raw);
-    } catch (error) {
-      toast.error('Failed to load operations loads');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
       setLoads([]);
     } finally {

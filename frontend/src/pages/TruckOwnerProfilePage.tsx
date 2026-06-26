@@ -38,6 +38,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { toast } from 'react-hot-toast';
+import { getApiErrorMessage } from '../config/errorMessages';
 import { cn } from '../utils/cn';
 import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 
@@ -187,9 +188,9 @@ const TruckOwnerProfilePage: React.FC = () => {
           currency: data.profile?.preferences?.currency || 'USD'
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile details');
+      toast.error(getApiErrorMessage(error));
     } finally {
       setTimeout(() => setLoading(false), 500); 
     }
@@ -224,7 +225,7 @@ const TruckOwnerProfilePage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Failed to upload avatar', error);
-      toast.error(error.response?.data?.message || 'Failed to upload avatar', { id: 'avatar_upload' });
+      toast.error(getApiErrorMessage(error), { id: 'avatar_upload' });
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -250,7 +251,7 @@ const TruckOwnerProfilePage: React.FC = () => {
       toast.success('Document uploaded successfully. It is now aligned with our Compliance team for review.', { id: 'kyc_upload' });
     } catch (error: any) {
       console.error('Failed to upload', error);
-      toast.error(error.response?.data?.message || 'Failed to upload document', { id: 'kyc_upload' });
+      toast.error(getApiErrorMessage(error), { id: 'kyc_upload' });
     } finally {
       setUploadingKyc(false);
       if (kycInputRef.current) kycInputRef.current.value = '';
@@ -283,9 +284,9 @@ const TruckOwnerProfilePage: React.FC = () => {
       
       await authAPI.updateProfile(updateData);
       toast.success('Profile updated successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }

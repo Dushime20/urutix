@@ -6,7 +6,7 @@ import { identifyUser, resetUser, captureEvent } from '../utils/posthog';
 import { authAPI } from '../services/api';
 import { getApiBaseUrl } from '../config/environment';
 import { useTranslation } from '../hooks/useTranslation';
-import { formatErrorForToast, getErrorTitle } from '../config/errorMessages';
+import { getApiErrorMessage } from '../config/errorMessages';
 
 // Debug helper
 const debugUserData = (userData: any, source: string) => {
@@ -398,14 +398,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error: any) {
       console.error('Login: Error occurred:', error);
       setIsLoading(false);
-      setIsLoggingIn(false); // Reset logging in flag
-      
-      // Use professional error messages
-      const errorMessage = formatErrorForToast(error);
-      const errorTitle = getErrorTitle(error);
-      
-      toast.error(`${errorTitle}: ${errorMessage}`);
-      throw error; // Re-throw so the caller can handle the specific error message
+      setIsLoggingIn(false);
+      toast.error(getApiErrorMessage(error));
+      throw error;
     }
   };
 
@@ -444,12 +439,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Select Role Error:', error);
       setIsLoading(false);
       setIsLoggingIn(false);
-      
-      // Use professional error messages
-      const errorMessage = formatErrorForToast(error);
-      const errorTitle = getErrorTitle(error);
-      
-      toast.error(`${errorTitle}: ${errorMessage}`);
+      toast.error(getApiErrorMessage(error));
       return null;
     }
   };
@@ -490,19 +480,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const message = response.data?.message || (registeredUser.status === 'ACTIVE'
         ? tSync('Registration successful!')
         : tSync('Registration successful! Please check your email to verify your account.'));
-  
       toast.success(message);
       return registeredUser;
     } catch (error: any) {
       console.error('Register: Error occurred:', error);
       setIsLoading(false);
-      setIsLoggingIn(false); // Reset logging in flag
-      
-      // Use professional error messages
-      const errorMessage = formatErrorForToast(error);
-      const errorTitle = getErrorTitle(error);
-      
-      toast.error(`${errorTitle}: ${errorMessage}`);
+      setIsLoggingIn(false);
+      toast.error(getApiErrorMessage(error));
       return null;
     }
   };
@@ -554,8 +538,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return true;
     } catch (error: any) {
       console.error('Profile update error:', error);
-      const errorMessage = error.response?.data?.message || tSync('Failed to update profile');
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error));
       return false;
     }
   };

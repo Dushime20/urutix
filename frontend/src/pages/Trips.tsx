@@ -5,6 +5,7 @@ import { tripsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { getApiErrorMessage } from '../config/errorMessages';
 
 const Trips = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
@@ -24,7 +25,7 @@ const Trips = () => {
       toast.success('Trip status updated successfully');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update trip status');
+      toast.error(getApiErrorMessage(error));
     },
   });
 

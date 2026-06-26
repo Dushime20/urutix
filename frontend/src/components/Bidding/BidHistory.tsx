@@ -67,17 +67,19 @@ interface Bid {
 
 interface BidHistoryProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
+  initialStatusFilter?: string;
 }
 
-const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
-  const { compactIn: fmtBid } = useCurrencyFormat();
+const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }) => {
+  const { compactIn: fmtBid, format: fmtFull } = useCurrencyFormat();
+  const formatCurrency = (amount: number, _currency?: string) => fmtFull(amount);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [filters, setFilters] = useState({
-    status: 'all',
+    status: initialStatusFilter ?? 'all',
     dateRange: 'all',
     minAmount: '',
     maxAmount: '',
@@ -231,8 +233,6 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole }) => {
   );
 
 
-
-  // formatCurrency provided by useCurrencyFormat hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

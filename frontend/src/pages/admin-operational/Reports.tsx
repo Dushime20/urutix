@@ -4,7 +4,7 @@ import OperationalPageLayout from '../../components/Admin/OperationalPageLayout'
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminReports: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -45,8 +45,8 @@ const OperationalAdminReports: React.FC = () => {
       link.parentNode?.removeChild(link);
       
       toast.success('Report downloaded successfully', { id: 'report-toast' });
-    } catch (error) {
-      toast.error('Failed to generate report', { id: 'report-toast' });
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error), { id: 'report-toast' });
       console.error(error);
     } finally {
       setLoading(false);

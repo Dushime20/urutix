@@ -23,6 +23,7 @@ import { CargoHealthModal } from './CargoHealthModal';
 import { driverApi } from '../../services/driverApi';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../config/errorMessages';
 
 interface CargoItem {
   id: string;
@@ -173,7 +174,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
         setCargos(mappedCargos);
       } catch (error: any) {
         console.error('Error fetching assigned loads:', error);
-        toast.error('Failed to load assigned cargo');
+        toast.error(getApiErrorMessage(error));
       } finally {
         setLoading(false);
       }
@@ -243,7 +244,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       setSelectedCargo(null);
     } catch (error: any) {
       console.error('Error saving inspection:', error);
-      toast.error('Failed to save inspection status');
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -273,7 +274,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       setSelectedCargo(null);
     } catch (error: any) {
       console.error('Error completing delivery:', error);
-      toast.error('Failed to finalize delivery', { id: 'pod-upload' });
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -308,7 +309,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       setSelectedCargo(null);
     } catch (error: any) {
       console.error('Error accepting cargo:', error);
-      toast.error(error.response?.data?.message || 'Failed to accept and load cargo');
+      toast.error(getApiErrorMessage(error));
     }
   };
 

@@ -26,6 +26,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { CreditService } from '../../services/credit.service';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { TrackingModule } from '../tracking/tracking.module';
+import { AvailabilityModule } from '../availability/availability.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TrackingModule } from '../tracking/tracking.module';
     NotificationsModule,
     EnhancedAuthModule,
     TrackingModule,
+    AvailabilityModule,
   ],
   providers: [TripsService, CreditService, EpodService, TripCompletionService],
   controllers: [TripsController, EpodController],

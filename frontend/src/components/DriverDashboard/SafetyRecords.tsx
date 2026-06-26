@@ -21,7 +21,7 @@ import { cn } from '../../utils/cn';
 import { IncidentDetailModal } from './IncidentDetailModal';
 import { IncidentReportModal } from './IncidentReportModal';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 interface SafetyRecordsProps {
   driverId: string;
   onReportIncident?: () => void;
@@ -231,22 +231,21 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
       await safetyApi.deleteIncident(incidentId);
       toast.success('Incident deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['driver-incidents', driverId] });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting incident:', error);
-      toast.error('Failed to delete incident');
+      toast.error(getApiErrorMessage(error));
     }
   };
 
   // Break handlers
   const handleRevertBreak = async (breakId: string) => {
     try {
-      // Call API to delete/revert the break
       await driverApi.deleteBreak(driverId, breakId);
       toast.success('Break reverted successfully');
       queryClient.invalidateQueries({ queryKey: ['driver-breaks', driverId] });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error reverting break:', error);
-      toast.error('Failed to revert break');
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -256,9 +255,9 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
       toast.success('Break started successfully');
       queryClient.invalidateQueries({ queryKey: ['driver-breaks', driverId] });
       queryClient.invalidateQueries({ queryKey: ['driver-details', driverId] });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting break:', error);
-      toast.error('Failed to start break');
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -268,9 +267,9 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
       toast.success('Break ended successfully');
       queryClient.invalidateQueries({ queryKey: ['driver-breaks', driverId] });
       queryClient.invalidateQueries({ queryKey: ['driver-details', driverId] });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error ending break:', error);
-      toast.error('Failed to end break');
+      toast.error(getApiErrorMessage(error));
     }
   };
 

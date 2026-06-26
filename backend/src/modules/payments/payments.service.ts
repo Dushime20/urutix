@@ -453,7 +453,7 @@ export class PaymentsService {
   }
 
   /**
-   * Handle advance payment completion: Update trip status to IN_PROGRESS and truck status to IN_TRANSIT
+   * Handle advance payment completion — trip stays PLANNED, waiting for driver to start.
    */
   private async handleAdvancePaymentCompletion(
     tripId: string,
@@ -464,10 +464,8 @@ export class PaymentsService {
         `Handling advance payment completion for trip ${tripId}`,
       );
 
-      // Find the trip
       const trip = await this.tripRepository.findOne({
         where: { id: tripId, tenantId },
-        relations: ['truck'],
       });
 
       if (!trip) {
@@ -475,15 +473,13 @@ export class PaymentsService {
         return;
       }
 
-      // Only update if trip is still in PLANNED status
-      if (trip.status !== TripStatus.PLANNED) {
-        this.logger.log(
-          `Trip ${tripId} is already in status ${trip.status}, skipping status update`,
-        );
-        return;
-      }
+      // Trip stays PLANNED — only the driver starting the trip
+      // (POST /trips/:id/start) should move it to IN_PROGRESS.
+      this.logger.log(
+        `Trip ${tripId} advance payment confirmed. Trip remains PLANNED until driver starts it.`,
+      );
 
-      // Find the advance payment that triggered this
+      // Find the advance payment for audit logging
       const advancePayment = await this.paymentRepository.findOne({
         where: {
           tripId,
@@ -494,52 +490,11 @@ export class PaymentsService {
         order: { processedAt: 'DESC' },
       });
 
-      // Update trip status to IN_PROGRESS via TripsService so credit deduction is triggered
-      if (this.tripsService) {
-        await this.tripsService.updateTripStatus(
-          tripId,
-          { status: TripStatus.IN_PROGRESS, actualStartTime: new Date() },
-          tenantId,
-        );
-      } else {
-        // Fallback: direct save (credit deduction will not fire in this path)
-        trip.status = TripStatus.IN_PROGRESS;
-        trip.actualStartTime = new Date();
-        await this.tripRepository.save(trip);
-      }
-
-      this.logger.log(
-        `Trip ${tripId} status updated to IN_PROGRESS`,
-      );
-
-      // Update truck status to IN_TRANSIT and set currentTripId
-      if (trip.truckId) {
-        const truck = await this.truckRepository.findOne({
-          where: { id: trip.truckId, tenantId },
-        });
-
-        if (truck) {
-          truck.status = VehicleStatus.IN_TRANSIT;
-          truck.currentTripId = tripId;
-          truck.estimatedAvailableTime = trip.plannedEndTime || trip.estimatedEndTime;
-          await this.truckRepository.save(truck);
-
-          this.logger.log(
-            `Truck ${truck.id} status updated to IN_TRANSIT and assigned to trip ${tripId}`,
-          );
-        } else {
-          this.logger.warn(
-            `Truck ${trip.truckId} not found for trip ${tripId}`,
-          );
-        }
-      }
-
-      // Log audit event if payment is found
       if (advancePayment) {
         await this.auditService.log('ADVANCE_PAYMENT_COMPLETED', advancePayment, {
           tripId,
           truckId: trip.truckId,
-          description: 'Trip started, truck in transit',
+          description: 'Advance payment completed. Trip ready — awaiting driver start.',
         });
       }
     } catch (error) {
@@ -547,7 +502,6 @@ export class PaymentsService {
         `Error handling advance payment completion for trip ${tripId}:`,
         error,
       );
-      // Don't throw - payment is already saved, this is a side effect
     }
   }
 

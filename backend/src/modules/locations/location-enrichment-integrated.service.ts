@@ -199,15 +199,15 @@ export class LocationEnrichmentIntegratedService {
         sequence: location.sequence,
         locationData: {
           name: location.locationData.name,
-          address: geocodingData.address,
+          address: geocodingData?.address || location.locationData.address || null,
           coordinates: coordinates,
-          city: geocodingData.city,
-          state: geocodingData.state,
-          country: geocodingData.country,
+          city: geocodingData?.city || location.locationData.city || null,
+          state: geocodingData?.state || location.locationData.state || null,
+          country: geocodingData?.country || location.locationData.country || null,
           locationCategory: locationIntelligence.locationCategory,
           locationSubCategory: locationIntelligence.locationSubCategory,
           businessHours: locationIntelligence.businessHours,
-          timezone: geocodingData.timezone,
+          timezone: geocodingData?.timezone || null,
           accessType: locationIntelligence.accessType,
           parkingAvailable: locationIntelligence.parkingAvailable,
           securityLevel: locationIntelligence.securityLevel,
@@ -219,11 +219,11 @@ export class LocationEnrichmentIntegratedService {
           trafficPattern: locationIntelligence.trafficPattern,
           bestAccessTime: locationIntelligence.bestAccessTime,
           restrictions: locationIntelligence.restrictions,
-          fullAddress: geocodingData.address,
+          fullAddress: geocodingData?.address || location.locationData.address || null,
           category: locationIntelligence.locationCategory,
           fuelStationsNearby: locationIntelligence.fuelStationsNearby,
           restAreasNearby: locationIntelligence.restAreasNearby,
-          administrativeAreas: geocodingData.administrativeAreas,
+          administrativeAreas: geocodingData?.administrativeAreas || null,
           nearbyPOIs: this.convertPOIDataToEnrichedFormat(poiData),
         },
         scheduledDate: location.scheduledDate,
@@ -365,7 +365,7 @@ export class LocationEnrichmentIntegratedService {
   private generateLocationIntelligence(
     coordinates: { latitude: number; longitude: number },
     locationType: 'PICKUP' | 'DELIVERY' | 'STOP' | 'REFUEL' | 'REST',
-    geocodingData: GeocodingResult,
+    geocodingData: GeocodingResult | null,
   ) {
     const lat = coordinates.latitude;
     const lng = coordinates.longitude;

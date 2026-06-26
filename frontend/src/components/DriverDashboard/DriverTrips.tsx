@@ -3,6 +3,7 @@ import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { driverApi, type Trip } from '../../services/driverApi';
+import { getApiErrorMessage } from '../../config/errorMessages';
 import {
   X,
   Play,
@@ -114,7 +115,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
       queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] });
       toast.success('Trip started successfully');
     },
-    onError: () => toast.error('Failed to start trip'),
+    onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
 
   const pauseTripMutation = useMutation({
@@ -123,7 +124,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       toast.success('Trip paused');
     },
-    onError: () => toast.error('Failed to pause trip'),
+    onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
 
   const resumeTripMutation = useMutation({
@@ -132,7 +133,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       toast.success('Trip resumed');
     },
-    onError: () => toast.error('Failed to resume trip'),
+    onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
 
   const completeTripMutation = useMutation({
@@ -142,7 +143,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
       queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
       toast.success('Trip completed successfully');
     },
-    onError: () => toast.error('Failed to complete trip'),
+    onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
 
   // Stats

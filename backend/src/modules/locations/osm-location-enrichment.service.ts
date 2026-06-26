@@ -134,6 +134,9 @@ interface LoadLocation {
     operatingHours?: any;
     accessInstructions?: string;
     specialInstructions?: string;
+    city?: string;
+    state?: string;
+    country?: string;
     requirements?: {
       requiresCrane?: boolean;
       hazmatCertified?: boolean;
@@ -235,15 +238,15 @@ export class OSMLocationEnrichmentService {
         sequence: location.sequence,
         locationData: {
           name: this.generateLocationName(location.type, coordinates),
-          address: geocodingData.address,
+          address: geocodingData?.address || location.locationData.address || null,
           coordinates,
-          city: geocodingData.city,
-          state: geocodingData.state,
-          country: geocodingData.country,
+          city: geocodingData?.city || location.locationData.city || null,
+          state: geocodingData?.state || location.locationData.state || null,
+          country: geocodingData?.country || location.locationData.country || null,
           locationCategory: locationIntelligence.category,
           locationSubCategory: locationIntelligence.subCategory,
           businessHours: locationIntelligence.businessHours,
-          timezone: geocodingData.timezone,
+          timezone: geocodingData?.timezone || null,
           accessType: locationIntelligence.accessType,
           parkingAvailable: locationIntelligence.parkingAvailable,
           securityLevel: locationIntelligence.securityLevel,
@@ -255,11 +258,11 @@ export class OSMLocationEnrichmentService {
           trafficPattern: locationIntelligence.trafficPattern,
           bestAccessTime: locationIntelligence.bestAccessTime,
           restrictions: locationIntelligence.restrictions,
-          fullAddress: geocodingData.address,
+          fullAddress: geocodingData?.address || location.locationData.address || null,
           category: locationIntelligence.category,
           fuelStationsNearby: locationIntelligence.fuelStationsNearby,
           restAreasNearby: locationIntelligence.restAreasNearby,
-          administrativeAreas: geocodingData.administrativeAreas,
+          administrativeAreas: geocodingData?.administrativeAreas || null,
           nearbyPOIs: this.convertOSMPOIDataToEnrichedFormat(poiData),
         },
         scheduledDate: new Date(
@@ -915,10 +918,10 @@ export class OSMLocationEnrichmentService {
 
       const suggestions = [];
 
-      // Add the main location
+      // Add the main location (only include address if geocoding succeeded)
       suggestions.push({
         name: `${locationType} Location`,
-        address: geocodingResult.address,
+        address: geocodingResult?.address || null,
         coordinates: coordinates,
       });
 
@@ -927,7 +930,8 @@ export class OSMLocationEnrichmentService {
         suggestions.push({
           name: landmark.name,
           address:
-            landmark.address || `${landmark.name}, ${geocodingResult.city}`,
+            landmark.address ||
+            (geocodingResult?.city ? `${landmark.name}, ${geocodingResult.city}` : landmark.name),
           coordinates: landmark.coordinates,
         });
       });
@@ -936,7 +940,8 @@ export class OSMLocationEnrichmentService {
       poiResult.transportHubs.slice(0, 3).forEach((hub) => {
         suggestions.push({
           name: hub.name,
-          address: hub.address || `${hub.name}, ${geocodingResult.city}`,
+          address: hub.address ||
+            (geocodingResult?.city ? `${hub.name}, ${geocodingResult.city}` : hub.name),
           coordinates: hub.coordinates,
         });
       });

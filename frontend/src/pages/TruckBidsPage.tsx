@@ -608,20 +608,13 @@ const TruckBidsPage: React.FC = () => {
 												</div>
 											</div>
 
-											<div className="grid grid-cols-2 gap-4">
-												<button
-													onClick={() => openQuickBidModal(a)}
-													className="py-5 bg-[#8b919d] text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-500 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
-												>
-													QUICK BID
-												</button>
-												<button
-													onClick={() => openBidModal(a)}
-													className="py-5 bg-white border-2 border-slate-50 text-[#8b919d] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95"
-												>
-													CUSTOM BID
-												</button>
-											</div>
+											<button
+											onClick={() => openBidModal(a)}
+											disabled={a.status !== 'ACTIVE'}
+											className="w-full py-5 bg-white border-2 border-slate-50 text-[#8b919d] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+										>
+											CUSTOM BID
+										</button>
 										</div>
 									</div>
 								);

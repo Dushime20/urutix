@@ -61,7 +61,7 @@ export class RealLocationApiService {
   async getGeocodingData(coordinates: {
     latitude: number;
     longitude: number;
-  }): Promise<GeocodingResult> {
+  }): Promise<GeocodingResult | null> {
     const cacheKey = `geocoding_${coordinates.latitude}_${coordinates.longitude}`;
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
@@ -81,15 +81,11 @@ export class RealLocationApiService {
         return osmResult;
       }
 
-      // Final fallback to coordinate-based generation
-      const fallbackResult = this.generateFallbackGeocodingData(coordinates);
-      this.setCache(cacheKey, fallbackResult);
-      return fallbackResult;
+      // All real geocoding sources failed — return null, do not synthesize data
+      return null;
     } catch (error) {
       this.logger.error('Error getting geocoding data:', error);
-      const fallbackResult = this.generateFallbackGeocodingData(coordinates);
-      this.setCache(cacheKey, fallbackResult);
-      return fallbackResult;
+      return null;
     }
   }
 

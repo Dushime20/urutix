@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 
 import toast from 'react-hot-toast';
-import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import { getApiErrorMessage } from '../config/errorMessages';import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ModernLoader from '../components/common/ModernLoader';
 import type { Cargo } from '../types/cargo';
 import StatCard from '../components/EnliteUI/Cards/StatCard';
@@ -230,7 +230,7 @@ const FleetBidsPage: React.FC = () => {
       setBids(transformedBids);
     } catch (error: any) {
       console.error('❌ Error loading bids:', error);
-      toast.error('Failed to load cargo bids');
+      toast.error(getApiErrorMessage(error));
       setBids([]);
     } finally {
       setLoading(false);
@@ -268,7 +268,7 @@ const FleetBidsPage: React.FC = () => {
       setSelectedBid(null);
     } catch (error: any) {
       console.error('Error accepting bid:', error);
-      toast.error('Failed to accept bid');
+      toast.error(getApiErrorMessage(error));
     } finally {
       setProcessingAction(null);
     }
@@ -301,7 +301,7 @@ const FleetBidsPage: React.FC = () => {
       setSelectedBid(null);
     } catch (error: any) {
       console.error('Error rejecting bid:', error);
-      toast.error('Failed to reject bid');
+      toast.error(getApiErrorMessage(error));
     } finally {
       setProcessingAction(null);
     }

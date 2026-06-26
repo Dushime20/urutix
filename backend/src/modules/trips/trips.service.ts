@@ -4,7 +4,8 @@ import { Repository, Brackets, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
-import { Truck } from '../../entities/truck.entity';
+import { Truck, VehicleStatus } from '../../entities/truck.entity';
+import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { User } from '../../entities/user.entity';
 import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
@@ -20,6 +21,7 @@ import { EmailService } from '../auth/services/email.service';
 import { EmergencyRematchService } from '../matching/services/emergency-rematch.service';
 import { TripLocation } from '../tracking/entities/trip-location.entity';
 import { TrackingGateway } from '../tracking/tracking.gateway';
+import { AvailabilityService } from '../availability/availability.service';
 
 @Injectable()
 export class TripsService {
@@ -32,6 +34,8 @@ export class TripsService {
     private readonly loadRepository: Repository<Load>,
     @InjectRepository(Truck)
     private readonly truckRepository: Repository<Truck>,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(TenantSubscription)
@@ -46,16 +50,45 @@ export class TripsService {
     @Optional() @InjectRepository(TripLocation)
     private readonly tripLocationRepository?: Repository<TripLocation>,
     @Optional() private readonly trackingGateway?: TrackingGateway,
+    @Optional() private readonly availabilityService?: AvailabilityService,
   ) { }
 
   async create(createTripDto: CreateTripDto, tenantId: string): Promise<Trip> {
+    // ── Scheduling conflict check ─────────────────────────────────────────────
+    if (this.availabilityService && createTripDto.plannedStartTime && createTripDto.plannedEndTime) {
+      await this.availabilityService.assertNoConflict({
+        truckId:          createTripDto.truckId,
+        driverId:         createTripDto.driverId,
+        pickupDateTime:   new Date(createTripDto.plannedStartTime),
+        deliveryDateTime: new Date(createTripDto.plannedEndTime),
+        tenantId,
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const trip = this.tripRepository.create({
       ...createTripDto,
       tenantId,
       tripNumber: `TRIP-${Date.now()}`,
     });
 
-    return this.tripRepository.save(trip);
+    const savedTrip = await this.tripRepository.save(trip);
+
+    // ── Create reservation ────────────────────────────────────────────────────
+    if (this.availabilityService && savedTrip.plannedStartTime && savedTrip.plannedEndTime) {
+      this.availabilityService.createReservation(
+        tenantId,
+        savedTrip.id,
+        savedTrip.loadId,
+        savedTrip.truckId,
+        savedTrip.driverId || null,
+        new Date(savedTrip.plannedStartTime),
+        new Date(savedTrip.plannedEndTime),
+      ).catch(err => this.logger.error(`Failed to create reservation for trip ${savedTrip.id}: ${err.message}`));
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    return savedTrip;
   }
 
   async findAll(
@@ -226,6 +259,11 @@ export class TripsService {
 
     // Send notification if status changed to IN_PROGRESS (Loaded)
     if (updateTripStatusDto.status === TripStatus.IN_PROGRESS && oldStatus !== TripStatus.IN_PROGRESS) {
+      // Update truck → IN_TRANSIT and driver → IN_TRANSIT (fire-and-forget)
+      this.updateTruckAndDriverOnStart(savedTrip).catch(err =>
+        this.logger.error(`Failed to update truck/driver status on trip start: ${err.message}`, err.stack)
+      );
+
       // Emit event for notification system
       this.emitTripStartedEvent(savedTrip).catch(err => 
         this.logger.error(`Failed to emit trip.started event: ${err.message}`, err.stack)
@@ -237,6 +275,15 @@ export class TripsService {
 
     // Send notification if status changed to COMPLETED
     if (updateTripStatusDto.status === TripStatus.COMPLETED && oldStatus !== TripStatus.COMPLETED) {
+      // Revert truck → AVAILABLE and driver → ACTIVE
+      this.updateTruckAndDriverOnEnd(savedTrip).catch(err =>
+        this.logger.error(`Failed to update truck/driver status on trip complete: ${err.message}`, err.stack)
+      );
+      // Release scheduling reservation
+      this.availabilityService?.releaseReservation(savedTrip.id, 'Trip completed').catch(err =>
+        this.logger.error(`Failed to release reservation on complete: ${err.message}`)
+      );
+
       // Emit event — TripNotificationListener and CargoNotificationListener handle all recipients
       this.emitTripCompletedEvent(savedTrip).catch(err =>
         this.logger.error(`Failed to emit trip.completed event: ${err.message}`, err.stack)
@@ -249,6 +296,14 @@ export class TripsService {
       [TripStatus.PLANNED, TripStatus.IN_PROGRESS].includes(oldStatus) &&
       this.emergencyRematchService
     ) {
+      // Revert truck → AVAILABLE and driver → ACTIVE on cancellation
+      this.updateTruckAndDriverOnEnd(savedTrip).catch(err =>
+        this.logger.error(`Failed to revert truck/driver status on cancel: ${err.message}`, err.stack)
+      );
+      // Release scheduling reservation immediately
+      this.availabilityService?.releaseReservation(savedTrip.id, 'Trip cancelled').catch(err =>
+        this.logger.error(`Failed to release reservation on cancel: ${err.message}`)
+      );
       this.logger.warn(`Post-acceptance cancellation detected for trip ${savedTrip.id} — triggering emergency rematch`);
       this.emergencyRematchService.triggerEmergencyRematch(savedTrip.id).catch(err =>
         this.logger.error(`Emergency rematch failed for trip ${savedTrip.id}: ${err.message}`)
@@ -265,6 +320,52 @@ export class TripsService {
     }
 
     return savedTrip;
+  }
+
+  /**
+   * When driver starts a trip: set truck → IN_TRANSIT, driver → IN_TRANSIT.
+   */
+  private async updateTruckAndDriverOnStart(trip: Trip): Promise<void> {
+    if (trip.truckId) {
+      const truck = await this.truckRepository.findOne({ where: { id: trip.truckId } });
+      if (truck) {
+        truck.status = VehicleStatus.IN_TRANSIT;
+        truck.currentTripId = trip.id;
+        await this.truckRepository.save(truck);
+        this.logger.log(`[TripsService] Truck ${truck.id} → IN_TRANSIT for trip ${trip.id}`);
+      }
+    }
+    if (trip.driverId) {
+      const driver = await this.driverRepository.findOne({ where: { id: trip.driverId } });
+      if (driver) {
+        driver.status = DriverStatus.IN_TRANSIT;
+        await this.driverRepository.save(driver);
+        this.logger.log(`[TripsService] Driver ${driver.id} → IN_TRANSIT for trip ${trip.id}`);
+      }
+    }
+  }
+
+  /**
+   * When a trip ends (COMPLETED or CANCELLED): set truck → AVAILABLE, driver → ACTIVE.
+   */
+  private async updateTruckAndDriverOnEnd(trip: Trip): Promise<void> {
+    if (trip.truckId) {
+      const truck = await this.truckRepository.findOne({ where: { id: trip.truckId } });
+      if (truck) {
+        truck.status = VehicleStatus.AVAILABLE;
+        truck.currentTripId = null;
+        await this.truckRepository.save(truck);
+        this.logger.log(`[TripsService] Truck ${truck.id} → AVAILABLE after trip ${trip.id}`);
+      }
+    }
+    if (trip.driverId) {
+      const driver = await this.driverRepository.findOne({ where: { id: trip.driverId } });
+      if (driver) {
+        driver.status = DriverStatus.ACTIVE;
+        await this.driverRepository.save(driver);
+        this.logger.log(`[TripsService] Driver ${driver.id} → ACTIVE after trip ${trip.id}`);
+      }
+    }
   }
 
   /**

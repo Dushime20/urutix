@@ -6,7 +6,7 @@ import type { TenantActivity } from '../../services/tenantApi';
 import ModernLoader from '../../components/common/ModernLoader';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminActivityLogs: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -30,8 +30,8 @@ const OperationalAdminActivityLogs: React.FC = () => {
         ? res
         : res?.logs ?? res?.data ?? res?.activities ?? res?.items ?? [];
       setActivities(raw);
-    } catch (error) {
-      toast.error('Failed to load activity logs');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
       setActivities([]);
     } finally {

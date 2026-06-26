@@ -139,54 +139,20 @@ export const ERROR_MESSAGES = {
 
 // Helper function to get appropriate error message
 export const getErrorMessage = (error: any): { title: string; message: string; action: string } => {
-  // Network errors
+  // Network errors (no response at all)
   if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
     return ERROR_MESSAGES.NETWORK_ERROR;
   }
-  
   if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
     return ERROR_MESSAGES.TIMEOUT_ERROR;
   }
 
-  // HTTP status codes
+  // HTTP errors — always prefer the backend message
   if (error.response) {
     const status = error.response.status;
-    
     switch (status) {
       case 0:
         return ERROR_MESSAGES.SERVER_NOT_RESPONDING;
-      case 400:
-        // Check for specific validation errors
-        if (error.response.data?.message?.includes('password')) {
-          return ERROR_MESSAGES.WEAK_PASSWORD;
-        }
-        if (error.response.data?.message?.includes('email')) {
-          return ERROR_MESSAGES.INVALID_EMAIL_FORMAT;
-        }
-        return ERROR_MESSAGES.VALIDATION_ERROR;
-      case 401:
-        if (error.response.data?.message?.includes('expired')) {
-          return ERROR_MESSAGES.SESSION_EXPIRED;
-        }
-        if (error.response.data?.message?.includes('credentials')) {
-          return ERROR_MESSAGES.INVALID_CREDENTIALS;
-        }
-        if (error.response.data?.message?.includes('locked')) {
-          return ERROR_MESSAGES.ACCOUNT_LOCKED;
-        }
-        if (error.response.data?.message?.includes('verified')) {
-          return ERROR_MESSAGES.EMAIL_NOT_VERIFIED;
-        }
-        return ERROR_MESSAGES.UNAUTHORIZED;
-      case 403:
-        return ERROR_MESSAGES.FORBIDDEN;
-      case 404:
-        return ERROR_MESSAGES.NOT_FOUND;
-      case 409:
-        if (error.response.data?.message?.includes('email')) {
-          return ERROR_MESSAGES.EMAIL_ALREADY_EXISTS;
-        }
-        return ERROR_MESSAGES.VALIDATION_ERROR;
       case 429:
         return ERROR_MESSAGES.TOO_MANY_REQUESTS;
       case 500:
@@ -202,32 +168,42 @@ export const getErrorMessage = (error: any): { title: string; message: string; a
     }
   }
 
-  // Check for specific error messages from backend
-  if (error.response?.data?.message) {
-    const backendMessage = error.response.data.message.toLowerCase();
-    
-    if (backendMessage.includes('password')) {
-      return ERROR_MESSAGES.WEAK_PASSWORD;
-    }
-    if (backendMessage.includes('email') && backendMessage.includes('exists')) {
-      return ERROR_MESSAGES.EMAIL_ALREADY_EXISTS;
-    }
-    if (backendMessage.includes('credentials') || backendMessage.includes('invalid')) {
-      return ERROR_MESSAGES.INVALID_CREDENTIALS;
-    }
-  }
-
-  // Fallback to generic error
   return ERROR_MESSAGES.GENERIC_ERROR;
 };
 
-// Helper function to format error message for toast notifications
-export const formatErrorForToast = (error: any): string => {
-  const errorInfo = getErrorMessage(error);
-  return `${errorInfo.message} ${errorInfo.action}`;
+/**
+ * Primary utility — always returns the backend API message when available.
+ * Only falls back to a generic description for network/infrastructure errors
+ * that have no meaningful server response (e.g. no internet, timeout, 5xx).
+ */
+export const getApiErrorMessage = (error: any): string => {
+  // Backend sent a message — use it verbatim
+  const apiMessage = error?.response?.data?.message;
+  if (apiMessage) {
+    return Array.isArray(apiMessage) ? apiMessage.join(', ') : String(apiMessage);
+  }
+
+  // No response (network / infrastructure failures) — use generic
+  if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+    return ERROR_MESSAGES.NETWORK_ERROR.message;
+  }
+  if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    return ERROR_MESSAGES.TIMEOUT_ERROR.message;
+  }
+  if (error.response?.status === 500) return ERROR_MESSAGES.INTERNAL_SERVER_ERROR.message;
+  if (error.response?.status === 502) return ERROR_MESSAGES.BAD_GATEWAY.message;
+  if (error.response?.status === 503) return ERROR_MESSAGES.SERVICE_UNAVAILABLE.message;
+  if (error.response?.status === 504) return ERROR_MESSAGES.TIMEOUT_ERROR.message;
+
+  return ERROR_MESSAGES.GENERIC_ERROR.message;
 };
 
-// Helper function to get error title
+// Kept for backward compatibility — delegates to getApiErrorMessage
+export const formatErrorForToast = (error: any): string => getApiErrorMessage(error);
+
+// Kept for backward compatibility
 export const getErrorTitle = (error: any): string => {
+  const apiMessage = error?.response?.data?.message;
+  if (apiMessage) return '';          // no separate title needed when message comes from API
   return getErrorMessage(error).title;
 };

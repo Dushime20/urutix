@@ -7,7 +7,7 @@ import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminMonitoring: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -37,8 +37,8 @@ const OperationalAdminMonitoring: React.FC = () => {
       setActiveTrips(tenantTrips.filter((t: any) => ['IN_PROGRESS', 'DELAYED'].includes(t.status)));
       const routes = healthData?.activeRoutes ?? healthData?.routes ?? [];
       setRoutePerformance(Array.isArray(routes) ? routes : []);
-    } catch (error) {
-      toast.error('Failed to load live monitoring data');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
       setActiveTrips([]);
       setRoutePerformance([]);

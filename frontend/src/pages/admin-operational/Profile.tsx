@@ -9,7 +9,7 @@ import OperationalPageLayout from '../../components/Admin/OperationalPageLayout'
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 /* ── types ───────────────────────────────────────────────────────── */
 type Tab = 'info' | 'password';
 
@@ -134,8 +134,8 @@ const OperationalAdminProfile: React.FC = () => {
       setSaving(true);
       const ok = await updateProfile(form);
       if (ok) { setEditing(false); }
-    } catch {
-      toast.error('Something went wrong');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -166,7 +166,7 @@ const OperationalAdminProfile: React.FC = () => {
       toast.success('Password changed successfully');
       setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to change password');
+      toast.error(getApiErrorMessage(err));
     } finally {
       setPwSaving(false);
     }

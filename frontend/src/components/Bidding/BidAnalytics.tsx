@@ -104,17 +104,17 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
 
 
 
-  const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
-    const displayValue = Array.isArray(value) ? value.length : value;
-    return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
-  };
-
   const formatCurrency = (amount: number) => fmtFull(amount);
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}H ${mins}M` : `${mins}M`;
+  };
+
+  const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
+    const displayValue = Array.isArray(value) ? value.length : value;
+    return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
   };
 
   if (loading) {

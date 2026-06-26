@@ -182,7 +182,7 @@ function Hero() {
         style={{ background: "linear-gradient(to right, #0D3D4A 0%, transparent 60%)" }}
       />
 
-      <div className="relative z-10 max-w-full px-0 pt-8 lg:pt-20 pb-32">
+      <div className="relative z-10 max-w-full px-0 pt-8 lg:pt-12 pb-32">
         {/* Centered text */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -196,7 +196,7 @@ function Hero() {
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
             <TranslatedText text="UrutiX Smart Logistics Platform" />
           </h1>
-          <p className="text-white/60 text-xl leading-relaxed mb-8 max-w-lg mx-auto">
+          <p className="text-white/60 text-sm leading-relaxed mb-8 max-w-lg mx-auto">
             <TranslatedText text="UrutiX is a multi-tenant logistics and embedded-finance platform that turns Africa's fragmented road-freight market into a single, financeable, data-rich digital network. It connects cargo owners, truck owners, drivers, brokers, fleet operators, lenders, fuel suppliers, and insurers in one ecosystem — and lets any logistics organization launch its own branded marketplace on a shared core." />
           </p>
           <div className="flex items-center justify-center gap-4">

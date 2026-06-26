@@ -7,7 +7,7 @@ import { fleetApi } from '../services/fleetApi';
 import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { cn } from '../utils/cn';
+import { getApiErrorMessage } from '../config/errorMessages';import { cn } from '../utils/cn';
 import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
 import ModernLoader from '../components/common/ModernLoader';
 
@@ -74,7 +74,7 @@ const UnifiedFleetManagement: React.FC = () => {
       console.error('Error loading active trips:', error);
       // Only show error toast if it's not a 404 (endpoint might not exist)
       if (error?.response?.status !== 404) {
-        toast.error('Failed to load active trips');
+        toast.error(getApiErrorMessage(error));
       }
       setActiveTrips([]);
     } finally {
@@ -160,7 +160,7 @@ const UnifiedFleetManagement: React.FC = () => {
       setActiveTab('my-trucks');
     } catch (error: any) {
       console.error('Error saving truck:', error);
-      toast.error(error?.response?.data?.message || 'Failed to save truck');
+      toast.error(getApiErrorMessage(error));
       throw error;
     }
   };

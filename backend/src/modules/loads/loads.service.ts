@@ -426,11 +426,12 @@ export class LoadsService {
                 const enriched = await this.locationEnrichmentService.enrichLocation(tempLoc as any);
 
                 if (enriched && enriched.locationData) {
-                  data.city = enriched.locationData.city;
-                  data.country = enriched.locationData.country;
-                  data.state = enriched.locationData.state;
+                  // Only update if geocoding returned real values (not null)
+                  if (enriched.locationData.city) data.city = enriched.locationData.city;
+                  if (enriched.locationData.country) data.country = enriched.locationData.country;
+                  if (enriched.locationData.state) data.state = enriched.locationData.state;
                   // Only update address if it was empty/generic, otherwise keep user input
-                  if (!data.address || data.address.startsWith('Lat:')) {
+                  if ((!data.address || data.address.startsWith('Lat:')) && enriched.locationData.address) {
                     data.address = enriched.locationData.address;
                   }
                   this.logger.log(`Resolved location to: ${data.city}, ${data.country}`);

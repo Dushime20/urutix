@@ -6,7 +6,7 @@ import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminAnalytics: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -26,8 +26,8 @@ const OperationalAdminAnalytics: React.FC = () => {
       setLoading(true);
       const data = await operationalAdminApi.getAnalyticsOverview();
       setMetrics(data);
-    } catch (error) {
-      toast.error('Failed to load operational analytics');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
     } finally {
       setLoading(false);

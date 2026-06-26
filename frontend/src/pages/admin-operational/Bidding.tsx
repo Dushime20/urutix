@@ -7,7 +7,7 @@ import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminBidding: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -41,8 +41,8 @@ const OperationalAdminBidding: React.FC = () => {
         accepted: statsRes?.accepted ?? 0,
         rejected: statsRes?.rejected ?? 0,
       });
-    } catch (error) {
-      toast.error('Failed to load bids for this tenant');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
       setBids([]);
     } finally {

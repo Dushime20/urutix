@@ -22,6 +22,7 @@ import {
   DisputeResolutionRecord,
   DisputeAuditLog,
 } from './../entities/dispute-v2.entity';
+import { ShipmentReservation } from './../entities/shipment-reservation.entity';
 import { AuditLog } from './../entities/audit-log.entity';
 import { TripLocation } from './../modules/tracking/entities/trip-location.entity';
 import { Geofence } from './../modules/tracking/entities/geofence.entity';
@@ -298,6 +299,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     DisputeAttachment,
     DisputeResolutionRecord,
     DisputeAuditLog,
+    // Scheduling engine
+    ShipmentReservation,
   ],
   synchronize: process.env.DB_SYNCHRONIZE === 'true',
   autoLoadEntities: false,

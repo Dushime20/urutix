@@ -58,6 +58,7 @@ import {
 // Enhanced services for consolidated matching
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
+import { AvailabilityService } from '../availability/availability.service';
 import { MLPredictionService } from './services/ml-prediction.service';
 import { NotificationService } from '../notifications/notification.service';
 import {
@@ -243,6 +244,7 @@ export class MatchingService {
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
     private readonly emailService: EmailService,
+    private readonly availabilityService: AvailabilityService,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
@@ -1730,6 +1732,32 @@ export class MatchingService {
       });
 
       console.log(`✅ Filtered to ${filteredTrucks.length} trucks`);
+
+      // ── Schedule-based availability filter ───────────────────────────────────
+      // Exclude trucks that have a confirmed shipment whose window overlaps
+      // the requested load's pickup → delivery period.
+      const loadPickup   = load.pickupDate   ? new Date(load.pickupDate)   : null;
+      const loadDelivery = load.deliveryDate ? new Date(load.deliveryDate) : null;
+
+      if (loadPickup && loadDelivery) {
+        const busyTruckIds = await this.availabilityService.getBusyTruckIds(
+          tenantId,
+          loadPickup,
+          loadDelivery,
+        );
+
+        if (busyTruckIds.size > 0) {
+          const beforeCount = filteredTrucks.length;
+          const scheduleFiltered = filteredTrucks.filter(t => !busyTruckIds.has(t.id));
+          console.log(
+            `📅 Schedule filter removed ${beforeCount - scheduleFiltered.length} busy truck(s) for window ` +
+            `${loadPickup.toISOString()} → ${loadDelivery.toISOString()}`,
+          );
+          return scheduleFiltered;
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       return filteredTrucks;
     } catch (error) {
       console.error('❌ Error in getAvailableTrucks:', error);

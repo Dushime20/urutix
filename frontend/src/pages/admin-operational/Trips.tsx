@@ -6,7 +6,7 @@ import type { Trip } from '../../services/tenantApi';
 import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminTrips: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -24,8 +24,8 @@ const OperationalAdminTrips: React.FC = () => {
       // Unwrap whatever shape the API returns — always end up with an array
       const raw: any[] = Array.isArray(res) ? res : res?.trips ?? res?.data ?? res?.items ?? [];
       setTrips(raw);
-    } catch (error) {
-      toast.error('Failed to load trips');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
       setTrips([]);
     } finally {

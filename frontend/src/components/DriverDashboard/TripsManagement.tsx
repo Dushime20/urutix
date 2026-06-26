@@ -4,11 +4,26 @@ import {
   Route, 
   CheckCircle, 
   Calendar,
-  ChevronRight,
   ArrowRight,
   Zap,
   Package,
-  ShieldCheck
+  ShieldCheck,
+  MapPin,
+  Clock,
+  Truck,
+  DollarSign,
+  Navigation,
+  Activity,
+  AlertCircle,
+  Eye,
+  X,
+  ChevronRight,
+  User,
+  Phone,
+  Mail,
+  FileText,
+  Info,
+  Hash
 } from 'lucide-react';
 import { driverApi } from '../../services/driverApi';
 import toast from 'react-hot-toast';
@@ -16,6 +31,9 @@ import { CurrentTrip } from './CurrentTrip';
 import { motion } from 'framer-motion';
 import { TripChecklist } from './TripChecklist';
 import { AnimatePresence } from 'framer-motion';
+import { cn } from '@/utils/cn';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { getApiErrorMessage } from '../../config/errorMessages';
 
 interface TripsManagementProps {
   driverId: string;
@@ -23,8 +41,11 @@ interface TripsManagementProps {
 
 export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) => {
   const queryClient = useQueryClient();
+  const { format: formatCurrency } = useCurrencyFormat();
   const [selectedTripForChecklist, setSelectedTripForChecklist] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'previous'>('active');
+  const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
+  const [selectedTripDetail, setSelectedTripDetail] = useState<string | null>(null);
 
   // Fetch current trip
   const { data: currentTrip, isLoading: currentLoading } = useQuery({
@@ -53,8 +74,8 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
       toast.success('Trip started successfully!');
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] });
-    } catch (error) {
-      toast.error('Failed to start trip');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -64,8 +85,8 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
       toast.success('Trip completed successfully!');
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
-    } catch (error) {
-      toast.error('Failed to complete trip');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -116,29 +137,132 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="space-y-6"
+            className="space-y-4"
           >
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Active Mission</h3>
-            </div>
-            
             {currentLoading ? (
-              <div className="h-64 bg-slate-50 border border-slate-100 rounded-[3rem] animate-pulse" />
-            ) : currentTrip ? (
-              <CurrentTrip 
-                trip={currentTrip as any} 
-                onComplete={() => handleCompleteTrip(currentTrip.id)}
-                onPause={() => driverApi.pauseTrip(currentTrip.id)}
-                onResume={() => driverApi.resumeTrip(currentTrip.id)}
-              />
-            ) : (
-              <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-12 text-center shadow-sm">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-inner">
-                  <Zap className="text-slate-300" size={32} />
+              <div className="h-32 bg-slate-50 border border-slate-100 rounded-2xl animate-pulse" />
+            ) : currentTrip && currentTrip.status === 'IN_PROGRESS' ? (
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {/* Top bar */}
+                <div className="flex items-center justify-between px-5 py-3 bg-[#0f172a]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">In Progress</span>
+                    <span className="text-slate-600 mx-1">·</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">#{currentTrip.tripNumber}</span>
+                  </div>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{currentTrip.progress}% complete</span>
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Active Trip</h4>
-                <p className="text-sm font-medium text-slate-400 mt-1">Select an upcoming trip to begin your next assignment</p>
-                <button onClick={() => setActiveTab('upcoming')} className="mt-6 px-6 py-2.5 bg-blue-50 text-[#345E85] hover:bg-blue-100 transition-colors text-[10px] font-black uppercase tracking-widest rounded-xl">
+
+                {/* Progress bar */}
+                <div className="h-1 bg-slate-100">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${currentTrip.progress}%` }}
+                    transition={{ duration: 1, ease: 'circOut' }}
+                    className="h-full bg-emerald-500"
+                  />
+                </div>
+
+                {/* Main content */}
+                <div className="p-5">
+                  {/* Route */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">From</p>
+                      <p className="text-sm font-black text-[#0f172a] uppercase truncate">{currentTrip.origin.city}</p>
+                      <p className="text-[9px] text-slate-400 truncate">{currentTrip.origin.address}</p>
+                    </div>
+                    <ArrowRight size={16} className="text-slate-300 shrink-0" />
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">To</p>
+                      <p className="text-sm font-black text-[#0f172a] uppercase truncate">{currentTrip.destination.city}</p>
+                      <p className="text-[9px] text-slate-400 truncate">{currentTrip.destination.address}</p>
+                    </div>
+                  </div>
+
+                  {/* Metrics row */}
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    {[
+                      { label: 'Distance', value: `${currentTrip.distance} km`, icon: Navigation },
+                      { label: 'ETA', value: currentTrip.estimatedArrival ? new Date(currentTrip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'TBD', icon: Clock },
+                      { label: 'Cargo', value: `${currentTrip.cargo.weight.toLocaleString()} kg`, icon: Package },
+                      { label: 'Earnings', value: formatCurrency(currentTrip.earnings), icon: DollarSign },
+                    ].map(m => (
+                      <div key={m.label} className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                        <div className="flex items-center gap-1 mb-1">
+                          <m.icon size={10} className="text-slate-400" />
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{m.label}</p>
+                        </div>
+                        <p className="text-xs font-black text-slate-800 truncate">{m.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Cargo description */}
+                  {currentTrip.cargo.description && currentTrip.cargo.description !== 'N/A' && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 mb-4">
+                      <Package size={12} className="text-slate-400 shrink-0" />
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate">{currentTrip.cargo.description}</span>
+                      {currentTrip.cargo.type && currentTrip.cargo.type !== 'General' && (
+                        <span className="ml-auto px-2 py-0.5 bg-blue-50 text-[#345E85] border border-blue-100 rounded text-[8px] font-black uppercase shrink-0">{currentTrip.cargo.type}</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleCompleteTrip(currentTrip.id)}
+                      className="flex-1 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle size={13} />
+                      Complete
+                    </button>
+                    <button
+                      onClick={() => setExpandedTripId(expandedTripId === currentTrip.id ? null : currentTrip.id)}
+                      className="px-4 py-2.5 bg-slate-50 border border-slate-100 text-slate-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Activity size={13} />
+                      {expandedTripId === currentTrip.id ? 'Less' : 'Details'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expandable full detail */}
+                <AnimatePresence>
+                  {expandedTripId === currentTrip.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="overflow-hidden border-t border-slate-100"
+                    >
+                      <div className="p-5">
+                        <CurrentTrip
+                          trip={currentTrip as any}
+                          onComplete={() => handleCompleteTrip(currentTrip.id)}
+                          onPause={() => driverApi.pauseTrip(currentTrip.id)}
+                          onResume={() => driverApi.resumeTrip(currentTrip.id)}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-dashed border-slate-200 py-12 px-6 text-center">
+                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-100">
+                  <Route size={22} className="text-slate-300" />
+                </div>
+                <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-1">No Active Trip</h4>
+                <p className="text-xs text-slate-400 mb-4">No trip is currently in progress.</p>
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className="px-5 py-2.5 bg-[#345E85] text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-[#2a4d6d] transition-all active:scale-95 inline-flex items-center gap-1.5"
+                >
+                  <Calendar size={12} />
                   View Upcoming
                 </button>
               </div>
@@ -239,8 +363,12 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                           Start
                           <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </button>
-                        <button className="px-5 py-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 hover:text-slate-600 transition-all">
-                          <ChevronRight size={20} />
+                        <button
+                          onClick={() => setSelectedTripDetail(trip.id)}
+                          className="px-5 py-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-blue-50 hover:text-[#345E85] hover:border-blue-100 border border-transparent transition-all"
+                          title="View trip details"
+                        >
+                          <Eye size={20} />
                         </button>
                       </div>
                     </div>
@@ -339,6 +467,266 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             }}
           />
         )}
+      </AnimatePresence>
+
+      {/* Trip Detail Modal */}
+      <AnimatePresence>
+        {selectedTripDetail && (() => {
+          const trip = upcomingTrips?.find(t => t.id === selectedTripDetail);
+          if (!trip) return null;
+
+          const priorityColors: Record<string, string> = {
+            URGENT: 'bg-red-50 text-red-600 border-red-100',
+            HIGH:   'bg-orange-50 text-orange-600 border-orange-100',
+            MEDIUM: 'bg-blue-50 text-[#345E85] border-blue-100',
+            LOW:    'bg-slate-50 text-slate-500 border-slate-200',
+          };
+          const priority = (trip as any).priority || 'MEDIUM';
+
+          return (
+            <motion.div
+              key="trip-detail-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+              onClick={() => setSelectedTripDetail(null)}
+            >
+              {/* Backdrop */}
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+              {/* Panel */}
+              <motion.div
+                initial={{ y: 60, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 60, opacity: 0 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+                className="relative w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="sticky top-0 z-10 bg-[#0f172a] rounded-t-[2rem] px-8 py-6 flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mission ID</span>
+                      <span className="px-2 py-0.5 bg-[#345E85]/30 text-blue-300 text-[9px] font-black uppercase rounded">
+                        ORD-{trip.tripNumber}
+                      </span>
+                      <span className={cn('px-2 py-0.5 text-[8px] font-black uppercase rounded border', priorityColors[priority])}>
+                        {priority}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                      {trip.origin.city} → {trip.destination.city}
+                    </h3>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                      {trip.status}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedTripDetail(null)}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="p-8 space-y-8">
+
+                  {/* Route Details */}
+                  <section>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Route Details</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Pickup */}
+                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-7 h-7 rounded-lg bg-[#345E85] flex items-center justify-center">
+                            <MapPin size={13} className="text-white" />
+                          </div>
+                          <span className="text-[9px] font-black text-[#345E85] uppercase tracking-widest">Pickup</span>
+                        </div>
+                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{trip.origin.city}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{trip.origin.address}</p>
+                        {trip.origin.state && (
+                          <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">{trip.origin.state}</p>
+                        )}
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <Clock size={11} />
+                            <span className="text-[9px] font-black uppercase tracking-widest">
+                              {(trip as any).pickupTime || trip.scheduledDeparture
+                                ? new Date((trip as any).pickupTime || trip.scheduledDeparture).toLocaleString('en-US', {
+                                    weekday: 'short', month: 'short', day: 'numeric',
+                                    hour: '2-digit', minute: '2-digit', hour12: true,
+                                  })
+                                : 'TBD'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Delivery */}
+                      <div className="bg-emerald-50/60 rounded-2xl p-5 border border-emerald-100">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+                            <MapPin size={13} className="text-white" />
+                          </div>
+                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Delivery</span>
+                        </div>
+                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{trip.destination.city}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{trip.destination.address}</p>
+                        {trip.destination.state && (
+                          <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">{trip.destination.state}</p>
+                        )}
+                        <div className="mt-3 pt-3 border-t border-emerald-200/60">
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <Clock size={11} />
+                            <span className="text-[9px] font-black uppercase tracking-widest">
+                              {(trip as any).deliveryTime || trip.estimatedArrival
+                                ? new Date((trip as any).deliveryTime || trip.estimatedArrival).toLocaleString('en-US', {
+                                    weekday: 'short', month: 'short', day: 'numeric',
+                                    hour: '2-digit', minute: '2-digit', hour12: true,
+                                  })
+                                : 'TBD'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Trip Metrics */}
+                  <section>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Trip Metrics</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { label: 'Distance', value: `${trip.distance} km`, icon: Navigation, color: 'text-blue-500' },
+                        { label: 'Est. Duration', value: trip.estimatedDuration ? `${Math.floor(trip.estimatedDuration / 60)}h ${trip.estimatedDuration % 60}m` : 'TBD', icon: Clock, color: 'text-orange-500' },
+                        { label: 'Earnings', value: formatCurrency(trip.earnings), icon: DollarSign, color: 'text-emerald-500' },
+                        { label: 'Cargo Weight', value: `${trip.cargo.weight.toLocaleString()} kg`, icon: Package, color: 'text-purple-500' },
+                      ].map(m => (
+                        <div key={m.label} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
+                          <m.icon size={18} className={cn('mx-auto mb-2', m.color)} />
+                          <p className="text-xs font-black text-slate-800">{m.value}</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{m.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Cargo Info */}
+                  <section>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Cargo Information</p>
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Description</p>
+                          <p className="text-sm font-bold text-slate-800">{trip.cargo.description}</p>
+                        </div>
+                        <span className="shrink-0 px-3 py-1 bg-white border border-slate-200 text-slate-600 text-[9px] font-black uppercase rounded-lg">
+                          {trip.cargo.type}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-200">
+                        <div>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Weight</p>
+                          <p className="text-sm font-black text-slate-800">{trip.cargo.weight.toLocaleString()} kg</p>
+                        </div>
+                        {trip.cargo.specialInstructions && (
+                          <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Special Instructions</p>
+                            <p className="text-xs font-medium text-orange-600">{trip.cargo.specialInstructions}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Customer Info */}
+                  {trip.customer.name && trip.customer.name !== 'N/A' && (
+                    <section>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Customer</p>
+                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 rounded-xl bg-[#345E85]/10 flex items-center justify-center">
+                            <User size={18} className="text-[#345E85]" />
+                          </div>
+                          <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{trip.customer.name}</p>
+                        </div>
+                        <div className="space-y-2">
+                          {trip.customer.phone && (
+                            <div className="flex items-center gap-3">
+                              <Phone size={13} className="text-slate-400 shrink-0" />
+                              <span className="text-xs font-medium text-slate-600">{trip.customer.phone}</span>
+                            </div>
+                          )}
+                          {trip.customer.email && (
+                            <div className="flex items-center gap-3">
+                              <Mail size={13} className="text-slate-400 shrink-0" />
+                              <span className="text-xs font-medium text-slate-600">{trip.customer.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Truck Info */}
+                  {(trip.truck.plateNumber || trip.truck.model) && (
+                    <section>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Assigned Vehicle</p>
+                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center">
+                          <Truck size={18} className="text-slate-500" />
+                        </div>
+                        <div>
+                          {trip.truck.model && <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{trip.truck.model}</p>}
+                          {trip.truck.plateNumber && (
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Hash size={11} className="text-slate-400" />
+                              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{trip.truck.plateNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Notes */}
+                  {trip.notes && (
+                    <section>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Notes</p>
+                      <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex gap-3">
+                        <Info size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium text-amber-800">{trip.notes}</p>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedTripDetail(null);
+                        setSelectedTripForChecklist(trip.id);
+                      }}
+                      className="flex-1 px-6 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-lg active:scale-95"
+                    >
+                      Start Trip
+                      <ArrowRight size={14} />
+                    </button>
+                    <button
+                      onClick={() => setSelectedTripDetail(null)}
+                      className="px-6 py-4 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
     </div>

@@ -51,6 +51,7 @@ import { GeofencingModule } from './modules/geofencing/geofencing.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { ApiMarketplaceModule } from './modules/api-marketplace/api-marketplace.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
 import { databaseConfig } from './config/database.config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
@@ -142,6 +143,7 @@ import { UserSession } from './entities/user-session.entity';
     ApiMarketplaceModule,
     CurrencyModule,
     DisputesModule,
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [

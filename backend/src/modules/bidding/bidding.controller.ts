@@ -31,6 +31,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { errorMessage } from '../../utils/error';
 import { UserRole } from '../../entities/user.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AvailabilityService } from '../availability/availability.service';
 
 @ApiTags('Bidding & Auctions')
 @ApiBearerAuth('JWT-auth')
@@ -40,6 +41,7 @@ export class BiddingController {
   constructor(
     private readonly biddingService: BiddingService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly availabilityService: AvailabilityService,
   ) { }
 
   @Get('test')
@@ -107,11 +109,78 @@ export class BiddingController {
     }
   }
 
+  // ─── Availability pre-check ─────────────────────────────────────────────────
+
+  @Post('check-availability')
+  @ApiOperation({
+    summary: 'Check truck/driver availability before submitting a bid',
+    description:
+      'Truck owners call this BEFORE submitting a bid to find out whether their ' +
+      'chosen truck and/or driver are free during the proposed shipment window. ' +
+      'Returns a list of conflicts (if any) so the truck owner can choose a ' +
+      'different resource before placing the bid.',
+  })
+  @ApiResponse({ status: 200, description: 'Availability check result' })
+  async checkBidAvailability(
+    @Body()
+    body: {
+      truckId?: string;
+      driverId?: string;
+      pickupDateTime: string;
+      deliveryDateTime: string;
+    },
+    @Request() req,
+  ) {
+    const { truckId, driverId, pickupDateTime, deliveryDateTime } = body;
+    const tenantId = req.user.tenantId;
+
+    if (!pickupDateTime || !deliveryDateTime) {
+      throw new BadRequestException('pickupDateTime and deliveryDateTime are required');
+    }
+
+    const conflicts = await this.availabilityService.findConflicts({
+      truckId,
+      driverId,
+      pickupDateTime:   new Date(pickupDateTime),
+      deliveryDateTime: new Date(deliveryDateTime),
+      tenantId,
+    });
+
+    const available = conflicts.length === 0;
+    const fmt = (d: Date) =>
+      new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    return {
+      success: true,
+      data: {
+        available,
+        conflicts: conflicts.map(c => ({
+          type:               c.type,
+          resourceId:         c.resourceId,
+          conflictingTripId:  c.conflictingTripId,
+          conflictingCargoId: c.conflictingCargoId,
+          existingPickup:     c.existingPickup,
+          existingDelivery:   c.existingDelivery,
+          message:
+            c.type === 'TRUCK'
+              ? `This truck is already assigned to another shipment (${fmt(c.existingPickup)} → ${fmt(c.existingDelivery)}).`
+              : `This driver is already assigned to another shipment (${fmt(c.existingPickup)} → ${fmt(c.existingDelivery)}).`,
+        })),
+        message: available
+          ? 'Truck and driver are available for the selected window.'
+          : `${conflicts.length} scheduling conflict(s) detected. Choose a different truck or driver.`,
+      },
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+
   @Post('bids')
   @ApiOperation({
     summary: 'Submit a bid for a load',
-    description:
-      'Truck owners can submit bids for published loads with active auctions.',
+    description: 'Truck owners can submit bids for published loads with active auctions.',
   })
   @ApiBody({
     type: 'object',

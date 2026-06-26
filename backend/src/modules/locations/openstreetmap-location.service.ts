@@ -98,7 +98,7 @@ export class OpenStreetMapLocationService {
   async getGeocodingData(coordinates: {
     latitude: number;
     longitude: number;
-  }): Promise<OSMGeocodingResult> {
+  }): Promise<OSMGeocodingResult | null> {
     const cacheKey = `osm_geocoding_${coordinates.latitude}_${coordinates.longitude}`;
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
@@ -109,16 +109,11 @@ export class OpenStreetMapLocationService {
         this.setCache(cacheKey, result);
         return result;
       }
-
-      // Fallback to coordinate-based generation
-      const fallbackResult = this.generateFallbackGeocodingData(coordinates);
-      this.setCache(cacheKey, fallbackResult);
-      return fallbackResult;
+      // OSM returned no usable data — don't cache, let next attempt try again
+      return null;
     } catch (error) {
       this.logger.error('Error getting OSM geocoding data:', error);
-      const fallbackResult = this.generateFallbackGeocodingData(coordinates);
-      this.setCache(cacheKey, fallbackResult);
-      return fallbackResult;
+      return null;
     }
   }
 
@@ -172,23 +167,25 @@ export class OpenStreetMapLocationService {
 
       if (response.status === 200 && response.data) {
         const data = response.data;
+        // Use display_name as full address
         const address = data.display_name || '';
 
-        // Extract address components
-        const addressParts = this.extractOSMAddressComponents(data.address);
+        // Extract address components — returns null for missing fields
+        const addressParts = this.extractOSMAddressComponents(data.address || {});
+
+        // If OSM returned nothing useful, signal failure so caller can skip enrichment
+        if (!addressParts.city && !addressParts.country) {
+          return null;
+        }
 
         // Get timezone
         const timezone = await this.getTimezoneFromCoordinates(coordinates);
 
         return {
           address,
-          city:
-            addressParts.city ||
-            addressParts.town ||
-            addressParts.village ||
-            'Unknown City',
-          state: addressParts.state || addressParts.province || 'Unknown State',
-          country: addressParts.country || 'Unknown Country',
+          city: addressParts.city,
+          state: addressParts.state,
+          country: addressParts.country,
           postalCode:
             addressParts.postcode ||
             this.generatePostalCode(
@@ -196,24 +193,16 @@ export class OpenStreetMapLocationService {
               coordinates.longitude,
             ),
           administrativeAreas: {
-            district:
-              addressParts.district ||
-              addressParts.county ||
-              'Unknown District',
-            province:
-              addressParts.state || addressParts.province || 'Unknown Province',
-            county:
-              addressParts.county || addressParts.district || 'Unknown County',
+            district: addressParts.district,
+            province: addressParts.state,
+            county: addressParts.district,
             postalCode:
               addressParts.postcode ||
               this.generatePostalCode(
                 coordinates.latitude,
                 coordinates.longitude,
               ),
-            administrativeArea:
-              addressParts.state ||
-              addressParts.province ||
-              'Unknown Administrative Area',
+            administrativeArea: addressParts.state,
             subDistrict:
               addressParts.suburb || addressParts.neighbourhood || undefined,
             ward: addressParts.ward || undefined,
@@ -399,16 +388,31 @@ export class OpenStreetMapLocationService {
    */
   private extractOSMAddressComponents(address: any): any {
     return {
+      // OSM Nominatim uses different keys in different regions:
+      // - "city" for large cities
+      // - "town" for smaller towns
+      // - "village" for villages
+      // - "municipality" in some countries
+      // - "county" for African districts/counties that OSM treats as city-level
+      // - "state_district" for some sub-national regions
+      // - "region" used in some African countries
       city:
-        address.city || address.town || address.village || address.municipality,
-      state: address.state || address.province,
-      country: address.country,
-      postcode: address.postcode,
-      district: address.district || address.county,
-      suburb: address.suburb,
-      neighbourhood: address.neighbourhood,
-      ward: address.ward,
-      constituency: address.constituency,
+        address.city ||
+        address.town ||
+        address.village ||
+        address.municipality ||
+        address.county ||
+        address.state_district ||
+        address.region ||
+        null,
+      state: address.state || address.province || null,
+      country: address.country || null,
+      postcode: address.postcode || null,
+      district: address.district || address.county || null,
+      suburb: address.suburb || null,
+      neighbourhood: address.neighbourhood || null,
+      ward: address.ward || null,
+      constituency: address.constituency || null,
     };
   }
 

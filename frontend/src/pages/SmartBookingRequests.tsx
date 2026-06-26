@@ -3,6 +3,7 @@ import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaSearch, FaSpinner, FaTruck, FaMapMarkerAlt, FaDollarSign } from 'react-icons/fa';
 import { smartBookingApi, type BookingRequest } from '../services/smartBookingApi';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../config/errorMessages';
 import { cn } from '../utils/cn';
 
 type TabType = 'pending' | 'accepted' | 'rejected' | 'all';
@@ -29,9 +30,9 @@ const SmartBookingRequests: React.FC = () => {
         try {
             const requests = await smartBookingApi.getBookingRequests();
             setBookingRequests(requests);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error loading booking requests:', error);
-            toast.error('Failed to load booking requests');
+            toast.error(getApiErrorMessage(error));
         } finally {
             setLoading(false);
         }
@@ -64,9 +65,9 @@ const SmartBookingRequests: React.FC = () => {
             await smartBookingApi.acceptBookingRequest(request.id, request.truckId);
             toast.success('Booking request accepted successfully!');
             await loadBookingRequests();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error accepting booking:', error);
-            toast.error('Failed to accept booking request');
+            toast.error(getApiErrorMessage(error));
         } finally {
             setProcessingId(null);
         }
@@ -78,9 +79,9 @@ const SmartBookingRequests: React.FC = () => {
             await smartBookingApi.rejectBookingRequest(request.id);
             toast.success('Booking request rejected');
             await loadBookingRequests();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error rejecting booking:', error);
-            toast.error('Failed to reject booking request');
+            toast.error(getApiErrorMessage(error));
         } finally {
             setProcessingId(null);
         }

@@ -609,23 +609,17 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-          <button
-            onClick={() => openQuickBidModal(auction)}
-            className="py-3 sm:py-4 bg-[#345E85] text-white rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 flex items-center justify-center gap-1.5"
-          >
-            <ZapIcon size={11} className="text-yellow-300 shrink-0" /> 
-            <span className="truncate">Quick</span>
-          </button>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <button
             onClick={() => openBidModal(auction)}
-            className="py-3 sm:py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-all active:scale-95 truncate"
+            disabled={auction.status !== 'ACTIVE'}
+            className="py-3 sm:py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-all active:scale-95 truncate disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800"
           >
             Custom
           </button>
           <button
             onClick={() => openDetailsModal(auction)}
-            className="py-3 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-[#345E85] dark:text-blue-400 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-100 dark:hover:border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-1.5 col-span-2 sm:col-span-1"
+            className="py-3 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-[#345E85] dark:text-blue-400 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-100 dark:hover:border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-1.5"
           >
             <Eye size={11} className="shrink-0" /> 
             <span className="truncate">Full Details</span>
@@ -785,14 +779,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => openQuickBidModal(auction)}
-                              className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all flex items-center gap-1.5 bg-[#345E85] text-white hover:bg-[#2a4d6d] shadow-lg"
-                            >
-                              <ZapIcon size={12} /> Quick
-                            </button>
-                            <button
                               onClick={() => openBidModal(auction)}
-                              className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg"
+                              disabled={auction.status !== 'ACTIVE'}
+                              className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900"
                             >
                               <Gavel size={14} />
                             </button>

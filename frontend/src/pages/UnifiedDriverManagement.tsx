@@ -31,7 +31,7 @@ import UserScoring from './UserScoring';
 import type { Driver } from '../services/fleetApi';
 import ModernLoader from '../components/common/ModernLoader';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../config/errorMessages';
 const UnifiedDriverManagement: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const UnifiedDriverManagement: React.FC = () => {
       setDrivers(Array.isArray(driversData) ? driversData : []);
     } catch (error: any) {
       console.error('Error loading drivers:', error);
-      toast.error('Failed to load drivers');
+      toast.error(getApiErrorMessage(error));
       setDrivers([]);
     } finally {
       setLoadingDrivers(false);
@@ -143,7 +143,7 @@ const UnifiedDriverManagement: React.FC = () => {
             );
           } catch (docError: any) {
             console.error('Failed to upload document:', doc.title, docError);
-            toast.error(`Failed to upload ${doc.title}`);
+            toast.error(getApiErrorMessage(docError));
           }
         }
 
@@ -161,7 +161,7 @@ const UnifiedDriverManagement: React.FC = () => {
       setActiveTab('my-drivers');
       navigate('/dashboard/fleet/drivers');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to save driver');
+      toast.error(getApiErrorMessage(err));
       throw err;
     }
   };

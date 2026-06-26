@@ -39,6 +39,7 @@ import { TranslatedText } from '../components/translated-text';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import CurrencySelector from '../components/common/CurrencySelector';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../config/errorMessages';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import axios from 'axios';
 import { getApiBaseUrl } from '../config/environment';
@@ -102,9 +103,9 @@ const Settings: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Contact settings saved successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save contact settings:', error);
-      toast.error('Failed to save contact settings. Please try again.');
+      toast.error(getApiErrorMessage(error));
     } finally {
       setIsSavingContact(false);
     }
@@ -250,7 +251,7 @@ const Settings: React.FC = () => {
       toast.success('Settings saved successfully');
     } catch (err: any) {
       console.error('Error saving settings:', err);
-      toast.error('Failed to save settings');
+      toast.error(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -362,8 +363,8 @@ const Settings: React.FC = () => {
         await deleteUser(receiverId);
         toast.success('Team member removed');
         loadReceivers();
-      } catch (err) {
-        toast.error('Failed to remove team member');
+      } catch (err: any) {
+        toast.error(getApiErrorMessage(err));
       }
     }
   };
@@ -629,8 +630,8 @@ const Settings: React.FC = () => {
                               lastName: userProfile.lastName
                             });
                             toast.success('Profile updated');
-                          } catch (err) {
-                            toast.error('Failed to update profile');
+                          } catch (err: any) {
+                            toast.error(getApiErrorMessage(err));
                           } finally {
                             setLoading(false);
                           }
@@ -1483,7 +1484,7 @@ const CurrencyManagementSection: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['exchange-rates'] });
       toast.success('Rates refreshed from external provider');
     },
-    onError: () => toast.error('Failed to refresh rates'),
+    onError: (err: any) => toast.error(getApiErrorMessage(err)),
   });
 
   const toggleActive = (c: AdminCurrency) =>

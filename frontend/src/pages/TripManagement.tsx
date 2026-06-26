@@ -24,6 +24,7 @@ import {
 import { tripsAPI } from '../services/api';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../config/errorMessages';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { cn } from '../utils/cn';
 import ModernLoader from '../components/common/ModernLoader';
@@ -159,7 +160,7 @@ const TripManagement: React.FC = () => {
   });
 
   if (error) {
-    toast.error('Failed to load trips');
+    toast.error(getApiErrorMessage(error));
   }
 
   const trips = tripsData || [];
@@ -230,8 +231,8 @@ const TripManagement: React.FC = () => {
       }
 
       setTruckDrivers(filtered);
-    } catch {
-      toast.error('Failed to load drivers');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoadingDrivers(false);
     }

@@ -24,6 +24,7 @@ import { BiddingController } from './bidding.controller';
 import { NotificationModule } from '../notifications/notification.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { CreditService } from '../../services/credit.service';
+import { AvailabilityModule } from '../availability/availability.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { CreditService } from '../../services/credit.service';
     ]),
     NotificationModule,
     AnalyticsModule,
+    AvailabilityModule,
   ],
   providers: [BiddingService, BiddingIntelligenceService, BidValidationService, CreditService],
   controllers: [BiddingController],

@@ -39,6 +39,7 @@ import { EmergencyRematchController } from './controllers/emergency-rematch.cont
 import { MatchingSchedulerService } from './services/matching-scheduler.service';
 import { NotificationModule } from '../notifications/notification.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { AvailabilityModule } from '../availability/availability.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     ConfigModule,
     NotificationModule,
     EnhancedAuthModule,
+    AvailabilityModule,
   ],
   providers: [
     MatchingService,

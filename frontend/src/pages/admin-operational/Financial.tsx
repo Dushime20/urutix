@@ -7,7 +7,7 @@ import ModernLoader from '../../components/common/ModernLoader';
 import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
+import { getApiErrorMessage } from '../../config/errorMessages';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const OperationalAdminFinancial: React.FC = () => {
@@ -30,8 +30,8 @@ const OperationalAdminFinancial: React.FC = () => {
       setLoading(true);
       const data = await operationalAdminApi.getFinancials();
       setMetrics(data);
-    } catch (error) {
-      toast.error('Failed to load financial metrics');
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error));
       console.error(error);
     } finally {
       setLoading(false);

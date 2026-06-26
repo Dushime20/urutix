@@ -9,7 +9,7 @@ import {
   X,
   AlertCircle,
   Shield,
-  Heart,
+  CheckCircle,
   History as HistoryIcon
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
@@ -262,16 +262,16 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             </span>
           </button>
           <button
-            onClick={() => setActiveTab('watched')}
+            onClick={() => setActiveTab('accepted')}
             className={cn(
               "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
-              activeTab === 'watched'
-                ? "bg-rose-500 text-white shadow-xl shadow-rose-900/10"
+              activeTab === 'accepted'
+                ? "bg-emerald-500 text-white shadow-xl shadow-emerald-900/10"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             )}
           >
-            <Heart size={14} className={activeTab === 'watched' ? 'fill-current' : ''} />
-            Watchlist
+            <CheckCircle size={14} />
+            Accepted Bids
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
@@ -291,7 +291,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
         {activeTab === 'auctions' && <AuctionList userRole={userRole} />}
         {activeTab === 'bids' && <BidHistory userRole={userRole} />}
-        {activeTab === 'watched' && <AuctionList userRole={userRole} showWatchedOnly={true} />}
+        {activeTab === 'accepted' && <BidHistory userRole={userRole} initialStatusFilter="ACCEPTED" />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
       </div>
     </div>
