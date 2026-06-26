@@ -12,6 +12,8 @@ import { Load } from '../../entities/load.entity';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { NotificationService } from './services/notification.service';
+// EmailService is re-exported from auth/services/email.service — same class token,
+// no wrapper, so EnhancedAuthModule's registered instance is reused directly.
 import { EmailService } from './services/email.service';
 import { SmsService } from './services/sms.service';
 import { PushService } from './services/push.service';
@@ -39,6 +41,9 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     EventEmitterModule.forRoot(),
     ConfigModule,
     EventsModule,
+    // EnhancedAuthModule exports EmailService (from auth/services/email.service).
+    // Because notifications/services/email.service re-exports that same class,
+    // Nest resolves them as the same token — no duplicate provider needed.
     EnhancedAuthModule,
   ],
   controllers: [NotificationsController],
@@ -46,7 +51,6 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     NotificationsService,
     NotificationService,
     PaymentNotificationService,
-    EmailService,
     SmsService,
     PushService,
     InAppService,

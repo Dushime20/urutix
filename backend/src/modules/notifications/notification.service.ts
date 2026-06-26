@@ -941,11 +941,11 @@ export class NotificationService {
       // TODO: Get recipient email from user context or notification metadata
       const recipientEmail =
         notification.metadata?.recipientEmail || 'placeholder@example.com';
-      await this.emailService.sendEmail(
-        recipientEmail,
-        notification.title || 'Notification',
-        notification.message,
-      );
+      await this.emailService.sendGenericEmail({
+        to:       recipientEmail,
+        subject:  notification.title || 'Notification',
+        textBody: notification.message,
+      });
       await this.markAsDelivered(
         notification.id,
         NotificationChannel.EMAIL,

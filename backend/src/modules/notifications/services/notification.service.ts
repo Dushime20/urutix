@@ -186,11 +186,11 @@ export class NotificationService {
 
       switch ((notification as any).channel) {
         case NotificationChannel.EMAIL:
-          result = await this.emailService.sendEmail(
-            notification.metadata?.recipientEmail || 'placeholder@example.com',
-            notification.title || 'Notification',
-            notification.message,
-          );
+          result = await this.emailService.sendGenericEmail({
+            to:       notification.metadata?.recipientEmail || 'placeholder@example.com',
+            subject:  notification.title || 'Notification',
+            textBody: notification.message,
+          });
           break;
         case NotificationChannel.SMS:
           result = await this.smsService.sendSms(
