@@ -13,6 +13,7 @@ import {
   NotificationChannel,
   NotificationStatus,
   NotificationCategory,
+  EntityType,
 } from '../../entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -52,11 +53,12 @@ export class NotificationsService {
         language: createNotificationDto.language || 'en',
         templateId: createNotificationDto.templateId,
       },
-      category: createNotificationDto.category,
-      entityType: createNotificationDto.entityType,
-      entityId: createNotificationDto.entityId || createNotificationDto.relatedEntityId,
-      actionUrl: createNotificationDto.actionUrl,
-      actionText: createNotificationDto.actionText,
+      category:    createNotificationDto.category,
+      // entityType is NOT NULL — fall back to SYSTEM if caller omits it
+      entityType:  createNotificationDto.entityType || EntityType.SYSTEM,
+      entityId:    createNotificationDto.entityId || createNotificationDto.relatedEntityId,
+      actionUrl:   createNotificationDto.actionUrl,
+      actionText:  createNotificationDto.actionText,
     });
     const saved = await this.notificationRepository.save(notification);
     await this.deliverNotification(saved);
@@ -95,11 +97,12 @@ export class NotificationsService {
               language: notification.language || 'en',
               templateId: notification.templateId,
             },
-            category: notification.category,
-            entityType: notification.entityType,
-            entityId: notification.entityId || notification.relatedEntityId,
-            actionUrl: notification.actionUrl,
-            actionText: notification.actionText,
+            category:    notification.category,
+            // entityType is NOT NULL — fall back to SYSTEM if caller omits it
+            entityType:  notification.entityType || EntityType.SYSTEM,
+            entityId:    notification.entityId || notification.relatedEntityId,
+            actionUrl:   notification.actionUrl,
+            actionText:  notification.actionText,
           }),
       );
       

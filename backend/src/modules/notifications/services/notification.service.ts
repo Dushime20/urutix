@@ -9,6 +9,7 @@ import {
   NotificationChannel,
   NotificationCategory,
   NotificationType,
+  EntityType,
 } from '../../../entities/notification.entity';
 import {
   NotificationTemplate,
@@ -47,27 +48,28 @@ export class NotificationService {
     createDto: CreateNotificationDto,
   ): Promise<Notification> {
     const notification = this.notificationRepository.create({
-      tenantId: createDto.tenantId,
-      recipientId: createDto.userId,
-      category: createDto.category,
-      priority: createDto.priority || NotificationPriority.NORMAL,
-      channels: createDto.channel
-        ? [createDto.channel]
-        : [NotificationChannel.IN_APP],
-      title: createDto.subject ?? '',
-      message: createDto.content ?? '',
-      actionUrl: createDto.actionUrl,
-      actionText: createDto.actionText,
+      tenantId:        createDto.tenantId,
+      recipientId:     createDto.userId,
+      category:        createDto.category,
+      priority:        createDto.priority || NotificationPriority.NORMAL,
+      channels:        createDto.channel ? [createDto.channel] : [NotificationChannel.IN_APP],
+      title:           createDto.subject ?? '',
+      message:         createDto.content ?? '',
+      actionUrl:       createDto.actionUrl,
+      actionText:      createDto.actionText,
       notificationType: createDto.type,
-      status: NotificationStatus.PENDING,
+      // entityType is NOT NULL — always provide a value; fall back to SYSTEM
+      entityType:      (createDto as any).entityType || EntityType.SYSTEM,
+      entityId:        (createDto as any).entityId   || undefined,
+      status:          NotificationStatus.PENDING,
       metadata: {
         ...(createDto.metadata || {}),
         recipientEmail: createDto.recipientEmail,
         recipientPhone: createDto.recipientPhone,
-        recipientName: createDto.recipientName,
-        deviceToken: createDto.deviceToken,
-        language: createDto.language || 'en',
-        templateId: createDto.templateId,
+        recipientName:  createDto.recipientName,
+        deviceToken:    createDto.deviceToken,
+        language:       createDto.language || 'en',
+        templateId:     createDto.templateId,
       },
     });
 
@@ -145,7 +147,7 @@ export class NotificationService {
           channel,
           priority: priority || NotificationPriority.NORMAL,
           category,
-          entityType: 'SYSTEM' as any,
+          entityType: EntityType.SYSTEM,
           templateId,
           subject: this.processTemplate(template.subject, data),
           content: this.processTemplate(template.content, data),

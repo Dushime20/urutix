@@ -58,9 +58,10 @@ export class EmailService {
 
       this.transporter.verify((err) => {
         if (err) {
-          this.logger.warn(`SMTP verify: ${err.message} (emails may still deliver)`);
+          this.logger.warn(`[EMAIL] SMTP verify failed: ${err.message} — emails may still deliver`);
+          this.logger.warn(`[EMAIL] Hint: for Gmail use port 465 + SMTP_SECURE=true, or port 587 + SMTP_SECURE=false`);
         } else {
-          this.logger.log(`Email service ready — ${host}:${port}`);
+          this.logger.log(`[EMAIL] SMTP ready ✓ — ${host}:${port} | from=${this.fromAddress}`);
         }
       });
     } catch (err: any) {
@@ -88,35 +89,55 @@ export class EmailService {
       ? `"${fromName}" <${this.fromAddress}>`
       : this.fromAddress;
 
+    // ── Pre-flight checks ───────────────────────────────────────────────────
+    this.logger.log(`[EMAIL] Preparing to send → to=${to} | subject="${subject}"`);
+
     if (!this.transporter) {
-      this.logger.warn(`[EMAIL SKIPPED] to=${to} | subject="${subject}" (SMTP not configured)`);
+      this.logger.error(`[EMAIL] BLOCKED — SMTP transporter not initialized.`);
+      this.logger.error(`[EMAIL] Check that SMTP_HOST, SMTP_USER, SMTP_PASS are set in .env and the server was restarted after changing them.`);
+      this.logger.warn(`[EMAIL SKIPPED] to=${to} | subject="${subject}"`);
       return { success: false, error: 'SMTP not configured' };
     }
 
+    if (!this.fromAddress) {
+      this.logger.error(`[EMAIL] BLOCKED — from address is empty. Set SMTP_FROM or SMTP_USER in .env.`);
+      return { success: false, error: 'From address not configured' };
+    }
+
     if (!this.isValidEmail(to)) {
-      this.logger.error(`Invalid recipient email: ${to}`);
+      this.logger.error(`[EMAIL] BLOCKED — Invalid recipient address: "${to}"`);
       return { success: false, error: `Invalid email address: ${to}` };
     }
 
+    this.logger.log(`[EMAIL] from="${from}" | replyTo="${replyTo || 'none'}" | hasHtml=${!!htmlBody} | hasText=${!!textBody}`);
+
+    // ── Send ────────────────────────────────────────────────────────────────
     try {
       const result = await this.transporter.sendMail({
         from,
         to: to.trim().toLowerCase(),
         subject,
-        ...(htmlBody ? { html: htmlBody } : {}),
-        ...(textBody ? { text: textBody } : {}),
-        ...(replyTo ? { replyTo } : {}),
+        ...(htmlBody  ? { html: htmlBody }   : {}),
+        ...(textBody  ? { text: textBody }   : {}),
+        ...(replyTo   ? { replyTo }          : {}),
       });
 
+      this.logger.log(`[EMAIL] SMTP response: accepted=${JSON.stringify(result.accepted)} rejected=${JSON.stringify(result.rejected || [])} messageId=${result.messageId}`);
+
       if (result.rejected?.length) {
-        this.logger.error(`Email rejected for ${to}: ${result.rejected.join(', ')}`);
+        this.logger.error(`[EMAIL] REJECTED by server for: ${result.rejected.join(', ')}`);
         return { success: false, error: `Rejected: ${result.rejected.join(', ')}` };
       }
 
-      this.logger.log(`Email sent → ${to} | "${subject}" | id=${result.messageId}`);
+      this.logger.log(`[EMAIL] DELIVERED ✓ → ${to} | "${subject}" | id=${result.messageId}`);
       return { success: true, messageId: result.messageId };
     } catch (err: any) {
-      this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+      this.logger.error(`[EMAIL] SEND FAILED → to=${to} | subject="${subject}"`);
+      this.logger.error(`[EMAIL] Error: ${err.message}`);
+      if (err.code)         this.logger.error(`[EMAIL] Code: ${err.code}`);
+      if (err.response)     this.logger.error(`[EMAIL] SMTP response: ${err.response}`);
+      if (err.responseCode) this.logger.error(`[EMAIL] SMTP code: ${err.responseCode}`);
+      if (err.command)      this.logger.error(`[EMAIL] Failed command: ${err.command}`);
       return { success: false, error: err.message };
     }
   }
